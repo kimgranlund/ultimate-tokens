@@ -1,12 +1,12 @@
-# Containers — insets, gaps, the space scale, borders
+# Containers: insets, gaps, the space scale, borders
 
-Container geometry is the space BETWEEN and AROUND components — a different tier from control-internal
+Container geometry is the space BETWEEN and AROUND components, a different tier from control-internal
 geometry (controls.md). It's treatment-derived (scales with the kit's density) and mode-independent.
 Reach for a SEMANTIC token (`--inset-*`, `--gap-*`) before a raw `--space-N`.
 
-## Insets — padding INSIDE a container
+## Insets: padding INSIDE a container
 
-`--inset-{name}` — each is a named rung of the space ladder, sized to the container's scale:
+`--inset-{name}`, each is a named rung of the space ladder, sized to the container's scale:
 
 | Token | Use for |
 |---|---|
@@ -16,12 +16,12 @@ Reach for a SEMANTIC token (`--inset-*`, `--gap-*`) before a raw `--space-N`.
 | `--inset-dialog` | a modal / dialog / sheet body |
 | `--inset-page` | the page gutter / outermost content padding |
 
-Pick by the container, not by eyeballing a number — a card is `--inset-card` whether it's small or
+Pick by the container, not by eyeballing a number, a card is `--inset-card` whether it's small or
 large; the token already carries the right rhythm.
 
-## Gaps — space BETWEEN siblings
+## Gaps: space BETWEEN siblings
 
-`--gap-{name}` — for `gap` on a flex/grid, or margins between stacked elements:
+`--gap-{name}`, for `gap` on a flex/grid, or margins between stacked elements:
 
 | Token | Use for |
 |---|---|
@@ -35,8 +35,8 @@ large; the token already carries the right rhythm.
 ## The raw space ladder (escape hatch)
 
 `--space-{0…9}` is the underlying geometric ladder (roughly-geometric multiples of the treatment's
-base spacing — read the actual values from the export). The `--inset-*`/`--gap-*` tier is named rungs
-OF this ladder — use the semantic name first; drop to a raw `--space-N` only for a one-off the tier
+base spacing, read the actual values from the export). The `--inset-*`/`--gap-*` tier is named rungs
+OF this ladder, use the semantic name first; drop to a raw `--space-N` only for a one-off the tier
 doesn't cover (an unusual offset, a bespoke grid).
 
 ## Recipes
@@ -51,7 +51,7 @@ doesn't cover (an unusual offset, a bespoke grid).
 
 ## Radius & borders
 
-- Container corners (the Material 3 shape scale — `xs 4 · sm 8 · md 12 · lg 16 · xl 28`):
+- Container corners (the Material 3 shape scale, `xs 4 · sm 8 · md 12 · lg 16 · xl 28`):
   `--radius-xs`/`-sm` (subtle), `--radius-md` (default card), `--radius-lg`/`-xl` (prominent
   surface). `--radius-none` = square; `--radius-full` = pill/circle.
 - Borders/dividers: WIDTH is `--border-thin` (hairlines, default) or `--border-thick` (emphasis);
@@ -59,8 +59,8 @@ doesn't cover (an unusual offset, a bespoke grid).
 
 ## Don't
 
-- Don't reach for `--space-N` when a `--inset-*`/`--gap-*` names the job — the semantic tier is why
+- Don't reach for `--space-N` when a `--inset-*`/`--gap-*` names the job, the semantic tier is why
   you don't guess rungs.
-- Don't pad a card with a control's `--size-*-padding-narrow`/`-padding-wide` — those are
+- Don't pad a card with a control's `--size-*-padding-narrow`/`-padding-wide`, those are
   control-internal; a container uses `--inset-*`.
 - Don't hardcode `border-radius`/`padding`/`gap` in px.

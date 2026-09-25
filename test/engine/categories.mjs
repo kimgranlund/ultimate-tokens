@@ -1,7 +1,7 @@
-// categories.mjs — per-palette CONFIG pass-through pipelines: the generated gallery PRESETS carry a
+// categories.mjs, per-palette CONFIG pass-through pipelines: the generated gallery PRESETS carry a
 // `type` config (scripts/gen-categories.mjs registersToTypeConfig, from each spec palette's
-// `type.registers` — ADR-022) and it survives the APPLY path (openConfigAsSet → hydrate → clampType →
-// typeScale) so opening a palette dresses the doc in its designed fonts — guards the seam the "every
+// `type.registers`, ADR-022) and it survives the APPLY path (openConfigAsSet → hydrate → clampType →
+// typeScale) so opening a palette dresses the doc in its designed fonts, guards the seam the "every
 // palette still shows Inter" bug lived in. The (geometry) block near the end of the main loop pins the
 // smaller, verbatim `geometry` pass-through (#485, currently only Adia's `{ramp:"linear4"}`) the same way,
 // and the (groups) block pins the `paletteGroups` pass-through (#617) the same way again, plus a
@@ -22,11 +22,11 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const SPECDIR = join(HERE, "..", "..", "docs", "reference", "colors", "categories");
 // slug → expected preset count. The original 7 are uniformly "12 volumes × 4" (sourced/decorative
 // content, curated to a fixed gallery scale); "brands" is a small, real-identity set with no reason
-// to hit that same count — one volume of exactly the researched brands, not padded to 48.
+// to hit that same count, one volume of exactly the researched brands, not padded to 48.
 const CAT_COUNTS = { architecture: 48, cuisine: 48, film: 48, literature: 48, music: 48, nature: 48, travel: 48, brands: 7 };
 const CATS = Object.keys(CAT_COUNTS);
 // register → font role + primary voice + the secondaries its `voices` sub-map may opt in. Kept in
-// lockstep with REGISTERS in scripts/gen-categories.mjs — the fidelity + schema gates lean on it.
+// lockstep with REGISTERS in scripts/gen-categories.mjs, the fidelity + schema gates lean on it.
 const REGISTERS = {
   anthemic:   { role: "display", voice: "Display",  own: [] },
   contextual: { role: "heading", voice: "Headline", own: ["Sub-heading"] },
@@ -34,12 +34,12 @@ const REGISTERS = {
   actionable: { role: "ui",      voice: "Label",    own: ["UI-control", "UI-widget"] },
   data:       { role: "mono",    voice: "Kicker",   own: ["Body-mono", "Label-mono", "Tiny-mono"] },
 };
-// styleName may only target an EXPRESSIVE-tier voice (intended-use.md Layer 2 — body-class voices
+// styleName may only target an EXPRESSIVE-tier voice (intended-use.md Layer 2, body-class voices
 // take the fixed Regular/Medium/Semi-bold faces, never a named cut).
 const EXPRESSIVE = new Set(["Display", "Headline", "Sub-heading", "Title", "Sub-title", "Kicker"]);
 const REG_FIELDS = new Set(["font", "weight", "tracking", "leading", "styleName", "weights", "voices"]);
 const ENTRY_FIELDS = new Set(["font", "weight", "tracking", "leading", "styleName", "weights"]);
-// the makeVoices / clampType voice allowlist — a voice NOT here is SILENTLY DROPPED by clampType on
+// the makeVoices / clampType voice allowlist, a voice NOT here is SILENTLY DROPPED by clampType on
 // hydrate, so the mapper emitting an off-list name (e.g. "Mono") would lose that voice with no error. Keep in lockstep.
 const VOICES = ["Display", "Headline", "Sub-heading", "Title", "Sub-title", "Lead", "Body", "Body-mono", "Label", "Label-mono", "Kicker", "Tiny", "Tiny-mono", "UI-control", "UI-widget"];
 
@@ -58,7 +58,7 @@ const cutNamesFor = (fam) => {
   }
   return out;
 };
-// nearest available face for a numeric weight — ties resolve DOWN, mirroring weightNameFor's snap.
+// nearest available face for a numeric weight, ties resolve DOWN, mirroring weightNameFor's snap.
 const nearestFace = (fam, weight) => {
   const f = CUTS[fam]; if (!f) return null;
   if (f.variable) { const [lo, hi] = f.variable; return String(Math.min(hi, Math.max(lo, weight))); }
@@ -72,10 +72,10 @@ const nearestFace = (fam, weight) => {
 const fails = [];
 const FAIL = (g, m) => { if (!fails.some((f) => f.startsWith(g + ":"))) fails.push(`${g}: ${m}`); };
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-// order-INSENSITIVE deep equality (clampType re-emits fonts/voices in its own allowlist order — same
-// values, different key order — so a stringify compare would false-fail; compare key SETS + field values).
+// order-INSENSITIVE deep equality (clampType re-emits fonts/voices in its own allowlist order, same
+// values, different key order, so a stringify compare would false-fail; compare key SETS + field values).
 const sameKeys = (a, b) => { const ka = Object.keys(a || {}).sort(), kb = Object.keys(b || {}).sort(); return eq(ka, kb); };
-// per-field compare via `eq` (not `===`) — `weights` is an ARRAY (the sibling-weight variants), and
+// per-field compare via `eq` (not `===`), `weights` is an ARRAY (the sibling-weight variants), and
 // clampType/the mapper each construct a fresh array of fresh objects, so `===` would always be false
 // even when the contents match; `eq`'s JSON.stringify compare handles both the primitive fields and
 // the array field uniformly (both sides build `{name, weight}` in the same key order).
@@ -94,16 +94,16 @@ for (const slug of CATS) {
   PRESETS.forEach((p, i) => {
     const st = specPals[i]?.type;
     const sd = st?.registers;
-    // (s) SCHEMA — the register declaration itself is well-formed. Runs on the SPEC side, before the
+    // (s) SCHEMA, the register declaration itself is well-formed. Runs on the SPEC side, before the
     //     sd-guarded value checks; the retired-shape check is defense in depth (the mapper also
     //     throws on it at generation, but this file must catch a spec edited after a stale regen).
-    //     Top-level `type` keys are deliberately NOT allowlisted here — the pass-through shape owns
+    //     Top-level `type` keys are deliberately NOT allowlisted here, the pass-through shape owns
     //     several, and `type.note` (the revision program's in-spec rationale, type-rubric.md Layer B)
     //     is valid and mapper-ignored; only the registers SHAPE is validated.
-    if (st && (st.slots || st.faces)) FAIL("schema", `${slug}[${i}] carries the RETIRED type.slots/type.faces shape — run scripts/migrate-type-registers.mjs`);
+    if (st && (st.slots || st.faces)) FAIL("schema", `${slug}[${i}] carries the RETIRED type.slots/type.faces shape, run scripts/migrate-type-registers.mjs`);
     const isPct = (x) => typeof x === "string" && /^\s*-?\d+(?:\.\d+)?\s*%\s*$/.test(x);
     const badUnit = (o, where) => {
-      if (typeof o?.tracking === "number" || typeof o?.leading === "number" || typeof o?.trackingEm === "number") FAIL("schema", `${slug}[${i}] ${where} carries the RETIRED numeric leading/tracking — use %-strings (tracking: "-2%", leading: "96%")`);
+      if (typeof o?.tracking === "number" || typeof o?.leading === "number" || typeof o?.trackingEm === "number") FAIL("schema", `${slug}[${i}] ${where} carries the RETIRED numeric leading/tracking, use %-strings (tracking: "-2%", leading: "96%")`);
       if (o?.tracking != null && !isPct(o.tracking)) FAIL("schema", `${slug}[${i}] ${where} tracking "${o.tracking}" is not a %-string`);
       if (o?.leading != null && !isPct(o.leading)) FAIL("schema", `${slug}[${i}] ${where} leading "${o.leading}" is not a %-string`);
     };
@@ -111,20 +111,20 @@ for (const slug of CATS) {
       if (o?.weights != null && (!Array.isArray(o.weights) || o.weights.some((w) => typeof w?.name !== "string" || !Number.isFinite(w?.weight))))
         FAIL("schema", `${slug}[${i}] ${where} weights must be an array of {name, weight} entries`);
     };
-    // declaredCeiling — a BODY-CLASS primary/secondary declaring weight > 450 in the SPEC is a
+    // declaredCeiling, a BODY-CLASS primary/secondary declaring weight > 450 in the SPEC is a
     // mis-declaration even though the mapper silently clamps it to 450 at generation (the nature
     // ruling, #414/#425: 27 palettes shipped a spec that lied about what actually rendered). The
     // spec must state the number that ships, not a number the mapper will quietly correct.
     const declaredCeiling = (o, where) => {
       if (BODY_CLASS_VOICES.has(where.voice) && Number.isFinite(o?.weight) && o.weight > 450)
-        FAIL("schema", `${slug}[${i}] ${where.label} declares weight ${o.weight} > 450 — the mapper clamps body-class cores to 450; state what ships`);
+        FAIL("schema", `${slug}[${i}] ${where.label} declares weight ${o.weight} > 450, the mapper clamps body-class cores to 450; state what ships`);
     };
     if (sd) for (const [reg, r] of Object.entries(sd)) {
       const def = REGISTERS[reg];
       if (!def) { FAIL("schema", `${slug}[${i}] unknown register "${reg}"`); continue; }
       for (const k of Object.keys(r || {})) if (!REG_FIELDS.has(k)) FAIL("schema", `${slug}[${i}] ${reg}: unknown field "${k}"`);
       badUnit(r, reg); badWeights(r, reg);
-      if (r?.styleName && !EXPRESSIVE.has(def.voice)) FAIL("schema", `${slug}[${i}] ${reg}: styleName targets body-class ${def.voice} — named cuts are expressive-tier only`);
+      if (r?.styleName && !EXPRESSIVE.has(def.voice)) FAIL("schema", `${slug}[${i}] ${reg}: styleName targets body-class ${def.voice}, named cuts are expressive-tier only`);
       declaredCeiling(r, { voice: def.voice, label: reg });
       for (const [v, e] of Object.entries(r?.voices || {})) {
         if (!def.own.includes(v)) FAIL("schema", `${slug}[${i}] ${reg}.voices["${v}"]: not this register's secondary (own: ${def.own.join(", ") || "none"})`);
@@ -139,17 +139,17 @@ for (const slug of CATS) {
       }
     }
     // A raw contextual-core > anthemic-core check was tried here and REVERTED (#418): it fired 51
-    // times against already-reviewed, checker-approved presets — a single-cut anthemic opted out
+    // times against already-reviewed, checker-approved presets, a single-cut anthemic opted out
     // to `weights: []` is optically loud at a low numeric core (the ceiling ruling above), and a
     // shared-family anthemic/contextual pair legitimately lets the anthemic's LADDER (not core)
     // outreach contextual's core (film's Tree of Life: EB Garamond 400+[500,600] vs contextual
-    // 500). "Must not out-shout" needs an optical-weight model this schema doesn't carry — it
+    // 500). "Must not out-shout" needs an optical-weight model this schema doesn't carry, it
     // stays a reviewer judgment call (font-choice-checker), not a mechanical gate.
-    // a spec palette is "designed" iff its type carries ≥1 font — exactly when the mapper yields a config
+    // a spec palette is "designed" iff its type carries ≥1 font, exactly when the mapper yields a config
     // (gen-categories returns null otherwise). Gate on the IFF, not on "100% seeded", so a future
     // un-designed palette doesn't redden this suite for a non-bug. A spec can ALSO carry an already-
     // resolved `type.fonts` directly (the "brands" category's real-doc pass-through, e.g. a config
-    // exported from the app itself, not the register design shape) — designed either way; the per-field
+    // exported from the app itself, not the register design shape), designed either way; the per-field
     // "faithful" checks below are registers-shaped and simply skip (guarded on `sd`) for this case.
     const specDesigned = !!(sd && Object.values(sd).some((r) => typeof r?.font === "string" && r.font.trim())) || !!st?.fonts;
     const t = p.type;
@@ -167,12 +167,12 @@ for (const slug of CATS) {
     for (const v of vk) if (!VOICES.includes(v)) FAIL("voices", `${slug}[${i}] off-allowlist voice "${v}" (clampType would drop it)`);
     if (!vk.includes("Kicker")) FAIL("kicker", `${slug}[${i}] data register did not map to Kicker`);
     // (d) generator FAITHFUL to the spec: preset fonts AND each register core's tracking/leading/
-    //     weight/styleName land on its PRIMARY voice at the spec's VALUES (not just fonts) — so an
+    //     weight/styleName land on its PRIMARY voice at the spec's VALUES (not just fonts), so an
     //     in-range-but-wrong param, or a dropped voice at generation, can't ship green.
-    // %-strings parsed the mapper's way ("96%" → 0.96; the 2026-07-10 unit transition — shape
+    // %-strings parsed the mapper's way ("96%" → 0.96; the 2026-07-10 unit transition, shape
     // violations are the schema group's job above).
     const pct = (x) => { if (typeof x !== "string") return NaN; const m = /^\s*(-?\d+(?:\.\d+)?)\s*%\s*$/.exec(x); return m ? Number(m[1]) / 100 : NaN; };
-    // body-class cores clamp to ≤450 at generation (intended-use.md Layer 2 law #1 — the
+    // body-class cores clamp to ≤450 at generation (intended-use.md Layer 2 law #1, the
     // Regular-face snap); the faithful expectation is the CLAMPED value, mirroring the mapper.
     const clampCore = (voice, w) => (BODY_CLASS_VOICES.has(voice) ? Math.min(w, 450) : w);
     // one voice-shaped fidelity check, shared by register cores and `voices` opt-in entries:
@@ -200,15 +200,15 @@ for (const slug of CATS) {
       // resolvedFontFor assertion stays the faces group's job below).
       for (const [v, e] of Object.entries(s.voices || {})) {
         if (!e || typeof e !== "object") continue;
-        if (v === "UI-control" || v === "UI-widget") continue; // font-only entries — faces group covers the font
+        if (v === "UI-control" || v === "UI-widget") continue; // font-only entries, faces group covers the font
         checkVoice(e, v, `${reg}.voices["${v}"]`);
       }
     }
     // (d2) INTERACTIVE-VOICE LADDERS (TKT-0005 sibling change, the BZZR shape; explicit-array
     //      flow-through 2026-07-31 per #418): a designed actionable register keys UI-control +
-    //      UI-widget weight ladders — ladders ONLY, never character overrides (the interactive
+    //      UI-widget weight ladders, ladders ONLY, never character overrides (the interactive
     //      voices keep the engine's control-text character). An EXPLICIT `weights` array wins
-    //      outright (core or not — it's the more authoritative signal for a no-mid-weight family
+    //      outright (core or not, it's the more authoritative signal for a no-mid-weight family
     //      like Trade Gothic/Helvetica Neue); otherwise derive from a finite, clamped core.
     if (sd && (Number.isFinite(sd.actionable?.weight) || Array.isArray(sd.actionable?.weights))) {
       const want = Array.isArray(sd.actionable.weights) ? sd.actionable.weights
@@ -223,7 +223,7 @@ for (const slug of CATS) {
       }
     }
     // (d3) AUTHORED FACES (TKT-0005): a register `voices` entry's font flows to voices[voice].font
-    //      and resolves via the TKT-0002 voiceFonts escape hatch (resolvedFontFor) — the
+    //      and resolves via the TKT-0002 voiceFonts escape hatch (resolvedFontFor), the
     //      differentiated face is REAL in the resolved scale, not just carried config.
     if (sd) for (const r of Object.values(sd)) for (const [fv, e] of Object.entries(r?.voices || {})) {
       const fam = typeof e?.font === "string" && e.font.trim();
@@ -237,13 +237,13 @@ for (const slug of CATS) {
     // (e2) FACE EXISTENCE + DISTINCTNESS (intended-use.md Layer 2 law #2, #402): for inventory-known
     //      families, a styleName must be a real cut, and the core + sibling weights must land on
     //      DISTINCT real faces (a missing cut falls back to the nearest face, so two "different"
-    //      configured weights would render identically — the GT America no-Semi-bold defect shape).
-    // (e3) PURPOSE: body-class + interactive cores stay ≤450 (Layer 2 law #1 — the Regular-face snap).
+    //      configured weights would render identically, the GT America no-Semi-bold defect shape).
+    // (e3) PURPOSE: body-class + interactive cores stay ≤450 (Layer 2 law #1, the Regular-face snap).
     for (const [v, vv] of Object.entries(t.voices || {})) {
       if ((BODY_CLASS_VOICES.has(v) || v === "UI-control" || v === "UI-widget") && Number.isFinite(vv.weight) && vv.weight > 450)
-        FAIL("purpose", `${slug}[${i}] ${v} core ${vv.weight} > 450 — the style labeled "regular" would render the Medium face`);
+        FAIL("purpose", `${slug}[${i}] ${v} core ${vv.weight} > 450, the style labeled "regular" would render the Medium face`);
       const fam = resolvedFontFor(sc, v);
-      if (!CUTS[fam]) continue; // family not in the inventory — unresolvable, skipped by design
+      if (!CUTS[fam]) continue; // family not in the inventory, unresolvable, skipped by design
       if (vv.styleName) {
         const names = cutNamesFor(fam);
         if (names && !names.has(vv.styleName)) FAIL("cuts", `${slug}[${i}] ${v} styleName "${vv.styleName}" is not a real ${fam} cut`);
@@ -262,7 +262,7 @@ for (const slug of CATS) {
     if (Object.keys(doc.type.voices || {}).length !== vk.length) FAIL("apply", `${slug}[${i}] hydrate dropped a voice`);
     if (!sameVoices(doc.type.voices, t.voices)) FAIL("apply", `${slug}[${i}] hydrate mutated in-range voice params`);
 
-    // (geometry) per-preset GEOMETRY pass-through (#485) — the same opt-in, verbatim shape as `type`
+    // (geometry) per-preset GEOMETRY pass-through (#485), the same opt-in, verbatim shape as `type`
     // above, but with no register-mapping layer: a spec palette's `geometry` object (currently only
     // Adia's `{ ramp: "linear4" }`) must survive generate → hydrate unmodified, and a palette with NO
     // `geometry` key must carry no `geometry` field on its generated preset at all (the byte-identity
@@ -272,12 +272,12 @@ for (const slug of CATS) {
       if (!eq(p.geometry, sg)) FAIL("geometry", `${slug}[${i}] the generated preset's geometry ${JSON.stringify(p.geometry)} != the spec's ${JSON.stringify(sg)}`);
       if (!eq(doc.geometry.ramp, sg.ramp)) FAIL("geometry", `${slug}[${i}] hydrate lost/changed geometry.ramp (spec ${sg.ramp}, doc ${doc.geometry.ramp})`);
     } else if ("geometry" in p) {
-      FAIL("geometry", `${slug}[${i}] carries a generated "geometry" field with no matching spec key — the opt-in must be byte-identical-absent by default`);
+      FAIL("geometry", `${slug}[${i}] carries a generated "geometry" field with no matching spec key, the opt-in must be byte-identical-absent by default`);
     }
 
-    // (groups) per-preset PALETTE GROUPS pass-through (#617) — same opt-in, verbatim shape as
+    // (groups) per-preset PALETTE GROUPS pass-through (#617), same opt-in, verbatim shape as
     // `geometry` above: a spec palette's `paletteGroups` object (none of the 7 sourced/decorative
-    // categories or "brands" carries one yet — Adia's fitted values land separately, #618) must
+    // categories or "brands" carries one yet, Adia's fitted values land separately, #618) must
     // survive generate → hydrate unmodified, and a palette with NO `paletteGroups` key must carry
     // no `paletteGroups` field on its generated preset at all (byte-identical-absent by default,
     // asserted here across every real category so this stays true as #618 lands real values).
@@ -289,16 +289,16 @@ for (const slug of CATS) {
           FAIL("groups", `${slug}[${i}] hydrate lost/changed paletteGroups.${g}.baseChroma`);
       }
     } else if ("paletteGroups" in p) {
-      FAIL("groups", `${slug}[${i}] carries a generated "paletteGroups" field with no matching spec key — the opt-in must be byte-identical-absent by default`);
+      FAIL("groups", `${slug}[${i}] carries a generated "paletteGroups" field with no matching spec key, the opt-in must be byte-identical-absent by default`);
     }
 
-    // (curve) per-preset CURVE OVERRIDE pass-through (#479, extended #625 for lmin/lmax) — unlike
+    // (curve) per-preset CURVE OVERRIDE pass-through (#479, extended #625 for lmin/lmax), unlike
     // `geometry`/`paletteGroups` (optional keys, absent by default), lmin/lmax are CORE
-    // DEFAULT_CONTROLS fields present on every preset — so the byte-identity contract here is "an
+    // DEFAULT_CONTROLS fields present on every preset, so the byte-identity contract here is "an
     // un-overridden preset carries the DEFAULT_CONTROLS value (5/100)", not "the field is absent".
     // None of the 7 sourced/decorative categories or "brands" carries an lmin/lmax override yet
     // (Adia's fitted lmin:3 lands separately, #618), so every real preset today must resolve to the
-    // engine default — asserted here across every real category so this stays true as #618 lands
+    // engine default, asserted here across every real category so this stays true as #618 lands
     // real values.
     const CURVE_DEFAULTS = { lmin: 5, lmax: 100 };
     for (const k of ["lmin", "lmax"]) {
@@ -310,9 +310,9 @@ for (const slug of CATS) {
 
 // (groups-discriminate) #617's DISCRIMINATING control: a category preset carrying an explicit
 // `paletteGroups` override must actually resolve to a DIFFERENT ramp-chroma target than the same
-// preset without one — proving the schema slot is real plumbing, not inert JSON that generate/hydrate
+// preset without one, proving the schema slot is real plumbing, not inert JSON that generate/hydrate
 // silently ignore. Runs buildCategory() (the REAL generator function, not a reimplementation) against
-// a synthetic doc — NOT a real curated category — so this stays independent of whatever real values
+// a synthetic doc, NOT a real curated category, so this stays independent of whatever real values
 // #618 eventually fits for Adia. Uses the `brands`-style `palettes` direct pass-through (no swatch/hier
 // derivation needed) so the fixture only has to carry the one thing under test.
 {
@@ -354,12 +354,12 @@ for (const slug of CATS) {
 
   if (cWithout !== 100) FAIL("groups", `synthetic fixture without an override resolved brand baseChroma to ${cWithout}, want the GROUP_DEFAULTS brand default (100)`);
   if (cWith !== 40) FAIL("groups", `synthetic fixture WITH a paletteGroups override resolved brand baseChroma to ${cWith}, want the overridden 40`);
-  if (cWith === cWithout) FAIL("groups", "the paletteGroups schema slot does not discriminate — with/without overrides resolved to the same ramp chroma");
+  if (cWith === cWithout) FAIL("groups", "the paletteGroups schema slot does not discriminate, with/without overrides resolved to the same ramp chroma");
 }
 
 // (groups-validate) #617 review follow-up: the GENERATOR itself must fail loudly on an authoring
-// mistake in a curated category JSON's `paletteGroups` block — an unrecognized group key, or a
-// non-numeric baseChroma/primeChroma — rather than letting it through to be silently dropped/clamped
+// mistake in a curated category JSON's `paletteGroups` block, an unrecognized group key, or a
+// non-numeric baseChroma/primeChroma, rather than letting it through to be silently dropped/clamped
 // by persist.js's clampPaletteGroups at OPEN time (a live doc's clamp-and-move-on is a distinct,
 // legitimate use case; a curated category JSON baked into committed src/ui/categories/*.js is not).
 // Reuses the same synthetic-fixture shape as (groups-discriminate) above.
@@ -398,7 +398,7 @@ for (const slug of CATS) {
   mustThrow({ brand: { baseChroma: "forty", primeChroma: 40 } }, "brand.baseChroma", "bad-basechroma");
   // non-numeric primeChroma, same contract.
   mustThrow({ brand: { baseChroma: 40, primeChroma: "forty" } }, "brand.primeChroma", "bad-primechroma");
-  // out-of-range baseChroma (above the documented max) must fail loudly, naming the value + range —
+  // out-of-range baseChroma (above the documented max) must fail loudly, naming the value + range,
   // typeof-only checking would silently accept this and let hydrate() floor/ceil it later (#617/#619/#620
   // review follow-up: same silent-typo-becomes-wrong-value hazard, moved from "wrong type" to "out of range").
   mustThrow({ brand: { baseChroma: 500, primeChroma: 40 } }, "brand.baseChroma", "bad-basechroma-above-max");
@@ -410,7 +410,7 @@ for (const slug of CATS) {
   // silently falling through to the group's plain defaults.
   mustThrow({ brand: "not-an-object" }, "brand", "bad-group-shape-string");
   mustThrow({ brand: [40, 40] }, "brand", "bad-group-shape-array");
-  // a VALID override across all four groups must still pass through fine — no regression.
+  // a VALID override across all four groups must still pass through fine, no regression.
   const okDoc = makeGroupsDoc({
     material: { baseChroma: 20, primeChroma: 30 },
     brand: { baseChroma: 40, primeChroma: 50 },
@@ -426,9 +426,9 @@ for (const slug of CATS) {
 
 // (curve-discriminate) #625's DISCRIMINATING control: a category preset carrying an explicit
 // lmin override must actually resolve to a DIFFERENT ramp tone at the dark end than the same preset
-// without one — proving the schema slot is real plumbing, not inert JSON that generate/hydrate
+// without one, proving the schema slot is real plumbing, not inert JSON that generate/hydrate
 // silently ignore (same shape as (groups-discriminate) above). Runs buildCategory() (the REAL
-// generator function) against a synthetic doc — NOT a real curated category — so this stays
+// generator function) against a synthetic doc, NOT a real curated category, so this stays
 // independent of whatever real value #618 eventually fits for Adia.
 {
   const makeCurveDoc = (withOverride) => ({
@@ -456,7 +456,7 @@ for (const slug of CATS) {
   if (withLmin.lmin !== 30) FAIL("curve", `synthetic fixture: buildCategory did not pass lmin through verbatim (got ${withLmin.lmin})`);
   if (withoutLmin.lmin !== 5) FAIL("curve", `synthetic fixture: buildCategory did not fall back to the DEFAULT_CONTROLS lmin (5) with no override (got ${withoutLmin.lmin})`);
 
-  // the ramp's darkest stop is the tone MOST sensitive to lmin (the ramp's dark floor) — resolve
+  // the ramp's darkest stop is the tone MOST sensitive to lmin (the ramp's dark floor), resolve
   // each fixture's own palette through the REAL generator pipeline (hydrate → paletteStops), reading
   // this preset's OWN lmin/lmax/toneMode (not DEFAULT_CONTROLS), so the comparison exercises exactly
   // what a real document would render.
@@ -467,13 +467,13 @@ for (const slug of CATS) {
   };
   const darkWith = darkestToneFor(withLmin);
   const darkWithout = darkestToneFor(withoutLmin);
-  if (darkWith === darkWithout) FAIL("curve", "the lmin schema slot does not discriminate — with/without overrides resolved to the same darkest-stop tone");
+  if (darkWith === darkWithout) FAIL("curve", "the lmin schema slot does not discriminate, with/without overrides resolved to the same darkest-stop tone");
   if (darkWith <= darkWithout) FAIL("curve", `an lmin:30 override (raising the dark floor above the default 5) should resolve a LIGHTER darkest-stop tone than the default, got ${darkWith} vs default ${darkWithout}`);
 }
 
 // (curve-validate) #625, same rigor as (groups-validate): the GENERATOR itself must fail loudly on
-// an authoring mistake in a curated category JSON's lmin/lmax fields — a non-numeric value, or one
-// outside DOMAINS.lmin/lmax's documented range — rather than letting it through to be silently
+// an authoring mistake in a curated category JSON's lmin/lmax fields, a non-numeric value, or one
+// outside DOMAINS.lmin/lmax's documented range, rather than letting it through to be silently
 // floored/ceiled by persist.js's clampNumber at OPEN time.
 {
   const makeCurveValidateDoc = (fields) => ({
@@ -516,7 +516,7 @@ for (const slug of CATS) {
   // out-of-range lmax (below DOMAINS.lmax.min=60, above DOMAINS.lmax.max=100) must fail loudly too.
   mustThrow({ lmax: 59 }, "out of range", "bad-lmax-below-min-range");
   mustThrow({ lmax: 101 }, "out of range", "bad-lmax-above-max-range");
-  // a VALID override must still pass through fine — no regression.
+  // a VALID override must still pass through fine, no regression.
   const okDoc = makeCurveValidateDoc({ lmin: 3, lmax: 95 });
   let okResult;
   try { okResult = buildCategory(okDoc); }

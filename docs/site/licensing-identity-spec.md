@@ -1,11 +1,11 @@
-# Licensing identity — email-bound licenses (decision record + plan)
+# Licensing identity: email-bound licenses (decision record + plan)
 
 **Decided 2026-07-02:** the unit of license enforcement is the **email**, not the device. A license
 unlocks **any number of computers and Figma installs** as long as the person using it is the person
-the license belongs to — i.e. their email matches the key's associated email. Device/activation
+the license belongs to, i.e. their email matches the key's associated email. Device/activation
 counts stop being the seat model; they remain only as an abuse backstop.
 
-Related records: `mcp-hosting-spec.md` (Phase B introduces the Ultimate Tokens account = email magic-link —
+Related records: `mcp-hosting-spec.md` (Phase B introduces the Ultimate Tokens account = email magic-link,
 the same identity this spec leans on) · `storage-and-sync-spec.md` (the account the kits sync to) ·
 `docs/marketing/store-copy.md` §3 (the customer-facing seat copy this eventually rewrites).
 
@@ -14,25 +14,25 @@ the same identity this spec leans on) · `storage-and-sync-spec.md` (the account
 The email ↔ license association **already exists at purchase**:
 
 - Every License API `validate`/`activate` response carries `meta.customer_email` (+ `customer_id`,
-  `customer_name`) — see `lemon-squeezy-api` references §6.
+  `customer_name`), see `lemon-squeezy-api` references §6.
 - The main-API `license-keys` resource carries `user_email`; orders/subscriptions carry
-  `user_name`/`user_email`; `order_created` / subscription webhooks deliver them server-side — see
+  `user_name`/`user_email`; `order_created` / subscription webhooks deliver them server-side, see
   `lemon-squeezy-schemas`.
 
 So "associate an email with a license #" is done by LS on day one. The work is **verifying that the
 person presenting the key owns that email**, and moving enforcement onto that check.
 
-## Phase 1 — interim, client-only (no accounts needed; ships with today's architecture)
+## Phase 1: interim, client-only (no accounts needed; ships with today's architecture)
 
 1. **Dashboard:** set `license_activation_limit` high enough to never bind one person (e.g. **25**,
-   Pro and Studio-per-seat alike) — activations stop being seats and become an abuse ceiling only.
+   Pro and Studio-per-seat alike), activations stop being seats and become an abuse ceiling only.
 2. **App:** the Account panel asks for **email + license key** (today: key only). On
    activate/validate, the mapper compares the entered email to `meta.customer_email`
    (case-insensitive, trimmed). Mismatch → reject as an anomaly (the same fail-closed posture as the
-   store/product pins in `src/engine/flags.js` — a mismatch is never `revoked`).
+   store/product pins in `src/engine/flags.js`, a mismatch is never `revoked`).
 3. **Honesty note (claim discipline):** this proves *knowledge* of the purchase email, not ownership
-   of the inbox — friction against key-sharing, not cryptography. Customer copy may say "your
-   license works on all your devices — it's tied to your email"; it may NOT say "secure" or
+   of the inbox, friction against key-sharing, not cryptography. Customer copy may say "your
+   license works on all your devices, it's tied to your email"; it may NOT say "secure" or
    "verified" until Phase 2.
 
 Code touchpoints when Phase 1 is built: `src/engine/flags.js` (`lemonActivation`/`lemonEntitlement`
@@ -40,9 +40,9 @@ gain an `email` opt + `emailMatch` check, unit-tested on match/mismatch/casing),
 (`_licenseService` passes the email through), `src/ui/app.js` (Account panel email field +
 microcopy via the marketing corpus).
 
-## Phase 2 — verified identity (rides mcp-hosting Phase B; the real thing)
+## Phase 2: verified identity (rides mcp-hosting Phase B; the real thing)
 
-- **Magic-link verification:** the Ultimate Tokens account (email, verified by link — the Phase B Worker)
+- **Magic-link verification:** the Ultimate Tokens account (email, verified by link, the Phase B Worker)
   becomes the identity; the app validates key + *verified session email* against the LS association.
 - **Server-side roster:** LS webhooks upsert `license ↔ email` into D1 on `order_created` /
   subscription events; "enter license key to link" remains the fallback for mismatched purchase
@@ -50,7 +50,7 @@ microcopy via the marketing corpus).
 - **Studio becomes named seats:** a seat = a **person (email)**, 5 included (+$19/seat/year), devices
   unlimited per person. The seat roster lives with the account system; LS activation instances stop
   being the seat ledger. Seat management UI = assign/remove emails.
-- **Figma plugin stays offline and free** — identity never enters the plugin.
+- **Figma plugin stays offline and free**: identity never enters the plugin.
 
 ## What does NOT change yet
 
@@ -58,7 +58,7 @@ microcopy via the marketing corpus).
   activation; `enterLicense`→activate, `clearLicense`→deactivate.
 - **Customer copy** keeps describing shipped behavior (store-copy §3 context notes point here).
   When Phase 1 ships, the variant descriptions + FAQ move to "tied to your email, works on all your
-  devices" — through the `ultimate-tokens-brand-voice` loop.
+  devices", through the `ultimate-tokens-brand-voice` loop.
 - **Go-live (#158) does not wait for this.** The flip is orthogonal; only the runbook's
   activation-limit guidance changes (high ceiling, not 3–5).
 
@@ -67,7 +67,7 @@ microcopy via the marketing corpus).
 There is **no support inbox and no sending domain**: the product is unattributed and owns no domain.
 Support is **GitHub Issues** (`kimgranlund/ultimate-tokens/issues`), and Lemon Squeezy sends all
 transactional mail from its own address today. If Phase B ever sends lifecycle mail (cancellation,
-ended, renewal) it needs a `<SUPPORT_EMAIL>` on a domain that does not yet exist — an explicit
+ended, renewal) it needs a `<SUPPORT_EMAIL>` on a domain that does not yet exist, an explicit
 prerequisite, not an assumed one. Once
 one exists; LS-native emails carry the copy until then. `{{SUPPORT_EMAIL}}` is pinned to
 `<SUPPORT_EMAIL>` across the corpus.

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// geometry.mjs — verifier for the dimensional engine (src/engine/geometry.mjs). Pure, no DOM.
+// geometry.mjs, verifier for the dimensional engine (src/engine/geometry.mjs). Pure, no DOM.
 import * as G from "../../src/engine/geometry.mjs";
 import { typeScale } from "../../src/engine/type.mjs";
 
@@ -31,7 +31,7 @@ ok(["comfortable", "compact", "spacious", "touch", "pill"].every((id) => G.GEOME
   const s = G.geomScale({ treatment: "comfortable" });
   for (const [name, sz] of Object.entries(s.sizes)) {
     ok(sz.paddingNarrow === (sz.height - sz.icon) / 2, `${name}: paddingNarrow = (h−icon)/2 (got ${sz.paddingNarrow}, want ${(sz.height - sz.icon) / 2})`);
-    ok(sz.paddingWide === (sz.height - sz.caret) / 2, `${name}: paddingWide = (h−caret)/2 — EXACT, halves allowed (got ${sz.paddingWide})`);
+    ok(sz.paddingWide === (sz.height - sz.caret) / 2, `${name}: paddingWide = (h−caret)/2, EXACT, halves allowed (got ${sz.paddingWide})`);
     ok(sz.paddingNarrowCompact === (sz.height - sz.gap - sz.icon) / 2, `${name}: paddingNarrowCompact = (h−gap−icon)/2 (got ${sz.paddingNarrowCompact})`);
     ok(sz.paddingWideCompact === (sz.height - sz.gap - sz.caret) / 2, `${name}: paddingWideCompact = (h−gap−caret)/2 (got ${sz.paddingWideCompact})`);
     ok(sz.radiusPill === Math.round(sz.height / 2), `${name}: pill radius = h/2 (got ${sz.radiusPill})`);
@@ -47,7 +47,7 @@ ok(["comfortable", "compact", "spacious", "touch", "pill"].every((id) => G.GEOME
   const comp = G.geomScale({ treatment: "compact" });
   ok(comf.sizes.SM.caret === 12 && comf.sizes.MD.caret === 13 && comf.sizes.LG.caret === 14 && comf.sizes.XL.caret === 16 && comf.sizes["2XL"].caret === 18, `caret's own ramp (SM..2XL) at the comfortable baseHeight (got ${["SM", "MD", "LG", "XL", "2XL"].map((k) => comf.sizes[k].caret)})`);
   // caret's gentler exponent (0.39 vs font's 0.45) means it grows STRICTLY slower than the standalone
-  // font power law at every step, not just the expressive band — the two only end up equal when font
+  // font power law at every step, not just the expressive band, the two only end up equal when font
   // itself is COMPOSED with a type scale's Label voice (fixed literals, not height-derived) at a step
   // Label actually reaches (SM/MD/LG); see the composition test below.
   ok(["XS", "SM", "MD", "LG", "XL", "2XL"].every((k) => comf.sizes[k].caret < comf.sizes[k].font), "caret < the standalone font power law at every step (retired the old caret=font v4 rule)");
@@ -76,7 +76,7 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
   const s = G.geomScale({ treatment: "comfortable" });
   // the exact M3 shape-corner scale: none 0 · xs 4 · sm 8 · md 12 · lg 16 · xl 28 · full pill.
   ok(JSON.stringify(s.radii) === JSON.stringify({ none: 0, xs: 4, sm: 8, md: 12, lg: 16, xl: 28, full: 9999 }), `radius ladder = M3 corners (got ${JSON.stringify(s.radii)})`);
-  // FIXED across treatments — M3 has one shape scale (density doesn't rescale corners).
+  // FIXED across treatments, M3 has one shape scale (density doesn't rescale corners).
   for (const t of ["compact", "spacious", "touch", "pill"])
     ok(JSON.stringify(G.geomScale({ treatment: t }).radii) === JSON.stringify(s.radii), `${t} shares the same M3 radius scale (fixed)`);
   // the treatment's FEEL is its default corner LEVEL (the M3 "pick a level" model), not a rescaling.
@@ -104,8 +104,8 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
   ok(G.geomTokensBreakpointCSS([{ name: "M", minWidth: 768, scale: g }], { prefix: "md-sys" })[0].css.includes("--md-sys-size-md-height:"), "a breakpoint file threads the prefix too");
 }
 
-// ── geomTokensSizesCSS (issue #487): a SIZE-ONLY sibling of geomTokensCSS — just the --size-* :root
-// block, no density/radius/space/inset/gap/border/focus tokens and no .control-* class rules — works
+// ── geomTokensSizesCSS (issue #487): a SIZE-ONLY sibling of geomTokensCSS, just the --size-* :root
+// block, no density/radius/space/inset/gap/border/focus tokens and no .control-* class rules, works
 // for either ramp (default t-shirt names or the linear-ladder's numbered steps, #483/#484) ──
 {
   const g = G.geomScale({ treatment: "comfortable" });
@@ -115,16 +115,16 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
   ok(!sizes.includes("--md-sys-density") && !sizes.includes("--md-sys-radius-") && !sizes.includes("--md-sys-space-") && !sizes.includes("--md-sys-inset-") && !sizes.includes("--md-sys-gap-") && !sizes.includes("--md-sys-border-") && !sizes.includes("--md-sys-focus-"), `the size-only CSS carries NOTHING but size tokens (got ${JSON.stringify(sizes)})`);
   ok(!sizes.includes(".md-sys-control-"), "the size-only CSS carries no .control-* class rules");
   ok(sizes.trimEnd().startsWith(":root {") && sizes.trimEnd().endsWith("}"), "the size-only CSS is a single, complete :root block");
-  // every size row the full export carries also appears, byte-identical, in the size-only export —
+  // every size row the full export carries also appears, byte-identical, in the size-only export,
   // it's a strict SUBSET of the same lines, not a re-derivation.
   for (const name of G.orderedSizeNames(g)) {
-    const s = name.toLowerCase(); // no special chars in any t-shirt/numbered name — kebab(name) === toLowerCase() here
+    const s = name.toLowerCase(); // no special chars in any t-shirt/numbered name, kebab(name) === toLowerCase() here
     const line = new RegExp(`--md-sys-size-${s}-height: \\d+px;.*--md-sys-size-${s}-min: \\d+px;`);
     const fm = full.match(line), sm = sizes.match(line);
     ok(fm && sm && fm[0] === sm[0], `size-only ${name}'s row is byte-identical to the full export's own row`);
   }
   ok(G.geomTokensSizesCSS(g, { prefix: "" }) === G.geomTokensSizesCSS(g), "empty prefix is byte-identical to the native default (identity gate)");
-  // works on the ladder too — numbered steps, no t-shirt names.
+  // works on the ladder too, numbered steps, no t-shirt names.
   const ladder = G.geomScale({ treatment: "comfortable", ramp: G.RAMP_LADDER });
   const ladderSizes = G.geomTokensSizesCSS(ladder, { prefix: "md-sys" });
   ok(ladderSizes.includes(`--md-sys-size-3-height: ${ladder.sizes["3"].height}px;`) && !ladderSizes.includes("size-md-"), `the size-only CSS renders the ladder's numbered steps (got MD-equivalent line present: ${ladderSizes.includes("size-3-height")})`);
@@ -139,7 +139,7 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
   ok(G.geomTokensDTCG(g, { unit: "rem" }).size.md.height.$value === "2rem" && G.geomTokensDTCG(g).size.md.height.$value === "32px", "geometry DTCG carries the unit + defaults to px");
 }
 
-// ── breakpoint CSS: SEPARATE, self-contained per-mode override FILES (not one @media-embedded file) —
+// ── breakpoint CSS: SEPARATE, self-contained per-mode override FILES (not one @media-embedded file),
 // each bounded on both ends except the narrowest, which stays open below (#264) ──
 {
   const base = G.geomScale({ treatment: "comfortable", baseHeight: 28 });
@@ -168,7 +168,7 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
 }
 
 // ── CONTROL TEXT (2026-07-16): the per-step `font` is the fixed CONTROL_FONT ramp (12·13·15·16·18·20 at
-// the canonical baseHeight 28), scaled by baseHeight/28 — its own hand-ratified table, DECOUPLED from
+// the canonical baseHeight 28), scaled by baseHeight/28, its own hand-ratified table, DECOUPLED from
 // the type scale's Label voice (the old opts.typeScale composition is RETIRED; controls read ~2px larger
 // than Label by design, and the ramp's MD kink fits no shared law). opts.fontOverrides carries a
 // per-mode hand column; gap re-derives from the resolved font either way ──
@@ -179,7 +179,7 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
   // the ramp scales with baseHeight like everything else (factor = bh/28)
   const tall = G.geomScale({ treatment: "comfortable", baseHeight: 56 });
   ok(tall.sizes.MD.font === 30, `the ramp scales by baseHeight/28 (MD at bh56 = 15×2 = 30, got ${tall.sizes.MD.font})`);
-  // COMPOSITION (TKT-0008): SM/MD/LG compose from the type scale's UI-CONTROL voice — value-neutral at
+  // COMPOSITION (TKT-0008): SM/MD/LG compose from the type scale's UI-CONTROL voice, value-neutral at
   // defaults (the voice carries the same table rows), so voice tuning is what flows through.
   const ts = typeScale({ treatment: "product", bodyBase: 16 });
   const composed = G.geomScale({ treatment: "comfortable", baseHeight: 28 }, { typeScale: ts });
@@ -189,7 +189,7 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
   ok(flows.sizes.MD.font === 17 && flows.sizes.LG.font === base.sizes.LG.font, `a UI-control voice override flows into the composed control text (MD ${flows.sizes.MD.font})`);
   ok(G.geomScale({ treatment: "comfortable", baseHeight: 28 }, { typeScale: ts, fontOverrides: { MD: 19 } }).sizes.MD.font === 19, "fontOverrides wins over the composition (the tier-column escape hatch)");
   // fontOverrides: a per-size hand column replaces the law for JUST that size; gap does NOT track the
-  // font anymore (TKT-0010 — the calibrated GAP_UNIT is height/step-keyed, not font/2)
+  // font anymore (TKT-0010, the calibrated GAP_UNIT is height/step-keyed, not font/2)
   const ov = G.geomScale({ treatment: "comfortable", baseHeight: 28 }, { fontOverrides: { MD: 17 } });
   ok(ov.sizes.MD.font === 17 && ov.sizes.MD.gap === base.sizes.MD.gap, `fontOverrides replaces the ramp for that size; gap stays on its own calibration (font ${ov.sizes.MD.font}, gap ${ov.sizes.MD.gap})`);
   ok(ov.sizes.LG.font === base.sizes.LG.font, "a font override touches only its size, no others");
@@ -222,11 +222,11 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
   const ref = G.geomScale({ treatment: "comfortable", baseHeight: 50 }).sizes.MD; // what a 50px raw height yields through buildSize
   const ov = G.geomScale({ treatment: "comfortable", baseHeight: 28 }, { overrides: { MD: ovH } }).sizes.MD;
   ok(ov.height === ref.height, `override height drives buildSize (got ${ov.height}, want ${ref.height})`);
-  // font does NOT track the height override — the control-text ramp is per-STEP (fixed table), not per-height (2026-07-16)
+  // font does NOT track the height override, the control-text ramp is per-STEP (fixed table), not per-height (2026-07-16)
   ok(ov.icon === ref.icon && ov.paddingNarrow === ref.paddingNarrow && ov.radiusPill === ref.radiusPill && ov.caret === ref.caret, "icon/pad/radius/caret ALL re-derive from the override via the laws");
   ok(ov.font === baseline.sizes.MD.font, `font stays on the per-step control ramp under a height override (got ${ov.font})`);
   ok(ov.paddingNarrow === (ov.height - ov.icon) / 2, "the centering law still holds on the overridden cell");
-  // only the targeted size changes — every other size stays at the baseline.
+  // only the targeted size changes, every other size stays at the baseline.
   const ovScale = G.geomScale({ treatment: "comfortable", baseHeight: 28 }, { overrides: { MD: ovH } });
   ok(ovScale.sizes.LG.height === baseline.sizes.LG.height && ovScale.sizes.XS.height === baseline.sizes.XS.height, "an override touches only its size, no others");
   // height + font overrides coexist independently (frame from the height, text from the font column)
@@ -238,13 +238,13 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
 
 // ── the LINEAR LADDER (issue #483, opt-in prototype): pins the AdiaUI scale-ladder-10step.csv formulas
 // at every one of the TEN mapped steps (owner ruling, 2026-09-02, THIRD and final mapping: the full
-// 10-step table, NUMBERED "0".."9" rather than t-shirt letters — gen-ui-kit binds --size-{0..9}-*
-// directly; step "3" / 32px is the MD-equivalent, LADDER_MD_STEP), exactly (not ±1px — these are
+// 10-step table, NUMBERED "0".."9" rather than t-shirt letters, gen-ui-kit binds --size-{0..9}-*
+// directly; step "3" / 32px is the MD-equivalent, LADDER_MD_STEP), exactly (not ±1px, these are
 // closed forms, not a power law), AND proves the identity gate (absent/unknown `ramp` never touches
 // the default ramp, which keeps exactly its original six t-shirt names) ──
 {
   const base = G.geomScale({ treatment: "comfortable", baseHeight: 28 });
-  const MD = G.LADDER_MD_STEP; // "3" — the ladder's own MD-equivalent step
+  const MD = G.LADDER_MD_STEP; // "3", the ladder's own MD-equivalent step
   // IDENTITY: an absent, undefined, or unknown `ramp` is byte-identical to no ramp option at all.
   ok(JSON.stringify(G.geomScale({ treatment: "comfortable", baseHeight: 28, ramp: "bogus" })) === JSON.stringify(base), "an unknown ramp id is byte-identical to the default (identity gate)");
   ok(JSON.stringify(G.geomScale({ treatment: "comfortable", baseHeight: 28, ramp: undefined })) === JSON.stringify(base), "ramp: undefined is byte-identical to the default (identity gate)");
@@ -255,10 +255,10 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
   ok(s.ramp === G.RAMP_LADDER, `the resolved scale surfaces ramp: "${G.RAMP_LADDER}" (got ${JSON.stringify(s.ramp)})`);
   ok(G.GEOMETRY_RAMPS.includes(G.RAMP_LADDER), "GEOMETRY_RAMPS carries RAMP_LADDER (the persist.js allowlist-parity source)");
   ok(Object.keys(s.sizes).length === 10 && JSON.stringify(Object.keys(s.sizes)) === JSON.stringify(G.LADDER_SIZE_KEYS), `the ladder exposes the FULL TEN steps, matching LADDER_SIZE_KEYS exactly (got ${Object.keys(s.sizes)})`);
-  ok(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].every((k) => k in s.sizes) && !("MD" in s.sizes) && !("XS" in s.sizes), "the ladder is named numerically \"0\"..\"9\" — none of the default ramp's t-shirt names exist on it");
+  ok(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].every((k) => k in s.sizes) && !("MD" in s.sizes) && !("XS" in s.sizes), "the ladder is named numerically \"0\"..\"9\", none of the default ramp's t-shirt names exist on it");
   ok(G.mdAnchor(s).name === MD && G.mdAnchor(base).name === "MD", `mdAnchor resolves "${MD}" on the ladder, "MD" on the default ramp (got ${G.mdAnchor(s).name}, ${G.mdAnchor(base).name})`);
 
-  // the CSV's own ten rows (steps 0..9, h = 20+4·step), pinned EXACTLY — every field a closed form of
+  // the CSV's own ten rows (steps 0..9, h = 20+4·step), pinned EXACTLY, every field a closed form of
   // height alone, not a fit: height/icon/font(=text)/caret(=text)/gap(=icon_label_gap)/
   // paddingNarrow(=inset)/paddingWide(=label_only_side).
   const REF = {
@@ -280,25 +280,25 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
     ok(sz.radiusPill === Math.round(sz.height / 2) && sz.minWidth === sz.height, `ladder step ${name}: radiusPill/minWidth follow the general laws (unchanged by the ramp)`);
     // the ladder's OWN square-cell identity: 2·paddingNarrow + (icon+2) = height (container = icon+2).
     ok(2 * sz.paddingNarrow + (sz.icon + 2) === sz.height, `ladder step ${name}: 2·inset + container = height (the ladder's own icon-only-square identity)`);
-    // compact pads have no CSV formula — mechanically re-derived the same way the default ramp derives them.
+    // compact pads have no CSV formula, mechanically re-derived the same way the default ramp derives them.
     ok(sz.paddingNarrowCompact === (sz.height - sz.gap - sz.icon) / 2 && sz.paddingWideCompact === (sz.height - sz.gap - sz.caret) / 2, `ladder step ${name}: compact pads mechanically re-derive from height/gap/icon/caret (no CSV value)`);
   }
-  // heights strictly increase step 0→9, EXPLICITLY via orderedSizeNames (issue #483 — see its own
+  // heights strictly increase step 0→9, EXPLICITLY via orderedSizeNames (issue #483, see its own
   // dedicated block below for why it sorts by canonical step INDEX, not resolved height).
   const heights = G.orderedSizeNames(s).map((k) => s.sizes[k].height);
   ok(heights.every((v, i) => i === 0 || v > heights[i - 1]), `ladder heights strictly increase (${heights})`);
 
-  // baseHeight scales the ladder uniformly too (the shape is preserved) — bh56 (factor 2) doubles step
+  // baseHeight scales the ladder uniformly too (the shape is preserved), bh56 (factor 2) doubles step
   // 3's canonical 32 to 64, and every field re-derives off that doubled height via the same closed forms.
   const tall = G.geomScale({ treatment: "comfortable", baseHeight: 56, ramp: G.RAMP_LADDER });
   ok(tall.sizes[MD].height === 64 && tall.sizes[MD].icon === 36 && tall.sizes[MD].font === 22, `the ladder scales by baseHeight/28 (step ${MD} at bh56: height ${tall.sizes[MD].height}, icon ${tall.sizes[MD].icon}, font ${tall.sizes[MD].font})`);
 
-  // rampContrast is a NO-OP on the ladder's SIZES (it has no gear change to blend away) — the resolved
+  // rampContrast is a NO-OP on the ladder's SIZES (it has no gear change to blend away), the resolved
   // `rampContrast` field still echoes the requested value (metadata), only the dimensions are unaffected.
   const withContrast = G.geomScale({ treatment: "comfortable", baseHeight: 28, ramp: G.RAMP_LADDER, rampContrast: 0 });
   ok(JSON.stringify(withContrast.sizes) === JSON.stringify(s.sizes), "rampContrast has no effect on the ladder's sizes while active (no gear to blend)");
 
-  // COMPOSITION is intentionally SKIPPED for the ladder — the ladder's own text formula wins over the
+  // COMPOSITION is intentionally SKIPPED for the ladder, the ladder's own text formula wins over the
   // type scale's UI-control voice while active (so the prototype shows the ladder AS AUTHORED); the
   // default ramp's composition is untouched (proven by the composition block above).
   const ts = typeScale({ treatment: "product", bodyBase: 16 });
@@ -307,7 +307,7 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
 
   // fontOverrides / gapOverrides still win over the ladder's own formulas (the same escape hatch as
   // the default ramp, keyed by the ladder's OWN step names now); caret is NEVER affected by
-  // fontOverrides — it keeps the ladder's own "= text" rule.
+  // fontOverrides, it keeps the ladder's own "= text" rule.
   const ov = G.geomScale({ treatment: "comfortable", baseHeight: 28, ramp: G.RAMP_LADDER }, { fontOverrides: { [MD]: 20 }, gapOverrides: { [MD]: 9 } });
   ok(ov.sizes[MD].font === 20 && ov.sizes[MD].gap === 9, `fontOverrides/gapOverrides win over the ladder's own formulas (font ${ov.sizes[MD].font}, gap ${ov.sizes[MD].gap})`);
   ok(ov.sizes[MD].caret === 14, `a font override does not move the ladder's caret (still the ladder's own text formula, got ${ov.sizes[MD].caret})`);
@@ -316,7 +316,7 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
   const ovh = G.geomScale({ treatment: "comfortable", baseHeight: 28, ramp: G.RAMP_LADDER }, { overrides: { [MD]: 44 } });
   ok(ovh.sizes[MD].height === 44 && ovh.sizes[MD].icon === 26 && ovh.sizes[MD].font === 17, `a height override re-derives the ladder's fields (height ${ovh.sizes[MD].height}, icon ${ovh.sizes[MD].icon}, font ${ovh.sizes[MD].font})`);
 
-  // the emitters need no ramp-specific code — same field shape as the default ramp's sizes; the CSS/
+  // the emitters need no ramp-specific code, same field shape as the default ramp's sizes; the CSS/
   // DTCG/Figma token NAMES are the numbered step ("3"), e.g. --size-3-height (gen-ui-kit's own ask).
   const css = G.geomTokensCSS(s);
   ok(css.includes(`--size-3-height: ${s.sizes[MD].height}px;`) && css.includes(`--size-3-padding-narrow: ${s.sizes[MD].paddingNarrow}px;`), "the CSS emitter renders the ladder scale with the numbered step name, no ramp-specific code");
@@ -343,7 +343,7 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
   ok(G.mdAnchor(ladder).name === "3" && G.mdAnchor(base).name === "MD", "mdAnchor is sizeAnchor's MD case on either ramp");
 
   // orderedSizeNames sorts by CANONICAL STEP INDEX (LADDER_SIZE_KEYS / SIZE_KEYS position), NOT by
-  // resolved height — a per-step HEIGHT OVERRIDE that breaks monotonicity must not reorder the list.
+  // resolved height, a per-step HEIGHT OVERRIDE that breaks monotonicity must not reorder the list.
   // Here MD is overridden taller than LG on the default ramp: the canonical order XS·SM·MD·LG·XL·2XL
   // must survive even though MD's live height now exceeds LG's.
   const skewed = G.geomScale({ treatment: "comfortable", baseHeight: 28 }, { overrides: { MD: 200 } });
@@ -374,7 +374,7 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
   ok(v && v.type === "FLOAT" && typeof v.values.Base === "number" && typeof v.values.Desktop === "number", "size/md/height is a FLOAT variable with Base + Desktop values");
   ok(["height", "icon", "padding-narrow", "padding-wide", "padding-narrow-compact", "padding-wide-compact", "pill-radius", "icon-gap"].every((f) => col.variables[`size/md/${f}`]) && !col.variables["size/md/font"] && !col.variables["size/md/gap"] && !col.variables["size/md/radius"] && !col.variables["size/md/padding"] && !col.variables["size/md/edgePadding"], "size emits height/icon/the four pads/pill-radius/icon-gap and NO font/gap/radius/padding/edgePadding rows (TKT-0010 + ADR-016 homonym renames)");
   ok(col.variables["radius/full"] && col.variables["radius/full"].type === "FLOAT" && col.variables["space/4"], "radius + space land as FLOAT variables too");
-  // per-mode values DIFFER for a breakpoint with a different baseHeight (40 vs 28) — the Desktop height is taller.
+  // per-mode values DIFFER for a breakpoint with a different baseHeight (40 vs 28), the Desktop height is taller.
   ok(v.values.Base === base.sizes.MD.height && v.values.Desktop === wide.sizes.MD.height, "Base value = base scale; Desktop value = that mode's scale");
   ok(v.values.Desktop !== v.values.Base, `the breakpoint's height differs from Base (Base ${v.values.Base}, Desktop ${v.values.Desktop})`);
   // IDENTITY: with no modes, a single "Base" mode whose values equal the base export.
@@ -385,31 +385,31 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
   ok(idCol.variables["size/md/height"].values.Base === base.sizes.MD.height && idCol.variables["radius/full"].values.Base === base.radii.full, "no-modes Base values equal the base scale");
 }
 
-// ── rampContrast — the responsive-ramp knob (expressive band: geometric ×4/3 ⇄ linear +4) ──
+// ── rampContrast, the responsive-ramp knob (expressive band: geometric ×4/3 ⇄ linear +4) ──
 {
   const col = (cfg) => ["XS", "SM", "MD", "LG", "XL", "2XL"].map((n) => G.geomScale(cfg).sizes[n].height);
   // the two reference columns (the responsive geometry spec): full desktop ramp + compressed ≤476 ramp.
   ok(JSON.stringify(col({ baseHeight: 28 })) === JSON.stringify([20, 24, 28, 36, 48, 64]), `contrast 1 (default) at bh28 = the canonical ramp (got ${col({ baseHeight: 28 })})`);
   ok(JSON.stringify(col({ baseHeight: 24, rampContrast: 0 })) === JSON.stringify([18, 20, 24, 28, 32, 36]), `contrast 0 at bh24 = the compressed mobile ramp 18·20·24·28·32·36 (got ${col({ baseHeight: 24, rampContrast: 0 })})`);
-  // a mid rung interpolates (the 992 column) — 2XL passes through 48 on its way from 36 to 64.
+  // a mid rung interpolates (the 992 column), 2XL passes through 48 on its way from 36 to 64.
   ok(G.geomScale({ baseHeight: 26, rampContrast: 0.5 }).sizes["2XL"].height === 48, `bh26 · contrast .5 puts 2XL at 48 (got ${G.geomScale({ baseHeight: 26, rampContrast: 0.5 }).sizes["2XL"].height})`);
   // IDENTITY: absent === 1 === clamped-above-1, byte-identical (existing kits untouched).
   const a = JSON.stringify(G.geomScale({ baseHeight: 28 })), b = JSON.stringify(G.geomScale({ baseHeight: 28, rampContrast: 1 })), c = JSON.stringify(G.geomScale({ baseHeight: 28, rampContrast: 7 }));
   ok(a === b && a === c, "rampContrast absent / 1 / clamped-above-1 are byte-identical (the identity gate)");
-  // the compact band (XS·SM·MD) never moves with contrast — only the expressive band changes gear.
+  // the compact band (XS·SM·MD) never moves with contrast, only the expressive band changes gear.
   const c0 = col({ baseHeight: 28, rampContrast: 0 }), c1 = col({ baseHeight: 28 });
   ok(c0[0] === c1[0] && c0[1] === c1[1] && c0[2] === c1[2] && c0[5] < c1[5], "contrast moves ONLY the expressive band (compact XS/SM/MD identical; 2XL compresses)");
   // monotone: the ramp still strictly increases at zero contrast.
   ok(c0.every((v, i) => i === 0 || v > c0[i - 1]), `zero-contrast ramp stays strictly increasing (got ${c0})`);
 }
 
-// ── the CONTAINER tier — semantic insets/gaps over the space ladder + strokes ──
+// ── the CONTAINER tier, semantic insets/gaps over the space ladder + strokes ──
 {
   const s = G.geomScale({ baseHeight: 28 }); // comfortable, spaceBase 4
   ok(JSON.stringify(s.insets) === JSON.stringify({ controlGroup: 8, card: 16, panel: 24, dialog: 32, page: 48 }), `insets are named space-ladder rungs (got ${JSON.stringify(s.insets)})`);
   ok(JSON.stringify(s.gaps) === JSON.stringify({ cluster: 8, stackTight: 12, stack: 16, stackLoose: 24, grid: 16, section: 48 }), `gaps are named space-ladder rungs (got ${JSON.stringify(s.gaps)})`);
-  ok(s.insets.card === s.space[4] && s.gaps.section === s.space[7], "the tier is DERIVED from the space ladder (card = space[4], section = space[7]) — no hand-picked values");
-  const sp = G.geomScale({ treatment: "spacious", baseHeight: 32 }); // spaceBase 8 — the tier follows the treatment rhythm
+  ok(s.insets.card === s.space[4] && s.gaps.section === s.space[7], "the tier is DERIVED from the space ladder (card = space[4], section = space[7]), no hand-picked values");
+  const sp = G.geomScale({ treatment: "spacious", baseHeight: 32 }); // spaceBase 8, the tier follows the treatment rhythm
   ok(sp.insets.card === 32 && sp.gaps.stack === 32, `the tier scales with the treatment's spaceBase (spacious card ${sp.insets.card}, stack ${sp.gaps.stack})`);
   ok(s.borders.thin === 1 && s.borders.thick === 2 && s.focus.ringWidth === 2 && s.focus.ringOffset === 2, "strokes are constants (borders 1/2; focus ring 2+2)");
   const css = G.geomTokensCSS(s);
@@ -421,5 +421,5 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
 }
 
 if (fails.length) { console.error(`geometry FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
-console.log("geometry PASS — the ramp, the centering law, the two families, treatments, CSS + DTCG + Figma-modes emit");
+console.log("geometry PASS, the ramp, the centering law, the two families, treatments, CSS + DTCG + Figma-modes emit");
 process.exit(0);

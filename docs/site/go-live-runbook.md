@@ -1,4 +1,4 @@
-# Ultimate Tokens — Monetization go-live runbook
+# Ultimate Tokens: Monetization go-live runbook
 
 Everything that must happen to turn the **soft launch** (built, but nothing withheld) into a **hard
 launch** (Pro features gated, only an active license unlocks them). Current state: `TIERS_ENFORCED` in
@@ -9,25 +9,25 @@ do; then tell me and I merge the flip (step 3).
 
 ---
 
-## 0. Wire the Pro gates (code — PREREQUISITE; the flip is a no-op without it)
+## 0. Wire the Pro gates (code: PREREQUISITE; the flip is a no-op without it)
 
 > **Discovered while prepping the flip:** the flag *resolver* is complete (`flagOf()` returns the right
-> value per tier), but **no feature surface consumes `flagOf()` yet** — the only references are its
+> value per tier), but **no feature surface consumes `flagOf()` yet**, the only references are its
 > definition and a comment. So flipping `TIERS_ENFORCED` today changes nothing a user can see. Each gate
 > must be wired to *read* `flagOf()` and withhold the feature. Since `flagOf()` returns the unlocked values
-> while `TIERS_ENFORCED` is `false`, the gates can be wired and shipped **now with zero user impact** — the
+> while `TIERS_ENFORCED` is `false`, the gates can be wired and shipped **now with zero user impact**, the
 > flip (step 3) then activates them all at once.
 
 Gates to wire (and the decisions each needs):
 - [ ] **`maxSets`** → block creating a brand kit past the cap (gallery) + upsell to checkout. Cap is
-      already defined (free 2 / pro ∞), so this one needs no product decision — just the UX (block vs.
+      already defined (free 2 / pro ∞), so this one needs no product decision, just the UX (block vs.
       upsell modal).
 - [ ] **`proExport`** → gate the Pro export formats in the export drawer. **Decision needed:** which
       formats are Free vs Pro (e.g. CSS + DTCG free; Tailwind + shadcn Pro?).
 - [ ] **`advancedTreatments`** → gate the advanced type/geometry treatments. **Decision needed:** which
       treatments count as "advanced."
 - [ ] **`hostedMcp`** → the hosted Brand-Kit MCP endpoint. **Blocked:** no hosted MCP server is deployed
-      yet, so only the free *download* exists — nothing to gate until one ships.
+      yet, so only the free *download* exists, nothing to gate until one ships.
 
 **Amendment (2026-09-16).** Step 0's premise is now stale: `maxSets`, `proExport`,
 `advancedTreatments`, and `describePalette` are wired `flagOf()` consumers (`src/ui/app.js`,
@@ -42,15 +42,15 @@ Account dev-toggle label in `src/ui/app-helpers.mjs`).
 License validation/activation only works if **license keys are enabled on each product** and the
 **activation limits** match the seat model.
 
-- [ ] **Enable license keys** on **both** products (Pro and Studio) — Product → *License keys* → enable.
+- [ ] **Enable license keys** on **both** products (Pro and Studio), Product → *License keys* → enable.
       (Subscription products issue a key per subscription; the key's `status`/`expires_at` tracks the
-      billing period, so a lapse auto-expires the key — which the app already honors.)
-- [ ] **Pro — activation limit:** set HIGH (e.g. **25**) — per the 2026-07-02 decision
+      billing period, so a lapse auto-expires the key, which the app already honors.)
+- [ ] **Pro, activation limit:** set HIGH (e.g. **25**), per the 2026-07-02 decision
       (`licensing-identity-spec.md`), enforcement is moving to **email-bound identity** (unlimited
       devices for the key's owner); the activation limit is only an abuse ceiling and must never be
       the binding constraint for one person. Never 1. The store copy says "activate on any device you
       work from."
-- [ ] **Studio — activation limit:** **5** (the base 5 seats — device-seats are the SHIPPED model,
+- [ ] **Studio, activation limit:** **5** (the base 5 seats, device-seats are the SHIPPED model,
       #131, until Phase 2's named-email seats). For the "+$19 / additional seat" add-ons, configure
       the variant/quantity so the activation limit rises with seats purchased (each extra seat
       = +1 activation). One Studio key, N activations = N seats.
@@ -63,7 +63,7 @@ License validation/activation only works if **license keys are enabled on each p
 
 The app validates/activates **from the browser**, directly against `api.lemonsqueezy.com`. If LS doesn't
 send permissive CORS headers to your deployed origin, every activation fails with a network error and
-nobody can unlock Pro. LS's license endpoints are built for client-side use, so this usually works — but
+nobody can unlock Pro. LS's license endpoints are built for client-side use, so this usually works, but
 **verify it from the deployed origin before flipping enforcement.**
 
 `curl` proves the endpoint works but **not** CORS (curl ignores it). Run this in the **browser console of
@@ -76,7 +76,7 @@ fetch("https://api.lemonsqueezy.com/v1/licenses/validate", {
   body: "license_key=cors-probe-not-a-real-key",
 })
   .then((r) => r.json())
-  .then((j) => console.log("✅ CORS OK — got a JSON body:", j))   // expect { valid:false, error:"license_key_not_found", ... }
+  .then((j) => console.log("✅ CORS OK, got a JSON body:", j))   // expect { valid:false, error:"license_key_not_found", ... }
   .catch((e) => console.error("❌ CORS BLOCKED:", e));            // a TypeError / CORS message = blocked
 ```
 
@@ -105,7 +105,7 @@ single merge once steps 1 & 2 are confirmed.
 - [ ] **Remove** frees the seat (deactivation).
 - [ ] The **Figma plugin** is unaffected (free + offline; no license UI there).
 
-**Rollback:** flip `TIERS_ENFORCED` back to `false` and redeploy — instantly un-gates everyone, no data
+**Rollback:** flip `TIERS_ENFORCED` back to `false` and redeploy, instantly un-gates everyone, no data
 change.
 
 ---

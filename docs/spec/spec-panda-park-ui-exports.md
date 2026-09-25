@@ -5,11 +5,11 @@ status: approved        # draft | approved | superseded  (0.1.0 approved 2026-09
 version: 0.3.1          # 0.1.1 2026-09-11: REQ-021 steps 1-8 corrected to raw ramp stops (issue #588 ruling); EX-4 regenerated. Data correction to an approved SPEC, not a new draft round.
                         # 0.2.0 2026-09-12: ticket #614 renamed the "Park UI" format to "Radix" everywhere in
                         # the live surfaces (exportParkUi/exportParkUiModule -> exportRadix/exportRadixModule,
-                        # format id parkui -> radix, drawer label/zip folder park-ui/ -> radix/) — a rename
+                        # format id parkui -> radix, drawer label/zip folder park-ui/ -> radix/), a rename
                         # only, no shape change; validated against real Radix/Park UI docs per #588/#603. The
                         # REQ-020..028/041..043/050..052/061/063 sections below are left as originally
                         # ratified (they describe the #570 build under its then-current names) rather than
-                        # rewritten to match the new names — this version note is the record of the rename.
+                        # rewritten to match the new names, this version note is the record of the rename.
                         # 0.3.0 2026-09-18: ticket #638 adds a reference form of the Radix preset (REQ-029
                         # under R-B, a new gate row REQ-065 under R-E), one format with two forms, not an
                         # eleventh format. Owner rulings on Q(a)..Q(f) (below, dated 2026-09-18) and the U0
@@ -29,7 +29,7 @@ audience: builder, reviewer, planner
 ---
 # SPEC: Panda CSS and Radix export formats
 
-(Renamed from "Panda CSS and Park UI export formats" at 0.2.0/ticket #614 — see the version header.
+(Renamed from "Panda CSS and Park UI export formats" at 0.2.0/ticket #614, see the version header.
 Park UI is still named throughout this SPEC where it is the accurate historical/technical referent:
 the format is a Panda preset built in Park UI's own token shape, and Park UI was the format's
 original real-world consumer.)
@@ -246,7 +246,7 @@ Consequences that shape the design:
   at exactly the light/dark stop numbers above, through the same `oklchStr(rgbToOklch(...))` path
   `exportTailwind`/REQ-002 already use for raw stops. They are never role-indirected (no
   `-surface-lowest`/`-outline`/etc. role lookup) and never flattened over step 1 or any other
-  background — the original ratification's role-indirection and step 6..8 flattening are
+  background, the original ratification's role-indirection and step 6..8 flattening are
   superseded for steps 1..8 by this table. Steps 9..12 are UNCHANGED: still the bare
   accent/`-hover`/`-on-surface-variant`/`-on-surface` roles, because those already matched the
   corrected source (issue #588's ruling comment, 2026-09-11, compared against
@@ -254,7 +254,7 @@ Consequences that shape the design:
 
   Canonical source: `docs/reference/data/radix-projection.json` (the committed projection table)
   and `docs/reference/references/radix-park-adaptation.md` (the architecture + rules this table
-  comes from — source-of-truth direction, Prime/Scrim namespace separation, data-driven
+  comes from, source-of-truth direction, Prime/Scrim namespace separation, data-driven
   exceptions).
 
   Alternative rejected: picking 12 of the 25 stops evenly, and (the original P-1 default, now
@@ -269,13 +269,13 @@ Consequences that shape the design:
   decimal) through `roleOklch({ rgb: C, frac: a })`; a step whose projection is `a = 0` emits
   `"transparent"`. Verified unaffected by the #588 correction: this formula reads "the
   same-numbered solid step" generically, never assumed steps 6..8 were translucent, and needs no
-  wording change now that steps 6..8 are raw ramp stops rather than flattened role values — `a6/a7/
+  wording change now that steps 6..8 are raw ramp stops rather than flattened role values, `a6/a7/
   a8` simply project from the new (raw) `6/7/8` solids.
 - **REQ-023** Appearance groups per palette, aliasing the palette's own steps by reference (the
   shape of KF-3, the step numbers to be confirmed against `amber.ts` by the K3 builder and recorded
   in the Findings of #570; the gate asserts keys, not numbers). Verified unaffected by the #588
   correction: these aliases reference step/alpha-step NUMBERS only (`a6`, `a7`, `9`, `10`, `11`, …),
-  never assumed steps 6..8 were translucent, so the wiring is unchanged — only what steps 6..8 ARE
+  never assumed steps 6..8 were translucent, so the wiring is unchanged, only what steps 6..8 ARE
   (raw stops, not flattened roles) changed, and these aliases resolve to whatever REQ-021/REQ-022
   now emit for those numbers:
   `solid.bg.DEFAULT → {colors.{n}.9}`, `solid.bg.hover → 10`, `solid.fg.DEFAULT →
@@ -453,14 +453,14 @@ Consequences that shape the design:
 
 All values engine-generated from `defaultDocument()` resolved through `resolvedPalettes`
 (colour values below re-generated five times: 2026-09-17 at #647, which made the perceptual ramp
-honour a palette's `skew` and `lift` — Primary and Neutral both carry skew -20, so every literal
+honour a palette's `skew` and `lift`, Primary and Neutral both carry skew -20, so every literal
 derived from their ramp moved; 2026-09-18 at #657, which gave that ramp's OKHSL hue solver its best
 iterate instead of an unread last one, moving Primary's accent by one 8-bit step; 2026-09-18 at
 #662, which made `onColorMode: "contrast"` the default and added the achromatic fall-through, moving
 `primary["on-primary"]._dark` to the black constant (#662 moved no ramp stop, so every raw literal
 and every semantic literal that is not an accent on-color is byte-for-byte the #657 capture); and
 2026-09-18 at #681 (U1), which minted Primary's DEFAULT_PALETTES entry an `anchor: "#0C5DCC"`
-(today's stop-550 hex, Q2 (b)) — the `prime` step now renders that hex verbatim instead of
+(today's stop-550 hex, Q2 (b)), the `prime` step now renders that hex verbatim instead of
 deriveKeyColor's cusp identity, moving Primary's prime.prime/.brightest/.dimmest. That sentence
 once continued "the RAMP stops (500/050/950/scrim) and every other default family's prime are
 untouched by #681, and #681 moves no on-color": corrected 2026-09-20 by #681 U5, because it
@@ -502,7 +502,7 @@ Neutral at full chroma, the emitters must be fed the resolved state, as the draw
   equals it; `tokens.radii.md.value === "12px"`, `tokens.radii.full.value === "9999px"`,
   `tokens.spacing["4"].value === "16px"`, `tokens.borderWidths.thin.value === "1px"`.
 - **EX-4 (NORMATIVE, park ladder, gray = neutral, corrected 2026-09-11 per issue #588's ruling).**
-  Emitted `base` / `_dark` values. Steps 1..8 are RAW RAMP STOPS (no flattening — superseding the
+  Emitted `base` / `_dark` values. Steps 1..8 are RAW RAMP STOPS (no flattening, superseding the
   pre-#588 EX-4, which flattened steps 6..8 over step 1); steps 9..12 are unchanged role-derived
   values. Regenerated 2026-09-11 by reading `src/engine/exports.js`'s actual resolved output
   (`derivedAll(stateOf(defaultDocument()))`'s `neutral` palette, the same raw-stop path
@@ -565,7 +565,7 @@ Neutral at full chroma, the emitters must be fed the resolved state, as the draw
   command scans. Anchored to a `package.json` dependency key or an `import`/`require` of the real
   packages, per Ruling 2026-09-11 on #588: the original bare `"pandacss\|park-ui"` pattern also
   matched this repo's own `park-ui/` export-folder and fixture-name strings in
-  `test/ui/headless-boot.mjs` and `test/engine/exports.mjs` — a feature-name collision, not a
+  `test/ui/headless-boot.mjs` and `test/engine/exports.mjs`, a feature-name collision, not a
   dependency, and not a real AC-007 failure. `scripts/smoke-panda.mjs` never has a real
   import/require or dependency-key line (only string literals and `execFileSync` calls), so the
   anchored pattern correctly excludes it too; the command's path list (`package.json test/
@@ -660,5 +660,5 @@ correction to an already-approved SPEC, not a new draft round). The corrected ta
 regenerated values, and the durable source material now live at
 `docs/reference/data/radix-projection.json` and `docs/reference/references/radix-park-adaptation.md`.
 REQ-022 and REQ-023 were checked against the correction and need no wording change (both operate on
-step/alpha-step numbers generically, never assumed steps 6..8 were translucent) — see the inline
+step/alpha-step numbers generically, never assumed steps 6..8 were translucent), see the inline
 notes on each REQ.

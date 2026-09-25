@@ -1,4 +1,4 @@
-# Lemon Squeezy API — Object Schemas
+# Lemon Squeezy API: Object Schemas
 
 Reference for the 19 JSON:API resources of the Lemon Squeezy main API (`https://api.lemonsqueezy.com/v1/...`).
 
@@ -8,10 +8,10 @@ Reference for the 19 JSON:API resources of the Lemon Squeezy main API (`https://
 - `id` is always a **string**, even when numeric (`"1"`). Checkouts use a UUID string id. Foreign keys inside `attributes` (`store_id`, `customer_id`, …) are **integers**.
 - Timestamps are ISO 8601 date-time strings (e.g. `"2021-08-17T09:45:53.000000Z"`).
 - **All money values are integers in cents** (`999` = $9.99), in the stated currency. Order/invoice/checkout money comes in three flavours: store-currency integer (`total`), USD integer (`total_usd`), and display string (`total_formatted`). `currency_rate` is a decimal **string**.
-- `test_mode` (boolean) appears on most objects (not on: store, price, order-item, subscription-item, usage-record, discount-redemption, license-key-instance; on license-key it is returned but undocumented — see that section).
+- `test_mode` (boolean) appears on most objects (not on: store, price, order-item, subscription-item, usage-record, discount-redemption, license-key-instance; on license-key it is returned but undocumented, see that section).
 - Every `status` has a display twin `status_formatted` (title-case, human-readable). Never branch on `*_formatted` fields.
 - `relationships.<name>.links` carries a `related` URL (the related resource) and a `self` URL (the relationship itself).
-- Signed URLs (order receipt, invoice PDF, file download, customer portal, update-payment-method, checkout URL) carry `signature=`/`expires=` query params — treat them as opaque, short-lived, and never store them long-term.
+- Signed URLs (order receipt, invoice PDF, file download, customer portal, update-payment-method, checkout URL) carry `signature=`/`expires=` query params, treat them as opaque, short-lived, and never store them long-term.
 
 ---
 
@@ -101,16 +101,16 @@ Deprecated attributes (moved to Price, still returned for backwards compatibilit
 
 | attribute | type | notes |
 |---|---|---|
-| `price` | integer | DEPRECATED — cents |
+| `price` | integer | DEPRECATED, cents |
 | `is_subscription` | boolean | DEPRECATED |
-| `interval` | string\|null | DEPRECATED — `day` \| `week` \| `month` \| `year` |
-| `interval_count` | integer\|null | DEPRECATED — intervals between billings |
-| `has_free_trial` | boolean | DEPRECATED — subscription variants only |
-| `trial_interval` | string | DEPRECATED — `day` \| `week` \| `month` \| `year` |
-| `trial_interval_count` | integer | DEPRECATED — trial length in `trial_interval` units |
+| `interval` | string\|null | DEPRECATED, `day` \| `week` \| `month` \| `year` |
+| `interval_count` | integer\|null | DEPRECATED, intervals between billings |
+| `has_free_trial` | boolean | DEPRECATED, subscription variants only |
+| `trial_interval` | string | DEPRECATED, `day` \| `week` \| `month` \| `year` |
+| `trial_interval_count` | integer | DEPRECATED, trial length in `trial_interval` units |
 | `pay_what_you_want` | boolean | DEPRECATED |
-| `min_price` | integer | DEPRECATED — cents, PWYW minimum |
-| `suggested_price` | integer | DEPRECATED — cents, PWYW suggestion |
+| `min_price` | integer | DEPRECATED, cents, PWYW minimum |
+| `suggested_price` | integer | DEPRECATED, cents, PWYW suggestion |
 
 Relationships: belongs to a Product; has one Price and many Files.
 
@@ -148,16 +148,16 @@ Relationships: belongs to a Variant; has many Subscription Items and Usage Recor
 
 ## Checkout
 
-JSON:API type: `checkouts` — **id is a UUID string** (e.g. `"ac470bd4-7c41-474d-b6cd-0f296f5be02a"`).
+JSON:API type: `checkouts`, **id is a UUID string** (e.g. `"ac470bd4-7c41-474d-b6cd-0f296f5be02a"`).
 
 | attribute | type | notes |
 |---|---|---|
 | `store_id` | integer | owning store |
 | `variant_id` | integer | highlighted variant; all sibling variants shown unless limited via `product_options.enabled_variants` |
 | `custom_price` | integer\|null | cents; overrides the variant price when non-null |
-| `product_options` | object | product overrides — keys below |
-| `checkout_options` | object | checkout UI options — keys below |
-| `checkout_data` | object | prefill + custom data — keys below |
+| `product_options` | object | product overrides, keys below |
+| `checkout_options` | object | checkout UI options, keys below |
+| `checkout_data` | object | prefill + custom data, keys below |
 | `preview` | object | pricing preview; **only present when the checkout was created with `preview: true`**, keys below |
 | `expires_at` | string\|null | ISO 8601; null = perpetual checkout |
 | `created_at` | string | ISO 8601 |
@@ -167,13 +167,13 @@ JSON:API type: `checkouts` — **id is a UUID string** (e.g. `"ac470bd4-7c41-474
 
 `product_options` keys: `name`, `description`, `media` (array of image URLs), `redirect_url` (post-purchase redirect), `receipt_button_text`, `receipt_link_url`, `receipt_thank_you_note`, `enabled_variants` (array of variant ids; empty = all enabled).
 
-`checkout_options` keys: `embed` (true = checkout overlay), `media`, `logo`, `desc`, `discount`, `subscription_preview` (each false = hide that element), color overrides as hex strings — `background_color`, `headings_color`, `primary_text_color`, `secondary_text_color`, `links_color`, `borders_color`, `checkbox_color`, `active_state_color`, `button_color`, `button_text_color`, `terms_privacy_color` — plus `locale` (ISO 639, null falls back to store then browser; supported: bg, hr, cs, da, nl, en, et, fil, fi, fr, de, el, hu, id, it, ja, ko, lv, lt, ms, mt, pl, pt, ro, ru, zh-CN, sk, sl, es, sv, th, tr, vi) and `dark` (deprecated in favor of the color options). The docs' JSON example also shows an undocumented `skip_trial` boolean.
+`checkout_options` keys: `embed` (true = checkout overlay), `media`, `logo`, `desc`, `discount`, `subscription_preview` (each false = hide that element), color overrides as hex strings, `background_color`, `headings_color`, `primary_text_color`, `secondary_text_color`, `links_color`, `borders_color`, `checkbox_color`, `active_state_color`, `button_color`, `button_text_color`, `terms_privacy_color`, plus `locale` (ISO 639, null falls back to store then browser; supported: bg, hr, cs, da, nl, en, et, fil, fi, fr, de, el, hu, id, it, ja, ko, lv, lt, ms, mt, pl, pt, ro, ru, zh-CN, sk, sl, es, sv, th, tr, vi) and `dark` (deprecated in favor of the color options). The docs' JSON example also shows an undocumented `skip_trial` boolean.
 
 `checkout_data` keys: `email`, `name`, `billing_address.country` (ISO 3166-1 alpha-2), `billing_address.zip`, `tax_number`, `discount_code`, `custom` (arbitrary object passed through to the order/webhooks), `variant_quantities` (list of quantity data objects).
 
 `preview` keys (all money integers in cents): `currency`, `currency_rate`, `subtotal`, `discount_total`, `tax`, `total`, `subtotal_usd`, `discount_total_usd`, `tax_usd`, `total_usd`, and `subtotal_formatted` / `discount_total_formatted` / `tax_formatted` / `total_formatted` display strings.
 
-URLs: `url` is the signed customer-facing checkout link — the primary output of creating a checkout.
+URLs: `url` is the signed customer-facing checkout link, the primary output of creating a checkout.
 
 Relationships: belongs to a Store; associated with a Variant. (`relationships` keys: `store`, `variant`.)
 
@@ -216,19 +216,19 @@ JSON:API type: `orders`
 | `tax_formatted` | string | display |
 | `total_formatted` | string | display |
 | `refunded_amount_formatted` | string | display |
-| `first_order_item` | object | embedded first Order Item — keys below |
-| `urls` | object | `{ receipt }` — keys below |
+| `first_order_item` | object | embedded first Order Item, keys below |
+| `urls` | object | `{ receipt }`, keys below |
 | `created_at` | string | ISO 8601 |
 | `updated_at` | string | ISO 8601 |
 | `test_mode` | boolean | created in test mode |
 
-`first_order_item` keys: `id`, `order_id`, `product_id`, `variant_id`, `price_id` (SDK — in the response but not the docs list), `quantity` (SDK — in the response but not the docs list), `product_name`, `variant_name`, `price` (cents, order currency), `created_at`, `updated_at`, `test_mode`.
+`first_order_item` keys: `id`, `order_id`, `product_id`, `variant_id`, `price_id` (SDK, in the response but not the docs list), `quantity` (SDK, in the response but not the docs list), `product_name`, `variant_name`, `price` (cents, order currency), `created_at`, `updated_at`, `test_mode`.
 
-URLs: `urls.receipt` — pre-signed URL to the customer's My Orders receipt page. A separate "Generate order invoice" endpoint returns a signed invoice download URL (not stored on the object).
+URLs: `urls.receipt`, pre-signed URL to the customer's My Orders receipt page. A separate "Generate order invoice" endpoint returns a signed invoice download URL (not stored on the object).
 
 Relationships: belongs to a Store; associated with a Customer; has many Order Items, Subscriptions, License Keys, Discount Redemptions.
 
-SDK cross-check (`src/orders/types.ts`): SDK `OrderStatus` omits `partial_refund` (docs list it; treat docs as authoritative — partially refunded orders do occur). SDK adds `price_id` and `quantity` to `first_order_item`, both flagged "Not in the documentation, but in the response". All other attributes match 1:1; SDK relationship set matches the docs prose exactly (`store`, `customer`, `order-items`, `subscriptions`, `license-keys`, `discount-redemptions`).
+SDK cross-check (`src/orders/types.ts`): SDK `OrderStatus` omits `partial_refund` (docs list it; treat docs as authoritative, partially refunded orders do occur). SDK adds `price_id` and `quantity` to `first_order_item`, both flagged "Not in the documentation, but in the response". All other attributes match 1:1; SDK relationship set matches the docs prose exactly (`store`, `customer`, `order-items`, `subscriptions`, `license-keys`, `discount-redemptions`).
 
 ## Order Item
 
@@ -271,12 +271,12 @@ Created automatically on a customer's first purchase (or via Create a customer).
 | `country_formatted` | string | full country name |
 | `total_revenue_currency_formatted` | string | display |
 | `mrr_formatted` | string | display |
-| `urls` | object | `{ customer_portal }` — see below |
+| `urls` | object | `{ customer_portal }`, see below |
 | `created_at` | string | ISO 8601 |
 | `updated_at` | string | ISO 8601 |
 | `test_mode` | boolean | created in test mode |
 
-URLs: `urls.customer_portal` — pre-signed Customer Portal URL, valid 24h from request; **null** if the customer has never bought a subscription in the store.
+URLs: `urls.customer_portal`, pre-signed Customer Portal URL, valid 24h from request; **null** if the customer has never bought a subscription in the store.
 
 Relationships: belongs to a Store; has many Orders, Subscriptions, License Keys.
 
@@ -296,7 +296,7 @@ JSON:API type: `subscriptions`
 | `variant_name` | string | |
 | `user_name` | string | customer full name |
 | `user_email` | string | customer email |
-| `status` | string | `on_trial` \| `active` \| `paused` \| `past_due` \| `unpaid` \| `cancelled` \| `expired` — lifecycle notes below |
+| `status` | string | `on_trial` \| `active` \| `paused` \| `past_due` \| `unpaid` \| `cancelled` \| `expired`, lifecycle notes below |
 | `status_formatted` | string | title-case (`past_due` → `Past due`) |
 | `card_brand` | string\|null | `visa` \| `mastercard` \| `amex` \| `discover` \| `jcb` \| `diners` \| `unionpay`; empty for non-card payments |
 | `card_last_four` | string\|null | last 4 digits; empty for non-card payments |
@@ -305,8 +305,8 @@ JSON:API type: `subscriptions`
 | `cancelled` | boolean | when true: `status=cancelled` and `ends_at` populated |
 | `trial_ends_at` | string\|null | ISO 8601; only when `status=on_trial`, else null |
 | `billing_anchor` | integer | day of month (1–31) payments are collected |
-| `first_subscription_item` | object\|null | embedded first Subscription Item — keys below; null when no item (e.g. free trial) |
-| `urls` | object | signed management URLs — see below |
+| `first_subscription_item` | object\|null | embedded first Subscription Item, keys below; null when no item (e.g. free trial) |
+| `urls` | object | signed management URLs, see below |
 | `renews_at` | string | ISO 8601; end of current billing cycle / next invoice (for `past_due`: next retry) |
 | `ends_at` | string\|null | ISO 8601; set only for `cancelled`/`expired` |
 | `created_at` | string | ISO 8601 |
@@ -315,16 +315,16 @@ JSON:API type: `subscriptions`
 
 Status lifecycle: `past_due` = a renewal failed; LS retries 4 times over 2 weeks, then flips to `unpaid` (dunning rules may then expire it). `cancelled` = still valid on a grace period until `ends_at`. `expired` = ended; revoke access.
 
-`first_subscription_item` keys: `id`, `subscription_id`, `price_id`, `quantity`, `is_usage_based` (SDK — in the response but not the docs list), `created_at`, `updated_at`.
+`first_subscription_item` keys: `id`, `subscription_id`, `price_id`, `quantity`, `is_usage_based` (SDK, in the response but not the docs list), `created_at`, `updated_at`.
 
 URLs (all pre-signed, valid 24h from request):
-- `urls.update_payment_method` — payment/billing management page (usable with Lemon.js overlays).
-- `urls.customer_portal` — full Customer Portal.
-- `urls.update_customer_portal` — upgrade/downgrade in the Customer Portal; PayPal-based subscriptions only, null otherwise. **Naming caveat:** the docs prose calls it `update_customer_portal`, but the docs' own JSON example and the SDK both show the key as `customer_portal_update_subscription` — match on the latter in real payloads.
+- `urls.update_payment_method`: payment/billing management page (usable with Lemon.js overlays).
+- `urls.customer_portal`: full Customer Portal.
+- `urls.update_customer_portal`: upgrade/downgrade in the Customer Portal; PayPal-based subscriptions only, null otherwise. **Naming caveat:** the docs prose calls it `update_customer_portal`, but the docs' own JSON example and the SDK both show the key as `customer_portal_update_subscription`, match on the latter in real payloads.
 
 Relationships: belongs to a Store; associated with a Customer, an Order, an Order Item, a Product, a Variant, Subscription Invoices and Subscription Items. (SDK relationship keys: `store`, `customer`, `order`, `order-item`, `product`, `variant`, `subscription-items`, `subscription-invoices`.)
 
-SDK cross-check (`src/subscriptions/types.ts`): SDK is **missing `payment_processor`** (documented, and present in payloads — docs win). SDK's `SubscriptionStatus` union contains a stray `"pause"` member and a duplicated `"cancelled"` — an SDK typing bug, not a real status; the real set is the 7 documented values. SDK types `card_brand`/`card_last_four` as `| null` where docs say "empty" for non-card payments. SDK `urls` type uses `customer_portal_update_subscription` (matching the example payload, not the docs prose). SDK adds `is_usage_based` to `first_subscription_item`.
+SDK cross-check (`src/subscriptions/types.ts`): SDK is **missing `payment_processor`** (documented, and present in payloads, docs win). SDK's `SubscriptionStatus` union contains a stray `"pause"` member and a duplicated `"cancelled"`, an SDK typing bug, not a real status; the real set is the 7 documented values. SDK types `card_brand`/`card_last_four` as `| null` where docs say "empty" for non-card payments. SDK `urls` type uses `customer_portal_update_subscription` (matching the example payload, not the docs prose). SDK adds `is_usage_based` to `first_subscription_item`.
 
 ## Subscription Invoice
 
@@ -364,12 +364,12 @@ Generated at purchase (`initial`) and each renewal (`renewal`) or plan change (`
 | `tax_formatted` | string | display |
 | `total_formatted` | string | display |
 | `refunded_amount_formatted` | string | display |
-| `urls` | object | `{ invoice_url }` — see below |
+| `urls` | object | `{ invoice_url }`, see below |
 | `created_at` | string | ISO 8601 |
 | `updated_at` | string | ISO 8601 |
 | `test_mode` | boolean | created in test mode |
 
-URLs: `urls.invoice_url` — signed PDF download URL (signed but does **not** expire); null while `status` is `pending`.
+URLs: `urls.invoice_url`, signed PDF download URL (signed but does **not** expire); null while `status` is `pending`.
 
 Relationships: belongs to a Subscription and a Store. (`relationships` keys in the example: `store`, `subscription`, `customer`.)
 
@@ -419,7 +419,7 @@ JSON:API type: `discounts`
 | `store_id` | integer | owning store |
 | `name` | string | discount name |
 | `code` | string | checkout code; uppercase letters+digits, 3–256 chars |
-| `amount` | integer | fixed amount **in cents** or a percentage — interpret via `amount_type` |
+| `amount` | integer | fixed amount **in cents** or a percentage, interpret via `amount_type` |
 | `amount_type` | string | `percent` \| `fixed` |
 | `is_limited_to_products` | boolean | restricted to certain products/variants |
 | `is_limited_redemptions` | boolean | limited number of redemptions |
@@ -475,7 +475,7 @@ JSON:API type: `license-keys`
 | `key_short` | string | `XXXX-` + last 12 chars |
 | `activation_limit` | integer | max activations |
 | `instances_count` | integer | current activation count |
-| `disabled` | boolean | docs describe boolean; docs example and SDK show integer `0` — accept both truthy forms |
+| `disabled` | boolean | docs describe boolean; docs example and SDK show integer `0`, accept both truthy forms |
 | `status` | string | `inactive` \| `active` \| `expired` \| `disabled` |
 | `status_formatted` | string | display form |
 | `expires_at` | string\|null | ISO 8601; null = perpetual |
@@ -485,7 +485,7 @@ JSON:API type: `license-keys`
 
 Relationships: belongs to a Store; associated with an Order, Order Item, Product; has many License Key Instances. (SDK relationship keys add `customer`: `store`, `customer`, `order`, `order-item`, `product`, `license-key-instances`.)
 
-SDK cross-check (`src/licenseKeys/types.ts`): SDK adds `test_mode: boolean` — the docs page omits it (both from the attribute list and the JSON example) but it is in real responses. SDK types `disabled` as `number` while the docs prose says boolean (`true` if disabled); the docs example value is `0`. SDK includes a `customer` relationship the docs prose omits (consistent with `customer_id` existing). All other fields match.
+SDK cross-check (`src/licenseKeys/types.ts`): SDK adds `test_mode: boolean`, the docs page omits it (both from the attribute list and the JSON example) but it is in real responses. SDK types `disabled` as `number` while the docs prose says boolean (`true` if disabled); the docs example value is `0`. SDK includes a `customer` relationship the docs prose omits (consistent with `customer_id` existing). All other fields match.
 
 ## License Key Instance
 
@@ -496,7 +496,7 @@ One activation of a license key.
 | attribute | type | notes |
 |---|---|---|
 | `license_key_id` | integer | owning license key |
-| `identifier` | string | activation UUID — the `instance_id` returned by the License API "activate" call |
+| `identifier` | string | activation UUID, the `instance_id` returned by the License API "activate" call |
 | `name` | string | instance label (e.g. a machine or domain name) |
 | `created_at` | string | ISO 8601 |
 | `updated_at` | string | ISO 8601 |
@@ -513,7 +513,7 @@ A downloadable digital good attached to a variant.
 
 | attribute | type | notes |
 |---|---|---|
-| `variant_id` | integer | owning variant (the docs page lists this field twice — a docs quirk, it is one field) |
+| `variant_id` | integer | owning variant (the docs page lists this field twice, a docs quirk, it is one field) |
 | `identifier` | string | file UUID |
 | `name` | string | filename (e.g. `example.pdf`) |
 | `extension` | string | e.g. `pdf` |
@@ -523,11 +523,11 @@ A downloadable digital good attached to a variant.
 | `version` | string\|null | software version if set (e.g. `1.0.0`) |
 | `sort` | integer | display order |
 | `status` | string | `draft` \| `published` |
-| `createdAt` | string | ISO 8601 — **camelCase**, unlike every other object |
-| `updatedAt` | string | ISO 8601 — **camelCase**, unlike every other object |
+| `createdAt` | string | ISO 8601, **camelCase**, unlike every other object |
+| `updatedAt` | string | ISO 8601, **camelCase**, unlike every other object |
 | `test_mode` | boolean | created in test mode |
 
-URLs: `download_url` is signed, 1-hour expiry — fetch fresh, never persist.
+URLs: `download_url` is signed, 1-hour expiry, fetch fresh, never persist.
 
 Relationships: belongs to a Variant.
 
@@ -592,7 +592,7 @@ store
 │    ├─→ orders
 │    ├─→ subscriptions
 │    └─→ license-keys
-├─→ checkouts                  (1) variant   — points into the catalog
+├─→ checkouts                  (1) variant, points into the catalog
 ├─→ orders
 │    ├─→ order-items           (1) product, (1) variant each
 │    ├─→ subscriptions

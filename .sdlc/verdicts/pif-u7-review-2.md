@@ -16,7 +16,7 @@ its own `edited` fixture (hue edit plus detach).
 Control, the `skewOnly.palettes[1].skew = ...` line replaced with a comment at `43033841`:
 
 ```
-  FAIL  model  — editing skew on a still-anchored palette did not change the projected ramp (stale/stored derived state?): ramp[12] #174488 both before and after
+  FAIL  model, editing skew on a still-anchored palette did not change the projected ramp (stale/stored derived state?): ramp[12] #174488 both before and after
 FAIL: 1 gate failure(s)
 exit 1
 ```
@@ -71,7 +71,7 @@ frozen lists untouched:
   pass  symmetry corpus measured-pixel: 22 of 3380 (expected 22)
   pass  symmetry corpus by-construction set == ORDER_ALLOW (test/engine/anchor.mjs): 26 vs 26
   pass  ladder-span under 30 L*: 364 ... 363 ... 0 ...
-  FAIL  symmetry  — by-construction minus measured is not the four named palettes: got [film "Apocalypse Now ..." primary #241E1A | music "The rave · the laser tent" secondary #212228 | travel "37° N ... Patmos ..." tertiary-muted #232220 | travel "42° N ... Hidaka coast ..." tertiary-muted #252215]
+  FAIL  symmetry, by-construction minus measured is not the four named palettes: got [film "Apocalypse Now ..." primary #241E1A | music "The rave · the laser tent" secondary #212228 | travel "37° N ... Patmos ..." tertiary-muted #232220 | travel "42° N ... Hidaka coast ..." tertiary-muted #252215]
 FAIL: 1 gate failure(s)
 exit 1
 ```

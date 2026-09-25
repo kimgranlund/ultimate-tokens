@@ -3,7 +3,7 @@
 > **No domain yet.** These blocks are written to be domain-agnostic; they currently
 > render at the GitHub Pages build (`kimgranlund.github.io/ultimate-tokens`).
 
-Copy blocks for the marketing landing page, in page order. Structure only — layout belongs to the
+Copy blocks for the marketing landing page, in page order. Structure only, layout belongs to the
 site build. Posture: **landing/store** (§4); every section demonstrates with the tool's real render
 (§3 stance 5). Facts: [`../fact-sheet.md`](../fact-sheet.md).
 
@@ -12,33 +12,33 @@ site build. Posture: **landing/store** (§4); every section demonstrates with th
 **H1**
 
 ```
-Design tokens, derived — not guessed.
+Design tokens, derived, not guessed.
 ```
 
 **Subhead**
 
-> Pick a key color. Ultimate Tokens derives an even, OKLCH-true system — 53 semantic roles, a type
-> scale, a geometry ramp — and exports it everywhere your product lives: CSS, Figma variables, and
+> Pick a key color. Ultimate Tokens derives an even, OKLCH-true system, 53 semantic roles, a type
+> scale, a geometry ramp, and exports it everywhere your product lives: CSS, Figma variables, and
 > your AI agents.
 
 **Primary CTA** `Open the app — it's free` · **Secondary** `See a real kit ↓`
 
-*(Hero visual: the live editor with a real kit — never a mockup.)*
+*(Hero visual: the live editor with a real kit, never a mockup.)*
 
 ## Section · Color
 
 **H2** `One color in. A system out.`
 
-> Color is modeled where human vision is even — OKLCH-native, HEX derived only for output. A single
+> Color is modeled where human vision is even, OKLCH-native, HEX derived only for output. A single
 > key color becomes a measured tonal ramp (050–950), mapped to 53 semantic roles: surfaces, on-colors,
-> outlines, containers, scrims, inverse — resolved for light and dark in one pass. Keep your exact
+> outlines, containers, scrims, inverse, resolved for light and dark in one pass. Keep your exact
 > brand color pinned; every other stop stays even around it.
 
 ## Section · Typography & Geometry
 
 **H2** `Type and space, from the same source`
 
-> Typography composes on a modular scale — eleven voices from headline to fine-print, five treatments from
+> Typography composes on a modular scale, eleven voices from headline to fine-print, five treatments from
 > Editorial to Brutalist, sizes snapped to a designer's ladder. Geometry builds a size ramp on one
 > centering law: edge padding = (height − glyph) / 2, so controls sit optically true at every size.
 > Change the source; both systems follow.
@@ -48,16 +48,16 @@ Design tokens, derived — not guessed.
 **H2** `Every export, the same decision`
 
 > CSS custom properties. W3C design tokens. Tailwind. shadcn. Panda CSS. Radix. Figma variables with a raw→role cascade,
-> plus paint & text styles bound to them. A re-importable config. A design system your AI design tool — Claude (`claude.ai/design` and Claude Code), Google Stitch, or Figma Make — reads to generate on-brand UI. They aren't kept
-> in sync — they're derived from one source, so they cannot drift. Emit every one under your own naming: the default, a Material 3-style `--md-sys-*` root, or a
+> plus paint & text styles bound to them. A re-importable config. A design system your AI design tool, Claude (`claude.ai/design` and Claude Code), Google Stitch, or Figma Make, reads to generate on-brand UI. They aren't kept
+> in sync, they're derived from one source, so they cannot drift. Emit every one under your own naming: the default, a Material 3-style `--md-sys-*` root, or a
 > `--{brand}-*` prefix, so the tokens land in the convention your codebase already uses.
 
 ## Section · Agents
 
 **H2** `Your agents build with your tokens`
 
-> AI agents guess design values all day — a plausible hex, an approximate size. Give yours the real
-> ones instead. The Brand-Kit MCP serves your kit to any MCP client — Claude Code, Cursor — a
+> AI agents guess design values all day, a plausible hex, an approximate size. Give yours the real
+> ones instead. The Brand-Kit MCP serves your kit to any MCP client, Claude Code, Cursor, a
 > zero-dependency server pre-filled with exact roles and resolved tokens. The free Ultimate Tokens
 > Claude plugin teaches the agent which of the 53 roles goes on each surface, binding to your
 > project's real exported variables. Serve the values; apply them correctly.
@@ -74,11 +74,11 @@ Design tokens, derived — not guessed.
 
 **H2** `Free to start. Pro when you outgrow it.`
 
-> **Free** — the full generator, 2 brand kits, core exports, the offline Figma plugin, the MCP
+> **Free**: the full generator, 2 brand kits, core exports, the offline Figma plugin, the MCP
 > download, the design-system export.
-> **Pro — $39/year, per user** — unlimited kits, the complete export suite, advanced treatments,
+> **Pro, $39/year, per user**: unlimited kits, the complete export suite, advanced treatments,
 > updates and support.
-> **Studio — $149/year for 5 seats** (+$19/seat/year) — Pro for the whole team, one account.
+> **Studio, $149/year for 5 seats** (+$19/seat/year), Pro for the whole team, one account.
 >
 > 14-day refund, no questions.
 
@@ -87,5 +87,5 @@ Design tokens, derived — not guessed.
 ## Footer line
 
 ```
-Ultimate Tokens · Perceptual color, type & geometry — as tokens you ship.
+Ultimate Tokens · Perceptual color, type & geometry, as tokens you ship.
 ```

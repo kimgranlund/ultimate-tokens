@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-// run.mjs — the HCT test suite. Runs every engine/ui/figma verifier + the headless DOM boot,
+// run.mjs, the HCT test suite. Runs every engine/ui/figma verifier + the headless DOM boot,
 // each as a child `node` process (they self-report + process.exit). Exit 0 = all pass.
 //
 // Prereq: the generated artifacts (figma/plugin/ui.html, src/ui/figma-plugin-assets.js, the
-// offline bundle) must be current — `npm test` regenerates them first (see package.json).
+// offline bundle) must be current, `npm test` regenerates them first (see package.json).
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -15,7 +15,7 @@ const TESTS = [
   "figma/plugin.mjs", "figma/binder.mjs", "figma/mode-apply.mjs", "figma/style-plan.mjs", "figma/migrations.mjs", "figma/live-diff.mjs",
   "mcp/core.mjs", "mcp/brand-kit.mjs", "mcp/describe-kit-core.mjs", "mcp/describe-rubric.mjs", "mcp/png-swatch-board.mjs", "mcp/describe-mcp-core.mjs", "mcp/describe-mcp.mjs", "mcp/brand-kit-merged-core.mjs", "mcp/brand-kit-merged.mjs", "mcp/describe-eval.mjs", "mcp/describe-mcp-package.mjs",
   "plugin/manifest.mjs", "plugin/color-tokens.mjs", "plugin/typography-tokens.mjs", "plugin/geometry-tokens.mjs", "plugin/hosted-pack.mjs",
-  "repo/branding.mjs", "repo/doc-mutation-lane.mjs", "repo/citations.mjs", "repo/gate-report.mjs", "repo/svg-rules.mjs",
+  "repo/branding.mjs", "repo/doc-mutation-lane.mjs", "repo/citations.mjs", "repo/gate-report.mjs", "repo/svg-rules.mjs", "repo/em-dash.mjs",
 ];
 
 let failed = 0;

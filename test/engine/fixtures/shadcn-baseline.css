@@ -1,10 +1,10 @@
-/* shadcn-baseline.css — REQ-062 byte-identical fixture, first captured BEFORE the pickDrivers
+/* shadcn-baseline.css, REQ-062 byte-identical fixture, first captured BEFORE the pickDrivers
    refactor (#586/K1). Regenerated ONLY by hand when the ramp feeding exportShadcn changes by a
-   ratified engine ruling — never to make a refactor gate pass, which defeats the point.
+   ratified engine ruling, never to make a refactor gate pass, which defeats the point.
    #647 CARVE-OUT: re-captured from the engine that honours a palette's skew and lift on the
    perceptual ramp (okhslStops, the shipped default tone mode), with Warning's own lift retuned from
    15 to -36 so its accent clears WCAG AA. Only color VALUES moved, and only for the 7 default
-   palettes carrying a non-zero skew or lift — Neutral, Primary, Tertiary, Info, Success, Danger
+   palettes carrying a non-zero skew or lift, Neutral, Primary, Tertiary, Info, Success, Danger
    (skew -20; Success/Danger also lift -5) and Warning (skew 40, lift -36). Secondary and Data 1-8 are
    byte-for-byte what the pre-#647 capture held, and no token NAME, block or ordering changed.
    exportShadcn's own contract is untouched.
@@ -13,20 +13,20 @@
    that clears WCAG AA, or the white/black constant when neither ramp end does. Twelve lines moved,
    all of them a `*-foreground`: --primary-foreground, --secondary-foreground and
    --sidebar-primary-foreground across the three fixtures. No ramp stop, token NAME, block or
-   ordering changed — every other line is byte-for-byte the #647 capture.
+   ordering changed, every other line is byte-for-byte the #647 capture.
    #681 CARVE-OUT (U2, re-captured 2026-09-18 by script from the engine, never typed): model.mjs's
    projectView and exports.js's derivePalette were fixed to actually forward a palette's `anchor`
-   field into paletteStops (a "subset-object gap" — they built narrowed object literals for the
+   field into paletteStops (a "subset-object gap", they built narrowed object literals for the
    engine call that silently dropped the new field, so the ramp itself had been silently ignoring
    `anchor` for every default palette, unlike prime.mjs which ticket #681 U1 already wired
    correctly). Every RT.defaults family now carries `anchor`, so every ramp-derived value in all
-   three fixtures moved — this is the WHOLE-CORPUS analogue of #647/#662's narrower carve-outs, not a
+   three fixtures moved, this is the WHOLE-CORPUS analogue of #647/#662's narrower carve-outs, not a
    partial one. No token NAME, block, or ordering changed; line counts are identical (124/115/115)
    in all three sections. exportShadcn's own contract is untouched. 
    #681 CARVE-OUT (U2, review pif-u2-review-1.md F2, re-captured 2026-09-18 by script from the
    engine, never typed): the anchored branches' saturation basis now lerps from the anchor's own
    measured chroma at stop 500 toward the group's resolved ramp chroma at each side's endpoint
-   (fixing a chroma notch/spike the earlier single-target basis put at the pivot — see
+   (fixing a chroma notch/spike the earlier single-target basis put at the pivot, see
    okhslStopsAnchored's own comment in src/engine/tonal.js), so every OFF-pivot stop's chroma moved a
    second time for every anchored family. Stop-500-derived lines (the verbatim anchor hex) are
    unchanged. No token NAME, block, or ordering changed; line counts are identical to the prior
@@ -43,7 +43,7 @@
    own contract is untouched.
    #681 CARVE-OUT (U2 repair pass, Q-U2-5 ruled, revision 17, re-captured 2026-09-18 by script from
    the engine, never typed): Finding 1's literal, unconditional anchor-value chroma basis (the
-   CARVE-OUT immediately above) broke REQ-002 — re-ruled to a BLEND: chromaEnvelope itself stays
+   CARVE-OUT immediately above) broke REQ-002, re-ruled to a BLEND: chromaEnvelope itself stays
    verbatim, but its basis input shades from the anchor's own chroma at the pivot to the group's
    resolved `rampChroma` at each side's endpoint (see paletteStopsAnchored/okhslStopsAnchored's own
    header comments in src/engine/tonal.js). This lands back at (or very near) the values TWO
@@ -52,7 +52,7 @@
    identical to the prior capture in all three sections. exportShadcn's own contract is untouched.
    #681 CARVE-OUT (U2 repair pass, addendum 2, re-captured 2026-09-18 by script from the engine,
    never typed): the chroma/saturation blend's own weight now keys on `liftStop` (`anchorChromaBasis`)
-   instead of `anchorWarp`'s skew-warped `w` — a local construction the ruling retired. Only skewed
+   instead of `anchorWarp`'s skew-warped `w`, a local construction the ruling retired. Only skewed
    anchored families move (Neutral, Primary, Tertiary, Info, Success, Danger skew -20; Warning skew
    40), and only near-pivot off-center lines. No token NAME, block, or ordering changed; line counts
    are identical to the prior capture in all three sections. exportShadcn's own contract is untouched.
@@ -68,7 +68,7 @@
    stamp-only edit; no color, name, block or ordering changed. */
 /* === FIXTURE: ALL === */
 /* ultimate-tokens export schema 3 */
-/* ShadCN theme — generated by Ultimate Tokens. Replace the token blocks in
+/* ShadCN theme, generated by Ultimate Tokens. Replace the token blocks in
    your globals.css. Mapped from: neutral=Neutral, primary=Primary, destructive=Danger. */
 :root {
   --radius: 0.625rem;
@@ -193,7 +193,7 @@
 }
 /* === FIXTURE: BRAND_ONLY === */
 /* ultimate-tokens export schema 3 */
-/* ShadCN theme — generated by Ultimate Tokens. Replace the token blocks in
+/* ShadCN theme, generated by Ultimate Tokens. Replace the token blocks in
    your globals.css. Mapped from: neutral=Neutral, primary=Primary, destructive=Danger. */
 :root {
   --radius: 0.625rem;
@@ -309,7 +309,7 @@
 }
 /* === FIXTURE: ALL_DATA_OFF === */
 /* ultimate-tokens export schema 3 */
-/* ShadCN theme — generated by Ultimate Tokens. Replace the token blocks in
+/* ShadCN theme, generated by Ultimate Tokens. Replace the token blocks in
    your globals.css. Mapped from: neutral=Neutral, primary=Primary, destructive=Danger. */
 :root {
   --radius: 0.625rem;

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// gen-tonal-fixture.mjs — regenerates test/engine/fixtures/tonal-legacy.json, the AC-003 byte-diff fixture
+// gen-tonal-fixture.mjs, regenerates test/engine/fixtures/tonal-legacy.json, the AC-003 byte-diff fixture
 // (SPEC spec-muted-base-key-spikes): every role-table default palette x EXPORT_STOPS x both ramp paths
 // (perceptual + even) at DEFAULT_CONTROLS, as hex. Run ONLY by hand, from the engine you want to pin
 // (it was first generated from the pre-intensity engine at commit 83756bb); `npm test` never runs it.
@@ -18,7 +18,7 @@ for (const toneMode of ["perceptual", "even"]) {
     // ticket #681 added the field) as a byte-diff regression check, so it must keep calling the
     // un-anchored `paletteStops` path on purpose. This is NOT the same "subset-object gap" #681 U2
     // fixed in model.mjs/exports.js, which silently dropped `anchor` from a call that SHOULD have
-    // forwarded it — this call never should.
+    // forwarded it, this call never should.
     out.paths[toneMode][p.name] = T.paletteStops({ hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift }, ctl, T.EXPORT_STOPS).map((r) => r.hex);
   }
 }

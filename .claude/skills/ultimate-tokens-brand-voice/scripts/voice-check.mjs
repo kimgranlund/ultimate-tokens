@@ -1,20 +1,20 @@
 #!/usr/bin/env node
-// voice-check.mjs — the mechanical half of the Ultimate Tokens voice gate. Checks customer-facing copy for the
+// voice-check.mjs, the mechanical half of the Ultimate Tokens voice gate. Checks customer-facing copy for the
 // failures a machine can catch: banned lexicon, hype-price phrasing, exclamation discipline, drifted
 // pinned facts, and em-dash-pivot overuse. The judged half (persona, posture, claim discipline) is the
-// rubric in docs/marketing/voice/voice-platform.md §6 — this script never scores those.
+// rubric in docs/marketing/voice/voice-platform.md §6, this script never scores those.
 //
 // Usage: node voice-check.mjs <file.md> [more files…]   (exit 1 on any ERROR; warnings don't fail)
 import { readFileSync } from "node:fs";
 import { makeVoices } from "../../../../src/engine/type.mjs";
 
-// "type voices" (below) is derived live from this — ticket #529: the pin was hand-set to 11 and
+// "type voices" (below) is derived live from this, ticket #529: the pin was hand-set to 11 and
 // stuck while makeVoices already returned 15, and makeVoices wasn't even exported, so nothing could
 // mechanically re-verify or self-correct the drift. A future voice added/removed in makeVoices now
 // flows straight into this count instead of needing a second, driftable hand-edit here.
 const TYPE_VOICE_COUNT = String(Object.keys(makeVoices()).length);
 
-// Banned lexicon (platform §5). Extend HERE, not in prose — word-boundary, case-insensitive.
+// Banned lexicon (platform §5). Extend HERE, not in prose, word-boundary, case-insensitive.
 const BANNED = [
   "AI-powered", "game-changing", "game changer", "stunning", "gorgeous", "effortless", "seamless",
   "magic", "magical", "blazingly fast", "blazing-fast", "next-generation", "next-gen", "cutting-edge",
@@ -45,7 +45,7 @@ const report = (file, line, level, msg) => {
 for (const file of process.argv.slice(2)) {
   const lines = readFileSync(file, "utf8").split("\n");
   // Rulebook docs (the voice platform, the fact sheet) MENTION banned words and drifted values as
-  // rules/examples — they exempt themselves with this pragma near the top. Copy never carries it.
+  // rules/examples, they exempt themselves with this pragma near the top. Copy never carries it.
   if (lines.slice(0, 6).some((l) => l.includes("voice-check: rulebook"))) {
     console.log(`- ${file}: rulebook (exempt)`);
     continue;
@@ -55,7 +55,7 @@ for (const file of process.argv.slice(2)) {
   lines.forEach((text, i) => {
     const n = i + 1;
 
-    // Fenced code is code, not copy — no voice rule applies inside it (a store slug, a shell command, an
+    // Fenced code is code, not copy, no voice rule applies inside it (a store slug, a shell command, an
     // id). Toggle on the fence line itself and skip everything within.
     if (/^\s*(```|~~~)/.test(text)) { inFence = !inFence; return; }
     if (inFence) return;
@@ -64,10 +64,10 @@ for (const file of process.argv.slice(2)) {
       if (new RegExp(`(?<![\\w-])${w.replace(/[-\s]/g, "[-\\s]")}(?![\\w-])`, "i").test(text))
         report(file, n, "ERROR", `banned lexicon: "${w}"`);
     }
-    if (/\b(?:just|only)\s+\$\d/i.test(text)) report(file, n, "ERROR", 'hype pricing ("just/only $…") — state the price plainly');
+    if (/\b(?:just|only)\s+\$\d/i.test(text)) report(file, n, "ERROR", 'hype pricing ("just/only $…"), state the price plainly');
     if (/~~.*\$\d.*~~/.test(text)) report(file, n, "ERROR", "strike-through price theatre");
     if (text.includes("!") && !text.includes("🎉") && !/^\s*(?:\/\/|#!)/.test(text) && !/\[!|!\(|!\[|<!--|-->/.test(text))
-      report(file, n, "ERROR", 'exclamation mark — the only permitted one is the post-purchase "You\'re Pro. 🎉"');
+      report(file, n, "ERROR", 'exclamation mark, the only permitted one is the post-purchase "You\'re Pro. 🎉"');
 
     for (const p of PINNED) {
       for (const m of text.matchAll(p.re)) {
@@ -75,28 +75,28 @@ for (const file of process.argv.slice(2)) {
       }
     }
     for (const m of text.matchAll(/\$(\d+(?:\.\d+)?)/g)) {
-      if (!PRICES_OK.has(m[1])) report(file, n, "ERROR", `unpinned price $${m[1]} — pinned prices are $39, $149, $19`);
+      if (!PRICES_OK.has(m[1])) report(file, n, "ERROR", `unpinned price $${m[1]}, pinned prices are $39, $149, $19`);
     }
 
     // Non-live feature in the present tense (a §6 auto-fail). The hosted MCP is the standing case:
     // any mention must carry future/conditional framing. Extend when new dark-flagged features appear.
     if (/hosted\s+(?:Brand-Kit\s+)?MCP|hosted\s+endpoint/i.test(text) &&
         !/when (?:live|it ships)|not yet|will include|hosted when live|isn't live|planned/i.test(text))
-      report(file, n, "ERROR", "hosted MCP in present tense — it is not live; use \"when live\" phrasing or omit (fact-sheet rule 2)");
+      report(file, n, "ERROR", "hosted MCP in present tense, it is not live; use \"when live\" phrasing or omit (fact-sheet rule 2)");
 
-    // The PIVOT construction specifically: "…claim — not/never/no contrast…". Ordinary em-dashes
+    // The PIVOT construction specifically: "…claim, not/never/no contrast…". Ordinary em-dashes
     // (bullets, appositions) are normal punctuation and not counted.
-    if (/ — (?:not|never|no)\b/i.test(text)) pivots += 1;
+    if (/ \u2014 (?:not|never|no)\b/i.test(text)) pivots += 1;
     // The maker brand was RETIRED: the product is unattributed. Any spelling of the old name is an ERROR,
-    // not a style warning — a reintroduced "by <maker>" line is a factual claim about who makes this.
+    // not a style warning, a reintroduced "by <maker>" line is a factual claim about who makes this.
     if (/nonoun/i.test(text))
-      report(file, n, "ERROR", 'the retired maker brand — the product is unattributed; it is "Ultimate Tokens", with no "by" line');
+      report(file, n, "ERROR", 'the retired maker brand, the product is unattributed; it is "Ultimate Tokens", with no "by" line');
     // The internal id shares its words with the product name, so police the SHAPE: the kebab form is the id,
     // "Ultimate Tokens" is the product.
     if (/ultimate-tokens/.test(text) && !/https?:\/\/|github\.io|`/.test(text))
-      report(file, n, "WARN", "internal id (kebab form) in copy — write \"Ultimate Tokens\" (URLs/code identifiers exempt)");
+      report(file, n, "WARN", "internal id (kebab form) in copy, write \"Ultimate Tokens\" (URLs/code identifiers exempt)");
   });
-  if (pivots > 3) report(file, "-", "WARN", `${pivots} em-dash pivot constructions ("… — not …") in one piece — the signature dies as a tic; keep ~one per section`);
+  if (pivots > 3) report(file, "-", "WARN", `${pivots} em-dash pivot constructions ("…, not …") in one piece, the signature dies as a tic; keep ~one per section`);
 }
 if (process.argv.length < 3) { console.error("usage: voice-check.mjs <file.md> [more…]"); process.exit(2); }
 process.exit(failed ? 1 : 0);

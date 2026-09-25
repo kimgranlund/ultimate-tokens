@@ -10,24 +10,24 @@ import { COLLECTIONS } from "../../engine/collections.js";
 import { icon } from "../icons.js";
 import { REPO_URL, btn, h, swatch } from "../app-helpers.mjs";
 
-// #465 — how long to wait for apply-done/apply-error before assuming the reply is never coming
+// #465, how long to wait for apply-done/apply-error before assuming the reply is never coming
 // (a detached plugin frame, a UI reload mid-apply) and self-clearing _applyBusy instead of leaving
-// the Apply/Regroup trigger wedged for the rest of the session. Generous — a real apply on a large
+// the Apply/Regroup trigger wedged for the rest of the session. Generous, a real apply on a large
 // kit can legitimately take a few seconds; this only fires on an ABSENT reply, not a slow one.
 const APPLY_TIMEOUT_MS = 20000;
 
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
-// methods — copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
+// methods, copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
 export class ApplyGateMixinImpl {
 
-  // applyToFigma — post the current DTCG bundle to the plugin sandbox (code.js), which
+  // applyToFigma, post the current DTCG bundle to the plugin sandbox (code.js), which
   // creates/updates the raw-colors + Light/Dark variable collections. A safe no-op outside
   // a Figma plugin: parent === window and nothing listens for the pluginMessage envelope.
-  // requestApplyToFigma — the GATED entry the Apply / Regroup buttons call. Shows a "back up your
+  // requestApplyToFigma, the GATED entry the Apply / Regroup buttons call. Shows a "back up your
   // variables first" road-block (explicit consent + destructive-overwrite warning) before touching
   // the file. Normal apply is cookieable ("don't show again"); the destructive Regroup ALWAYS warns.
   requestApplyToFigma(rebuild = false) {
-    // TKT-0004: belt-and-suspenders re-entry guard — the disabled Apply/Regroup buttons (drawer.js)
+    // TKT-0004: belt-and-suspenders re-entry guard, the disabled Apply/Regroup buttons (drawer.js)
     // are the primary defense, but this closes every OTHER path (a direct call, a future affordance)
     // while an apply is already in flight, not just the two trigger buttons.
     if (this._applyBusy) return;
@@ -39,7 +39,7 @@ export class ApplyGateMixinImpl {
     this.applyGateLibraryMode = this._libraryMode();
     this.applyGateOpen = true;
     // TKT-0020: kick off the live Geometry/Type Primitives read-back so the gate can show a
-    // changed-value count before the user commits — reset to null (not stale) until the reply lands;
+    // changed-value count before the user commits, reset to null (not stale) until the reply lands;
     // _figmaChangedCount()/renderApplyGate treat null as "still checking", 0 as a real answer.
     this._liveFloatVars = null;
     if (this.inFigma) { try { parent.postMessage({ pluginMessage: { type: "read-float-variables" } }, "*"); } catch { /* no frame */ } }
@@ -56,13 +56,13 @@ export class ApplyGateMixinImpl {
     // source of truth for msg.libraryMode on every apply, gated or consent-skipped.
     this._setLibraryMode(!!this.applyGateLibraryMode);
     this.applyGateOpen = false;
-    this.render(); // CLOSE the gate <dialog> (via _syncApplyGate) + rebuild toastEl — toast() alone never renders
+    this.render(); // CLOSE the gate <dialog> (via _syncApplyGate) + rebuild toastEl, toast() alone never renders
     this.applyToFigma(rebuild);
   }
 
   // consent is a per-USER preference (not doc-bound) → localStorage, versioned so a material change to
   // apply-behavior can re-surface the warning by bumping the key. (Figma's iframe localStorage may be
-  // session-scoped — re-warning once per session for a destructive action is acceptable / safe.)
+  // session-scoped, re-warning once per session for a destructive action is acceptable / safe.)
   _applyConsentKey() { return "ultimate-tokens-apply-consent-v1"; } // renamed: re-shows the back-up warning once (a safety prompt, not data)
 
   _applyConsented() { try { return localStorage.getItem(this._applyConsentKey()) === "1"; } catch { return false; } }
@@ -84,8 +84,8 @@ export class ApplyGateMixinImpl {
   applyToFigma(rebuild = false) {
     // rebuild = the opt-in "Regroup" path: re-create the Color Roles collection so it adopts the
     // canonical grouped order (Figma keeps existing variables' positions on a normal update). It
-    // re-creates the semantic variables — bound layers detach (warned in the apply gate).
-    if (this._applyBusy) return; // TKT-0004: the final backstop — never post a second concurrent apply
+    // re-creates the semantic variables, bound layers detach (warned in the apply gate).
+    if (this._applyBusy) return; // TKT-0004: the final backstop, never post a second concurrent apply
     try {
       // Apply respects the SAME export-system opt-in as Download-All (this.exportSystems): a toggled-off
       // system is NOT written to the file. Color omits `dtcg` (code.js then skips the color collections);
@@ -105,14 +105,14 @@ export class ApplyGateMixinImpl {
       // variable; #687 closed the last gap, applyFloatPlans' own breakpoint-mode removeMode.
       const msg = { type: "apply", config: serialize(this.doc), rebuildSemantic: !!rebuild, libraryMode: this._libraryMode(), floatPlans: this._figmaFloatPlans(), collections: figmaCollectionNames(this.doc), renames: { color: { ...kebabWaveColorRenames(_colorSlugs), collections: FIGMA_MIGRATIONS.color.collections } } };
       if (sys.color !== false) msg.dtcg = this.figmaBundle();
-      // STYLES (opt-out): the swatch layer bound to the variables — paint styles per semantic role
+      // STYLES (opt-out): the swatch layer bound to the variables, paint styles per semantic role
       // (color on), text styles per voice×step×weight (type on). Pure plans (style-plan.mjs); the
       // sandbox executes them verbatim after the variables land, so bindings always resolve.
       if (sys.styles !== false && (sys.color !== false || sys.type !== false)) {
         const scale = sys.type !== false ? this._typeScaleFor("base") : null;
         let families = [];
         if (sys.color !== false && msg.dtcg && msg.dtcg["Light_tokens.json"]) {
-          // the semantic tree keys ARE the variable-name family slugs, in enabled-palette order —
+          // the semantic tree keys ARE the variable-name family slugs, in enabled-palette order,
           // pair each with its palette's display name for the style folder segment.
           const enabled = (this.doc.palettes || []).filter((p) => p && p.on !== false);
           families = Object.keys(msg.dtcg["Light_tokens.json"]).filter((k) => k[0] !== "$")
@@ -125,7 +125,7 @@ export class ApplyGateMixinImpl {
           if (plans.texts.length) {
             // #491: stamp the SAME rename-migration channel _figmaFloatPlans uses (FIGMA_MIGRATIONS.floats),
             // so an existing file's "Font Primitives" collection renames in place to "Type Primitives"
-            // instead of getting a parallel one — applyRenameMigrations is pure and array-shaped, so a
+            // instead of getting a parallel one, applyRenameMigrations is pure and array-shaped, so a
             // single plan rides through as a 1-element array and is unwrapped back out.
             const fpPlan = primitivesModesApplyPlan(typeTokensFigmaPrimitivesModes(scale));
             msg.fontPrimitivesModes = fpPlan ? applyRenameMigrations([fpPlan], FIGMA_MIGRATIONS.floats)[0] : null;
@@ -133,7 +133,7 @@ export class ApplyGateMixinImpl {
         }
       }
       parent.postMessage({ pluginMessage: msg }, "*");
-      // TKT-0004: the PERSISTENT busy state — set the moment "apply" is posted, cleared only by
+      // TKT-0004: the PERSISTENT busy state, set the moment "apply" is posted, cleared only by
       // onApplyDone/onApplyError (the real completion signal; this toast below is only optimistic).
       // render() reflects it as the .apply-busy host indicator (styles.css) AND disables the
       // Apply/Regroup trigger (drawer.js), closing the double-submit gap a transient toast alone left open.
@@ -145,41 +145,41 @@ export class ApplyGateMixinImpl {
       // (→ onApplyDone → a "done" toast), or {apply-error} on failure (→ onApplyError). See the ui.html bridge.
       this.toast(rebuild ? "Regrouping Color Roles…" : "Applying to Figma…");
     } catch {
-      /* not in a frame / blocked — nothing to apply to */
+      /* not in a frame / blocked, nothing to apply to */
     }
   }
 
 
-  // onApplyDone / onApplyError — the sandbox's completion callbacks (relayed by the ui.html bridge). The apply
+  // onApplyDone / onApplyError, the sandbox's completion callbacks (relayed by the ui.html bridge). The apply
   // is async in the plugin VM, so THIS is the real "done" signal (the applyToFigma toast is only optimistic).
   onApplyDone(m) {
-    if (this._applyTimeoutTimer) { clearTimeout(this._applyTimeoutTimer); this._applyTimeoutTimer = null; } // #465: real reply arrived — disarm the fallback
+    if (this._applyTimeoutTimer) { clearTimeout(this._applyTimeoutTimer); this._applyTimeoutTimer = null; } // #465: real reply arrived, disarm the fallback
     const n = (m && (Number(m.raw) || 0) + (Number(m.semantic) || 0) + (Number(m.floatVars) || 0)) || 0;
     const st = (m && (Number(m.paintStyles) || 0) + (Number(m.textStyles) || 0)) || 0;
     this.applyGateOpen = false; // defensive: never leave the gate open past completion
-    this._applyBusy = false; // TKT-0004: the operation is over — clear the persistent busy state
+    this._applyBusy = false; // TKT-0004: the operation is over, clear the persistent busy state
     this.render(); // reflect both of the above (re-enables the trigger, clears the busy indicator) + rebuild toastEl
     const varsPart = n ? `${n} variable${n === 1 ? "" : "s"}` : "";
     const stylesPart = st ? `${st} style swatch${st === 1 ? "" : "es"}` : "";
     const what = [varsPart, stylesPart].filter(Boolean).join(" + ");
     const missing = m && Array.isArray(m.missingFonts) ? m.missingFonts : [];
     const subbed = m && Array.isArray(m.substitutedFonts) ? m.substitutedFonts : [];
-    this.toast(what ? `Applied ${what} to Figma — check the Variables & Styles panels` : "Applied to Figma — check the Variables panel");
-    // SECOND toast — the font reality. A substituted family means the style EXISTS with its family
+    this.toast(what ? `Applied ${what} to Figma. Check the Variables & Styles panels` : "Applied to Figma. Check the Variables panel");
+    // SECOND toast, the font reality. A substituted family means the style EXISTS with its family
     // still bound to the Type Primitives variable: installing the font adopts it, no re-apply needed.
     // (The sandbox's own notify races the apply-done toast and gets lost, so the UI says it too.)
-    if (subbed.length) this.toast(`${m.substituted || subbed.length} text style${(m.substituted || 0) === 1 ? "" : "s"} use a placeholder face — install to see them as designed: ${subbed.slice(0, 4).join(", ")}${subbed.length > 4 ? "…" : ""}. The family stays variable-bound.`);
-    if (missing.length) this.toast(`Text styles skipped — no usable font for: ${missing.slice(0, 4).join(", ")}${missing.length > 4 ? "…" : ""}`);
+    if (subbed.length) this.toast(`${m.substituted || subbed.length} text style${(m.substituted || 0) === 1 ? "" : "s"} use a placeholder face, install to see them as designed: ${subbed.slice(0, 4).join(", ")}${subbed.length > 4 ? "…" : ""}. The family stays variable-bound.`);
+    if (missing.length) this.toast(`Text styles skipped: no usable font for ${missing.slice(0, 4).join(", ")}${missing.length > 4 ? "…" : ""}`);
   }
 
   onApplyError() {
     if (this._applyTimeoutTimer) { clearTimeout(this._applyTimeoutTimer); this._applyTimeoutTimer = null; } // #465
     this._applyBusy = false; // TKT-0004: clear the persistent busy state on failure too (the toast still carries the error detail)
     this.render();
-    this.toast("Couldn't apply to Figma — please try again.");
+    this.toast("Couldn't apply to Figma. Please try again.");
   }
 
-  // _onApplyTimeout — #465's fallback: fires ONLY if neither onApplyDone nor onApplyError ever
+  // _onApplyTimeout, #465's fallback: fires ONLY if neither onApplyDone nor onApplyError ever
   // ran (both disarm this timer first). Self-clears the wedge and tells the user the truth: the
   // write may or may not have gone through, so check the file rather than trusting either state.
   _onApplyTimeout() {
@@ -187,18 +187,18 @@ export class ApplyGateMixinImpl {
     this.applyGateOpen = false;
     this._applyBusy = false;
     this.render();
-    this.toast("Apply may not have completed — check the file's Variables & Styles panels.");
+    this.toast("Apply may not have completed, check the file's Variables & Styles panels.");
   }
 
 
-  // ── legacy-style sweep (Settings › Cleanup, Figma-only) — find real Figma styles that look like ours
+  // ── legacy-style sweep (Settings › Cleanup, Figma-only), find real Figma styles that look like ours
   // (their top "/" segment matches a namespace we still use) but aren't anything the CURRENT plan would
   // produce: leftovers from an older naming generation that predate this plugin's own per-style registry,
   // so no ordinary apply/prune can ever reach them. Scan-then-confirm: nothing is ever deleted without the
   // user checking it first (sweepCandidates in code.js is itself read-only; only sweep-delete mutates,
   // and only the exact ids sent).
   _sweepNames() {
-    // the SAME resolution applyToFigma uses for its own plan — so "current" here means exactly what the
+    // the SAME resolution applyToFigma uses for its own plan, so "current" here means exactly what the
     // next real apply would produce, never a stale or hypothetical shape.
     const sys = this.exportSystems || {};
     const scale = sys.type !== false ? this._typeScaleFor("base") : null;
@@ -221,7 +221,7 @@ export class ApplyGateMixinImpl {
       const { textNames, paintNames } = this._sweepNames();
       this.sweepBusy = true; this.render();
       parent.postMessage({ pluginMessage: { type: "sweep-scan", textNames, paintNames } }, "*");
-    } catch { this.sweepBusy = false; this.toast("Couldn't scan — please try again."); }
+    } catch { this.sweepBusy = false; this.toast("Couldn't scan. Please try again."); }
   }
 
   receiveSweepScan(m) {
@@ -248,7 +248,7 @@ export class ApplyGateMixinImpl {
     if (!this.inFigma || this.sweepBusy || !this.sweepSelected.size) return;
     this.sweepBusy = true; this.render();
     try { parent.postMessage({ pluginMessage: { type: "sweep-delete", ids: [...this.sweepSelected] } }, "*"); }
-    catch { this.sweepBusy = false; this.toast("Couldn't delete — please try again."); }
+    catch { this.sweepBusy = false; this.toast("Couldn't delete. Please try again."); }
   }
 
   onSweepDone(m) {
@@ -261,15 +261,15 @@ export class ApplyGateMixinImpl {
   }
 
 
-  // _figmaFloatPlans — the Type + Geometry halves of the single breakpoint-moded "Geometry" collection
+  // _figmaFloatPlans, the Type + Geometry halves of the single breakpoint-moded "Geometry" collection
   // (typeTokensFigmaModes / geomTokensFigmaModes over the override-aware base + per-breakpoint mode
   // scales, TKT-0009), MERGED into one interchange and turned into the pure apply PLANS code.js executes
-  // (figma/binder/mode-apply-plan.mjs) — one plan per collection is load-bearing: the executor prunes
+  // (figma/binder/mode-apply-plan.mjs), one plan per collection is load-bearing: the executor prunes
   // variables per collection against ITS plan, so two plans on "Geometry" would delete each other's
   // halves. Only the systems toggled ON in this.exportSystems are included (a toggled-off system is
-  // never applied). Each HALF is validated separately first — a malformed one (the half-bound-import
+  // never applied). Each HALF is validated separately first, a malformed one (the half-bound-import
   // failure) is dropped rather than half-applied; an engine error on one system never blocks the other
-  // (or the color apply) — and the merged interchange is validated again (a mode-list mismatch between
+  // (or the color apply), and the merged interchange is validated again (a mode-list mismatch between
   // halves surfaces as missing values there, never as a half-applied file).
   _figmaFloatPlans() {
     const sys = this.exportSystems || {};
@@ -291,13 +291,13 @@ export class ApplyGateMixinImpl {
       }
       // TKT-0018: the TKT-0009 retirement rule (the merged Geometry collection supersedes the old
       // two-collection era's "Typography" once it actually lands type/ variables) is pure + unit-tested
-      // in mode-apply-plan.mjs — see FIGMA_MIGRATIONS.floats.retire for the declarative rule.
+      // in mode-apply-plan.mjs, see FIGMA_MIGRATIONS.floats.retire for the declarative rule.
       return retirementsFor(plans, FIGMA_MIGRATIONS.floats);
     } catch { return []; }
   }
 
 
-  // receiveLiveFloatVariables — code.js's reply to the read-float-variables request requestApplyToFigma
+  // receiveLiveFloatVariables, code.js's reply to the read-float-variables request requestApplyToFigma
   // fires when the gate opens (TKT-0020: the Geometry/Type counterpart to receiveLiveVariables' color
   // drift read). Stashes the raw per-collection read-back; _figmaChangedCount derives the count the gate
   // renders. A safe no-op outside the gate (the message simply arrives and re-renders).
@@ -307,7 +307,7 @@ export class ApplyGateMixinImpl {
   }
 
 
-  // _figmaChangedCount() — how many LIVE Geometry/Type Primitives values the apply the gate is about
+  // _figmaChangedCount(), how many LIVE Geometry/Type Primitives values the apply the gate is about
   // to confirm would actually overwrite (collections-arch review C2 / TKT-0020): the SAME plans
   // applyToFigma is about to POST (_figmaFloatPlans + the Type Primitives plan, filtered by the SAME
   // exportSystems toggles), diffed against the read-back via the pure figma/binder/live-diff.mjs helpers.
@@ -326,7 +326,7 @@ export class ApplyGateMixinImpl {
     }
     // Type Primitives is only ever WRITTEN alongside text styles (applyToFigma sets msg.fontPrimitivesModes
     // only inside the styles-on branch; code.js only calls applyFontPrimitivesModes when msg.fontPrimitivesModes
-    // is present) — so counting it while Styles is toggled off would over-report values this apply
+    // is present), so counting it while Styles is toggled off would over-report values this apply
     // never touches.
     if (sys.type !== false && sys.styles !== false) {
       try {
@@ -338,7 +338,7 @@ export class ApplyGateMixinImpl {
   }
 
 
-  // _syncApplyGate — reconcile the gate <dialog> with applyGateOpen (mirrors _syncDrawer/_syncNewPal).
+  // _syncApplyGate, reconcile the gate <dialog> with applyGateOpen (mirrors _syncDrawer/_syncNewPal).
   _syncApplyGate() {
     const d = this.querySelector(".apply-gate");
     if (!d || typeof d.showModal !== "function") return;
@@ -347,7 +347,7 @@ export class ApplyGateMixinImpl {
   }
 
 
-  // renderApplyGate — the "back up your variables first" consent road-block shown before Apply/Regroup.
+  // renderApplyGate, the "back up your variables first" consent road-block shown before Apply/Regroup.
   // A Figma review gate (explicit awareness before modifying the file) AND destructive-overwrite
   // protection (Apply can overwrite same-named variables that components are bound to).
   renderApplyGate() {
@@ -378,22 +378,22 @@ export class ApplyGateMixinImpl {
           // breaks regardless of that checkbox. Shown unconditionally here (not only when the box is
           // ticked): Regroup is always this destructive, and the checkbox sits below this text in
           // reading order, so a user who ticks it later has already read the disclosure either way.
-          ? "Regroup deletes and re-creates the Color Roles variables so they adopt the grouped order. Any layers or styles bound to them will detach and need reconnecting — the Ultimate Tokens style swatches are re-bound automatically on this same apply. (Color Primitives are untouched.) Published library does not cover Regroup: every Color Roles variable is replaced either way, so bound consumer files break regardless of that checkbox."
+          ? "Regroup deletes and re-creates the Color Roles variables so they adopt the grouped order. Any layers or styles bound to them will detach and need reconnecting, the Ultimate Tokens style swatches are re-bound automatically on this same apply. (Color Primitives are untouched.) Published library does not cover Regroup: every Color Roles variable is replaced either way, so bound consumer files break regardless of that checkbox."
           : (() => {
-              // #496/P1: the lede must name only the systems this apply will actually write —
+              // #496/P1: the lede must name only the systems this apply will actually write,
               // both non-rebuild branches were previously keyed ONLY on exportSystems.styles, so a
               // Colour-off apply still claimed "creates or updates the Color Primitives + Color
               // Roles variable collections", which is false whenever exportSystems.color is off.
               //
               // Re-fold (review of #496): the FIRST fix still built both clauses off fixed strings
-              // keyed on a single flag each, so two more reachable false claims survived — (a) the
+              // keyed on a single flag each, so two more reachable false claims survived, (a) the
               // "Type and Geometry variable collections" phrase claimed a "Type Primitives" write
               // that only happens when Styles is ALSO on (:83/:103 below), and {color:false,
               // type:false, geometry:true} (legal per the drawer's keep-one-system guard,
               // overlays/drawer.js:301) writes only "Geometry"; (b) the styles parenthetical named
               // BOTH "paint styles" and "text styles" unconditionally whenever Styles was on, but
               // {color:false, styles:true, type:true} (ticket #496's own U5t/U5s configuration)
-              // writes zero paints (stylePlans({include:{color:false}}) — figma/plugin/code.js:987
+              // writes zero paints (stylePlans({include:{color:false}}), figma/plugin/code.js:987
               // skips the whole paint leg when paints.length is 0). Both clauses now derive from the
               // SAME `sys` flags applyToFigma/_figmaFloatPlans actually gate on, so the lede can never
               // claim a write this apply won't make.
@@ -404,7 +404,7 @@ export class ApplyGateMixinImpl {
                 (sys.type !== false && sys.styles !== false) && "Type Primitives",
               ].filter(Boolean);
               // The "Color Primitives + Color Roles" part alone names TWO collections, so pluralize
-              // whenever color is included (or there's more than one part) — counting PARTS instead
+              // whenever color is included (or there's more than one part), counting PARTS instead
               // of actual collections under-pluralizes the color-only case (fold-review fix).
               const isPluralCollections = collectionParts.length !== 1 || sys.color !== false;
               const collections = collectionParts.join(" + ") + " variable collection" + (isPluralCollections ? "s" : "");
@@ -413,8 +413,8 @@ export class ApplyGateMixinImpl {
                 sys.type !== false && "text styles per type step",
               ].filter(Boolean);
               return (sys.styles === false || !styleParts.length)
-                ? "This creates or updates the " + collections + " in this file. Variables with the same names are overwritten — which can re-skin components already bound to them (sometimes exactly what you want)."
-                : "This creates or updates the " + collections + " in this file, plus the STYLE swatches bound to them (" + styleParts.join(", ") + " — toggle \u201CStyles\u201D in the drawer to opt out). Variables and Ultimate Tokens styles with the same names are overwritten — which can re-skin components already bound to them (sometimes exactly what you want).";
+                ? "This creates or updates the " + collections + " in this file. Variables with the same names are overwritten, which can re-skin components already bound to them (sometimes exactly what you want)."
+                : "This creates or updates the " + collections + " in this file, plus the STYLE swatches bound to them (" + styleParts.join(", ") + ", toggle \u201CStyles\u201D in the drawer to opt out). Variables and Ultimate Tokens styles with the same names are overwritten, which can re-skin components already bound to them (sometimes exactly what you want).";
             })()),
         h(
           "div",
@@ -422,18 +422,18 @@ export class ApplyGateMixinImpl {
           icon("warning", { size: 16 }),
           h("div", {}, h("b", {}, "Back up your file first."), " Duplicate the file (or the collections) before applying, so you can roll back if a mapping overwrites something you meant to keep."),
         ),
-        // TKT-0020: the Geometry/Type changed-value count (collections-arch review C2) — a hand-tweaked
+        // TKT-0020: the Geometry/Type changed-value count (collections-arch review C2), a hand-tweaked
         // dimension is invisible today; this surfaces it BEFORE the overwrite, not just after. Figma-only
         // (the read-back is a plugin message); null while the read-back is still in flight. Suppressed
-        // entirely on a color-only apply (Type AND Geometry both off) — there is nothing Geometry/Type
+        // entirely on a color-only apply (Type AND Geometry both off), there is nothing Geometry/Type
         // -shaped for the count to ever mean there. Regroup still carries floatPlans (it only affects
-        // the Color Roles rebuild flag), so the count is just as relevant there — no rebuild guard.
+        // the Color Roles rebuild flag), so the count is just as relevant there, no rebuild guard.
         (this.inFigma && ((this.exportSystems || {}).type !== false || (this.exportSystems || {}).geometry !== false)) ? (() => {
           const n = this._figmaChangedCount();
           return h("p", { class: "apply-gate-drift" + (n ? " has-changes" : "") },
             n === null ? "Checking for hand-edited values in this file…"
               : n > 0 ? `${n} existing Geometry/Type value${n === 1 ? "" : "s"} in this file will be overwritten by this apply.`
-              : "No hand-edited Geometry/Type values found — nothing will be overwritten.");
+              : "No hand-edited Geometry/Type values found, nothing will be overwritten.");
         })() : false,
         h("p", { class: "apply-gate-learn" },
           "Re-routing semantic tokens onto existing variables? ",
@@ -456,7 +456,7 @@ export class ApplyGateMixinImpl {
             h("span", { class: "apply-gate-librarymode-hint" }, "Consumer files stay bound. Leave this off for an ordinary, unpublished file."),
           ),
         ),
-        // "Don't show again" — normal apply only; the destructive Regroup always warns.
+        // "Don't show again", normal apply only; the destructive Regroup always warns.
         rebuild ? false : h(
           "label",
           { class: "apply-gate-dontshow" },

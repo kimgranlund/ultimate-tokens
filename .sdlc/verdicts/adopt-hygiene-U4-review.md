@@ -26,8 +26,8 @@ Every negative control was planted and reverted; the tree ended with `0` dirty p
 
 ## Scope and branding gate
 
-- The full `39b78dc..8ebf172` diff touches exactly two files: `.sdlc/verdicts/adopt-hygiene-U1-review.md` (P4 row, one line changed) and the new `.sdlc/handoffs/adopt-hygiene-U4.md`. `.sdlc/plans/adopt-hygiene.md` is untouched in this diff — the plan-level U1-7 exclusion the handoff refers to was already in place at `39b78dc`, confirmed rather than re-edited, matching the handoff's own note.
-- The retired brand name and its domain appear only on the diff's removed ("-") line, which is the superseded text being replaced — inherent to any diff of a redaction, not a new occurrence. No added ("+") line in the diff, and no line in the commit message, names the retired brand or domain; both instead paraphrase it. `node test/repo/branding.mjs` on the head is clean, so the gate that actually matters (committed file content, not diff text) passes.
+- The full `39b78dc..8ebf172` diff touches exactly two files: `.sdlc/verdicts/adopt-hygiene-U1-review.md` (P4 row, one line changed) and the new `.sdlc/handoffs/adopt-hygiene-U4.md`. `.sdlc/plans/adopt-hygiene.md` is untouched in this diff, the plan-level U1-7 exclusion the handoff refers to was already in place at `39b78dc`, confirmed rather than re-edited, matching the handoff's own note.
+- The retired brand name and its domain appear only on the diff's removed ("-") line, which is the superseded text being replaced, inherent to any diff of a redaction, not a new occurrence. No added ("+") line in the diff, and no line in the commit message, names the retired brand or domain; both instead paraphrase it. `node test/repo/branding.mjs` on the head is clean, so the gate that actually matters (committed file content, not diff text) passes.
 - The commit message itself is scoped correctly: it states the P4 fix and confirms row 2 needed no edit, with no invented claims beyond what the diff shows.
 
 ## Findings

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// brand-kit.mjs — verifier for the downloadable Brand-Kit MCP server. Generates a kit from the default
+// brand-kit.mjs, verifier for the downloadable Brand-Kit MCP server. Generates a kit from the default
 // doc, spawns the (zero-dep) server, drives the MCP protocol over stdio, and asserts tools/resources/
 // prompts. Proves the engine's tokens are servable to an agent end-to-end.
 import { spawn } from "node:child_process";
@@ -26,16 +26,16 @@ ok(kit.$schema === "ultimate-tokens-brand-kit/3" && kit.palettes.length === 16, 
 // SERVER.version moved to 0.3.0. The constant is now GENERATED from SERVER.version, and this pins
 // the pair so a future bump cannot silently split them again.
 ok(MCP_BRAND_KIT_VERSION === SERVER.version, `the downloaded package.json version (${MCP_BRAND_KIT_VERSION}) must equal the server's own SERVER.version (${SERVER.version}); regenerate with npm run gen:mcp-assets`);
-// ICONS — the kit ALWAYS names an icon library (an agent must never pick its own).
+// ICONS, the kit ALWAYS names an icon library (an agent must never pick its own).
 ok(kit.icons && kit.icons.family === "Phosphor" && kit.icons.variant === "regular", `brandKit serves the default icon system: ${JSON.stringify(kit.icons)}`);
 {
   const k2 = brandKit({ ...defaultDocument(), icons: { id: "lucide" } });
   ok(k2.icons && k2.icons.family === "Lucide" && !k2.icons.variant, "a variant-less library (Lucide) serves no variant");
 }
-// MOTION — system constants, always served (an agent binds curves, never types a raw ms).
+// MOTION, system constants, always served (an agent binds curves, never types a raw ms).
 ok(kit.motion && kit.motion.easing && kit.motion.easing.standard && kit.motion.duration.short2 === 100 && kit.motion.animatable.join() === "transform,opacity",
   `brandKit serves the motion facet: ${JSON.stringify(kit.motion && kit.motion.animatable)}`);
-// CONSTANTS — fixed, non-palette tokens (dialog-backdrop, white, black), always served like motion
+// CONSTANTS, fixed, non-palette tokens (dialog-backdrop, white, black), always served like motion
 // (no sys.color gate: none of these are a brand color).
 ok(kit.constants && kit.constants.dialogBackdrop && kit.constants.dialogBackdrop.hex === "#000000CC" && kit.constants.dialogBackdrop.oklch === "oklch(0 0 0 / 80%)",
   `brandKit serves the constants facet: ${JSON.stringify(kit.constants)}`);
@@ -58,7 +58,7 @@ ok(!typeOnly.palettes && !typeOnly.roles && typeOnly.type && !typeOnly.geometry,
 const geomOnly = brandKit(defaultDocument(), { geometry: true });
 ok(!geomOnly.palettes && !geomOnly.type && geomOnly.geometry, "brandKit({geometry}) omits colour + type");
 
-// BASE per-cell overrides reach the kit (Phase 3 — the MCP zip + get_type/get_geometry are override-aware,
+// BASE per-cell overrides reach the kit (Phase 3, the MCP zip + get_type/get_geometry are override-aware,
 // like every other export). A "<...>|base"-keyed tokenOverride must surface on kit.type / kit.geometry.
 {
   const baseDoc = defaultDocument();
@@ -73,16 +73,16 @@ ok(!geomOnly.palettes && !geomOnly.type && geomOnly.geometry, "brandKit({geometr
   ok(ovKit.type.categories.Body.MD.size !== plainKit.type.categories.Body.MD.size, "the type override actually moves kit.type off the un-overridden kit");
   ok(ovKit.geometry.sizes.MD.height === 50, `a BASE geom override reaches kit.geometry (got ${ovKit.geometry.sizes.MD.height}, want 50)`);
   ok(ovKit.geometry.sizes.MD.height !== plainKit.geometry.sizes.MD.height, "the geom override actually moves kit.geometry off the un-overridden kit");
-  // the per-step `font` is DECOUPLED from the type scale (2026-07-16) — a type override must NOT move it,
+  // the per-step `font` is DECOUPLED from the type scale (2026-07-16), a type override must NOT move it,
   // and a height override doesn't either (the control-text ramp is per-STEP, not per-height)
-  ok(ovKit.geometry.sizes.MD.font === plainKit.geometry.sizes.MD.font, `the control font is decoupled — type/height overrides don't move it (got ${ovKit.geometry.sizes.MD.font})`);
+  ok(ovKit.geometry.sizes.MD.font === plainKit.geometry.sizes.MD.font, `the control font is decoupled, type/height overrides don't move it (got ${ovKit.geometry.sizes.MD.font})`);
   // a NON-base ("|md")-keyed override must NOT touch the BASE kit (the base slice is mode-local)
   const nonBaseDoc = { ...baseDoc, type: { ...baseDoc.type, tokenOverrides: { "Body|MD|md": 99 } } };
   ok(brandKit(nonBaseDoc).type.categories.Body.MD.size === plainKit.type.categories.Body.MD.size, "a non-base (|md) override does NOT leak into the BASE kit");
 }
 
 // controls (SPEC 0.3.0 RP-2, ticket #573, plan PR #571 step E2): the brand-kit states the chroma
-// policy it was generated under — the SAME shape exportJSON's `meta.controls` carries. Proven with a
+// policy it was generated under, the SAME shape exportJSON's `meta.controls` carries. Proven with a
 // document whose controls are NON-default (every group differs from GROUP_DEFAULTS, both global
 // fallbacks differ from 100/100) so the check exercises real resolution, not a default-vs-default
 // match that would pass even if brandKit ignored the document's controls entirely.
@@ -104,7 +104,7 @@ ok(!geomOnly.palettes && !geomOnly.type && geomOnly.geometry, "brandKit({geometr
   ok(customKit.controls && customKit.controls.paletteGroups && customKit.controls.paletteGroups.brand.baseChroma === 56 && customKit.controls.paletteGroups.brand.primeChroma === 78,
     `brandKit(doc).controls.paletteGroups resolves the doc's own per-group override (got ${JSON.stringify(customKit.controls && customKit.controls.paletteGroups.brand)})`);
   ok(kit.controls && customKit.controls.baseChroma !== kit.controls.baseChroma,
-    "the default doc's kit.controls differs from the custom doc's — proves controls isn't a hardcoded constant");
+    "the default doc's kit.controls differs from the custom doc's, proves controls isn't a hardcoded constant");
 }
 
 const dir = mkdtempSync(join(tmpdir(), "ultimate-tokens-mcp-"));
@@ -144,14 +144,14 @@ try {
   const geo = await callTool("get_geometry", {});
   ok(geo && geo.sizes && geo.sizes.MD && geo.sizes.MD.paddingNarrow === (geo.sizes.MD.height - geo.sizes.MD.icon) / 2, "get_geometry → the dimensional scale (the centering law holds on the served MD size)");
   // decoupled end-to-end (2026-07-16): the served geometry's per-step `font` is the control-text ramp,
-  // NOT the Label voice — and the retired composition flag is gone
+  // NOT the Label voice, and the retired composition flag is gone
   ok(!("typed" in geo) && geo.sizes.MD.font === 15, `get_geometry font is the decoupled control-text ramp (got ${geo.sizes.MD.font}, want 15)`);
 
   const resUris = (await rpc("resources/list")).result.resources.map((r) => r.uri);
   ok(resUris.includes("brand://type") && resUris.includes("brand://geometry"), `resources/list has brand://type + brand://geometry (${resUris})`);
   ok(resUris.includes("brand://palette/primary/prime") && resUris.filter((u) => /^brand:\/\/palette\/.+\/prime$/.test(u)).length === 16, `resources/list has one brand://palette/{slug}/prime per palette (${resUris.length} total)`);
 
-  // brand://kit serves the full kit object verbatim — its `controls` block (RP-2) must round-trip
+  // brand://kit serves the full kit object verbatim, its `controls` block (RP-2) must round-trip
   // over the MCP protocol matching the local kit.controls exactly (no drift between what the server
   // sends and what brandKit(doc) computed).
   const kitRes = JSON.parse((await rpc("resources/read", { uri: "brand://kit" })).result.contents[0].text);
@@ -161,7 +161,7 @@ try {
   const pal = await callTool("list_palettes", {});
   ok(Array.isArray(pal) && pal.length === 16 && /^#|^oklch/.test(pal[0].key || ""), "list_palettes → 16 palettes with identity colours");
   // group metadata (SPEC 0.3.0 RP-1, ticket #572): every entry's group is one of the four valid ids
-  // and matches model.mjs's own paletteGroup(p) resolution for that palette — no drift between the
+  // and matches model.mjs's own paletteGroup(p) resolution for that palette, no drift between the
   // MCP's served metadata and the single resolver every other surface reads.
   {
     const VALID_GROUPS = ["material", "brand", "system", "data"];
@@ -218,5 +218,5 @@ try {
 }
 
 if (fails.length) { console.error("brand-kit MCP FAIL:\n  " + fails.join("\n  ")); process.exit(1); }
-console.log("brand-kit MCP PASS — server serves palettes/ramps/semantic/nearest over MCP stdio");
+console.log("brand-kit MCP PASS, server serves palettes/ramps/semantic/nearest over MCP stdio");
 process.exit(0);

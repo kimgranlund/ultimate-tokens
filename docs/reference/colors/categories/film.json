@@ -4,7 +4,7 @@
   "eyebrow": "Cinema Palette · Sourced from the frame",
   "tagline": "Forty-eight films, <em>read for their colour grade,</em> not their poster.",
   "metaNote": "Color sourced from grade,<br/>production design &amp; film stock",
-  "sourcing": "Every palette is sampled from a specific film's actual colour grade, production design, lighting, and film stock — the colour the cinematographer and designer built into the frame. Iconic works are named; the aim is the palette you would pull from a freeze-frame, not a generic 'cinematic' look.",
+  "sourcing": "Every palette is sampled from a specific film's actual colour grade, production design, lighting, and film stock, the colour the cinematographer and designer built into the frame. Iconic works are named; the aim is the palette you would pull from a freeze-frame, not a generic 'cinematic' look.",
   "volumes": [
     {
       "roman": "I",
@@ -12,7 +12,7 @@
       "eyebrow": "Cinema · Vol I · Sourced from the Frame",
       "h1": "Four palettes from <em>the shadow pictures,</em> tinted silver and smoke.",
       "preface": [
-        "Classic noir is read as black-and-white, but the silver-nitrate frame is never neutral — it tilts warm toward tungsten or cool toward night, and the eye reads cigarette smoke, wet asphalt, and venetian-blind shadow as distinct greys. The palette is a near-monochrome with one or two tints doing all the work.",
+        "Classic noir is read as black-and-white, but the silver-nitrate frame is never neutral, it tilts warm toward tungsten or cool toward night, and the eye reads cigarette smoke, wet asphalt, and venetian-blind shadow as distinct greys. The palette is a near-monochrome with one or two tints doing all the work.",
         "Each refuses the flat black-and-white assumption: the noir frame is a tinted grey scale, not an absence of colour."
       ],
       "palettes": [
@@ -84,7 +84,7 @@
           "refuses": "Pure black-and-white. The nitrate print is warm-tinted; flat neutral grey loses the tungsten heat of the room.",
           "type": {
             "base": "technical",
-            "note": "Wilder's story is insurance paperwork, so the system is 1940s jobbing type on real cuts: ATF Alternate Gothic Condensed shouts (ten real weights in four widths — atftype.com), Trade Gothic frames (Linotype ships Light/Regular/Bold only, so the ladder is authored), Times New Roman is the policy document and Courier Prime the claim report (both Regular/Bold only); ITC Franklin Gothic's Book/Medium/Demi carries the UI ladder.",
+            "note": "Wilder's story is insurance paperwork, so the system is 1940s jobbing type on real cuts: ATF Alternate Gothic Condensed shouts (ten real weights in four widths, atftype.com), Trade Gothic frames (Linotype ships Light/Regular/Bold only, so the ladder is authored), Times New Roman is the policy document and Courier Prime the claim report (both Regular/Bold only); ITC Franklin Gothic's Book/Medium/Demi carries the UI ladder.",
             "registers": {
               "anthemic": {
                 "font": "ATF Alternate Gothic Condensed",
@@ -219,7 +219,7 @@
           "refuses": "Even grey-scale. Reed's Vienna is built on one warm lamp against pervasive black-blue; flat grey kills the contrast.",
           "type": {
             "base": "statement",
-            "note": "Reed's canted Vienna pushes the same 1940s jobbing set one stop heavier — ATF Alternate Gothic Condensed Heavy (800) against Trade Gothic Bold, with Times New Roman as the occupation paperwork and Courier Prime as the black-market ledger; every core is a real cut (ATF's ten weights, atftype.com; Trade Gothic Light/Regular/Bold, Linotype; Times and Courier Prime Regular/Bold).",
+            "note": "Reed's canted Vienna pushes the same 1940s jobbing set one stop heavier, ATF Alternate Gothic Condensed Heavy (800) against Trade Gothic Bold, with Times New Roman as the occupation paperwork and Courier Prime as the black-market ledger; every core is a real cut (ATF's ten weights, atftype.com; Trade Gothic Light/Regular/Bold, Linotype; Times and Courier Prime Regular/Bold).",
             "registers": {
               "anthemic": {
                 "font": "ATF Alternate Gothic Condensed",
@@ -483,10 +483,10 @@
               "c": "#418792"
             }
           },
-          "refuses": "Clean studio monochrome. Welles's border is grimy, blown-out, and neon-flecked — a dirty grey scale, not a polished one.",
+          "refuses": "Clean studio monochrome. Welles's border is grimy, blown-out, and neon-flecked, a dirty grey scale, not a polished one.",
           "type": {
             "base": "statement",
-            "note": "Welles's dirty border noise takes the top of the real ladder — ATF Alternate Gothic Condensed Black (900) over Trade Gothic Bold, Times New Roman as the case file, Courier Prime as the border-station typescript; no invented intermediates (ATF's ten weights, atftype.com; Trade Gothic Light/Regular/Bold; Courier Prime Regular/Bold).",
+            "note": "Welles's dirty border noise takes the top of the real ladder, ATF Alternate Gothic Condensed Black (900) over Trade Gothic Bold, Times New Roman as the case file, Courier Prime as the border-station typescript; no invented intermediates (ATF's ten weights, atftype.com; Trade Gothic Light/Regular/Bold; Courier Prime Regular/Bold).",
             "registers": {
               "anthemic": {
                 "font": "ATF Alternate Gothic Condensed",
@@ -561,7 +561,7 @@
       "eyebrow": "Cinema · Vol II · Sourced from the Frame",
       "h1": "Four palettes from <em>three-strip Technicolor,</em> saturated past life.",
       "preface": [
-        "Three-strip Technicolor produced colour more saturated and separated than reality — primary reds, emerald greens, and impossible skies, all under bright, even key light. The palettes are bold, clean, and joyful, with deep saturation as the whole point.",
+        "Three-strip Technicolor produced colour more saturated and separated than reality, primary reds, emerald greens, and impossible skies, all under bright, even key light. The palettes are bold, clean, and joyful, with deep saturation as the whole point.",
         "Each refuses the muddy desaturated 'classic film' assumption: golden-age Technicolor is the most saturated colour cinema ever made."
       ],
       "palettes": [
@@ -755,7 +755,7 @@
           "refuses": "Muted period drama. The Archers used Technicolor expressionistically; restraint betrays the film's feverish red.",
           "type": {
             "base": "luxury",
-            "note": "The Archers' theatre-programme register: Broadway's single cut stays bare for the anthemic, Futura PT Bold gives the ballet bill its snap (Paratype's seven weights), Bookman Old Style sets the synopsis and Prestige Elite Std the call sheet — every core a real cut, Gill Sans Nova Book for the actionable ladder (Monotype's Book/Medium/SemiBold).",
+            "note": "The Archers' theatre-programme register: Broadway's single cut stays bare for the anthemic, Futura PT Bold gives the ballet bill its snap (Paratype's seven weights), Bookman Old Style sets the synopsis and Prestige Elite Std the call sheet, every core a real cut, Gill Sans Nova Book for the actionable ladder (Monotype's Book/Medium/SemiBold).",
             "registers": {
               "anthemic": {
                 "font": "Broadway",
@@ -998,7 +998,7 @@
           "refuses": "Naturalistic colour. Hitchcock weaponised Technicolor green and red as psychology; realism drains the dread.",
           "type": {
             "base": "editorial",
-            "note": "Vertigo's titles are Saul Bass, not a Deco marquee, so Broadway is refused: the anthemic moves to Futura PT Extra Bold (800) — the geometric sans of Bass's Hitchcock title sequences — over Futura PT Demi, with Bookman Old Style as the case notes and Prestige Elite Std as the detective's report; Futura PT's seven Paratype weights make every stop real.",
+            "note": "Vertigo's titles are Saul Bass, not a Deco marquee, so Broadway is refused: the anthemic moves to Futura PT Extra Bold (800), the geometric sans of Bass's Hitchcock title sequences, over Futura PT Demi, with Bookman Old Style as the case notes and Prestige Elite Std as the detective's report; Futura PT's seven Paratype weights make every stop real.",
             "registers": {
               "anthemic": {
                 "font": "Futura PT",
@@ -1058,7 +1058,7 @@
       "eyebrow": "Cinema · Vol III · Sourced from the Frame",
       "h1": "Four palettes from <em>the 1970s,</em> warm, grainy, and underlit.",
       "preface": [
-        "The New Hollywood look came from fast film stock, available light, and a deliberate rejection of studio gloss — warm tungsten interiors, smoky browns, and underexposed shadow, with grain as a texture. The palettes are earthy and low-key.",
+        "The New Hollywood look came from fast film stock, available light, and a deliberate rejection of studio gloss, warm tungsten interiors, smoky browns, and underexposed shadow, with grain as a texture. The palettes are earthy and low-key.",
         "Each refuses the clean modern grade: the seventies frame is warm, dim, and amber, not crisp and cool."
       ],
       "palettes": [
@@ -1130,7 +1130,7 @@
           "refuses": "Bright even lighting. Willis built the film on shadow and warmth; flat fill destroys the don's menace.",
           "type": {
             "base": "statement",
-            "note": "The 1972 ITC catalogue, on its real cuts: ITC Serif Gothic Bold (its six weights are Light/Roman/Bold/ExtraBold/Heavy/Black — ITC via MyFonts) with an explicit ExtraBold/Roman/Light ladder, ITC Souvenir Bold for framing (Light/Medium/Demi/Bold only — no 400, so the ladder is authored), ITC Garamond Book for the body (Book/Bold/Ultra), Courier Std as the screenplay typescript; Helvetica takes the actionable with NO core weight declared, since it has neither a 500 nor a 600 to build the UI ladder from.",
+            "note": "The 1972 ITC catalogue, on its real cuts: ITC Serif Gothic Bold (its six weights are Light/Roman/Bold/ExtraBold/Heavy/Black, ITC via MyFonts) with an explicit ExtraBold/Roman/Light ladder, ITC Souvenir Bold for framing (Light/Medium/Demi/Bold only, no 400, so the ladder is authored), ITC Garamond Book for the body (Book/Bold/Ultra), Courier Std as the screenplay typescript; Helvetica takes the actionable with NO core weight declared, since it has neither a 500 nor a 600 to build the UI ladder from.",
             "registers": {
               "anthemic": {
                 "font": "ITC Serif Gothic",
@@ -1280,10 +1280,10 @@
               "c": "#D9AA40"
             }
           },
-          "refuses": "Clean neon glamour. Scorsese's city is smeared, sweaty, and sick-lit — not the polished neon of a music video.",
+          "refuses": "Clean neon glamour. Scorsese's city is smeared, sweaty, and sick-lit, not the polished neon of a music video.",
           "type": {
             "base": "technical",
-            "note": "Travis keeps a typed diary, so the data register is ITC American Typewriter (1974) named with no numeric core at all — its roman ships as 'Medium' and asserting 400 would be fiction; ITC Serif Gothic Bold and ITC Souvenir Demi hold the marquee registers on real ITC cuts (Serif Gothic Light/Roman/Bold/ExtraBold; Souvenir Light/Medium/Demi/Bold), ITC Garamond Book sets the body, and Helvetica takes the actionable coreless (no 500/600 for the UI ladder).",
+            "note": "Travis keeps a typed diary, so the data register is ITC American Typewriter (1974) named with no numeric core at all, its roman ships as 'Medium' and asserting 400 would be fiction; ITC Serif Gothic Bold and ITC Souvenir Demi hold the marquee registers on real ITC cuts (Serif Gothic Light/Roman/Bold/ExtraBold; Souvenir Light/Medium/Demi/Bold), ITC Garamond Book sets the body, and Helvetica takes the actionable coreless (no 500/600 for the UI ladder).",
             "registers": {
               "anthemic": {
                 "font": "ITC Serif Gothic",
@@ -1426,7 +1426,7 @@
           "refuses": "Crisp HD clarity. Altman fogged the negative for a faded, rain-soaked memory; sharp clean colour erases the mood.",
           "type": {
             "base": "editorial",
-            "note": "Altman fogged the negative, so nothing shouts: ITC Serif Gothic drops to its Roman (400) with Light and Bold as the only real siblings, ITC Souvenir Medium frames (the family has no 400 at all — Light/Medium/Demi/Bold), ITC Garamond Book carries the long fogged body, and Courier Std is the mining-claim typescript; Helvetica actionable stays coreless for want of a 500/600.",
+            "note": "Altman fogged the negative, so nothing shouts: ITC Serif Gothic drops to its Roman (400) with Light and Bold as the only real siblings, ITC Souvenir Medium frames (the family has no 400 at all, Light/Medium/Demi/Bold), ITC Garamond Book carries the long fogged body, and Courier Std is the mining-claim typescript; Helvetica actionable stays coreless for want of a 500/600.",
             "registers": {
               "anthemic": {
                 "font": "ITC Serif Gothic",
@@ -1568,10 +1568,10 @@
               "c": "#241E1A"
             }
           },
-          "refuses": "Cool war-film grade. Coppola's war is hot, green, and orange — a hallucination, not a desaturated battlefield.",
+          "refuses": "Cool war-film grade. Coppola's war is hot, green, and orange, a hallucination, not a desaturated battlefield.",
           "type": {
             "base": "statement",
-            "note": "The hallucination takes ITC Serif Gothic at ExtraBold (800) — a real cut, unlike the former 780 — over ITC Souvenir Bold, with ITC Garamond Book for the dossier body and Courier Std for the mission order (the film's own document register); Helvetica actionable carries no core weight because classic Helvetica has neither a 500 nor a 600.",
+            "note": "The hallucination takes ITC Serif Gothic at ExtraBold (800), a real cut, unlike the former 780, over ITC Souvenir Bold, with ITC Garamond Book for the dossier body and Courier Std for the mission order (the film's own document register); Helvetica actionable carries no core weight because classic Helvetica has neither a 500 nor a 600.",
             "registers": {
               "anthemic": {
                 "font": "ITC Serif Gothic",
@@ -1737,7 +1737,7 @@
           "refuses": "Busy retro-future colour. Kubrick's future is disciplined white-and-black; the colour storm is reserved for transcendence.",
           "type": {
             "base": "technical",
-            "note": "The Discovery's own signage is Eurostile Bold Extended, so the anthemic is Eurostile Next Bold with an authored Semibold/Regular ladder (Eurostile Next ships ultra light/light/regular/semibold/bold — Linotype); Univers 65 Bold frames and Frutiger 55 Roman reads (both are Frutiger's numbered cuts, no 500/600, so ladders are explicit), DIN 1451 Mittelschrift takes the actionable with no core weight and no siblings because the DIN standard is a single cut, and OCR-A Std — one real cut — is the machine register.",
+            "note": "The Discovery's own signage is Eurostile Bold Extended, so the anthemic is Eurostile Next Bold with an authored Semibold/Regular ladder (Eurostile Next ships ultra light/light/regular/semibold/bold, Linotype); Univers 65 Bold frames and Frutiger 55 Roman reads (both are Frutiger's numbered cuts, no 500/600, so ladders are explicit), DIN 1451 Mittelschrift takes the actionable with no core weight and no siblings because the DIN standard is a single cut, and OCR-A Std, one real cut, is the machine register.",
             "registers": {
               "anthemic": {
                 "font": "Eurostile Next",
@@ -1872,7 +1872,7 @@
           "refuses": "Teal-and-orange everywhere. Deakins commits to one saturated colour per location; mixing them muddies his blocks.",
           "type": {
             "base": "statement",
-            "note": "2049 inherits the original's square machine face, so Eurostile Next stays but at its real Bold (700, not the fictional 800) with a Semibold/Light ladder; Univers 65 Bold frames Deakins's colour blocks, Frutiger 55 Roman reads, DIN 1451 Mittelschrift is coreless single-cut, OCR-A Std is the machine read — Eurostile Next weights per Linotype, Univers/Frutiger by their numbered cuts.",
+            "note": "2049 inherits the original's square machine face, so Eurostile Next stays but at its real Bold (700, not the fictional 800) with a Semibold/Light ladder; Univers 65 Bold frames Deakins's colour blocks, Frutiger 55 Roman reads, DIN 1451 Mittelschrift is coreless single-cut, OCR-A Std is the machine read, Eurostile Next weights per Linotype, Univers/Frutiger by their numbered cuts.",
             "registers": {
               "anthemic": {
                 "font": "Eurostile Next",
@@ -2144,7 +2144,7 @@
           "refuses": "Daylight realism. The Grid only exists as glow-on-black; any ambient fill collapses its digital depth.",
           "type": {
             "base": "technical",
-            "note": "The Grid is glow-on-black signage: Eurostile Next Bold (700 — the real cut, not 680) with a Semibold/Regular ladder, Univers 65 Bold framing, Frutiger 55 Roman reading, DIN 1451 Mittelschrift coreless single-cut for controls, OCR-A Std as the program's own machine type; Eurostile Next per Linotype, Univers/Frutiger by numbered cuts.",
+            "note": "The Grid is glow-on-black signage: Eurostile Next Bold (700, the real cut, not 680) with a Semibold/Regular ladder, Univers 65 Bold framing, Frutiger 55 Roman reading, DIN 1451 Mittelschrift coreless single-cut for controls, OCR-A Std as the program's own machine type; Eurostile Next per Linotype, Univers/Frutiger by numbered cuts.",
             "registers": {
               "anthemic": {
                 "font": "Eurostile Next",
@@ -2292,7 +2292,7 @@
           "refuses": "Muted modern horror. Argento scares with saturated candy colour; desaturation removes the lurid threat.",
           "type": {
             "base": "statement",
-            "note": "Argento's academy is Art Nouveau decor and Italian modern serifs: Arnold Boecklin stays but bare at its single real cut, Bauer Bodoni Bold frames with an authored Roman/Black ladder (Bauer ships Roman/Bold/Black), Adobe Caslon Pro reads with its real Semibold/Bold, Akzidenz-Grotesk takes the actionable with NO core weight (Berthold AG Pro has Light/Regular/Medium/Bold/Super — no 600 for the UI ladder), Courier Std is the police file.",
+            "note": "Argento's academy is Art Nouveau decor and Italian modern serifs: Arnold Boecklin stays but bare at its single real cut, Bauer Bodoni Bold frames with an authored Roman/Black ladder (Bauer ships Roman/Bold/Black), Adobe Caslon Pro reads with its real Semibold/Bold, Akzidenz-Grotesk takes the actionable with NO core weight (Berthold AG Pro has Light/Regular/Medium/Bold/Super, no 600 for the UI ladder), Courier Std is the police file.",
             "registers": {
               "anthemic": {
                 "font": "Arnold Boecklin",
@@ -2433,10 +2433,10 @@
               "c": "#BC9A5A"
             }
           },
-          "refuses": "Dark gloomy haunted-house. The Overlook's terror is bright, symmetrical, and warm — emptiness in full light.",
+          "refuses": "Dark gloomy haunted-house. The Overlook's terror is bright, symmetrical, and warm, emptiness in full light.",
           "type": {
             "base": "luxury",
-            "note": "The palette refuses the gloomy haunted house, so the type refuses gothic lettering: Arnold Boecklin and Bodoni are out and the whole system becomes the Overlook's corporate signage — Helvetica across display, framing, body and controls (real cuts only: Light/Roman/Bold/Black, hence explicit ladders and no actionable core, since Helvetica has neither 500 nor 600) — with Courier Prime as the one other voice, the Adler typescript of 'All work and no play' (Courier Prime ships Regular/Bold).",
+            "note": "The palette refuses the gloomy haunted house, so the type refuses gothic lettering: Arnold Boecklin and Bodoni are out and the whole system becomes the Overlook's corporate signage, Helvetica across display, framing, body and controls (real cuts only: Light/Roman/Bold/Black, hence explicit ladders and no actionable core, since Helvetica has neither 500 nor 600), with Courier Prime as the one other voice, the Adler typescript of 'All work and no play' (Courier Prime ships Regular/Bold).",
             "registers": {
               "anthemic": {
                 "font": "Helvetica",
@@ -2576,7 +2576,7 @@
           "refuses": "Jump-scare neon. Aster's dread is slow, warm, and domestic; the horror hides in ordinary lamplight, not flash.",
           "type": {
             "base": "editorial",
-            "note": "Aster's dread is a miniature, not a poster, so Arnold Boecklin's Art Nouveau gives way to Cormorant Garamond — a fine, cold, doll's-house serif — at Medium and SemiBold, both real Google Fonts cuts (300/400/500/600/700), over Adobe Caslon Pro with its real Semibold/Bold, Engravers Gothic for the funeral-notice sub-title, Akzidenz-Grotesk coreless for controls (no 600), Courier Std for the séance notes.",
+            "note": "Aster's dread is a miniature, not a poster, so Arnold Boecklin's Art Nouveau gives way to Cormorant Garamond, a fine, cold, doll's-house serif, at Medium and SemiBold, both real Google Fonts cuts (300/400/500/600/700), over Adobe Caslon Pro with its real Semibold/Bold, Engravers Gothic for the funeral-notice sub-title, Akzidenz-Grotesk coreless for controls (no 600), Courier Std for the séance notes.",
             "registers": {
               "anthemic": {
                 "font": "Cormorant Garamond",
@@ -2709,7 +2709,7 @@
           "refuses": "Stylised colour horror. Eggers uses only period-plausible natural light; saturation would break the bleak realism.",
           "type": {
             "base": "technical",
-            "note": "Eggers built the script from 1630s court records, so the type is period-plausible too: IM Fell English — Igino Marini's digitisation of the actual Fell punches, one real weight each, hence bare cores — carries display, framing and the caps-tracked sub-title in its SC cut; Adobe Caslon Pro is the nearest real reading serif (Regular/Semibold/Bold), Akzidenz-Grotesk stays coreless for controls, and Courier Std is the deposition transcript.",
+            "note": "Eggers built the script from 1630s court records, so the type is period-plausible too: IM Fell English, Igino Marini's digitisation of the actual Fell punches, one real weight each, hence bare cores, carries display, framing and the caps-tracked sub-title in its SC cut; Adobe Caslon Pro is the nearest real reading serif (Regular/Semibold/Bold), Akzidenz-Grotesk stays coreless for controls, and Courier Std is the deposition transcript.",
             "registers": {
               "anthemic": {
                 "font": "IM Fell English",
@@ -2981,7 +2981,7 @@
           "refuses": "Warm-nostalgia gold. Anderson's West is harsh, pale, and dusty; the only heat is fire and blood.",
           "type": {
             "base": "editorial",
-            "note": "This is 1900s California job printing, not a spaghetti-Western poster, so Rosewood's wood type is refused and Clarendon — the 1845 slab of oil-lease and share-prospectus printing — takes both display and framing on its real Light/Roman/Bold cuts; Bitter's variable axis carries the body, News Gothic Std the coreless controls, FF Trixie the kept on its Plain cut (Trixie ships Plain/Light/Heavy/Text/Cameo as separate styles) ledger typescript.",
+            "note": "This is 1900s California job printing, not a spaghetti-Western poster, so Rosewood's wood type is refused and Clarendon, the 1845 slab of oil-lease and share-prospectus printing, takes both display and framing on its real Light/Roman/Bold cuts; Bitter's variable axis carries the body, News Gothic Std the coreless controls, FF Trixie the kept on its Plain cut (Trixie ships Plain/Light/Heavy/Text/Cameo as separate styles) ledger typescript.",
             "registers": {
               "anthemic": {
                 "font": "Linotype Clarendon",
@@ -3115,7 +3115,7 @@
           "refuses": "Warm adventure grade. Shot in daylight only, the film is cold and blue; warmth survives only as a dying fire.",
           "type": {
             "base": "technical",
-            "note": "1823, natural light, no warmth — so the warm Western wood type goes and Bauer Bodoni takes over: an engraved, cold, widely-spaced modern face at its real Roman and Bold (Bauer ships Roman/Bold/Black), Source Serif 4's variable 200–900 axis for the body ladder, News Gothic Std coreless for controls, FF Trixie's kept on its Plain cut (Trixie ships Plain/Light/Heavy/Text/Cameo as separate styles) for the field journal.",
+            "note": "1823, natural light, no warmth, so the warm Western wood type goes and Bauer Bodoni takes over: an engraved, cold, widely-spaced modern face at its real Roman and Bold (Bauer ships Roman/Bold/Black), Source Serif 4's variable 200–900 axis for the body ladder, News Gothic Std coreless for controls, FF Trixie's kept on its Plain cut (Trixie ships Plain/Light/Heavy/Text/Cameo as separate styles) for the field journal.",
             "registers": {
               "anthemic": {
                 "font": "Bauer Bodoni",
@@ -3244,7 +3244,7 @@
           "refuses": "Flat brown nostalgia. Leone's gold light against deep shadow and one turquoise is operatic, not a sepia snapshot.",
           "type": {
             "base": "luxury",
-            "note": "Leone's operatic railhead keeps Rosewood Std bare (one real decorative cut) over Clarendon Bold with an authored Roman/Light ladder, Bitter's variable axis for the body, News Gothic Std coreless for controls (no 600), FF Trixie kept on its Plain cut (Trixie ships Plain/Light/Heavy/Text/Cameo as separate styles) for the timetable — the former 500/640/440/420 cores were all fiction on these families.",
+            "note": "Leone's operatic railhead keeps Rosewood Std bare (one real decorative cut) over Clarendon Bold with an authored Roman/Light ladder, Bitter's variable axis for the body, News Gothic Std coreless for controls (no 600), FF Trixie kept on its Plain cut (Trixie ships Plain/Light/Heavy/Text/Cameo as separate styles) for the timetable, the former 500/640/440/420 cores were all fiction on these families.",
             "registers": {
               "anthemic": {
                 "font": "Rosewood Std",
@@ -3309,7 +3309,7 @@
       "eyebrow": "Cinema · Vol VII · Sourced from the Frame",
       "h1": "Four palettes from <em>the Asian masters,</em> where colour is composition.",
       "preface": [
-        "Across Hong Kong, mainland China, Korea, and beyond, a strain of art cinema treats colour as deliberate composition — saturated single-hue rooms, costume as palette, and light filtered through period detail. The colour is rich, controlled, and emotional.",
+        "Across Hong Kong, mainland China, Korea, and beyond, a strain of art cinema treats colour as deliberate composition, saturated single-hue rooms, costume as palette, and light filtered through period detail. The colour is rich, controlled, and emotional.",
         "Each refuses the flat 'foreign film' assumption: these are among the most consciously colour-designed films ever made."
       ],
       "palettes": [
@@ -3496,7 +3496,7 @@
           "refuses": "Muted realism. Zhang structures the film as monochrome chapters; restraint betrays the chromatic storytelling.",
           "type": {
             "base": "statement",
-            "note": "A film structured as calligraphic chapters gets a Chinese serif for framing — Noto Serif SC SemiBold (real statics 200–700 + 900) — under Cormorant SemiBold (real 300–700, replacing the fictional 640); Crimson Pro and Noto Sans are variable so their ladders are real, GT Pressura Mono's Light/Regular/Bold is authored explicitly.",
+            "note": "A film structured as calligraphic chapters gets a Chinese serif for framing, Noto Serif SC SemiBold (real statics 200–700 + 900), under Cormorant SemiBold (real 300–700, replacing the fictional 640); Crimson Pro and Noto Sans are variable so their ladders are real, GT Pressura Mono's Light/Regular/Bold is authored explicitly.",
             "registers": {
               "anthemic": {
                 "font": "Cormorant",
@@ -3607,7 +3607,7 @@
               "c": "#AF372E"
             }
           },
-          "refuses": "Neutral thriller grade. Park's revenge is colour-sick — purple and green bruising every frame, not clean realism.",
+          "refuses": "Neutral thriller grade. Park's revenge is colour-sick, purple and green bruising every frame, not clean realism.",
           "type": {
             "base": "technical",
             "note": "Park's Seoul takes Noto Serif KR for framing (real statics 200–700 + 900) under Cormorant SemiBold pulled tight; the engraved-caps sub-title opt-in is dropped as unearned here, Crimson Pro and Noto Sans carry real variable ladders, GT Pressura Mono's Light/Regular/Bold is authored.",
@@ -3774,7 +3774,7 @@
       "eyebrow": "Cinema · Vol VIII · Sourced from the Frame",
       "h1": "Four palettes from <em>drawn and rendered worlds,</em> built colour by colour.",
       "preface": [
-        "Animation chooses every colour deliberately — there is no 'available light' to fall back on. The palettes are designed top-down for mood, from Ghibli's gentle naturalism to the neon of cyberpunk anime and the comic-book chromatics of modern CG.",
+        "Animation chooses every colour deliberately, there is no 'available light' to fall back on. The palettes are designed top-down for mood, from Ghibli's gentle naturalism to the neon of cyberpunk anime and the comic-book chromatics of modern CG.",
         "Each refuses the muddy realism of live action: animated colour is intentional, harmonised, and often joyful."
       ],
       "palettes": [
@@ -3844,10 +3844,10 @@
               "c": "#687480"
             }
           },
-          "refuses": "Garish cartoon brights. Ghibli's world is gentle, naturalistic, and harmonised — soft, not saturated kid-TV colour.",
+          "refuses": "Garish cartoon brights. Ghibli's world is gentle, naturalistic, and harmonised, soft, not saturated kid-TV colour.",
           "type": {
             "base": "product",
-            "note": "Bungee's stacked signage and Bebas Neue's tall caps fight a gentle pastoral, so Totoro gets Zen Maru Gothic — the rounded maru-gothic register of Japanese children's publishing (real Google Fonts cuts 300/400/500/700/900, hence authored ladders since there is no 600) — over Source Sans 3 and Work Sans on real variable axes, with Space Mono's Regular/Bold authored for the data voice.",
+            "note": "Bungee's stacked signage and Bebas Neue's tall caps fight a gentle pastoral, so Totoro gets Zen Maru Gothic, the rounded maru-gothic register of Japanese children's publishing (real Google Fonts cuts 300/400/500/700/900, hence authored ladders since there is no 600), over Source Sans 3 and Work Sans on real variable axes, with Space Mono's Regular/Bold authored for the data voice.",
             "registers": {
               "anthemic": {
                 "font": "Zen Maru Gothic",
@@ -3977,7 +3977,7 @@
           "refuses": "Naturalistic CG. The film embraces print-process CMYK and chromatic aberration; realism erases its comic identity.",
           "type": {
             "base": "statement",
-            "note": "Bungee was drawn for vertical urban signage, which is exactly this film's Brooklyn — kept, but bare at its single real weight instead of a fictional 700; Nunito's variable 200–1000 axis makes the ExtraBold framing and its 900/700/600 siblings real, Source Sans 3 and Work Sans are variable, Bebas Neue's single caps cut stays font-only, Space Mono's Regular/Bold is authored.",
+            "note": "Bungee was drawn for vertical urban signage, which is exactly this film's Brooklyn, kept, but bare at its single real weight instead of a fictional 700; Nunito's variable 200–1000 axis makes the ExtraBold framing and its 900/700/600 siblings real, Source Sans 3 and Work Sans are variable, Bebas Neue's single caps cut stays font-only, Space Mono's Regular/Bold is authored.",
             "registers": {
               "anthemic": {
                 "font": "Bungee",
@@ -4093,7 +4093,7 @@
           "refuses": "Daylight flatness. Akira is a night film of glow-on-indigo; the red bike only sings against the dark city.",
           "type": {
             "base": "technical",
-            "note": "Neo-Tokyo is signage stacked on signage, Bungee's design brief — kept but bare at its one real weight (600 was fiction); Nunito Bold frames on its real variable axis, Source Sans 3 and Work Sans are variable, Bebas Neue stays a font-only caps cut, Space Mono's Regular/Bold is authored.",
+            "note": "Neo-Tokyo is signage stacked on signage, Bungee's design brief, kept but bare at its one real weight (600 was fiction); Nunito Bold frames on its real variable axis, Source Sans 3 and Work Sans are variable, Bebas Neue stays a font-only caps cut, Space Mono's Regular/Bold is authored.",
             "registers": {
               "anthemic": {
                 "font": "Bungee",
@@ -4311,7 +4311,7 @@
             {
               "name": "Newborn skin, warm",
               "oklch": "0.682 0.062 50",
-              "note": "The baby — the one warmth left.",
+              "note": "The baby, the one warmth left.",
               "hier": "a",
               "hex": "#B98E77"
             }
@@ -4336,7 +4336,7 @@
           "refuses": "Saturated action grade. Cuarón's future is grey and exhausted; warmth appears only as the newborn, deliberately.",
           "type": {
             "base": "technical",
-            "note": "Cuarón's exhausted Britain is signage and forms: Druk Medium (Commercial Type ships Medium/Bold/Heavy/Super and nothing lighter, so the core is Medium and the ladder authored), Archivo and Roboto on real variable axes, IBM Plex Sans Regular for the institutional body with its real 500/600, OCR-B Std — one real cut — for the checkpoint machine read.",
+            "note": "Cuarón's exhausted Britain is signage and forms: Druk Medium (Commercial Type ships Medium/Bold/Heavy/Super and nothing lighter, so the core is Medium and the ladder authored), Archivo and Roboto on real variable axes, IBM Plex Sans Regular for the institutional body with its real 500/600, OCR-B Std, one real cut, for the checkpoint machine read.",
             "registers": {
               "anthemic": {
                 "font": "Druk",
@@ -4455,7 +4455,7 @@
           "refuses": "Neutral colour. The film codes its two worlds green and blue; removing the casts erases the simulation/real divide.",
           "type": {
             "base": "technical",
-            "note": "The simulation is coded green, so the machine register leads: Druk Bold (700 — real; 720 was not) with an authored Super/Medium ladder, Archivo SemiBold framing on a real variable axis, IBM Plex Sans Regular for the cubicle body with its real 500/600, Roboto variable for controls, and OCR-B Std's single cut as the terminal's own face.",
+            "note": "The simulation is coded green, so the machine register leads: Druk Bold (700, real; 720 was not) with an authored Super/Medium ladder, Archivo SemiBold framing on a real variable axis, IBM Plex Sans Regular for the cubicle body with its real 500/600, Roboto variable for controls, and OCR-B Std's single cut as the terminal's own face.",
             "registers": {
               "anthemic": {
                 "font": "Druk",
@@ -4575,7 +4575,7 @@
           "refuses": "Naturalistic desert. Miller pushes orange and teal to the limit; a realistic grade flattens the kinetic spectacle.",
           "type": {
             "base": "statement",
-            "note": "Miller cranks everything to the limit, so the anthemic sits on Druk's actual top cut — Super (900) — with Heavy and Bold beneath it (Commercial Type: Medium/Bold/Heavy/Super); Archivo Bold frames on a real variable axis, IBM Plex Sans Regular reads with real 500/600, Roboto variable drives controls, OCR-B Std's one cut stamps the war rig's data.",
+            "note": "Miller cranks everything to the limit, so the anthemic sits on Druk's actual top cut, Super (900), with Heavy and Bold beneath it (Commercial Type: Medium/Bold/Heavy/Super); Archivo Bold frames on a real variable axis, IBM Plex Sans Regular reads with real 500/600, Roboto variable drives controls, OCR-B Std's one cut stamps the war rig's data.",
             "registers": {
               "anthemic": {
                 "font": "Druk",
@@ -4754,7 +4754,7 @@
       "eyebrow": "Cinema · Vol X · Sourced from the Frame",
       "h1": "Four palettes from <em>the storybook films,</em> soft and symmetrical.",
       "preface": [
-        "A strain of contemporary cinema embraces candy pastels, warm symmetry, and nostalgic colour as a deliberate aesthetic — romance and whimsy made of millennial pink, butter yellow, and mint. The palettes are gentle, harmonised, and consciously charming.",
+        "A strain of contemporary cinema embraces candy pastels, warm symmetry, and nostalgic colour as a deliberate aesthetic, romance and whimsy made of millennial pink, butter yellow, and mint. The palettes are gentle, harmonised, and consciously charming.",
         "Each refuses the gritty realist grade: these films choose prettiness as meaning, not as decoration."
       ],
       "palettes": [
@@ -4827,7 +4827,7 @@
           "refuses": "Realist period grade. Anderson's world is a deliberate confection of symmetrical pastel; realism erases the doll's-house charm.",
           "type": {
             "base": "luxury",
-            "note": "Anderson actually set this film's graphics in Archer, so the framing register is documented rather than invented — Archer SemiBold (H&Co: Book/Medium/Semibold/Bold) under Playfair Display SemiBold (variable 400–900), Lora Regular for the hotel's stationery body (variable 400–700), Lato Regular for controls (the full Lato 2.0 family, latofonts.com, has the 500/600 the Google subset lacks), Courier Prime's Regular/Bold for the telegram.",
+            "note": "Anderson actually set this film's graphics in Archer, so the framing register is documented rather than invented, Archer SemiBold (H&Co: Book/Medium/Semibold/Bold) under Playfair Display SemiBold (variable 400–900), Lora Regular for the hotel's stationery body (variable 400–700), Lato Regular for controls (the full Lato 2.0 family, latofonts.com, has the 500/600 the Google subset lacks), Courier Prime's Regular/Bold for the telegram.",
             "registers": {
               "anthemic": {
                 "font": "Playfair Display",
@@ -4942,7 +4942,7 @@
           "refuses": "Neutral naturalism. Jeunet floods Paris with green-and-red warmth; a true grade removes the fairy-tale glow.",
           "type": {
             "base": "editorial",
-            "note": "Jeunet's Montmartre is a belle-époque storybook, so Playfair Display Medium keeps the Parisian didone voice at a real axis stop (500 — its variable range starts at 400, so a 400 core would collapse its lighter sibling onto itself), Archer Medium frames, Lora Regular reads, Lato Regular drives controls (full Lato 2.0 has 500/600 — latofonts.com), Courier Prime's Regular/Bold is the photo-booth strip's caption machine.",
+            "note": "Jeunet's Montmartre is a belle-époque storybook, so Playfair Display Medium keeps the Parisian didone voice at a real axis stop (500, its variable range starts at 400, so a 400 core would collapse its lighter sibling onto itself), Archer Medium frames, Lora Regular reads, Lato Regular drives controls (full Lato 2.0 has 500/600, latofonts.com), Courier Prime's Regular/Bold is the photo-booth strip's caption machine.",
             "registers": {
               "anthemic": {
                 "font": "Playfair Display",
@@ -5057,7 +5057,7 @@
           "refuses": "Desaturated indie grade. Chazelle paints with saturated primaries and purple dusk; muting it kills the musical's joy.",
           "type": {
             "base": "statement",
-            "note": "A CinemaScope musical keeps its poster serif but on real stops: Playfair Display SemiBold (variable 400–900) over Archer Semibold (H&Co Book/Medium/Semibold/Bold), Lora Regular for the liner notes, Gotham for the marquee sub-title, Lato Regular for controls (full Lato 2.0 has 500/600 — latofonts.com), Courier Prime Regular/Bold for the club's set list.",
+            "note": "A CinemaScope musical keeps its poster serif but on real stops: Playfair Display SemiBold (variable 400–900) over Archer Semibold (H&Co Book/Medium/Semibold/Bold), Lora Regular for the liner notes, Gotham for the marquee sub-title, Lato Regular for controls (full Lato 2.0 has 500/600, latofonts.com), Courier Prime Regular/Bold for the club's set list.",
             "registers": {
               "anthemic": {
                 "font": "Playfair Display",
@@ -5170,7 +5170,7 @@
               "c": "#825E42"
             }
           },
-          "refuses": "High-saturation modern colour. Anderson's island is faded, warm, and nostalgic — a 1960s memory, not a bright present.",
+          "refuses": "High-saturation modern colour. Anderson's island is faded, warm, and nostalgic, a 1960s memory, not a bright present.",
           "type": {
             "base": "product",
             "note": "Moonrise Kingdom is Anderson's Futura film, not a didone one, so Playfair Display is refused: Futura PT Medium and Demi carry display and framing on real Paratype cuts (Light/Book/Medium/Demi/Bold/Extra Bold/Heavy), Lora Regular keeps Suzy's storybook body, the Gotham sub-title opt-in is dropped as redundant, Lato Regular drives controls (full Lato 2.0, latofonts.com), Courier Prime Regular/Bold stamps the scout log.",
@@ -5297,7 +5297,7 @@
           "refuses": "Saturated travel-poster desert. Lean's Nefud is bleached and pale, a furnace of gold and white, not rich orange.",
           "type": {
             "base": "statement",
-            "note": "The one palette in this volume that earns inscriptional capitals — a 70mm desert epic of Roman monuments and spaced credits: Trajan Pro 3 Bold with an authored Semibold/Regular/Black ladder (Adobe's Trajan Pro 3 adds Extra Light/Light/Semibold/Black to the original Regular/Bold; the old 560 core was fiction), EB Garamond Medium framing and Source Serif 4 body on real variable axes, Fira Sans Regular for controls (its statics include 500/600), IBM Plex Mono Regular for the field log.",
+            "note": "The one palette in this volume that earns inscriptional capitals, a 70mm desert epic of Roman monuments and spaced credits: Trajan Pro 3 Bold with an authored Semibold/Regular/Black ladder (Adobe's Trajan Pro 3 adds Extra Light/Light/Semibold/Black to the original Regular/Bold; the old 560 core was fiction), EB Garamond Medium framing and Source Serif 4 body on real variable axes, Fira Sans Regular for controls (its statics include 500/600), IBM Plex Mono Regular for the field log.",
             "registers": {
               "anthemic": {
                 "font": "Trajan Pro 3",
@@ -5637,7 +5637,7 @@
           "refuses": "Saturated space opera. Villeneuve's Dune is austere and beige; the only colour is spice, kept rare and earned.",
           "type": {
             "base": "statement",
-            "note": "The palette refuses saturated space opera, and Trajan IS the space-opera poster reflex — so Arrakis takes Archivo Expanded Medium instead, a wide brutalist grotesk matching the film's monumental concrete and its own spaced sans logotype, with Archivo Medium framing (both real variable 100–900 axes), Source Serif 4 for the Bene Gesserit body, Fira Sans Regular for controls, IBM Plex Mono Regular for the spice manifest.",
+            "note": "The palette refuses saturated space opera, and Trajan IS the space-opera poster reflex, so Arrakis takes Archivo Expanded Medium instead, a wide brutalist grotesk matching the film's monumental concrete and its own spaced sans logotype, with Archivo Medium framing (both real variable 100–900 axes), Source Serif 4 for the Bene Gesserit body, Fira Sans Regular for controls, IBM Plex Mono Regular for the spice manifest.",
             "registers": {
               "anthemic": {
                 "font": "Archivo Expanded",
@@ -5686,7 +5686,7 @@
       "h1": "Four palettes from <em>the neon night,</em> where the city glows in the dark.",
       "preface": [
         "Neo-noir trades the silver of classic noir for saturated neon: hot pink and electric cyan against wet black streets, the city lit by signage and screens. The structure is deep black violated by intense, artificial colour.",
-        "Each refuses the muted realist night: these films are luminous, electric, and synthetic — colour as atmosphere itself."
+        "Each refuses the muted realist night: these films are luminous, electric, and synthetic, colour as atmosphere itself."
       ],
       "palettes": [
         {
@@ -5757,7 +5757,7 @@
           "refuses": "Naturalistic night. Scott's city only exists as neon-on-black; ambient light collapses its synthetic depth.",
           "type": {
             "base": "statement",
-            "note": "The 1982 film's own titles and interfaces are square-machine faces of the Microgramma/Eurostile line, so the anthemic becomes Eurostile Next Bold with an authored Semibold/Regular ladder (Linotype's ultra light/light/regular/semibold/bold) rather than a wide grotesk of the 2010s; Space Grotesk SemiBold frames and Manrope Regular reads on real variable axes, Inter Regular drives controls, and VT323 — one real cut — is the Esper terminal.",
+            "note": "The 1982 film's own titles and interfaces are square-machine faces of the Microgramma/Eurostile line, so the anthemic becomes Eurostile Next Bold with an authored Semibold/Regular ladder (Linotype's ultra light/light/regular/semibold/bold) rather than a wide grotesk of the 2010s; Space Grotesk SemiBold frames and Manrope Regular reads on real variable axes, Inter Regular drives controls, and VT323, one real cut, is the Esper terminal.",
             "registers": {
               "anthemic": {
                 "font": "Eurostile Next",
@@ -5996,7 +5996,7 @@
           "refuses": "Realist nightlife. Noé's Tokyo is pure saturated glow on black; any naturalism erases the psychedelic drift.",
           "type": {
             "base": "statement",
-            "note": "Noé's strobing title barrage takes PP Monument Extended at Black (900 — a real cut; 800 was not) with Bold and Regular beneath (Pangram Pangram v4: nine weights per width), Space Grotesk SemiBold framing and Manrope Regular body on real variable axes, Inter Regular for controls, VT323's single cut for the neon signage data.",
+            "note": "Noé's strobing title barrage takes PP Monument Extended at Black (900, a real cut; 800 was not) with Bold and Regular beneath (Pangram Pangram v4: nine weights per width), Space Grotesk SemiBold framing and Manrope Regular body on real variable axes, Inter Regular for controls, VT323's single cut for the neon signage data.",
             "registers": {
               "anthemic": {
                 "font": "PP Monument Extended",

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// verify.mjs — export-formats validation adapter (CRITIC side; deny-on-write to the advancer).
+// verify.mjs, export-formats validation adapter (CRITIC side; deny-on-write to the advancer).
 import { readFileSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -15,10 +15,10 @@ import { PRIME_STEPS } from "../../src/engine/prime.mjs";
 import { oklchToRgb } from "../../src/engine/okhsl.js"; // radix gate's own oklch()->rgb inverse (anti-tautology, never X's forward path)
 import { gateReport } from "../gate-report.mjs";
 import { paletteGroup, brandKit, defaultDocument, stateOf } from "../../src/ui/model.mjs"; // paletteGroup is the SINGLE
-// group resolver (ticket #556/#572) — the group-metadata gate below asserts every emitted surface
+// group resolver (ticket #556/#572), the group-metadata gate below asserts every emitted surface
 // matches THIS, never a second hand-kept copy; brandKit/defaultDocument prove the MCP-facing kit too.
 // stateOf builds the exporter-shaped State the hpg-export-json-meta gate (ticket #573) deep-equals
-// exportJSON's `meta.controls` against — the SAME function every real export path (projectView,
+// exportJSON's `meta.controls` against, the SAME function every real export path (projectView,
 // figmaBundle) goes through, never a hand-built State that could drift from it.
 
 const RT = JSON.parse(readFileSync(new URL("../../docs/reference/data/role-table.json", import.meta.url), "utf8"));
@@ -26,10 +26,10 @@ const C = (palettes) => ({ palettes, curve: "logistic", tension: 0, lmin: 5, lma
 const ALL = RT.defaults.map((p) => ({ ...p, on: true }));
 const enabledCount = (st) => st.palettes.filter((p) => p.on !== false).length;
 
-// ── DATA PALETTE FIXTURES (#516, U7 of #503) — constructed directly, this repo's standard
+// ── DATA PALETTE FIXTURES (#516, U7 of #503), constructed directly, this repo's standard
 // engine-test pattern (fixture palette objects, not a live default document), rather than relying on
 // RT.defaults' own data-N entries. #515/U6 has since landed real data-1..8 into role-table.json, so
-// ALL now already carries 16 (8 brand + 8 data) — BRAND_ONLY isolates the 8 brand families as the
+// ALL now already carries 16 (8 brand + 8 data), BRAND_ONLY isolates the 8 brand families as the
 // stable "no data enabled" baseline these gates compare against.
 const dataPalette = (i, hue, chroma) => ({ name: `Data ${i}`, hue, chroma, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true });
 const BRAND_ONLY = ALL.filter((p) => !X.isDataPalette(p));
@@ -37,7 +37,7 @@ const PRIMARY_CHROMA = BRAND_ONLY.find((p) => p.name === "Primary").chroma; // R
 const DATA_8 = [30, 75, 120, 165, 210, 255, 300, 345].map((hue, i) => dataPalette(i + 1, hue, PRIMARY_CHROMA));
 const ALL_WITH_DATA = [...BRAND_ONLY, ...DATA_8];
 
-// RADIX_COLLIDING (#630, reused by #638's reference-form gates) — the reserved-alias-key collision
+// RADIX_COLLIDING (#630, reused by #638's reference-form gates), the reserved-alias-key collision
 // document: stock "Danger" dropped so pickDrivers' danger regex lands on the "Error" palette, plus
 // palettes whose slugs ARE reserved alias keys ("accent", "error"), so both are emitted under a
 // `<slug>-palette` key. Declared once here because radix-alias-collision and radix-refs-collision
@@ -62,15 +62,15 @@ const want3 = ["palette.tokens.json", "Light_tokens.json", "Dark_tokens.json"];
 if (want3.some((k) => !(k in dtcg)) || Object.keys(dtcg).length !== 3) FAIL("dtcg-shape", `keys = ${Object.keys(dtcg)}`);
 for (const k of want3) try { JSON.parse(JSON.stringify(dtcg[k])); } catch { FAIL("dtcg-shape", `${k} not JSON-serializable`); }
 
-// ── hpg-export-themes (TKT-0021 — the theme axis is data-driven, not a hardcoded Light/Dark pair) ──
+// ── hpg-export-themes (TKT-0021, the theme axis is data-driven, not a hardcoded Light/Dark pair) ──
 // IDENTITY: an absent opts.themes must reproduce EXACTLY the same output as passing the default pair
-// explicitly — proves the fallback isn't a separate code path that could quietly drift from the axis.
+// explicitly, proves the fallback isn't a separate code path that could quietly drift from the axis.
 const dtcgDefault = X.exportDTCG(C(ALL), {});
 const dtcgExplicit2 = X.exportDTCG(C(ALL), { themes: [{ name: "Light", side: "light" }, { name: "Dark", side: "dark" }] });
 if (JSON.stringify(dtcgDefault) !== JSON.stringify(dtcgExplicit2)) FAIL("themes", "default (no opts.themes) output differs from the explicit 2-theme (Light/Dark) equivalent");
 // GENERALIZATION: a 3-theme axis (Light/Dark/Dim) produces a THIRD semantic file, correctly tagged and
-// resolved — proves the axis is genuinely N-way, not just "2 still works". Dim reuses the dark side
-// (a real, named companion mode — not a new per-role color derivation, which is out of this ticket's
+// resolved, proves the axis is genuinely N-way, not just "2 still works". Dim reuses the dark side
+// (a real, named companion mode, not a new per-role color derivation, which is out of this ticket's
 // scope; see semantic.js's DEFAULT_THEMES note), so its tree must equal Dark's tree exactly.
 const THEMES_3 = [{ name: "Light", side: "light" }, { name: "Dark", side: "dark" }, { name: "Dim", side: "dark" }];
 const dtcg3 = X.exportDTCG(C(ALL), { themes: THEMES_3 });
@@ -118,7 +118,7 @@ const aliasOf = (l) => l.$extensions && l.$extensions["com.figma.aliasData"];
 // === the Color Primitives collection. That is the shape Figma's documented aliasData fallback hierarchy
 // resolves on NATIVE import when the Color Primitives collection pre-exists in the file (OD-004 spike;
 // ADR-002 re-verify 2026-06-15). The native-import cascade itself is validated end-to-end in Figma,
-// NOT here — this gate only proves the emitted SHAPE so the spike can't silently regress.
+// NOT here, this gate only proves the emitted SHAPE so the spike can't silently regress.
 if (sa.length === 0 || !sa.every((l) => {
   const a = aliasOf(l);
   // ADR-016: solid targets "{n}/{pad3}" (2 segments), scrim targets NEST "{n}/scrim/{step}" (3)
@@ -166,7 +166,7 @@ for (const m of css.matchAll(/--c-[a-z0-9-]+-(\d+)\s*:/gi)) {
 // ── on-color policy threads to exports (OD-001 / ADR-025): "fixed" = on{N} pinned 050 both modes;
 //    "contrast" (the DEFAULT since #662) re-points at least one to the better-contrasting end, and
 //    falls through to the document-level white/black constants where neither ramp end clears AA.
-//    BOTH modes are named explicitly — reading one of them off the engine default would make this
+//    BOTH modes are named explicitly, reading one of them off the engine default would make this
 //    gate re-state whatever DEFAULT_CONTROLS happens to say instead of testing the two policies. ──
 //    The ref group accepts a stop, a scrim ref, OR a bare `white`/`black`, because an achromatic
 //    on-color aliases the document constant (`var(--c-white)`), not a per-palette var.
@@ -174,36 +174,36 @@ const onRefs = (cssStr) => [...cssStr.matchAll(/--c-([a-z]+)-on-\1:\s*light-dark
 const fixedOn = onRefs(X.exportCSS({ ...C(ALL), onColorMode: "fixed" }));
 const contrastOn = onRefs(X.exportCSS({ ...C(ALL), onColorMode: "contrast" }));
 if (fixedOn.length === 0) FAIL("oncolors", "no on-{n} CSS vars found");
-if (contrastOn.length !== fixedOn.length) FAIL("oncolors", `contrast mode matched ${contrastOn.length} on-{n} vars, fixed matched ${fixedOn.length} — a ref shape the matcher does not know about`);
+if (contrastOn.length !== fixedOn.length) FAIL("oncolors", `contrast mode matched ${contrastOn.length} on-{n} vars, fixed matched ${fixedOn.length}, a ref shape the matcher does not know about`);
 if (!fixedOn.every((r) => /:050\/050$/.test(r))) FAIL("oncolors", `fixed mode: on-colors not all 050/050 (${fixedOn.find((r) => !/:050\/050$/.test(r))})`);
-if (JSON.stringify(fixedOn) === JSON.stringify(contrastOn)) FAIL("oncolors", "contrast mode changed no on-color — onColorMode not threaded to exports");
+if (JSON.stringify(fixedOn) === JSON.stringify(contrastOn)) FAIL("oncolors", "contrast mode changed no on-color, onColorMode not threaded to exports");
 // #662: the achromatic fall-through reaches the CSS emitter, and it aliases the emitted document
 // constant rather than a per-palette var that would not resolve.
 //
 // This needs a palette whose accent (550 light / 450 dark) misses AA against BOTH of its own ramp
-// ends (050 and 950) — the only case `applyOnColorContrast`'s `pick()` falls through to white/black.
+// ends (050 and 950), the only case `applyOnColorContrast`'s `pick()` falls through to white/black.
 // RT.defaults no longer supplies one: ticket #681 U2 fixed model.mjs's projectView and exports.js's
-// derivePalette to actually forward `anchor` into paletteStops (a "subset-object gap" — they built
+// derivePalette to actually forward `anchor` into paletteStops (a "subset-object gap", they built
 // narrowed object literals for the engine call that silently dropped the new field), and RT.defaults'
 // families now carry `anchor` (mirroring DEFAULT_PALETTES). With the anchor honoured, every family's
 // own 050/950 clears AA against its accent comfortably (see test/engine/semantic.mjs's re-measured
-// role-contrast floors) — none of them exercise the fallback path any more. A dedicated synthetic
+// role-contrast floors), none of them exercise the fallback path any more. A dedicated synthetic
 // probe, unrelated to any default family, keeps this gate meaningful: hue 150 (a green/cyan) at full
 // chroma, with damping OFF (damp/dampAmp/dampBias: 0, so the ramp keeps full saturation all the way
 // to its own 050/950 instead of fading toward white/black) is measured to land its light-scheme
-// accent between its own washed-out ends, missing AA on both — the exact "no” a ramp fixture chases.
+// accent between its own washed-out ends, missing AA on both, the exact "no” a ramp fixture chases.
 const FALLBACK_PROBE = { name: "Probe", hue: 150, chroma: 100, skew: 0, lift: 0, on: true };
 const probeCtl = { ...C([...ALL, FALLBACK_PROBE]), onColorMode: "contrast", damp: 0, dampAmp: 0, dampBias: 0 };
 const contrastCss = X.exportCSS(probeCtl);
 const probeOn = onRefs(contrastCss).filter((r) => r.startsWith("probe:"));
-if (probeOn.length === 0) FAIL("oncolors", "fallback probe palette produced no on-color ref — the resolution ladder changed shape");
+if (probeOn.length === 0) FAIL("oncolors", "fallback probe palette produced no on-color ref, the resolution ladder changed shape");
 else if (!probeOn.some((r) => /white|black/.test(r)))
-  FAIL("oncolors", `contrast mode produced no white/black on-color for the fallback probe (got ${probeOn.join(",")}) — the achromatic fall-through (#662) is not wired to the exporters`);
+  FAIL("oncolors", `contrast mode produced no white/black on-color for the fallback probe (got ${probeOn.join(",")}), the achromatic fall-through (#662) is not wired to the exporters`);
 for (const which of ["white", "black"]) {
   if (contrastCss.includes(`var(--c-${which})`) && !contrastCss.includes(`--c-${which}: `))
     FAIL("oncolors", `an on-color aliases var(--c-${which}) but --c-${which} is not emitted in :root (ADR-005)`);
   if (/--c-[a-z0-9-]+-(white|black)\b/.test(contrastCss))
-    FAIL("oncolors", `an achromatic ref was emitted palette-prefixed (--c-{n}-${which}) — it must alias the document constant`);
+    FAIL("oncolors", `an achromatic ref was emitted palette-prefixed (--c-{n}-${which}), it must alias the document constant`);
 }
 
 // ── hpg-export-disabled-palette (on:false absent; all-disabled = valid empty, no throw) ───
@@ -227,44 +227,44 @@ for (const k of ["css", "oklch", "json", "dtcg", "ui3", "tailwind", "shadcn", "p
 const j = X.exportJSON(C(ALL)); const p0 = j[ALL[0].name.toLowerCase()] || Object.values(j)[0];
 if (!p0 || !p0.stops || !p0.scrims || !p0.semantic) FAIL("nonempty", "JSON palette missing stops/scrims/semantic");
 
-// ── hpg-export-dialog-backdrop (a fixed, non-palette color CONSTANT — opaque black at 80% alpha,
+// ── hpg-export-dialog-backdrop (a fixed, non-palette color CONSTANT, opaque black at 80% alpha,
 //    emitted ONCE per document, never per-palette, never mode-flipped) across every color format ──
 {
   const WANT_HEX = "#000000CC"; // black, alpha 0.8 * 255 = 204 = 0xCC
   const WANT_OKLCH = "oklch(0 0 0 / 80%)";
-  // CSS (hex) / CSS (OKLCH) — one line in :root, before any palette (cssFrom's shared body).
+  // CSS (hex) / CSS (OKLCH), one line in :root, before any palette (cssFrom's shared body).
   if (!X.exportCSS(C(ALL)).includes(`--c-dialog-backdrop: ${WANT_HEX};`)) FAIL("dialog-backdrop", "exportCSS missing --c-dialog-backdrop (hex)");
   if (!X.exportOKLCH(C(ALL)).includes(`--c-dialog-backdrop: ${WANT_OKLCH};`)) FAIL("dialog-backdrop", "exportOKLCH missing --c-dialog-backdrop (oklch)");
   // the configurable prefix covers it too (same {pfx} as every other token).
   const mdCss = X.exportCSS({ ...C(ALL), export: { colorPrefix: "md-sys-color" } });
   if (!mdCss.includes(`--md-sys-color-dialog-backdrop: ${WANT_HEX};`)) FAIL("dialog-backdrop", "a custom prefix must cover --{prefix}-dialog-backdrop too");
-  // JSON — a top-level `constants` sibling to the palette-name keys (never itself a palette).
+  // JSON, a top-level `constants` sibling to the palette-name keys (never itself a palette).
   const jc = X.exportJSON(C(ALL));
   if (!jc.constants || jc.constants["dialog-backdrop"]?.hex !== WANT_HEX) FAIL("dialog-backdrop", `JSON constants.dialog-backdrop.hex = ${jc.constants && jc.constants["dialog-backdrop"] && jc.constants["dialog-backdrop"].hex}, want ${WANT_HEX}`);
-  // DTCG — RAW tree only (palette.tokens.json), under a "constants" group. Deliberately ABSENT from
+  // DTCG, RAW tree only (palette.tokens.json), under a "constants" group. Deliberately ABSENT from
   // the SEMANTIC tree (Light/Dark): every top-level key there is treated elsewhere (style-plan family
   // derivation, regroup ordering) as a real, fully-roled palette positionally zipped against
-  // doc.palettes — a synthetic non-palette key breaks that invariant (caught live during this change).
+  // doc.palettes, a synthetic non-palette key breaks that invariant (caught live during this change).
   const dtcgC = X.exportDTCG(C(ALL), {});
   const rawLeaf = dtcgC["palette.tokens.json"] && dtcgC["palette.tokens.json"].constants && dtcgC["palette.tokens.json"].constants["dialog-backdrop"];
   if (!rawLeaf || rawLeaf.$type !== "color" || rawLeaf.$value.alpha !== 0.8 || (rawLeaf.$value.hex || "").toUpperCase() !== WANT_HEX)
     FAIL("dialog-backdrop", `DTCG raw constants/dialog-backdrop leaf malformed: ${JSON.stringify(rawLeaf)}`);
   if (dtcgC["Light_tokens.json"].constants || dtcgC["Dark_tokens.json"].constants)
     FAIL("dialog-backdrop", "DTCG semantic tree (Light/Dark) must NOT carry a 'constants' key (breaks the real-palette invariant)");
-  // even with rawColl set, the raw constants leaf carries NO aliasData — there is no semantic entry to
+  // even with rawColl set, the raw constants leaf carries NO aliasData, there is no semantic entry to
   // point FROM, and the raw leaf is the thing consumers bind to directly.
   const dtcgAliased = X.exportDTCG(C(ALL), { rawColl: "Color Primitives" });
   const rawLeafAliased = dtcgAliased["palette.tokens.json"].constants["dialog-backdrop"];
   if (rawLeafAliased.$extensions && rawLeafAliased.$extensions["com.figma.aliasData"]) FAIL("dialog-backdrop", "the raw constants leaf must never carry aliasData");
-  // UI3 (Figma interchange) — Primitives collection ONLY, same reasoning as DTCG above.
+  // UI3 (Figma interchange), Primitives collection ONLY, same reasoning as DTCG above.
   const ui3 = X.exportUI3(C(ALL));
   const ui3Prim = ui3.collections["Color Primitives"].variables["raw/constants/dialog-backdrop"];
   if (!ui3Prim || ui3Prim.type !== "COLOR" || ui3Prim.values.Base !== WANT_HEX) FAIL("dialog-backdrop", `UI3 Primitives raw/constants/dialog-backdrop malformed: ${JSON.stringify(ui3Prim)}`);
   if (ui3.collections["Color Roles"].variables["constants/dialog-backdrop"]) FAIL("dialog-backdrop", "UI3 Semantic collection must NOT carry constants/dialog-backdrop");
-  // Tailwind @theme — one line, outside any palette's scale/role blocks.
+  // Tailwind @theme, one line, outside any palette's scale/role blocks.
   if (!X.exportTailwind(C(ALL)).includes(`--color-dialog-backdrop: ${WANT_OKLCH};`)) FAIL("dialog-backdrop", "exportTailwind missing --color-dialog-backdrop");
-  // ShadCN — the one fixed, non-role token (--overlay), outside SHADCN_ORDER/MAP: present in BOTH
-  // :root/.dark (mode-independent — token-set parity is proven generically by the shadcn gate above),
+  // ShadCN, the one fixed, non-role token (--overlay), outside SHADCN_ORDER/MAP: present in BOTH
+  // :root/.dark (mode-independent, token-set parity is proven generically by the shadcn gate above),
   // mapped in @theme inline, literal in the default (non-alias) call, var()-linked when aliased.
   const scDefault = X.exportShadcn(C(ALL));
   if (!scDefault.includes(`--overlay: ${WANT_OKLCH};`)) FAIL("dialog-backdrop", "exportShadcn (default) missing a literal --overlay value");
@@ -273,7 +273,7 @@ if (!p0 || !p0.stops || !p0.scrims || !p0.semantic) FAIL("nonempty", "JSON palet
   if (!scAliased.includes("--overlay: var(--c-dialog-backdrop);")) FAIL("dialog-backdrop", "exportShadcn (aliased) --overlay must link var(--{aliasPrefix}-dialog-backdrop)");
 }
 
-// ── hpg-export-white-black (two more fixed, non-palette color CONSTANTS — solid, opaque, emitted
+// ── hpg-export-white-black (two more fixed, non-palette color CONSTANTS, solid, opaque, emitted
 //    ONCE per document, never per-palette, never mode-flipped) across every color format except
 //    ShadCN (its fixed contract has no white/black slot, same reasoning as the dialog-backdrop block
 //    above for why --overlay is dialog-backdrop-only) ──
@@ -282,7 +282,7 @@ if (!p0 || !p0.stops || !p0.scrims || !p0.semantic) FAIL("nonempty", "JSON palet
   const BLACK_HEX = "#000000";
   const WHITE_OKLCH = "oklch(1 0 0)";
   const BLACK_OKLCH = "oklch(0 0 0)";
-  // CSS (hex) / CSS (OKLCH) — two lines in :root, alongside dialog-backdrop, before any palette.
+  // CSS (hex) / CSS (OKLCH), two lines in :root, alongside dialog-backdrop, before any palette.
   if (!X.exportCSS(C(ALL)).includes(`--c-white: ${WHITE_HEX};`)) FAIL("white-black", "exportCSS missing --c-white (hex)");
   if (!X.exportCSS(C(ALL)).includes(`--c-black: ${BLACK_HEX};`)) FAIL("white-black", "exportCSS missing --c-black (hex)");
   if (!X.exportOKLCH(C(ALL)).includes(`--c-white: ${WHITE_OKLCH};`)) FAIL("white-black", "exportOKLCH missing --c-white (oklch)");
@@ -291,11 +291,11 @@ if (!p0 || !p0.stops || !p0.scrims || !p0.semantic) FAIL("nonempty", "JSON palet
   const mdCss = X.exportCSS({ ...C(ALL), export: { colorPrefix: "md-sys-color" } });
   if (!mdCss.includes(`--md-sys-color-white: ${WHITE_HEX};`) || !mdCss.includes(`--md-sys-color-black: ${BLACK_HEX};`))
     FAIL("white-black", "a custom prefix must cover --{prefix}-white/--{prefix}-black too");
-  // JSON — top-level `constants` siblings to dialog-backdrop (never themselves a palette).
+  // JSON, top-level `constants` siblings to dialog-backdrop (never themselves a palette).
   const jc = X.exportJSON(C(ALL));
   if (!jc.constants || jc.constants.white?.hex !== WHITE_HEX) FAIL("white-black", `JSON constants.white.hex = ${jc.constants && jc.constants.white && jc.constants.white.hex}, want ${WHITE_HEX}`);
   if (!jc.constants || jc.constants.black?.hex !== BLACK_HEX) FAIL("white-black", `JSON constants.black.hex = ${jc.constants && jc.constants.black && jc.constants.black.hex}, want ${BLACK_HEX}`);
-  // DTCG — RAW tree only (palette.tokens.json), under the same "constants" group as dialog-backdrop,
+  // DTCG, RAW tree only (palette.tokens.json), under the same "constants" group as dialog-backdrop,
   // absent from the SEMANTIC tree for the same real-palette-invariant reason.
   const dtcgC = X.exportDTCG(C(ALL), {});
   const whiteLeaf = dtcgC["palette.tokens.json"].constants.white;
@@ -306,7 +306,7 @@ if (!p0 || !p0.stops || !p0.scrims || !p0.semantic) FAIL("nonempty", "JSON palet
     FAIL("white-black", `DTCG raw constants/black leaf malformed: ${JSON.stringify(blackLeaf)}`);
   if (dtcgC["Light_tokens.json"].constants || dtcgC["Dark_tokens.json"].constants)
     FAIL("white-black", "DTCG semantic tree (Light/Dark) must NOT carry a 'constants' key (breaks the real-palette invariant)");
-  // UI3 (Figma interchange) — Primitives collection ONLY, same reasoning as DTCG above.
+  // UI3 (Figma interchange), Primitives collection ONLY, same reasoning as DTCG above.
   const ui3 = X.exportUI3(C(ALL));
   const ui3White = ui3.collections["Color Primitives"].variables["raw/constants/white"];
   const ui3Black = ui3.collections["Color Primitives"].variables["raw/constants/black"];
@@ -314,7 +314,7 @@ if (!p0 || !p0.stops || !p0.scrims || !p0.semantic) FAIL("nonempty", "JSON palet
   if (!ui3Black || ui3Black.type !== "COLOR" || ui3Black.values.Base !== BLACK_HEX) FAIL("white-black", `UI3 Primitives raw/constants/black malformed: ${JSON.stringify(ui3Black)}`);
   if (ui3.collections["Color Roles"].variables["constants/white"] || ui3.collections["Color Roles"].variables["constants/black"])
     FAIL("white-black", "UI3 Semantic collection must NOT carry constants/white or constants/black");
-  // Tailwind @theme — two lines, outside any palette's scale/role blocks.
+  // Tailwind @theme, two lines, outside any palette's scale/role blocks.
   if (!X.exportTailwind(C(ALL)).includes(`--color-white: ${WHITE_OKLCH};`)) FAIL("white-black", "exportTailwind missing --color-white");
   if (!X.exportTailwind(C(ALL)).includes(`--color-black: ${BLACK_OKLCH};`)) FAIL("white-black", "exportTailwind missing --color-black");
 }
@@ -343,18 +343,18 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   FAIL("shadcn", `:root (${rootToks.size}) and .dark (${darkToks.size}) token sets differ`);
 }
 // typography + geometry props: the brand fonts fill shadcn's three family slots, and --radius is DERIVED
-// from the geometry `md` corner (rem), not hard-coded — the medium corner on the M3-aligned scale.
+// from the geometry `md` corner (rem), not hard-coded, the medium corner on the M3-aligned scale.
 {
   const withSys = X.exportShadcn(C(ALL), { fonts: { body: "Inter", display: "Source Serif 4", mono: "JetBrains Mono" }, radii: { none: 0, xs: 4, sm: 8, md: 12, lg: 16, xl: 28, full: 9999 } });
   if (!withSys.includes("--radius: 0.75rem;")) FAIL("shadcn", "--radius not derived from the geometry md corner (12px → 0.75rem, M3-aligned scale)");
   if (!withSys.includes("--font-sans: 'Inter',")) FAIL("shadcn", "--font-sans not mapped from the body font");
-  if (!withSys.includes("--font-serif: 'Source Serif 4',")) FAIL("shadcn", "--font-serif not mapped from the display font (quoted — digit name)");
+  if (!withSys.includes("--font-serif: 'Source Serif 4',")) FAIL("shadcn", "--font-serif not mapped from the display font (quoted, digit name)");
   if (!withSys.includes("--font-mono: 'JetBrains Mono',")) FAIL("shadcn", "--font-mono not mapped from the mono font");
   // absent opts → the shadcn defaults (backward compatible)
   if (!X.exportShadcn(C(ALL)).includes("--radius: 0.625rem;") || X.exportShadcn(C(ALL)).includes("--font-sans:")) FAIL("shadcn", "no opts → default 0.625rem radius + no font vars");
 }
 
-// ── hpg-export-shadcn-baseline (REQ-040/062, #586 K1 — the pickDrivers refactor gate: exportShadcn's
+// ── hpg-export-shadcn-baseline (REQ-040/062, #586 K1, the pickDrivers refactor gate: exportShadcn's
 //    output over three fixtures is byte-identical to a string captured BEFORE the refactor) ──────
 {
   const fixture = readFileSync(new URL("./fixtures/shadcn-baseline.css", import.meta.url), "utf8");
@@ -373,7 +373,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     const want = section(marker);
     if (got.trimEnd() !== want) FAIL("shadcn-baseline", `exportShadcn(${marker}) drifted from the pre-refactor fixture`);
   }
-  // AC-004: pickDrivers is the ONLY site left holding the driver-pick regex — exactly one grep hit,
+  // AC-004: pickDrivers is the ONLY site left holding the driver-pick regex, exactly one grep hit,
   // and the exports.js source shows it sitting inside pickDrivers's own body (before exportShadcn).
   const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
   const grepHits = execSync(`git grep -n "find(/neutral|gray" src/engine || true`, { cwd: repoRoot, encoding: "utf8" }).trim().split("\n").filter(Boolean);
@@ -388,7 +388,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   }
 }
 
-// ── hpg-export-panda (Panda CSS preset — REQ-001..006/009/042 colour half; REQ-007/008 land in K2) ──
+// ── hpg-export-panda (Panda CSS preset, REQ-001..006/009/042 colour half; REQ-007/008 land in K2) ──
 {
   const state = C(ALL);
   const preset = X.exportPanda(state);
@@ -399,7 +399,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (!semanticTokens || !semanticTokens.colors) FAIL("panda", "theme.extend.semanticTokens.colors missing");
 
   // PF-2: every leaf is a bare { value }. Collect dotted paths -> value for tokens/semanticTokens
-  // SEPARATELY (Panda flattens each namespace by dot path, PF-4 — REQ-005's coexistence proof).
+  // SEPARATELY (Panda flattens each namespace by dot path, PF-4, REQ-005's coexistence proof).
   const COLOR_RE = /^oklch\([^)]*\)$/;
   const collectLeaves = (node, path, out) => {
     if (node && typeof node === "object" && !Array.isArray(node)) {
@@ -435,7 +435,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   }
   for (const k of ["white", "black", "backdrop"]) if (!(`colors.constant.${k}` in rawLeaves)) FAIL("panda", `colors.constant.${k} missing`);
 
-  // EX-1/EX-2 (normative literal spot-checks) — fed the SAME resolved state the drawer/every other
+  // EX-1/EX-2 (normative literal spot-checks), fed the SAME resolved state the drawer/every other
   // export path uses (stateOf(defaultDocument())), per the SPEC's Examples header: calling derivedAll
   // on a bare C(ALL)-shaped fixture skips the group chroma resolver and renders different numbers.
   // #647 re-capture: the five colour literals below moved when okhslStops started honouring a
@@ -443,37 +443,37 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   // value derived from their ramp shifted. Re-pinned here AND in the SPEC's own Examples section in the
   // same change, so the normative text and this mirror cannot drift apart. The prime ladder, on-colors,
   // data-1 and constant.backdrop did not move.
-  // #681 re-capture (U1, Q2 (b)): Primary's prime.prime/.brightest/.dimmest moved AGAIN — Primary's
+  // #681 re-capture (U1, Q2 (b)): Primary's prime.prime/.brightest/.dimmest moved AGAIN, Primary's
   // DEFAULT_PALETTES entry now carries `anchor: "#0C5DCC"` (today's stop-550 hex), so its `prime` step
   // renders that hex verbatim instead of deriveKeyColor's cusp identity, and the other six ladder
   // rungs bend around the anchor's own OKHSL l/s/h instead of the cusp's. Re-pinned to the anchor's
   // own oklch (independently verified: hexToRgb("#0C5DCC") -> oklch(0.504 0.1867 258.99) by a
   // from-scratch sRGB->OKLab->OKLCH conversion, not by reading this pipeline's own output back). The
-  // ramp stops (500/050/950/scrim) and every OTHER default family's prime are untouched by U1 — only
+  // ramp stops (500/050/950/scrim) and every OTHER default family's prime are untouched by U1, only
   // Primary's row happens to be this file's literal spot check.
   //
-  // #681 re-capture (U2): the RAMP's own stop 500 moved too — model.mjs's projectView and exports.js's
+  // #681 re-capture (U2): the RAMP's own stop 500 moved too, model.mjs's projectView and exports.js's
   // derivePalette were fixed to actually forward `anchor` into paletteStops (a "subset-object gap":
   // they built narrowed object literals for the engine call that silently dropped the new field, so
   // the ramp itself had been silently ignoring `anchor` all along, unlike prime.mjs which U1 already
   // wired correctly). With that fixed, colors.primary.500 now equals colors.primary.prime.prime
   // exactly (both read the SAME verbatim anchor hex #0C5DCC, in-window per RAMP_L_MIN/MAX so it is
-  // never clamped) — the two were coincidentally different literals before this fix, now the SAME by
+  // never clamped), the two were coincidentally different literals before this fix, now the SAME by
   // construction (C3's own claim). scrim.300 tracks 500. neutral.500 moved (Neutral also carries an
-  // anchor). The accent-role semantic tokens (DEFAULT/hover, at ramp stops 550/450/650/350 — NOT 500,
+  // anchor). The accent-role semantic tokens (DEFAULT/hover, at ramp stops 550/450/650/350, NOT 500,
   // so still genuinely distinct from the anchor) and data-1's own accent moved with the ramp shape.
   // on-primary._dark ALSO moved (black -> white): #662's achromatic-fallback `pick()` now finds
   // Primary's own dark ramp end clears AA against the anchor-pinned 450 fill, so it no longer needs
   // the black constant. on-surface/backdrop/prime.brightest/prime.dimmest (no accent role reads them)
   // did not move. Every literal below independently re-verified against exports.mjs's own resolution
-  // ladder output (this file's normal spot-check discipline — not re-derived by hand).
+  // ladder output (this file's normal spot-check discipline, not re-derived by hand).
   //
   // #681 re-capture (U2, review pif-u2-review-1.md F2): the anchored branches' saturation basis now
   // lerps from the anchor's own measured chroma toward the group-driven ramp target as a stop moves
   // away from 500 (see okhslStopsAnchored's own comment), so every OFF-pivot stop's chroma moved a
-  // second time — primary.DEFAULT/.hover (stops 550/450) and data-1.DEFAULT (also off-pivot). EX-1's
+  // second time, primary.DEFAULT/.hover (stops 550/450) and data-1.DEFAULT (also off-pivot). EX-1's
   // raw ramp literals (500/50/950/scrim.300, all either the verbatim anchor or undamped by chroma)
-  // and on-primary/on-surface (no chroma dependence) are UNCHANGED — independently re-verified.
+  // and on-primary/on-surface (no chroma dependence) are UNCHANGED, independently re-verified.
   //
   // #681 re-capture (U2 repair pass, re-diagnosis Findings 1+2): the anchored branches' chroma now
   // routes through U3's own chromaEnvelope (verbatim copy, keyed on liftStop) instead of the interim
@@ -483,18 +483,18 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   // prior linear-curve build).
   //
   // #681 re-capture (U2 repair pass, Q-U2-5 ruled, revision 17): Finding 1's literal, unconditional
-  // anchor-value basis (immediately above) broke REQ-002 — re-ruled to a BLEND (chromaEnvelope stays
+  // anchor-value basis (immediately above) broke REQ-002, re-ruled to a BLEND (chromaEnvelope stays
   // verbatim, but its basis input shades from the anchor's own chroma at the pivot to `rampChroma` at
   // the ramp's ends, see paletteStopsAnchored/okhslStopsAnchored's own header comments). Numerically
   // this lands back at (or very near) the F2-blend values two re-captures above, since both blend
-  // toward the same group target — only primary.DEFAULT/.hover (550/450) and data-1.DEFAULT moved;
-  // EX-1's raw ramp literals and on-primary/on-surface are UNCHANGED — independently re-verified.
+  // toward the same group target, only primary.DEFAULT/.hover (550/450) and data-1.DEFAULT moved;
+  // EX-1's raw ramp literals and on-primary/on-surface are UNCHANGED, independently re-verified.
   //
   // #681 re-capture (U2 repair pass, addendum 2, u2-p2-brief.md): the blend's own weight now keys on
   // `liftStop` (`anchorChromaBasis`, see its own header comment above `chromaEnvelope`), never
-  // `anchorWarp`'s skew-warped `w` — a local construction the ruling retired. Primary carries skew -20,
+  // `anchorWarp`'s skew-warped `w`, a local construction the ruling retired. Primary carries skew -20,
   // so its own DEFAULT literal (stop 550) moved a hair from the anchorWarp-keyed capture immediately
-  // above; every other literal is unchanged — independently re-verified.
+  // above; every other literal is unchanged, independently re-verified.
   //
   // #681 re-capture (U2 review pass 2, R6 -- toneAt piecewise-affine remap replacing anchorLerp's
   // per-side double-S, tonal.js's own header comment): stop 550/450 sit closer to toneAt's own
@@ -505,14 +505,14 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   //
   // #681 U4 re-capture (integration of U6 onto U1's anchor branch, prime.mjs rewritten per U1's own
   // "provisional OKHSL fix; U6's L*-domain equal-compress rewrite replaces this whole mechanism"):
-  // `prime.brightest`/`.dimmest` moved again — the ladder now builds in CIE L* around the anchor's own
+  // `prime.brightest`/`.dimmest` moved again, the ladder now builds in CIE L* around the anchor's own
   // measured L*/CAM16 hue/chroma (not the anchor's OKHSL l/s/h U1's provisional construction read),
   // equal-compress at the window bound (Primary's anchor sits well inside [PRIME_L_MIN, PRIME_L_MAX],
   // so this ladder is NOT window-clamped). `.prime` itself is unchanged (REQ-056's verbatim-anchor
   // identity holds regardless of ladder construction). Every ramp stop (500/50/950/scrim/neutral.500)
-  // and `.prime` are independently re-verified UNCHANGED from the U3 merge — U6 touches only
+  // and `.prime` are independently re-verified UNCHANGED from the U3 merge, U6 touches only
   // src/engine/prime.mjs, never tonal.js/the ramp. Values independently re-verified against
-  // exports.mjs's own resolution ladder output (this file's normal spot-check discipline — not
+  // exports.mjs's own resolution ladder output (this file's normal spot-check discipline, not
   // re-derived by hand), out-of-lane reporting on the SPEC's own stale EX-1 mirror carried over from
   // U6's own paragraph (`docs/spec/spec-panda-park-ui-exports.md:419-424`, see `.sdlc/handoffs/pif-u6.md`).
   const ddState = stateOf(defaultDocument());
@@ -546,7 +546,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (offName in disabledPanda.theme.extend.tokens.colors) FAIL("panda", `disabled palette '${offName}' still in tokens.colors`);
   if (offName in disabledPanda.theme.extend.semanticTokens.colors) FAIL("panda", `disabled palette '${offName}' still in semanticTokens.colors`);
 
-  // AC-005/REQ-043: theme-independent — exportPanda never reads state.theme, so the default
+  // AC-005/REQ-043: theme-independent, exportPanda never reads state.theme, so the default
   // document's preset is byte-identical whether STATE.theme (not the doc, which stateOf never
   // copies theme off of) is light, dark, or auto.
   for (const t of ["light", "dark"]) {
@@ -605,7 +605,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   }
 }
 
-// ── hpg-export-radix (Radix preset — REQ-020..028/041/061; issue #588's corrected 1..8) ────
+// ── hpg-export-radix (Radix preset, REQ-020..028/041/061; issue #588's corrected 1..8) ────
 {
   const parseOklch = (s) => {
     if (s === "transparent") return { rgb: null, a: 0 };
@@ -616,7 +616,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   };
 
   // The ratified 1..8 raw-stop table (docs/reference/data/radix-projection.json), redeclared here
-  // independently of exports.js's own RADIX_RAW_STEPS — pins the EXACT stop number per step, not
+  // independently of exports.js's own RADIX_RAW_STEPS, pins the EXACT stop number per step, not
   // just monotone direction (a same-direction off-by-one, e.g. step 6 duplicating step 5's stop,
   // still reads monotone but is wrong).
   const RATIFIED_RAW_STEPS = [
@@ -672,7 +672,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     if (!g.prime || typeof g.prime.value.base !== "string" || g.prime.value._dark !== undefined) FAIL("radix", `colors.${p.n}.prime malformed (mode-independent, base only): ${JSON.stringify(g.prime)}`);
 
     // exact-value pin (reviewer finding on #588's radix gate): each of steps 1..8 must read the
-    // EXACT ratified stop number, not merely a monotone-in-the-right-direction neighbour — deep-equal
+    // EXACT ratified stop number, not merely a monotone-in-the-right-direction neighbour, deep-equal
     // the emitted leaf's parsed rgb against derivedAll's own byStop.get(expectedStop) for that step,
     // per palette (cheap enough to run for all, not just one representative).
     for (const { step, light, dark } of RATIFIED_RAW_STEPS) {
@@ -719,7 +719,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
       const a = parseOklch(primaryGroup[`a${k}`].value[mode]);
       const solid = parseOklch(primaryGroup[String(k)].value[mode]);
       if (!a || !solid) { FAIL("radix", `a${k}.${mode} or solid ${k}.${mode} failed to parse`); continue; }
-      if (a.a === 0) continue; // transparent — nothing to composite
+      if (a.a === 0) continue; // transparent, nothing to composite
       const composited = a.rgb.map((c, i) => Math.round(a.a * c + (1 - a.a) * bg[i]));
       for (let i = 0; i < 3; i++) {
         if (Math.abs(composited[i] - solid.rgb[i]) > 1) FAIL("radix", `a${k}.${mode} composited over ${mode === "base" ? "white" : "black"} = ${composited} not within 1/255 of solid ${k} = ${solid.rgb}`);
@@ -749,7 +749,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (offName in disabledRadix.theme.extend.semanticTokens.colors) FAIL("radix", `disabled palette '${offName}' still in colors`);
   if (!colors["data-1"]) FAIL("radix", "data-1 missing from colors (REQ-028: data palettes emitted like any other)");
 
-  // AC-005/REQ-043: theme-independent — exportRadix never reads state.theme, so the default
+  // AC-005/REQ-043: theme-independent, exportRadix never reads state.theme, so the default
   // document's preset is byte-identical whether STATE.theme (not the doc, which stateOf never
   // copies theme off of) is light, dark, or auto.
   for (const t of ["light", "dark"]) {
@@ -773,7 +773,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (parsedMod && JSON.stringify(parsedMod) !== JSON.stringify(preset)) FAIL("radix", "module JSON does not deep-equal exportRadix(state)");
 }
 
-// ── radix-keys-drift (I4, ticket #637; rewritten for #630) — RESERVED_ALIAS_KEYS is the ONE source
+// ── radix-keys-drift (I4, ticket #637; rewritten for #630), RESERVED_ALIAS_KEYS is the ONE source
 //    of truth for the non-palette keys exportRadix writes into semanticTokens.colors. Under the #630
 //    rule a colliding palette is emitted under `<slug>-palette`, so "subtract the palette slugs" no
 //    longer isolates the aliases; instead: the 7 reserved keys are present verbatim and in order, and
@@ -796,7 +796,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   check(C([...BRAND_ONLY, { name: "Accent", hue: 40, chroma: 60, skew: 0, lift: 0, on: true }]), "with a colliding 'Accent' palette");
 }
 
-// ── radix-alias-collision (#630) — a palette whose slug equals a reserved alias key is emitted
+// ── radix-alias-collision (#630), a palette whose slug equals a reserved alias key is emitted
 //    under `<slug>-palette` (suffix repeated until unique against the reserved set AND the other
 //    palettes' slugs; order-independent), the 7 alias keys stay verbatim, and every `{colors.X.N}`
 //    reference in the document resolves. Negative control: against the pre-fix engine (797173e)
@@ -873,11 +873,11 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   }
 }
 
-// ── radix-refs-values-unchanged (#638 U1.1) — the REFERENCE form is purely additive: the VALUES
+// ── radix-refs-values-unchanged (#638 U1.1), the REFERENCE form is purely additive: the VALUES
 //    form exportRadix(state) must stay byte-identical to the output captured at 2805f40, BEFORE
 //    the opts.refs branch existed. The REQ-062 pattern (hpg-export-shadcn-baseline above): a
 //    committed fixture, not a self-derived expectation, so a leaf builder that quietly changed the
-//    values path — or a refs branch that leaked into the default — goes red here and nowhere else.
+//    values path, or a refs branch that leaked into the default, goes red here and nowhere else.
 //    The preset object carries no schema stamp, so the 2 -> 3 bump does not touch this fixture.
 //    #681 U4 integration re-capture (2026-09-20, by script from the engine, never typed): this
 //    fixture landed on main before #681's anchor/chroma-envelope/prime-ladder engine changes, so
@@ -898,7 +898,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   }
 }
 
-// ── radix-refs-* (#638 U1.2..U1.12) — the REFERENCE form of the Radix preset: the same preset with
+// ── radix-refs-* (#638 U1.2..U1.12), the REFERENCE form of the Radix preset: the same preset with
 //    every numbered leaf replaced by a var() LINK into the kit's own CSS custom-property layer
 //    (owner rulings a1/c1/d1/e1, 2026-09-18). Each criterion is its own gate name so a red says
 //    WHICH property broke. Every expectation below is derived from this test's own tables
@@ -933,7 +933,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   const ROLE_STEPS = [{ step: 9, suffix: "" }, { step: 10, suffix: "-hover" }, { step: 11, suffix: "-on-surface-variant" }, { step: 12, suffix: "-on-surface" }];
   // the test's OWN ref -> var-name-fragment rule (semantic.js's refSlug re-derived here): a bare
   // stop pads to 3 digits; a scrim "{base}-{step}" becomes "scrim-{step}" on the emitted hyphen
-  // surface (ADR-016) — pinned against exportCSS's real text by radix-refs-parity below.
+  // surface (ADR-016), pinned against exportCSS's real text by radix-refs-parity below.
   const fragOf = (ref) => {
     const s = String(ref);
     const dash = s.indexOf("-");
@@ -950,7 +950,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   const ACHROMATIC = ["white", "black"];
   const wantLink = (n, ref) => (ACHROMATIC.includes(String(ref)) ? `var(--c-${ref})` : `var(--c-${n}-${fragOf(ref)})`);
 
-  // U1.2 — every numbered leaf 1..12 of every palette is a var() link in BOTH modes.
+  // U1.2, every numbered leaf 1..12 of every palette is a var() link in BOTH modes.
   {
     const G = "radix-refs-shape";
     const RE = /^var\(--c-(?:white|black|[a-z0-9-]+-(?:\d{3}|scrim-\d{3}|prime-[a-z]+))\)$/;
@@ -969,7 +969,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     if (v1.startsWith("var(")) FAIL(G, `the DEFAULT (values) form emitted a link: ${JSON.stringify(v1)}`);
   }
 
-  // U1.3 — steps 1..8 link the exact ratified raw stop, per palette, both modes (c1 identity map).
+  // U1.3, steps 1..8 link the exact ratified raw stop, per palette, both modes (c1 identity map).
   {
     const G = "radix-refs-raw-pin";
     for (const p of derived) {
@@ -984,7 +984,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     }
   }
 
-  // U1.4 — steps 9..12 link the DRIVING ROLE's own lightRef/darkRef, so overrides, accentRef and
+  // U1.4, steps 9..12 link the DRIVING ROLE's own lightRef/darkRef, so overrides, accentRef and
   //        the on-color policy travel with the link instead of being frozen into a stop number.
   {
     const G = "radix-refs-role-pin";
@@ -1010,7 +1010,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     }
   }
 
-  // U1.5 — REF PARITY, the load-bearing gate: resolve each link through exportCSS's OWN emitted
+  // U1.5, REF PARITY, the load-bearing gate: resolve each link through exportCSS's OWN emitted
   //        declarations (the real custom-property layer a consumer loads) and compare the rgb to
   //        the values form's leaf, within 1/255 per channel. A link pointing one stop off, or at
   //        the light ref for the _dark mode, is red here even though it is a legal var() name.
@@ -1040,7 +1040,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     if (checked < 12 * 2 * derived.length) FAIL(G, `only ${checked} of ${12 * 2 * derived.length} link/value pairs were actually compared`);
   }
 
-  // U1.6 — a1..a12 are COMPUTED projections in both forms (no primitive exists for them), so the
+  // U1.6, a1..a12 are COMPUTED projections in both forms (no primitive exists for them), so the
   //        two files' alpha leaves are string-equal.
   {
     const G = "radix-refs-alpha";
@@ -1055,7 +1055,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     }
   }
 
-  // U1.7 — the two additive leaves: on-accent follows the `-on-{n}` role's own refs; prime links the
+  // U1.7, the two additive leaves: on-accent follows the `-on-{n}` role's own refs; prime links the
   //        mode-independent prime-prime identity primitive and stays base-only (REQ-024).
   {
     const G = "radix-refs-extras";
@@ -1070,7 +1070,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     }
   }
 
-  // U1.8 — the accent/gray driver clones (REQ-025) link the PRIMARY/NEUTRAL palette's own custom
+  // U1.8, the accent/gray driver clones (REQ-025) link the PRIMARY/NEUTRAL palette's own custom
   //        properties, never a `var(--c-accent-…)` name that no surface emits: rewriteRefs only
   //        rewrites `{colors.{n}.` Panda paths, which cannot occur inside a var() string. The
   //        internal appearance aliases still re-point at the clone's own group name.
@@ -1090,7 +1090,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     }
   }
 
-  // U1.9 — #630 collision (ruling d1): the GROUP key stays `<slug>-palette`, but its links use the
+  // U1.9, #630 collision (ruling d1): the GROUP key stays `<slug>-palette`, but its links use the
   //        RAW slug, because the primitive surfaces only ever emit `--c-{raw slug}-…`. The Panda
   //        `{colors.…}` aliases are unchanged from the values form.
   {
@@ -1118,7 +1118,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     if (skeleton(cRef) !== skeleton(cVal)) FAIL(G, "the reference form's key/alias skeleton differs from the values form's");
   }
 
-  // U1.10 — the links follow cssPrefixOf: a Material-flavoured prefix renames both surfaces in
+  // U1.10, the links follow cssPrefixOf: a Material-flavoured prefix renames both surfaces in
   //         lockstep, so the pair still resolves.
   {
     const G = "radix-refs-prefix";
@@ -1132,7 +1132,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     if (mdCss.includes(`--c-${drivers.primary.n}-100:`)) FAIL(G, "exportCSS still declares the default-prefixed name under a custom prefix");
   }
 
-  // U1.11 — the module wrapper names the link contract on its own header line, and only there.
+  // U1.11, the module wrapper names the link contract on its own header line, and only there.
   {
     const G = "radix-refs-module";
     const refMod = X.exportRadixModule(refPreset);
@@ -1153,7 +1153,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     else if (JSON.stringify(bundle.radixRef) !== JSON.stringify(refPreset)) FAIL(G, "exportAll(state).radixRef is not exportRadix(state, { refs: true })");
   }
 
-  // U1.12 — the no-driver sentinel is a property of the document, not of the form.
+  // U1.12, the no-driver sentinel is a property of the document, not of the form.
   {
     const G = "radix-refs-sentinel";
     const s = X.exportRadix(C([]), { refs: true });
@@ -1163,7 +1163,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   }
 }
 
-// ── hpg-export-data-palette (#516 — isDataPalette, shadcn chart-1..5 binding, fallback exclusion) ──
+// ── hpg-export-data-palette (#516, isDataPalette, shadcn chart-1..5 binding, fallback exclusion) ──
 {
   // isDataPalette: every derived palette's data-ness matches the /^data-\d+$/ slug pattern exactly.
   const derivedWithData = X.derivedAll(C(ALL_WITH_DATA));
@@ -1175,7 +1175,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   const fake = X.derivedAll(C([{ name: "Metadata", hue: 100, chroma: 50, skew: 0, lift: 0, on: true }]))[0];
   if (X.isDataPalette(fake)) FAIL("data-palette", "isDataPalette false-positived on a non-'data-N' slug ('metadata')");
 
-  // EX-7 half 1 — chart-1..5 bind to the prime role of data-1..5 when those enabled palettes exist.
+  // EX-7 half 1, chart-1..5 bind to the prime role of data-1..5 when those enabled palettes exist.
   const scData = X.exportShadcn(C(ALL_WITH_DATA));
   const chartMatches = (sc, n) => [...sc.matchAll(new RegExp(`--chart-${n}:\\s*(oklch\\([^;]+\\));`, "g"))].map((m) => m[1]);
   for (let i = 1; i <= 5; i++) {
@@ -1186,11 +1186,11 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     if (gotLight !== wantLight || gotDark !== wantDark) FAIL("data-palette", `chart-${i} != prime role of data-${i} (light ${gotLight} vs ${wantLight}; dark ${gotDark} vs ${wantDark})`);
   }
 
-  // EX-7 half 2 — data palettes all disabled: byte-identical to the pre-feature (no-data) baseline.
+  // EX-7 half 2, data palettes all disabled: byte-identical to the pre-feature (no-data) baseline.
   const allDataOff = ALL_WITH_DATA.map((p) => (/^Data \d+$/.test(p.name) ? { ...p, on: false } : p));
   if (X.exportShadcn(C(allDataOff)) !== X.exportShadcn(C(BRAND_ONLY))) FAIL("data-palette", "EX-7: with data palettes disabled, shadcn output differs from the pre-feature (no-data) baseline");
 
-  // fallback exclusion (REQ-031) — an adversarial fixture: data-1/data-2 listed FIRST, two renamed
+  // fallback exclusion (REQ-031), an adversarial fixture: data-1/data-2 listed FIRST, two renamed
   // brand palettes ("Aurora"/"Nightfall") matching NEITHER the neutral NOR the primary regex, so a
   // bare `palettes[0]` fallback (the pre-fix bug) would resolve neutral straight to data-1. The fix
   // must still land neutral on Aurora (first non-data) and primary on Nightfall (next non-data).
@@ -1204,13 +1204,13 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   const derivedRenamed = X.derivedAll(C(RENAMED));
   const auroraBg = X.roleOklch(derivedRenamed.find((p) => p.n === "aurora").roles.find((r) => r.suffix === "-background").light);
   const nightfallPrime = X.roleOklch(derivedRenamed.find((p) => p.n === "nightfall").roles.find((r) => r.suffix === "").light);
-  if (tokenVal(scRenamed, "background") !== auroraBg) FAIL("data-palette", "neutral fallback did not land on the first non-data palette (Aurora) — may have resolved to a data palette");
-  if (tokenVal(scRenamed, "primary") !== nightfallPrime) FAIL("data-palette", "primary fallback did not land on the first non-data non-neutral palette (Nightfall) — may have resolved to a data palette");
+  if (tokenVal(scRenamed, "background") !== auroraBg) FAIL("data-palette", "neutral fallback did not land on the first non-data palette (Aurora), may have resolved to a data palette");
+  if (tokenVal(scRenamed, "primary") !== nightfallPrime) FAIL("data-palette", "primary fallback did not land on the first non-data non-neutral palette (Nightfall), may have resolved to a data palette");
 }
 
-// ── hpg-export-shadcn-chart-6-8 (#576, #569 RP-3/H-3 — a deliberate departure from shadcn's stock
+// ── hpg-export-shadcn-chart-6-8 (#576, #569 RP-3/H-3, a deliberate departure from shadcn's stock
 //    5 chart slots: chart-6..8 bind to data-6..8's prime role when enabled, and are OMITTED
-//    entirely — not fallback-filled — when those data palettes are absent/disabled) ──
+//    entirely, not fallback-filled, when those data palettes are absent/disabled) ──
 {
   const chartMatches = (sc, n) => [...sc.matchAll(new RegExp(`--chart-${n}:\\s*(oklch\\([^;]+\\));`, "g"))].map((m) => m[1]);
 
@@ -1226,14 +1226,14 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     if (!scData.includes(`--color-chart-${i}: var(--chart-${i});`)) FAIL("shadcn-chart-6-8", `@theme inline missing --color-chart-${i} -> var(--chart-${i})`);
   }
 
-  // disabled (no data palettes at all, BRAND_ONLY): chart-6..8 entirely absent — no fallback.
+  // disabled (no data palettes at all, BRAND_ONLY): chart-6..8 entirely absent, no fallback.
   const scBrandOnly = X.exportShadcn(C(BRAND_ONLY));
   for (let i = 6; i <= 8; i++) {
     if (new RegExp(`--chart-${i}:`).test(scBrandOnly)) FAIL("shadcn-chart-6-8", `chart-${i} present with data-${i} disabled/absent (must be omitted, no fallback)`);
     if (scBrandOnly.includes(`--color-chart-${i}:`)) FAIL("shadcn-chart-6-8", `@theme inline includes chart-${i} with data-${i} disabled/absent`);
   }
 
-  // selective: only data-6..8 disabled, data-1..5 stay enabled — chart-6..8 absent, chart-1..5 unaffected.
+  // selective: only data-6..8 disabled, data-1..5 stay enabled, chart-6..8 absent, chart-1..5 unaffected.
   const only678Off = ALL_WITH_DATA.map((p) => (/^Data [678]$/.test(p.name) ? { ...p, on: false } : p));
   const sc678Off = X.exportShadcn(C(only678Off));
   for (let i = 6; i <= 8; i++) {
@@ -1256,9 +1256,9 @@ if ("rgb" in kp.keyColors[0]) FAIL("keycolors", "JSON keyColors leaf leaked the 
 // a palette with no key colors emits no key tokens (opt-in only)
 if (X.exportCSS(C(ALL)).includes("-key-")) FAIL("keycolors", "key tokens present when none set");
 
-// TKT-0022 — key colors must ALSO surface in DTCG (raw tree's key/ group, mirroring scrim/) and UI3
+// TKT-0022, key colors must ALSO surface in DTCG (raw tree's key/ group, mirroring scrim/) and UI3
 // (raw/{n}/key/{role} primitives): they exported fine via CSS/JSON but were silently absent from the
-// two "standards path" formats, with no ADR fencing the omission (checked decision-records.md — none
+// two "standards path" formats, with no ADR fencing the omission (checked decision-records.md, none
 // exists). Treated as a bug, not a documented exception.
 const slug0 = ALL[0].name.toLowerCase();
 const kdtcg = X.exportDTCG(withKey)["palette.tokens.json"][slug0];
@@ -1280,9 +1280,9 @@ if (!primVars[`raw/${slug0}/key/supportive`]) FAIL("keycolors-ui3", "UI3 raw/{n}
 const noKeyUi3 = X.exportUI3(C(ALL)).collections["Color Primitives"].variables;
 if (Object.keys(noKeyUi3).some((k) => k.startsWith(`raw/${slug0}/key/`))) FAIL("keycolors-ui3", "UI3 key/ variables present when no keyColors set");
 
-// ── hpg-export-prime (#539/P4, REQ-054, AC-051 — the seven-swatch prime group, engine-emitter half) ──
+// ── hpg-export-prime (#539/P4, REQ-054, AC-051, the seven-swatch prime group, engine-emitter half) ──
 // Naming per REQ-054: CSS/OKLCH "--{pfx}-{n}-prime-{step}"; JSON palette.prime[step] = {hex, oklch};
-// Tailwind "--color-{n}-prime-{step}". exportShadcn has no slot (non-goal) — proven as a negative
+// Tailwind "--color-{n}-prime-{step}". exportShadcn has no slot (non-goal), proven as a negative
 // control below rather than assumed. UI3/DTCG naming has its own gates further down.
 const primeCss = X.exportCSS(C(ALL));
 const primeOklch = X.exportOKLCH(C(ALL));
@@ -1324,14 +1324,14 @@ if (offJson[offName]) FAIL("prime", `disabled palette '${offName}' still present
 const wantPrimeOff = 7 * enabledCount(primeOff);
 if (primeCssCount(X.exportCSS(primeOff)) !== wantPrimeOff) FAIL("prime", "disabling a palette did not drop the CSS prime count by exactly 7");
 
-// negative control: exportShadcn has NO prime slot (non-goal) — its output is unaffected by
+// negative control: exportShadcn has NO prime slot (non-goal), its output is unaffected by
 // primeChroma, byte-identical whether the control is 100 or 50 on every palette.
 const shadcnBase = X.exportShadcn(C(ALL));
 const shadcnPrimeChroma50 = X.exportShadcn({ ...C(ALL), primeChroma: 50 });
-if (shadcnBase !== shadcnPrimeChroma50) FAIL("prime", "exportShadcn output changed with primeChroma — it must have no prime slot (non-goal)");
+if (shadcnBase !== shadcnPrimeChroma50) FAIL("prime", "exportShadcn output changed with primeChroma, it must have no prime slot (non-goal)");
 if (shadcnBase.includes("prime")) FAIL("prime", "exportShadcn output unexpectedly mentions 'prime'");
 
-// ── hpg-export-prime-dtcg (REQ-054 — raw tree nests prime beside scrim/key, same depth) ──────────
+// ── hpg-export-prime-dtcg (REQ-054, raw tree nests prime beside scrim/key, same depth) ──────────
 const primeDtcgTree = X.exportDTCG(C(ALL))["palette.tokens.json"][slug0];
 if (!primeDtcgTree.prime || PRIME_STEPS.some((s) => !primeDtcgTree.prime[s])) FAIL("prime-dtcg", "DTCG raw tree missing prime/ group or a step");
 else {
@@ -1340,22 +1340,22 @@ else {
     if (!leaf || leaf.$type !== "color" || !leaf.$value || leaf.$value.colorSpace !== "srgb" || leaf.$value.alpha !== 1) FAIL("prime-dtcg", `prime/${step} not a well-formed, opaque (frac=1) color leaf`);
   }
 }
-// nesting depth: prime/{step} sits exactly as deep as scrim/{step} — both ONE segment under the
+// nesting depth: prime/{step} sits exactly as deep as scrim/{step}, both ONE segment under the
 // palette group (grp.scrim.{step} / grp.prime.{step}), never a numeral-compound or a deeper path.
 const scrimDepthKeys = Object.keys(primeDtcgTree.scrim);
 const primeDepthKeys = Object.keys(primeDtcgTree.prime);
 if (typeof primeDtcgTree.scrim !== "object" || typeof primeDtcgTree.prime !== "object" || !scrimDepthKeys.length || !primeDepthKeys.length) FAIL("prime-dtcg", "scrim/prime groups are not both one-level nested objects");
-// a disabled palette is wholly absent from the raw tree (derivedAll's own filter) — no prime/ leaks.
+// a disabled palette is wholly absent from the raw tree (derivedAll's own filter), no prime/ leaks.
 const primeDtcgOff = X.exportDTCG(primeOff)["palette.tokens.json"];
 if (offName in primeDtcgOff) FAIL("prime-dtcg", `disabled palette '${offName}' still present in DTCG raw tree`);
 const primeDtcgRaw = X.exportDTCG(C(ALL))["palette.tokens.json"];
 const primeDtcgLeafCount = Object.keys(primeDtcgRaw).filter((k) => k !== "constants" && k !== "$extensions").reduce((n, k) => n + Object.keys(primeDtcgRaw[k].prime).length, 0);
 if (primeDtcgLeafCount !== wantPrime) FAIL("prime-dtcg", `DTCG prime leaf count ${primeDtcgLeafCount} != ${wantPrime}`);
 
-// ── hpg-export-prime-ui3 (REQ-054, LLD Interfaces block — a DEDICATED "Color Prime" collection,
+// ── hpg-export-prime-ui3 (REQ-054, LLD Interfaces block, a DEDICATED "Color Prime" collection,
 //    one "Base" mode, variables keyed "{n}/{step}") ───────────────────────────────────────────
 // NOTE (#539 sub-unit split): the collection is a LITERAL "Color Prime" string here, not
-// COLLECTIONS.colorPrime — that constant is added by #539's sub-unit B (stacked on this branch)
+// COLLECTIONS.colorPrime, that constant is added by #539's sub-unit B (stacked on this branch)
 // together with the two Figma sandbox literal mirrors it must move in lockstep with for the
 // `collparity` gate. The STRING VALUE is fixed now so sub-unit B's constant has a stable shape to
 // agree with.
@@ -1369,17 +1369,17 @@ else {
   const primeUi3Count = Object.keys(primeUi3Coll.variables).length;
   if (primeUi3Count !== wantPrime) FAIL("prime-ui3", `UI3 "Color Prime" leaf count ${primeUi3Count} != ${wantPrime}`);
 }
-// "Color Prime" carries ONLY prime data — no "raw/" prefixed keys leaked in from the Primitives shape.
+// "Color Prime" carries ONLY prime data, no "raw/" prefixed keys leaked in from the Primitives shape.
 if (primeUi3Coll && Object.keys(primeUi3Coll.variables).some((k) => k.startsWith("raw/"))) FAIL("prime-ui3", `UI3 "Color Prime" variables leaked a "raw/"-prefixed key`);
 // the "Color Primitives" collection must NOT also carry prime data (moved wholesale to its own collection).
 const primitivesVars = X.exportUI3(C(ALL)).collections["Color Primitives"].variables;
-if (Object.keys(primitivesVars).some((k) => /\/prime\//.test(k))) FAIL("prime-ui3", `UI3 "Color Primitives" still carries prime/ keys — should have moved wholesale to "Color Prime"`);
+if (Object.keys(primitivesVars).some((k) => /\/prime\//.test(k))) FAIL("prime-ui3", `UI3 "Color Primitives" still carries prime/ keys, should have moved wholesale to "Color Prime"`);
 const primeUi3Off = X.exportUI3(primeOff).collections["Color Prime"].variables;
 if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("prime-ui3", `disabled palette '${offName}' still emits UI3 "Color Prime" variables`);
 
 // ── hpg-export-design-system (the LLM design-system bundle: DESIGN.md universal-dialect core + tokens.json
 // + @dsCard previews + README receipt). The engine gate runs the ported §8 verifier (ds-gates.js) on the
-// emitted bundle — the same platform-agnostic checks bundle_gates.py enforces (contrast all-pairs × both
+// emitted bundle, the same platform-agnostic checks bundle_gates.py enforces (contrast all-pairs × both
 // schemes · scheme parity · carrier equality · refs · section grammar · previews · relative leading). Runs
 // on the DEFAULT palettes (a theme != the Studio golden): the emitter must be theme-general.
 {
@@ -1392,10 +1392,10 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   if (previews.length < 5) FAIL("design-system", `too few previews (${previews.length})`);
   const asPreviews = previews.map((p) => ({ name: p.name.replace("components/", ""), html: p.data }));
 
-  // EXTENDED COLOR LAYER (#471) — chrome-only: -placeholder/-scrim/-inverse-surface/-inverse-on-surface;
+  // EXTENDED COLOR LAYER (#471), chrome-only: -placeholder/-scrim/-inverse-surface/-inverse-on-surface;
   // per-family (chrome + every fill family, intents included): -container/-container-low/-container-high.
   // The reduced consumption set (dsColorRoles), the tokens.json colors/colorsDark tier, and the DESIGN.md
-  // frontmatter must all agree — one source, three carriers, same as every other slot.
+  // frontmatter must all agree, one source, three carriers, same as every other slot.
   {
     const ds = X.dsColorRoles(C(ALL));
     const cn = ds.chrome.n;
@@ -1422,7 +1422,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
     }
   }
 
-  // TEXT-RENDERING BASELINE — "always include" is a GATE, not a hope (the standing rule, 2026-07-10):
+  // TEXT-RENDERING BASELINE, "always include" is a GATE, not a hope (the standing rule, 2026-07-10):
   // the DESIGN.md Typography section mandates the block (smoothing pair · optimizeLegibility · optical
   // sizing · font-synthesis none · kerning + common ligatures · the code/pre/kbd no-ligatures exception),
   // and EVERY @dsCard preview actually renders under it.
@@ -1438,13 +1438,13 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
     }
   }
 
-  // §8 GATES — KIT FIDELITY: G1 (contrast) is a MEASUREMENT of the kit's own onColorMode choice
+  // §8 GATES, KIT FIDELITY: G1 (contrast) is a MEASUREMENT of the kit's own onColorMode choice
   // (fixed = uniform brand labels, sub-4.5 pairs accepted per ADR-003) and is DISCLOSED in the
   // receipt; every OTHER gate (G0 parse, G2 parity, G3 carrier equality, G5 refs, G6 sections,
   // G7 roles, G8 leading) stays a hard ZERO.
   const gate = dsBundleGates({ designMd: byName["DESIGN.md"], tokensJson: byName["tokens.json"], previews: asPreviews });
   const nonG1 = gate.findings.filter((f) => f.level === "ERROR" && f.gate !== "G1");
-  if (nonG1.length > 0) FAIL("design-system", `§8 non-G1 gates: ${nonG1.length} fail(s) — ${nonG1.map((f) => `[${f.gate}] ${f.msg}`).join(" | ")}`);
+  if (nonG1.length > 0) FAIL("design-system", `§8 non-G1 gates: ${nonG1.length} fail(s), ${nonG1.map((f) => `[${f.gate}] ${f.msg}`).join(" | ")}`);
   const g1Count = gate.findings.filter((f) => f.level === "ERROR" && f.gate === "G1").length;
   const receipt = byName["README.md"];
   if (g1Count > 0) {
@@ -1453,12 +1453,12 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
     if (!/ADR-003/.test(receipt)) FAIL("design-system", "contrast disclosure missing the ADR-003 brand-override citation");
   } else if (!/🟢 Contrast/.test(receipt)) FAIL("design-system", "all pairs pass but the receipt has no 🟢 contrast line");
 
-  // KIT FIDELITY — the reduced grammar is a NAME reduction of the semantic layer: values VERBATIM.
+  // KIT FIDELITY, the reduced grammar is a NAME reduction of the semantic layer: values VERBATIM.
   {
     const tjF = JSON.parse(byName["tokens.json"]);
     for (const [nm, sem] of [["primary", "primary"], ["primary-on-primary", "primary-on-primary"], ["primary-hover", "primary-hover"], ["neutral-background", "neutral-background"]]) {
-      if (tjF.colors[nm] !== tjF.semantic[sem]) FAIL("design-system", `colors.${nm} !== semantic.${sem} — the export adjusted a kit value (fidelity broken)`);
-      if (tjF.colorsDark[nm] !== tjF.semanticDark[sem]) FAIL("design-system", `colorsDark.${nm} !== semanticDark.${sem} — the export adjusted a kit value (fidelity broken)`);
+      if (tjF.colors[nm] !== tjF.semantic[sem]) FAIL("design-system", `colors.${nm} !== semantic.${sem}, the export adjusted a kit value (fidelity broken)`);
+      if (tjF.colorsDark[nm] !== tjF.semanticDark[sem]) FAIL("design-system", `colorsDark.${nm} !== semanticDark.${sem}, the export adjusted a kit value (fidelity broken)`);
     }
   }
 
@@ -1486,12 +1486,12 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
     if (!geo.sizes || !geo.sizes.md || !(geo.sizes.md.height > 0 && geo.sizes.md.icon > 0)) FAIL("design-system", "geometry.sizes.md missing/non-numeric");
     for (const grp of ["insets", "gaps", "borders", "focus"]) if (!geo[grp] || Object.values(geo[grp]).some((v) => typeof v !== "number")) FAIL("design-system", `geometry.${grp} missing/non-numeric`);
     if (!Object.values(tj.type.scale).some((st) => typeof st.letterSpacing === "number")) FAIL("design-system", "no type.scale step carries letterSpacing (tracking dropped)");
-    // ICONS — always present (an agent must never pick its own library); sizes come FROM geometry, never
+    // ICONS, always present (an agent must never pick its own library); sizes come FROM geometry, never
     // redefined, so the icon ramp must equal the geometry ramp's per-size icon px.
     if (!tj.icons || tj.icons.family !== "Phosphor" || tj.icons.variant !== "regular") FAIL("design-system", `tokens.icons is not the default Phosphor·regular: ${JSON.stringify(tj.icons)}`);
     const geoIcons = Object.fromEntries(Object.entries(gsc.sizes).map(([k, v]) => [k.toLowerCase(), v.icon]));
     if (JSON.stringify(tj.icons.sizes) !== JSON.stringify(geoIcons)) FAIL("design-system", "tokens.icons.sizes diverges from the geometry ramp (icon sizes must never be redefined)");
-    // MOTION — always present. Easings are cubic-bezier strings (an agent binds, never types); the ms
+    // MOTION, always present. Easings are cubic-bezier strings (an agent binds, never types); the ms
     // ladder is 4 tiers × 4 steps, strictly ascending; only compositor properties are animatable.
     const mo = tj.motion || {};
     if (!mo.easing || !mo.duration || !Array.isArray(mo.animatable)) FAIL("design-system", "tokens.motion missing easing/duration/animatable");
@@ -1506,7 +1506,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
     }
   }
 
-  // SELF-CONTAINMENT (standing rule): no emitted file may reference a path outside its shipped folder —
+  // SELF-CONTAINMENT (standing rule): no emitted file may reference a path outside its shipped folder,
   // the consuming harness may have ONLY that folder. Gate every design-system bundle file.
   const UNREACHABLE = /\.\.\/design-system|\.\.\/_superseded|design-system-files-for-llms/;
   for (const f of files) if (UNREACHABLE.test(f.data)) FAIL("design-system", `${f.name} references a path outside the shipped folder (unreachable for the consumer)`);
@@ -1533,7 +1533,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 
   // BRIGHT-BRAND regression fixture (the real ADIA kit params): base fills luminous enough that the
   // MEASURED light-scheme label is the INK pole. The role table's mode-mirrored hover (darker in light)
-  // then moves AGAINST the ink label — pre-fix, 7/8 families failed AA on the light hover pair (the
+  // then moves AGAINST the ink label, pre-fix, 7/8 families failed AA on the light hover pair (the
   // default theme masked it: its labels are white, so darkening hover *gains* contrast). dsStateFills
   // must keep every emitted state pair ≥4.5 for THIS shape too, not just the default.
   {
@@ -1543,7 +1543,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
     const bPrev = bf.filter((f) => f.name.startsWith("components/")).map((p) => ({ name: p.name.replace("components/", ""), html: p.data }));
     const bg = dsBundleGates({ designMd: bByName["DESIGN.md"], tokensJson: bByName["tokens.json"], previews: bPrev });
     const bNonG1 = bg.findings.filter((f) => f.level === "ERROR" && f.gate !== "G1");
-    if (bNonG1.length > 0) FAIL("design-system", `bright-brand fixture: non-G1 gates ${bNonG1.length} fail(s) — ${bNonG1.slice(0, 4).map((f) => `[${f.gate}] ${f.msg}`).join(" | ")}`);
+    if (bNonG1.length > 0) FAIL("design-system", `bright-brand fixture: non-G1 gates ${bNonG1.length} fail(s), ${bNonG1.slice(0, 4).map((f) => `[${f.gate}] ${f.msg}`).join(" | ")}`);
     // fidelity: the bright kit's values ship VERBATIM (fixed-mode G1 misses are the kit's own, disclosed)
     const bTj = JSON.parse(bByName["tokens.json"]);
     if (bTj.colors["primary"] !== bTj.semantic["primary"] || bTj.colors["primary-on-primary"] !== bTj.semantic["primary-on-primary"]) FAIL("design-system", "bright-brand fixture: export adjusted a kit value (fidelity broken)");
@@ -1551,14 +1551,14 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
     if (bG1 > 0 && !bByName["README.md"].includes(`${bG1} derivable fill/on-pair(s) below 4.5:1`)) FAIL("design-system", "bright-brand fixture: receipt does not disclose the measured G1 count");
   }
 
-  // the §8 gate CATCHES a broken bundle (a constant dark on-color) — proves npm test would fail on the F1 defect.
+  // the §8 gate CATCHES a broken bundle (a constant dark on-color), proves npm test would fail on the F1 defect.
   if (tj) {
     // Inject a carrier-divergence defect into the OKLCH tokens.json: a value no kit token plausibly is
     // (#123456), so it MUST diverge from the OKLCH frontmatter and trip G3. (The old #FFFFFF injection went
-    // vacuous under kit fidelity — fixed-mode dark on-colors can BE white, making white a no-op mutation.)
+    // vacuous under kit fidelity, fixed-mode dark on-colors can BE white, making white a no-op mutation.)
     const bad = JSON.parse(JSON.stringify(tj)); const onKey = Object.keys(bad.colorsDark).find((k) => /^(.+)-on-\1$/.test(k)); bad.colorsDark[onKey] = "#123456";
     const g = dsBundleGates({ designMd: md, tokensJson: bad, previews: asPreviews });
-    if (!g.findings.some((f) => f.level === "ERROR" && f.gate === "G3")) FAIL("design-system", "the §8 gate does not catch a constant dark on-color (F1 — G3 carrier divergence)");
+    if (!g.findings.some((f) => f.level === "ERROR" && f.gate === "G3")) FAIL("design-system", "the §8 gate does not catch a constant dark on-color (F1, G3 carrier divergence)");
   }
 
   // disabled-palette fallback: all-off → tokens.json-only with a $note, no throw
@@ -1567,12 +1567,12 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   try { const j = JSON.parse(off[0].data); if (j.colors) FAIL("design-system", "all-disabled emitted colors"); if (!j.$note) FAIL("design-system", "all-disabled missing $note"); } catch { FAIL("design-system", "all-disabled not valid JSON"); }
 }
 
-// ── hpg-export-design-system-catalog (#473 — exportDesignSystemComponents expanded from 7 teaching
+// ── hpg-export-design-system-catalog (#473, exportDesignSystemComponents expanded from 7 teaching
 // previews to a ~95%-usage component catalog: one card per component group, per the pinned resolution.
 // Verifies the returned [{name, data}] array directly: card count/roster, the @dsCard marker + single
 // shared :root structure, token-reference-only discipline (no hardcoded hex/oklch outside :root), and
 // that the active-state + focus-ring tokens (which existed but were never drawn before this ticket) are
-// actually referenced. Runs on the default palettes — the emitter must be theme-general.
+// actually referenced. Runs on the default palettes, the emitter must be theme-general.
 {
   const tsc = typeScale({});
   const gsc = geomScale({});
@@ -1580,8 +1580,8 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   const G = "design-system-catalog";
   const cards = X.exportDesignSystemComponents(state, tsc, gsc);
 
-  // card count — one card per named component group (~12-14 per the resolution; the resolved roster —
-  // 8 named groups + colors/spacing/card — lands at 11, so a wide-but-bounded range catches a regression
+  // card count, one card per named component group (~12-14 per the resolution; the resolved roster,
+  // 8 named groups + colors/spacing/card, lands at 11, so a wide-but-bounded range catches a regression
   // (a collapse back toward 7, or an unbounded per-variant explosion) without pinning an exact number.
   if (cards.length < 10 || cards.length > 18) FAIL(G, `card count ${cards.length} outside the expected ~11-14 catalog range`);
   const names = cards.map((c) => c.name);
@@ -1589,7 +1589,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   for (const want of ["components/colors.html", "components/buttons.html", "components/inputs.html", "components/table.html", "components/dialog.html", "components/navigation.html", "components/card.html", "components/feedback.html", "components/motion.html", "components/typography.html", "components/spacing.html"])
     if (!names.includes(want)) FAIL(G, `catalog missing expected card ${want}`);
 
-  // marker / :root structure — every card is a self-contained @dsCard sharing exactly one :root block,
+  // marker / :root structure, every card is a self-contained @dsCard sharing exactly one :root block,
   // and none forks color on prefers-color-scheme (light-dark() must carry that branch, not a media query).
   for (const c of cards) {
     const first = c.data.trim().split("\n")[0];
@@ -1600,7 +1600,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
     if (/@media\s*\(\s*prefers-color-scheme/.test(c.data)) FAIL(G, `${c.name}: forks on prefers-color-scheme (light-dark() must carry the branch, not a media query)`);
   }
 
-  // token-reference-only discipline — outside the shared :root declaration (where tokens are DEFINED),
+  // token-reference-only discipline, outside the shared :root declaration (where tokens are DEFINED),
   // no card may hardcode a raw hex or oklch() color literal; every color value must be a var(--...) ref.
   for (const c of cards) {
     const body = c.data.replace(/:root\{[^}]*\}/, "");
@@ -1610,7 +1610,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   }
 
   // active-state + focus-ring tokens actually referenced (the seed's own complaint: "tokens already
-  // exist but are never drawn") — both must show up as var() references on the Buttons card.
+  // exist but are never drawn"), both must show up as var() references on the Buttons card.
   const dsr = X.dsColorRoles(state);
   const brand = dsr.families.find((f) => /primary|brand/.test(f)) || dsr.chrome.n;
   const pfx = X.cssPrefixOf(state);
@@ -1619,7 +1619,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   else {
     if (dsr.tokens.some((t) => t.name === `${brand}-active`) && !buttons.data.includes(`var(--${pfx}-${brand}-active)`))
       FAIL(G, "Buttons card does not reference the brand family's -active token");
-    // Focus ring — real outline/outline-offset from geometry.focus, AND (the reviewed defect) the
+    // Focus ring, real outline/outline-offset from geometry.focus, AND (the reviewed defect) the
     // ring's own color token must differ from the control's own fill token: a ring drawn in the
     // SAME token as the fill it surrounds is illegible at a 1-2px geometry-authored offset.
     const demo = (buttons.data.match(/<button class="btn btn--focus-demo" style="([^"]*)"/) || [])[1] || "";
@@ -1629,11 +1629,11 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
       const fillMatch = /(?:^|;)background:var\((--[a-z0-9-]+)\)/.exec(demo);
       if (!ringMatch || !/outline-offset:\d+px/.test(demo)) FAIL(G, "Buttons card does not render a real focus ring (outline/outline-offset from geometry.focus)");
       else if (!fillMatch) FAIL(G, "Buttons card's focus-ring control has no token-derived fill to contrast the ring against");
-      else if (ringMatch[1] === fillMatch[1]) FAIL(G, `Buttons card's focus ring (${ringMatch[1]}) is the SAME token as its control's own fill (${fillMatch[1]}) — illegible at a 1-2px offset`);
+      else if (ringMatch[1] === fillMatch[1]) FAIL(G, `Buttons card's focus ring (${ringMatch[1]}) is the SAME token as its control's own fill (${fillMatch[1]}), illegible at a 1-2px offset`);
     }
   }
 
-  // Motion card — reduced-motion is a CROSS-FADE fallback (reduce, don't remove), not a frozen preview:
+  // Motion card, reduced-motion is a CROSS-FADE fallback (reduce, don't remove), not a frozen preview:
   // the full-motion keyframe moves (translateX); the media-query override swaps to an opacity-only one.
   const motion = cards.find((c) => c.name === "components/motion.html");
   if (!motion) FAIL(G, "no components/motion.html card");
@@ -1644,15 +1644,15 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
     else if (reduceBlock.includes("translateX")) FAIL(G, "Motion card's reduced-motion override still animates transform (must cross-fade opacity only)");
   }
 
-  // Dialog card — the fixed dialog-backdrop system constant rides as a token reference, never a literal.
+  // Dialog card, the fixed dialog-backdrop system constant rides as a token reference, never a literal.
   const dialog = cards.find((c) => c.name === "components/dialog.html");
   if (!dialog) FAIL(G, "no components/dialog.html card");
   else if (!dialog.data.includes(`var(--${pfx}-dialog-backdrop)`)) FAIL(G, "Dialog card does not reference --{pfx}-dialog-backdrop via var()");
 
-  // uiFont font-size pin (#477) — .btn/.pbtn (Card)/.dlg-btn (Dialog) must carry a font-size read from
+  // uiFont font-size pin (#477): .btn/.pbtn (Card)/.dlg-btn (Dialog) must carry a font-size read from
   // the real UI-control MD step, not the browser default; and the Inputs .field rule must not carry a
   // bare `font:` SHORTHAND after uiFont (it resets family/size/weight/line-height to `inherit`,
-  // wiping the UI voice uiFont just set — the exact defect this ticket fixes).
+  // wiping the UI voice uiFont just set, the exact defect this ticket fixes).
   {
     const uiMd = tsc && tsc.categories && tsc.categories["UI-control"] && tsc.categories["UI-control"].MD;
     const wantSize = uiMd && uiMd.size ? uiMd.size : null;
@@ -1676,20 +1676,20 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
       if (!fieldRule) FAIL(G, "Inputs card carries no .field rule to check");
       else {
         if (/font-size:(\d+(?:\.\d+)?)px/.exec(fieldRule) == null) FAIL(G, ".field rule carries no font-size (UI voice not applied)");
-        if (/(?:^|;)font:\s*inherit\b/.test(fieldRule)) FAIL(G, ".field rule still carries a `font: inherit` shorthand after uiFont — it resets family/size/weight to inherit, wiping the UI voice");
+        if (/(?:^|;)font:\s*inherit\b/.test(fieldRule)) FAIL(G, ".field rule still carries a `font: inherit` shorthand after uiFont, it resets family/size/weight to inherit, wiping the UI voice");
       }
     }
   }
 
-  // linear-ladder "wins while active" pin (issue #483) — geomScale's own composition-skip decision
+  // linear-ladder "wins while active" pin (issue #483), geomScale's own composition-skip decision
   // (the ladder's text formula overrides the UI-control voice) must reach EVERY uiFont consumer here,
   // not just the Size-ladder preview row (which already reads per-size `s.font` directly and needed no
   // change). Re-derives the catalog with a ladder-active geomSc and checks .btn/.pbtn/.dlg-btn/.field
-  // all switch from the composed UI-control MD size to the ladder's own MD font — and that turning the
+  // all switch from the composed UI-control MD size to the ladder's own MD font, and that turning the
   // ladder OFF again is untouched (the identity gate for this leg).
   {
     const gscLadder = geomScale({ ramp: "linear4" }, { typeScale: tsc });
-    const wantLadderSize = gscLadder.sizes[LADDER_MD_STEP].font; // "3" — the ladder's own MD-equivalent, not ".MD" (numbered steps, issue #483)
+    const wantLadderSize = gscLadder.sizes[LADDER_MD_STEP].font; // "3", the ladder's own MD-equivalent, not ".MD" (numbered steps, issue #483)
     const cardsLadder = X.exportDesignSystemComponents(state, tsc, gscLadder);
     const fontSizeOf = (html, ruleRe) => { const m = (html || "").match(ruleRe); const fs = m && /font-size:(\d+(?:\.\d+)?)px/.exec(m[0]); return fs ? Number(fs[1]) : null; };
     const ladderChecks = [
@@ -1711,7 +1711,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
     const uiMdSize = tsc && tsc.categories && tsc.categories["UI-control"] && tsc.categories["UI-control"].MD && tsc.categories["UI-control"].MD.size;
     if (uiMdSize != null && wantLadderSize === uiMdSize) FAIL(G, "test fixture problem: the ladder's MD font must differ from the composed UI-control MD size for this leg to be meaningful");
 
-    // mapping ruling (2026-09-02, THIRD and final: the full 10-step table, NUMBERED "0".."9") — the
+    // mapping ruling (2026-09-02, THIRD and final: the full 10-step table, NUMBERED "0".."9"), the
     // Buttons card's Size-ladder row must render all ten numbered steps, not the default ramp's six
     // t-shirt names (it reads geomSc.sizes' own keys via orderedSizeNames, never a hardcoded list).
     const buttonsLadder = cardsLadder.find((c) => c.name === "components/buttons.html");
@@ -1719,7 +1719,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
     const sizeButtonCount = sizeRowLadder ? (sizeRowLadder.match(/<button/g) || []).length : 0;
     if (sizeButtonCount !== 10) FAIL(G, `Buttons card's Size-ladder row renders ${sizeButtonCount} controls while the linear ladder is active, expected 10 (steps 0-9)`);
     if (!sizeRowLadder || !sizeRowLadder.includes(">0<") || !sizeRowLadder.includes(">9<")) FAIL(G, "Buttons card's Size-ladder row is missing the ladder's step 0 or step 9 control");
-    // and they render in ascending numeric order (step 0 first, step 9 last) — not JS's coincidental
+    // and they render in ascending numeric order (step 0 first, step 9 last), not JS's coincidental
     // integer-key reordering, but orderedSizeNames' explicit canonical-step-index sort (issue #483).
     const ladderStepOrder = [...sizeRowLadder.matchAll(/>(\d)</g)].map((m) => m[1]);
     if (ladderStepOrder.join(",") !== "0,1,2,3,4,5,6,7,8,9") FAIL(G, `Buttons card's Size-ladder row is out of order, expected steps 0-9 ascending (got ${ladderStepOrder.join(",")})`);
@@ -1728,10 +1728,10 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
     const sizeButtonCountDefault = sizeRowDefault ? (sizeRowDefault.match(/<button/g) || []).length : 0;
     if (sizeButtonCountDefault !== 6) FAIL(G, `Buttons card's Size-ladder row renders ${sizeButtonCountDefault} controls on the DEFAULT ramp, expected 6 (unchanged by the ladder's existence)`);
 
-    // checkbox/radio + switch pin — Inputs' selection controls read sizeAnchor(geomSc,"SM"/"XS")'s
+    // checkbox/radio + switch pin, Inputs' selection controls read sizeAnchor(geomSc,"SM"/"XS")'s
     // icon, not a bare .sizes.SM/.sizes.XS (which don't exist on the ladder and used to silently fall
     // through to the hardcoded 18/16 defaults, so the Inputs card never actually followed the ladder).
-    // baseHeight 40 (not the canonical 28 the rest of this leg uses) — at 28 the ladder's SM/XS-
+    // baseHeight 40 (not the canonical 28 the rest of this leg uses), at 28 the ladder's SM/XS-
     // equivalent icons (18/16) happen to numerically COINCIDE with the hardcoded fallback constants,
     // which would let a regressed "still reads .sizes.SM" bug pass silently.
     const gscLadder40 = geomScale({ ramp: "linear4", baseHeight: 40 }, { typeScale: tsc });
@@ -1749,7 +1749,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
     if (wantCtrlIcon === 18 || wantSwitchH === 16) FAIL(G, "test fixture problem: the ladder's SM/XS-equivalent icons must differ from the 18/16 hardcoded fallbacks for this leg to be meaningful");
   }
 
-  // Typography card — every voice's every step appears (not one cherry-picked key per tier). Anchored
+  // Typography card, every voice's every step appears (not one cherry-picked key per tier). Anchored
   // to the EXACT caption-span markup exportDesignSystemComponents emits for a step specimen (the
   // ".cap" span's own class/style plus the "<voice-step> · size/lh · weight" triple it wraps) rather
   // than the bare "· N/M ·" fragment, which could in principle coincide with unrelated card text.
@@ -1762,12 +1762,12 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 
   const md = X.exportDesignSystemSpine(state, tsc, gsc);
 
-  // Hover-wash grammar pin (#475/#476) — {cn}-surface-dim must exist in the reduced consumption
+  // Hover-wash grammar pin (#475/#476), {cn}-surface-dim must exist in the reduced consumption
   // grammar (not just the full semantic layer), be declared as a real custom property in the shared
   // :root (so the fallback, if ever taken, resolves rather than dangles), be taught in the Surfaces
   // prose (consumers aren't handed an untaught token), and the Table/Navigation fallback SOURCE must
   // target -surface-dim, never regress to -surface-high (a MIRRORED elevation stop, not a hover
-  // wash) — the branch is unreachable at runtime under any real theme (every real palette carries
+  // wash), the branch is unreachable at runtime under any real theme (every real palette carries
   // -hover), so a source-level check is the only way to pin the literal fallback target.
   {
     const cn = dsr.chrome.n;
@@ -1786,7 +1786,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
     if (menuHoverRule.includes('"-surface-high"')) FAIL(G, "Navigation menu-item hover fallback source regressed back to -surface-high (an elevation stop, not a hover wash)");
   }
 
-  // AdiaUI-parity dimensional-default pins (#480) — the concrete dimension/state values this ticket
+  // AdiaUI-parity dimensional-default pins (#480), the concrete dimension/state values this ticket
   // adopted from the AdiaUI (gen-ui-kit) spec, translated onto our own token grammar.
   {
     const cn = dsr.chrome.n;
@@ -1798,7 +1798,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
     const navCard = cards.find((c) => c.name === "components/navigation.html");
 
     // -outline (a real, stronger role than -outline-variant) exists in the reduced grammar and is
-    // what the Table header's hairline reads — row dividers keep the subtler -outline-variant.
+    // what the Table header's hairline reads, row dividers keep the subtler -outline-variant.
     if (!dsr.tokens.some((t) => t.name === `${cn}-outline`)) FAIL(G, `dsColorRoles is missing ${cn}-outline (the AdiaUI-parity strong-hairline token)`);
     if (table) {
       if (!table.data.includes(`var(--${pfx}-${cn}-outline)`)) FAIL(G, "Table header does not reference the stronger -outline hairline");
@@ -1808,17 +1808,17 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
       if (!tdRule.includes(`--${pfx}-${cn}-outline-variant`)) FAIL(G, "Table row dividers should keep the subtler -outline-variant");
     }
 
-    // Buttons — Ghost is transparent even at rest (not Tonal's always-on fill); Tonal stands on a
+    // Buttons, Ghost is transparent even at rest (not Tonal's always-on fill); Tonal stands on a
     // real token fill; Active pairs its color state with the scale(0.97) press transform.
     if (buttonsCard) {
       const ghostBtn = (buttonsCard.data.match(/<button class="btn" style="([^"]*)">Ghost<\/button>/) || [])[1] || "";
-      if (!ghostBtn.startsWith("background:transparent")) FAIL(G, `Ghost variant must be transparent even at rest — got: ${ghostBtn}`);
+      if (!ghostBtn.startsWith("background:transparent")) FAIL(G, `Ghost variant must be transparent even at rest, got: ${ghostBtn}`);
       const tonalBtn = (buttonsCard.data.match(/<button class="btn" style="([^"]*)">Tonal<\/button>/) || [])[1] || "";
-      if (!/^background:var\(--/.test(tonalBtn)) FAIL(G, `Tonal variant must stand on a real token fill — got: ${tonalBtn}`);
+      if (!/^background:var\(--/.test(tonalBtn)) FAIL(G, `Tonal variant must stand on a real token fill, got: ${tonalBtn}`);
       if (!/transform:scale\(0\.97\)/.test(buttonsCard.data)) FAIL(G, "Buttons card active/pressed state carries no scale(0.97) press transform");
     }
 
-    // Card — the inset is a real spacing-ladder value (AdiaUI's own default inset, 16), not the old
+    // Card, the inset is a real spacing-ladder value (AdiaUI's own default inset, 16), not the old
     // hardcoded 24.
     if (cardCard) {
       const space = Object.keys(gsc.space).sort((a, b) => a - b).map((k) => gsc.space[k]);
@@ -1829,7 +1829,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
       else if (Number(padMatch[1]) !== wantPad) FAIL(G, `Card padding is ${padMatch[1]}px, expected the real spacing-ladder value ${wantPad}px`);
     }
 
-    // Dialog + Toast — the soft shadow (top-most/overlay surfaces, per our own Elevation & Depth
+    // Dialog + Toast, the soft shadow (top-most/overlay surfaces, per our own Elevation & Depth
     // exception) is a real -scrim token reference, never a raw color.
     if (dialogCard) {
       const panelRule = (dialogCard.data.match(/\.dlg-panel\{[^}]*\}/) || [])[0] || "";
@@ -1840,7 +1840,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
       if (!/max-width:\d+px/.test(toastRule)) FAIL(G, "Toast rule carries no max-width constraint");
       const toastEl = (feedbackCard.data.match(/<div class="toast" style="([^"]*)">/) || [])[1] || "";
       if (!/box-shadow:[^;"]*var\(--/.test(toastEl)) FAIL(G, "Toast element carries no token-derived box-shadow");
-      // Badge — mono, uppercase, tracked, tabular (AdiaUI's badge typography treatment, translated
+      // Badge, mono, uppercase, tracked, tabular (AdiaUI's badge typography treatment, translated
       // into our own mono voice, not their font).
       const badgeRule = (feedbackCard.data.match(/\.badge\{[^}]*\}/) || [])[0] || "";
       if (!/text-transform:uppercase/.test(badgeRule)) FAIL(G, "Badge rule is not uppercase");
@@ -1854,11 +1854,11 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
       if (!trackHeight || Number(trackHeight[1]) !== 6) FAIL(G, `Progress track height is ${trackHeight ? trackHeight[1] : "unset"}px, expected 6px`);
       if (cardCard && alertRadius) {
         const panelRadius = /border-radius:(\d+)px/.exec((cardCard.data.match(/\.panel\{[^}]*\}/) || [])[0] || "");
-        if (panelRadius && Number(alertRadius[1]) === Number(panelRadius[1])) FAIL(G, "Alert radius still matches Card's lg radius — expected the smaller md radius");
+        if (panelRadius && Number(alertRadius[1]) === Number(panelRadius[1])) FAIL(G, "Alert radius still matches Card's lg radius, expected the smaller md radius");
       }
     }
 
-    // Navigation — the menu popover is a card-tier (lg) radius, and its item radius is CONCENTRIC:
+    // Navigation, the menu popover is a card-tier (lg) radius, and its item radius is CONCENTRIC:
     // the popover's own radius minus its own padding, never a fixed/arbitrary value.
     if (navCard && cardCard) {
       const menuRule = (navCard.data.match(/\.menu\{[^}]*\}/) || [])[0] || "";
@@ -1874,16 +1874,16 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
     }
   }
 
-  // §8 gate parity — the expanded catalog still clears every non-G1 gate through dsBundleGates, same as
+  // §8 gate parity, the expanded catalog still clears every non-G1 gate through dsBundleGates, same as
   // the full-bundle check above (this is a targeted re-run scoped to the catalog change itself).
   const tj = X.exportDesignSystemTokens(state, tsc, gsc);
   const gate = dsBundleGates({ designMd: md, tokensJson: tj, previews: cards.map((c) => ({ name: c.name.replace("components/", ""), html: c.data })) });
   const nonG1 = gate.findings.filter((f) => f.level === "ERROR" && f.gate !== "G1");
-  if (nonG1.length > 0) FAIL(G, `§8 non-G1 gates: ${nonG1.length} fail(s) — ${nonG1.map((f) => `[${f.gate}] ${f.msg}`).join(" | ")}`);
+  if (nonG1.length > 0) FAIL(G, `§8 non-G1 gates: ${nonG1.length} fail(s), ${nonG1.map((f) => `[${f.gate}] ${f.msg}`).join(" | ")}`);
 }
 
-// ── hpg-export-design-system-stitch (the Google Stitch profile: DESIGN.md ONLY — the SAME canonical spine,
-// byte-identical to the Claude Code DESIGN.md — plus a Stitch-lint-framed README receipt). One core, two
+// ── hpg-export-design-system-stitch (the Google Stitch profile: DESIGN.md ONLY, the SAME canonical spine,
+// byte-identical to the Claude Code DESIGN.md, plus a Stitch-lint-framed README receipt). One core, two
 // uploads: the acceptance is byte-identity of the DESIGN.md, so P3 adds NO second spine to drift.
 {
   const tsc = typeScale({});
@@ -1894,28 +1894,28 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   if (stitch.length !== 2) FAIL("design-system-stitch", `stitch bundle is not 2 files (got ${stitch.length}: ${stitch.map((f) => f.name).join(", ")})`);
   for (const layer of ["DESIGN.md", "README.md"]) if (!(layer in byName)) FAIL("design-system-stitch", `stitch bundle missing ${layer}`);
 
-  // BYTE-IDENTITY — the Stitch DESIGN.md must equal the Claude Code DESIGN.md exactly (one canonical spine).
+  // BYTE-IDENTITY, the Stitch DESIGN.md must equal the Claude Code DESIGN.md exactly (one canonical spine).
   const claudeSpine = X.exportDesignSystemSpine(C(ALL), tsc, gsc);
   if (byName["DESIGN.md"] !== claudeSpine) FAIL("design-system-stitch", "Stitch DESIGN.md is NOT byte-identical to the Claude Code spine");
   const claudeBundle = Object.fromEntries(X.exportDesignSystemBundle(C(ALL), tsc, gsc, { date: "2026-07-05" }).map((f) => [f.name, f.data]));
   if (byName["DESIGN.md"] !== claudeBundle["DESIGN.md"]) FAIL("design-system-stitch", "Stitch DESIGN.md diverges from the Claude Code bundle's DESIGN.md");
 
-  // no light-dark() in the carrier (Stitch rejects it) — inherited from the shared spine, asserted here too.
+  // no light-dark() in the carrier (Stitch rejects it), inherited from the shared spine, asserted here too.
   if (/^\s+[a-z0-9-]+(?:-dark)?:\s*"light-dark\(/mi.test(byName["DESIGN.md"])) FAIL("design-system-stitch", "light-dark() in the Stitch frontmatter carrier");
 
-  // NO DUPLICATE YAML KEY — the `primary` Stitch alias must not collide with a grammar family already
+  // NO DUPLICATE YAML KEY, the `primary` Stitch alias must not collide with a grammar family already
   // named `primary`. C(ALL) is the canonical-defaults theme whose brand family IS `primary`, so a naive
-  // always-append alias emits `primary:`/`primary-dark:` twice — a duplicate key the Stitch prelint rejects
+  // always-append alias emits `primary:`/`primary-dark:` twice, a duplicate key the Stitch prelint rejects
   // (theme-generality regression: the golden's renamed brand family hid this). Each must appear exactly once.
   const fm = (byName["DESIGN.md"].match(/^---\n([\s\S]*?)\n---/) || [, ""])[1];
   for (const k of ["primary", "primary-dark"]) {
     const n = (fm.match(new RegExp(`^  ${k}:`, "gm")) || []).length;
-    if (n !== 1) FAIL("design-system-stitch", `frontmatter \`${k}:\` appears ${n}× (expected exactly 1 — a duplicate YAML key fails the Stitch prelint)`);
+    if (n !== 1) FAIL("design-system-stitch", `frontmatter \`${k}:\` appears ${n}× (expected exactly 1, a duplicate YAML key fails the Stitch prelint)`);
   }
 
   // Stitch-profile README receipt: distinct header + the single-file / byte-identical / lint framing.
   const rm = byName["README.md"];
-  if (!/design-system-for-google-stitch — Stitch profile export/.test(rm)) FAIL("design-system-stitch", "README is not the Stitch profile receipt");
+  if (!/design-system-for-google-stitch: Stitch profile export/.test(rm)) FAIL("design-system-stitch", "README is not the Stitch profile receipt");
   if (!/`DESIGN\.md` only/.test(rm)) FAIL("design-system-stitch", "Stitch receipt missing the single-file note");
   if (!/same canonical core/.test(rm)) FAIL("design-system-stitch", "Stitch receipt missing the one-canonical-core note");
   if (!/complete on its own/.test(rm)) FAIL("design-system-stitch", "Stitch receipt missing the self-containment note");
@@ -1932,10 +1932,10 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 }
 
 // ── hpg-export-design-system-make (the Figma Make profile: a routed guidelines/ tree). The gate of
-// record is make_guidelines_check.py (D1–D6, D10, D11) — python, run manually against emitted scratch
+// record is make_guidelines_check.py (D1–D6, D10, D11), python, run manually against emitted scratch
 // dirs for both the default theme and a hand-authored theme (see the handoff); this block asserts the
 // SAME shape/content predicates in JS so `npm test` stays the zero-dependency gate. Runs on the DEFAULT
-// palettes (C(ALL)) — the emitter must be theme-general, no hardcoded brand names/values.
+// palettes (C(ALL)), the emitter must be theme-general, no hardcoded brand names/values.
 {
   const tsc = typeScale({});
   const gsc = geomScale({});
@@ -1947,7 +1947,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   if (make.length !== wantFiles.length) FAIL("design-system-make", `make bundle is not ${wantFiles.length} files (got ${make.length}: ${make.map((f) => f.name).join(", ")})`);
   for (const f of wantFiles) if (!(f in byName)) FAIL("design-system-make", `bundle missing ${f}`);
 
-  // D10 carrier — styles.css is exportShadcn() in the MEASURED on-color mode (R1: the shadcn projection
+  // D10 carrier, styles.css is exportShadcn() in the MEASURED on-color mode (R1: the shadcn projection
   // forces onColorMode:"contrast" so the dark foregrounds are the contrast-passing pole, like dsColorRoles;
   // raw "fixed"-mode shadcn ships white foregrounds that fail AA on the brightened dark fills).
   const styles = byName["guidelines/styles.css"];
@@ -1962,7 +1962,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   if (!styles.includes("FULL token layers")) FAIL("design-system-make", "styles.css missing the appended full token layers");
   // the appendix must land AFTER the @theme block so the D10 parse (first :root -> .dark -> @theme) is untouched
   if (styles.indexOf("FULL token layers") < styles.indexOf("@theme inline {")) FAIL("design-system-make", "full-layer appendix must come after @theme inline (D10 parse safety)");
-  // TEXT-RENDERING BASELINE — Make carries it as REAL CSS in styles.css AND as prose in typography.md.
+  // TEXT-RENDERING BASELINE, Make carries it as REAL CSS in styles.css AND as prose in typography.md.
   for (const probe of ["-webkit-font-smoothing:antialiased", "font-synthesis:none", "font-optical-sizing:auto", "code, pre, kbd { font-variant-ligatures: none; }"])
     if (!styles.includes(probe)) FAIL("design-system-make", `styles.css missing the text-rendering baseline: ${probe}`);
   const makeTypo = byName["guidelines/foundations/typography.md"];
@@ -1975,63 +1975,63 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
     if (!e || !/^(oklch\(|#)/.test(e.light) || !/^(oklch\(|#)/.test(e.dark)) FAIL("design-system-make", `${tok} does not resolve to concrete values through the link layer`);
   }
   // the fixed --overlay constant resolves too, through the SAME link mechanism, to the SAME value in
-  // both schemes (an overlay doesn't flip) — proves dsFullLayersCss actually defines the alias target
+  // both schemes (an overlay doesn't flip), proves dsFullLayersCss actually defines the alias target
   // the aliased shadcn projection points at (D10 for a non-palette token, not just palette roles).
   {
     const e = rmap["--overlay"];
     if (!e || e.light !== "oklch(0 0 0 / 80%)" || e.dark !== "oklch(0 0 0 / 80%)") FAIL("design-system-make", `--overlay does not resolve to the fixed backdrop value in both schemes (got ${JSON.stringify(e)})`);
   }
-  // KIT-FIDELITY guard — the resolved shadcn foregrounds must equal the kit's own on-role values
+  // KIT-FIDELITY guard, the resolved shadcn foregrounds must equal the kit's own on-role values
   // (tokens.json semantic layer, same state): the projection may never re-measure or re-point a label.
   {
     const tjm = JSON.parse(X.exportDesignSystemTokens(C(ALL), tsc, gsc));
     for (const [tok, sem] of [["--primary-foreground", "primary-on-primary"], ["--primary", "primary"], ["--background", "neutral-background"]]) {
       const e = rmap[tok];
       if (!e) { FAIL("design-system-make", `${tok} missing from the resolved runtime map`); continue; }
-      if (e.light !== tjm.semantic[sem] || e.dark !== tjm.semanticDark[sem]) FAIL("design-system-make", `resolved ${tok} != the kit's ${sem} role — the projection adjusted a kit value (fidelity broken)`);
+      if (e.light !== tjm.semantic[sem] || e.dark !== tjm.semanticDark[sem]) FAIL("design-system-make", `resolved ${tok} != the kit's ${sem} role, the projection adjusted a kit value (fidelity broken)`);
     }
   }
 
   // SELF-CONTAINMENT: no file may reference a path outside the shipped folder (`../styles.css` WITHIN
-  // guidelines/ is fine — same shipped tree; sibling design-system folders are not).
+  // guidelines/ is fine, same shipped tree; sibling design-system folders are not).
   const UNREACHABLE_M = /\.\.\/design-system|\.\.\/_superseded|design-system-files-for-llms/;
   for (const f of make) if (UNREACHABLE_M.test(f.data)) FAIL("design-system-make", `${f.name} references a path outside the shipped folder`);
 
-  // D6 — Guidelines.md hard rules (>=1 "Do NOT" + the literal word "IMPORTANT").
+  // D6, Guidelines.md hard rules (>=1 "Do NOT" + the literal word "IMPORTANT").
   const gmd = byName["guidelines/Guidelines.md"];
   if (!/\bDo NOT\b/.test(gmd)) FAIL("design-system-make", "Guidelines.md missing a 'Do NOT' rule");
   if (!/IMPORTANT/.test(gmd)) FAIL("design-system-make", "Guidelines.md missing the IMPORTANT marker");
 
-  // D1 — Guidelines.md routes to every leaf; overview.md routes to button.md.
+  // D1, Guidelines.md routes to every leaf; overview.md routes to button.md.
   for (const rel of ["setup.md", "foundations/color.md", "foundations/typography.md", "foundations/spacing.md", "components/overview.md", "components/button.md"])
     if (!gmd.includes(rel)) FAIL("design-system-make", `Guidelines.md does not route to ${rel}`);
   if (!byName["guidelines/components/overview.md"].includes("button.md")) FAIL("design-system-make", "overview.md does not route to button.md");
 
-  // D5 — button.md names hover + carries a color literal or a -hover/-active token reference.
+  // D5, button.md names hover + carries a color literal or a -hover/-active token reference.
   const btn = byName["guidelines/components/button.md"];
   if (!/\bhover\b/i.test(btn)) FAIL("design-system-make", "button.md does not name 'hover'");
   if (!/-hover\b/.test(btn) && !btn.includes("var(--")) FAIL("design-system-make", "button.md hover state carries no color literal or -hover/-active token reference");
 
-  // D11 — no px leading/tracking anywhere in the tree.
+  // D11, no px leading/tracking anywhere in the tree.
   for (const [nm, data] of Object.entries(byName)) {
     if (/(?:line-height|letter-spacing)\s*:\s*[^;\n]*?\d[\d.]*px/i.test(data) || /\|\s*[\d.]+\s*\/\s*[\d.]+\s*px/i.test(data))
       FAIL("design-system-make", `${nm} carries a px leading/tracking value`);
   }
 
-  // D4 — a paste-ready light-dark() block, with color-scheme: light dark declared in the SAME file.
+  // D4, a paste-ready light-dark() block, with color-scheme: light dark declared in the SAME file.
   const colorMd = byName["guidelines/foundations/color.md"];
   if (!/light-dark\(/.test(colorMd)) FAIL("design-system-make", "no light-dark() runtime block in foundations/color.md");
   if (!/color-scheme:\s*light dark/.test(colorMd)) FAIL("design-system-make", "light-dark() block missing its color-scheme: light dark declaration");
 
-  // D2/D3 — the grammar-token reference table: every row carries light AND dark (parity), and (per
+  // D2/D3, the grammar-token reference table: every row carries light AND dark (parity), and (per
   // R1/dsColorRoles' contrast guarantee) every fill/on-fill pair clears 4.5:1 in both schemes.
   const tokenRowRe = /^\|\s*`(--[a-z0-9-]+)`\s*\|([^|]*)\|([^|]*)\|([^|]*)\|([^|]*)\|/gim;
   let tokenRows = 0;
   for (const m of colorMd.matchAll(tokenRowRe)) tokenRows++;
   if (tokenRows === 0) FAIL("design-system-make", "no `--token` grammar rows found in foundations/color.md (D2 needs >=1)");
 
-  // D10 (measured, not left UNMEASURED) — the runtime block's tokens equal the SHIPPED styles.css
-  // parse (kit fidelity: same state, same carrier, links resolved — never a re-forced mode).
+  // D10 (measured, not left UNMEASURED), the runtime block's tokens equal the SHIPPED styles.css
+  // parse (kit fidelity: same state, same carrier, links resolved, never a re-forced mode).
   const rtMap = X.dsShadcnRuntimeMap(styles);
   if (Object.keys(rtMap).length === 0) FAIL("design-system-make", "dsShadcnRuntimeMap parsed no tokens");
   for (const [tok, { light, dark }] of Object.entries(rtMap))
@@ -2039,11 +2039,11 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 
   // README.md is the figma-make profile receipt, citing the gate of record.
   const rm = byName["README.md"];
-  if (!/design-system-for-figma-make — Figma Make profile export/.test(rm)) FAIL("design-system-make", "README is not the figma-make profile receipt");
+  if (!/design-system-for-figma-make: Figma Make profile export/.test(rm)) FAIL("design-system-make", "README is not the figma-make profile receipt");
   if (!/make_guidelines_check\.py/.test(rm)) FAIL("design-system-make", "README does not cite make_guidelines_check.py as the gate of record");
   if (!rm.includes(`/* ultimate-tokens export schema ${X.EXPORT_SCHEMA_VERSION} */`)) FAIL("design-system-make", "README does not cite the styles.css schema stamp");
 
-  // theme-general — no hardcoded golden-theme (Studio 54) names leak into a default-theme run.
+  // theme-general, no hardcoded golden-theme (Studio 54) names leak into a default-theme run.
   const allText = Object.values(byName).join("\n").toLowerCase();
   for (const bad of ["spotlight", "beam", "mirror", "dancefloor", "studio 54"])
     if (allText.includes(bad)) FAIL("design-system-make", `hardcoded theme-specific name '${bad}' leaked into the theme-general emitter`);
@@ -2069,7 +2069,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   if (off.length !== 0) FAIL("design-system-make", "disabled make bundle is not empty");
 }
 
-// ── hpg-export-design-system-data (#516 — the ds-export `data` tier + DESIGN.md "Data series"
+// ── hpg-export-design-system-data (#516, the ds-export `data` tier + DESIGN.md "Data series"
 // section). REQ-031: data palettes are excluded from `others`/`families` (no hover/active/disabled/
 // container treatment) and form their own tier; DESIGN.md gains a short listing, only when present.
 {
@@ -2082,7 +2082,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   if (JSON.stringify(ds.dataFamilies) !== JSON.stringify(wantData)) FAIL("design-system-data", `dataFamilies = ${JSON.stringify(ds.dataFamilies)}, want ${JSON.stringify(wantData)}`);
   if (ds.families.some((f) => wantData.includes(f))) FAIL("design-system-data", "a data-N slug leaked into ds.families");
   // minimal token: the prime + its on-color (a legend label pairing, and what the §8 G7 gate
-  // requires of every fill) are present, but none of the interactive-family states — proves the
+  // requires of every fill) are present, but none of the interactive-family states, proves the
   // `others` exclusion actually bit.
   for (const f of ds.dataFamilies) {
     if (!ds.tokens.some((t) => t.name === f)) FAIL("design-system-data", `dsColorRoles missing the data prime token for ${f}`);
@@ -2107,7 +2107,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
     if (!mdData.includes(`\`{colors.${f}}\``)) FAIL("design-system-data", `Data series section missing a reference to ${f}`);
     if (!tjData.colors[f]) FAIL("design-system-data", `tokens.json colors missing ${f} referenced by the Data series section`);
   }
-  // REQ-030: the FULL semantic layer's per-palette loop needs no edit — 53 x 16 entries.
+  // REQ-030: the FULL semantic layer's per-palette loop needs no edit, 53 x 16 entries.
   if (Object.keys(tjData.semantic).length !== 53 * ALL_WITH_DATA.length) FAIL("design-system-data", `semantic layer = ${Object.keys(tjData.semantic).length} entries, want 53 * ${ALL_WITH_DATA.length} = ${53 * ALL_WITH_DATA.length}`);
 
   // the extra section rides the unknown-section tolerance: every canonical section still present,
@@ -2124,7 +2124,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   if (nonG1D.length > 0) FAIL("design-system-data", `§8 non-G1 gates fail with data palettes enabled: ${nonG1D.map((f) => `[${f.gate}] ${f.msg}`).join(" | ")}`);
 }
 
-// ── hpg-export-design-system-prime (#541 — the ds-export `prime` block per family in tokens.json +
+// ── hpg-export-design-system-prime (#541, the ds-export `prime` block per family in tokens.json +
 // DESIGN.md's "Prime swatches" section). REQ-054 / AC-031's prime part: every enabled palette
 // (chrome/others/intents AND data-N) carries its seven identity swatches in the DS bundle,
 // byte-identical to exportJSON's own canonical prime block; DESIGN.md gains a short section,
@@ -2153,7 +2153,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   const tj = JSON.parse(X.exportDesignSystemTokens(stateData, tsc, gsc));
   if (JSON.stringify(tj.prime) !== JSON.stringify(ds.prime)) FAIL("design-system-prime", "tokens.json prime block diverges from dsColorRoles.prime");
 
-  // DESIGN.md gains the section unconditionally — present even with NO data palettes enabled.
+  // DESIGN.md gains the section unconditionally, present even with NO data palettes enabled.
   const mdNoData = X.exportDesignSystemSpine(C(BRAND_ONLY), tsc, gsc);
   if (!mdNoData.includes("## Prime swatches")) FAIL("design-system-prime", "DESIGN.md missing the Prime swatches section with no data palettes enabled");
   for (const f of X.dsColorRoles(C(BRAND_ONLY)).families) if (!mdNoData.includes(`${f}-prime-`)) FAIL("design-system-prime", `Prime swatches section (no data) missing a reference to ${f}`);
@@ -2166,7 +2166,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   for (const sec of ["## Overview", "## Colors", "## Typography", "## Components", "## Do's and Don'ts"]) if (!mdData.includes(sec)) FAIL("design-system-prime", `spine missing ${sec} once Prime swatches is present`);
   if (!(mdData.indexOf("## Colors") < mdData.indexOf("## Prime swatches") && mdData.indexOf("## Prime swatches") < mdData.indexOf("## Typography"))) FAIL("design-system-prime", "Prime swatches section is not positioned between Colors and Typography");
 
-  // Stitch shares the SAME canonical spine byte-for-byte (one core, two uploads) — the byte-identity
+  // Stitch shares the SAME canonical spine byte-for-byte (one core, two uploads), the byte-identity
   // check above already proves Stitch's DESIGN.md carries the SAME Prime swatches section and every
   // family reference the Claude Code profile does; asserted explicitly here too so the Stitch profile
   // is its own named proof, not just inherited from the Claude Code assertions above.
@@ -2176,9 +2176,9 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   if (!stitchMd.includes("## Prime swatches")) FAIL("design-system-prime", "Stitch DESIGN.md missing the Prime swatches section");
   for (const f of allFamilies) if (!stitchMd.includes(`${f}-prime-`)) FAIL("design-system-prime", `Stitch DESIGN.md Prime swatches section missing a reference to ${f}`);
 
-  // Figma Make profile (a DIFFERENT shape — no DESIGN.md/tokens.json, a guidelines/ tree): the prime
+  // Figma Make profile (a DIFFERENT shape, no DESIGN.md/tokens.json, a guidelines/ tree): the prime
   // section lives in foundations/color.md and the seven-step values live as raw CSS custom properties
-  // in styles.css's FULL token layers appendix (dsFullLayersCss) — proven per-profile, not inherited
+  // in styles.css's FULL token layers appendix (dsFullLayersCss), proven per-profile, not inherited
   // from the byte-identity check above (Make's carrier is NOT byte-identical to DESIGN.md).
   const pfx = X.cssPrefixOf(stateData);
   const makeFiles = X.exportDesignSystemMakeBundle(stateData, tsc, gsc, { date: "2026-09-11" });
@@ -2194,7 +2194,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
       if (!makeStyles.includes(`--${pfx}-${f}-prime-${step}: ${want.oklch};`)) FAIL("design-system-prime", `Make styles.css missing/mismatched --${pfx}-${f}-prime-${step} (want ${want.oklch})`);
     }
   }
-  // unconditional like Claude Code/Stitch — present even with NO data palettes enabled.
+  // unconditional like Claude Code/Stitch, present even with NO data palettes enabled.
   const makeFilesNoData = X.exportDesignSystemMakeBundle(C(BRAND_ONLY), tsc, gsc, { date: "2026-09-11" });
   const makeColorMdNoData = Object.fromEntries(makeFilesNoData.map((f) => [f.name, f.data]))["guidelines/foundations/color.md"];
   if (!makeColorMdNoData.includes("## Prime swatches")) FAIL("design-system-prime", "Make foundations/color.md missing the Prime swatches section with no data palettes enabled");
@@ -2213,18 +2213,18 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   if ("prime" in offTokens) FAIL("design-system-prime", "disabled-palette tokens.json unexpectedly carries a prime block");
 }
 
-// ── hpg-export-group-metadata (SPEC 0.3.0 RP-1, ticket #572, plan PR #571 step E1) — the palette
+// ── hpg-export-group-metadata (SPEC 0.3.0 RP-1, ticket #572, plan PR #571 step E1), the palette
 // group (material/brand/system/data) is exported METADATA on every surface that has a metadata slot
 // (JSON, DTCG's raw file, a CSS/OKLCH/Tailwind comment line, the DS bundle's familiesByGroup) and is
-// ABSENT from UI3/ShadCN (no metadata slot short of `description`, #556's own no-Figma-folder ruling)
-// — every emitted group is one of the four valid ids AND matches model.mjs's paletteGroup(p), the
+// ABSENT from UI3/ShadCN (no metadata slot short of `description`, #556's own no-Figma-folder ruling),
+// every emitted group is one of the four valid ids AND matches model.mjs's paletteGroup(p), the
 // single resolver (no drift between the metadata and the real resolver).
 {
   const VALID_GROUPS = ["material", "brand", "system", "data"];
   const tsc = typeScale({});
   const gsc = geomScale({});
   const gstate = C(ALL_WITH_DATA);
-  const derived = X.derivedAll(gstate); // [{name, n, group, ...}] — group per exports.js's own derivePalette
+  const derived = X.derivedAll(gstate); // [{name, n, group, ...}], group per exports.js's own derivePalette
 
   const gjson = X.exportJSON(gstate);
   const gdtcg = X.exportDTCG(gstate, {});
@@ -2236,19 +2236,19 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   const gds = X.dsColorRoles(gstate);
 
   for (const d of derived) {
-    // ALL_WITH_DATA's fixture palettes carry no explicit `.group` — paletteGroup(p)'s own by-name
+    // ALL_WITH_DATA's fixture palettes carry no explicit `.group`, paletteGroup(p)'s own by-name
     // default rule is what resolves them, the SAME rule exports.js's paletteGroupOf mirrors.
     const src = ALL_WITH_DATA.find((p) => p.name === d.name);
     const want = paletteGroup(src);
     if (!VALID_GROUPS.includes(d.group)) FAIL("hpg-export-group-metadata", `derivePalette group "${d.group}" for "${d.name}" is not one of ${VALID_GROUPS.join("/")}`);
     if (d.group !== want) FAIL("hpg-export-group-metadata", `derivePalette group for "${d.name}" is "${d.group}", want "${want}" (paletteGroup(p))`);
 
-    // JSON — palettes[n].group
+    // JSON, palettes[n].group
     const j = gjson[d.n];
     if (!j || !VALID_GROUPS.includes(j.group)) FAIL("hpg-export-group-metadata", `JSON group for "${d.name}" is ${JSON.stringify(j && j.group)}, want one of ${VALID_GROUPS.join("/")}`);
     else if (j.group !== want) FAIL("hpg-export-group-metadata", `JSON group for "${d.name}" is "${j.group}", want "${want}"`);
 
-    // DTCG — the RAW file's palette group node carries $extensions["com.ultimate-tokens"].group;
+    // DTCG, the RAW file's palette group node carries $extensions["com.ultimate-tokens"].group;
     // the two SEMANTIC theme files must NEVER carry it (RP-1: raw file only).
     const rawNode = gdtcg["palette.tokens.json"][d.n];
     const dtcgExt = rawNode && rawNode.$extensions && rawNode.$extensions["com.ultimate-tokens"];
@@ -2259,19 +2259,19 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
       if (themeNode && themeNode.$extensions && themeNode.$extensions["com.ultimate-tokens"]) FAIL("hpg-export-group-metadata", `DTCG ${themeFile} palette node for "${d.name}" unexpectedly carries com.ultimate-tokens group metadata (raw file only, per RP-1)`);
     }
 
-    // CSS / OKLCH / Tailwind — one ADDED comment line per palette block, never a token.
+    // CSS / OKLCH / Tailwind, one ADDED comment line per palette block, never a token.
     const commentLine = `/* ${d.name} · ${want} */`;
     if (!gcss.includes(commentLine)) FAIL("hpg-export-group-metadata", `CSS missing group comment for "${d.name}" (want "${commentLine}")`);
     if (!goklch.includes(commentLine)) FAIL("hpg-export-group-metadata", `OKLCH missing group comment for "${d.name}" (want "${commentLine}")`);
     if (!gtw.includes(commentLine)) FAIL("hpg-export-group-metadata", `Tailwind missing group comment for "${d.name}" (want "${commentLine}")`);
   }
 
-  // negative check: UI3 and ShadCN carry NOTHING group-shaped — no group id/keyword anywhere.
+  // negative check: UI3 and ShadCN carry NOTHING group-shaped, no group id/keyword anywhere.
   const groupWordRe = /"material"|"brand"|"system"|com\.ultimate-tokens|"group"\s*:/;
-  if (groupWordRe.test(JSON.stringify(gui3))) FAIL("hpg-export-group-metadata", "UI3 output unexpectedly carries group metadata (ruled out — no Figma metadata slot, #556)");
+  if (groupWordRe.test(JSON.stringify(gui3))) FAIL("hpg-export-group-metadata", "UI3 output unexpectedly carries group metadata (ruled out, no Figma metadata slot, #556)");
   if (groupWordRe.test(gshadcn)) FAIL("hpg-export-group-metadata", "ShadCN output unexpectedly carries group metadata (fixed contract, no groups)");
 
-  // DS bundle — familiesByGroup partitions EXACTLY the union of families + dataFamilies, one bucket
+  // DS bundle, familiesByGroup partitions EXACTLY the union of families + dataFamilies, one bucket
   // per valid group, alongside the existing flat `families` (kept, unchanged, for consumers).
   for (const g of VALID_GROUPS) if (!Array.isArray(gds.familiesByGroup && gds.familiesByGroup[g])) FAIL("hpg-export-group-metadata", `dsColorRoles.familiesByGroup missing/invalid group "${g}"`);
   else {
@@ -2283,8 +2283,8 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   const bucketed = VALID_GROUPS.flatMap((g) => gds.familiesByGroup[g]).sort();
   if (JSON.stringify(bucketed) !== JSON.stringify(allDsFamilies)) FAIL("hpg-export-group-metadata", `familiesByGroup does not partition families+dataFamilies exactly (bucketed=${JSON.stringify(bucketed)}, want ${JSON.stringify(allDsFamilies)})`);
 
-  // Figma Make profile's "Grammar token reference" table — the one literal per-family markdown
-  // table in the DS bundle — gains a Group column matching familiesByGroup.
+  // Figma Make profile's "Grammar token reference" table, the one literal per-family markdown
+  // table in the DS bundle, gains a Group column matching familiesByGroup.
   const makeFiles = X.exportDesignSystemMakeBundle(gstate, tsc, gsc, { date: "2026-09-11" });
   const makeColorMd = Object.fromEntries(makeFiles.map((f) => [f.name, f.data]))["guidelines/foundations/color.md"];
   if (!makeColorMd.includes("| Token | Group | Fill (Light) | Fill (Dark) | On (Light) | On (Dark) | Use |")) FAIL("hpg-export-group-metadata", "Make foundations/color.md grammar table missing the Group column header");
@@ -2293,7 +2293,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
     if (!makeColorMd.includes(`\`--${X.cssPrefixOf(gstate)}-${f}\` | ${g} |`)) FAIL("hpg-export-group-metadata", `Make foundations/color.md grammar table row for "${f}" missing/mismatched Group cell (want "${g}")`);
   }
 
-  // brandKit / MCP list_palettes — every entry's group is valid and matches paletteGroup(p).
+  // brandKit / MCP list_palettes, every entry's group is valid and matches paletteGroup(p).
   const dd = defaultDocument();
   const kit = brandKit(dd);
   for (const kp of kit.palettes) {
@@ -2304,9 +2304,9 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   }
 }
 
-// ── hpg-export-json-meta (SPEC 0.3.0 RP-2, ticket #573, plan PR #571 step E2) — exportJSON's
+// ── hpg-export-json-meta (SPEC 0.3.0 RP-2, ticket #573, plan PR #571 step E2), exportJSON's
 // top-level `meta` states the chroma policy the export was resolved under: `generator` names the
-// tool, `controls` deep-equals stateOf(doc)'s OWN resolved baseChroma/primeChroma/paletteGroups —
+// tool, `controls` deep-equals stateOf(doc)'s OWN resolved baseChroma/primeChroma/paletteGroups,
 // never a stale or independently re-derived snapshot. `doc` below carries NON-default controls
 // (every group differs from GROUP_DEFAULTS, the two global fallbacks differ from 100/100) so the
 // deep-equal actually exercises resolution, not a default-vs-default match that would pass even if
@@ -2348,16 +2348,16 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   else if (JSON.stringify(kit.controls) !== JSON.stringify(json.meta.controls)) FAIL("hpg-export-json-meta", `brandKit(doc).controls disagrees with exportJSON's meta.controls: ${JSON.stringify(kit.controls)} vs ${JSON.stringify(json.meta.controls)}`);
 }
 
-// ── hpg-export-schema-stamp (SPEC 0.3.0 RP-8, ticket #577, plan PR #571 step E6) — one
+// ── hpg-export-schema-stamp (SPEC 0.3.0 RP-8, ticket #577, plan PR #571 step E6), one
 // EXPORT_SCHEMA_VERSION stamped, verbatim, on every surface that can carry it: JSON meta,
 // DTCG root $extensions (all 3 files), UI3 $schema, a first-line comment on CSS/OKLCH/Tailwind/
 // ShadCN/Panda module/Radix module, the DS bundle's tokens.json + DESIGN.md frontmatter, and
 // the brand-kit $schema. (ticket #606: the gate originally missed the Panda/Radix module stamps.)
-// `v` is a HARDCODED literal (2), deliberately never X.EXPORT_SCHEMA_VERSION itself — reading the
+// `v` is a HARDCODED literal (2), deliberately never X.EXPORT_SCHEMA_VERSION itself, reading the
 // constant back to build the expectation would make this gate vacuous (it would degrade in
 // lockstep with the very thing under test, proven live: neutering the constant to `undefined`
 // left every check here passing). Bumping the real constant is expected to turn this red until
-// `v` is bumped alongside it in the same PR — that IS the bump-rule contract, not a bug in the gate.
+// `v` is bumped alongside it in the same PR, that IS the bump-rule contract, not a bug in the gate.
 {
   const G = "hpg-export-schema-stamp";
   const v = 3;
@@ -2395,7 +2395,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   const fm = (md.match(/^---\n([\s\S]*?)\n---/) || [, ""])[1];
   if (!new RegExp(`^tokensSchema: ${v}$`, "m").test(fm)) FAIL(G, `DESIGN.md frontmatter is missing "tokensSchema: ${v}"`);
 
-  // Figma Make ships no DESIGN.md/tokens.json — styles.css's inherited shadcn first-line comment IS
+  // Figma Make ships no DESIGN.md/tokens.json, styles.css's inherited shadcn first-line comment IS
   // its schema carrier (E6 follow-up, ticket #607), cited explicitly in the profile's own README receipt.
   const makeFiles = X.exportDesignSystemMakeBundle(state, tsc, gsc);
   const makeStyles = makeFiles.find((f) => f.name === "guidelines/styles.css");

@@ -1,4 +1,4 @@
-# Hosted Brand-Kit MCP — Spec & Plan (Cloudflare, account-based)
+# Hosted Brand-Kit MCP: Spec & Plan (Cloudflare, account-based)
 
 **Status:** draft / design. **Owner:** `kimgranlund/ultimate-tokens`. **Gates:** the `hostedMcp` Pro flag (`src/engine/flags.js`).
 
@@ -10,12 +10,12 @@ The **hosted Brand-Kit MCP** is the live, always-current sibling of the free *do
 the **recurring-value anchor** for the Pro subscription. **Decided model:** there is **one** hosted MCP
 endpoint; a user **authenticates** when adding it to their agent (OAuth), and the server serves **their
 account's** brand kits. Identity is an **Ultimate Tokens account via email magic-link**, linked to the Lemon Squeezy
-subscription by email. This makes accounts + cloud-synced kits a first-class part of the product — the same
+subscription by email. This makes accounts + cloud-synced kits a first-class part of the product, the same
 foundation the **Studio** (multi-seat) tier already assumes.
 
 > **What changed from the first draft:** we moved from "publish a per-kit URL + bearer token (snapshot)" to
-> "one endpoint + OAuth + account↔kit (live, synced)". That is a bigger build — it introduces **accounts**
-> and **server-side kit sync** (the product is accountless today) — but it is the foundation Studio + an
+> "one endpoint + OAuth + account↔kit (live, synced)". That is a bigger build, it introduces **accounts**
+> and **server-side kit sync** (the product is accountless today), but it is the foundation Studio + an
 > always-current/team-shared MCP both need, so we do it once.
 
 ---
@@ -26,16 +26,16 @@ foundation the **Studio** (multi-seat) tier already assumes.
 - **One-line setup:** `claude mcp add --transport http brand-kit https://<MCP_DOMAIN>/mcp` → the agent
   triggers an OAuth sign-in (magic-link) → it serves **that account's** kits. No URLs or tokens to copy.
 - **Always-current + team-shared:** kits live with the account; re-saving updates the hosted kit; Studio
-  teammates on the same account see it — the recurring value the subscription is sold on.
+  teammates on the same account see it, the recurring value the subscription is sold on.
 - **Identical token surface** to the downloadable server (parity is a gate, not a hope).
 - **Near-zero fixed cost**, free-tier-first on Cloudflare.
 
-**Constraints (load-bearing — one narrowly amended by ADR, below)**
+**Constraints (load-bearing, one narrowly amended by ADR, below)**
 - **The generator stays client-side.** The Vite SPA is static (Cloudflare **Pages**); the Figma plugin stays
   **offline** (`networkAccess:"none"`). **Amended, narrowly, by ADR-021** (`docs/reference/references/decision-records.md`)
   for the describe-palette hosted flavor only (#377): a Pro-gated `generate_kit` + a demoted,
   LLM-less-clients-only `describe_palette` are permitted to run server-side on the Phase B Worker. Every
-  other surface — this document's own kit-storage/OAuth/sync scope, the app SPA, the Figma plugin — keeps
+  other surface, this document's own kit-storage/OAuth/sync scope, the app SPA, the Figma plugin, keeps
   this rule verbatim; the amendment does not widen it.
 - **No `fetch` in the app bundle.** Auth + kit-sync are network calls → they go through **web-only seams**
   (injected by `src/main.ts`, like the Lemon Squeezy `_licenseService`), so `app.js` / the Figma `ui.html`
@@ -44,8 +44,8 @@ foundation the **Studio** (multi-seat) tier already assumes.
   **server-side** (LS by email + webhook), never the client-side check.
 
 **New scope this introduces**
-- **Ultimate Tokens accounts** (email magic-link) — the product's first identity layer.
-- **Server-side kit sync** — kits push from the app to the account so the MCP (and other devices) see them.
+- **Ultimate Tokens accounts** (email magic-link), the product's first identity layer.
+- **Server-side kit sync**: kits push from the app to the account so the MCP (and other devices) see them.
 
 ---
 
@@ -86,7 +86,7 @@ foundation the **Studio** (multi-seat) tier already assumes.
 
 ## 3. The two delivery modes (parity)
 
-| | **Free — downloadable** (today) | **Pro — hosted, account-based** (this spec) |
+| | **Free, downloadable** (today) | **Pro, hosted, account-based** (this spec) |
 |---|---|---|
 | Where | `mcp/brand-kit-server.mjs`, on the user's machine | one Cloudflare Worker, always on |
 | Transport | JSON-RPC over **stdio** | JSON-RPC over **Streamable HTTP** + **OAuth** |
@@ -142,86 +142,86 @@ token** (generated in the app) is the documented fallback for any client that ca
 
 - **When:** while signed in **and** Pro/Studio, saving a set pushes its **resolved** kit (`brandKit(doc,
   systems)`) to `POST /api/kits/<kitId>` (the web-only `_kitSync` seam). The app still keeps the local
-  localStorage copy — the cloud copy is what the hosted MCP serves.
+  localStorage copy, the cloud copy is what the hosted MCP serves.
 - **What:** the same `brand-kit.json` the downloadable server consumes (palettes, ramps, 53 roles light+dark,
   type, geometry, name) → KV `kit:<kitId>`; the metadata row (owner, name, updatedAt) → D1.
 - **Active kit:** the app marks one kit "active for MCP" (or all are exposed via `list_kits`). Single-brand
   users get their one kit; agencies/Studio scope with the `kit` arg.
-- **Conflict/versioning:** governed by `storage-and-sync-spec.md` (SPEC-R15/R16) — LWW on `(version,
+- **Conflict/versioning:** governed by `storage-and-sync-spec.md` (SPEC-R15/R16), LWW on `(version,
   updatedAt, ownerRef)`, the losing write preserved as a recoverable conflict copy, never silently
   discarded; multi-device concurrent edits **are** handled there (superseding this bullet's earlier
   "out of scope for v1" note, written before that spec existed).
-- **First sync of a pre-existing local kit:** see §6a — `kit_id` is the client-minted id the kit already
+- **First sync of a pre-existing local kit:** see §6a, `kit_id` is the client-minted id the kit already
   carries from creation, not something the server assigns at sync time.
 
 ---
 
 ## 6a. First-sync identity: what `kit_id` *is*, and the conflict rule
 
-*(TKT-0029 — closes the gap: §8's `kits` table listed `kit_id` with no stated origin, leaving undefined
+*(TKT-0029, closes the gap: §8's `kits` table listed `kit_id` with no stated origin, leaving undefined
 whether a pre-existing local kit's first sync mints a fresh id, needs a client-side id to correlate
 against, or resolves a name collision against an existing hosted kit.)*
 
-- **Rule: `kit_id` is not server-minted — it's the doc id `storage-and-sync-spec.md` already mints
+- **Rule: `kit_id` is not server-minted, it's the doc id `storage-and-sync-spec.md` already mints
   client-side.** That spec's `DocEnvelope.id` (§5.1: "stable doc id (client-minted UUID)") is assigned the
-  moment a kit is *created*, locally, before any account or sync exists for it — a `"brand-kit"`-typed doc
+  moment a kit is *created*, locally, before any account or sync exists for it, a `"brand-kit"`-typed doc
   under that spec's `type` field. `kits.kit_id` (§8) **is that same id**, not a second identity system
   layered on top: the D1 `kits` row is MCP-serving metadata (`name`, `active`, `updated_at`) keyed by the
-  id the doc already carries. §8 therefore needs no separate client-side-identifier column — there is
-  nothing to correlate. (Don't invent a parallel mint-vs-correlate mechanism here — this reuses the one
+  id the doc already carries. §8 therefore needs no separate client-side-identifier column, there is
+  nothing to correlate. (Don't invent a parallel mint-vs-correlate mechanism here, this reuses the one
   `storage-and-sync-spec.md` already decided. This holds regardless of which v1 push channel carries the
-  bytes — §6's `POST /api/kits/<kitId>` or the sibling spec's `/sync/push` `Mutation`; the id in the path
+  bytes, §6's `POST /api/kits/<kitId>` or the sibling spec's `/sync/push` `Mutation`; the id in the path
   / `docId` is the same client-minted id either way. Which channel is canonical, and who resolves
-  `brandKit(doc, systems)` server-side if it's the latter, is the sibling spec's LLD to settle — not a
+  `brandKit(doc, systems)` server-side if it's the latter, is the sibling spec's LLD to settle, not a
   second decision this section needs to make.)
-- **What "first sync" actually is, then:** not an identity-assignment event — just the first push (a
+- **What "first sync" actually is, then:** not an identity-assignment event, just the first push (a
   `POST /api/kits/<kitId>`, or a `storage-and-sync-spec.md` §5.1 `Mutation`) whose id the server hasn't
   seen before. The server creates the `kits` row + `kit:<kitId>` KV blob keyed by that id on first push,
   exactly as SPEC-R2 already describes for any doc's first sync trigger (export / hosted-MCP use /
-  sign-in) — a kit new to the server is the ordinary case that mechanism handles, not a special one this
+  sign-in), a kit new to the server is the ordinary case that mechanism handles, not a special one this
   spec needs its own rule for.
 - **Cross-owner id collision (tenant isolation, ties to §9 Security):** a client-minted id is a string the
-  server did not choose, so "first push for this id" MUST also bind the id to its first-seen owner — a
+  server did not choose, so "first push for this id" MUST also bind the id to its first-seen owner, a
   later push presenting the same `kit_id` under a **different** account is rejected (`404`/not-found, no
-  existence leak — the same posture as `storage-and-sync-spec.md`'s SPEC-R20 owner isolation), never
+  existence leak, the same posture as `storage-and-sync-spec.md`'s SPEC-R20 owner isolation), never
   treated as "the same kit, new owner." §9's "`kitId`s are unguessable" now cuts both ways: the server no
   longer just *hands out* an unguessable id, it must *validate* that an incoming one is UUID-shaped before
-  accepting it as a KV/D1 key — rejecting anything else (including a legacy `set-<ts36>` id, see below)
+  accepting it as a KV/D1 key, rejecting anything else (including a legacy `set-<ts36>` id, see below)
   forces a client-side re-mint rather than admitting a weak, guessable key into the shared namespace.
 - **Conflict rule: identity is the id, never the name.** `kits.name` (§8) carries no uniqueness constraint
-  and is not part of identity — two kits named "Brand" with different `kit_id`s are simply two different
+  and is not part of identity, two kits named "Brand" with different `kit_id`s are simply two different
   kits; a first sync never needs to detect or resolve a name match, because a name was never a candidate
-  identity in the first place. A *real* conflict — two writes to the **same** `kit_id` that diverge — is
+  identity in the first place. A *real* conflict, two writes to the **same** `kit_id` that diverge, is
   exactly SPEC-R15/R16's job (LWW + conflict copy; non-clobbering pull per SPEC-R16), not a first-sync-
   specific case: the same-id path is identical whether it's a kit's 1st push or its 400th.
 - **What this means for today's local model:** `src/ui/app.js`'s local `sets` array already assigns each
-  saved set a locally-generated id — `newSet` (`app-helpers.mjs`, the primary creation path): a 7-char
+  saved set a locally-generated id, `newSet` (`app-helpers.mjs`, the primary creation path): a 7-char
   `Math.random().toString(36)` slice; the config-import and first-run-seed paths: `"set-" +
   Date.now().toString(36)`. Both are the *shape* `storage-and-sync-spec.md`'s doc id generalizes, but not
   its *strength*: neither is the unguessable id (comparable to the ≥128-bit anonymous device id, §4.2)
   that a value serving as a cross-account KV/D1 primary key must be. Upgrading these to real client-minted
-  UUIDs is a **one-time, local, pre-sync re-mint** — Phase A/B implementation work for the storage-and-sync
-  build, done before a kit is ever pushed — not a translation step the server performs at sync time and
+  UUIDs is a **one-time, local, pre-sync re-mint**, Phase A/B implementation work for the storage-and-sync
+  build, done before a kit is ever pushed, not a translation step the server performs at sync time and
   not a new decision this spec needs to make: it's already what `DocEnvelope.id`'s contract calls for. (An
   existing local kit whose id is never upgraded simply gets rejected on its first push per the id-format
   check above, forcing the one-time re-mint then, at latest.)
 
 ---
 
-## 7. Code reuse — transport-agnostic core (parity gate)
+## 7. Code reuse: transport-agnostic core (parity gate)
 
 Unchanged from the first draft and still **Phase A**: extract **`mcp/brand-kit-core.mjs`** (PURE) exporting
 `buildSurface(kit) → { TOOLS, RESOURCES, PROMPTS, SERVER, PROTOCOL_VERSION }` + `handle(message, surface)`
 (the JSON-RPC dispatch). The stdio server (download) and the Worker (hosted) both import it → identical
 surface, **parity-gated by a test** (mirrors `bind-plan.mjs` ↔ `figma-semantic-binder/code.js`). The hosted
 server adds `list_kits` + the `kit` arg on top of the shared core. Shippable in-repo now, no Cloudflare
-needed — it de-risks everything downstream by locking the surface first.
+needed, it de-risks everything downstream by locking the surface first.
 
 ---
 
 ## 8. Data model (D1 + KV)
 
-**KV** — `kit:<kitId>` → the resolved `brand-kit.json` (the served payload).
+**KV**, `kit:<kitId>` → the resolved `brand-kit.json` (the served payload).
 
 **D1**
 | table | columns (essentials) |
@@ -231,7 +231,7 @@ needed — it de-risks everything downstream by locking the surface first.
 | `sessions` | `session_id` · `user_id` · `expires_at` |
 | `accounts` | `account_id` · `owner_user_id` · `name` (personal or Studio team) |
 | `account_members` | `account_id` · `user_id` · `role` (for Studio seats) |
-| `kits` | `kit_id` (the client-minted doc id — see §6a) · `account_id` · `name` · `active` · `updated_at` (blob is in KV) |
+| `kits` | `kit_id` (the client-minted doc id, see §6a) · `account_id` · `name` · `active` · `updated_at` (blob is in KV) |
 | `ls_subscriptions` | `email` · `ls_subscription_id` · `status` · `variant` (Pro/Studio) · `current_period_end` |
 
 Entitlement(account) = join `accounts → users.email → ls_subscriptions` (active + unexpired). OAuth
@@ -241,7 +241,7 @@ access/refresh tokens are managed by `workers-oauth-provider` (its own KV/DO sto
 
 ## 9. Security
 
-- **MCP is read-only, low blast radius:** every tool is a pure read of the account's own brand tokens — no
+- **MCP is read-only, low blast radius:** every tool is a pure read of the account's own brand tokens, no
   write tools, no outbound fetches, no private data beyond the kit. The lethal trifecta doesn't apply.
 - **Magic links:** single-use, short-TTL, hashed at rest, HTTPS-only; rate-limit `/auth/start` per email/IP
   to prevent enumeration + email bombing.
@@ -255,8 +255,8 @@ access/refresh tokens are managed by `workers-oauth-provider` (its own KV/DO sto
 
 ## 10. App integration
 
-- **Sign-in UI:** a lightweight "Sign in" (email → "check your inbox") in the app shell / Settings « Account »
-  — **web only** (hidden `inFigma`). Signed-in + Pro unlocks **cloud sync** + the **hosted MCP** panel.
+- **Sign-in UI:** a lightweight "Sign in" (email → "check your inbox") in the app shell / Settings « Account »,
+  **web only** (hidden `inFigma`). Signed-in + Pro unlocks **cloud sync** + the **hosted MCP** panel.
 - **Hosted-MCP panel** (Config / Account): shows the **one** endpoint URL + the `claude mcp add` snippet +
   per-kit "active for MCP" toggles + a personal-access-token generator (fallback) + "this kit is live".
   Gated by `flagOf("hostedMcp")`; locked → `_proUpsell()`.
@@ -277,8 +277,8 @@ access/refresh tokens are managed by `workers-oauth-provider` (its own KV/DO sto
 - **Domains:** `<APP_DOMAIN>` (Pages) · `<MCP_DOMAIN>` (Worker). Magic-link return + OAuth redirect URIs
   registered to these.
 - **Cost (free-tier-first):** Workers/KV/D1 free tiers cover launch volume; Resend free tier for email;
-  Durable Objects bill on paid Workers ($5/mo) — realistically single-digit dollars/mo, consistent with
-  near-zero fixed cost. (DO is the one new line item vs. the tokenless design — the price of real auth.)
+  Durable Objects bill on paid Workers ($5/mo), realistically single-digit dollars/mo, consistent with
+  near-zero fixed cost. (DO is the one new line item vs. the tokenless design, the price of real auth.)
 - **Observability:** Workers logs / Logpush; a `/health` route; alert on webhook-verify + email-send failures.
 
 ---
@@ -301,21 +301,21 @@ access/refresh tokens are managed by `workers-oauth-provider` (its own KV/DO sto
 ## 13. Open decisions (smaller now)
 
 1. **Email provider:** **Resend** (recommended) vs Postmark / SES.
-2. **`McpAgent`/Durable Objects** (recommended — the supported authed-MCP path) vs a hand-rolled stateless
+2. **`McpAgent`/Durable Objects** (recommended, the supported authed-MCP path) vs a hand-rolled stateless
    OAuth-token-validated Worker (cheaper, more to build/own).
 3. **Multi-kit UX:** `list_kits` + a `kit` arg (recommended) vs a single "active" kit per account.
 4. **Email↔license mismatch:** require same email vs the "enter license key to link" fallback (recommended).
-5. **Studio teams in v1** vs deferring teams to Phase F (recommended — ship solo accounts first).
+5. **Studio teams in v1** vs deferring teams to Phase F (recommended, ship solo accounts first).
 
 ## 14. Risks & open questions
 
 - **OAuth client coverage:** confirm the target agents do MCP OAuth (Claude Code/Desktop do); the **PAT
   fallback** covers the rest.
 - **Accounts are new surface area:** auth, sessions, email deliverability, and kit-sync are real
-  build+ops cost — sequenced behind Phase A so the surface/parity is locked first.
-- **Parity drift:** hosted ↔ downloaded ↔ in-app token output must stay identical — the core + parity gate
+  build+ops cost, sequenced behind Phase A so the surface/parity is locked first.
+- **Parity drift:** hosted ↔ downloaded ↔ in-app token output must stay identical, the core + parity gate
   is the guard, extended to the Worker in D.
 - **Revocation latency:** webhook + cron → a lapsed sub stops serving within minutes (fine for a read-only
   feed; documented).
-- **Offline-Figma invariant:** auth/sync/MCP paths must never enter the plugin bundle — enforced by the
+- **Offline-Figma invariant:** auth/sync/MCP paths must never enter the plugin bundle, enforced by the
   web-only seams + the existing `figma/plugin.mjs` no-network grep.

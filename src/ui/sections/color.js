@@ -4,10 +4,10 @@ import { icon } from "../icons.js";
 import { CURVES, DAMP_PRESETS, HUE_SPACE_ANCHOR_REASON, SCHEME_ICON, SCHEME_NEXT, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
 
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
-// methods — copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
+// methods, copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
 export class ColorSectionImpl {
 
-  // analysisCards — the left rail's graph cards for the current view. Shared by
+  // analysisCards, the left rail's graph cards for the current view. Shared by
   // the full render (renderLeftPane) and the in-place liveRefresh, so a drag
   // updates these graphs without a full re-render.
   analysisCards(view) {
@@ -20,16 +20,16 @@ export class ColorSectionImpl {
         body,
       );
     return [
-      card("L*×C — applied chroma vs gamut ceiling", this.graphLC(view, idx)),
-      card("Tone curve — L* per stop", this.graphTone(view, idx)),
-      card("Chroma curve — applied vs ceiling", this.graphChroma(view, idx)),
-      card("Contrast — on-colors vs fills (≥4.5:1)", this.graphContrast(view, idx)),
-      card("Hue wheel — all enabled palettes", this.graphHueWheel(view)),
+      card("L*×C: applied chroma vs gamut ceiling", this.graphLC(view, idx)),
+      card("Tone curve: L* per stop", this.graphTone(view, idx)),
+      card("Chroma curve: applied vs ceiling", this.graphChroma(view, idx)),
+      card("Contrast: on-colors vs fills (≥4.5:1)", this.graphContrast(view, idx)),
+      card("Hue wheel: all enabled palettes", this.graphHueWheel(view)),
     ];
   }
 
 
-  // L*×C plot (moved OUT of the canvas) — applied chroma vs gamut ceiling + tone line.
+  // L*×C plot (moved OUT of the canvas), applied chroma vs gamut ceiling + tone line.
   graphLC(view, idx) {
     const target = view.plot[idx] || view.plot[0];
     if (!target) return h("div", { class: "an-empty" }, "n/a");
@@ -68,7 +68,7 @@ export class ColorSectionImpl {
   }
 
 
-  // Tone curve — L* (tone) per stop across the ramp.
+  // Tone curve, L* (tone) per stop across the ramp.
   graphTone(view, idx) {
     const vp = view.palettes[idx];
     if (!vp) return h("div", { class: "an-empty" }, "n/a");
@@ -90,7 +90,7 @@ export class ColorSectionImpl {
   }
 
 
-  // Chroma curve — applied chroma per stop vs the gamut ceiling (edge damping).
+  // Chroma curve, applied chroma per stop vs the gamut ceiling (edge damping).
   graphChroma(view, idx) {
     const vp = view.palettes[idx];
     if (!vp) return h("div", { class: "an-empty" }, "n/a");
@@ -123,7 +123,7 @@ export class ColorSectionImpl {
   }
 
 
-  // Contrast — the selected palette's on-color vs fill ratios; flag <4.5:1.
+  // Contrast, the selected palette's on-color vs fill ratios; flag <4.5:1.
   graphContrast(view, idx) {
     const vp = view.palettes[idx];
     const cr = vp ? view.contrast.find((c) => c.palette === vp.name) : null;
@@ -155,7 +155,7 @@ export class ColorSectionImpl {
   }
 
 
-  // dampPresets — a row of one-click chips that set all four damping knobs together.
+  // dampPresets, a row of one-click chips that set all four damping knobs together.
   // The chip matching the current values is highlighted; each is a single undo step.
   dampPresets() {
     const d = this.doc;
@@ -182,7 +182,7 @@ export class ColorSectionImpl {
   }
 
 
-  // Damping curve — the global chroma multiplier m(stop) the differential damping
+  // Damping curve, the global chroma multiplier m(stop) the differential damping
   // produces across the ramp. Crosses the 1× line (unity); dips at the ends (damp),
   // can bulge in the mids (amplify), and tilts with bias. Palette-independent.
   graphDamping(doc) {
@@ -217,7 +217,7 @@ export class ColorSectionImpl {
   }
 
 
-  // Hue wheel — every ENABLED palette's hue plotted around a circle (whole set).
+  // Hue wheel, every ENABLED palette's hue plotted around a circle (whole set).
   graphHueWheel(view) {
     const W = 200, H = 200, cx = W / 2, cy = H / 2, R = 78;
     const sel = this.selectedIndex();
@@ -251,25 +251,25 @@ export class ColorSectionImpl {
   }
 
 
-  // selectPalette — pick the palette that drives the right pane + selected graphs.
+  // selectPalette, pick the palette that drives the right pane + selected graphs.
   selectPalette(id) {
     const max = this.doc.palettes.length - 1;
     this.sel = { kind: "palette", id: Math.max(0, Math.min(id, max)) };
-    this.doc.selected = this.sel.id; // `selected` is a real serialized field (persist.js) — persist it
+    this.doc.selected = this.sel.id; // `selected` is a real serialized field (persist.js), persist it
     this.save(); // TKT-0455: without this, isDirty() falsely reports "unsaved" after a plain reselect
     this.render();
   }
 
 
-  // setSegment — switch the right-pane segmented control (kept in ui-session state).
+  // setSegment, switch the right-pane segmented control (kept in ui-session state).
   setSegment(seg) {
     this.segment = seg;
     this.render();
   }
 
 
-  // setCanvasView — switch the canvas between the palette ramps, the scrim overlays, the
-  // semantic-mapping table, and the radix ladder view (ui-session state, like canvasTheme —
+  // setCanvasView, switch the canvas between the palette ramps, the scrim overlays, the
+  // semantic-mapping table, and the radix ladder view (ui-session state, like canvasTheme,
   // never persisted with the doc).
   setCanvasView(v) {
     this.canvasView = v;
@@ -277,14 +277,14 @@ export class ColorSectionImpl {
   }
 
 
-  // setStopsMode — core (19 display stops) vs extended (25 EXPORT_STOPS) for the palette ramps.
+  // setStopsMode, core (19 display stops) vs extended (25 EXPORT_STOPS) for the palette ramps.
   setStopsMode(v) {
     this.stopsMode = v;
     this.render();
   }
 
 
-  // _canvasScene — the canvas content for the current view (one place, two call sites).
+  // _canvasScene, the canvas content for the current view (one place, two call sites).
   _canvasScene(view) {
     if (this.canvasView === "scrims") return this.renderScrimsScene(view);
     if (this.canvasView === "mapping") return this.renderMappingScene(view);
@@ -299,7 +299,7 @@ export class ColorSectionImpl {
   }
 
 
-  // setRoleOverride — re-point a role's raw ref for one mode. Stored as a per-doc override on
+  // setRoleOverride, re-point a role's raw ref for one mode. Stored as a per-doc override on
   // top of the canonical role table (doc.roleOverrides); applied in projectView + the exporters.
   // One undo step; persisted. An empty/whitespace ref is ignored (use the reset ↺ to revert).
   setRoleOverride(key, mode, ref) {
@@ -312,7 +312,7 @@ export class ColorSectionImpl {
   }
 
 
-  // commitMapRaw — free-text editor: the user typed a full token name ("neutral-600"); strip the
+  // commitMapRaw, free-text editor: the user typed a full token name ("neutral-600"); strip the
   // palette prefix to the ref and store it (unknown refs degrade gracefully in resolveRoleHex).
   commitMapRaw(key, mode, tokenName, n) {
     const s = String(tokenName || "").trim();
@@ -321,7 +321,7 @@ export class ColorSectionImpl {
   }
 
 
-  // clearRoleOverride — revert one mode of one role to canonical (drop the entry if now empty).
+  // clearRoleOverride, revert one mode of one role to canonical (drop the entry if now empty).
   clearRoleOverride(key, mode) {
     this.commit((d) => {
       const e = d.roleOverrides && d.roleOverrides[key];
@@ -340,7 +340,7 @@ export class ColorSectionImpl {
   addPalette() {
     this.commit((d) => {
       // A new palette starts from clean defaults: every shaping control reset to neutral (skew/lift 0,
-      // edge-hue 0, same-dir off) so it never inherits the previous palette's tweaks — only the
+      // edge-hue 0, same-dir off) so it never inherits the previous palette's tweaks, only the
       // hue/chroma seed defines it. (Global controls are doc-level and shared, so they're untouched.)
       const name = "Palette " + (d.palettes.length + 1);
       d.palettes.push({ name, hue: 200, chroma: 60, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true, group: paletteGroup({ name }) });
@@ -352,16 +352,16 @@ export class ColorSectionImpl {
   // ── New-Palette modal ──────────────────────────────────────────────────────────
   // "+ Palette" opens a native <dialog> (top layer, like the export drawer) that DERIVES a
   // new palette instead of dropping a default. Three modes (segmented tabs):
-  //   • Relative — a color-theory relationship (extend/complete/contrast/bridge/anchor/
+  //   • Relative, a color-theory relationship (extend/complete/contrast/bridge/anchor/
   //     recontextualize) computed from the included palettes' identity colors.
-  //   • Environmental — a neutral/environment tone (chroma-weighted-mean hue + a clamped low
+  //   • Environmental, a neutral/environment tone (chroma-weighted-mean hue + a clamped low
   //     chroma) per docs/reference/color-neutral-derivation.md.
-  //   • Custom — pick Hue + Chroma directly (parametric, the classic seed).
+  //   • Custom, pick Hue + Chroma directly (parametric, the classic seed).
   // A/B derive a TARGET OKLCH (engine/derive.mjs), seed hue+chroma from it (seedFromKeyColor),
   // and retain it as the dominant key color; C sets hue+chroma straight. The "Derive from"
-  // strip toggles which existing palettes feed A/B — system/status palettes start excluded.
+  // strip toggles which existing palettes feed A/B, system/status palettes start excluded.
 
-  // status palettes (success/warning/error/…) carry meaning, not character — off by default.
+  // status palettes (success/warning/error/…) carry meaning, not character, off by default.
   _isSystemPalette(name) {
     return /\b(success|positive|warning|error|danger|critical|negative|info)\b/.test(String(name || "").toLowerCase());
   }
@@ -386,7 +386,7 @@ export class ColorSectionImpl {
   }
 
 
-  // _beginNewPalDrag — drag the modal by its header. The dialog is centered via `inset:0;
+  // _beginNewPalDrag, drag the modal by its header. The dialog is centered via `inset:0;
   // margin:auto`, so we offset from centre with a live `transform: translate()` (set in place,
   // no re-render → smooth) and remember the offset in newPalDrag so the next render re-applies it.
   // A drag that starts on a header control (the close button) is ignored.
@@ -407,7 +407,7 @@ export class ColorSectionImpl {
   }
 
 
-  // _syncNewPal — mirror _syncDrawer for the New-Palette <dialog>: re-promote to the top layer
+  // _syncNewPal, mirror _syncDrawer for the New-Palette <dialog>: re-promote to the top layer
   // after each render (render rebuilds a fresh, closed dialog). Guarded for the headless shim.
   _syncNewPal() {
     const d = this.querySelector(".newpal");
@@ -418,7 +418,7 @@ export class ColorSectionImpl {
 
 
   // a context palette is "neutral" (deprioritized as a derivation primary) if it's named neutral/grey
-  // or its identity is near-grey — so a derived/leading neutral never becomes the Relative primary.
+  // or its identity is near-grey, so a derived/leading neutral never becomes the Relative primary.
   _isNeutralPalette(p, vp) {
     if (/\b(neutral|grey|gray)\b/i.test(String((p && p.name) || ""))) return true;
     return !!(vp && vp.keyOklch && vp.keyOklch[1] < 0.02);
@@ -426,7 +426,7 @@ export class ColorSectionImpl {
 
 
   // the included context palette indices in PRIORITY ORDER: non-neutral palettes first (in palette
-  // order — so the first non-neutral is the "primary"), neutrals last. Drives samples[0] = primary.
+  // order, so the first non-neutral is the "primary"), neutrals last. Drives samples[0] = primary.
   _orderedContext(view) {
     const ctx = this.newPalCtx || new Set();
     return [...ctx]
@@ -440,13 +440,13 @@ export class ColorSectionImpl {
 
 
   // samples for A/B = each included palette's vivid identity color as OKLCH [L,C,H], PRIORITY-ORDERED
-  // (samples[0] = the primary, so deriveRelative pivots on it — see derive.mjs).
+  // (samples[0] = the primary, so deriveRelative pivots on it, see derive.mjs).
   newPalSamples(view) {
     return this._orderedContext(view).map((i) => view.palettes[i].keyOklch);
   }
 
 
-  // the primary context color (the highest-priority, first non-neutral included palette) — the hex
+  // the primary context color (the highest-priority, first non-neutral included palette), the hex
   // the Relative relationships pivot on, shown as the preview's reference swatch.
   _primaryContextHex(view) {
     const o = this._orderedContext(view);
@@ -465,7 +465,7 @@ export class ColorSectionImpl {
 
 
   createNewPalette(view) {
-    // the preview IS the source of truth — commit the same palette _newPalProposed projected.
+    // the preview IS the source of truth, commit the same palette _newPalProposed projected.
     const proposed = this._newPalProposed(view);
     if (!proposed) { this.toast("Pick at least one palette to derive from"); return; }
     const tab = this.newPalTab;
@@ -510,7 +510,7 @@ export class ColorSectionImpl {
         h("div", { class: "spacer" }),
         btn(icon("x"), { ariaLabel: "Close", onclick: () => this.closeNewPalette() }),
       ),
-      // "Derive from" strip — swatch-only chips (name on hover); tap to include/exclude (A/B only).
+      // "Derive from" strip, swatch-only chips (name on hover); tap to include/exclude (A/B only).
       h(
         "div",
         { class: "newpal-ctx" + (needsCtx ? "" : " muted") },
@@ -564,7 +564,7 @@ export class ColorSectionImpl {
   }
 
 
-  // _newPalProposed — the would-be palette for the current settings, PROJECTED (not committed):
+  // _newPalProposed, the would-be palette for the current settings, PROJECTED (not committed):
   // returns { pal, view, vp, hex, target, pos } or null when A/B has no context. `pal` is the
   // minimal palette object (hue/chroma + keyColors for A/B); `view` is its throwaway projectView
   // (palettes[0] = vp, carrying .key + .ramp) so the diagrams + ramp render from real engine output.
@@ -590,27 +590,27 @@ export class ColorSectionImpl {
   }
 
 
-  // LEFT column — the diagrams. The hue×chroma circle places every context color (and the proposed
+  // LEFT column, the diagrams. The hue×chroma circle places every context color (and the proposed
   // one) at angle = hue, radius ∝ chroma; the chroma curve reuses the analysis-rail graph.
   _newPalDiagrams(view, proposed) {
     return [
       h(
         "div",
         { class: "newpal-diagram" },
-        h("div", { class: "newpal-diagram-title" }, "Hue × chroma — context + proposed"),
+        h("div", { class: "newpal-diagram-title" }, "Hue × chroma: context + proposed"),
         this._hueCircle(view, proposed),
       ),
       h(
         "div",
         { class: "newpal-diagram" },
-        h("div", { class: "newpal-diagram-title" }, "Chroma curve — applied vs ceiling"),
+        h("div", { class: "newpal-diagram-title" }, "Chroma curve: applied vs ceiling"),
         proposed ? this.graphChroma(proposed.view, 0) : h("div", { class: "an-empty" }, "n/a"),
       ),
     ];
   }
 
 
-  // _hueCircle — a polar plot: 0° at top, clockwise (90° right · 180° bottom · 270° left). Each dot
+  // _hueCircle, a polar plot: 0° at top, clockwise (90° right · 180° bottom · 270° left). Each dot
   // sits at its hue angle; its distance from centre is its chroma normalized to the busiest sample
   // (greys fall to the middle, vivids to the rim). The proposed color wears an accent ring.
   _hueCircle(view, proposed) {
@@ -648,13 +648,13 @@ export class ColorSectionImpl {
   }
 
 
-  // RIGHT column — segment-specific: the selection/picker, then the proposed-palette preview.
+  // RIGHT column, segment-specific: the selection/picker, then the proposed-palette preview.
   _newPalRight(view, samples, blocked, proposed) {
     const pane = h("div", { class: "newpal-pp-host" }, this._newPalPreviewPane(view, proposed));
     if (this.newPalTab === "relative") return [this._relSelect(), pane];
     if (this.newPalTab === "environmental") {
       return [
-        h("p", { class: "newpal-note" }, "A neutral environment tone for backgrounds, surfaces, dividers, and system text. Its hue is the chroma-weighted average of the selected palettes — the saturated members set the temperature — at a chroma low enough to still read as grey."),
+        h("p", { class: "newpal-note" }, "A neutral environment tone for backgrounds, surfaces, dividers, and system text. Its hue is the chroma-weighted average of the selected palettes, the saturated members set the temperature, at a chroma low enough to still read as grey."),
         blocked ? false : h("p", { class: "newpal-readout" }, ...this._envReadout(samples)),
         pane,
       ];
@@ -687,10 +687,10 @@ export class ColorSectionImpl {
   }
 
 
-  // the Custom picker — a native color picker + parametric Hue/Chroma sliders. Picking a color seeds
+  // the Custom picker, a native color picker + parametric Hue/Chroma sliders. Picking a color seeds
   // hue/chroma from it (CAM16 recovery); the sliders fine-tune. Both touch newPalCustom (not the
   // doc/undo stack) and refresh the preview + diagrams in place (a full render would recreate the
-  // range input mid-drag / detach the OS color panel) — the sliders re-sync on the picker's `change`.
+  // range input mid-drag / detach the OS color panel), the sliders re-sync on the picker's `change`.
   _customPicker(proposed) {
     const c = this.newPalCustom || (this.newPalCustom = { hue: 210, chroma: 55 });
     const slider = (label, key, min, max, fmtFn) => {
@@ -723,7 +723,7 @@ export class ColorSectionImpl {
           "aria-label": "Pick a color",
           value: (proposed && proposed.hex) || "#888888",
           // live: recover hue/chroma from the picked color + refresh the preview in place (don't
-          // rebuild the input mid-pick — that would detach the OS color panel).
+          // rebuild the input mid-pick, that would detach the OS color panel).
           oninput: (e) => { const s = seedFromKeyColor(hexToOklch(e.target.value), this.doc.hueSpace); if (s) { c.hue = s.hue; c.chroma = s.chroma; this._refreshNewPalPreview(); } },
           // settle: full render so the Hue/Chroma sliders move to reflect the picked color.
           onchange: () => this.render(),
@@ -736,8 +736,8 @@ export class ColorSectionImpl {
 
 
   // the proposed-palette preview: the proposed Dominant swatch, the Primary it's derived relative to
-  // (Relative only — the priority anchor), the priority chain of the remaining context, and the full
-  // generated ramp — the colors before committing.
+  // (Relative only, the priority anchor), the priority chain of the remaining context, and the full
+  // generated ramp, the colors before committing.
   _newPalPreviewPane(view, proposed) {
     if (!proposed) return h("div", { class: "newpal-preview-pane empty" }, h("small", {}, "Select a palette to derive from"));
     const isRel = this.newPalTab === "relative";
@@ -753,7 +753,7 @@ export class ColorSectionImpl {
         this._ppSwatch("Dominant", proposed.hex),
         chain.length ? this._ppSwatch("Primary", chain[0], "the priority color this relationship pivots on") : false,
       ),
-      // priority chain (Relative): the ordered context — primary first, then secondary/tertiary — so
+      // priority chain (Relative): the ordered context, primary first, then secondary/tertiary, so
       // the priority order driving the relationship is visible, not just the single anchor.
       isRel && chain.length > 1
         ? h(
@@ -782,14 +782,14 @@ export class ColorSectionImpl {
   }
 
 
-  // _envReadout — the derived neutral's hue + chroma, as a short human line under the description.
+  // _envReadout, the derived neutral's hue + chroma, as a short human line under the description.
   _envReadout(samples) {
     const [, C, H] = deriveNeutral(samples);
-    return ["Derived neutral: ", h("b", {}, fmt(H) + "° hue"), ", ", h("b", {}, "chroma " + C.toFixed(3)), " — a tinted grey."];
+    return ["Derived neutral: ", h("b", {}, fmt(H) + "° hue"), ", ", h("b", {}, "chroma " + C.toFixed(3)), ", a tinted grey."];
   }
 
 
-  // _refreshNewPalPreview — recompute the diagrams + preview pane IN PLACE (no full render), so the
+  // _refreshNewPalPreview, recompute the diagrams + preview pane IN PLACE (no full render), so the
   // Custom sliders stay smooth mid-drag (their input nodes, in the right column, are never touched).
   _refreshNewPalPreview() {
     const view = this._view || projectView(this.doc);
@@ -810,20 +810,20 @@ export class ColorSectionImpl {
       { class: "canvas-header" },
       // when the LEFT pane is collapsed its toggle pops here, at the canvas's left edge.
       !this.panesLeft ? this.paneToggle("left") : false,
-      // canvas content toggle — palette ramps vs the scrim overlays.
+      // canvas content toggle, palette ramps vs the scrim overlays.
       this.segmented(
         [
-          { id: "palettes", label: "Palettes", title: "Palettes — the tonal ramps" },
-          { id: "scrims", label: "Scrims", title: "Scrims — the 7 translucent 500 overlays per palette, over a checkerboard" },
-          { id: "mapping", label: "Mapping", title: "Semantic Mapping — each role's Light/Dark raw token, as a table" },
-          { id: "radix", label: "Radix", title: "Radix — the 12-step Park UI ladder per palette, read straight from the engine's own Radix export" },
+          { id: "palettes", label: "Palettes", title: "Palettes: the tonal ramps" },
+          { id: "scrims", label: "Scrims", title: "Scrims: the 7 translucent 500 overlays per palette, over a checkerboard" },
+          { id: "mapping", label: "Mapping", title: "Semantic Mapping: each role's Light/Dark raw token, as a table" },
+          { id: "radix", label: "Radix", title: "Radix: the 12-step Park UI ladder per palette, read straight from the engine's own Radix export" },
         ],
         this.canvasView,
         (id) => this.setCanvasView(id),
         { cls: "canvas-seg", ariaLabel: "Canvas view", idPrefix: "cview" },
       ),
       // stops density (Palettes + Scrims ramps): 19 core stops vs the 25 extended set (half-steps).
-      // I3: an explicit allow-list, not a deny-list — meaningless for Mapping's table AND for
+      // I3: an explicit allow-list, not a deny-list, meaningless for Mapping's table AND for
       // Radix's fixed 12-step ladder, so both are excluded by construction rather than by luck.
       (this.canvasView === "palettes" || this.canvasView === "scrims")
         ? this.segmented(
@@ -838,23 +838,23 @@ export class ColorSectionImpl {
         : false,
       // trailing tool group, right-aligned: fit · scheme · zoom · + Palette.
       h("div", { class: "spacer" }),
-      // fit/orient — reset the canvas view to centre at 100% (icon-only).
+      // fit/orient, reset the canvas view to centre at 100% (icon-only).
       btn(icon("crosshair"), {
-        title: "Fit — reset the canvas view to centre at 100%",
-        ariaLabel: "Fit — reset the canvas view to centre at 100%",
+        title: "Fit: reset the canvas view to centre at 100%",
+        ariaLabel: "Fit: reset the canvas view to centre at 100%",
         onclick: () => {
           this.fit();
           this.render();
         },
       }),
-      // scheme cycle (system/light/dark, icon-only — matches Type/Geom's canvasThemeBtn) + a
+      // scheme cycle (system/light/dark, icon-only, matches Type/Geom's canvasThemeBtn) + a
       // separate Compare toggle for the side-by-side Light+Dark view.
       this.colorSchemeBtn(),
       this.colorCompareBtn(),
       btn(icon("minus"), { ariaLabel: "Zoom out", onclick: () => this.zoomBy(-1) }),
       h("span", { class: "zoom-readout", role: "status", "aria-live": "polite", "aria-label": "Zoom level" }, Math.round(this.viewport.zoom * 100) + "%"),
       btn(icon("plus"), { ariaLabel: "Zoom in", onclick: () => this.zoomBy(1) }),
-      btn([icon("plus"), "Palette"], { cls: "add-pal-btn", title: "Create a new palette — derive it from your palette set, or pick one custom", onclick: () => this.openNewPalette() }),
+      btn([icon("plus"), "Palette"], { cls: "add-pal-btn", title: "Create a new palette, derive it from your palette set, or pick one custom", onclick: () => this.openNewPalette() }),
       // when the RIGHT pane is collapsed its toggle pops here, at the canvas's right edge.
       !this.panesRight ? this.paneToggle("right") : false,
     );
@@ -862,7 +862,7 @@ export class ColorSectionImpl {
 
 
   // The canvas IS the 2D pannable space; the ramp rows ARE the palette navigator. The Mapping
-  // view is a DATA TABLE, not a visual scene — it scrolls instead of pan/zoom (is-table).
+  // view is a DATA TABLE, not a visual scene, it scrolls instead of pan/zoom (is-table).
   renderCanvasArea(view) {
     const isTable = this.canvasView === "mapping";
     // Color "Both" mode → the side-by-side Compare (Palettes/Scrims/Radix; the Mapping table already shows
@@ -875,7 +875,7 @@ export class ColorSectionImpl {
         class: "canvas-area canvas-scheme-" + this.resolvedCanvasScheme() + (isTable ? " is-table" : ""),
         style: "--canvas-bg:" + this.canvasBg(),
         role: "group",
-        "aria-label": isTable ? "Semantic mapping table" : "Palette canvas — drag to pan, wheel to zoom, double-click to reset",
+        "aria-label": isTable ? "Semantic mapping table" : "Palette canvas: drag to pan, wheel to zoom, double-click to reset",
       },
       h("div", { class: "canvas-scene" }, scene),
     );
@@ -889,35 +889,35 @@ export class ColorSectionImpl {
   }
 
 
-  // colorSchemeBtn — icon-only scheme cycle (system → light → dark), the Color-section analog of
+  // colorSchemeBtn, icon-only scheme cycle (system → light → dark), the Color-section analog of
   // app.js's canvasThemeBtn, so all three sections use the same compact control for the same axis
   // (space saved vs. the old Light/Dark/Both segmented pill). While Both/Compare is active it shows
   // the currently-resolved concrete scheme (never blank); clicking always lands on a real scheme,
-  // exiting Compare if it was on — Compare itself lives in the separate colorCompareBtn.
+  // exiting Compare if it was on, Compare itself lives in the separate colorCompareBtn.
   colorSchemeBtn() {
     const shown = this.colorMode === "both" ? this.resolvedCanvasScheme() : this.colorMode;
     return btn(icon(SCHEME_ICON[shown] || "theme"), {
       cls: "scheme-btn",
-      title: "Color value mode: " + shown + " — click to cycle system / light / dark",
-      ariaLabel: "Color value mode: " + shown + " — cycle system / light / dark",
+      title: "Color value mode: " + shown + ", click to cycle system / light / dark",
+      ariaLabel: "Color value mode: " + shown + ", cycle system / light / dark",
       onclick: () => this.setColorMode(SCHEME_NEXT[shown] || "system"),
     });
   }
 
-  // colorCompareBtn — toggles the side-by-side Light+Dark Compare view. Remembers the scheme it
+  // colorCompareBtn, toggles the side-by-side Light+Dark Compare view. Remembers the scheme it
   // was on so turning Compare back off restores it, rather than always landing on "system".
   colorCompareBtn() {
     const on = this.colorMode === "both";
     return btn(icon("sidebar"), {
       cls: "scheme-btn" + (on ? " on" : ""),
-      title: on ? "Compare is on — click to return to a single scheme" : "Compare — Light & Dark side by side",
-      ariaLabel: on ? "Compare is on — click to return to a single scheme" : "Compare Light & Dark side by side",
+      title: on ? "Compare is on, click to return to a single scheme" : "Compare: Light & Dark side by side",
+      ariaLabel: on ? "Compare is on, click to return to a single scheme" : "Compare Light & Dark side by side",
       ariaPressed: on ? "true" : "false",
       onclick: () => this.toggleColorCompare(),
     });
   }
 
-  // an explicit pick (system/light/dark/both) overrides the default and PERSISTS (app prefs) —
+  // an explicit pick (system/light/dark/both) overrides the default and PERSISTS (app prefs),
   // matches canvasThemeBtn's contract; only Settings › Reset returns this to "system".
   setColorMode(v) { this.colorMode = v; this._saveAppPrefs(); this.render(); }
 
@@ -929,14 +929,14 @@ export class ColorSectionImpl {
   }
 
 
-  // renderCompareArea — the Color "Both" mode: the canvas scene rendered in Light AND Dark, side by side,
+  // renderCompareArea, the Color "Both" mode: the canvas scene rendered in Light AND Dark, side by side,
   // inside ONE pannable .canvas-scene (so pan/zoom/fit move both columns together). Each column forces its
   // own scheme via _schemeOverride, so canvasBg() + every resolvedCanvasScheme() read while the scene
   // builds resolves per-column.
   renderCompareArea(view) {
     const area = h(
       "div",
-      { class: "canvas-area canvas-compare", role: "group", "aria-label": "Compare — Light and Dark side by side · drag to pan, wheel to zoom" },
+      { class: "canvas-area canvas-compare", role: "group", "aria-label": "Compare: Light and Dark side by side · drag to pan, wheel to zoom" },
       h("div", { class: "canvas-scene compare" },
         this._compareColumn(view, "light"),
         this._compareColumn(view, "dark")),
@@ -960,9 +960,9 @@ export class ColorSectionImpl {
   }
 
 
-  // Ramps scene — each ENABLED palette = a clickable navigator row: name + ●/○
+  // Ramps scene, each ENABLED palette = a clickable navigator row: name + ●/○
   // enable toggle + its stop swatches. Click (not drag) selects that palette. Rows are grouped
-  // under four headers (Material/Brand/System/Data, ticket #556) via paletteGroup(p) — a stable
+  // under four headers (Material/Brand/System/Data, ticket #556) via paletteGroup(p), a stable
   // filter per group, so a group's visual block always reflects that group's palettes regardless
   // of their order in the underlying doc.palettes array (drag-reorder still splices the REAL array).
   renderRampsScene(view) {
@@ -995,7 +995,7 @@ export class ColorSectionImpl {
             class: "ramp-row" + (selected ? " sel" : ""),
             style: this.containerBg(vp) ? "background:" + this.containerBg(vp) : null, // tint = palette's 150 stop
             "data-pi": i, // real index into doc.palettes (for reorder hit-testing)
-            // click selects the palette — but never on a pan-drag OR a handle-drag.
+            // click selects the palette, but never on a pan-drag OR a handle-drag.
             onclick: () => {
               if (this._didDrag || this._reordering) {
                 this._didDrag = false;
@@ -1014,7 +1014,7 @@ export class ColorSectionImpl {
               {
                 class: "enable",
                 title: "Toggle enabled",
-                // a clickable span is invisible to the keyboard — give it button
+                // a clickable span is invisible to the keyboard, give it button
                 // semantics, focusability, and Enter/Space activation.
                 role: "button",
                 tabindex: "0",
@@ -1038,7 +1038,7 @@ export class ColorSectionImpl {
           // retained key colors (when set): the brand colors, above the generated ramp,
           // each captioned with its nearest stop (the perceptual placement). Off-ramp by design.
           this.keyStrip(vp),
-          // the seven prime swatches, lightest first, mode-independent — SPEC
+          // the seven prime swatches, lightest first, mode-independent, SPEC
           // spec-muted-base-key-spikes REQ-034.
           this.primeStrip(vp),
           strip,
@@ -1076,7 +1076,7 @@ export class ColorSectionImpl {
         ),
       );
 
-    // one row element per palette index — built once, then bucketed into its group below.
+    // one row element per palette index, built once, then bucketed into its group below.
     const rowByIndex = new Map();
     this.doc.palettes.forEach((p, i) => {
       const vp = view.palettes[i];
@@ -1086,7 +1086,7 @@ export class ColorSectionImpl {
     if (rowByIndex.size === 0) return h("div", { class: "empty-note" }, "No palettes");
 
     // four group sections in PALETTE_GROUPS order; a stable filter over doc.palettes keeps
-    // each group's own relative order — empty groups (no rows) are hidden entirely.
+    // each group's own relative order, empty groups (no rows) are hidden entirely.
     const sections = PALETTE_GROUPS.map((g) => {
       const idxs = this.doc.palettes.map((_, i) => i).filter((i) => rowByIndex.has(i) && paletteGroup(this.doc.palettes[i]) === g);
       if (!idxs.length) return null;
@@ -1109,16 +1109,16 @@ export class ColorSectionImpl {
   }
 
 
-  // renderRadixScene (ticket #637) — the "Radix" canvas view: one row per ENABLED palette (I5),
+  // renderRadixScene (ticket #637), the "Radix" canvas view: one row per ENABLED palette (I5),
   // each rendering the engine's OWN exportRadix output (view.radixPreset, OQ-1) as a 12-step
   // ladder, never re-derived and never cross-checked against radix-projection.json. This scene is
-  // READ-ONLY (I1): no drag handle, no reorder wiring, no document mutation of any kind — it is
+  // READ-ONLY (I1): no drag handle, no reorder wiring, no document mutation of any kind, it is
   // NOT one of the isGroupedView canvas views and adds no export affordance whatsoever (I6).
   //
   // Three states only (no fourth):
-  //   - no-drivers (I9): view.radixPreset is the exportRadix no-driver sentinel STRING — the scene
+  //   - no-drivers (I9): view.radixPreset is the exportRadix no-driver sentinel STRING, the scene
   //     still renders, wrapped, with exactly one .radix-empty node and no rows.
-  //   - collision (#630, option (a)): radixKeyCollision(p.name) — the engine emits the palette
+  //   - collision (#630, option (a)): radixKeyCollision(p.name), the engine emits the palette
   //     under radixExportKey(...) (`<slug>-palette`), so the row renders its FULL ladder read from
   //     that key PLUS exactly one .radix-badge text node (radixCollisionBadge(key), naming it).
   //   - normal: a .radix-ladder of 12 .radix-step nodes, painted base/_dark per
@@ -1153,12 +1153,12 @@ export class ColorSectionImpl {
   }
 
 
-  // renderScrimsScene — the canvas "Scrims" view. Per ENABLED palette, the 7 scrim roles
+  // renderScrimsScene, the canvas "Scrims" view. Per ENABLED palette, the 7 scrim roles
   // (scrimWeakest..scrimStrongest = the 500-base color at 10–55% alpha, already resolved in
   // view.palettes[i].roles as #RRGGBBAA). Each cell paints the translucent color over a
-  // light/dark split so the alpha — and how it reads on light vs dark content — is visible.
+  // light/dark split so the alpha, and how it reads on light vs dark content, is visible.
   // Reuses the ramp-row chrome (drag-reorder, enable, selection) so both views feel identical.
-  // scrimAlpha — recover a scrim's alpha % from its #RRGGBBAA byte, so the label always matches
+  // scrimAlpha, recover a scrim's alpha % from its #RRGGBBAA byte, so the label always matches
   // the actual color (never a hardcoded list that can drift from SCRIM_STEPS). Nearest 0.5%.
   scrimAlpha(hex8) {
     return Math.round((parseInt(hex8.slice(7, 9), 16) / 255) * 200) / 2;
@@ -1172,7 +1172,7 @@ export class ColorSectionImpl {
       .map(({ p, i, vp }) => {
         const selected = this.sel.kind === "palette" && this.selectedIndex() === i;
         // The FULL scrim ramp: the palette's 500 color at every stop's alpha (alpha% = stop/10),
-        // one cell per stop, honoring the Core-19 / All-25 toggle — parallel to the palette ramp.
+        // one cell per stop, honoring the Core-19 / All-25 toggle, parallel to the palette ramp.
         const stops = this.stopsMode === "extended" ? vp.fullRamp : vp.ramp;
         const base = vp.fullRamp.find((s) => s.stop === 500) || vp.ramp[Math.floor(vp.ramp.length / 2)];
         const hex500 = (base ? base.hex : "#808080").slice(0, 7); // the solid 500 color, opaque
@@ -1248,18 +1248,18 @@ export class ColorSectionImpl {
           strip,
         );
       });
-    if (rows.length === 0) return h("div", { class: "empty-note" }, "No enabled palettes — toggle one on to see its scrims");
+    if (rows.length === 0) return h("div", { class: "empty-note" }, "No enabled palettes. Toggle one on to see its scrims");
     const stack = h("div", { class: "ramp-stack" }, ...rows);
     this._wireReorder(stack); // reorder works in the scrim view too
     return stack;
   }
 
 
-  // renderMappingScene — the Semantic Mapping table for the SELECTED palette: every role's
-  // chain, one row per mode — [ Mode · swatch · semantic-token · raw-token ]. Read-only for now
-  // (the raw/semantic names are the values from the canonical role table; editing them — a
-  // per-doc remap/rename — and bidirectional load are the next step, pending the data-model call).
-  // keyStrip — the retained key colors row (dominant/supportive) for one palette, captioned with
+  // renderMappingScene, the Semantic Mapping table for the SELECTED palette: every role's
+  // chain, one row per mode, [ Mode · swatch · semantic-token · raw-token ]. Read-only for now
+  // (the raw/semantic names are the values from the canonical role table; editing them, a
+  // per-doc remap/rename, and bidirectional load are the next step, pending the data-model call).
+  // keyStrip, the retained key colors row (dominant/supportive) for one palette, captioned with
   // each color's nearest stop. Shown above the ramp AND atop the mapping table so the brand colors
   // stay visible across canvas views (not just the Palettes view).
   keyStrip(vp) {
@@ -1279,9 +1279,9 @@ export class ColorSectionImpl {
   }
 
 
-  // primeStrip — the seven prime swatches (SPEC spec-muted-base-key-spikes REQ-034), lightest
+  // primeStrip, the seven prime swatches (SPEC spec-muted-base-key-spikes REQ-034), lightest
   // first: brightest/brighter/bright/prime/dim/dimmer/dimmest. Reads vp.prime DIRECTLY (the
-  // primeSwatches() output, REQ-050..057) — never ramp stops or roles — so unlike the 0.1.0
+  // primeSwatches() output, REQ-050..057), never ramp stops or roles, so unlike the 0.1.0
   // role-mapped identity strip this replaces, the strip does NOT change with the scheme toggle,
   // accentRef, or stopsMode: the prime system is mode-independent by construction. Renamed from
   // identity-strip/identity-swatch (stale "identity role" terminology now that the LLD names this
@@ -1320,14 +1320,14 @@ export class ColorSectionImpl {
     const ov = this.doc.roleOverrides || {};
     const ovCount = Object.keys(ov).reduce((a, k) => a + Object.keys(ov[k] || {}).length, 0);
     // raw refs you can re-point a role to: the 25 solid stops + every scrim ref (base-step), built
-    // from the SAME SCRIM_BASES × SCRIM_STEPS the engine/exporters use — so the scrim roles
+    // from the SAME SCRIM_BASES × SCRIM_STEPS the engine/exporters use, so the scrim roles
     // (e.g. scrim-weakest → 500-050) always have a matching option instead of falling back to 050.
     const scrimRefs = SCRIM_BASES.flatMap((b) => SCRIM_STEPS.map((st) => String(b).padStart(3, "0") + "-" + String(st).padStart(3, "0")));
     const validRefs = [...vp.fullRamp.map((s) => String(s.stop)), ...scrimRefs];
     const tokenName = (ref) => n + "-" + (ref.includes("-") ? ref : ref.padStart(3, "0")); // the displayed raw-token name
     const padRef = (ref) => (ref.includes("-") ? ref : ref.padStart(3, "0"));
     const drift = this.liveVars ? this.driftSummary() : null; // the Figma drift-diff summary, if a live read was done
-    // per-mode drift cell: check = matches the file / ✗ drifted / — not in the file / · not read yet.
+    // per-mode drift cell: check = matches the file / ✗ drifted / n/a not in the file / · not read yet.
     const driftCell = (ref, hex) => {
       const st = this.driftStatus(n + "/" + padRef(ref), hex);
       const title = { match: "Matches the file", drift: "Drifted from the file", absent: "Not in the file" }[st]
@@ -1390,7 +1390,7 @@ export class ColorSectionImpl {
         h("b", {}, "Semantic Mapping"),
         h("small", {}, `${vp.name} · ${vp.roles.length} roles${ovCount ? " · " + ovCount + " re-pointed" : ""}`),
         h("div", { class: "spacer" }),
-        // drift summary chip (after a live read) — does the file match what I'd generate now?
+        // drift summary chip (after a live read), does the file match what I'd generate now?
         drift ? chip(drift.drifted ? `${drift.drifted} drifted` : "in sync", { tone: drift.drifted ? "has-drift" : "in-sync" }) : false,
         // read the live raw-colors variables from the file and diff (Figma only).
         this.inFigma ? btn([icon("arrows-clockwise"), "Read live"], { title: "Read the live raw-colors variables from this file and compare (drift)", onclick: () => this.readLiveVariables() }) : false,
@@ -1411,7 +1411,7 @@ export class ColorSectionImpl {
   }
 
 
-  // dragHandle — the ⋮⋮ grip that starts a reorder drag. Its pointerdown stops
+  // dragHandle, the ⋮⋮ grip that starts a reorder drag. Its pointerdown stops
   // propagation so it NEVER reaches the canvas pan handler, and the row's onclick
   // is suppressed during/after a reorder (this._reordering guard), so dragging the
   // handle neither pans the canvas nor selects the row.
@@ -1425,7 +1425,7 @@ export class ColorSectionImpl {
   }
 
 
-  // _wireReorder — keep a handle on the live stack node for hit-testing during a
+  // _wireReorder, keep a handle on the live stack node for hit-testing during a
   // drag. Rows carry data-pi (their real doc.palettes index); we read the rects
   // at move-time so the target insertion index is always current.
   _wireReorder(stack) {
@@ -1433,7 +1433,7 @@ export class ColorSectionImpl {
   }
 
 
-  // _rowRects — current [{ pi, top, bottom, mid, el }] for every row in the stack,
+  // _rowRects, current [{ pi, top, bottom, mid, el }] for every row in the stack,
   // top-to-bottom. Recomputed per drag-move (cheap; few rows).
   _rowRects() {
     const stack = this._rampStack;
@@ -1445,7 +1445,7 @@ export class ColorSectionImpl {
   }
 
 
-  // _beginReorder — start a handle-drag. Stops propagation (no canvas pan), sets
+  // _beginReorder, start a handle-drag. Stops propagation (no canvas pan), sets
   // the reorder guard, and installs document-level move/up so the drag tracks even
   // when the pointer leaves the handle. The actual move happens once on release.
   _beginReorder(e, src) {
@@ -1457,7 +1457,7 @@ export class ColorSectionImpl {
     if (handle && handle.setPointerCapture) {
       try { handle.setPointerCapture(e.pointerId); } catch {}
     }
-    // find the source ROW for the grabbed handle (parentNode walk — works in the browser AND the
+    // find the source ROW for the grabbed handle (parentNode walk, works in the browser AND the
     // headless DOM shim, which has no Element.closest / attribute selectors).
     let srcRow = handle;
     while (srcRow && !(srcRow.classList && srcRow.classList.contains("ramp-row"))) srcRow = srcRow.parentNode;
@@ -1472,7 +1472,7 @@ export class ColorSectionImpl {
   }
 
 
-  // _buildDragGhost — the visual lift. Clones the dragged row into a viewport-fixed "ghost" that
+  // _buildDragGhost, the visual lift. Clones the dragged row into a viewport-fixed "ghost" that
   // tracks the cursor, and replaces the source row with a same-size dashed PLACEHOLDER so the list
   // visibly parts to show where the drop will land. Appended to the HOST (not the transformed canvas
   // scene) so `position:fixed` is viewport-relative. Guarded: in the headless DOM shim (no cloneNode /
@@ -1488,7 +1488,7 @@ export class ColorSectionImpl {
     ghost.classList.add("drag-ghost");
     ghost.classList.remove("sel"); // the lifted clone isn't the selection ring
     // The ghost is re-parented to the HOST (for viewport-fixed positioning), but the row it clones
-    // lives in the CANVAS — whose color-scheme (the ◐ preview toggle) is independent of the app chrome.
+    // lives in the CANVAS, whose color-scheme (the ◐ preview toggle) is independent of the app chrome.
     // Pin the canvas's resolved scheme on the ghost so its light-dark() tokens (--ink, --panel, …)
     // resolve in the mode it visually belongs to, not the host's (else a light-canvas row dragged while
     // the chrome is dark renders dark-mode text on the light row).
@@ -1502,13 +1502,13 @@ export class ColorSectionImpl {
     ph.className = "drop-ghost";
     ph.style.height = rect.height + "px";
     st.placeholderEl = ph;
-    // drop the placeholder into the source's slot, then collapse the source — the lift is immediate.
+    // drop the placeholder into the source's slot, then collapse the source, the lift is immediate.
     if (srcRow.parentNode) srcRow.parentNode.insertBefore(ph, srcRow);
     srcRow.style.display = "none";
   }
 
 
-  // _syncDropFromPlaceholder — read the committed drop (dropPi/before) from the placeholder's live DOM
+  // _syncDropFromPlaceholder, read the committed drop (dropPi/before) from the placeholder's live DOM
   // position: it drops BEFORE the next real row, or AFTER the previous one if it's at the very end. The
   // collapsed source row (data-pi === src) is skipped so it never reads as the target.
   _syncDropFromPlaceholder() {
@@ -1525,7 +1525,7 @@ export class ColorSectionImpl {
   }
 
 
-  // _teardownDragGhost — remove the floating clone + placeholder and un-hide the source row. The
+  // _teardownDragGhost, remove the floating clone + placeholder and un-hide the source row. The
   // subsequent render() rebuilds the stack anyway; this just keeps the frame clean before it.
   _teardownDragGhost() {
     const st = this._reorder;
@@ -1537,9 +1537,9 @@ export class ColorSectionImpl {
   }
 
 
-  // _onReorderMove — the floating clone tracks the cursor 1:1; the DROP slot is decided relative to
+  // _onReorderMove, the floating clone tracks the cursor 1:1; the DROP slot is decided relative to
   // the PLACEHOLDER's own position (the proposed placement) with a 10px deadzone, so it only reslots
-  // when the cursor moves clearly past the placeholder's edge — stable, never jittering from the
+  // when the cursor moves clearly past the placeholder's edge, stable, never jittering from the
   // reflow. Headless (no placeholder) falls back to the row-midpoint hit-test so the verifier holds.
   _onReorderMove(ev) {
     const st = this._reorder;
@@ -1551,7 +1551,7 @@ export class ColorSectionImpl {
     // the floating clone follows the cursor (anchored under the original grab point).
     if (st.ghostEl) st.ghostEl.style.transform = `translate(${(ev.clientX ?? 0) - (st.grabDx || 0)}px, ${(y ?? 0) - (st.grabDy || 0)}px)`;
 
-    // Browser path — the hit area is the placeholder (proposed placement) ± SENS px. Step the
+    // Browser path, the hit area is the placeholder (proposed placement) ± SENS px. Step the
     // placeholder one row toward the cursor while it's past the deadzone (bounded, to keep up with a
     // fast flick), re-reading rects each step since each move reflows the list.
     const SENS = 10; // px the cursor must pass the placeholder edge before the drop reslots
@@ -1562,18 +1562,18 @@ export class ColorSectionImpl {
         const above = rows.filter((r) => r.bottom <= ph.top + 2).pop();    // row immediately above the placeholder
         const below = rows.find((r) => r.top >= ph.bottom - 2);            // row immediately below it
         // insertBefore relative to the TARGET row's own parent, not the placeholder's cached one
-        // (ticket #556 — rows now nest inside per-group `.ramp-group` containers, so crossing a
+        // (ticket #556, rows now nest inside per-group `.ramp-group` containers, so crossing a
         // group boundary must re-parent the placeholder into the row's actual group; inserting
         // against a stale parent throws when the neighbor lives in a different group's container).
         if (above && y < ph.top - SENS) { above.el.parentNode.insertBefore(st.placeholderEl, above.el); continue; }
         if (below && y > ph.bottom + SENS) { below.el.parentNode.insertBefore(st.placeholderEl, below.el.nextSibling); continue; }
-        break; // cursor is within the proposed slot's hit area — stable
+        break; // cursor is within the proposed slot's hit area, stable
       }
       this._syncDropFromPlaceholder();
       return;
     }
 
-    // Headless / no placeholder — row-midpoint hit-test (unchanged) so the reorder verifier still works.
+    // Headless / no placeholder, row-midpoint hit-test (unchanged) so the reorder verifier still works.
     const rects = this._rowRects().filter((r) => r.bottom - r.top > 1);
     if (!rects.length) return;
     let target = null;
@@ -1587,7 +1587,7 @@ export class ColorSectionImpl {
   }
 
 
-  // _onReorderUp — finalize. Translate (dropPi, before) into a destination index in
+  // _onReorderUp, finalize. Translate (dropPi, before) into a destination index in
   // doc.palettes, splice the source there as ONE undo step, and keep `selected` on
   // the SAME palette object (track it by identity across the move).
   _onReorderUp() {
@@ -1598,7 +1598,7 @@ export class ColorSectionImpl {
     this.classList.remove("reordering");
     this._teardownDragGhost(); // remove the floating clone + placeholder, un-hide the source row
     this._reorder = null;
-    // NOTE: leave this._reordering TRUE if a move happened — the row's onclick
+    // NOTE: leave this._reordering TRUE if a move happened, the row's onclick
     // fires right after this pointerup and must be suppressed; it (or the next
     // _beginReorder / pointerdown) clears the flag.
     if (!st || !st.moved) { this._reordering = false; this.render(); return; }
@@ -1612,13 +1612,13 @@ export class ColorSectionImpl {
     if (from < to) to -= 1;
     to = Math.max(0, Math.min(to, pals.length - 1));
 
-    // the row we're dropping adjacent to decides the target group — dragging ACROSS a group
+    // the row we're dropping adjacent to decides the target group, dragging ACROSS a group
     // header reassigns the moved palette's group (ratified Open Question 1, ticket #556); a
     // reorder that never leaves its own group's rows leaves `.group` untouched. Only the
-    // "palettes" canvas view (renderRampsScene) shows group headers at all — Scrims/Mapping
+    // "palettes" canvas view (renderRampsScene) shows group headers at all, Scrims/Mapping
     // share this same reorder machinery but have no group boundaries to cross, so a reorder
     // there must never silently reassign a palette's group. Radix (ticket #637) has no drag
-    // handle at all and never reaches this reorder machinery — read-only, no reorder.
+    // handle at all and never reaches this reorder machinery, read-only, no reorder.
     const isGroupedView = this.canvasView === "palettes";
     const neighbor = pals[st.dropPi];
     const targetGroup = isGroupedView ? (neighbor ? paletteGroup(neighbor) : paletteGroup(pals[from])) : paletteGroup(pals[from]);
@@ -1640,7 +1640,7 @@ export class ColorSectionImpl {
   }
 
 
-  // renderStoryInspector — the holistic "Story" tab: the set's concept narrative + the curated
+  // renderStoryInspector, the holistic "Story" tab: the set's concept narrative + the curated
   // colors (name · role · description) + the 60/30/10 groups + what the palette refuses. Mirrors the
   // source's cover layout. Present only for sets that carry a story (the curated travel volumes).
   renderStoryInspector(view) {
@@ -1692,9 +1692,9 @@ export class ColorSectionImpl {
   }
 
 
-  // scrimContext — the sub-variant preview shown atop the Palette inspector while the canvas is
-  // in the Scrims view. Scrims have NO independent controls — they ARE this palette's 500 stop at
-  // fixed alpha — so the panel shows the 7 swatches and makes the shared-edit relationship explicit:
+  // scrimContext, the sub-variant preview shown atop the Palette inspector while the canvas is
+  // in the Scrims view. Scrims have NO independent controls, they ARE this palette's 500 stop at
+  // fixed alpha, so the panel shows the 7 swatches and makes the shared-edit relationship explicit:
   // editing Hue / Chroma / Skew / Lift below moves the palette and its scrims together.
   scrimContext(view) {
     const vp = view.palettes[this.selectedIndex()];
@@ -1714,7 +1714,7 @@ export class ColorSectionImpl {
           return h("div", { class: "scrim-cell sm", title: `${this.scrimAlpha(hex8)}% · ${hex8}` }, h("i", { class: "scrim-fill", style: `background:${hex8}` }));
         }),
       ),
-      h("p", { class: "scrim-ctx-note" }, "A scrim is a sub-variant of this palette — its 500 stop at a fixed alpha. Edit Hue · Chroma · Skew · Lift below and the palette and its scrims move together."),
+      h("p", { class: "scrim-ctx-note" }, "A scrim is a sub-variant of this palette, its 500 stop at a fixed alpha. Edit Hue · Chroma · Skew · Lift below and the palette and its scrims move together."),
     );
   }
 
@@ -1724,11 +1724,11 @@ export class ColorSectionImpl {
     const p = this.doc.palettes[i];
     if (!p) return h("div", {}, "No palette selected");
     const vp = view.palettes[i];
-    // skew + lift shape the CIELAB tone curve (toneAt) — they have NO effect in the OKHSL distribution
+    // skew + lift shape the CIELAB tone curve (toneAt), they have NO effect in the OKHSL distribution
     // modes (perceptual/peak step lightness directly), so hide them there, matching the Global controls.
     const isEven = this.doc.toneMode === "even";
     // SPEC 0.3.0 (#556/#559 re-ruling): this palette's resolved group. A LOCKED group (Data) has no
-    // per-palette Prime chroma override at all — that slider is hidden entirely for it (any stored
+    // per-palette Prime chroma override at all, that slider is hidden entirely for it (any stored
     // p.primeChroma stays in the doc, just ignored while grouped as Data, per primeChromaOf).
     const pGroup = resolvePaletteGroups(this.doc)[paletteGroup(p)];
 
@@ -1736,7 +1736,7 @@ export class ColorSectionImpl {
       "div",
       { class: "insp-body" },
       h("h3", { class: "insp-title" }, swatch((vp.ramp.find((s) => s.stop === 550) || vp.ramp[9]).hex, { size: 16 }), "Palette"),
-      h("div", { class: "insp-sub" }, isEven ? "Tune hue · chroma · skew · lift — live" : (this.doc.toneMode === "perceptual" ? "Tune hue · chroma · cusp pull — live" : "Tune hue · chroma — live")),
+      h("div", { class: "insp-sub" }, isEven ? "Tune hue · chroma · skew · lift (live)" : (this.doc.toneMode === "perceptual" ? "Tune hue · chroma · cusp pull (live)" : "Tune hue · chroma (live)")),
       // curated story for this color (preset palettes): its evocative name, role, and description.
       vp.colorName
         ? h(
@@ -1755,7 +1755,7 @@ export class ColorSectionImpl {
           "data-fk": "pname",
           value: p.name,
           // typing coalesces into one undo step (editDrag debounce). editDrag does
-          // a PARTIAL liveRefresh — it never replaces this <input> (the right pane
+          // a PARTIAL liveRefresh, it never replaces this <input> (the right pane
           // is left alone), so focus + caret survive mid-word. The canvas row name
           // + analysis header update live. blur/Enter ('change') settles + renders.
           oninput: (e) => this.editDrag((d) => (d.palettes[i].name = e.target.value)),
@@ -1775,7 +1775,7 @@ export class ColorSectionImpl {
           onToggle: () => this.commit((d) => (d.palettes[i].on = !(d.palettes[i].on !== false))),
         }),
       ),
-      // Group (ticket #556) — which canvas group (Material/Brand/System/Data) this palette is
+      // Group (ticket #556), which canvas group (Material/Brand/System/Data) this palette is
       // organized under. Fully user-assignable: explicit here always wins over the default-by-name
       // rule (model.mjs's paletteGroup, the same single source of truth the canvas grouping reads).
       field(
@@ -1785,7 +1785,7 @@ export class ColorSectionImpl {
           { onchange: (e) => this.commit((d) => (d.palettes[i].group = e.target.value)) },
           ...PALETTE_GROUPS.map((g) => h("option", { value: g, selected: paletteGroup(p) === g }, paletteGroupLabel(g))),
         ),
-        { labelTitle: "Which canvas group this palette is organized under — Material, Brand, System, or Data." },
+        { labelTitle: "Which canvas group this palette is organized under: Material, Brand, System, or Data." },
       ),
       // Q-D (ticket #681, U2, ruled + verified): this palette's own hueSpace applicability note - the
       // doc-level Hue space control (renderGlobalInspector) only moves THIS palette in "even" mode;
@@ -1796,25 +1796,25 @@ export class ColorSectionImpl {
         ? h("div", { class: "field" }, h("small", { class: "insp-sub", "data-fk": "huespace-palette-reason" }, "Hue space: " + HUE_SPACE_ANCHOR_REASON))
         : false,
       // Hue/Chroma edits DETACH an anchored palette (ticket #681, U2/Q6): they drop the live `anchor`
-      // (the generator-written `sourceAnchor` copy stays, so Reset below can restore it) — a hue or
+      // (the generator-written `sourceAnchor` copy stays, so Reset below can restore it), a hue or
       // chroma slider drag makes an anchor-carrying palette ordinary again, since the ramp's stop 500
       // and prime.mjs's own anchor rung would otherwise keep rendering the OLD source color while the
       // hue/chroma the user just set claims a different one. Skew/lift edits do NOT detach (their own
-      // sliders below are untouched) — they're aesthetic warps ABOUT the anchor's own fixed pivot, not
+      // sliders below are untouched), they're aesthetic warps ABOUT the anchor's own fixed pivot, not
       // a claim about a different source color.
       //
       // Snapshot hue/chroma/lift the MOMENT this drag detaches (re-diagnosis Finding 3 / review F7):
       // `detachSnapshot` below stamps `preDetachHue`/`preDetachChroma`/`preDetachLift` from the
       // PRE-edit palette, once, only on the transition from anchored to detached (an already-detached
       // palette dragging Hue again must not overwrite its FIRST snapshot with an already-detached
-      // in-between value) — resetAnchor restores these exactly, never re-deriving.
+      // in-between value), resetAnchor restores these exactly, never re-deriving.
       this.slider("Hue", p.hue, 0, 360, 1, (v) => fmt(v) + "°", (v) => this.editDrag((d) => { this.detachSnapshot(d, i, p); d.palettes[i].hue = v; if (d.palettes[i].anchor) delete d.palettes[i].anchor; })),
-      // Chroma (SPEC 0.3.0 REQ-002/032) — feeds the KEY COLOUR and the prime system only now (the
+      // Chroma (SPEC 0.3.0 REQ-002/032), feeds the KEY COLOUR and the prime system only now (the
       // gallery tile, deriveKeyColor, and the seven prime swatches); the ramp no longer reads it at
-      // all — a palette's group supplies the ramp's own absolute chroma target instead (the four
+      // all, a palette's group supplies the ramp's own absolute chroma target instead (the four
       // per-group rows on the Global tab). No "Intensity" slider exists any more, in any group.
       this.slider("Chroma", p.chroma, 0, 100, 1, (v) => fmt(v) + "%", (v) => this.editDrag((d) => { this.detachSnapshot(d, i, p); d.palettes[i].chroma = v; if (d.palettes[i].anchor) delete d.palettes[i].anchor; })),
-      // Reset — re-attach a detached palette (Q6, U2's C12): restores `anchor = sourceAnchor` and
+      // Reset, re-attach a detached palette (Q6, U2's C12): restores `anchor = sourceAnchor` and
       // restores hue/chroma/lift EXACTLY from the pre-detach snapshot (resetAnchor below, R8/R9 review
       // pass 2 - the tooltip used to say "re-derive", which was true before the Finding 3/F7 fix landed
       // and is stale now: resetAnchor restores a snapshot, it only re-derives as a last-resort fallback
@@ -1834,19 +1834,19 @@ export class ColorSectionImpl {
         : false,
       isEven ? this.slider("Skew", p.skew, -100, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].skew = v))) : false,
       isEven ? this.slider("Lift", p.lift, -40, 40, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].lift = v))) : false,
-      // Cusp pull (perceptual only) — this palette's override of the global Vibrancy: how far its
+      // Cusp pull (perceptual only), this palette's override of the global Vibrancy: how far its
       // richest stop is nudged toward 500. Starts at the inherited global value; the peak mode pins it.
       this.doc.toneMode === "perceptual"
         ? this.slider("Cusp pull", p.cuspPull ?? (this.doc.vibrancy ?? 0), 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].cuspPull = v)))
         : false,
-      // Prime chroma (SPEC spec-muted-base-key-spikes REQ-032) — this palette's override of its
+      // Prime chroma (SPEC spec-muted-base-key-spikes REQ-032), this palette's override of its
       // GROUP's primeChroma default (ticket #559), same group-in-the-middle shape as Intensity above.
       // Shapes the prime system only (REQ-052), never the ramp, so unlike Cusp pull it stays visible
       // in every toneMode. HIDDEN entirely for a locked (Data) group, same reasoning as Intensity.
       pGroup.locked
         ? false
         : this.slider("Prime chroma", p.primeChroma ?? pGroup.primeChroma, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].primeChroma = v))),
-      // Edge hue rotation — bipolar, centre 0. The readout shows the light/dark torsion:
+      // Edge hue rotation, bipolar, centre 0. The readout shows the light/dark torsion:
       // left = light + / dark −, right = light − / dark + (the slider value = the dark edge).
       this.slider(
         "Edge hue",
@@ -1885,7 +1885,7 @@ export class ColorSectionImpl {
   }
 
 
-  // keyColorsEditor — the palette's retained brand colors as two EXPRESSIONS: `dominant`
+  // keyColorsEditor, the palette's retained brand colors as two EXPRESSIONS: `dominant`
   // (the main color) and `supportive` (optional). Each is a big swatch (≈ half width) with
   // its ramp placement (≈ stop + drift), a "seed" (align the family to it), and remove. An
   // empty slot captures the palette's current identity color in one click. Values are OKLCH.
@@ -1902,7 +1902,7 @@ export class ColorSectionImpl {
             "div",
             { class: "key-meta" },
             h("span", { class: "key-role" }, role),
-            h("span", { class: "key-place", title: `drift ${pl.drift} — perceptual distance to that stop` }, "≈ " + pl.nearStop),
+            h("span", { class: "key-place", title: `drift ${pl.drift}, perceptual distance to that stop` }, "≈ " + pl.nearStop),
           ),
           h(
             "div",
@@ -1927,7 +1927,7 @@ export class ColorSectionImpl {
   }
 
 
-  // addKeyColor — capture the palette's current identity color (its vivid `key`) as a key
+  // addKeyColor, capture the palette's current identity color (its vivid `key`) as a key
   // color in OKLCH, tagged with the role. One undo step.
   addKeyColor(i, role) {
     const vp = (this._view || projectView(this.doc)).palettes[i];
@@ -1937,7 +1937,7 @@ export class ColorSectionImpl {
   }
 
 
-  // seedFromKey — set the palette's hue + chroma from a key color, in the ACTIVE doc's hue space
+  // seedFromKey, set the palette's hue + chroma from a key color, in the ACTIVE doc's hue space
   // (OKLCH for new docs, CAM16 for a preserved legacy doc), so the generated ramp's family matches the
   // brand color. One undo step.
   //
@@ -1962,16 +1962,16 @@ export class ColorSectionImpl {
   }
 
 
-  // detachSnapshot(d, i, p) — stamp `preDetachHue`/`preDetachChroma`/`preDetachLift` from `p` (the
+  // detachSnapshot(d, i, p), stamp `preDetachHue`/`preDetachChroma`/`preDetachLift` from `p` (the
   // PRE-drag palette, captured by the caller before this drag gesture began) onto `d.palettes[i]`,
   // ticket #681 U2 re-diagnosis Finding 3 (review F7): resetAnchor below restores these EXACTLY
   // instead of re-deriving a new hue/chroma/lift via `seedFromKeyColor`, which is lossy (it reads the
-  // ANCHOR's own hue, never whatever `hue` the palette held before the edit — 1,902 of 3,380 corpus
+  // ANCHOR's own hue, never whatever `hue` the palette held before the edit, 1,902 of 3,380 corpus
   // palettes measured with a DIFFERENT hue than before detach, worst case 90°) and never round-trips
   // a hand-tuned `lift` (e.g. the default kit's Warning at -36) at all, since re-deriving always reset
   // it to 0. Fires ONLY on the anchored->detached transition (`p.anchor` present): an already-detached
   // palette dragging Hue or Chroma again must not overwrite its FIRST snapshot with an in-between,
-  // already-detached value — one detach, one snapshot, until the next Reset clears it.
+  // already-detached value, one detach, one snapshot, until the next Reset clears it.
   detachSnapshot(d, i, p) {
     if (!p || !p.anchor) return;
     d.palettes[i].preDetachHue = p.hue;
@@ -1979,18 +1979,18 @@ export class ColorSectionImpl {
     d.palettes[i].preDetachLift = p.lift ?? 0;
   }
 
-  // resetAnchor — re-attach a detached palette (ticket #681, U2/Q6): restores `anchor = sourceAnchor`
+  // resetAnchor, re-attach a detached palette (ticket #681, U2/Q6): restores `anchor = sourceAnchor`
   // (the generator's never-user-written copy, unaffected by the hue/chroma edit that dropped `anchor`)
   // and restores hue/chroma/lift EXACTLY from the `preDetachHue`/`preDetachChroma`/`preDetachLift`
-  // snapshot `detachSnapshot` stamped at the moment of detach (re-diagnosis Finding 3 / review F7) —
+  // snapshot `detachSnapshot` stamped at the moment of detach (re-diagnosis Finding 3 / review F7),
   // never re-derived. Skew is left alone either way: only hue/chroma (the detach trigger) and lift
   // (the field re-derivation used to reset to 0) are restored, not the user's own skew warp. Falls
   // back to the ORIGINAL re-derivation (`seedFromKeyColor`, lift 0) only when no snapshot exists at
-  // all — a palette that carries `sourceAnchor` but was detached some other way than this inspector's
+  // all, a palette that carries `sourceAnchor` but was detached some other way than this inspector's
   // own sliders (a hand-edited import, or a doc saved before this fix), so Reset still does SOMETHING
-  // reasonable rather than nothing. The restored fields are cleared afterward — nothing left to
+  // reasonable rather than nothing. The restored fields are cleared afterward, nothing left to
   // restore once restored, same as `anchor` itself being the thing that came back. Only reachable when
-  // `sourceAnchor` is present and `anchor` is absent (the inspector hides the button otherwise) — a
+  // `sourceAnchor` is present and `anchor` is absent (the inspector hides the button otherwise), a
   // no-op guard here too, so a stray call (e.g. a stubbed-out UI event) can never silently misfire.
   resetAnchor(i) {
     const p = this.doc.palettes[i];
@@ -2031,7 +2031,7 @@ export class ColorSectionImpl {
 
   // ── U8: "Add data palettes (8)" / "Re-derive data hues" (SPEC spec-muted-base-key-spikes
   // REQ-032, the opt-in path for a document that predates this feature, REQ-012). ──────────
-  // dataPaletteCount — the actual COUNT of Data-N palettes (not just whether any exist). Kept
+  // dataPaletteCount, the actual COUNT of Data-N palettes (not just whether any exist). Kept
   // distinct from model.mjs's exported hasDataPalettes(doc), which only answers the existence
   // question; the two boolean-only call sites below use that shared export instead of re-deriving
   // the regex here, so this local re-derivation only backs a genuine count consumer.
@@ -2039,7 +2039,7 @@ export class ColorSectionImpl {
     return (this.doc.palettes || []).filter((p) => /^data-\d+$/.test(slug(p.name))).length;
   }
 
-  // addDataPalettes — REQ-032/AC-032: appends the 8 derived Data N palettes. A no-op once any
+  // addDataPalettes, REQ-032/AC-032: appends the 8 derived Data N palettes. A no-op once any
   // already exist (the opt-in only ever runs once per document); mintDataPalettes itself
   // returns [] with no Primary palette to anchor the derivation on.
   addDataPalettes() {
@@ -2053,7 +2053,7 @@ export class ColorSectionImpl {
     this.toast("Added 8 data palettes");
   }
 
-  // rederiveDataHuesAction — REQ-023/AC-032: recomputes existing Data N hues from the CURRENT
+  // rederiveDataHuesAction, REQ-023/AC-032: recomputes existing Data N hues from the CURRENT
   // Primary + brand hues; every other field is left untouched. A no-op when the document has
   // no Data N palettes yet.
   rederiveDataHuesAction() {
@@ -2083,7 +2083,7 @@ export class ColorSectionImpl {
         { labelTitle: "perceptual: even OKHSL-lightness steps + gamut chroma (no near-white dead zone). even: the classic CIELAB curve (tone-aligned across hues; Curve/Tension/Chroma-basis apply). peak: cusp anchored at stop 500." },
       ),
       // Vibrancy (perceptual only): pulls the ramp's center toward the hue's chroma cusp, so the mid
-      // stops read vibrant — the fix for hues whose vivid expression is off-center (e.g. yellow). At
+      // stops read vibrant, the fix for hues whose vivid expression is off-center (e.g. yellow). At
       // 100 it equals "peak" mode. Hidden in even (CIELAB) + peak (already pinned at the cusp).
       d.toneMode === "perceptual"
         ? this.slider("Vibrancy", d.vibrancy, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.vibrancy = v)))
@@ -2091,13 +2091,13 @@ export class ColorSectionImpl {
       // Base chroma (SPEC spec-muted-base-key-spikes REQ-032), placed next to Vibrancy. Unlike Vibrancy
       // (perceptual-only), the intensity factor applies on BOTH ramp paths (REQ-002), so it stays visible
       // in every toneMode: it shapes the whole ramp (doc.baseIntensity). Prime chroma (doc.primeChroma)
-      // shapes the separate prime system instead (REQ-050..057) — it never touches the ramp, so it too
+      // shapes the separate prime system instead (REQ-050..057), it never touches the ramp, so it too
       // stays visible in every toneMode.
       this.slider("Base chroma", d.baseIntensity, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.baseIntensity = v))),
       this.slider("Prime chroma", d.primeChroma, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.primeChroma = v))),
-      // Per-group base chroma (SPEC 0.3.0, #556/#559 re-ruling) — a GROUP layer between a palette's
+      // Per-group base chroma (SPEC 0.3.0, #556/#559 re-ruling), a GROUP layer between a palette's
       // own resolution and the two global sliders above (Material/Brand/System/Data, PALETTE_GROUPS
-      // order). Each group gets its own baseChroma/primeChroma pair, writing doc.paletteGroups[g] —
+      // order). Each group gets its own baseChroma/primeChroma pair, writing doc.paletteGroups[g],
       // resolvePaletteGroups(d) reads back the same default-filled shape rampChromaOf/primeChromaOf
       // resolve every palette against, so a slider here always reflects the value actually applied.
       h("div", { class: "insp-sub" }, "Per-group base chroma"),
@@ -2116,7 +2116,7 @@ export class ColorSectionImpl {
           this.slider(`${paletteGroupLabel(g)} prime chroma`, gv.primeChroma, 0, 100, 1, (v) => fmt(v), setGroupField("primeChroma")),
         );
       }),
-      // Curve · Tension · Chroma-basis shape the CIELAB "even" path ONLY — hide them in the OKHSL modes.
+      // Curve · Tension · Chroma-basis shape the CIELAB "even" path ONLY, hide them in the OKHSL modes.
       d.toneMode === "even"
         ? field(
             "Curve",
@@ -2138,7 +2138,7 @@ export class ColorSectionImpl {
       d.toneMode === "even"
         ? this.slider("Chroma floor", d.chromaFloor, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.chromaFloor = v)))
         : false,
-      // differential damping curve — falloff (shape) · amplify (mid boost) · bias (L↔D)
+      // differential damping curve, falloff (shape) · amplify (mid boost) · bias (L↔D)
       h("div", { class: "sub-head" }, "Differential curve"),
       this.dampPresets(),
       this.slider("Falloff", d.dampCurve, 0.5, 4, 0.1, (v) => fmt(v, 1), (v) => this.editDrag((doc) => (doc.dampCurve = v))),
@@ -2153,7 +2153,7 @@ export class ColorSectionImpl {
         (v) => this.editDrag((doc) => (doc.dampBias = v)),
       ),
       h("div", { class: "damp-graph" }, this.graphDamping(d)),
-      // Hue space + On-color policy — two 2-option choices as side-by-side segmented controls (both
+      // Hue space + On-color policy, two 2-option choices as side-by-side segmented controls (both
       // options visible, vs a toggle that hid the OFF label). On-colors: "fixed" = the light tint in both
       // modes (ADR-003); "contrast" flips on{N}/on{N}Variant to the better-contrasting end vs the accent fill.
       //
@@ -2192,7 +2192,7 @@ export class ColorSectionImpl {
           h(
             "div",
             { class: "field" },
-            h("label", { title: "Fixed: on-colors are the light tint in both modes (ADR-003). Contrast: on{N}/on{N}Variant flip to the end with the best WCAG contrast vs the accent fill, per mode — accessible, but no longer uniform." }, "On-colors"),
+            h("label", { title: "Fixed: on-colors are the light tint in both modes (ADR-003). Contrast: on{N}/on{N}Variant flip to the end with the best WCAG contrast vs the accent fill, per mode, accessible, but no longer uniform." }, "On-colors"),
             this.segmented(
               [{ id: "fixed", label: "Fixed" }, { id: "contrast", label: "Contrast" }],
               d.onColorMode === "contrast" ? "contrast" : "fixed",
@@ -2207,14 +2207,14 @@ export class ColorSectionImpl {
             "Chroma basis",
             switchControl({
               on: d.relChroma,
-              ariaLabel: "Chroma basis — gamut when on, peak when off",
+              ariaLabel: "Chroma basis: gamut when on, peak when off",
               label: d.relChroma ? "gamut" : "peak",
               onToggle: () => this.commit((doc) => (doc.relChroma = !doc.relChroma)),
             }),
-            { labelTitle: "peak: chroma is % of each hue's own peak. gamut: % of every stop's gamut ceiling — palettes harmonize across hue." },
+            { labelTitle: "peak: chroma is % of each hue's own peak. gamut: % of every stop's gamut ceiling: palettes harmonize across hue." },
           )
         : false,
-      // Data palettes (SPEC spec-muted-base-key-spikes REQ-032/REQ-012, U8) — the opt-in path for
+      // Data palettes (SPEC spec-muted-base-key-spikes REQ-032/REQ-012, U8), the opt-in path for
       // a document that predates this feature: "Add data palettes (8)" mints the 8 Data N
       // palettes once (disabled once any exist); "Re-derive data hues" recomputes existing ones
       // from the current Primary + brand hues (disabled when none exist yet).
@@ -2237,7 +2237,7 @@ export class ColorSectionImpl {
   }
 
 
-  // Roles panel — the 53-role table for the selected palette: key · suffix · the
+  // Roles panel, the 53-role table for the selected palette: key · suffix · the
   // light ref swatch + the dark ref swatch · plus a small live semantic preview.
   renderRolesInspector(view) {
     const idx = this.selectedIndex();
@@ -2247,9 +2247,9 @@ export class ColorSectionImpl {
       "div",
       {},
       h("h3", { class: "insp-title" }, icon("roles"), "Roles"),
-      h("div", { class: "insp-sub" }, `${p ? p.name : ""} — 53 semantic roles · light / dark refs`),
+      h("div", { class: "insp-sub" }, `${p ? p.name : ""}: 53 semantic roles · light / dark refs`),
       // (the live component preview is pinned at the bottom of the pane on every
-      // tab — see .seg-example / exampleCard — so the Roles panel no longer repeats
+      // tab, see .seg-example / exampleCard, so the Roles panel no longer repeats
       // it here at the top.)
       h(
         "div",

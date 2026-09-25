@@ -1,4 +1,4 @@
-# Knowledge 02 — Tonal-Scale Generation
+# Knowledge 02: Tonal-Scale Generation
 
 > Topic: how a palette's per-stop tone (L\*) and chroma are computed from the global
 > controls plus a palette's `{hue, chroma, skew, lift}`. All formulas are literal.
@@ -7,9 +7,9 @@
 1. Stops
 2. Global controls and defaults
 3. Tone curves (the five `shape` functions)
-4. `toneAt` — tone per stop
+4. `toneAt`: tone per stop
 5. Chroma targeting and edge damping
-6. `paletteStops` — the per-stop pipeline
+6. `paletteStops`: the per-stop pipeline
 7. Worked example
 8. Palette groups, base chroma, and the prime system (absolute per-group ramp chroma, seven prime swatches)
 9. Anchored palettes (a stored source colour, exact at `prime.DEFAULT` and at stop 500)
@@ -31,9 +31,9 @@
 
 ## 2. Global controls and defaults
 
-> ⚠️ **`toneMode` selects the whole ramp algorithm and defaults to `perceptual`, not the curve-driven path below.** `toneMode ∈ {perceptual (default), even, peak}`. The `curve`/`relChroma`/`chromaFloor` controls in this table and the `toneAt` math in §3–§4 apply to **`even` mode only**; `perceptual`/`peak` go through the OKHSL path (`okhslStops`), shaped by `lmin`/`lmax`/`damp`/`vibrancy`. `skew` and `lift` are the exception: both apply in every tone mode, since #647 wired them into `okhslStops` via the shared `liftStop` helper. The additional defaults not yet tabled here — `relChroma` (false), `chromaFloor` (40), `toneMode` (perceptual), `vibrancy` (0), `onColorMode` (contrast, since #662), `accentRef` (mode) — live in `DEFAULT_CONTROLS` in `tonal.js`. `baseIntensity` and `primeChroma` (100 each, §8) are NOT engine controls: SPEC 0.3.0 retired both from `tonal.js`'s `DEFAULT_CONTROLS` entirely — they live only on the document/UI side (`src/ui/persist.js` `DOMAINS`), as the two global fallbacks the palette-group resolvers in §8 read.
+> ⚠️ **`toneMode` selects the whole ramp algorithm and defaults to `perceptual`, not the curve-driven path below.** `toneMode ∈ {perceptual (default), even, peak}`. The `curve`/`relChroma`/`chromaFloor` controls in this table and the `toneAt` math in §3–§4 apply to **`even` mode only**; `perceptual`/`peak` go through the OKHSL path (`okhslStops`), shaped by `lmin`/`lmax`/`damp`/`vibrancy`. `skew` and `lift` are the exception: both apply in every tone mode, since #647 wired them into `okhslStops` via the shared `liftStop` helper. The additional defaults not yet tabled here, `relChroma` (false), `chromaFloor` (40), `toneMode` (perceptual), `vibrancy` (0), `onColorMode` (contrast, since #662), `accentRef` (mode), live in `DEFAULT_CONTROLS` in `tonal.js`. `baseIntensity` and `primeChroma` (100 each, §8) are NOT engine controls: SPEC 0.3.0 retired both from `tonal.js`'s `DEFAULT_CONTROLS` entirely, they live only on the document/UI side (`src/ui/persist.js` `DOMAINS`), as the two global fallbacks the palette-group resolvers in §8 read.
 
-> ⚠️ **`peak` was the tone mode least suited to accent-on-text use, and #662 is why it no longer is.** Peak pins vibrancy at 100 and anchors the hue's cusp at stop 500, which pushes the accent fills toward the chroma peak and away from either ramp end. Under the pre-#662 fixed on-color policy that made it the worst of the three by a wide margin: measured on the default document, dark-scheme Secondary 1.24:1, Success 1.58:1, Info 2.44:1 and Warning 2.52:1 against their pinned light on-color, all far under WCAG AA 4.5:1 and under the MCP lint's advisory 3.0 floor as well. Those numbers were a property of the ON-COLOR, not of peak's ramp: with the contrast policy and its achromatic fall-through now the default (ADR-025), peak clears 4.5:1 in all 32 cells and is the highest-contrast of the three modes. Peak's ramp is unchanged — pick it for vivid mid-stops, and read this as the record of why it once carried an accessibility caveat.
+> ⚠️ **`peak` was the tone mode least suited to accent-on-text use, and #662 is why it no longer is.** Peak pins vibrancy at 100 and anchors the hue's cusp at stop 500, which pushes the accent fills toward the chroma peak and away from either ramp end. Under the pre-#662 fixed on-color policy that made it the worst of the three by a wide margin: measured on the default document, dark-scheme Secondary 1.24:1, Success 1.58:1, Info 2.44:1 and Warning 2.52:1 against their pinned light on-color, all far under WCAG AA 4.5:1 and under the MCP lint's advisory 3.0 floor as well. Those numbers were a property of the ON-COLOR, not of peak's ramp: with the contrast policy and its achromatic fall-through now the default (ADR-025), peak clears 4.5:1 in all 32 cells and is the highest-contrast of the three modes. Peak's ramp is unchanged, pick it for vivid mid-stops, and read this as the record of why it once carried an accessibility caveat.
 
 | Control | Range | Default | Purpose |
 |---------|-------|---------|---------|
@@ -42,8 +42,8 @@
 | `lmin` | 0–40 | 5 | darkest L\* (stop 950 end) |
 | `lmax` | 60–100 | 100 | lightest L\* (stop 050 end) |
 | `damp` | 0–100 | 80 | edge chroma damping strength (amount) |
-| `dampCurve` | 0.5–4 | 1.5 | falloff exponent γ — where damping bites (low = broad into mids, high = confined to the ends) |
-| `dampAmp` | 0–100 | 0 | mid-tone chroma amplify — boosts the mids toward the gamut ceiling (multiplier > 1) |
+| `dampCurve` | 0.5–4 | 1.5 | falloff exponent γ, where damping bites (low = broad into mids, high = confined to the ends) |
+| `dampAmp` | 0–100 | 0 | mid-tone chroma amplify, boosts the mids toward the gamut ceiling (multiplier > 1) |
 | `dampBias` | -100..100 | 0 | light(−)↔dark(+) asymmetry of the damping |
 | `hueSpace` | cam16 / oklch | oklch | how input hues are read (default flipped to OKLCH; cam16 stays selectable, and legacy cam16 docs carry `hueSpace:"cam16"` explicitly) |
 | `theme` | auto / light / dark | auto | UI appearance only (not exported) |
@@ -81,7 +81,7 @@ exp:       k = lerp(0.4,5,ten); q = (e^(k p) - 1)/(e^k - 1)
 | logistic | flat near 050/950, distinct mid tones (default) |
 | exp | compressed lights, expanded darks |
 
-## 4. `toneAt` — tone per stop
+## 4. `toneAt`: tone per stop
 
 ```
 liftStop(stop, lift):                    // #648: lift DISPLACES the stop, it does not add L*
@@ -110,7 +110,7 @@ toneAt(stop, skew, lift):
   monotone for any lift by one closed-form bound, `|A| · π/900 < 1`, which holds for every
   curve, skew, tension, `lmin` and `lmax`. Still used to nudge a palette's mid lightness
   (e.g. Warning gets `lift −36`), but because the shift rides the curve, a given lift moves
-  the tone furthest where the ramp is STEEPEST — its effect in L\* is not a fixed amount, and
+  the tone furthest where the ramp is STEEPEST, its effect in L\* is not a fixed amount, and
   it is attenuated relative to the old additive bump. `skew` and `lift` apply in every tone
   mode: #647 wired them into the `perceptual`/`peak` OKHSL distributions through this same
   `liftStop` helper.
@@ -127,7 +127,7 @@ toneAt(stop, skew, lift):
 ## 5. Chroma targeting and edge damping
 
 ```
-hue    = hueSpace=="oklch" ? solveCam16Hue(palette.hue, chroma@500, tone@500)  // solve the CAM16 hue directly in the RENDER space at stop 500's ACTUAL chroma+tone so the key stop EXPORTS at the set OKLCH hue (kills the Abney residual a peak-tone proxy left — worst in the blues); effHue seeds only the gamut basis
+hue    = hueSpace=="oklch" ? solveCam16Hue(palette.hue, chroma@500, tone@500)  // solve the CAM16 hue directly in the RENDER space at stop 500's ACTUAL chroma+tone so the key stop EXPORTS at the set OKLCH hue (kills the Abney residual a peak-tone proxy left, worst in the blues); effHue seeds only the gamut basis
                         : palette.hue                        // cam16 hue passes straight through
 pk     = peakC(hue).c                     // hue's own max chroma in sRGB
 target = (palette.chroma / 100) * pk      // chroma control is % of the hue's peak
@@ -168,17 +168,17 @@ chromaEnvelope(stop, anchorStop, lift, controls):      // src/engine/tonal.js, O
   Helmholtz-Kohlrausch coupling that reds #668 in the OKHSL-domain modes.
 - **Differential damping curve.** The defaults
   `dampCurve 1.5, dampAmp 0, dampBias 0` reduce it to the legacy `1 - (damp/100)·u^1.5`
-  edge damp **exactly** (backward-compatible — existing palettes/exports are unchanged).
+  edge damp **exactly** (backward-compatible, existing palettes/exports are unchanged).
   - **`damp`** sets the edge depth (amount); **`dampCurve` (γ)** shapes *where* damping
-    bites — low spreads it into the mids, high confines it to the extreme ends.
+    bites, low spreads it into the mids, high confines it to the extreme ends.
   - **`dampAmp`** boosts mid-tone chroma toward the ceiling (`m > 1`, peaking at stop 500,
     tapering to 0 at the ends so it never fights the edge damp).
-  - **`dampBias`** tilts damping toward the dark (`>0`) or light (`<0`) end — the two ends
+  - **`dampBias`** tilts damping toward the dark (`>0`) or light (`<0`) end, the two ends
     were previously locked together.
 - Final chroma is always clamped to the gamut ceiling `cm` (the `min(·, cm)`), so amplify
   can only push *toward* the ceiling and every emitted color stays in sRGB by construction.
 
-## 6. `paletteStops` — the per-stop pipeline
+## 6. `paletteStops`: the per-stop pipeline
 
 ```
 paletteStops(palette, stops) ->
@@ -208,7 +208,7 @@ lmin 5, lmax 100, damp 80:
 > the new `src/engine/resolve.mjs`) and the UI (`src/ui/model.mjs`, `src/ui/persist.js`). Unlike
 > 0.2.0's shipped defaults, the 0.3.0 `GROUP_DEFAULTS` (§8.1) make a REAL visual change to the
 > default document: Neutral (material) renders visibly muted and the eight data palettes render
-> at equal ramp chroma regardless of their own `chroma` field — see the CHANGELOG. The 0.1.0
+> at equal ramp chroma regardless of their own `chroma` field, see the CHANGELOG. The 0.1.0
 > "key-stop spike" on the ramp (identity stops, `keyIntensity`) was retired under #533; the ramp
 > is continuous and the vivid identity colours live in the prime system (§8.3) below.
 
@@ -216,7 +216,7 @@ lmin 5, lmax 100, damp 80:
 
 Every palette resolves to an effective **group**, one of `material`, `brand`, `system`, `data`
 (`paletteGroup(p)`, `src/ui/model.mjs`): an explicit `palette.group` if set, else the by-name
-default — `neutral` is material; `primary`/`secondary`/`tertiary` are brand; `info`/`success`/
+default, `neutral` is material; `primary`/`secondary`/`tertiary` are brand; `info`/`success`/
 `warning`/`danger` are system; every other palette (the eight data palettes, user-added,
 preset-opened) is data. Groups are an editor concept only: they never enter token names, CSS
 variables, Figma paths, the role table, or MCP output.
@@ -227,16 +227,16 @@ group, default-filled from `GROUP_DEFAULTS` (declared in `src/ui/persist.js`, re
 
 | Group | `baseChroma` | `primeChroma` | `locked` |
 |---|---|---|---|
-| `material` | 30 | 60 | — |
-| `brand` | 100 | 100 | — |
-| `system` | 100 | 100 | — |
+| `material` | 30 | 60 | none |
+| `brand` | 100 | 100 | none |
+| `system` | 100 | 100 | none |
 | `data` | 100 | 100 | yes |
 
 **Base chroma is now an ABSOLUTE ramp-chroma target, not a multiplier.** For a palette `p` in
 group `g`, the pure resolver `rampChromaOf(palette, paletteGroups, controls)`
 (`src/engine/resolve.mjs`, imported identically by `src/ui/model.mjs`'s `projectView` and
 `src/engine/exports.js`'s `derivePalette` so the canvas and every export format can never
-disagree — the doc-shaped convenience wrapper `rampChromaOf(p, doc)` in `model.mjs` resolves the
+disagree, the doc-shaped convenience wrapper `rampChromaOf(p, doc)` in `model.mjs` resolves the
 palette's group and the document's `paletteGroups`/global fallbacks first) computes:
 
 ```
@@ -244,7 +244,7 @@ rampChromaOf(p, doc) = paletteGroups[paletteGroup(p)].baseChroma ?? controls.bas
 ```
 
 and the model hands the resolved number to `paletteStops`/`okhslStops` AS the palette's own
-`chroma` (`paletteStops({ ...p, chroma: rampChromaOf(p, doc) }, controls, stops)`) — it REPLACES
+`chroma` (`paletteStops({ ...p, chroma: rampChromaOf(p, doc) }, controls, stops)`), it REPLACES
 `palette.chroma` for ramp purposes; it never multiplies it. `palette.chroma` itself now feeds
 only `deriveKeyColor` (the gallery tile and the prime system, §8.3); the ramp ignores it
 entirely. There is no per-palette ramp override in any group any more: `palette.intensity` was
@@ -252,7 +252,7 @@ retired at schema v4 (§8.4) and a stray stored value is ignored on read.
 
 `baseIntensity` (UI "Base chroma", global) is the fallback target used only when a palette's
 group carries no `baseChroma` of its own. The field name is a deliberate legacy holdover from
-the 0.2.0 per-stop multiplier it used to control — only its MEANING changed. It is a
+the 0.2.0 per-stop multiplier it used to control, only its MEANING changed. It is a
 document/UI-side control now, not an engine one: `tonal.js`'s `DEFAULT_CONTROLS` no longer
 defines or reads `baseIntensity` at all, and `intensityAt` is deleted
 (`git grep -n "intensityAt\|baseIntensity\|\.intensity\b" src/engine` returns nothing).
@@ -264,19 +264,19 @@ every data palette minted at the primary's chroma only when that chroma is 100; 
 for Neutral, Primary, Tertiary, Info, Success, Danger, or the default data palettes, which now
 render at a different chroma than their own `chroma` field states.
 
-### 8.2 Prime chroma resolution (feeds only the prime system, §8.3 — never the ramp)
+### 8.2 Prime chroma resolution (feeds only the prime system, §8.3: never the ramp)
 
 The companion resolver, also pure and living in `src/engine/resolve.mjs`:
 
 ```
 primeChromaOf(palette, paletteGroups, controls):
   g = paletteGroups[palette.group] ?? {}
-  if g.locked: return g.primeChroma                       // data — the per-palette override is ignored, not deleted
+  if g.locked: return g.primeChroma                       // data, the per-palette override is ignored, not deleted
   return palette.primeChroma ?? g.primeChroma ?? controls.primeChroma
 ```
 
 The `data` group is locked: a data palette's own `primeChroma` override, if it has one stored, is
-ignored while grouped as data — it becomes live again the moment the palette moves to another
+ignored while grouped as data, it becomes live again the moment the palette moves to another
 group. `primeChroma` (UI "Prime chroma", global) is the prime system's own global fallback,
 independent of `baseIntensity`.
 
@@ -292,12 +292,12 @@ unchanged and roles never alias prime tokens (knowledge-03 §3).
 | Control | Range | Default | Purpose |
 |---------|-------|---------|---------|
 | `primeChroma` (UI "Prime chroma", global) | 0–100 | 100 | the global fallback `primeChromaOf` (§8.2) reads last; was `keyIntensity` through schema v2, renamed at v3 (REQ-011, R4) |
-| `palette.primeChroma` (UI "Prime chroma", inspector) | 0–100, optional | absent (inherits) | per-palette override, folded into `primeChromaOf` (§8.2) — ignored while the palette's group is locked (`data`) |
+| `palette.primeChroma` (UI "Prime chroma", inspector) | 0–100, optional | absent (inherits) | per-palette override, folded into `primeChromaOf` (§8.2), ignored while the palette's group is locked (`data`) |
 
 `primeSwatches` itself is unchanged by SPEC 0.3.0 and stays group-unaware: its caller
 (`src/ui/model.mjs`'s `projectView`, `src/engine/exports.js`'s `derivePalette`) resolves
 `primeChromaOf(p, doc)` (§8.2) FIRST and calls `primeSwatches({ ...p, primeChroma: undefined },
-{ ...controls, primeChroma: primeChromaResolved })` — the palette's own `primeChroma` field is
+{ ...controls, primeChroma: primeChromaResolved })`, the palette's own `primeChroma` field is
 cleared and the already-resolved number rides in on `controls.primeChroma` instead, so
 `primeSwatches(palette, controls)` (REQ-050..053a, REQ-056; #537 ruling) below can keep reading
 `palette.primeChroma ?? controls.primeChroma` with no group knowledge of its own:
@@ -385,7 +385,7 @@ behaviour with no version gate. The v4 migration below still runs, unconditional
 hydrate.
 
 Hydrating below v4 deletes `palette.intensity`
-from every palette — there is no per-palette ramp override in any group any more — and reports it
+from every palette, there is no per-palette ramp override in any group any more, and reports it
 through `DROPPED_KEYS` (TKT-0455, loud not silent); the document's `paletteGroups` facet is
 default-filled from `GROUP_DEFAULTS` unconditionally on every hydrate, not gated by schema version.
 `palette.group` is never written by the migration itself: an old document stays byte-stable on

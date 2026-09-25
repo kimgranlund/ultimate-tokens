@@ -1,4 +1,4 @@
-// plugin/typography-tokens.mjs — the ultimate-tokens PLUGIN gate for the typography-tokens
+// plugin/typography-tokens.mjs, the ultimate-tokens PLUGIN gate for the typography-tokens
 // consumption skill: every --type-*/--font-* token and .type-* class it names must match the type
 // engine (voices·steps·props·fonts·count). The check lives WITH the skill
 // (plugin/.../scripts/voice-parity.mjs) so the shipped plugin carries its own gate; this wrapper
@@ -16,5 +16,5 @@ const r = spawnSync(process.execPath, [SCRIPT], { encoding: "utf8" });
 process.stdout.write(r.stdout || "");
 process.stderr.write(r.stderr || "");
 if (r.status !== 0) { console.error("plugin FAIL: typography-tokens skill drifted from the type engine"); process.exit(1); }
-console.log("plugin PASS — typography-tokens skill in parity with the type engine");
+console.log("plugin PASS, typography-tokens skill in parity with the type engine");
 process.exit(0);

@@ -1,6 +1,6 @@
-// plugin/manifest.mjs — the ultimate-tokens PLUGIN packaging gate: the manifest + marketplace entry
+// plugin/manifest.mjs, the ultimate-tokens PLUGIN packaging gate: the manifest + marketplace entry
 // must stay valid and coherent with the skills on disk, so a broken plugin.json (or a skill removed
-// without updating the package) reddens the suite. Structural only — the skill CONTENT gates are the
+// without updating the package) reddens the suite. Structural only, the skill CONTENT gates are the
 // per-skill parity legs.
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -11,7 +11,7 @@ const fails = [];
 const ok = (cond, msg) => { if (!cond) fails.push(msg); };
 
 const manifestPath = join(ROOT, "plugin/ultimate-tokens/.claude-plugin/plugin.json");
-// the marketplace descriptor MUST sit at the repo root — that's where `/plugin marketplace add
+// the marketplace descriptor MUST sit at the repo root, that's where `/plugin marketplace add
 // owner/repo` looks; a nested one is invisible to the add command.
 const marketPath = join(ROOT, ".claude-plugin/marketplace.json");
 ok(existsSync(manifestPath), "plugin/ultimate-tokens/.claude-plugin/plugin.json exists");
@@ -56,5 +56,5 @@ if (existsSync(agentsDir)) {
 }
 
 if (fails.length) { console.error("plugin FAIL:\n  ✗ " + fails.join("\n  ✗ ")); process.exit(1); }
-console.log("plugin PASS — ultimate-tokens manifest + marketplace coherent with the skills (+ agents) on disk");
+console.log("plugin PASS, ultimate-tokens manifest + marketplace coherent with the skills (+ agents) on disk");
 process.exit(0);

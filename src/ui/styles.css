@@ -1,10 +1,10 @@
-/* styles.css — HCT Palette Generator UI.
+/* styles.css, HCT Palette Generator UI.
    App-shell as a CSS grid; gallery, drawer, swatch, slider, analysis rail,
    ramp navigator, segmented inspector.
 
    DOGFOODING: the chrome themes itself with the tokens the tool generates. On
-   boot app.js injects <style id="ultimate-tokens-theme"> — exportCSS() over the 8 default
-   palettes — into <head>, emitting per-palette --{n}-{stop} raw vars and 37
+   boot app.js injects <style id="ultimate-tokens-theme">, exportCSS() over the 8 default
+   palettes, into <head>, emitting per-palette --{n}-{stop} raw vars and 37
    --c-{n}{suffix} semantic roles in :root. The app-internal variables below
    (--bg/--panel/--ink/--accent/…) are now thin aliases onto those generated
    --c-* roles, each with a CSS fallback so the chrome survives if a token is
@@ -45,9 +45,9 @@
   --r-sm: 5px;
   --r:    8px;
   --r-lg: 12px;
-  /* control geometry — the one shared dimension across controls (switch + range thumb).
+  /* control geometry, the one shared dimension across controls (switch + range thumb).
      A full (height−glyph)/2 size-ramp (component-inventory.md GRADE) would CHANGE pixels,
-     so it is intentionally not derived here — it wants a visual pass. */
+     so it is intentionally not derived here, it wants a visual pass. */
   --ctl-thumb: 15px;
   --hh: 48px;   /* header height */
   --ch: 42px;   /* canvas-header height */
@@ -76,8 +76,8 @@ ultimate-tokens[data-theme="system"] { color-scheme: light dark; } /* follow the
 ultimate-tokens[data-theme="light"]  { color-scheme: light; }
 ultimate-tokens[data-theme="dark"]   { color-scheme: dark; }
 
-/* Reduced motion — Settings › Appearance › Motion. "Reduced" forces it; "System" (the default)
-   respects the OS prefers-reduced-motion. Durations collapse to near-zero (0.01ms, not 0 — a zero
+/* Reduced motion, Settings › Appearance › Motion. "Reduced" forces it; "System" (the default)
+   respects the OS prefers-reduced-motion. Durations collapse to near-zero (0.01ms, not 0, a zero
    duration can skip transitionend listeners) rather than being removed, so state changes still land
    instantly and nothing waits on an event that never fires. */
 ultimate-tokens[data-motion="reduced"] *,
@@ -99,17 +99,17 @@ ultimate-tokens[data-motion="reduced"] *::after {
   }
 }
 
-/* TKT-0004 — Apply-to-Figma busy state: a PERSISTENT, INDETERMINATE indicator for the real,
+/* TKT-0004, Apply-to-Figma busy state: a PERSISTENT, INDETERMINATE indicator for the real,
    unbounded duration of an in-flight apply (from the "apply" postMessage until apply-done/
-   apply-error — see app.js's applyToFigma/onApplyDone/onApplyError), closing the gap a transient
+   apply-error, see app.js's applyToFigma/onApplyDone/onApplyError), closing the gap a transient
    toast alone left once its timeout passed. `.apply-busy` is set on the HOST element AND (render())
-   the open export `.drawer` <dialog> — never in the web-app preview build (Figma-plugin-embed only,
+   the open export `.drawer` <dialog>, never in the web-app preview build (Figma-plugin-embed only,
    gated by `this.inFigma`). TWO rings, not one: the Apply/Regroup triggers live INSIDE the drawer,
-   a native <dialog> promoted to the browser's TOP LAYER by showModal() — a `position:fixed` ring on
+   a native <dialog> promoted to the browser's TOP LAYER by showModal(), a `position:fixed` ring on
    the host alone would render BELOW that top layer (dialog + its ::backdrop always paint above
    normal stacking, no z-index escapes it), so while the drawer is open the host ring would sit
    behind the drawer panel/dim behind its backdrop. The drawer-scoped ring below solves that by
-   being framed to the dialog's OWN box (already in the top layer, so no stacking fight) — the host
+   being framed to the dialog's OWN box (already in the top layer, so no stacking fight), the host
    ring still matters if the drawer gets closed mid-apply (nothing else prevents that). Both use the
    SAME gradient-mask technique (padding + mask-composite:exclude, not `border`/`outline`, so neither
    affects box geometry) for a real 6px INSET frame with a looping background-position sweep. */
@@ -133,10 +133,10 @@ dialog.drawer.apply-busy::after { position: absolute; } /* frames the drawer's O
   0%   { background-position: 0% 50%; }
   100% { background-position: 300% 50%; }
 }
-/* `ultimate-tokens[data-motion="reduced"] *::after` (above) is a DESCENDANT selector — `*` can never
+/* `ultimate-tokens[data-motion="reduced"] *::after` (above) is a DESCENDANT selector, `*` can never
    match the HOST element's own pseudo-element (an element is not its own descendant), so it silently
    never reaches `ultimate-tokens.apply-busy::after` itself. (`dialog.drawer.apply-busy::after` IS a
-   real descendant of the host, so that ring is already covered by the existing rule above — no gap
+   real descendant of the host, so that ring is already covered by the existing rule above, no gap
    there.) This explicit, self-targeting pair closes that gap for the host-level ring. */
 ultimate-tokens[data-motion="reduced"].apply-busy::after {
   animation-duration: 0.01ms !important;
@@ -149,7 +149,7 @@ ultimate-tokens[data-motion="reduced"].apply-busy::after {
   }
 }
 
-/* Hidden scrollbars — content still scrolls; the bar is just not painted. Keeps the
+/* Hidden scrollbars, content still scrolls; the bar is just not painted. Keeps the
    chrome clean and avoids the bright native scrollbar in a Figma plugin iframe. */
 * { scrollbar-width: none; }                    /* Firefox / modern */
 *::-webkit-scrollbar { width: 0; height: 0; }   /* WebKit */
@@ -213,7 +213,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 .gallery-header .spacer { flex: 1; }
 /* the scroll container: the masthead sticks to its top, the content scrolls beneath. */
 .gallery-body { flex: 1; overflow: auto; }
-/* sticky page masthead — title/eyebrow + search, then a description. Pins below the utility bar
+/* sticky page masthead, title/eyebrow + search, then a description. Pins below the utility bar
    while the content scrolls under it; a solid bg + bottom seam hide the content passing behind. */
 .gallery-masthead {
   position: sticky; top: 0; z-index: 5;
@@ -236,7 +236,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 }
 .category-back-eyebrow:hover { color: var(--accent); background: none; }
 .gallery-content { padding: 18px 24px 24px; }
-/* the "read a project that has no config yet" row — shown above the sets when the Figma file
+/* the "read a project that has no config yet" row, shown above the sets when the Figma file
    already carries a compatible raw-colors structure (renderFigmaImportRow). */
 .figma-import-row {
   display: flex; align-items: center; gap: 12px;
@@ -265,7 +265,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: 16px;
-  align-items: start; /* tiles size to their own content — don't stretch to the row's tallest (which
+  align-items: start; /* tiles size to their own content, don't stretch to the row's tallest (which
                          left an empty gap under shorter tiles). The fixed-height thumb then always fills. */
 }
 .set-tile {
@@ -301,11 +301,11 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 .tile-tag.tile-count { left: 8px; bottom: 8px; }
 .tile-tag.tile-preset { right: 8px; bottom: 8px; }
 /* the delete button overlays the preview top-right (same scrim language as the tags, but
-   interactive — it carries its own click + stopPropagation, so it stays pointer-events:auto). */
+   interactive, it carries its own click + stopPropagation, so it stays pointer-events:auto). */
 .set-thumb .del {
   position: absolute; top: 6px; right: 6px;
   display: flex; align-items: center; justify-content: center;
-  padding: 0; border: none; /* a real <button> now — drop the base button chrome */
+  padding: 0; border: none; /* a real <button> now, drop the base button chrome */
   width: 22px; height: 22px; border-radius: 999px;
   font-size: 12px; line-height: 1; cursor: pointer;
   background: rgba(0, 0, 0, .55); color: #fff;
@@ -332,7 +332,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 .new-tile .plus { font-size: 26px; line-height: 1; }
 .empty-note { color: var(--ink-dim); padding: 40px 0; text-align: center; }
 
-/* ─────────────────── PALETTE CATEGORYS — hub category grid ─────────────────── */
+/* ─────────────────── PALETTE CATEGORYS, hub category grid ─────────────────── */
 .categories-head { margin-top: 32px; }
 .categories-lede { margin: -10px 0 18px; max-width: 76ch; color: var(--ink-dim); font-size: 13px; line-height: 1.55; }
 .category-grid {
@@ -401,7 +401,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
   border-radius: var(--r-sm); padding: 4px 9px; max-width: 180px;
 }
 .app-header .spacer { flex: 1; }
-/* pane-collapse toggles — one per side. While its pane is OPEN the toggle sits in that
+/* pane-collapse toggles, one per side. While its pane is OPEN the toggle sits in that
    pane's own header (accented via .on); once collapsed it pops to the canvas-header. */
 .pane-toggle {
   padding: 3px 8px; color: var(--ink-dim); flex: none;
@@ -510,7 +510,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 .canvas-header .spacer { flex: 1; }
 .canvas-header .add-pal-btn { border: 1px dashed var(--line); }
 .canvas-header .add-pal-btn:hover { border-color: var(--accent); color: var(--accent); }
-/* Typography breakpoint Mode control (canvas header) — the Base/modes segment + a "+" to add one */
+/* Typography breakpoint Mode control (canvas header), the Base/modes segment + a "+" to add one */
 .mode-control { display: inline-flex; align-items: center; gap: 4px; }
 .mode-control .mode-add { flex: none; padding: 4px 6px; }
 /* the inspector mode editor: rename + delete the active breakpoint */
@@ -537,7 +537,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
   background: var(--canvas-bg, var(--bg));
 }
 .canvas-area.panning { cursor: grabbing; }
-/* canvas color-scheme — flips ONLY the preview's color-scheme, independent of app
+/* canvas color-scheme, flips ONLY the preview's color-scheme, independent of app
    chrome; the backdrop fill itself is the lmin/lmax-derived --canvas-bg above. */
 .canvas-area.canvas-scheme-light { color-scheme: light; }
 .canvas-area.canvas-scheme-dark  { color-scheme: dark; }
@@ -546,7 +546,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
   transform-origin: 0 0;
   will-change: transform;
 }
-/* Color "Both" / Compare — the scene rendered in Light + Dark side by side, in ONE pannable scene so
+/* Color "Both" / Compare, the scene rendered in Light + Dark side by side, in ONE pannable scene so
    pan/zoom/fit move both columns together. Each column forces its own color-scheme (so light-dark()
    tokens + var(--ink) resolve per column) and carries its own --canvas-bg near-edge ground. */
 .canvas-area.canvas-compare { background: var(--bg); }
@@ -559,7 +559,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
   color: var(--ink-faint); margin: 0 0 8px 4px; }
 /* canvas = the ramps as the 2D space; each row IS the palette navigator */
 .ramp-stack { display: flex; flex-direction: column; gap: 20px; padding: 4px; }
-/* .ramp-group — one canvas-group section (Material/Brand/System/Data, ticket #556); its own
+/* .ramp-group, one canvas-group section (Material/Brand/System/Data, ticket #556); its own
    rows keep the tighter 12px rhythm, while .ramp-stack's 20px gap separates the group blocks. */
 .ramp-group { display: flex; flex-direction: column; gap: 12px; }
 .ramp-group-header {
@@ -584,7 +584,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 }
 .ramp-row .enable:hover { background: var(--line); color: var(--ink); }
 
-/* drag handle (⋮⋮) — grabs the row for reorder; never pans the canvas / selects */
+/* drag handle (⋮⋮), grabs the row for reorder; never pans the canvas / selects */
 .ramp-row .drag-handle {
   flex: none; width: 16px; align-self: stretch;
   display: flex; align-items: center; justify-content: center;
@@ -598,7 +598,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 .ramp-row .drag-handle:hover { color: var(--ink); background: var(--line); }
 .ramp-row .drag-handle:active { cursor: grabbing; }
 ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !important; }
-/* the lifted CLONE of the dragged row — a ghost that tracks the cursor, viewport-fixed, above all.
+/* the lifted CLONE of the dragged row, a ghost that tracks the cursor, viewport-fixed, above all.
    JS sets its width/height + a translate() transform; it never intercepts pointers (so the row under
    the cursor is still hit-testable). */
 .ramp-row.drag-ghost {
@@ -608,7 +608,7 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
   outline: 1px solid var(--accent); outline-offset: 0;
   box-shadow: var(--shadow-lg);
 }
-/* the DROP placeholder — a dashed, accent-tinted ghost the exact size of the dragged row, inserted
+/* the DROP placeholder, a dashed, accent-tinted ghost the exact size of the dragged row, inserted
    at the landing slot so the list visibly parts to show where the drop will go. */
 .drop-ghost {
   box-sizing: border-box; pointer-events: none;
@@ -625,7 +625,7 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
 }
 .ramp-strip i:hover { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 2; }
 
-/* prime strip — the seven prime-system swatches (brightest/brighter/bright/prime/dim/dimmer/
+/* prime strip, the seven prime-system swatches (brightest/brighter/bright/prime/dim/dimmer/
    dimmest), discrete chips (not a joined ramp) so they read as their own token group, not stops. */
 .prime-strip { display: flex; gap: 3px; margin-bottom: 6px; }
 .prime-swatch {
@@ -634,7 +634,7 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
 }
 .prime-swatch:hover { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 2; }
 
-/* scrim view — 7 translucent 750-base overlays per palette, painted over a neutral
+/* scrim view, 7 translucent 750-base overlays per palette, painted over a neutral
    checkerboard (the universal "this is translucent" indicator) so the alpha reads clearly. */
 .scrim-strip { display: flex; box-shadow: var(--shadow); border-radius: 6px; overflow: hidden; width: fit-content; }
 .scrim-cell {
@@ -645,13 +645,13 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
 /* small scrim swatches for the right-pane sub-variant preview */
 .scrim-cell.sm { width: 28px; height: 24px; }
 
-/* radix view (ticket #637) — one row per enabled palette, either a 12-step Park UI ladder read
+/* radix view (ticket #637), one row per enabled palette, either a 12-step Park UI ladder read
    straight from the engine's own exportRadix output, or (a name collision with a reserved alias
-   key) a single badge line and nothing else — read-only, no drag handle, no reorder. */
+   key) a single badge line and nothing else, read-only, no drag handle, no reorder. */
 .radix-scene { display: flex; flex-direction: column; gap: 12px; padding: 4px; }
 .radix-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; border: 1px solid transparent; }
 .radix-row:hover { border-color: var(--line); }
-/* fixed name column so every ladder starts at the same x — the ramps scene stacks name ABOVE
+/* fixed name column so every ladder starts at the same x, the ramps scene stacks name ABOVE
    strip (column layout, alignment doesn't matter there); this row is a flex row, so without a
    width every ladder would start at a different offset depending on palette-name length. */
 .radix-row .ramp-name { flex: none; width: 132px; }
@@ -662,12 +662,12 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
 .radix-badge { font-size: 12px; color: var(--ink-dim); }
 .radix-empty { color: var(--ink-dim); padding: 40px 0; text-align: center; }
 
-/* Semantic Mapping view — a DATA TABLE in the canvas slot: scrolls, no pan/zoom. */
+/* Semantic Mapping view, a DATA TABLE in the canvas slot: scrolls, no pan/zoom. */
 .canvas-area.is-table { cursor: default; overflow: hidden; }
 .canvas-area.is-table .canvas-scene {
   position: static; transform: none !important; inset: auto;
   /* top padding is 0 so a sticky thead/first-col sticks FLUSH to the scroll top (the gutter moves to the
-     inner wrap's margin); see .map-table — its overflow must be visible for the sticky scrollport to be
+     inner wrap's margin); see .map-table, its overflow must be visible for the sticky scrollport to be
      THIS scene, not the table itself. */
   width: 100%; height: 100%; max-height: 100%; overflow: auto; display: block; padding: 0 14px 14px;
 }
@@ -676,7 +676,7 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
 .map-head { display: flex; align-items: baseline; gap: 10px; margin: 0 2px 10px; }
 .map-head small { color: var(--ink-dim); }
 /* overflow:visible (not hidden) so the STICKY thead + first column stick to the scrolling .canvas-scene,
-   not to the table's own box — overflow!=visible would make the table the scrollport and headers would
+   not to the table's own box, overflow!=visible would make the table the scrollport and headers would
    scroll away. The radius is dropped: it needed overflow:hidden to clip, which would re-trap the scrollport;
    the table is square-cornered inside the (square) .canvas-area. */
 .map-table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--panel); border: 1px solid var(--line); overflow: visible; }
@@ -719,7 +719,7 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
 }
 .map-table code { font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink); }
 .map-sem code { color: var(--accent); font-weight: 600; }
-/* the editable raw-token cell — a select menu, or a free text input (⇄ toggle in the head). */
+/* the editable raw-token cell, a select menu, or a free text input (⇄ toggle in the head). */
 .map-raw-select, .map-raw-input {
   font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
   padding: 2px 6px; border: 1px solid var(--line); border-radius: 5px;
@@ -732,14 +732,14 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
 .map-reset:hover { color: var(--accent); }
 .map-head .spacer { flex: 1; }
 .map-head .ghost { padding: 4px 10px; }
-/* drift diff (#3) — does the file match what we'd generate? */
+/* drift diff (#3), does the file match what we'd generate? */
 .map-file { width: 38px; text-align: center; }
 .map-drift { display: inline-block; min-width: 16px; text-align: center; font-weight: 700; }
 .map-drift-match { color: #2e9e5b; }
 .map-drift-drift { color: #d9534f; }
 .map-drift-absent, .map-drift-none { color: var(--ink-faint); font-weight: 400; }
 
-/* ── Tokens MATRIX (Type / Geom) — a READ-ONLY token table in the .is-table canvas slot.
+/* ── Tokens MATRIX (Type / Geom), a READ-ONLY token table in the .is-table canvas slot.
    Rows = steps grouped by voice/size; columns = Base + one per breakpoint mode. Extends .map-table
    (sticky head, monospace code cells); the first column (token name) is sticky-left too. */
 .tok-wrap { max-width: min(100%, 1040px); margin-left: auto; margin-right: auto; }
@@ -748,24 +748,24 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
 .tok-hint { flex-basis: 100%; font-style: italic; color: var(--ink-dim); }
 .tok-table { table-layout: auto; }
 .tok-table td, .tok-table th { vertical-align: top; }
-/* the token-name FIRST column — sticky-LEFT only (top:auto: .map-table sets top:0 for THEAD headers, but
+/* the token-name FIRST column, sticky-LEFT only (top:auto: .map-table sets top:0 for THEAD headers, but
    these <th> live in the tbody), group headers scroll (static), only the corner pins on both axes. The
    sticky scrollport is the .canvas-scene (since .map-table is now overflow:visible + the scene's top
-   padding is 0), so the column headers AND this column genuinely pin on scroll — verified Δ0px in Chrome
+   padding is 0), so the column headers AND this column genuinely pin on scroll, verified Δ0px in Chrome
    for both Mapping and this matrix (CDP scroll probe). */
 .tok-table th.tok-name {
   text-align: left; position: sticky; left: 0; top: auto; z-index: 1;
   background: var(--panel); border-right: 1px solid var(--line); white-space: nowrap;
 }
-.tok-table th.tok-name-head { top: 0; z-index: 2; background: var(--panel-2); } /* the corner — sticky on BOTH axes */
+.tok-table th.tok-name-head { top: 0; z-index: 2; background: var(--panel-2); } /* the corner, sticky on BOTH axes */
 .tok-table th.tok-grouphead { position: static; } /* group-header rows scroll with the body, never pin to the top */
 .tok-table th.tok-name code { color: var(--ink); font-weight: 600; }
-/* breakpoint column heads — name above, ≥{minWidth}px beneath */
+/* breakpoint column heads, name above, ≥{minWidth}px beneath */
 .tok-col { white-space: nowrap; }
 .tok-col-name { display: block; }
 .tok-col-bp { display: block; color: var(--ink-faint); font-weight: 400; font-size: 11px; }
 .tok-col-base .tok-col-name { color: var(--ink); }
-/* group header row — spans every column */
+/* group header row, spans every column */
 .tok-grouphead {
   text-align: left; background: var(--panel-2); border-top: 2px solid var(--line);
   padding: 6px 10px; color: var(--ink-dim);
@@ -773,7 +773,7 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
 .tok-grouphead b { color: var(--ink); margin-right: 8px; }
 .tok-grouphead small { color: var(--ink-dim); }
 .tok-group-count { float: right; color: var(--ink-faint); font-weight: 400; }
-/* value cell — an EDITABLE size/height input (the lever) over a compact re-derived sub-line (Phase 3) */
+/* value cell, an EDITABLE size/height input (the lever) over a compact re-derived sub-line (Phase 3) */
 .tok-cell { white-space: nowrap; }
 .tok-val { display: block; color: var(--ink); }
 .tok-edit { display: flex; align-items: center; gap: 2px; }
@@ -817,7 +817,7 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 .mini-check { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-dim); margin: 0; cursor: pointer; }
 .mini-check input { width: 13px; height: 13px; accent-color: var(--accent); cursor: pointer; }
 .damp-presets { display: flex; flex-wrap: wrap; gap: 4px; }
-/* the preset buttons are chips (.chip.on) — see the chip primitive above. */
+/* the preset buttons are chips (.chip.on), see the chip primitive above. */
 .damp-graph { padding: 6px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--panel-2); }
 .dg-unity { stroke: var(--ink-faint); stroke-width: 1; stroke-dasharray: 2 2; }
 
@@ -867,7 +867,7 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 }
 .pane-head .segmented { flex: 1; margin: 0; }
 .segmented {
-  /* no self-margin — the parent owns spacing (.pane-head provides it; .canvas-seg sits inline) */
+  /* no self-margin, the parent owns spacing (.pane-head provides it; .canvas-seg sits inline) */
   display: flex; gap: 2px;
   background: var(--panel-2); border: 1px solid var(--line);
   border-radius: var(--r); padding: 2px; flex: none;
@@ -880,9 +880,9 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
   background: var(--accent); color: var(--accent-ink); box-shadow: var(--shadow);
 }
 .segmented button:not(.on):hover { background: var(--line-2); color: var(--ink); }
-/* colorCompareBtn's active state (Compare/Both is on) — same treatment as a selected segment. */
+/* colorCompareBtn's active state (Compare/Both is on), same treatment as a selected segment. */
 .scheme-btn.on { background: var(--accent); color: var(--accent-ink); }
-/* canvas-header variant of .segmented — inline + compact (no right-pane margins, auto-width). */
+/* canvas-header variant of .segmented, inline + compact (no right-pane margins, auto-width). */
 .canvas-seg { margin: 0; }
 /* two labeled segmented controls side-by-side in the inspector (Hue space · On-colors) */
 .global-seg-row { display: flex; gap: 12px; }
@@ -891,7 +891,7 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 .segmented.seg-sm button { padding: 5px 6px; font-size: 12px; }
 .canvas-seg button { flex: 0 0 auto; padding: 5px 14px; }
 .seg-body { flex: 1; overflow: auto; padding: 14px; }
-/* live component preview — pinned below the panel on every tab, painted from the
+/* live component preview, pinned below the panel on every tab, painted from the
    selected palette's semantic roles (surface / onSurface / onSurfaceVariant / primary). */
 .seg-example { flex: none; border-top: 1px solid var(--line); padding: 14px; background: var(--panel); display: flex; flex-direction: column; gap: 10px; }
 .example-card { border-radius: 14px; padding: 16px 18px; }
@@ -901,14 +901,14 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
   margin-top: 14px; border: none; border-radius: 10px;
   padding: 9px 18px; font-weight: 650; font-size: 14px; cursor: default;
 }
-/* the collapse/expand affordance for the preview gallery — a quiet eyebrow-style ghost button */
+/* the collapse/expand affordance for the preview gallery, a quiet eyebrow-style ghost button */
 .ex-collapse-toggle {
   align-self: flex-start; background: none; border: none; padding: 2px 0; cursor: pointer;
   font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
   color: var(--ink-2); opacity: .8;
 }
 .ex-collapse-toggle:hover { opacity: 1; color: var(--ink); }
-/* the extra preview artifacts (native slider + form controls) — compact cards with an eyebrow title */
+/* the extra preview artifacts (native slider + form controls), compact cards with an eyebrow title */
 .ex-artifact { padding: 12px 14px; }
 .ex-artifact-title { font-weight: 700; font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; opacity: .8; margin-bottom: 7px; }
 .ex-range { width: 100%; margin: 0; }
@@ -936,7 +936,7 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 input[type="range"] {
   -webkit-appearance: none; appearance: none; width: 100%; height: 4px;
   background: var(--line); border-radius: 999px; outline: none;
-  touch-action: none; /* the delegated pointer-drag (_bindRangeDrag) owns the gesture — don't let touch scroll/pan it */
+  touch-action: none; /* the delegated pointer-drag (_bindRangeDrag) owns the gesture, don't let touch scroll/pan it */
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none;
@@ -949,7 +949,7 @@ input[type="range"]::-moz-range-thumb {
   background: var(--accent); border: 2px solid var(--panel); cursor: pointer;
 }
 
-/* switchControl() — a <button role=switch>. Neutralise the base button chrome
+/* switchControl(), a <button role=switch>. Neutralise the base button chrome
    (padding/border/hover bg) so only the track + label show; the platform gives it
    :focus-visible and Enter/Space toggling for free. */
 .toggle {
@@ -973,13 +973,13 @@ input[type="range"]::-moz-range-thumb {
 .insp-actions { display: flex; gap: 8px; padding-top: 14px; border-top: 1px solid var(--line); }
 .insp-actions .danger:hover { color: var(--danger); }
 
-/* ── key colors — retained brand colors (canvas row + inspector editor) ──────────── */
+/* ── key colors, retained brand colors (canvas row + inspector editor) ──────────── */
 /* canvas: a row of brand swatches above the ramp, each captioned with its nearest stop. */
 .key-strip { display: flex; gap: 6px; margin-bottom: 6px; }
 .key-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .key-cell .key-fill { width: 54px; height: 26px; border-radius: 6px; border: 1px solid var(--line); box-shadow: var(--shadow); }
 .key-cell small { font-size: 9px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
-/* inspector: two big expression swatches — `dominant` + `supportive`, each ≈ half width. */
+/* inspector: two big expression swatches, `dominant` + `supportive`, each ≈ half width. */
 .key-colors .key-slots { display: flex; gap: 8px; margin-top: 6px; }
 .key-slot { flex: 1; min-width: 0; border-radius: var(--r); }
 .key-slot.filled { display: flex; flex-direction: column; }
@@ -990,7 +990,7 @@ input[type="range"]::-moz-range-thumb {
 .key-slot .key-acts { display: flex; gap: 2px; margin-top: 4px; }
 .key-slot .key-act { padding: 2px 6px; color: var(--ink-dim); }
 .key-slot .key-act:hover { color: var(--ink); background: var(--line-2); }
-/* empty slot — a dashed add tile with the same footprint as a filled swatch. */
+/* empty slot, a dashed add tile with the same footprint as a filled swatch. */
 .key-slot.empty {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
   height: 84px; border: 1.5px dashed var(--line); background: var(--panel-2);
@@ -998,7 +998,7 @@ input[type="range"]::-moz-range-thumb {
 }
 .key-slot.empty:hover { border-color: var(--accent); color: var(--accent); background: var(--panel-2); }
 
-/* ── curated story — per-color line (Palette tab) ────────────────────────────────── */
+/* ── curated story, per-color line (Palette tab) ────────────────────────────────── */
 .color-story { padding: 8px 10px; border-radius: var(--r-sm); background: var(--panel-2); border: 1px solid var(--line); }
 .color-story-name { font-size: 12px; font-weight: 600; color: var(--ink); display: flex; align-items: baseline; gap: 6px; }
 .color-role { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); flex: none; }
@@ -1027,7 +1027,7 @@ input[type="range"]::-moz-range-thumb {
 .story-refuses b { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--danger); }
 .story-refuses p { margin: 5px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--ink-dim); font-style: italic; }
 
-/* ── gallery preset shelf — grouped by VOLUME ────────────────────────────────────── */
+/* ── gallery preset shelf, grouped by VOLUME ────────────────────────────────────── */
 .preset-shelf { display: flex; flex-direction: column; gap: 24px; }
 .preset-vol-head { margin-bottom: 12px; }
 .preset-vol-num { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-faint); }
@@ -1044,8 +1044,8 @@ input[type="range"]::-moz-range-thumb {
 .roles-table .rrow.rhead .sw-pair span { width: 16px; text-align: center; }
 
 /* ───────────────────────── EXPORT DRAWER ───────────────────────── */
-/* A native <dialog> opened with showModal(): the browser renders it in the TOP LAYER — above
-   every stacking context with no z-index race against the panes/canvas — and gives a real
+/* A native <dialog> opened with showModal(): the browser renders it in the TOP LAYER, above
+   every stacking context with no z-index race against the panes/canvas, and gives a real
    ::backdrop, focus trapping, background inert, and Esc. open/close is driven by exportOpen
    (see app.js _syncDrawer). A closed dialog is display:none by default. */
 dialog.drawer {
@@ -1060,8 +1060,8 @@ dialog.drawer {
 }
 dialog.drawer:not([open]) { display: none; }
 dialog.drawer::backdrop { background: rgba(10,14,22,.34); }
-/* the drawer header reuses the shared header band — same height (--ch), inset, and bottom seam
-   as .canvas-header / .pane-head — so it lines up with the rest of the chrome. */
+/* the drawer header reuses the shared header band, same height (--ch), inset, and bottom seam
+   as .canvas-header / .pane-head, so it lines up with the rest of the chrome. */
 .drawer-head {
   display: flex; align-items: center; gap: 10px;
   height: var(--ch); flex: none; padding: 0 12px;
@@ -1073,7 +1073,7 @@ dialog.drawer::backdrop { background: rgba(10,14,22,.34); }
 .drawer-systems { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
 .drawer-systems-label { font-size: 11.5px; color: var(--ink-dim); font-weight: 600; flex: none; }
 .drawer-systems-note { font-size: 10.5px; color: var(--ink-faint); flex: none; margin-left: auto; }
-/* export-format picker — a grouped <select> (the flat tab row outgrew the drawer at 9 formats). */
+/* export-format picker, a grouped <select> (the flat tab row outgrew the drawer at 9 formats). */
 .drawer-format { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
 .drawer-format label { font-size: 11.5px; color: var(--ink-dim); font-weight: 600; flex: none; }
 .drawer-format select { width: auto; min-width: 150px; flex: none; }
@@ -1110,7 +1110,7 @@ dialog.drawer::backdrop { background: rgba(10,14,22,.34); }
   background: var(--panel-2); white-space: pre; tab-size: 2;
   color: var(--ink);
 }
-/* Pro upsell — shown in place of a gated export's code (and inline on gated treatments). */
+/* Pro upsell, shown in place of a gated export's code (and inline on gated treatments). */
 .pro-upsell {
   flex: 1; min-height: 0; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 12px;
@@ -1123,11 +1123,11 @@ dialog.drawer::backdrop { background: rgba(10,14,22,.34); }
   flex-wrap: wrap; /* footer actions wrap to a 2nd row rather than clipping (narrow plugin window) */
 }
 .drawer-foot .meta { color: var(--ink-dim); font-size: 11.5px; flex: 1; min-width: 140px; font-variant-numeric: tabular-nums; }
-/* the two footer buttons travel together (Apply left, Download right) — never split across rows.
+/* the two footer buttons travel together (Apply left, Download right), never split across rows.
    The group wraps as a UNIT under the meta on a narrow plugin window; its own buttons stay side by side. */
 .drawer-foot .foot-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex-shrink: 0; }
 
-/* ── New-Palette modal — a CENTERED native <dialog> (top layer, like the export drawer) that
+/* ── New-Palette modal, a CENTERED native <dialog> (top layer, like the export drawer) that
    DERIVES a new palette: a "Derive from" context strip, the relative/environmental/custom tabs,
    and a live preview. Unlike the drawer it's centered, not edge-pinned. ── */
 dialog.newpal {
@@ -1141,7 +1141,7 @@ dialog.newpal {
 }
 dialog.newpal:not([open]) { display: none; }
 dialog.newpal::backdrop { background: rgba(10,14,22,.34); }
-/* the header is the drag handle — move cursor everywhere except its buttons. */
+/* the header is the drag handle, move cursor everywhere except its buttons. */
 .newpal-head { cursor: move; user-select: none; touch-action: none; }
 .newpal-head button { cursor: pointer; }
 .newpal-ctx { padding: 12px 16px; border-bottom: 1px solid var(--line); }
@@ -1149,7 +1149,7 @@ dialog.newpal::backdrop { background: rgba(10,14,22,.34); }
 .newpal-ctx-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
 .newpal-ctx-head b { font-size: 12px; }
 .newpal-ctx-head small { color: var(--ink-dim); font-size: 11px; }
-/* swatch-only chips — the palette name is the title (hover tooltip), no inline text. */
+/* swatch-only chips, the palette name is the title (hover tooltip), no inline text. */
 .newpal-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .newpal-chip {
   width: 32px; height: 32px; padding: 0; flex: none;
@@ -1166,7 +1166,7 @@ dialog.newpal::backdrop { background: rgba(10,14,22,.34); }
 .newpal-cols { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 20px; align-items: start; }
 .newpal-col { min-width: 0; }
 @media (max-width: 720px) { .newpal-cols { grid-template-columns: 1fr; } }
-/* LEFT — diagrams */
+/* LEFT, diagrams */
 .newpal-diagram { margin-bottom: 16px; }
 .newpal-diagram-title { font-size: 11px; color: var(--ink-dim); font-weight: 600; margin-bottom: 6px; }
 .newpal-hc svg { display: block; width: 100%; height: auto; max-width: 300px; margin: 0 auto; }
@@ -1174,7 +1174,7 @@ dialog.newpal::backdrop { background: rgba(10,14,22,.34); }
 .hc-axis { fill: var(--ink-dim); font-size: 11px; font-variant-numeric: tabular-nums; }
 .hc-dot { stroke: rgba(0,0,0,.28); stroke-width: 1; }
 .hc-ring { fill: none; stroke: var(--accent); stroke-width: 2.5; }
-/* RIGHT — relationship radios (single column inside the right pane) */
+/* RIGHT, relationship radios (single column inside the right pane) */
 .newpal-rels { display: grid; grid-template-columns: 1fr; gap: 8px; }
 .newpal-rel {
   display: flex; flex-direction: column; gap: 3px; text-align: left;
@@ -1189,19 +1189,19 @@ dialog.newpal::backdrop { background: rgba(10,14,22,.34); }
 .newpal-readout { font-size: 12.5px; color: var(--ink); margin: 0 0 12px; }
 .newpal-readout b { font-variant-numeric: tabular-nums; }
 .newpal-custom .field { margin-bottom: 16px; }
-/* native color picker on the Custom tab — a compact swatch button that opens the OS picker. */
+/* native color picker on the Custom tab, a compact swatch button that opens the OS picker. */
 .newpal-color-field { display: flex; align-items: center; gap: 12px; }
 .newpal-color-field label { margin: 0; }
 .newpal-color-input { width: 64px; height: 32px; padding: 2px; flex: none; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--panel-2); cursor: pointer; }
 .newpal-color-input::-webkit-color-swatch-wrapper { padding: 0; }
 .newpal-color-input::-webkit-color-swatch { border: none; border-radius: 3px; }
-/* priority chain (Relative preview) — the ordered context colors; the primary wears the accent ring. */
+/* priority chain (Relative preview), the ordered context colors; the primary wears the accent ring. */
 .newpal-pp-chain { margin-bottom: 12px; }
 .newpal-pp-chain small { display: block; color: var(--ink-dim); font-size: 10.5px; margin-bottom: 6px; }
 .newpal-pp-chain-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .newpal-pp-chain-sw { width: 22px; height: 22px; border-radius: var(--r-sm); border: 1px solid var(--line); box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
 .newpal-pp-chain-sw.primary { box-shadow: 0 0 0 2px var(--accent); }
-/* RIGHT — proposed-palette preview (swatches + ramp) */
+/* RIGHT, proposed-palette preview (swatches + ramp) */
 .newpal-pp-host { margin-top: 14px; }
 .newpal-preview-pane { border-top: 1px solid var(--line); padding-top: 12px; }
 .newpal-preview-pane.empty { color: var(--ink-dim); font-size: 12px; }
@@ -1221,7 +1221,7 @@ dialog.newpal::backdrop { background: rgba(10,14,22,.34); }
 .newpal-preview small { color: var(--ink-dim); font-size: 11px; }
 .newpal-sw { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--line); background-clip: padding-box; flex: none; }
 
-/* ── Apply-to-Figma consent gate — a centered top-layer <dialog> shown before Apply/Regroup, warning
+/* ── Apply-to-Figma consent gate, a centered top-layer <dialog> shown before Apply/Regroup, warning
    to back up variables first (Figma consent gate + destructive-overwrite protection). ── */
 dialog.apply-gate {
   position: fixed; inset: 0; margin: auto;
@@ -1259,7 +1259,7 @@ dialog.apply-gate::backdrop { background: rgba(10,14,22,.34); }
 .apply-gate-foot { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--line); }
 .apply-gate-foot .spacer { flex: 1; }
 
-/* ── Settings page — a left section-nav + right content (top-layer <dialog>, page-sized). ── */
+/* ── Settings page, a left section-nav + right content (top-layer <dialog>, page-sized). ── */
 dialog.settings {
   position: fixed; inset: 0; margin: auto;
   width: min(960px, 94vw); height: min(85vh, 720px); max-width: 94vw; max-height: 90vh;
@@ -1290,7 +1290,7 @@ dialog.settings::backdrop { background: rgba(10,14,22,.34); }
 .settings-pagehead p { margin: 0; color: var(--ink-dim); font-size: 13px; line-height: 1.5; }
 .settings-sections { max-width: 620px; }
 .settings-group { margin-bottom: 26px; }
-/* settings section header — the SAME caps eyebrow as the nav group label (.settings-nav-grouplabel),
+/* settings section header, the SAME caps eyebrow as the nav group label (.settings-nav-grouplabel),
    for one consistent eyebrow treatment across the nav + the panels. */
 .settings-group-title { font-size: 10.5px; font-weight: 600; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .06em; margin: 0 0 8px; }
 .settings-row {
@@ -1337,7 +1337,7 @@ a.account-manage:hover { text-decoration: underline; }
 }
 .settings-foot .spacer { flex: 1; }
 
-/* ── Typography specimen lines — used by the Typography section's in-pane Specimen tab (.tyi-specimen).
+/* ── Typography specimen lines, used by the Typography section's in-pane Specimen tab (.tyi-specimen).
    The modal chrome (dialog.typo / .typo-controls / .typo-note / .typo-foot) was retired with the section;
    these bare specimen-line classes are KEPT (reused by typeSpecimenTab / _typeSample). ── */
 .typo-cat { margin-bottom: 20px; }
@@ -1352,11 +1352,11 @@ a.account-manage:hover { text-decoration: underline; }
 .typo-cat:nth-child(3) .typo-sample { white-space: normal; }
 
 /* ── Typography SECTION (the editor section: switcher · specimen canvas · analysis · inspector) ── */
-/* editor-section switcher — the centered « Color · Typography · Geometry » tablist in the app-header */
+/* editor-section switcher, the centered « Color · Typography · Geometry » tablist in the app-header */
 .app-header .section-seg { margin: 0; }
 .app-header .section-seg button { flex: 0 0 auto; padding: 5px 16px; }
 
-/* Typography specimen — the full 21-step scale as a pannable canvas scene (parallel to .ramp-stack).
+/* Typography specimen, the full 21-step scale as a pannable canvas scene (parallel to .ramp-stack).
    Lives inside .canvas-scene, so it pans/zooms with the viewport. Colors resolve via --ink* against the
    canvas-area color-scheme, so it tracks the canvas preview light/dark. */
 .type-spec { display: flex; flex-direction: column; gap: 22px; padding: 16px 20px; width: 720px; max-width: 720px; }
@@ -1377,9 +1377,9 @@ a.account-manage:hover { text-decoration: underline; }
 .type-spec-render { color: var(--ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .type-spec-render.para { white-space: normal; overflow: visible; max-width: 640px; }
 
-/* typography analysis — the seven-group series (display · 3 headings · body · ui · code), shared palette */
+/* typography analysis, the seven-group series (display · 3 headings · body · ui · code), shared palette */
 /* the .ty-sN series classes ride BOTH the line <path> and the dot <circle>; the dots need their `fill`,
-   so qualify the line rule (0,2,0) to outrank `.ty-sN` (0,1,0) — otherwise the series fill leaks onto the
+   so qualify the line rule (0,2,0) to outrank `.ty-sN` (0,1,0), otherwise the series fill leaks onto the
    open path, closing it into a filled wedge. Keep fill:none winning regardless of source order. */
 .an-svg .ty-line { fill: none; stroke-width: 1.5; }
 .ty-dot { stroke: none; }
@@ -1417,7 +1417,7 @@ a.account-manage:hover { text-decoration: underline; }
 .ty-role .ty-role-k { width: 54px; color: var(--ink-dim); flex: none; }
 .ty-role .ty-role-fam { color: var(--ink); font-size: 12px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* Typography inspector (right pane) — reuses .insp-* / .seg-* / .example-card / .field / .typo-* */
+/* Typography inspector (right pane), reuses .insp-* / .seg-* / .example-card / .field / .typo-* */
 .insp-sub.tyi-note { margin-top: 2px; }
 .insp-sub.tyi-future { margin-top: 2px; opacity: .85; }
 .tyi-voices { display: flex; flex-direction: column; gap: 10px; }
@@ -1433,7 +1433,7 @@ a.account-manage:hover { text-decoration: underline; }
 .tyi-voice-edit { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
 .tyi-voice-reset { align-self: flex-start; }
 
-/* sibling weights — the per-voice named weight variants (chips row in the voice editor) */
+/* sibling weights, the per-voice named weight variants (chips row in the voice editor) */
 .tyi-weights { display: flex; flex-direction: column; gap: 4px; margin: 2px 0 6px; }
 .tyi-weight-row { display: flex; gap: 4px; align-items: center; }
 .tyi-weight-name { flex: 1; min-width: 0; }
@@ -1447,17 +1447,17 @@ a.account-manage:hover { text-decoration: underline; }
 .tyi-voice-stats dd { margin: 0; font-size: 12px; font-variant-numeric: tabular-nums; }
 .tyi-fonts { display: flex; flex-direction: column; gap: 8px; }
 .tyi-font-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; background: var(--panel); }
-/* same field-label look as .field > label (Distribution/Name/Hue) — a per-row label is still a FIELD
+/* same field-label look as .field > label (Distribution/Name/Hue), a per-row label is still a FIELD
    label, not a section eyebrow (that uppercase/tracked style is for group headings like "DIFFERENTIAL
    CURVE", a different role); flex: none keeps the 11 rows' inputs aligned to one column. */
 .tyi-font-role { color: var(--ink-dim); font-size: 11.5px; flex: none; }
-/* editable combobox per voice — same visible border/background/padding as the base input[type=text]/
+/* editable combobox per voice, same visible border/background/padding as the base input[type=text]/
    select rule, so it doesn't read as a different control family from Distribution's <select> or the
    Palette panel's Name <input>. */
 .tyi-font-input { flex: 1; min-width: 0; font-size: 14px; line-height: 1.2; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--panel-2); color: var(--ink); padding: 5px 8px; }
 .tyi-font-input:hover { border-color: var(--accent); }
 .tyi-font-input:focus { border-color: var(--accent, #5b9dff); outline: none; }
-/* a small state dot beside the input replaces a per-row text pill — 11 "falls back" pills read as noise,
+/* a small state dot beside the input replaces a per-row text pill, 11 "falls back" pills read as noise,
    especially since many curated treatments legitimately fall back on EVERY voice (the design fonts
    aren't bundled/Google-hosted). The dot still carries the full detail in its title tooltip; a shared
    .tyi-font-legend below the list spells out only the states actually present this render. */
@@ -1473,7 +1473,7 @@ a.account-manage:hover { text-decoration: underline; }
 .tyi-ex-body { margin: 0; }
 .tyi-example .ex-btn { align-self: flex-start; margin-top: 4px; }
 
-/* ── Geometry section — the canvas scene (full dimensional dataset) mirrors the Typography specimen ── */
+/* ── Geometry section, the canvas scene (full dimensional dataset) mirrors the Typography specimen ── */
 .geom-spec { display: flex; flex-direction: column; gap: 20px; padding: 16px 20px; width: 720px; max-width: 720px; }
 .geom-spec-head { display: flex; align-items: baseline; gap: 10px; }
 .geom-spec-head b { font-size: 14px; color: var(--ink); }
@@ -1493,14 +1493,14 @@ a.account-manage:hover { text-decoration: underline; }
 .geom-spec-dims { color: var(--ink-faint); }
 /* the per-size component row: Button · Select · Switch side by side, one gap between siblings. */
 .geom-spec-render { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-/* Select — the outlined sibling (border color = the palette's outlineVariant, set inline). */
+/* Select, the outlined sibling (border color = the palette's outlineVariant, set inline). */
 .geom-select { display: inline-flex; align-items: center; box-sizing: border-box; flex: none;
   background: transparent; border: 1.5px solid; font-weight: 500; line-height: 1; }
-/* Switch (ON) — track + a right-inset circular thumb; every dimension/color set inline from the ramp. */
+/* Switch (ON), track + a right-inset circular thumb; every dimension/color set inline from the ramp. */
 .geom-switch { flex: none; position: relative; display: inline-block; box-sizing: border-box; }
 .geom-switch-thumb { position: absolute; top: 50%; transform: translateY(-50%); border-radius: 50%; }
 .geom-scale-row { display: flex; gap: 10px 14px; align-items: center; flex-wrap: wrap; }
-/* the live mock control on the ramp (and the inspector example reuse the glyph/caret idiom) — background/
+/* the live mock control on the ramp (and the inspector example reuse the glyph/caret idiom), background/
    color come from the selected palette's own roles, set inline (see _geomPaletteColors in geometry.js). */
 .geom-ctl { display: inline-flex; align-items: center; box-sizing: border-box; flex: none;
   font-weight: 600; line-height: 1; }
@@ -1513,7 +1513,7 @@ a.account-manage:hover { text-decoration: underline; }
 .geom-radius-swatch { width: 18px; height: 18px; background: var(--c-neutral-container); border: 1.5px solid var(--accent); }
 .geom-space-bar { height: 10px; background: var(--accent); border-radius: 2px; display: inline-block; opacity: .7; }
 
-/* geometry analysis rail — the centering-law diagram, the power-law curves, the band ramp, composition */
+/* geometry analysis rail, the centering-law diagram, the power-law curves, the band ramp, composition */
 .gc-cell { fill: none; stroke: var(--line); stroke-width: 1.5; }
 .gc-glyph { fill: color-mix(in srgb, var(--accent) 24%, transparent); stroke: var(--accent); stroke-width: 1.5; }
 .gc-pad { stroke: var(--ink-faint); stroke-width: 3; stroke-linecap: round; }
@@ -1535,7 +1535,7 @@ a.account-manage:hover { text-decoration: underline; }
 .geom-comp-v { color: var(--ink); }
 .geom-comp-v.dim { color: var(--ink-faint); margin-left: auto; }
 
-/* geometry inspector — the radius + space ladders (right pane) */
+/* geometry inspector, the radius + space ladders (right pane) */
 .geom-lad { display: flex; flex-direction: column; gap: 6px; }
 .geom-lad-row { display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; background: var(--panel); }
 .geom-lad-k { font-size: 12px; color: var(--ink); font-family: var(--mono, ui-monospace, monospace); }
@@ -1554,7 +1554,7 @@ a.account-manage:hover { text-decoration: underline; }
 .geom-ex-chip-x .ic, .geom-ex-chip-x svg { width: 100%; height: 100%; }
 .geom-ex-input { display: inline-flex; align-items: center; box-sizing: border-box; border: 1.5px solid; background: transparent; font-weight: 400; line-height: 1; opacity: .85; }
 
-/* ── responsive toolbars — the plugin window can be narrow; toolbars must never overflow ── */
+/* ── responsive toolbars, the plugin window can be narrow; toolbars must never overflow ── */
 /* never break a button's own label across lines (no 3-line "⚑ Add Variables → Figma"). */
 .app-header button, .canvas-header button, .drawer-foot button, .drawer-head button { white-space: nowrap; }
 @media (max-width: 1240px) { /* tighten the fixed-height header toolbars so buttons still fit */
@@ -1575,31 +1575,31 @@ a.account-manage:hover { text-decoration: underline; }
 
 /* ── forced-colors / Windows High Contrast ─────────────────────────────────────────
    The custom-painted controls (switch track, active segment/tab, slider thumb, chips)
-   lose their var(--accent) fills when the OS substitutes its own palette — background
+   lose their var(--accent) fills when the OS substitutes its own palette, background
    colors are forced to Canvas unless they are SYSTEM color keywords. Re-assert on/off +
    active state with Highlight / ButtonText so the controls stay legible in High Contrast
    (the native-parity affordance the inventory found missing everywhere). */
 @media (forced-colors: active) {
-  /* switch — border the track, fill the thumb; Highlight marks ON. */
+  /* switch, border the track, fill the thumb; Highlight marks ON. */
   .toggle .track { border: 1px solid ButtonText; }
   .toggle .track::after { background: ButtonText; }
   .toggle.on .track { background: Highlight; }
   .toggle.on .track::after { background: HighlightText; }
-  /* segmented control, tabs, and the active chip — Highlight-filled when selected. */
+  /* segmented control, tabs, and the active chip, Highlight-filled when selected. */
   .segmented button.on, .canvas-seg button.on,
   .figma-files button.on, .radix-files button.on, .chip.on {
     background: Highlight; color: HighlightText;
   }
   /* status chips keep a border so the tinted pill still reads as a bounded badge. */
   .chip { border-color: ButtonText; }
-  /* range slider — a visible track and a Highlight thumb (appearance:none drops the native one). */
+  /* range slider, a visible track and a Highlight thumb (appearance:none drops the native one). */
   input[type="range"] { background: ButtonText; }
   input[type="range"]::-webkit-slider-thumb { background: Highlight; border: 1px solid ButtonText; }
   input[type="range"]::-moz-range-thumb { background: Highlight; border: 1px solid ButtonText; }
 }
 
 
-/* Settings › Icons — the library grid (one tile per icon system) */
+/* Settings › Icons, the library grid (one tile per icon system) */
 .icon-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .icon-tile { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; text-align: left;
   padding: 10px 12px; border-radius: var(--radius-sm, 8px); border: 1px solid var(--c-outline-variant);

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// describe-kit-core.mjs — verifier for the PURE, deterministic describe-palette core (mcp/describe-kit-core.mjs,
+// describe-kit-core.mjs, verifier for the PURE, deterministic describe-palette core (mcp/describe-kit-core.mjs,
 // #369). Contract: docs/site/describe-palette-spec.md.
 import { DOMAINS, hydrate } from "../../src/ui/persist.js";
 import { brandKit, hexToOklch, seedFromKeyColor } from "../../src/ui/model.mjs";
@@ -15,7 +15,7 @@ ok(PALETTE_BRIEF_SCHEMA.$id === "ultimate-tokens-palette-brief/1", "schema carri
 ok(PALETTE_BRIEF_SCHEMA.required.includes("families") && PALETTE_BRIEF_SCHEMA.properties.families.required.join() === "Primary", "top-level requires families; families requires only Primary");
 ok(FAMILY_NAMES.length === 8 && FAMILY_NAMES.join() === "Neutral,Primary,Secondary,Tertiary,Info,Success,Warning,Danger", `FAMILY_NAMES is the canonical 8, role-table order (got ${FAMILY_NAMES.join()})`);
 ok(Object.keys(PALETTE_BRIEF_SCHEMA.properties.families.properties).join() === FAMILY_NAMES.join(), "the families schema has exactly the 8 canonical keys, no more");
-ok(PALETTE_BRIEF_SCHEMA.properties.families.additionalProperties === false, "no 9th family can be created (§3.1 — structural, not just documented)");
+ok(PALETTE_BRIEF_SCHEMA.properties.families.additionalProperties === false, "no 9th family can be created (§3.1, structural, not just documented)");
 {
   const fs = PALETTE_BRIEF_SCHEMA.$defs.familySeed.properties;
   ok(fs.hue.minimum === DOMAINS.palette.hue.min && fs.hue.maximum === DOMAINS.palette.hue.max, "schema hue bounds match persist DOMAINS.palette.hue exactly");
@@ -30,18 +30,18 @@ ok(PALETTE_BRIEF_SCHEMA.properties.global.properties.vibrancy.minimum === DOMAIN
 ok(Object.keys(STATUS_BANDS).join() === "Info,Success,Warning,Danger", `STATUS_BANDS covers exactly the 4 status families (got ${Object.keys(STATUS_BANDS).join()})`);
 ok(Object.values(STATUS_BANDS).every((b) => Number.isFinite(b.center) && b.center >= 0 && b.center < 360 && Number.isFinite(b.halfWidth) && b.halfWidth > 0), "every band has a valid {center, halfWidth}");
 ok(typeof MIN_HUE_SEP === "number" && MIN_HUE_SEP > 0, `MIN_HUE_SEP is a positive degree threshold (got ${MIN_HUE_SEP})`);
-ok(typeof BRAND_NUDGE === "number" && BRAND_NUDGE >= 0 && Object.values(STATUS_BANDS).every((b) => BRAND_NUDGE <= b.halfWidth), `BRAND_NUDGE (${BRAND_NUDGE}) never exceeds any band's halfWidth — the nudge can never itself leave the band`);
+ok(typeof BRAND_NUDGE === "number" && BRAND_NUDGE >= 0 && Object.values(STATUS_BANDS).every((b) => BRAND_NUDGE <= b.halfWidth), `BRAND_NUDGE (${BRAND_NUDGE}) never exceeds any band's halfWidth, the nudge can never itself leave the band`);
 
-// ── generateKit: the basic shape, non-object / empty briefs still generate (§4.4 — never reject) ──
+// ── generateKit: the basic shape, non-object / empty briefs still generate (§4.4, never reject) ──
 {
   const { kit, doc, lint, meta } = generateKit({ families: { Primary: { hue: 30, chroma: 80 } } });
   ok(kit.$schema === "ultimate-tokens-brand-kit/3" && kit.palettes.length === 8, "a minimal brief (Primary only) generates a full 8-palette kit");
   ok(Array.isArray(lint) && Array.isArray(FAMILY_NAMES), "lint is an array");
   ok(meta.generator === "Ultimate Tokens" && meta.kitSchema === "ultimate-tokens-brand-kit/3" && meta.briefSchema === "ultimate-tokens-palette-brief/1", "meta carries the generator + both schema ids");
   ok(JSON.stringify(meta.brief) === JSON.stringify({ families: { Primary: { hue: 30, chroma: 80 } } }), "meta.brief echoes the originating brief verbatim (the replay handle)");
-  ok(typeof doc === "string" || typeof doc === "object", "doc is present"); // serialize() returns a plain object, not a string — just presence-checking the field here
+  ok(typeof doc === "string" || typeof doc === "object", "doc is present"); // serialize() returns a plain object, not a string, just presence-checking the field here
 }
-ok(generateKit({}).kit.palettes.length === 8, "an empty brief ({} — no families at all) still generates a full kit, never rejects");
+ok(generateKit({}).kit.palettes.length === 8, "an empty brief ({}, no families at all) still generates a full kit, never rejects");
 ok(generateKit(null).kit.palettes.length === 8, "a null brief still generates (non-object degrades to {})");
 ok(generateKit(undefined).kit.palettes.length === 8, "an undefined brief still generates");
 
@@ -55,15 +55,15 @@ ok(generateKit(undefined).kit.palettes.length === 8, "an undefined brief still g
 }
 
 // ── core↔app parity (G1, #369's stated acceptance): the emitted doc, hydrated, brandKit's to the SAME kit ──
-// hydrate() itself drops `name` (not a domain field, per app.js's own _restore — "carry it from the
-// snapshot") — so the real app round-trip is hydrate() + reattaching raw.name, exactly like _restore does.
+// hydrate() itself drops `name` (not a domain field, per app.js's own _restore, "carry it from the
+// snapshot"), so the real app round-trip is hydrate() + reattaching raw.name, exactly like _restore does.
 {
   const brief = { name: "Parity Check", families: { Primary: { hue: 300, chroma: 70, skew: -10, lift: 5 }, Danger: { hue: 10, chroma: 90 } } };
   const { kit, doc } = generateKit(brief);
   const restored = hydrate(doc);
   restored.name = typeof doc.name === "string" ? doc.name : restored.name;
   const rehydrated = brandKit(restored);
-  ok(JSON.stringify(kit) === JSON.stringify(rehydrated), "kit deep-equals brandKit(hydrate(doc) + reattached name) for the same brief — the emitted doc genuinely round-trips through the app's own restore path");
+  ok(JSON.stringify(kit) === JSON.stringify(rehydrated), "kit deep-equals brandKit(hydrate(doc) + reattached name) for the same brief, the emitted doc genuinely round-trips through the app's own restore path");
 }
 
 // ── §4.1 absent-family defaulting ──
@@ -73,7 +73,7 @@ ok(generateKit(undefined).kit.palettes.length === 8, "an undefined brief still g
   const neutral = paletteByName(kit, "Neutral");
   const secondary = paletteByName(kit, "Secondary");
   const tertiary = paletteByName(kit, "Tertiary");
-  // Neutral/Secondary/Tertiary hues aren't in the kit directly (only ramp hexes are) — re-derive via the doc.
+  // Neutral/Secondary/Tertiary hues aren't in the kit directly (only ramp hexes are), re-derive via the doc.
   const { doc: rawDoc } = generateKit({ families: { Primary: { hue: primaryHue, chroma: primaryChroma } } });
   const docPalettes = hydrate(rawDoc).palettes;
   const byName = (n) => docPalettes.find((p) => p.name === n);
@@ -92,7 +92,7 @@ ok(generateKit(undefined).kit.palettes.length === 8, "an undefined brief still g
 }
 
 // ── §4.1's brand-hue nudge (#372): an ABSENT status family pulls toward Primary's hue, bounded within its
-// own band, and ONLY when it's actually absent — an explicit status hue skips the nudge entirely (below). ──
+// own band, and ONLY when it's actually absent, an explicit status hue skips the nudge entirely (below). ──
 {
   // Primary=110 keeps Info gate-free (worstDist to every brand hue stays ≥ MIN_HUE_SEP) so the nudge's
   // effect is isolated and directly checkable: Info's band center is STATUS_BANDS.Info.center; the nudge
@@ -108,39 +108,39 @@ ok(generateKit(undefined).kit.palettes.length === 8, "an undefined brief still g
   ok(!lint.some((l) => l.family === "Info"), "no distinctness-gate lint for Info when the nudge alone already clears MIN_HUE_SEP from every brand hue");
 }
 {
-  // an EXPLICIT status hue skips the nudge (taken as-is) — only the distinctness gate below may still move it.
+  // an EXPLICIT status hue skips the nudge (taken as-is), only the distinctness gate below may still move it.
   const { doc: rawDoc } = generateKit({ families: { Primary: { hue: 110, chroma: 90 }, Danger: { hue: 200 } } });
   const danger = hydrate(rawDoc).palettes.find((p) => p.name === "Danger");
-  ok(danger.hue === 200, `an explicit Danger hue is taken as-is, not nudged toward Primary (got ${danger.hue}, want 200 — no collision here so the gate leaves it alone too)`);
+  ok(danger.hue === 200, `an explicit Danger hue is taken as-is, not nudged toward Primary (got ${danger.hue}, want 200, no collision here so the gate leaves it alone too)`);
 }
 
-// ── the status-distinctness gate (#372) — the tiger-orange acceptance case ──
+// ── the status-distinctness gate (#372), the tiger-orange acceptance case ──
 {
   // #372's own acceptance: "a primary at hue 27-50 still yields visually distinguishable danger and warning
   // roles." Danger/Warning absent (role-table defaults collide directly: Danger's OKLCH center sits at ~30,
-  // Warning's at ~69 — squarely inside 27-50's neighborhood).
+  // Warning's at ~69, squarely inside 27-50's neighborhood).
   const { doc: rawDoc, lint } = generateKit({ families: { Primary: { hue: 40, chroma: 90 } } });
   const p = hydrate(rawDoc).palettes;
   const primary = p.find((x) => x.name === "Primary");
   const danger = p.find((x) => x.name === "Danger");
   const warning = p.find((x) => x.name === "Warning");
   const hueDist = (a, b) => { const d = Math.abs(((a % 360) + 360) % 360 - ((b % 360) + 360) % 360) % 360; return d > 180 ? 360 - d : d; };
-  ok(hueDist(danger.hue, primary.hue) >= MIN_HUE_SEP, `tiger-orange: Danger (${danger.hue}) stays ≥${MIN_HUE_SEP}° from Primary (${primary.hue}) — got ${hueDist(danger.hue, primary.hue)}°`);
-  ok(hueDist(warning.hue, primary.hue) >= MIN_HUE_SEP, `tiger-orange: Warning (${warning.hue}) stays ≥${MIN_HUE_SEP}° from Primary (${primary.hue}) — got ${hueDist(warning.hue, primary.hue)}°`);
+  ok(hueDist(danger.hue, primary.hue) >= MIN_HUE_SEP, `tiger-orange: Danger (${danger.hue}) stays ≥${MIN_HUE_SEP}° from Primary (${primary.hue}), got ${hueDist(danger.hue, primary.hue)}°`);
+  ok(hueDist(warning.hue, primary.hue) >= MIN_HUE_SEP, `tiger-orange: Warning (${warning.hue}) stays ≥${MIN_HUE_SEP}° from Primary (${primary.hue}), got ${hueDist(warning.hue, primary.hue)}°`);
   ok(lint.some((l) => l.code === "status-distinctness" && l.family === "Danger") && lint.some((l) => l.code === "status-distinctness" && l.family === "Warning"), "both resolutions are lint-visible (status-distinctness)");
-  // in this exact scenario Info ALSO collides — not with Primary, but with Secondary/Tertiary (both land
+  // in this exact scenario Info ALSO collides, not with Primary, but with Secondary/Tertiary (both land
   // near Info's own band once Primary sits at 40: Secondary = Primary+180 = 220, Tertiary = Secondary+30 =
   // 250, both close to Info's ~237 center). Info's band can't clear MIN_HUE_SEP by hue alone here, so it
-  // takes the chroma-fallback path — a real, legitimate resolution, not a bug, but worth pinning so a
+  // takes the chroma-fallback path, a real, legitimate resolution, not a bug, but worth pinning so a
   // regression in this exact canonical case doesn't silently mangle Info instead.
   const info = p.find((x) => x.name === "Info");
   const secondary = p.find((x) => x.name === "Secondary");
   const tertiary = p.find((x) => x.name === "Tertiary");
   const infoWorstDist = Math.min(hueDist(info.hue, primary.hue), hueDist(info.hue, secondary.hue), hueDist(info.hue, tertiary.hue));
-  ok(infoWorstDist < MIN_HUE_SEP && info.chroma === 100, `tiger-orange also drives Info into the chroma fallback (hue-only distance ${infoWorstDist}° < ${MIN_HUE_SEP}°, chroma boosted to ${info.chroma}) — Secondary/Tertiary crowd Info's band here`);
+  ok(infoWorstDist < MIN_HUE_SEP && info.chroma === 100, `tiger-orange also drives Info into the chroma fallback (hue-only distance ${infoWorstDist}° < ${MIN_HUE_SEP}°, chroma boosted to ${info.chroma}), Secondary/Tertiary crowd Info's band here`);
 }
 {
-  // an EXPLICIT status seed is taken as-is (no nudge) but is NOT exempt from the gate — a real collision
+  // an EXPLICIT status seed is taken as-is (no nudge) but is NOT exempt from the gate, a real collision
   // still gets resolved, just without the pre-gate nudge step.
   const { doc: rawDoc, lint } = generateKit({ families: { Primary: { hue: 40, chroma: 90 }, Danger: { hue: 40, chroma: 90 } } });
   const p = hydrate(rawDoc).palettes;
@@ -152,7 +152,7 @@ ok(generateKit(undefined).kit.palettes.length === 8, "an undefined brief still g
 }
 {
   // band exhausted → chroma differentiation (§4.2's second resolution step). Primary pinned EXACTLY on a
-  // status family's own band center puts both band edges at the SAME 20°<MIN_HUE_SEP distance — hue alone
+  // status family's own band center puts both band edges at the SAME 20°<MIN_HUE_SEP distance, hue alone
   // structurally cannot clear the gate, so chroma must take over.
   const { doc: rawDoc, lint } = generateKit({ families: { Primary: { hue: STATUS_BANDS.Danger.center, chroma: 90 } } });
   const danger = hydrate(rawDoc).palettes.find((p) => p.name === "Danger");
@@ -161,7 +161,7 @@ ok(generateKit(undefined).kit.palettes.length === 8, "an undefined brief still g
   ok(entry && entry.level === "warn", `the band-exhausted resolution is a WARN-level lint entry (got ${entry && entry.level})`);
 }
 
-// ── §4.3's referent-count mapping rules need no new code (module header) — confirm the claim ──
+// ── §4.3's referent-count mapping rules need no new code (module header), confirm the claim ──
 ok(generateKit({ families: { Primary: { hue: 40, chroma: 80 }, NinthFamily: { hue: 99, chroma: 99 } } }).kit.palettes.length === 8, "an unknown 9th family key is silently dropped, never becomes a 9th palette (structural via the schema's additionalProperties:false; enforced here by simply never being read)");
 
 // ── keyColor precedence + supportColor (§3.2) ──
@@ -169,12 +169,12 @@ ok(generateKit({ families: { Primary: { hue: 40, chroma: 80 }, NinthFamily: { hu
   const { doc: rawDoc, lint } = generateKit({ families: { Primary: { hue: 999, chroma: 999, keyColor: "#3a7bd5", supportColor: "#00d2ff" } } });
   const primary = hydrate(rawDoc).palettes.find((p) => p.name === "Primary");
   // Discriminating check: derive the EXPECTED hue/chroma independently (the same conversion generateKit
-  // uses internally) rather than just asserting "not what a clamped 999/999 would be" — hue 999 clamps to
+  // uses internally) rather than just asserting "not what a clamped 999/999 would be", hue 999 clamps to
   // 360 and chroma 999 clamps to 100, and #3a7bd5's own derived chroma could in principle also land near
   // 100, so a loose inequality could pass even if keyColor were silently ignored. Pin to the exact expected
   // values instead.
   const expected = seedFromKeyColor(hexToOklch("#3a7bd5"), "oklch");
-  ok(primary.hue === expected.hue && primary.chroma === expected.chroma, `keyColor wins over sibling hue/chroma even when both are given (got hue=${primary.hue} chroma=${primary.chroma}, want hue=${expected.hue} chroma=${expected.chroma} — NOT the clamped-999 values 360/100)`);
+  ok(primary.hue === expected.hue && primary.chroma === expected.chroma, `keyColor wins over sibling hue/chroma even when both are given (got hue=${primary.hue} chroma=${primary.chroma}, want hue=${expected.hue} chroma=${expected.chroma}, NOT the clamped-999 values 360/100)`);
   ok(primary.keyColors && primary.keyColors.find((k) => k.role === "dominant") && primary.keyColors.find((k) => k.role === "supportive"), "keyColor → dominant keyColors entry; supportColor → supportive keyColors entry");
   ok(lint.some((l) => l.code === "key-color-precedence" && l.family === "Primary"), "a key-color-precedence lint entry is emitted when hue/chroma were also given");
 }
@@ -184,7 +184,7 @@ ok(generateKit({ families: { Primary: { hue: 40, chroma: 80 }, NinthFamily: { hu
 }
 {
   const { lint } = generateKit({ families: { Primary: { keyColor: "#3a7bd5" } } });
-  ok(!lint.some((l) => l.code === "key-color-precedence"), "keyColor ALONE (no sibling hue/chroma) never fires the precedence lint — nothing was overridden");
+  ok(!lint.some((l) => l.code === "key-color-precedence"), "keyColor ALONE (no sibling hue/chroma) never fires the precedence lint, nothing was overridden");
 }
 
 // ── clamping: out-of-domain fields clamp to the nearest bound, per-field isolation, lint entries (§4.4) ──
@@ -194,7 +194,7 @@ ok(generateKit({ families: { Primary: { hue: 40, chroma: 80 }, NinthFamily: { hu
   ok(primary.hue === DOMAINS.palette.hue.max, `hue 999 clamps to the domain max ${DOMAINS.palette.hue.max} (got ${primary.hue})`);
   ok(primary.chroma === DOMAINS.palette.chroma.min, `chroma -50 clamps to the domain min ${DOMAINS.palette.chroma.min} (got ${primary.chroma})`);
   ok(primary.skew === DOMAINS.palette.skew.max, `skew 500 clamps to the domain max ${DOMAINS.palette.skew.max} (got ${primary.skew})`);
-  ok(primary.lift === 40, "an ALREADY in-domain lift (40, the max) is preserved exactly — per-field isolation");
+  ok(primary.lift === 40, "an ALREADY in-domain lift (40, the max) is preserved exactly, per-field isolation");
   ok(lint.filter((l) => l.code === "clamped" && l.family === "Primary").length === 3, `exactly 3 clamped-lint entries for Primary's 3 out-of-domain fields (got ${lint.filter((l) => l.code === "clamped" && l.family === "Primary").length})`);
 }
 {
@@ -220,14 +220,14 @@ ok(generateKit({ families: { Primary: { hue: 40, chroma: 80 }, NinthFamily: { hu
   ok(lint.some((l) => l.message.includes("vibrancy")), "an out-of-domain global.vibrancy emits a clamped-lint entry");
 }
 {
-  // NaN passes `typeof === "number"` and PROPAGATES through Math.min/max — it must be dropped (the persist
+  // NaN passes `typeof === "number"` and PROPAGATES through Math.min/max, it must be dropped (the persist
   // default stands), never planted in the doc. Unreachable over JSON-RPC, but the pure core is importable.
   const { doc: rawDoc } = generateKit({ families: { Primary: { hue: 40, chroma: 80 } }, global: { vibrancy: NaN } });
   const v = hydrate(rawDoc).vibrancy;
   ok(Number.isFinite(v) && v === DOMAINS.vibrancy.default, `a NaN global.vibrancy is dropped, not propagated (got ${v}, want the persist default ${DOMAINS.vibrancy.default})`);
 }
 {
-  // meta.brief is a SNAPSHOT, not the caller's live reference — mutating the brief after the call must not
+  // meta.brief is a SNAPSHOT, not the caller's live reference, mutating the brief after the call must not
   // corrupt the replay handle (§6.4).
   const brief = { families: { Primary: { hue: 40, chroma: 80 } } };
   const { meta } = generateKit(brief);
@@ -248,5 +248,5 @@ ok(generateKit({ families: { Primary: { hue: 40, chroma: 80 }, NinthFamily: { hu
 ok(generateKit({ families: { Primary: { hue: 200, chroma: 60 } } }).kit.name === "Brand Kit", "no name and no story → brandKit's own final fallback \"Brand Kit\"");
 
 if (fails.length) { console.error(`describe-kit-core FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
-console.log("describe-kit-core PASS — PaletteBrief schema (persist-domain parity) · generateKit (defaulting, harmony recipes, keyColor precedence, clamping, determinism, core↔app parity)");
+console.log("describe-kit-core PASS, PaletteBrief schema (persist-domain parity) · generateKit (defaulting, harmony recipes, keyColor precedence, clamping, determinism, core↔app parity)");
 process.exit(0);
