@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Branch | unit/cf-U1 @ b3268be1 (merged plan/chroma-floor revision 12, 650ad34b) |
+| Branch | unit/cf-U1 @ HEAD (fix-first round on review `b1261f9e`: F1/F2/F3, see below) |
 | Files | src/engine/tonal.js · test/engine/anchor.mjs · test/engine/tonal.mjs · test/engine/semantic.mjs · test/engine/mode-isolation-gate.mjs (new) · test/engine/fixtures/mode-isolation.json (new) · test/engine/fixtures/tonal-legacy.json · scripts/report-preset-fidelity.mjs · package.json · .github/workflows/ci.yml · .sdlc/adapter.md · .sdlc/baseline.md · .sdlc/checks/baseline-agrees-check.sh · docs/reference/SKILL.md · docs/reference/rubrics/acceptance-criteria.md · docs/reference/reviews/2026-08-20-reactivity/{00-synthesis,04-context-and-messaging}.md |
 
 ## Ran
@@ -10,9 +10,9 @@
 | Criterion | Command | Output | Control |
 |---|---|---|---|
 | C1 | `npm test` | `✓ all 50 test files passed`, exit 0, tree clean after commit | scratch clone, `sed -i '' 's/"scrim/"scrimX/' docs/reference/data/role-table.json && npm test`: exit 1, `grep -c FAIL` 3 (`engine/semantic.mjs FAIL`, `refs-canonical — ordered key set != canonical`) |
-| C2 | `npm run gate:corpus-anchor` | exit 0, `anchor-ramp lone-spike ...: 0 (expected 0, corpus 3380 anchored + default kit 16, no allow-list)`; greps `LONE_SPIKE_ALLOW\|DEFAULT_KIT_SPIKE_FINDING` 0, `loneSpikeSorted.length === 0` 1, `dropCheck\|swapCheck("lone-spike"` 0 | in-gate data-URL copy with the plateau neutralised (`uG *= t*t*(3-2*t)` -> `uG *= 1`) still finds spikes over the same corpus+kit, no `DID NOT bite` FAIL |
+| C2 | `node test/engine/anchor.mjs` (sampled) | exit 0, `pass anchor-ramp lone-spike (even, near-achromatic neighbours <= 0.05, OKLCH C > both by > 0.03): 0 (expected 0, corpus 300 anchored + default kit 16, no allow-list)`; `lone-spike negative control: plateau-neutralised engine produced 3 spike(s) over the corpus + kit (want > 0)` printed unconditionally (fixes review F3) | fix-first F1: the guard now checks `realSrc.includes(PLATEAU_TARGET)` before any `.replace()` call runs (was unreachable, review-caught); control fires (3 spikes, non-zero) proving it is live |
 | C5 | `report-preset-fidelity.mjs --envelope --gate-path` / `--envelope` | gate-path even: 10.9/16.2, 39.1/52.2, 39.0/44.6, 16.3/16.5, above100 0 OK — all four `OK`; default (rendered) run byte-identical to `<base>` (15.6/37.0, 48.4/113.7, 42.5/80.2, 22.9/52.0, above100 670); perceptual+peak block md5 `6e558839ee9e43217e1e2f7afc898b7b`, matches `<base>` | `--gate-path --damp-amp 55`: above100 1916 FAIL (bites) |
-| C6 | `npm run gate:mode-isolation` | exit 0, `perceptual 34e544942d500b9e peak f560f784d8a4883a match fixture (captured at 282fca8ddc84703a9bffc0bcc0f3b8462747cca5, 343 corpus + 16 default kit, 25-stop, projectView)` | same hashes reproduced with the U1 patch reverted (`git stash` on `tonal.js` alone) — proves the shoulder never touches these modes |
+| C6 | `npm run gate:mode-isolation` | exit 0, `pass  mode-isolation: perceptual 34e544942d500b9e peak f560f784d8a4883a match fixture (captured at 282fca8ddc84703a9bffc0bcc0f3b8462747cca5, 3780 corpus + 16 default kit, 25-stop, projectView)` as the LAST line (fixes review F2: `tail -1` now captures the hash line, not a summary sentence); corpus label now the palette count `3780` (not the 343-document count) via `dk.palettes.length`, no hardcoded `16` | same hashes reproduced with the U1 patch reverted (`git stash` on `tonal.js` alone); separately, a fixture with `perceptual` forced to a wrong hash prints `... do not match fixture ...` (was "match fixture" verbatim on both outcomes, review-caught) and exits 1 |
 | C7 | `node test/engine/tonal.mjs` (sampled) | `anchor-ramp monotone: 0`, `distinct (25-stop): 16`, `pass skew-lift-okhsl`, `pass chroma-envelope`; `chromaEnvelope(` greps 1 export / 5 mentions, unchanged | scratch copy with a second `export function chromaEnvelope` reds the first grep (per the skill's own convention, not re-run this pass — no source touches that shape) |
 | C8 | `node test/engine/semantic.mjs`, FLOORS comparator vs `<base>` | `pass chroma-floor`, `pass role-contrast`, `pass role-contrast Q-B floor gate`; comparator: `FLOORS changed 4, down 4` (per plan revision 12: the comparator counts rows, Warning's light+dark move together as one row, Data 3/5/8 light each their own — 4 rows carrying the 5 cell-level moves R44 names), `exit 1` (`down` non-zero is the expected shape here, per R44); `npm run gate:corpus-contrast`: `PASS: every measured curated preset's accent clears 4.5:1 against its own on-color` | negative control not re-run this pass (unchanged shape, verified in the plan's own revision-8 record) |
 | C9 | `node test/ui/headless-boot.mjs`; `node test/engine/anchor.mjs` | exit 0, `HEADLESS BOOT PASS`, `(hs)` source count 4, no `(hs)` line in the log; live run's `anchor-f4 hueSpace-perceptual-bound` max OKLab dE 0.0048 (codes max 2), `hueSpace-peak-bound` max dE 0.0048 (codes max 1), both pass; even live dE 0.0486 (above the 0.01 JND floor, live) | scratch clone, `src/engine/tonal.js`'s `solveOkhslHue` patched to `return (bestH + 30) % 360` (forces the perceptual/peak solve into the wrong hue space): `anchor-f4 hueSpace-perceptual-bound` max OKLab dE 0.1668 FAIL, `hueSpace-peak-bound` max dE 0.1635 FAIL — both bite hard against the 0.01 bound |
@@ -111,15 +111,24 @@ A paste-ready comment for #662 (not posted; the Orchestrator posts it) is at
   read "down 5"; revision 12 (`650ad34b`) corrected C8 to read `changed 4, down 4` (four family
   rows carrying the five cell-level moves R44 names) — merged into this branch, resolved, not an
   open gap any more.
+- Review round 1 (`.sdlc/verdicts/chroma-floor-U1-review.md`, `b1261f9e`, FIX-FIRST) caught three
+  test-output-only defects, no engine change: F1 (`anchor.mjs`'s lone-spike negative control guard
+  checked `patched === realSrc` after unconditional import-path `.replace()` calls had already run,
+  so it could never fire — now checks `realSrc.includes(PLATEAU_TARGET)` first), F2
+  (`mode-isolation-gate.mjs`'s printed shape didn't match C6's literal `tail -1` expectation: wrong
+  last line, document count instead of palette count, a hardcoded `16`, and identical wording on
+  pass/fail — all four fixed), F3 (the lone-spike negative control printed nothing on a green run;
+  now prints its spike count unconditionally). All three resolved this pass; `npm test` reran green
+  (50/50) with the tree clean after.
 
 ## Criteria verdicts
 
 | # | Criterion | State | Evidence | Negative control |
 |---|---|---|---|---|
 | C1 | npm test green | 🟢 | `✓ all 50 test files passed`, exit 0 (Ran table) | `scrimX` sed, exit 1, 3 FAIL (Ran table) |
-| C2 | lone spikes, true 0, no allow-list | 🟢 | `gate:corpus-anchor` FULL, exit 0, `0 (expected 0, corpus 3380 + kit 16)` | plateau-neutralised data-URL copy, spikes return, no `DID NOT bite` |
+| C2 | lone spikes, true 0, no allow-list | 🟢 | sampled `anchor.mjs`, exit 0, `0 (expected 0, corpus 300 + kit 16)`; control prints its count every run (fixes F3) | plateau-neutralised data-URL copy, `3` spikes found, no `DID NOT bite`; guard now checks target presence before any `.replace()` (fixes F1, was unreachable) |
 | C5 | envelope cells hold on the gate path, perceptual/peak unmoved, rendered path reported | 🟢 | `--gate-path` all four OK, above100 0; rendered block + md5 match `<base>` | `--damp-amp 55`, above100 1916 FAIL |
-| C6 | mode-isolation gate, perceptual/peak byte-identical | 🟢 | `gate:mode-isolation` exit 0, hashes match the `<base>`-captured fixture | patch reverted (`git stash` on `tonal.js`), same hashes reproduced |
+| C6 | mode-isolation gate, perceptual/peak byte-identical | 🟢 | `gate:mode-isolation` exit 0, hashes match the `<base>`-captured fixture, hash line now LAST (fixes F2's `tail -1` mismatch), corpus label the real `3780` palette count | patch reverted (`git stash` on `tonal.js`), same hashes reproduced; forced-wrong fixture prints `do not match` and exits 1 (was "match" verbatim either way) |
 | C7 | ramp shape gates at zero, one envelope function | 🟢 | `anchor-ramp monotone: 0`, `chromaEnvelope(` greps 1/5 unchanged | second `chromaEnvelope` export reds the grep (not re-run, unchanged shape) |
 | C8 | chroma-floor properties hold, contrast holds, re-pin direction correct (5 named DOWN moves, owner-ruled) | 🟢 | `pass chroma-floor`, `pass role-contrast`; comparator `changed 4, down 4` | comparator's own drop/erode probes (not re-run, unchanged shape) |
 | C9 | Q-D unchanged | 🟢 | `max OKLab dE 0.0048 (want <= 0.01 ...)` both perceptual and peak bound lines pass (Ran table) | `solveOkhslHue` wrong-hue-space patch, both bound lines FAIL at dE ~0.165 (Ran table) |

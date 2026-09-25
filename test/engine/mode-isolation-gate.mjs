@@ -36,12 +36,17 @@ for (const slug of CATS) {
 const dk = defaultDocument(); // .name is read before hydrate, same shape as anchor.mjs's own kit sweep
 const kitLabel = dk.name ?? "Default";
 
-function fingerprintMode(mode) {
+let corpusPaletteCount = 0;
+
+function fingerprintMode(mode, countPalettes) {
   const lines = [];
   for (const preset of presets) {
     const doc = hydrate({ ...preset, toneMode: mode });
     const view = projectView(doc);
-    for (const p of view.palettes) lines.push(`${preset.name}|${p.name}|${p.fullRamp.map((s) => s.hex).join(" ")}`);
+    for (const p of view.palettes) {
+      lines.push(`${preset.name}|${p.name}|${p.fullRamp.map((s) => s.hex).join(" ")}`);
+      if (countPalettes) corpusPaletteCount++;
+    }
   }
   {
     const doc = hydrate({ ...dk, toneMode: mode });
@@ -52,9 +57,9 @@ function fingerprintMode(mode) {
   return createHash("sha256").update(lines.join("\n")).digest("hex").slice(0, 16);
 }
 
-const perceptual = fingerprintMode("perceptual");
-const peak = fingerprintMode("peak");
-const corpusLabel = `${presets.length} corpus + ${kitLabel === "Default" ? 16 : dk.palettes.length} default kit`;
+const perceptual = fingerprintMode("perceptual", true);
+const peak = fingerprintMode("peak", false);
+const corpusLabel = `${corpusPaletteCount} corpus + ${dk.palettes.length} default kit`;
 
 if (CAPTURE) {
   let sha = "unknown";
@@ -73,10 +78,8 @@ if (CAPTURE) {
 
 const FX = JSON.parse(readFileSync(FIXTURE_URL, "utf8"));
 const ok = perceptual === FX.perceptual && peak === FX.peak;
-console.log(`  ${ok ? "pass" : "FAIL"}  mode-isolation: perceptual ${perceptual} peak ${peak} match fixture (captured at ${FX.capturedAt}, ${FX.corpus}, 25-stop, projectView)`);
-if (!ok) {
-  console.log(`    expected perceptual ${FX.perceptual} peak ${FX.peak}`);
-  console.log(`FAIL: mode-isolation`);
-  process.exit(1);
-}
-console.log("PASS: mode-isolation clears its checkable [gate] predicate");
+if (!ok) console.log(`    expected perceptual ${FX.perceptual} peak ${FX.peak}`);
+// the pass/FAIL hash line prints LAST: C6's own command is `tail -1` on this gate's log, and the
+// hash line (not a summary sentence) is the evidence it captures.
+console.log(`  ${ok ? "pass" : "FAIL"}  mode-isolation: perceptual ${perceptual} peak ${peak} ${ok ? "match" : "do not match"} fixture (captured at ${FX.capturedAt}, ${FX.corpus}, 25-stop, projectView)`);
+if (!ok) process.exit(1);

@@ -1008,13 +1008,18 @@ for (const n of loneSpikeSorted) FAIL("anchor-ramp", `lone-spike: unexpected mem
 // any more.
 {
   const realSrc = readFileSync(new URL("../../src/engine/tonal.js", import.meta.url), "utf8");
+  const PLATEAU_TARGET = "uG *= t * t * (3 - 2 * t);";
+  // review pass 1, F1: the two import-path .replace calls below always change realSrc, so
+  // `patched === realSrc` could never fire even with the plateau target long gone - it would
+  // silently run the REAL (fixed) engine, find 0 spikes and print "DID NOT bite" with the wrong
+  // diagnosis. Check the target's presence in realSrc directly, before any replace runs.
+  if (!realSrc.includes(PLATEAU_TARGET)) FAIL("anchor-ramp", "lone-spike negative control: a patch target string was not found - the neighbourhood plateau text moved, update this control");
   const hctUrl = new URL("../../src/engine/hct.js", import.meta.url).href;
   const okhslUrl = new URL("../../src/engine/okhsl.js", import.meta.url).href;
   const patched = realSrc
     .replace('from "./hct.js"', `from "${hctUrl}"`)
     .replace('from "./okhsl.js"', `from "${okhslUrl}"`)
-    .replace("uG *= t * t * (3 - 2 * t);", "uG *= 1;");
-  if (patched === realSrc) FAIL("anchor-ramp", "lone-spike negative control: a patch target string was not found - the neighbourhood plateau text moved, update this control");
+    .replace(PLATEAU_TARGET, "uG *= 1;");
   const BuggyT = await import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
   const buggySpikeNames = new Set();
   const spikeDocs = [...presetsByCat.map(({ preset }) => hydrate({ ...preset, toneMode: "even" })), dkSpikeDoc];
@@ -1028,6 +1033,9 @@ for (const n of loneSpikeSorted) FAIL("anchor-ramp", `lone-spike: unexpected mem
       if (spikeStop !== null) buggySpikeNames.add(`${doc.name ?? "default kit"}|${p.name}|${spikeStop}`);
     }
   }
+  // F3: print the count on every run, not only on failure - a green run left no evidence of the
+  // 65-witness number C2's own verifier note names (64 corpus + default kit "Default" Data 7).
+  console.log(`    lone-spike negative control: plateau-neutralised engine produced ${buggySpikeNames.size} spike(s) over the corpus + kit (want > 0)`);
   if (buggySpikeNames.size === 0) FAIL("anchor-ramp", "lone-spike negative control DID NOT bite: the plateau-neutralised engine produced 0 spikes over the corpus + kit");
 }
 
