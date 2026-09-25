@@ -10,11 +10,17 @@
 // `--movement` (U4's own criterion, C6-iv/C9) is NOT built here  -  out of this unit's lane. This file
 // exists so U4 can add that mode to it rather than invent a second script.
 //
-//   node scripts/report-preset-fidelity.mjs --envelope [--damp-amp N]
+//   node scripts/report-preset-fidelity.mjs --envelope [--damp-amp N] [--gate-path]
 //
 // `--damp-amp N` is the plan's own negative control: forces every palette's `dampAmp` control to N
 // (overriding whatever the source document carries) before measuring, to prove the above-100% count
 // tracks the mechanism rather than being a static, uninspected number.
+//
+// `--gate-path` (#701 U1, C5): renders WITHOUT each palette's own `anchor` (the construction
+// `EVEN_DIP_BASELINE`'s `findDips` and this same file's pre-fa0264fa reading both used  -  what a
+// user's own non-anchored palette actually renders), at both call sites that otherwise pass
+// `anchor: pal.anchor` (READING (a)/(b) above, and the C6 (v) companion below). Omitted, the default
+// run is the RENDERED path (anchor passed), unchanged since fa0264fa.
 import { readFileSync } from "node:fs";
 import { hydrate } from "../src/ui/persist.js";
 import { defaultDocument, rampChromaOf } from "../src/ui/model.mjs";
@@ -24,9 +30,10 @@ const args = process.argv.slice(2);
 const mode_envelope = args.includes("--envelope");
 const dampAmpIdx = args.indexOf("--damp-amp");
 const dampAmpOverride = dampAmpIdx >= 0 ? Number(args[dampAmpIdx + 1]) : null;
+const gatePath = args.includes("--gate-path");
 
 if (!mode_envelope) {
-  console.error("usage: node scripts/report-preset-fidelity.mjs --envelope [--damp-amp N]");
+  console.error("usage: node scripts/report-preset-fidelity.mjs --envelope [--damp-amp N] [--gate-path]");
   process.exit(2);
 }
 
@@ -96,7 +103,7 @@ for (const mode of MODES) {
     // anchored - the same fault the dip gate had. Passing anchor through matches projectView's own call
     // shape (src/ui/model.mjs, "the SAME resolved-chroma call" this file's own header already claimed).
     const ramp = T.paletteStops(
-      { hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull, anchor: pal.anchor },
+      { hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull, anchor: gatePath ? undefined : pal.anchor },
       controls,
       T.STOPS,
     );
@@ -202,7 +209,7 @@ for (const mode of MODES) {
   }
 }
 
-console.log(`report-preset-fidelity --envelope${dampAmpOverride !== null ? ` --damp-amp ${dampAmpOverride}` : ""}`);
+console.log(`report-preset-fidelity --envelope${dampAmpOverride !== null ? ` --damp-amp ${dampAmpOverride}` : ""}${gatePath ? " --gate-path" : ""}`);
 console.log(`corpus: ${totalCurated} curated palettes, ${instances.length} instances at source chroma >= 10 or in the 8 default-kit semantic families`);
 console.log(`env(500) = 1 sweep: ${envFails === 0 ? "PASS" : `FAIL (${envFails} combinations off)`}`);
 console.log("");
@@ -289,7 +296,7 @@ console.log(" the SAME scope test/engine/tonal.mjs's C6 (v) gates for peak; even
       for (const pal of doc.palettes) {
         total++;
         const chroma = rampChromaOf(pal, doc);
-        const ramp = T.paletteStops({ hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull, anchor: pal.anchor }, controls, T.STOPS);
+        const ramp = T.paletteStops({ hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull, anchor: gatePath ? undefined : pal.anchor }, controls, T.STOPS);
         const c500row = ramp.find((r) => r.stop === 500);
         if (!c500row) continue;
         const c500 = c500row.chroma;
