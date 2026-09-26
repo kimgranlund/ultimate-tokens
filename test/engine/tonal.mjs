@@ -183,6 +183,10 @@ for (const p of DEFAULTS) {
   //     (u3fix/retune-even-only.mjs swept dampCurve x0.001..x1 at fixed damp and stop 100/900 never
   //     moved; T.EVEN_DAMP_FACTOR is the ratified, exported constant this independent re-derivation
   //     reads, not a re-derivation of chromaEnvelope's own code path).
+  //     #701 U1: the even path now also gates uLeg^evenDampCurve by a smoothstep plateau of
+  //     uLeg/T.EVEN_NEIGHBOURHOOD_R (0 at the anchor, 1 by R  -  the neighbourhood term that closes
+  //     the lone-spike population, C2). Read as the exported R, same discipline as EVEN_DAMP_FACTOR
+  //     above: an independent re-derivation of the BEHAVIOUR, not chromaEnvelope's own code.
   const evenDamp = 100 - (100 - CTL.damp) * T.EVEN_DAMP_FACTOR;
   const evenDampCurve = (CTL.dampCurve ?? 1.5) * T.EVEN_DAMP_FACTOR;
   for (const p of SAT) {
@@ -194,7 +198,9 @@ for (const p of DEFAULTS) {
       // Capped at 1, as chromaEnvelope caps `sd` (#681 U10, pre-land F3): under a lift the raw lifted
       // distance can pass 450, and the legacy form never read a position past the ramp end.
       const uLeg = Math.min(1, Math.abs(T.liftStop(r.stop, p.lift) - T.liftStop(500, p.lift)) / 450);
-      const legacyWant = Math.min(tgt * Math.max(0, 1 - (evenDamp / 100) * uLeg ** evenDampCurve), r.maxc);
+      const tLeg = Math.min(1, uLeg / T.EVEN_NEIGHBOURHOOD_R);
+      const plateauLeg = tLeg * tLeg * (3 - 2 * tLeg);
+      const legacyWant = Math.min(tgt * Math.max(0, 1 - (evenDamp / 100) * uLeg ** evenDampCurve * plateauLeg), r.maxc);
       const want = Math.min(legacyWant, anchorWant);
       if (Math.abs(r.chroma - want) > 1e-6) FAIL("damping-curve", `${p.name} default != legacy at stop ${r.stop}: ${r.chroma.toFixed(4)} vs ${want.toFixed(4)}`);
     }
@@ -640,6 +646,16 @@ for (const mode of ["perceptual", "peak"]) {
 //   #EAE4DE -> #FCFBFA #F9F7F5 #F5F2EF #F0ECE6 #EBE4DC) and even stops 125/150/175 (#FBFBFB #FCF6F3
 //   #FAF2ED -> #FFFAF8 #FFF6F0 #FAF2EC). Every other cell of the 32 ramps is byte-identical before and
 //   after the cap. Patched by hand, cell by cell, not regenerated.
+//   #701 U1 re-pin: chromaEnvelope's even branch now multiplies uG by a smoothstep plateau of
+//   |sd|/EVEN_NEIGHBOURHOOD_R (0 at the anchor, 1 by R=0.2), closing the lone-spike population at
+//   stop 500 (C2) by raising 450/550's chroma toward the anchor. 26 cells moved, all even, all
+//   already carved (#681 U3 pass 7 carved every even default), all at stops 450/550 (the only stops
+//   inside R): Primary 450/550, Secondary 450/550, Info 550 only (450 already sat on the anchor cap),
+//   Success 450/550, Warning 450 only (550 clipped by the U10 lift-cap above), Danger 450/550, Data
+//   1-8 450/550 - see the diff this unit's handoff quotes verbatim. Neutral and Tertiary are
+//   untouched (Neutral's intended chroma is 0 at every stop; Tertiary's 450/550 already sat on the
+//   anchor cap, not the damped value, so the plateau never binds there). Patched by hand, cell by
+//   cell, not regenerated.
 {
   const FX = JSON.parse(readFileSync(new URL("./fixtures/tonal-legacy.json", import.meta.url), "utf8")).paths;
   const dc = T.DEFAULT_CONTROLS || {};

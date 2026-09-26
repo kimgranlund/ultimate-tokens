@@ -114,6 +114,7 @@ jobs:
           - gate:sweep-prime
           - gate:corpus-reset
           - gate:corpus-contrast
+          - gate:mode-isolation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

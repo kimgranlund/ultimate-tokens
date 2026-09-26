@@ -33,6 +33,7 @@
 // validated primitives — never a call back into primeSwatches's own internals — mirroring
 // test/engine/prime.mjs's own "Agent verification" anti-tautology note for this exact file. A negative
 // control (one mutated chroma) proves the comparison loop itself can fail before trusting its "0 off".
+import { readFileSync } from "node:fs";
 import { primeSwatches, PRIME_STEPS } from "../../src/engine/prime.mjs";
 import { peakC, hctToRgb, lstarFromRgb, cam16FromRgb } from "../../src/engine/hct.js";
 import { effHue, paletteStops, DEFAULT_CONTROLS, RAMP_L_MIN, RAMP_L_MAX, STOPS, ACHROMATIC_ANCHOR_C } from "../../src/engine/tonal.js";
@@ -831,87 +832,23 @@ const windowNames = new Set(), nonMonoNames = new Set(), gapNames = new Set(), d
 // ramp. Negative control: restoring the old seedHue fallback in a scratch copy reds this exact gate
 // (recorded in the handoff, since it needs a source patch this file does not carry).
 //
-// LONE_SPIKE_ALLOW (owner ruling, U4 review pass 1 / pass 2, 2026-09-20; same treatment as
-// NOTCH_ALLOW above, named-by-value not just counted). Root-caused, not an integration defect: all 64
-// hits sit at stop 500 (the anchor pass-through point, U2) and the spiking hex is the palette's own
-// stored `anchor` in every case. U3's ruled `dampAmp` 55 -> 0 (ticket #681 U3, Q7) removes even mode's
-// chroma-envelope shoulder term, so at `dampAmp` 0 stops 450/550 fall to OKLCH C 0.036-0.049 (under
-// this gate's own 0.05 achromatic bound) while U2's pass-through holds stop 500 at the anchor's own
-// full chroma, C 0.072-0.093 - a genuine one-stop chroma spike exactly at the pass-through point.
-// Witness: architecture "Komsomolskaya Station" tertiary `#346190`: `#5F768F` (C 0.0475) ->
-// `#346190` (C 0.0911) -> `#3E546C` (C 0.0482). Neither `unit/pif-u2-ramp` (carries this gate, but
-// `dampAmp: 55`: 0 hits) nor `unit/pif-u3-envelope` (carries `dampAmp: 0`, but not this gate) could
-// see the combination alone - the gate and the corpus change first meet on this integration branch.
-// Owner ruling: name the 64 by value and gate the count here; the real fix (an even-mode neighbourhood
-// chroma term at the anchor stop, so 450/550 are not left achromatic beside a saturated 500) joins
-// ticket #701, not this unit. Printed by the gate itself, so a real drift is copy-pasteable back in.
+// The corpus lone-spike allow-list, RETIRED (#701 U1). Root-caused by #681 U4 review pass 1/2 (2026-09-20): all 64
+// corpus hits (plus 1 in the default kit, below) sat at stop 500 (the anchor pass-through point, U2),
+// the spiking hex the palette's own stored `anchor` in every case. U3's ruled `dampAmp` 55 -> 0
+// (ticket #681 U3, Q7) removed even mode's chroma-envelope shoulder term, so at `dampAmp` 0 stops
+// 450/550 fell to OKLCH C 0.036-0.049 (under this gate's own 0.05 achromatic bound) while U2's
+// pass-through held stop 500 at the anchor's own full chroma, C 0.072-0.093 - a genuine one-stop
+// chroma spike exactly at the pass-through point. Witness: architecture "Komsomolskaya Station"
+// tertiary `#346190`: `#5F768F` (C 0.0475) -> `#346190` (C 0.0911) -> `#3E546C` (C 0.0482). The owner
+// ruled the 64 named and gated by count, with the real fix (an even-mode neighbourhood chroma term at
+// the anchor stop, so 450/550 are not left achromatic beside a saturated 500) routed to #701 - this
+// unit. `chromaEnvelope`'s even branch (src/engine/tonal.js) now multiplies its damping term by a
+// smoothstep plateau of |sd|/EVEN_NEIGHBOURHOOD_R, raising 450/550 above the 0.05 achromatic bound (or
+// narrowing the gap under 0.03) for every one of the 64 + 1 named witnesses, so the allow-list retires
+// to a true 0, no membership test at all - a re-add under any identifier reds this gate directly. The
+// data-URL negative control right after the gate (the dip gate's own shape, `findDips`'s sibling)
+// neutralises the plateau and re-measures > 0 hits, proving the gate still bites.
 const LONE_SPIKE_BOUND = 0.03, LONE_SPIKE_ACHROMATIC = 0.05;
-const LONE_SPIKE_ALLOW = [
-  `architecture "Komsomolskaya Station · 1952 · Moscow Metro" tertiary #346190 stop 500`,
-  `architecture "Marine Drive · 1930s · Art Deco ensemble · Mumbai" tertiary #3C819E stop 500`,
-  `architecture "Napier · rebuilt 1931–33 · Art Deco town, New Zealand" primary-muted #458FA7 stop 500`,
-  `architecture "Ocean Drive · 1930s · Miami Beach Art Deco Historic District" primary-muted #6BABCD stop 500`,
-  `architecture "Ocean Drive · 1930s · Miami Beach Art Deco Historic District" tertiary #78C0C4 stop 500`,
-  `architecture "Oia · Cyclades vernacular · Santorini, Greece" tertiary #136689 stop 500`,
-  `architecture "Piazza d'Italia · 1978 · Charles Moore · New Orleans" tertiary #399091 stop 500`,
-  `architecture "Piazza d'Italia · 1978 · Charles Moore · New Orleans" tertiary-muted #5893AC stop 500`,
-  `architecture "Sagrada Família · Gaudí, begun 1882 · Barcelona · the nave" tertiary-muted #2C9498 stop 500`,
-  `architecture "Shah Mosque · 1629 · Isfahan, Iran · the dome and iwan" secondary #3CA1A2 stop 500`,
-  `architecture "Sydney Opera House · 1973 · Jørn Utzon" primary #6BABCD stop 500`,
-  `architecture "Sydney Opera House · 1973 · Jørn Utzon" tertiary #206F92 stop 500`,
-  `architecture "Taos Pueblo · adobe vernacular · New Mexico" secondary-muted #4A9FA3 stop 500`,
-  `architecture "Taos Pueblo · adobe vernacular · New Mexico" tertiary #5F97BD stop 500`,
-  `architecture "The Alhambra · 14th c · Granada · the Court of the Lions" tertiary #28817E stop 500`,
-  `architecture "The Chrysler Building · 1930 · William Van Alen · New York" primary-muted #6595BF stop 500`,
-  `architecture "The Portland Building · 1982 · Michael Graves" primary #4875A6 stop 500`,
-  `architecture "Trellick Tower · 1972 · Ernő Goldfinger · London" primary-muted #40888A stop 500`,
-  `architecture "VDNKh · 1939–54 · exhibition pavilions · Moscow" tertiary-muted #528DA6 stop 500`,
-  `cuisine "Mole poblano · the festival plate" secondary-muted #346190 stop 500`,
-  `cuisine "Sicilian table · the southern feast" primary-muted #3D699A stop 500`,
-  `film "Blade Runner 2049 · 2017 · dir. Villeneuve · cin. Deakins · the Vegas ruins" primary #409EB2 stop 500`,
-  `film "Hero · 2002 · dir. Zhang Yimou · the red courtyard duel" primary-muted #2C5887 stop 500`,
-  `film "Hero · 2002 · dir. Zhang Yimou · the red courtyard duel" tertiary #3B8269 stop 500`,
-  `film "John Wick · 2014 · dir. Stahelski · the Red Circle club" primary #2C9498 stop 500`,
-  `film "John Wick · 2014 · dir. Stahelski · the Red Circle club" secondary #244979 stop 500`,
-  `film "La La Land · 2016 · dir. Chazelle · the Griffith Park dusk" secondary-muted #264B7C stop 500`,
-  `film "Mad Max: Fury Road · 2015 · dir. Miller · the desert chase" tertiary #005567 stop 500`,
-  `film "My Neighbour Totoro · 1988 · Studio Ghibli · the rural summer" secondary-muted #82BAD8 stop 500`,
-  `film "Once Upon a Time in the West · 1968 · dir. Leone · the railhead town" primary #40888A stop 500`,
-  `film "TRON: Legacy · 2010 · dir. Kosinski · the Grid" secondary-muted #4376A5 stop 500`,
-  `film "The Red Shoes · 1948 · dir. Powell & Pressburger · the ballet" tertiary-muted #0A8285 stop 500`,
-  `film "The Wizard of Oz · 1939 · the gates of the Emerald City" primary-muted #729DCA stop 500`,
-  `film "Touch of Evil · 1958 · dir. Orson Welles · the border-town night" primary #418792 stop 500`,
-  `film "Vertigo · 1958 · dir. Alfred Hitchcock · the green neon hotel" primary #274D76 stop 500`,
-  `literature "Don Quixote · Cervantes · 1605 · the plains of La Mancha" tertiary-muted #6292BC stop 500`,
-  `literature "The Little Prince · Saint-Exupéry · 1943 · the desert & the asteroid" tertiary #2E4E7A stop 500`,
-  `literature "The Picture of Dorian Gray · Wilde · 1890 · the aesthete's drawing room" secondary #006366 stop 500`,
-  `music "City pop · the '80s Tokyo-night sleeve" secondary-muted #279196 stop 500`,
-  `music "Cool jazz · the mid-century record sleeve" secondary #265986 stop 500`,
-  `music "Gospel · the church choir" secondary-muted #346190 stop 500`,
-  `music "Mod & British Invasion · the op-art club" secondary-muted #264B7C stop 500`,
-  `music "Modal jazz · the cool-blue session" secondary #23436E stop 500`,
-  `music "Motown · the glamour stage" primary #1E8B8F stop 500`,
-  `music "Nashville rhinestone · the Opry stage" secondary #30979D stop 500`,
-  `music "Outlaw country · the desert-highway sleeve" primary #399092 stop 500`,
-  `music "Power metal · the fantasy album art" secondary #2C5887 stop 500`,
-  `music "Stax · the Southern-soul sleeve" primary #289195 stop 500`,
-  `music "Vaporwave · the digital-pastel aesthetic" tertiary-muted #75C7D3 stop 500`,
-  `nature "0° · June · 11:00 · Congo Basin lowland forest, Odzala, Republic of the Congo" primary #116264 stop 500`,
-  `nature "18° S · November · 11:00 · Ribbon Reefs, Great Barrier Reef, Australia" secondary #6CBBBB stop 500`,
-  `nature "18° S · November · 11:00 · Ribbon Reefs, Great Barrier Reef, Australia" tertiary #29638E stop 500`,
-  `nature "19° S · July · 17:00 · Okavango Delta, Botswana, dry-season flood" primary-muted #1E8B90 stop 500`,
-  `nature "20° N · January · 11:00 · Cenote Ik Kil, Yucatán, Mexico" secondary #569DA0 stop 500`,
-  `nature "23° S · December · 13:00 · Salar de Atacama edge, Atacama Desert, Chile" secondary-muted #5DA4A1 stop 500`,
-  `nature "37° N · October · 16:00 · Monument Valley, Colorado Plateau, Arizona–Utah" primary #4E79A4 stop 500`,
-  `nature "51° N · July · 08:00 · Moraine Lake, Valley of the Ten Peaks, Canadian Rockies" secondary-muted #56AAAD stop 500`,
-  `nature "64° N · March · inside · Vatnajökull glacier cave, Iceland" secondary #2F7B9F stop 500`,
-  `travel "22° N · January · 11:00 · Sapa Sunday market, Lào Cai Province, cold mountain fog" secondary #042546 stop 500`,
-  `travel "23° S · December · 16:20 · Salar de Atacama, 2,305 m" primary-muted #588AB9 stop 500`,
-  `travel "26° N · June · 18:30 · The shrine of Lal Shahbaz Qalandar, Sehwan, at the evening dhamaal" secondary #397554 stop 500`,
-  `travel "41° N · April · 09:00 · La Boqueria, Barcelona, just past opening on a Tuesday" tertiary #1C486F stop 500`,
-  `travel "41° N · April · 10:00 · Bolhão Market, Porto, Saturday opening hour" primary #4F80A8 stop 500`,
-  `travel "47° N · October · 05:55 · Ger camp at Övörkhangai, the moment before sunrise" primary-muted #5485AE stop 500`,
-];
 function loneSpikeStop(ramp25) {
   for (let i = 1; i < ramp25.length - 1; i++) {
     const c0 = rgbToOklchIndep(hexToRgb(ramp25[i - 1].hex))[1];
@@ -1031,10 +968,10 @@ for (const n of NOTCH_ALLOW) console.log(`    r ${n}`);
 // same `loneSpikeStop` function, so it costs 16 extra renders instead of re-opening six unrelated
 // gates' scope. It found exactly one hit: default kit "Default" Data 7 #088585 stop 500 (even, 25-stop) -
 // a near-achromatic teal anchor sitting as a lone spike between two near-grey neighbours, the same
-// mechanism as the curated corpus's 64: `dampAmp` 0 leaves stops 450/550 achromatic beside the anchor
-// pass-through at stop 500, the fix joins #701 (not this unit). Per addendum 2, this is its OWN
-// finding, not folded into LONE_SPIKE_ALLOW: LONE_SPIKE_ALLOW's own count gate is scoped to the 8
-// curated categories, so folding the kit in would silently widen what that number means.
+// mechanism as the curated corpus's 64: `dampAmp` 0 left stops 450/550 achromatic beside the anchor
+// pass-through at stop 500. #701 U1 closes both mechanisms with the same neighbourhood term, so the
+// print below (line ~999) unions this loop's own `defaultKitSpikeNames` into the corpus sweep's
+// `loneSpikeNames` before the one sort - one count, corpus + kit, no allow-list either side.
 //
 // Q8 RULED (owner, via the conductor, 2026-09-20, review pass 2 confirmed the measurement): the
 // rendered-path ruling puts the default kit in the sweep, so the plan's "0 notched cells in the
@@ -1056,21 +993,93 @@ for (const p of dkSpikeDoc.palettes) {
   const spikeStop = loneSpikeStop(ramp25);
   if (spikeStop !== null) defaultKitSpikeNames.add(`default kit "${dkBaseForSpike.name}" ${p.name} ${p.anchor} stop ${spikeStop}`);
 }
-const DEFAULT_KIT_SPIKE_FINDING = new Set([`default kit "Default" Data 7 #088585 stop 500`]);
-const dkSpikeSorted = [...defaultKitSpikeNames].sort();
-console.log(`  ${allowListMatches(dkSpikeSorted, [...DEFAULT_KIT_SPIKE_FINDING]) ? "pass" : "FAIL"}  anchor-ramp default-kit lone-spike (addendum 2, own finding, NOT part of LONE_SPIKE_ALLOW - Q8 ruled: the "0 notched cells" invariant is restated, not broken, notch itself reads 0 for the kit): ${dkSpikeSorted.length} (expected ${DEFAULT_KIT_SPIKE_FINDING.size})`);
-if (!allowListMatches(dkSpikeSorted, [...DEFAULT_KIT_SPIKE_FINDING])) {
-  for (const n of DEFAULT_KIT_SPIKE_FINDING) if (!dkSpikeSorted.includes(n)) FAIL("anchor-ramp", `default-kit lone-spike: expected member missing - ${n}`);
-  for (const n of dkSpikeSorted) if (!DEFAULT_KIT_SPIKE_FINDING.has(n)) FAIL("anchor-ramp", `default-kit lone-spike: unexpected member - ${n}`);
-}
-for (const n of DEFAULT_KIT_SPIKE_FINDING) console.log(`    r ${n}`);
+// The default-kit lone-spike finding, RETIRED (#701 U1). Addendum-2's own finding (default kit "Default" Data 7
+// #088585 stop 500) closed by the same neighbourhood term as the corpus's 64 - unioned into the one
+// corpus+kit count below rather than kept as a second, separately-printed allow-list.
+for (const n of defaultKitSpikeNames) loneSpikeNames.add(n);
 const loneSpikeSorted = [...loneSpikeNames].sort();
-console.log(`  ${allowListOk(loneSpikeSorted, LONE_SPIKE_ALLOW) ? "pass" : "FAIL"}  anchor-ramp lone-spike allow-list (even, near-achromatic neighbours <= ${LONE_SPIKE_ACHROMATIC}, OKLCH C > both by > ${LONE_SPIKE_BOUND}; owner-ruled dampAmp-0/anchor-pass-through carve-out, fix joins #701): ${loneSpikeSorted.length} (expected ${FULL ? LONE_SPIKE_ALLOW.length : `at most ${LONE_SPIKE_ALLOW.length} (SAMPLED reads the recorded count as an upper bound; run --full for the exact check)`})`);
-if (!allowListOk(loneSpikeSorted, LONE_SPIKE_ALLOW)) {
-  if (FULL) for (const n of LONE_SPIKE_ALLOW) if (!loneSpikeSorted.includes(n)) FAIL("anchor-ramp", `lone-spike allow-list: expected member missing - ${n}`);
-  for (const n of loneSpikeSorted) if (!LONE_SPIKE_ALLOW.includes(n)) FAIL("anchor-ramp", `lone-spike allow-list: unexpected member (stop's OKLCH C exceeds both neighbours by > ${LONE_SPIKE_BOUND}) - ${n}`);
+console.log(`  ${loneSpikeSorted.length === 0 ? "pass" : "FAIL"}  anchor-ramp lone-spike (even, near-achromatic neighbours <= ${LONE_SPIKE_ACHROMATIC}, OKLCH C > both by > ${LONE_SPIKE_BOUND}): ${loneSpikeSorted.length} (expected 0, corpus ${anchored.length} anchored + default kit 16, no allow-list)`);
+for (const n of loneSpikeSorted) FAIL("anchor-ramp", `lone-spike: unexpected member (stop's OKLCH C exceeds both neighbours by > ${LONE_SPIKE_BOUND}) - ${n}`);
+
+// Negative control (#701 U1, the dip gate's own shape, tonal.mjs's findDips sibling): a data-URL copy
+// of tonal.js with the neighbourhood plateau neutralised (t*t*(3-2*t) forced to 1, so uG is never
+// scaled down near the anchor - the pre-U1 shape) must still produce spikes over the same corpus + kit,
+// proving the gate is live, not vacuously green because nothing calls loneSpikeStop with a spiky input
+// any more.
+//
+// review pass 2, F3 follow-up: a hand-rebuilt `controls` object fed straight to `paletteStops` is NOT
+// the render path the real 64+1 population above was found on (that sweep goes through hydrate() +
+// projectView(), which resolves hue space, group chroma and more before ever calling paletteStops) - a
+// first version of this control did that shortcut, AND deduped witnesses on too short a key
+// (`doc.name|p.name|stop`, collapsing distinct presets/palettes that share a palette name and spike
+// stop), so it undercounted 65 as 7. Fixed by (a) patching model.mjs's own tonal.js import to the
+// plateau-neutralised module and calling ITS projectView, so the buggy run takes the exact render path
+// the real sweep two blocks up does, and (b) keying each witness the same way that sweep's own `label`
+// does (slug + preset name + palette name + anchor hex + stop) so no two distinct witnesses collide.
+{
+  const realSrc = readFileSync(new URL("../../src/engine/tonal.js", import.meta.url), "utf8");
+  const PLATEAU_TARGET = "uG *= t * t * (3 - 2 * t);";
+  // review pass 1, F1: the two import-path .replace calls below always change realSrc, so
+  // `patched === realSrc` could never fire even with the plateau target long gone - it would
+  // silently run the REAL (fixed) engine, find 0 spikes and print "DID NOT bite" with the wrong
+  // diagnosis. Check the target's presence in realSrc directly, before any replace runs.
+  if (!realSrc.includes(PLATEAU_TARGET)) FAIL("anchor-ramp", "lone-spike negative control: a patch target string was not found - the neighbourhood plateau text moved, update this control");
+  const hctUrl = new URL("../../src/engine/hct.js", import.meta.url).href;
+  const okhslUrl = new URL("../../src/engine/okhsl.js", import.meta.url).href;
+  const buggyTonalUrl = `data:text/javascript;base64,${Buffer.from(
+    realSrc
+      .replace('from "./hct.js"', `from "${hctUrl}"`)
+      .replace('from "./okhsl.js"', `from "${okhslUrl}"`)
+      .replace(PLATEAU_TARGET, "uG *= 1;"),
+  ).toString("base64")}`;
+  // model.mjs's own relative imports, rewritten to absolute file URLs so it can load standalone from a
+  // data: URL - every one EXCEPT tonal.js, which points at the plateau-neutralised module above.
+  const modelSrc = readFileSync(new URL("../../src/ui/model.mjs", import.meta.url), "utf8");
+  const modelRewrites = [
+    ['"../engine/collections.js"', new URL("../../src/engine/collections.js", import.meta.url).href],
+    ['"./persist.js"', new URL("../../src/ui/persist.js", import.meta.url).href],
+    ['"../engine/hct.js"', hctUrl],
+    ['"../engine/okhsl.js"', okhslUrl],
+    ['"../engine/icon-systems.mjs"', new URL("../../src/engine/icon-systems.mjs", import.meta.url).href],
+    ['"../engine/motion.mjs"', new URL("../../src/engine/motion.mjs", import.meta.url).href],
+    ['"../engine/tonal.js"', buggyTonalUrl],
+    ['"../engine/data-hues.mjs"', new URL("../../src/engine/data-hues.mjs", import.meta.url).href],
+    ['"../engine/prime.mjs"', new URL("../../src/engine/prime.mjs", import.meta.url).href],
+    ['"../engine/resolve.mjs"', new URL("../../src/engine/resolve.mjs", import.meta.url).href],
+    ['"../engine/semantic.js"', new URL("../../src/engine/semantic.js", import.meta.url).href],
+    ['"../engine/type.mjs"', new URL("../../src/engine/type.mjs", import.meta.url).href],
+    ['"../engine/geometry.mjs"', new URL("../../src/engine/geometry.mjs", import.meta.url).href],
+    ['"../engine/exports.js"', new URL("../../src/engine/exports.js", import.meta.url).href],
+    ['"../engine/ds-export.js"', new URL("../../src/engine/ds-export.js", import.meta.url).href],
+  ];
+  let patchedModel = modelSrc;
+  for (const [target, url] of modelRewrites) {
+    if (!modelSrc.includes(target)) FAIL("anchor-ramp", `lone-spike negative control: model.mjs import target not found - ${target} moved, update this control`);
+    patchedModel = patchedModel.replace(`from ${target}`, `from "${url}"`);
+  }
+  const BuggyModel = await import(`data:text/javascript;base64,${Buffer.from(patchedModel).toString("base64")}`);
+  const buggySpikeNames = new Set();
+  // key shape matches the REAL corpus/kit sweep's own `label` above (slug + preset name + palette name
+  // + anchor hex + stop): a first version keyed on `doc.name|p.name|stop` alone and collapsed distinct
+  // witnesses that share a palette name and spike stop across different presets into one Set entry,
+  // undercounting 65 as 7 (review pass 2, F3 follow-up).
+  const spikeDocs = [...presetsByCat.map(({ slug, preset }) => ({ slug, doc: hydrate({ ...preset, toneMode: "even" }) })), { slug: "default kit", doc: dkSpikeDoc, kitName: dkBaseForSpike.name }];
+  for (const { slug, doc, kitName } of spikeDocs) {
+    const view = BuggyModel.projectView(doc);
+    for (const p of doc.palettes) {
+      if (typeof p.anchor !== "string") continue;
+      const vp = view.palettes.find((v) => v.name === p.name);
+      const ramp25 = vp ? vp.fullRamp : null;
+      if (!ramp25) continue;
+      const spikeStop = loneSpikeStop(ramp25);
+      if (spikeStop !== null) buggySpikeNames.add(`${slug} "${kitName ?? doc.name}" ${p.name} ${p.anchor} stop ${spikeStop}`);
+    }
+  }
+  // F3: print the count on every run, not only on failure - a green run left no evidence of the
+  // 65-witness number C2's own verifier note names (64 corpus + default kit "Default" Data 7).
+  console.log(`    lone-spike negative control: plateau-neutralised engine produced ${buggySpikeNames.size} spike(s) over the corpus + kit (want > 0)`);
+  if (buggySpikeNames.size === 0) FAIL("anchor-ramp", "lone-spike negative control DID NOT bite: the plateau-neutralised engine produced 0 spikes over the corpus + kit");
 }
-for (const n of LONE_SPIKE_ALLOW) console.log(`    r ${n}`);
 
 // R10 (review pass 2): the OLD "N1-style" control compared two hardcoded arrays with its own duplicate
 // of allowListMatches's logic — a tautology, since that comparison can never pass regardless of whether
@@ -1090,7 +1099,9 @@ if (FULL) {
   dropCheck("gap", gapSorted, RAMP_GAP_ALLOW);
   dropCheck("distinct", distinctSorted, RAMP_DISTINCT_ALLOW);
   dropCheck("notch", notchSorted, NOTCH_ALLOW);
-  dropCheck("lone-spike", loneSpikeSorted, LONE_SPIKE_ALLOW);
+  // lone-spike has no allow-list any more (#701 U1): its own negative control is the data-URL
+  // neighbourhood-neutralising probe right after the print above (the corpus+kit union reading true 0), the
+  // dip gate's own shape, not a dropCheck/swapCheck against a list that no longer exists.
   // A same-length swap must ALSO be caught (a name substitution, not just a shrink).
   const swapCheck = (name, measuredSorted, allow, fakeMember) => {
     const swapped = [...allow.slice(0, -1), fakeMember].sort();
@@ -1100,7 +1111,6 @@ if (FULL) {
   swapCheck("gap", gapSorted, RAMP_GAP_ALLOW, `film "A Made-Up Title" primary #000003`);
   swapCheck("distinct", distinctSorted, RAMP_DISTINCT_ALLOW, `film "A Made-Up Title" primary #000004`);
   swapCheck("notch", notchSorted, NOTCH_ALLOW, `film "A Made-Up Title" primary #000005 [peak]`);
-  swapCheck("lone-spike", loneSpikeSorted, LONE_SPIKE_ALLOW, `film "A Made-Up Title" primary #000006 stop 500`);
 }
 
 // ── F4 gate (R3, review pass 2, 2026-09-18): the owner's F4 principle — "no control goes dead" for an

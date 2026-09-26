@@ -385,6 +385,30 @@ const ANCHOR_STOP = 500;
 // perceptual/peak are untouched  -  this only fires when controls.toneMode === "even" (paletteStops's own
 // dispatch guarantees that string exactly, never a default fallthrough  -  see paletteStops above).
 export const EVEN_DAMP_FACTOR = 0.25;
+// EVEN_NEIGHBOURHOOD_R (#701 U1): the even envelope's own uG term is |sd|^dampCurve, an exponent under
+// 1 (dampCurve is EVEN_DAMP_FACTOR * controls.dampCurve, 0.375 at the shipped 1.5), so uG has INFINITE
+// slope at the anchor - one stop away (|sd| = 50/450 = 0.111) uG is already 0.406 at the shipped damp
+// 70, which is what produces both the 64 corpus + 1 default-kit lone spikes (anchor.mjs's
+// `loneSpikeStop`: 450/550 read near-achromatic while 500 sits far above them, C2) and 57 of the
+// EVEN_DIP_BASELINE's 90 named dips (a different predicate, tonal.mjs's own `findDips`, U2's to
+// retire). A neighbourhood (plateau) term multiplies uG by a smoothstep of |sd|/R that is 0 at the
+// anchor and 1 by R, replacing the exponent's infinite initial slope with a flat start: near the
+// anchor uG is smaller than the shipped formula gives, so the envelope (1 - damp/100*uG) is CLOSER to
+// 1 there, closing the spike without changing anything beyond R (chromaEnvelope's C5-gated cells sit
+// at |sd| >= 0.444 for the innermost measured stop, 300/700 (lift 0; 0.222 is 400/600, not a C5 stop),
+// well outside R).
+//
+// R is a named constant, not a new control (F4): the plan's own feasibility probe (revision 1,
+// scratch patched copies of this file) swept r = 0.2/0.3/0.4 against the real corpus + default kit and
+// found 0.2 the smallest that fully closes BOTH lone-spike populations (64 corpus + 1 kit -> 0 at every
+// r tried) while moving the fewest even 25-stop cells (4,498 of 94,500, all within two lifted-stop
+// steps of the anchor) and leaving the four `--envelope` READING (a) cells (C5) unchanged to one
+// decimal at every r tried, since those stops sit far outside the plateau. 0.2 lifted-stop-units is
+// just under two of the ramp's own 50-unit steps either side of the anchor (450/550 sit at 0.111,
+// comfortably inside; 400/600 at 0.222, just outside), which is why the shoulder never reaches stop
+// 400/600 ("even palettes whose 450 or 550 CAM16 C is under 50% of stop 500" was already 0 at ship -
+// the spike is a 60% shoulder, not a collapse, so R only needs to reach the two innermost stops).
+export const EVEN_NEIGHBOURHOOD_R = 0.2;
 export function chromaEnvelope(stop, anchorStop, lift, controls) {
   // Capped at +/-1 (#681 U10, F3): under lift the raw distance can pass 450, and |sd| > 1 clipped the
   // envelope to 0 over whole bands (neutral greys). At the cap a stop takes the 50/950 edge floor.
@@ -392,7 +416,13 @@ export function chromaEnvelope(stop, anchorStop, lift, controls) {
   const isEven = controls.toneMode === "even";
   const damp = isEven ? 100 - (100 - controls.damp) * EVEN_DAMP_FACTOR : controls.damp;
   const dampCurve = (isEven ? EVEN_DAMP_FACTOR : 1) * (controls.dampCurve ?? 1.5);
-  const uG = Math.abs(sd) ** dampCurve;
+  let uG = Math.abs(sd) ** dampCurve;
+  if (isEven) {
+    // smoothstep plateau: 0 at sd=0 (the shoulder term below still vanishes there, uG's own factor),
+    // 1 by |sd| = EVEN_NEIGHBOURHOOD_R; perceptual/peak never take this branch (C6).
+    const t = Math.min(1, Math.abs(sd) / EVEN_NEIGHBOURHOOD_R);
+    uG *= t * t * (3 - 2 * t);
+  }
   const sideW = Math.max(0, 1 + ((controls.dampBias ?? 0) / 100) * Math.sign(sd));
   const shoulder = ((controls.dampAmp ?? 0) / 100) * 4 * uG * (1 - uG); // 0 at sd=0 AND |sd|=1  -  shoulders only
   return Math.max(0, 1 + shoulder - (damp / 100) * sideW * uG);

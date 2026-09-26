@@ -30,6 +30,7 @@ for (const [cmd, gate, label] of [
   ["npm run gate:corpus-anchor", "corpus-anchor", "gate:corpus-anchor"],
   ["npm run gate:sweep-prime", "sweep-prime", "gate:sweep-prime"],
   ["npm run gate:corpus-reset", "corpus-reset", "gate:corpus-reset"],
+  ["npm run gate:mode-isolation", "mode-isolation", "gate:mode-isolation"],
   ["npm run gen:type-fonts", "fonts", "fonts"],
 ]) {
   const t = (row(b, "| `" + cmd + "` |")[4] || "").split("·").map(Number);
