@@ -317,9 +317,20 @@ function solveCam16Hue(targetOklchHue, chroma, tone, gamutClamp = false, { chrom
 // LOW-chroma ramps chromaFloor exists for. Factored so the per-stop map AND the stop-500 hue anchor share
 // ONE formula and can't drift (the oklch-hue-anchor gate reads the exported hue, so any drift here trips
 // it).
-function evenChroma(maxc, intended, env, chromaFloor) {
+// floorRef (#701 U2): the floor's gamut reference is min(maxc, floorRef), where floorRef is the gamut
+// ceiling AT THE ANCHOR STOP (the pivot's own tone and hue). Near white and black maxc falls under
+// floorRef, so the floor stays chromaFloor% of the local gamut there (the shape the even 100/900 cells
+// depend on); in the interior, on the side where the gamut WIDENS away from the anchor (the hue's cusp
+// side), the floor holds flat at chromaFloor% of floorRef instead of following maxc up. So the floor
+// never rises moving away from the anchor on either side: it is non-increasing outward, and so is the
+// damped value (the envelope is 1 at the anchor and falls with |sd|), and the max of two outward-non-
+// increasing curves has no interior local minimum. The old gamut-relative floor, chromaFloor%*maxc at
+// every stop, followed maxc DOWN toward a dark (or light) anchor while the damped value rose toward it,
+// and the two met in a valley one or two stops from the anchor: the 450 (and 400/550) dips #701 retires.
+// Defaults to maxc, so a caller that passes none (the stop-500 seeds, where maxc IS floorRef) is unchanged.
+function evenChroma(maxc, intended, env, chromaFloor, floorRef = maxc) {
   const damped = Math.min(intended * env, maxc);
-  const floorC = Math.min(((chromaFloor ?? 0) / 100) * maxc, intended);
+  const floorC = Math.min(((chromaFloor ?? 0) / 100) * Math.min(maxc, floorRef), intended);
   return Math.min(maxc, Math.max(damped, floorC));
 }
 
@@ -783,6 +794,13 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
   const anchorRelFrac = maxc500 > 0 ? Math.min(1, anchor.cam.chroma / maxc500) : 0;
   const pk = peakC(seedHue).c; // the SEED hue's max chroma in sRGB - same basis paletteStops's own `target` uses
   const groupTarget = (palette.chroma / 100) * pk;
+  // evenChroma's floorRef: the gamut ceiling at the anchor's own tone and hue, for an in-window anchor.
+  // A clamped anchor (L* outside RAMP_L_MIN..RAMP_L_MAX, near white or near black) keeps the plain
+  // gamut-relative floor (floorRef Infinity): its pivot sits at the window edge, where the gamut is
+  // nearly degenerate, so capping the floor there would drain the opposite side of the ramp toward grey
+  // (measured: #FFFFFF, hue 250, chroma 50, stop 700 fell from CAM16 C 14.45 to 4.72, the dead zone the
+  // floor exists to lift). Those ramps render exactly as before #701 U2.
+  const floorRef = clamped ? Infinity : maxc500;
   const lift = palette.lift ?? 0;
   const oklchSpace = controls.hueSpace === "oklch";
   const built = stops.map((stop) => {
@@ -805,7 +823,7 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
       const anchorIntendedH = controls.relChroma ? anchorRelFrac * mc : anchor.cam.chroma;
       const groupIntendedH = controls.relChroma ? (palette.chroma / 100) * mc : groupTarget;
       const intendedH = anchorChromaBasis(stop, 500, lift, anchorIntendedH, groupIntendedH);
-      return evenChroma(mc, intendedH, env, controls.chromaFloor);
+      return evenChroma(mc, intendedH, env, controls.chromaFloor, floorRef);
     };
     let resolvedHue = seedHue;
     if (oklchSpace) {
@@ -932,7 +950,7 @@ export function paletteStops(palette, controls, stops) {
     // NEVER past the anchor's own envelope of 1 (a muted palette stays muted, a neutral stays neutral,
     // saturated stops already clamp at/near maxc so the floor never binds). Shared with the stop-500 hue
     // anchor so they can't drift.
-    let chroma = evenChroma(maxc, intended, envelopeAt.get(stop), controls.chromaFloor);
+    let chroma = evenChroma(maxc, intended, envelopeAt.get(stop), controls.chromaFloor, maxc500);
     // Generated palettes (dampAmp 0) never emit more chroma than the anchor itself (#681 U3 pass 3, the
     // C6 "0 above 100%" clause). At stop === ANCHOR_STOP this is an exact no-op (same formula, same
     // inputs, chroma === anchorChroma already). Authored dampAmp>0 overrides (Adia, C6's named carve-out)

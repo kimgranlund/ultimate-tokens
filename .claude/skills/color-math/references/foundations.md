@@ -84,7 +84,8 @@ per stop:
   m        = chromaEnvelope(stop, 500, lift, controls)   # the ONE shared multiplier (#681 U3, below)
   intended = relChroma ? (chroma/100)·maxc : target   # per-stop ceiling basis vs base-peak basis
   damped   = min(intended·m, maxc)
-  floorC   = min((chromaFloor/100)·maxc, intended)    # NEVER above intended → muted stays muted, neutral stays neutral
+  floorC   = min((chromaFloor/100)·min(maxc, maxc500), intended)  # NEVER above intended → muted stays muted, neutral stays neutral
+                                                  # maxc500 = the ceiling AT the anchor stop (#701): the floor never rises moving outward
   chroma   = min(maxc, max(damped, floorC))
   rgb      = hctToRgb(hue, chroma, tone)
 ```
@@ -127,7 +128,13 @@ chromaEnvelope(stop, anchorStop, lift, controls):        # src/engine/tonal.js, 
 - **`chromaFloor`** (default 40): lifts the damping-starved light/dark ends of a LOW-chroma ramp back toward
   `intended` (kills the near-white "dead zone") but is capped at `intended` — so it never over-saturates a
   muted palette and never tints a true neutral (`intended≈0` → floorC 0). Saturated ramps already clamp at
-  `maxc`, so the floor never binds. (The `chroma-floor` gate proves all four.)
+  `maxc`, so the floor never binds. (The `chroma-floor` gate proves all four.) Its gamut reference is
+  `min(maxc, maxc500)` (#701 U2): near white and black `maxc` is the smaller, so the floor stays gamut-relative
+  there; on the side where the gamut widens away from the anchor it holds flat at `maxc500`. The old
+  `chromaFloor%·maxc` followed `maxc` down toward a dark or light anchor while the damped value rose toward it,
+  and the two met in a valley beside the anchor (the retired 90-name even dip baseline). The floor and the
+  damped value are now both non-increasing outward, so no off-anchor dip can form; `test/engine/tonal.mjs`
+  (`dip-gate-even`, rendered path) and `npm run gate:even-dips` (gate path) gate it at 0 with no list.
 
 ### 6. The OKHSL-path pipeline (`okhslStops`, perceptual/peak)
 
