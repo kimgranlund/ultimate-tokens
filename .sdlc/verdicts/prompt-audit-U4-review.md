@@ -25,7 +25,7 @@ skip line and exits 0; `node test/mcp/describe-eval.mjs` prints its PASS line an
 All three match Expected.
 
 **U4-3**: ran the plan's exact fetch-stub probe against the worktree head, got `1`
-(`RESEARCH_TIER_NOTE` appears once in the assembled `system` string — the rubric embeds
+(`RESEARCH_TIER_NOTE` appears once in the assembled `system` string, the rubric embeds
 it, the runner no longer appends `briefing.research` a second time). Ran the same probe
 against a fresh `git worktree add --detach` at `8f5c6dc0` (the unit's own base, a
 same-repo clone rather than the handoff's `git clone --shared`, functionally identical),
@@ -43,7 +43,7 @@ got `2`. Matches both the Expected row and the plan's stated negative control.
   for this payload shape.
 - System prompt: `${briefing.rubric}\n\n${briefing.research}` (double-sent, `E2`/`E3`'s
   target) is replaced with `${briefing.rubric}\n\nNo web search is available in this
-  session; work only from the description given.` — matches the plan's stated intent for
+  session; work only from the description given.`, matches the plan's stated intent for
   E3 (rubric embeds `RESEARCH_TIER_NOTE` once already at §10; the added sentence heads off
   the model reaching for a host tool the note references but this eval never provides).
   The comment above `interpretOne` is retargeted off the retracted "guaranteed
@@ -62,7 +62,7 @@ changed, no others touched).
   empty in the unit worktree, and confirmed clean again after this review's own run).
 - `node test/repo/branding.mjs`: clean (785 files scanned).
 - Em dash: searched the diff's added lines for U+2014 directly (not just the gate's own
-  report) — none found. No em dash added by this unit.
+  report), none found. No em dash added by this unit.
 
 ## Findings
 
@@ -71,7 +71,7 @@ None blocking.
 - Low: the handoff's own "P6" label (`## Gates`, the paragraph checking `#375`/`#377`
   survive untouched in the mcp file) is not the plan's actual P6 criterion, which scopes
   to `.claude/agents .claude/skills plugin/ultimate-tokens docs/reference/SKILL.md
-  .claude/CLAUDE.md` only — a file set U4 never touches, so the plan's P6 doesn't apply to
+  .claude/CLAUDE.md` only, a file set U4 never touches, so the plan's P6 doesn't apply to
   this unit at all. The check the builder ran is a reasonable extra sanity pass (no
   history id crept into the touched file) but mislabeling it as "P6" could confuse a later
   reader cross-referencing the plan's actual criterion table. No fix needed to the code or
