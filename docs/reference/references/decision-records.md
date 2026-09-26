@@ -4,7 +4,7 @@
 > counter-intuitive, and must survive regeneration. An agent enhancing this spec or
 > regenerating the tool should treat each as a constraint with a rationale, not a bug to
 > fix. Where a decision overrides an "obvious" correctness rule, it is flagged
-> **OVERRIDE**, that is exactly the kind of thing a well-meaning agent will try to undo.
+> **OVERRIDE**: that is exactly the kind of thing a well-meaning agent will try to undo.
 
 Format: Context → Decision → Rationale → Consequences → Status.
 
