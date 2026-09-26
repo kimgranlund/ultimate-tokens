@@ -4,7 +4,7 @@ plan: rule-gates
 unit: U5
 branch: unit/rg-U5
 written: 2026-09-26
-pass: 2
+pass: 3
 ---
 
 # rule-gates U5: figures of record
@@ -114,3 +114,32 @@ resulting `STALE time test` line is the documented exception, not a defect.
 
 No question for the owner: both rulings this pass needed (`.sdlc/questions/rule-gates-U5-load.md`,
 R53) already exist and are cited above.
+
+## Pass 3: verdict 🔴 (`.sdlc/verdicts/rule-gates-U5.md`), main's merge undid one U4 hand rewrite
+
+The verifier found `docs/reference/references/decision-records.md:7`: U4's hand rewrite (`a9cec2ef`)
+read `**OVERRIDE**: t`, but Step 0's merge took main's untouched side there (main still carried the
+raw glyph, since main predates U4's sweep), and the re-sweep's `--fix` then applied the generic R2
+comma rule instead of U4's chosen colon, producing `**OVERRIDE**, t`. Restored the colon by hand.
+
+Checked every file Step 0's merge conflicted in for the same failure mode: a line where main's
+untouched side happened to sit at the same spot as one of U4's HAND rewrites (not an auto-fixed
+one), so taking main's side and re-sweeping silently downgraded a chosen rewrite to the generic
+rule. Method: `diff <(git show f06609ed:"$file") "$file" | grep '^<'` for all eleven conflicted
+files, reading every line that shows as present in U4's pre-merge state (`f06609ed`) but missing
+from the current tree. Every removed line traces to one of two expected causes, not a third: (a)
+main's own #713/#738 restructuring genuinely replaced that logic (`test/engine/anchor.mjs`,
+`curated-contrast.mjs`, `prime.mjs`, the color-math skill references, `shipping-changes/SKILL.md`,
+`00-synthesis.md`, all already named in the merge commit as taking main's side because the content
+was substantively newer, not just re-punctuated), or (b) it was the OVERRIDE line above. `.github/
+workflows/ci.yml`, `src/engine/okhsl.js` and `figma/plugin/ui.html` show no removed lines at all.
+Cross-checked against the U4 handoff's own before/after pairs that fall inside these eleven files:
+only two exist tree-wide (`test/engine/prime.mjs`'s "them, / both measured unclipped" pair, already
+verified matching at `test/engine/prime.mjs:555` in pass 1, and the OVERRIDE line above); no other
+hand-rewritten pair from U4 (the E1 to E4 enumerations, the refused-list rewrites, the five
+half-rewritten lines, the ~20 over-refusals) falls inside any of the eleven conflicted files, so
+there is nothing else in that set to check. No other reverted pair found, matching the verifier's
+own finding.
+
+`node test/repo/em-dash.mjs | tail -1` → `em-dash: clean (763 files scanned)`.
+`node test/repo/branding.mjs | tail -1` → `branding: clean (755 files scanned)`.
