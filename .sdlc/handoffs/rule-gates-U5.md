@@ -3,13 +3,13 @@ kind: handoff
 plan: rule-gates
 unit: U5
 branch: unit/rg-U5
-written: 2026-09-25
-pass: 1
+written: 2026-09-26
+pass: 3
 ---
 
-# rule-gates U5: figures of record (partial, stopped on the quiet-host clock)
+# rule-gates U5: figures of record
 
-Head sha: `e8a56d7e`. Base: `047b2951` (unit/rg-U5 cut from `plan/rule-gates`, U1 to U4 and U6
+Head sha: `72efa36a`. Base: `047b2951` (unit/rg-U5 cut from `plan/rule-gates`, U1 to U4 and U6
 merged, the gate registered in `npm test`).
 
 ## Step 0: merge and sweep
@@ -61,38 +61,54 @@ One uncounted `npm test` ran during the merge/sweep step, for correctness only (
 load was `99.82 81.49 54.67` at start): exit `0`, `✓ all 52 test files passed`, tree clean after.
 Not used for any figure below; U5-2's three runs are still owed.
 
-## Criteria
-
-| # | Result |
-|---|---|
-| U5-1 (P7) | `sh .sdlc/checks/baseline-agrees-check.sh; echo "exit $?"` → `STALE tests: baseline 50, test/run.mjs TESTS 52`; `STALE ui.html: baseline 4125.3 KB, tree 4120.9 KB`; every `time` row `ok`; `note head:` (tree moved outside `.sdlc/` since the baseline ran, expected); `ok head:` (in origin/main's history); `stale total: 2`; `exit 1`. Not green: this is the very staleness U5 exists to repair, and it cannot close without the three quiet runs |
-| U5-2 | Not run: no quiet slot in ~85 minutes of polling. `TESTS.length` confirmed `52`; the three-run Runs table, `.sdlc/baseline.md`'s `npm test` row and its three figures, and `.sdlc/adapter.md` §1's test-row range are all still owed |
-
-## Left for the next pass
-
-1. Three quiet `npm test` runs (load under 5 at start each, `.worktrees/rg-U5`, no `node_modules`),
-   Runs table with load/hot/pgrep before and after, exit, wall, last line, `git status --short`
-   count, as gate-split U6-3 reads it.
-2. `.sdlc/baseline.md`: the `npm test` row's `3/3`, the three seconds, the summary span (`✓ all 52
-   test files passed`), `ref` moved to this unit's base, a `supersedes` note on the prior row.
-3. `.sdlc/adapter.md` §1 test row: the time range only, rounded per the check script.
-4. `sh .sdlc/checks/baseline-agrees-check.sh` green, `stale total: 0`.
-5. The `ui.html` KB figure is also stale (`4125.3` vs `4120.9` at this head) and needs its own
-   correction paragraph in `baseline.md` per the U7/U10 precedent, named to whichever commit's
-   source edit moved it (likely #738's `okhslLAt` change, `src/engine/tonal.js`, inlined by
-   `gen-figma-ui`); not yet attributed here, since the three build runs that would confirm the
-   figure were not taken either.
-
-No question for the owner: the brief's own stop condition fired, this is a status report, not a
-ruling to ask for.
-
 ## Second polling window (owner R47, "window open")
 
 Resumed on the team lead's word that the window was open and load was falling. Polled load, the
 heavy-run pgrep count, and the hot-process count every 10 s for about 118 minutes (the team lead's
 2-hour cap). The heavy-run count never reached `0` for more than a few checks running (it moved
-between `0` and `9` across the window, `1` other agent's own concurrent gate runs on this host); the
+between `0` and `9` across the window, other agents' own concurrent gate runs on this host); the
 lowest single load reading was `16.39`, momentarily, immediately followed by a climb back past `40`.
 No 10-second sample cleared all three conditions (load under 5, heavy-run `0`, hot `0`) at once.
-Stopping at the cap; no code or record changed in this window, so no new commit. Same three owed
-items as above (Runs table, baseline row, adapter range), still gated on a quiet slot.
+Stopped at the cap; no code or record changed in this window, so no new commit that pass.
+
+## Third window: owner ruling R47, count runs under load
+
+The owner ruled (`.sdlc/questions/rule-gates-U5-load.md`): U5 may count three green `npm test` runs
+taken under load; the heavy-run count (not the 1-minute load average) still has to read `0`
+immediately before each run starts. That condition is far easier to clear than load under 5 on this
+host, and did clear three times, each within a few minutes of polling. All three ran in
+`.worktrees/rg-U5`, no `node_modules`, none overlapping (clock spans below don't touch):
+
+| run | start (UTC) | end (UTC) | load before | load after | hot before | hot after | exit | wall (s) | last line | git status lines |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 2026-09-26 06:17:20 | 2026-09-26 06:19:51 | 6.83 9.46 15.44 | 9.24 9.29 14.38 | 1 | 2 | 0 | 151 | `✓ all 52 test files passed` | 0 |
+| 2 | 2026-09-26 06:21:23 | 2026-09-26 06:23:09 | 6.50 8.43 13.54 | 7.13 8.05 12.79 | 0 | 2 | 0 | 106 | `✓ all 52 test files passed` | 0 |
+| 3 | 2026-09-26 07:10:20 | 2026-09-26 07:15:37 | 94.40 120.40 90.39 | 49.62 72.09 76.74 | 3 | 4 | 0 | 317 | `✓ all 52 test files passed` | 0 |
+
+Heavy-run count was `0` immediately before each run (confirmed by the same pgrep line the brief
+names, read right before `npm test` started). All three exit `0`, all three tree-clean after. Run
+3's load climbed past 90 mid-search and mid-run (other agents' own concurrent gate runs, not this
+seat's), which is the source of its much longer wall time; per R47 the wall time counts regardless.
+
+`.sdlc/baseline.md` updated: the `npm test` row's three figures (151, 106, 317 s), its `3/3`/`0`
+columns, and its summary span citing R47 and R53 and this handoff; a new superseded-note section for
+the #713 U6c-8 quiet-host figures it replaces; the `npm run build` row's `ui.html` KB figure moved
+4125.3 to 4120.9 KB (the em-dash sweep's own byte shrink, confirmed byte-identical on all three
+runs); a Correction paragraph with the full per-run table and both ruling citations; the `host:`
+frontmatter line notes the one exception. `.sdlc/adapter.md` §1's quiet-host test figure (80 to 89
+s) is left unchanged, per owner ruling R53 (`.sdlc/runtime/owner-rulings-2026-09-22.md`): the
+resulting `STALE time test` line is the documented exception, not a defect.
+
+## Criteria
+
+| # | Result |
+|---|---|
+| U5-1 (P7) | `sh .sdlc/checks/baseline-agrees-check.sh; echo "exit $?"` → `ok tests: baseline 52, test/run.mjs TESTS 52`; `ok ui.html: baseline 4120.9 KB, tree 4120.9 KB`; `STALE time test: baseline 106 to 317 s, adapter 80 to 89 s` (the documented R53 exception); every other `time` row `ok`; `note head:` (tree moved outside `.sdlc/` since the baseline ran, expected); `ok head:` (in origin/main's history); `stale total: 1`; `exit 1`. Every line but the one documented exception reads `ok`, matching the team lead's instruction exactly |
+| U5-2 | Three `npm test` runs taken under load per owner ruling R47, heavy-run count `0` before each, none overlapping; table above. `TESTS.length` confirmed `52`. `.sdlc/baseline.md`'s `npm test` row and `.sdlc/adapter.md` §1's test-row range both updated (adapter's own figure held unchanged per R53) |
+
+`node test/repo/em-dash.mjs | tail -1` → `em-dash: clean (763 files scanned)`.
+`node test/repo/branding.mjs | tail -1` → `branding: clean (755 files scanned)`.
+`git status --short | wc -l` → `0` after every commit in this pass.
+
+No question for the owner: both rulings this pass needed (R47, R53) already exist and are cited
+above.
