@@ -1,5 +1,4 @@
 # Review U8 · 🟡 FIX-FIRST
-verdict: 🟢
 
 Fresh-context reviewer, opus high under owner ruling R17 (the Fable allowance is spent). Unit
 branch `unit/pif-u8`, diff `505416d7..d8dd6bdb`, one commit, 13 files. Nothing in the worktree was
@@ -69,3 +68,5 @@ Reruns at `14d9604d` (test files copied into my scratch copy, verified identical
 `branding: clean (574 files scanned)`. Added em dashes in the delta after the backtick strip: 0; removed: 0.
 
 No new finding. The pass-1 negative controls stand: the rework changed only comments in the two test files.
+
+verdict: 🟢

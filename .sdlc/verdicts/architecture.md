@@ -1,4 +1,5 @@
 # Verdict A2 architecture · pass 6 · 🟢 18 of 18 (pass 5: 17 of 18, K17 🔴; pass 6 reruns K17)
+verdict: 🟢
 
 Graded by sdlc-verifier on 2026-09-16 against `.sdlc/architecture.md` (152 lines) at `sdlc/adopt` @ f9e20c5. Every control rerun in a throwaway git worktree of HEAD (since removed), plants reset between runs. Pass 1 gaps listed at the bottom with their disposition.
 

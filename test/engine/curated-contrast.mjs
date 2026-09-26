@@ -65,18 +65,19 @@
 //     35 documents x 3 tone modes = 2352 cells.
 //   FULL (`--full`, what `npm run gate:corpus-contrast` runs, and CI's own job): all 343 documents
 //     x 3 tone modes = 22680 cells.
-// The pick is DETERMINISTIC: volume index = FNV-1a("<category>#<SAMPLE_SEED>") % volumeCount, so the
-// same volume is chosen on every run and on every machine, and the sample is NOT "volume I
-// everywhere" — each category canaries a different part of its gallery. Bumping SAMPLE_SEED rotates
-// the whole sample deliberately. The sampled tier is a canary, not the gate of record; the full sweep
-// in CI is what actually covers the corpus.
+// The pick is DETERMINISTIC and lives in one shared place now: lib/corpus-sample.mjs's `pickVolume`,
+// sorting each category's volume list before hashing so the pick does not move with load order
+// (#686, #713 U1: the un-sorted picker this file used to carry picked a different volume in 7 of 7
+// gallery categories once a category's `PRESETS` array was reversed). Bumping SAMPLE_SEED there
+// rotates the whole sample deliberately. The sampled tier is a canary, not the gate of record; the
+// full sweep in CI is what actually covers the corpus.
 import { derivedAll, isDataPalette } from "../../src/engine/exports.js";
 import { contrastRatio } from "../../src/ui/model.mjs";
 import { hydrate, DOMAINS } from "../../src/ui/persist.js";
 import { gateReport } from "../gate-report.mjs";
+import { pickVolume, SAMPLE_SEED } from "./lib/corpus-sample.mjs";
 
 const FULL = process.argv.includes("--full");
-const SAMPLE_SEED = 0;                 // bump to rotate every category's sampled volume
 const fails = [];
 const FAIL = (g, m) => { fails.push(`${g}: ${m}`); };
 const AA = 4.5;
@@ -87,8 +88,6 @@ const CATS = ["architecture", "brands", "cuisine", "film", "literature", "music"
 const MODES = ["perceptual", "peak", "even"];
 const IDENTITY = "brands";             // always measured in full, in both SCOPES (sampled and full)
 const docKey = (name) => String(name).split(" · ")[0];
-const fnv1a = (s) => { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h; };
-const pickVolume = (cat, vols) => vols[fnv1a(`${cat}#${SAMPLE_SEED}`) % vols.length];
 
 // ── brands.json cells BELOW the floor, named one per line with the measured ratio. Empty since #662.
 //    Key is `<document>|<palette>|<scheme>|<toneMode>`, so a miss is pinned to the one tone mode it
@@ -126,9 +125,8 @@ for (const cat of CATS) {
   if (!Array.isArray(PRESETS) || !PRESETS.length) { FAIL("corpus", `category "${cat}" exposed no PRESETS — gen:categories did not run, or the mirror moved`); continue; }
   let docs = PRESETS;
   if (!FULL && cat !== IDENTITY) {
-    const vols = [...new Set(PRESETS.map((p) => p.vol))];
-    if (!vols.length || vols.some((v) => v === undefined)) { FAIL("sample", `category "${cat}": a preset carries no \`vol\`, so the volume sample cannot be taken — run --full or fix the mirror`); continue; }
-    const vol = pickVolume(cat, vols);
+    const vol = pickVolume(cat, PRESETS);
+    if (vol === undefined) { FAIL("sample", `category "${cat}": a preset carries no \`vol\`, so the volume sample cannot be taken — run --full or fix the mirror`); continue; }
     sampled[cat] = vol;
     docs = PRESETS.filter((p) => p.vol === vol);
     if (!docs.length) FAIL("sample", `category "${cat}": volume ${vol} selected but matched no preset`);

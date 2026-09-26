@@ -29,9 +29,15 @@ the smoke leg is Chrome-only. Landing under sdlc composes this procedure with `a
 
 `npm test` regenerates the committed artifacts (`figma/plugin/ui.html`, `src/ui/figma-plugin-assets.js`,
 `src/ui/mcp-assets.js`) as its first act — so a green `npm test` also leaves them in sync with source.
-CI (`.github/workflows/ci.yml`) runs `npm ci` → `npm run build` → `npm test` → `npm run smoke`
-(real headless Chrome over CDP). `npm run smoke` itself runs `npm run build` before booting Chrome
-(#564 — a standalone `npm run smoke` must never trust a stale `dist/`), so CI's own preceding build
+CI (`.github/workflows/ci.yml`) runs four jobs on every PR: `build-test` (`npm ci` → `npm run build` →
+`npm test` → `npm run smoke`, real headless Chrome over CDP), `panda-smoke` (the Panda/Radix codegen
+check), `corpus-contrast` (the full curated-corpus contrast sweep) and `sweeps` (a matrix, one runner
+per full-corpus gate script, `gate:corpus-tonal`/`gate:corpus-anchor`/`gate:sweep-prime`/
+`gate:corpus-reset`/`gate:corpus-contrast`, `fail-fast: false`). All four must report `success`; a red
+`sweeps` leg is a red run, same as a red `build-test`. `npm run gate:sweeps` is the local command that
+runs the same five full-corpus gates in sequence, for a builder or verifier who wants to check them
+without waiting on CI. `npm run smoke` itself runs `npm run build` before booting Chrome (#564, a
+standalone `npm run smoke` must never trust a stale `dist/`), so `build-test`'s own preceding build
 step is a harmless redundant rebuild, not a dependency smoke relies on. You cannot reproduce smoke's
 value locally without Chrome, so let CI be the smoke gate and download the `smoke-screenshots`
 artifact if a UI change is involved.
@@ -51,8 +57,10 @@ artifact if a UI change is involved.
 5. PR: `gh pr create --fill` (or `--title`/`--body`); the PR title becomes the squash-commit subject —
    write it as `feat(scope): …` / `fix(scope): …` with the changelog-worthy summary (match `git log`).
    If the body has backticks or `$(…)`, pass it via `--body-file` (see quirk), not inline `--body`.
-6. Watch CI (~50–90s): poll until the run registers, then watch it — a bare `gh pr checks <n> --watch`
-   false-greens (see quirk). Three legs must pass: build · test · smoke.
+6. Watch CI (~265 s wall on a PR, measured on run 35974499577: `build-test` about 260 s is the wall,
+   the `sweeps` legs run 70 to 190 s in parallel): poll until the run registers, then
+   watch it (a bare `gh pr checks <n> --watch` false-greens, see quirk). Every job must pass:
+   `build-test` (build, test, smoke), `panda-smoke`, `corpus-contrast` and `sweeps`.
 7. Squash-merge:
    - **Gate on the run's conclusion first**: `[ "$(gh run view <run> --json conclusion --jq .conclusion)" = success ] && gh pr merge <n> --squash`.
    - The repo has **no branch protection**: `gh pr merge` merges a RED PR without complaint, and
@@ -113,7 +121,7 @@ changed files → `npm test` + commit + push from the worktree → `git worktree
 
 ## Validate (the ship is "done" only when)
 
-`npm test` green locally → push → CI green on all three legs (per the quirk above) →
+`npm test` green locally → push → CI green on every job (per the quirk above) →
 `gh pr view <n> --json state,mergedAt` shows `MERGED` → local `main`
 fast-forwarded to the squash commit (`git log --oneline -1`) → feature branch deleted locally and on
 the remote. Smoke is Chrome-only — green CI is not Safari proof; reason about WebKit from spec (see

@@ -1,4 +1,5 @@
 # Verdict adopt-hygiene U5 · 🟢
+verdict: 🟢
 
 Graded by sdlc-verifier on 2026-09-17 (evidence run: adopt-hygiene-U5-verifier-l1-p1, grade l1; scope control rerun by me). Branch `unit/hygiene-U5` @ ed565dd, worktree `.worktrees/hygiene-U5`. Criterion 3 and branding ran on a scratch detached worktree at 9fbb601 (U4 merged) with ed565dd merged in (removed after). The handoff and `.sdlc/verdicts/adopt-hygiene-U5-review.md` were not used as evidence.
 Tally: 5 rows (3 criteria + scope + branding). 🟢 5 · 🟡 0 · 🔴 0. One merge-time concern below; it does not block the unit.

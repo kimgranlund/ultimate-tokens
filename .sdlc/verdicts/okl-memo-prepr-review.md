@@ -1,0 +1,26 @@
+PASS
+
+Pre-land review pass 2, plan okl-memo (#738), draft PR #749, target `plan/okl-memo` at `9d5f6dc3`. Reviewer: pre-land reviewer L4, 2026-09-24. Delta since pass 1 (`59a55d91`): `1b7aab04` (plan revision 7, P4 admits `.sdlc/baseline.md`) and `9d5f6dc3` (baseline figure 4125.3, wording at `00-synthesis.md:89` and `test/engine/tonal.mjs:1985`). `git diff --stat 59a55d91 9d5f6dc3` touches four files: `.sdlc/baseline.md`, `.sdlc/plans/okl-memo.md`, `00-synthesis.md`, `test/engine/tonal.mjs`; no source, bundle or asset moved (`git diff --stat 59a55d91 9d5f6dc3 -- figma/plugin/ui.html src/ | wc -l` is `0`, `ui.html` still 4260330 bytes). `origin/main` (`62e48e91`) is an ancestor (`git merge-base --is-ancestor` true), B is `62e48e91`. Every command ran in a throwaway `git clone -q --shared` at `9d5f6dc3` under the job scratchpad, foreground, nothing committed; the root checkout and the worktree were not touched.
+
+Pass 1's blocker is closed. Pass 1's rows not re-listed here (fold-in comment-only, dead code, in-scope stale claims, private docs, deps, secrets, bundle carries the source) grade the same files at the same content, which the delta did not touch.
+
+| Check | State | Evidence | Negative control |
+|---|---|---|---|
+| `.sdlc/baseline.md` ui.html figure agrees | 🟢 | `bash .sdlc/checks/baseline-agrees-check.sh`: `ok    ui.html: baseline 4125.3 KB, tree 4125.3 KB`, `stale total: 0`, exit `0`; the correction paragraph names the cause (comment fold-in inlined by `gen:figma-ui`) on the U7/U10 precedent, only the KB cell moves | main's figure put back with `sed` (`4125.3` to `4125.1` in the build row): `STALE ui.html: baseline 4125.1 KB, tree 4125.3 KB`, `stale total: 1`; reverted, `git status --short \| wc -l` `0` |
+| P4 scope wall, three commands (revision 7 filter) | 🟢 | prints `0`, `0`, `0` at B `62e48e91` | fixture `src/engine/hct.js`, `test/engine/prime.mjs`, `src/engine/tonal.js` through the first filter prints `1`; `const __x = 1;` appended to `hct.js` makes the middle command `1` (reverted) |
+| P3 branding, em dash, raw count matches the handoff | 🟢 | `branding: clean (716 files scanned)`; added lines outside backticks with U+2014: `0`; raw count excluding `.sdlc/handoffs`: `0`, and the handoff's P3 row (`.sdlc/handoffs/okl-memo-U1.md:51`) states `0`, so no quoted lines are owed | `cp decision-records.md .sdlc/verdicts/x.md`: `FAIL: 3 branding violation(s) across 717 files`, exit `1` (removed after); a one-line fixture `+x <U+2014> y` through the same perl prints `1` |
+| `test/engine/tonal.mjs` delta is comment text only | 🟢 | `git diff 59a55d91 9d5f6dc3 -- test/engine/tonal.mjs`: 8 changed lines, `0` of them outside a `//` comment | the same filter on the branch's full `tonal.mjs` diff against B is non-zero by construction (the gate's own code), so the filter distinguishes code from comment |
+| `npm test`, no `node_modules`, tree stable | 🟢 | `ls node_modules \| wc -l` `0`; `npm test` exit `0`, `✓ all 50 test files passed`; `git status --short \| wc -l` `0` after | B's `src/engine/tonal.js` restored (memo back): `node test/engine/tonal.mjs` exit `1`, one `okl-order ... 24/24 ramps shifted` line; reverted |
+| `okl-order` gate at the head | 🟢 | `node test/engine/tonal.mjs`: `okl-order: okhslLAt is a function of its argument; 0/24 ramps shifted hex by call order`, `pass  okl-order` | same control as the row above |
+| Integration with main | 🟢 | `git merge-base --is-ancestor 62e48e91 9d5f6dc3` true; the two new commits are `.sdlc/`, one docs line and comment lines | pass 1 showed the wrong base (`b747c2c8`) makes P4's first count `2`; at the right base it is `0` |
+| Brand term in added lines | 🟢 | branch diff added lines, `grep -c -i` on the retired maker term: `0` | the branding scanner's own control above reds on a copied decision record |
+| Wording consistency of the timing claim | 🟢 | `grep -rn 'well under 1us' docs test src .claude .sdlc` on the head returns nothing outside `.sdlc/verdicts` and `.sdlc/plans` history lines; `tonal.js:926`, `foundations.md:139`, `00-synthesis.md:89`, `tonal.mjs:1985` all state `0.40-0.90 us` quiet, `median 1.54` at load 67 | at `59a55d91` the same grep hit `00-synthesis.md:89` and `tonal.mjs:1985` (pass 1 finding 4) |
+
+## Findings, ranked
+
+1. 🟡 Carried from pass 1, outside the plan's scope, not created by this branch: `docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:71` still describes `_okL` at `tonal.js:922` as live; `docs/reference/references/knowledge-01-color-engine.md:131`, `:155`, `:181` and `.claude/skills/geometry-system/references/best-practices.md:78` still claim `toFixed(2)` memo keys (stale since #686). No gate reads them; a follow-up task ticket, not this PR.
+
+2. 🟢 Noted. The baseline correction paragraph says the build was reproduced "in a scratch clone (`node_modules` symlinked from the repo root)". This pass did not rebuild; the committed `ui.html` measured the way the check measures it is 4125.3, which is what the check and the landing gate read.
+
+Smoke is not owed (plan Landing section: no hand-written `src/ui/` change; the bundle is a build product, unchanged since pass 1).
+verdict: 🟢 PASS

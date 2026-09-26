@@ -10,7 +10,9 @@
 // (querySelector takes a single class only, no `id`/`textContent`, etc).
 
 import { ROLES, DEFAULT_PALETTES, CATEGORIES, CATEGORY_PRESETS, BRAND_PRESETS, CATEGORY_PRESET_PALETTES, CATEGORY_VOLUMES, CORE_RAMP_STOPS, EXTENDED_RAMP_STOPS, VOICES, TYPE_STEPS, GEOM_SIZES } from "./counts.mjs";
+import { sampleCorpus, SAMPLE_SEED } from "../engine/lib/corpus-sample.mjs";
 
+const FULL = process.argv.includes("--full");
 const fails = [];
 const ok = (cond, msg) => { if (!cond) fails.push(msg); };
 
@@ -4061,19 +4063,55 @@ flushRaf();
 // state (a cache, a second copy) diverged from the fields Reset itself writes — the ramp comparison is
 // a strictly stronger claim than the field-only check the prior pass shipped.
 {
-  const corpusPresets = [...TPm.PRESETS, ...LITm, ...FILMm, ...BRANDSm];
+  const byCategory = { travel: TPm.PRESETS, literature: LITm, film: FILMm, brands: BRANDSm };
   for (const slug of ["architecture", "cuisine", "music", "nature"]) {
     const { PRESETS } = await LS(slug);
-    corpusPresets.push(...PRESETS);
+    byCategory[slug] = PRESETS;
   }
+  const corpusDocs = FULL ? Object.values(byCategory).flat() : sampleCorpus(byCategory);
   const { defaultDocument: defaultDocumentRSTC, projectView: pvRSTC } = await import("../../src/ui/model.mjs");
   const { hydrate: hydrateRSTC } = await import("../../src/ui/persist.js");
   const dkDoc = defaultDocumentRSTC();
-  corpusPresets.push({ name: "default kit", palettes: dkDoc.palettes, ...dkDoc });
-  let corpusChecked = 0, corpusFails = 0, rampChecked = 0, rampFails = 0;
-  for (const preset of corpusPresets) {
+  const defaultKitPreset = { name: "default kit", palettes: dkDoc.palettes, ...dkDoc };
+  // RESET_STRIDE: SAMPLED keeps every fourth anchored palette of the sampled corpus (first kept),
+  // in the sorted sample's own order, and keeps the default kit whole (#713 U6c, owner ruling R35).
+  // The skip is keyed on identity with `defaultKitPreset`, not `preset.name`, because the spread
+  // `...dkDoc` after `name: "default kit"` replaces that name with `defaultDocument().name`
+  // (`"Default"`), so a name-keyed skip on `=== "default kit"` never matches the kit.
+  const RESET_STRIDE = 4;
+  const corpusAnchoredEntries = [];
+  for (const preset of corpusDocs) {
     for (const pal of preset.palettes) {
       if (typeof pal.anchor !== "string") continue;
+      corpusAnchoredEntries.push({ preset, pal });
+    }
+  }
+  const sampledCorpusEntries = FULL ? corpusAnchoredEntries : corpusAnchoredEntries.filter((_, i) => i % RESET_STRIDE === 0);
+  const defaultKitEntries = [];
+  for (const pal of defaultKitPreset.palettes) {
+    if (typeof pal.anchor !== "string") continue;
+    defaultKitEntries.push({ preset: defaultKitPreset, pal });
+  }
+  const resetEntries = [...sampledCorpusEntries, ...defaultKitEntries];
+  const resetTotalBeforeStride = corpusAnchoredEntries.length + defaultKitEntries.length;
+  // What the stride gives up, per the plan's own wording ("the builder prints how many documents
+  // contribute none and cites it"): count sampled documents with zero anchored palettes before the
+  // stride (no anchored palette in either mode) against sampled documents that had at least one
+  // before the stride but lost every one of them to the stride (a real coverage loss).
+  let docsWithNoAnchorEver = 0, docsLostToStride = 0;
+  if (!FULL) {
+    const beforeStrideByDoc = new Map();
+    for (const e of corpusAnchoredEntries) beforeStrideByDoc.set(e.preset, (beforeStrideByDoc.get(e.preset) || 0) + 1);
+    const afterStrideByDoc = new Map();
+    for (const e of sampledCorpusEntries) afterStrideByDoc.set(e.preset, (afterStrideByDoc.get(e.preset) || 0) + 1);
+    for (const doc of corpusDocs) {
+      const before = beforeStrideByDoc.get(doc) || 0;
+      if (before === 0) docsWithNoAnchorEver++;
+      else if (!afterStrideByDoc.has(doc)) docsLostToStride++;
+    }
+  }
+  let corpusChecked = 0, corpusFails = 0, rampChecked = 0, rampFails = 0;
+  for (const { preset, pal } of resetEntries) {
       const detunedHue = (pal.hue + 37) % 360;
       const detunedChroma = Math.max(0, Math.min(100, pal.chroma - 13));
       const detunedLift = -17;
@@ -4104,11 +4142,16 @@ flushRaf();
         rampFails++;
         if (rampFails <= 3) ok(false, `(rst-corpus-ramp) ${preset.name} ${pal.name}: the restored palette's rendered ramp does not deep-equal the reference ramp captured before detach/detune`);
       }
-    }
   }
-  ok(corpusChecked > 3000, `(rst-corpus-setup) exercised Reset over the FULL anchored corpus, all 8 categories plus the default kit (${corpusChecked} palettes, want > 3000)`);
+  const corpusFloor = FULL ? 3000 : 60;
+  ok(corpusChecked > corpusFloor, `(rst-corpus-setup) exercised Reset over the ${FULL ? "FULL" : "SAMPLED"} anchored corpus, all 8 categories plus the default kit (${corpusChecked} palettes, want > ${corpusFloor})`);
   ok(corpusFails === 0, `(rst-corpus) ${corpusFails} of ${corpusChecked} anchored palettes failed the exact-snapshot field round trip`);
   ok(rampFails === 0, `(rst-corpus-ramp) ${rampFails} of ${rampChecked} anchored palettes failed the full projectView ramp round trip`);
+  if (!FULL) console.log(`  (rst-corpus SAMPLED: stride ${RESET_STRIDE}, ${corpusChecked} anchored palettes checked of ${resetTotalBeforeStride}, default kit whole)`);
+  if (!FULL) console.log(`  (rst-corpus SAMPLED: ${docsWithNoAnchorEver} of ${corpusDocs.length} sampled documents contribute no anchored palette in either mode, ${docsLostToStride} of the rest lost every anchored palette to the stride)`);
+  const docCount = corpusDocs.length;
+  const paletteCount = corpusDocs.reduce((n, p) => n + p.palettes.length, 0);
+  console.log(`  (${FULL ? `FULL: ${docCount} curated documents, ${paletteCount} palettes` : `SAMPLED seed ${SAMPLE_SEED}: ${docCount} curated documents, ${paletteCount} palettes`})`);
 }
 
 // ── report ──────────────────────────────────────────────────────────────────────────
