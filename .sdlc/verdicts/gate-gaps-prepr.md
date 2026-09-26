@@ -2,7 +2,7 @@
 kind: verdict
 plan: gate-gaps
 seat: verifier
-pass: 1
+pass: 2
 pr: 756
 ticket: "#715"
 written: 2026-09-26
@@ -77,3 +77,27 @@ the next pass reruns P2, P3, P4 and the checks at the new head, and the code row
 
 verdict: 🔴
 sha: 39142e49574a8fcb892cee7f417978f5abe21fff
+
+## Pass 2 · 2026-09-26 · `ef8afdd9` (revision 8)
+
+`39142e49` to `ef8afdd9` is one commit that changes only `.sdlc/plans/gate-gaps.md` (`3 insertions(+), 2 deletions(-)`),
+so pass 1's code rows carry on custody. In a clone at `ef8afdd9` I reran every row a plan edit can move. The
+reviewer's round 2 is appended to `/tmp/v13/gg-prepr-review.md` and still ends `verdict: 🟡 FIX-FIRST`.
+
+| id | criterion | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| P2 | the baseline agrees by line, as the plan now writes it | 🔴 | mine: the row's two greps print `1` and `1` (the one line is `STALE time test: baseline 151 to 1058 s, adapter 80 to 89 s`), but the row's Expected still opens ```0`, then `0```, and U2-7 still reads ``P2's two figures `0`, `0```. Revision 8's prose admits the R53 line, and its figures do not; a later reader of this row would call the landed head red | the baseline's test figure planted `50`: `stale total: 2` and a `STALE tests` line, so the greps do move |
+| F2 | U2-2's figures | 🟢 | re-pinned to `2.1736`, `4.3631`, `0.4290`, which pass 1's verification leg read at the head; the reviewer checked the cause sentence against the `src/` commits since `26940c07` | pass 1 read `2.60` as stale |
+| RL | the pre-land review leg | 🔴 | round 2: `verdict: 🟡 FIX-FIRST`, on the same two tokens as P2 | a PASS round would end `verdict: 🟢 PASS` |
+| C | the other checks | 🟢 | `verdicts 149 graded 149 bad 0`, `stale total: 0`, `range mismatches: 0`; `branding: clean (739 files scanned)`; added em dashes outside backticks `0` | pass 1's plants |
+| M | clean merge into today's main | 🟢 | `git merge-tree --write-tree origin/main ef8afdd9` exit `0` at main `1c61ecbc`; board lines removed `0` | the worker's conflicting `TESTS` plant: exit `1` |
+| CI | CI at the full sha | 🟢 | run `36239931577` at `ef8afdd9`: `success`, every job `success` but `deploy` `skipped` | run `35785765215` failed at `Run npm run smoke` |
+
+K (#755, DD9), EN (the four en dashes) and PR1 (the title) stand as in pass 1. The review also notes the
+revision 8 row has a third cell in a two-column table, which is cosmetic.
+
+What unblocks: P2's Expected and U2-7's figures set to what the greps print under R53 (`1`, then `1`,
+that one line only). Then the next pass rereads P2 and the review round.
+
+verdict: 🔴
+sha: ef8afdd90be9a2956c122026177ce6dc6f53474f
