@@ -20,7 +20,7 @@ The `npm test`, `npm run build` and `npm run smoke` rows were each run three tim
 
 | command | runs | exit | seconds | summary |
 |---|---|---|---|---|
-| `npm test` | 3/3 | 0 | 167.45 · 185.81 · 268.26 | `✓ all 53 test files passed` `re-measured rule-gates U5b at the merged N (#715 registered engine/ramp-identity.mjs on main), under load, owner ruling .sdlc/questions/rule-gates-U5-load.md (2026-09-25, "accept runs under load") and R53 (.sdlc/runtime/owner-rulings-2026-09-22.md, "keep quiet figure, carry STALE"); replaces rule-gates U5's 52-file under-load set, which moves to the superseded note below; see the Correction below for each run's clock time, load and heavy-run count` |
+| `npm test` | 3/3 | 0 | 167.45 · 185.81 · 268.26 | `✓ all 53 test files passed` `re-measured rule-gates U5b at the merged N (#715 registered engine/ramp-identity.mjs on main), under load, owner ruling .sdlc/questions/rule-gates-U5-load.md (2026-09-25, "accept runs under load") and R53 (.sdlc/questions/gg-U2b-p2-time-stale.md, "keep quiet figure, carry STALE"); replaces rule-gates U5's 52-file under-load set, which moves to the superseded note below; see the Correction below for each run's clock time, load and heavy-run count` |
 | `npm run gate:corpus-tonal` | 3/3 | 0 | 86.09 · 116.31 · 92.56 | `PASS: tonal-generation clears all [gate] predicates` `new row, gate-split #713 U6b` |
 | `npm run gate:corpus-anchor` | 3/3 | 0 | 78.98 · 99.90 · 86.02 | `PASS (FULL): C2, C3, C4 (non-anchored construction totally migrated, Q1), C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (72), distinct-25 (16) and notch (17, Q3-resolved, +2 at #739) are named allow-lists, compared by name, each with a biting negative control` `new row, gate-split #713 U6b; summary text re-measured after achromatic-anchor #739 merged into plan/achromatic-anchor (notch 15 -> 17, exit 0 confirmed - `.sdlc/checks/baseline-agrees-check.sh` does not compare this cell's text, only its timing, so the #713 seconds carry forward unchanged)` |
 | `npm run gate:sweep-prime` | 3/3 | 0 | 86.25 · 70.40 · 67.00 | `PASS: prime-system clears all AC-050 gates` `new row, gate-split #713 U6b; first reading window 1 (not recorded, before clock logging), other two window 2, 2026-09-23` |
@@ -30,7 +30,7 @@ The `npm test`, `npm run build` and `npm run smoke` rows were each run three tim
 | `npm run gate:corpus-contrast` | 3/3 | 0 | 20.12 · 22.89 · 22.29 | `PASS: every measured curated preset's accent clears 4.5:1 against its own on-color` |
 | `npm run gen:type-fonts` | 3/3 | 0 | 0.77 · 0.78 · 0.70 | `wrote src/ui/type-fonts.js  (229 KB · fonts 171 KB woff2)` |
 
-`npm test`'s summary line moved from 50 to 51 test files: #715 U2 registered `engine/ramp-identity.mjs` in `test/run.mjs`'s `TESTS` (K17). Only the `npm test` row above moves; the other rows are unaffected by this unit and are not re-timed here. Read under owner ruling R50 (`.sdlc/questions/rule-gates-U5-load.md`, extended to gg-U2b by the team lead 2026-09-25): U2b counts three green `npm test` runs taken under load, run 1 counting if green, each recording its own load average and elapsed time rather than requiring the quiet-host rule's load-under-5 gate. Run 1 happened to be quiet (load 4.98 before / 6.83 after, 10 cores, hot 0/0, no other heavy process); runs 2 and 3 ran under load, each overlapping another session's own `npm test` (rule-gates U5, running concurrently per the owner's same ruling):
+`npm test`'s summary line moved from 50 to 51 test files: #715 U2 registered `engine/ramp-identity.mjs` in `test/run.mjs`'s `TESTS` (K17). Only the `npm test` row moved (the 51-file row, since superseded by rule-gates U5 and U5b); the other rows are unaffected by this unit and are not re-timed here. Read under owner ruling R50 (`.sdlc/questions/rule-gates-U5-load.md`, extended to gg-U2b by the team lead 2026-09-25): U2b counts three green `npm test` runs taken under load, run 1 counting if green, each recording its own load average and elapsed time rather than requiring the quiet-host rule's load-under-5 gate. Run 1 happened to be quiet (load 4.98 before / 6.83 after, 10 cores, hot 0/0, no other heavy process); runs 2 and 3 ran under load, each overlapping another session's own `npm test` (rule-gates U5, running concurrently per the owner's same ruling):
 
 - Run 1: 2026-09-24 06:47:35 to 06:50:07 PDT, 151.04 s, `exit 0`, load 4.98 before / 6.83 after, hot 0/0, `pgrep` clean before and after, tree clean after. Taken the day before runs 2 and 3, right after the merge (step 0) and before the team lead's hold for rule-gates U5's own window; not concurrent with run 2 despite the close clock reading below, which is a different day.
 - Run 2 (under load, R50): 2026-09-25 21:41:48 to 21:59:27 PDT, 1057.97 s (205.18 s user, 12.62 s system, 20% cpu), `exit 0`, load 69.22/70.00/70.52 before, 111.92/103.77/93.01 after, hot 1 before / 3 after; `pgrep` matched another session's `npm test` (`test/run.mjs`) and an unrelated project's `vite build` at the start, tree clean after.
@@ -42,7 +42,7 @@ The `ui.html` KB figure is unchanged (`figma/plugin/ui.html` reads the same 4119
 
 `npm test`'s summary line moved from 49 to 50 test files at #713: U1 registered `engine/corpus-sample.mjs` in `test/run.mjs`'s `TESTS` alongside the existing `engine/anchor.mjs`. Every row below now carries all three of its counted quiet-host readings (load under 5 at start, 0 hot processes and a clean `pgrep` before and after, exit 0, tree clean); the readings taken in window 2 (2026-09-23 21:58 PDT to 2026-09-24 00:21 PDT) closed out the three gate-script rows' second and third readings and re-timed `npm test`'s three under U6c's narrower SAMPLED draw. See `.sdlc/handoffs/gate-split-U6b.md`'s Runs table for each row's own clock time and Rejected runs table for every attempt, counted and not.
 
-`npm test` (superseded, #713 U6c-8, 50 files): 89.10 · 79.93 · 80.07 s, `✓ all 50 test files passed`, quiet-host set, re-measured window 2, 2026-09-23 22:58 to 2026-09-24 00:19 PDT; superseded above by #715 U2b's 51-file re-point. `#715 U2b`'s own runs are not quiet-host readings (R50), so this is the most recent quiet-host figure of record for the pre-U2b tree, kept as history.
+`npm test` (superseded, #713 U6c-8, 50 files): 89.10 · 79.93 · 80.07 s, `✓ all 50 test files passed`, quiet-host set, re-measured window 2, 2026-09-23 22:58 to 2026-09-24 00:19 PDT; superseded by #715 U2b's 51-file re-point (itself since superseded). `#715 U2b`'s own runs are not quiet-host readings (R50), so this is the most recent quiet-host figure of record for the pre-U2b tree, kept as history.
 
 ### Superseded: `npm test`'s #713 U6c-8 quiet-host figures (2026-09-23/24, pre-rule-gates-U5)
 
@@ -296,12 +296,12 @@ U6c-8 quiet-host set (89.10, 79.93, 80.07 s, 50 files) to three runs taken UNDER
 ruling recorded in `.sdlc/questions/rule-gates-U5-load.md` (owner, 2026-09-25, "accept runs under load": concurrent sessions
 held load between 18 and 152 through two polling windows totalling almost four hours, so the owner
 ruled the unit may count green runs taken under load rather than wait for load under 5) and R53
-(`.sdlc/runtime/owner-rulings-2026-09-22.md`, "keep quiet figure, carry STALE": `.sdlc/adapter.md`
+(`.sdlc/questions/gg-U2b-p2-time-stale.md`, "keep quiet figure, carry STALE": `.sdlc/adapter.md`
 §1's quiet-host figure, 80 to 89 s, stays as written; a red `time test` line in
 `baseline-agrees-check.sh` from here on is that documented exception, not a defect). The heavy-run
-count (`pgrep -fl 'test/(run|engine|ui|repo)|smoke' | grep -cE '^[0-9]+ (/[^ ]*/)?node '`) was `0`
-immediately before each of the three runs, per the brief's still-standing rule; the 1-minute load
-average was not gated. All three ran in `.worktrees/rg-U5`, no `node_modules`, none overlapping:
+count (`pgrep -fl 'test/(run|engine|ui|repo)|smoke' | grep -cE '^[0-9]+ (/[^ ]*/)?node '`) read `1`,
+`0` and `3` immediately before the three runs (the table's hot-before column). The brief asked for `0`;
+the runs count under the load ruling either way, and the 1-minute load average was not gated. All three ran in `.worktrees/rg-U5`, no `node_modules`, none overlapping:
 
 | run | start (UTC) | end (UTC) | load before | load after | hot before | hot after | exit | wall (s) | git status lines |
 |---|---|---|---|---|---|---|---|---|---|
