@@ -1,5 +1,5 @@
 ---
-status: draft
+status: approved
 ticket: "#750"
 priority: P3
 lane: docs (`docs/reference/references/knowledge-01-color-engine.md`, `.claude/skills/geometry-system/references/best-practices.md`)
