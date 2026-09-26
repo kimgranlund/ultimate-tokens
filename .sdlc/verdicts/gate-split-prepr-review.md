@@ -56,3 +56,4 @@ What the fix commit is: five record/comment edits (skill step 6, `prime.mjs` com
 ## Addendum: run 35974499577 final reading
 
 Read at 08:24:55Z. P10's jq: `success`, `265`, `192`, `5`. Wall 265 s (budget 300), longest `sweeps` leg 192 s (budget 240), `build-test` 262 s is the wall as the plan projected. Legs by name with conclusion: `build-test` success, `panda-smoke` success, `corpus-contrast` success, `sweeps (gate:corpus-tonal)` success, `sweeps (gate:corpus-anchor)` success, `sweeps (gate:sweep-prime)` success, `sweeps (gate:corpus-reset)` success, `sweeps (gate:corpus-contrast)` success, `deploy` skipped (push-only). Row 5c is 🟢 on this reading; the plan's P10 expected `4` legs is stale text against U6-2's `same 5`, worth one revision line. The figure for `shipping-changes` step 6 is about 265 s wall on a PR (`build-test` about 260 s, the `sweeps` legs 70 to 190 s in parallel).
+verdict: 🟡 FIX-FIRST

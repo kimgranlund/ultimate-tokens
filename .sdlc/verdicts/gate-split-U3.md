@@ -47,3 +47,4 @@ P2 (the ceiling of record) and P10 (CI wall budget) are pre-land-only rows that 
 | Rows graded | 🟢 | 🟡 (by design, not blocking) | 🔴 |
 |---|---|---|---|
 | 11 (U3-1 to U3-5, P1, P3, P5, P7, P8, P9) | 9 | 2 (U3-5, P7) | 0 |
+verdict: 🟢

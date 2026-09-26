@@ -868,28 +868,9 @@ function resolveRoleHex(ref, byStop) {
   return hit.hex + a;
 }
 
-// ANCHOR_HEX / anchorRgbOf / rgbToOklchLocal: the anchored branch of deriveKeyColor below.
 // The regex mirrors src/engine/prime.mjs's own anchor-detection constant exactly, so this file
 // classifies a palette anchored/non-anchored identically to the engine that renders it.
-// rgbToOklchLocal is a private sRGB(0..255) -> OKLCH(L,C,H) helper on Bjorn Ottosson's matrices,
-// the third identically-scoped private copy in this codebase (src/engine/prime.mjs and
-// src/engine/exports.js each carry their own, for the same reason): okhsl.js exports the OKLCH HUE
-// alone (rgbToOklchHue) and hct.js only goes the other way, so there is no shared full-triple
-// converter to import, and model.mjs may not reach into either module's internals.
 const ANCHOR_HEX = /^#[0-9A-Fa-f]{6}$/;
-const anchorRgbOf = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-function rgbToOklchLocal([r, g, b]) {
-  const inv = (a) => (a <= 0.04045 ? a / 12.92 : Math.pow((a + 0.055) / 1.055, 2.4));
-  const [lr, lg, lb] = [r, g, b].map((v) => inv(v / 255));
-  const l = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb);
-  const m = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb);
-  const s = Math.cbrt(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb);
-  const L = 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s;
-  const A = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s;
-  const B = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
-  const H = ((((Math.atan2(B, A) * 180) / Math.PI) % 360) + 360) % 360;
-  return [L, Math.hypot(A, B), H]; // the [L, C, H] triple shape hctToOklch returns, not an object
-}
 
 // deriveKeyColor(p, hueSpace), a palette's VIVID identity color: the cusp (peak-chroma) hue at the
 // palette's own hue+chroma, independent of toneMode/the ramp (a ramp stop reads muted; this is what a
@@ -910,7 +891,7 @@ function rgbToOklchLocal([r, g, b]) {
 function deriveKeyColor(p, hueSpace) {
   if (typeof p?.anchor === "string" && ANCHOR_HEX.test(p.anchor)) {
     const keyHex = p.anchor.toUpperCase();
-    return { keyOklch: rgbToOklchLocal(anchorRgbOf(keyHex)), keyHex };
+    return { keyOklch: hexToOklch(keyHex), keyHex };
   }
   const baseHue = effHue(p.hue, hueSpace, (p.chroma ?? 0) / 100);
   const pk = peakC(baseHue);

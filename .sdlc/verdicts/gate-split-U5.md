@@ -31,3 +31,4 @@ Notes for the Orchestrator:
 - Row 13 moves to P10: the pre-land verdict must name the `sweeps (gate:corpus-reset)` leg with conclusion `success`.
 
 Scratch worktree `vU5` removed by exact path. The control clones under `scratchpad/gsv5/` are still there: the permission system denied `rm -rf` on that path. They are plain clones, not registered worktrees.
+verdict: 🟡

@@ -65,3 +65,4 @@ Every negative-control clone was checked for two things before its result was tr
 ## Overall
 
 🟢. No graded row is red. The two 🟡 rows (U4-3, U4-4) are not-graded-by-design per the plan itself (U4-3 is explicitly "recorded, not graded"; U4-4's ceiling only grades on a quiet host, and this host never read a 1-minute load under 5 during this pass). All eleven graded rows (P1, U4-1, U4-2, P3 main/a/b/c, P5-4, P8, P9) reproduced independently with a working negative control each, and every negative-control clone's provenance was confirmed against the unit's own final head (`c8823976`) before its result was trusted.
+verdict: 🟢
