@@ -1,6 +1,6 @@
 ---
 status: approved
-ticket: to mint at activation (Q0: `adapter.py create --title prompt-audit --label kind:chore --label lane:prompts --size M`, body shortened to the units list)
+ticket: "#758" (minted at activation 2026-09-26, Q0; the repo has no lane:prompts label, so kind:chore and size M only)
 priority: P2
 lane: prompts (`.claude/agents/`, `.claude/skills/`, `plugin/ultimate-tokens/`, the prompt strings in `mcp/*.mjs`, `test/plugin/`, `test/mcp/`; plus the three docs-repair carve-out files, `test/repo/citations.mjs`, and the three `.sdlc/architecture.md` §8 rows that quote the CLAUDE.md text U8 removes, once #751 lands)
 size: M+M+M+S+S+M+M+S+M (U1 M = 2, U2 M = 2, U3 M = 2, U4 S = 1, U5 S = 1, U6 M = 2, U7 M = 2, U8 S = 1, U9 M = 2; 15 points)
@@ -108,11 +108,11 @@ Criteria ids: `P` rows for the plan, `U<n>-<m>` rows for a unit. Finding ids in 
 
 ## Units
 
-- [ ] U1 (M) consumer plugin prose: voices, steps, on-colour law, label vs operable chrome, history ids (C1 C2 T1 T2 T3 T4 S1 S2 S3 S4) · builder-l3 · reviewer-l2 · verifier-l2 · first, after G0
+- [~] U1 (M) consumer plugin prose: voices, steps, on-colour law, label vs operable chrome, history ids (C1 C2 T1 T2 T3 T4 S1 S2 S3 S4) · builder-l3 · reviewer-l2 · verifier-l2 · first, after G0
 - [ ] U2 (M) consumer plugin pins: number words to ninety-nine, per-voice steps and the `Steps` column, the on-colour default, the README, in-suite fixture controls (F6) · builder-l3 · reviewer-l2 · verifier-l2 · after U1
-- [ ] U3 (M) MCP tool, instruction and rubric text with two pins and the regenerated assets (M1 to M10, R1 to R3; Q3) · builder-l3 · reviewer-l2 · verifier-l2 · after G0, parallel with U1
-- [ ] U4 (S) the eval runner's request: comment, system prompt, `max_tokens`, `stop_reason` (E2 E3 E4; E1 by Q2) · builder-l2 · reviewer-l1 · verifier-l1 · after G0, parallel with U1
-- [ ] U5 (S) the two agents: the loop's register, the 53 to 59 anecdote, the dated type-mode rule (SA4 SA5 SA6) · builder-l2 · reviewer-l1 · verifier-l1 · after G0, parallel with U1
+- [~] U3 (M) MCP tool, instruction and rubric text with two pins and the regenerated assets (M1 to M10, R1 to R3; Q3) · builder-l3 · reviewer-l2 · verifier-l2 · after G0, parallel with U1
+- [~] U4 (S) the eval runner's request: comment, system prompt, `max_tokens`, `stop_reason` (E2 E3 E4; E1 by Q2) · builder-l2 · reviewer-l1 · verifier-l1 · after G0, parallel with U1
+- [~] U5 (S) the two agents: the loop's register, the 53 to 59 anecdote, the dated type-mode rule (SA4 SA5 SA6) · builder-l2 · reviewer-l1 · verifier-l1 · after G0, parallel with U1
 - [ ] U6 (M) slice B skills: geometry laws and fields, symbol homes, the count-gate list, history narratives (SB1 to SB9, SB11 to SB23) · builder-l3 · reviewer-l2 · verifier-l2 · after U2
 - [ ] U7 (M) slice C skills: line anchors, `list_palettes (16)`, project-docs routes, `makeVoices`, `ensureTypeFonts`, H5's four jobs, the figma-plugins paragraph, history narratives (SC1 to SC27; Q4) · builder-l3 · reviewer-l2 · verifier-l2 · after U2, parallel with U6
 - [ ] U8 (S) the docs-repair carve-out: `.claude/CLAUDE.md` intake routes and the split clause, `docs/reference/SKILL.md` twenty-nine and the parity line, the section skill's setter home, DD10/DD32/DD56 re-pointed (SA1 SA2 SA3 SA7 SA8 SB10) · builder-l2 · reviewer-l1 · verifier-l1 · after G1
