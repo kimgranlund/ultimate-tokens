@@ -77,19 +77,36 @@ A paste-ready comment for #662 (not posted; the Orchestrator posts it) is at
 
 ## Movement table (blast radius)
 
-Movement script: `scripts/report-chroma-floor-movement.mjs` (new, committed this pass). It reads the
-literal pre-unit `src/engine/tonal.js` from git history at a named base ref (default `git merge-base
-HEAD origin/main`), patches only its two relative imports so it loads from a `data:` URL, wires
+Movement script (owner ruling S, pass 2: outside U1's scope, kept as a named scratch copy, not
+committed): `/private/tmp/claude-501/report-chroma-floor-movement.mjs`. It reads the literal pre-unit
+`src/engine/tonal.js` from git history at a named base ref (default `git merge-base HEAD
+origin/main`), patches only its two relative imports so it loads from a `data:` URL, wires
 `model.mjs`'s own `tonal.js` import to that base-commit module, and diffs the shipped engine's
-`hydrate()`+`projectView()` 25-stop even output against it for every corpus palette (343 curated
-documents) plus the 16-palette default kit - the same render-path technique `test/engine/anchor.mjs`'s
-lone-spike control uses (post review round 2, F6), so it is independently rerunnable at any base:
-`node scripts/report-chroma-floor-movement.mjs [<base-ref>]`.
+`hydrate()`+`projectView()` rendered output against it, in all three tone modes, for every corpus
+palette (343 curated documents) plus the 16-palette default kit - the same render-path technique
+`test/engine/anchor.mjs`'s lone-spike control uses (post review round 2, F6). Two limits, since it is
+scratch and not gated: its default base becomes the head itself once the plan lands (it will then
+print 0 moved), and it hard-codes `model.mjs`'s 15 import strings, exiting 2 if any move. Rerun:
+`REPO=<worktree path> node /private/tmp/claude-501/report-chroma-floor-movement.mjs [<base-ref>]`.
 
+- Presets moved: 344 / 344 (343 curated documents + the default kit; every one carries at least one
+  moved even-mode cell).
+- Palettes moved per mode: perceptual 0 / 3,796, peak 0 / 3,796, even 2,417 / 3,796 (C6's own
+  fingerprint proof, corroborated here per-palette).
 - 4,531 of 94,900 even 25-stop cells move (4.77%), all within two lifted-stop steps of the anchor
   (`|sd| <= 0.222`, stops 400/450/550/600 under lift 0; the exact set shifts under `liftStop` for
   lifted defaults, still bounded by the same `R`).
-- Max |dC| 19.2013 CAM16 C, Danger stop 550 (a saturated default, lift 0).
+- Max |dC| by stop, CAM16 chroma of the RENDERED (8-bit) hex: 400 2.25, 450 18.40, 550 19.20, 600 1.52.
+  Max |dC| overall: 19.2013, brands "BZZR" Danger stop 550. This is the rendered-hex reading, not the
+  pre-quantization requested chroma (pass 1's own script read `s.chroma` directly and got 19.1356 at
+  "Modal jazz" Danger stop 550, whose rendered dC is 19.0268 - both runs cover the same 4,531 cells;
+  8-bit rounding moves rendered chroma off the request by up to 2.8690, enough to reorder the top
+  cell). Report the rendered-hex figure here since that is what a consumer of the shipped hex actually
+  sees.
+- Max |dL*| CIELAB lightness across every rendered cell, every mode: 0.3848 (travel "22° N · January ·
+  11:00 · Sapa Sunday market, Lào Cai Province, cold mountain fog" secondary [even] stop 550) -
+  8-bit-quantization noise on a tone the damping term never perturbs by construction (the
+  `damping-curve (f)` gate's own float-domain bound, `|delta tone| <= 1e-9`).
 - Perceptual and peak: 0 cells move (C6's own fingerprint proof).
 - Gate-path (non-anchored) construction: 0 cells move in count terms that matter to any gate (the
   gate-path dip sweep and the `--gate-path` envelope cells are both byte-identical before/after).
