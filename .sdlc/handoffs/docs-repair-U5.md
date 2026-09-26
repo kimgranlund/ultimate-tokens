@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Branch | unit/dr-U5 @ <HEAD_PLACEHOLDER> |
+| Branch | unit/dr-U5 @ fa34e3a0 |
 | Files | `.claude/CLAUDE.md`, `.sdlc/verdicts/docs-repair-U5-review.md` |
 
 ## Ran
