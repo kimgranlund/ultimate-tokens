@@ -1,5 +1,5 @@
 ---
-status: draft
+status: approved
 ticket: "#741 (anchor; the plan also closes #742, #745, #747)"
 priority: P2
 lane: records and gates (`.sdlc/adapter.md`, `.sdlc/checks/card-source-range-check.sh`, `.sdlc/checks/card-amendment-check.sh`, the `.sdlc/verdicts/*.md` records the G0 check lists (none today), `test/repo/verdict-frontmatter.mjs` (new), `test/run.mjs`, `test/repo/em-dash.mjs`, `.sdlc/baseline.md`, `docs/reference/references/decision-records.md` under Q2)
