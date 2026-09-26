@@ -68,3 +68,4 @@ Route (Orchestrator, plan revision, before the verifier):
 ## Not run
 
 I did not re-run `npm test` or the full `gate:corpus-tonal`, `gate:corpus-anchor` and `gate:even-dips` legs because of host load. The builder's C1, C3 and C4 readings are consistent with my targeted sweeps; the verifier owns the full legs.
+verdict: 🟢

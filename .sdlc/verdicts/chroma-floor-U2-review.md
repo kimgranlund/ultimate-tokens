@@ -42,3 +42,4 @@ The floor redesign does what it claims on the two targets the stop rule names: 0
 ## Not run
 
 `npm test` and the full `gate:corpus-tonal` and `gate:corpus-anchor` legs were not re-run (load 120 to 174). These findings rest on the targeted sweeps above. The verifier owns the full legs.
+verdict: 🔴
