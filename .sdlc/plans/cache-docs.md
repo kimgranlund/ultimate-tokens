@@ -71,7 +71,7 @@ Post-merge check, the Orchestrator's own step once G0 is green: merge `origin/ma
 
 ## Units
 
-- [~] U1 (S) four knowledge-01 cache claims rewritten to the live keys, #686 cited, and the geometry cross-reference rewritten bare · builder-l1 · reviewer-l1 · verifier-l1 · starts at G0 green
+- [x] U1 (S) four knowledge-01 cache claims rewritten to the live keys, #686 cited, and the geometry cross-reference rewritten bare · builder-l1 · reviewer-l1 · verifier-l1 · starts at G0 green
 
 | Unit | Size | Builder | Reviewer | Verifier | Touches |
 |---|---|---|---|---|---|
