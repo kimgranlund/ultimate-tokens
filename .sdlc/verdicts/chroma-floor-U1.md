@@ -11,7 +11,7 @@ pass: 1
 written: 2026-09-26
 ---
 
-# Verdict chroma-floor U1 · 🔴 · the engine change holds every invariant; C7 and C10 red on their written Expected, three record items open
+# Verdict chroma-floor U1 · 🔴 · the engine change holds every invariant; C7 and C10 red on their written Expected, C2 and C8 yellow, record items open
 
 verdict: 🔴
 sha: fb85ed0b9b80a35d6a7e9b3fc9c0f45c58850f75
@@ -49,7 +49,7 @@ What unblocks, all without an engine change:
 | C1 | `npm test` | 🟢 | `✓ all 50 test files passed`, TESTS `50`, tree `0` | `scrim` to `scrimX`: `✗ 1/50 test file(s) failed`, exit `1` |
 | C5 | the gate-path envelope | 🟢 | even `10.9/16.2`, `39.1/52.2`, `39.0/44.6`, `16.3/16.5` all `OK`, `above 100% of stop 500: 0 OK`; perceptual and peak md5 `6e558839ee9e43217e1e2f7afc898b7b` at head and base | `--damp-amp 55`: `above 100% of stop 500: 1916 FAIL` |
 | C6 | the mode-isolation gate | 🟢 | `pass  mode-isolation: perceptual 34e544942d500b9e peak f560f784d8a4883a match fixture`; the same two hashes recomputed at the base | the damping term scaled by `1.01` off even: `FAIL  mode-isolation: perceptual 1e74d9d21676fbf4 peak c7d4a2be791066aa do not match fixture`, exit `1`; the shoulder switched off keeps the hashes, so the gate is blind to even, as C6 intends |
-| C8 | the chroma floor, and R44's five re-pins | 🟢 | `pass  chroma-floor`, `pass  role-contrast`, `0 unlisted drops, 0 further erosion`; the comparator prints `FLOORS changed 4, down 4`, the revision-12 figure: Warning `9.9/5.3 -> 9.8/5.2`, Data 3 `6.5/4.8 -> 6.4/4.8`, Data 5 and Data 8 `5.8/5.3 -> 5.7/5.3`, all above AA; no perceptual or peak line | the comparator exits `1` on the change, as ruled, so it sees any FLOORS move |
+| C8 | the chroma floor, and R44's five re-pins | 🟡 | the #662 comment the row asks for is not posted (its draft, `.sdlc/handoffs/chroma-floor-U1-662-comment.md`, carries one em dash); otherwise `pass  chroma-floor`, `pass  role-contrast`, `0 unlisted drops, 0 further erosion`; the comparator prints `FLOORS changed 4, down 4`, the revision-12 figure: Warning `9.9/5.3 -> 9.8/5.2`, Data 3 `6.5/4.8 -> 6.4/4.8`, Data 5 and Data 8 `5.8/5.3 -> 5.7/5.3`, all above AA; no perceptual or peak line | the comparator exits `1` on the change, as ruled, so it sees any FLOORS move |
 | C9 | the hue solve | 🟢 | `max OKLab dE 0.0048` perceptual and peak, even `0.0486` (want `> 0.01`); `HEADLESS BOOT PASS` | `solveOkhslHue` offset by 30: `max OKLab dE 0.1668`, exit `1` |
 | I | the color-math invariants | 🟢 | one `chromaEnvelope`, the term only in `if (isEven)`; `env(anchorStop) = 1` on `5508/5508` combinations; min abs(sd) at 300/700 `0.2241` above R `0.2`; `0` out-of-gamut cells over 3 × 94,900; target tone moved `0.0000` on all `4,531` moved cells (pixel L* within `0.3848`, 8-bit quantization); the sliders still move `env(450)` | a 69,768-point grid: `0` non-even points differ from the base |
 | B | `npm run build` | 🟢 | exit `0`, `wrote figma/plugin/ui.html 4130.1 KB`, tree `0` | `baseline-agrees` reads the new size as `STALE ui.html: baseline 4125.3 KB, tree 4130.1 KB`, so the figure is live |
