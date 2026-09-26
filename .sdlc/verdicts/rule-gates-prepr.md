@@ -2,7 +2,7 @@
 kind: verdict
 plan: rule-gates
 seat: verifier
-pass: 1
+pass: 2
 pr: 757
 ticket: "#730, #727, #728, #724"
 written: 2026-09-26
@@ -56,3 +56,34 @@ pass reruns the pair at the new head.
 
 verdict: 🔴
 sha: 374f7f1dce912501e3323bd9d06e84a4675b61ad
+
+## Pass 2 · 2026-09-26 · `240c2e5a`: 🔴 on one false sentence in the baseline
+
+Since `374f7f1d`: revision 16 (`5795ac4e`), the main sync `718b685b` (origin/main `276bc3ba`, #715 landed), the dash
+sweep `b2287241`, the figures of record `99c452a2`, and unit U5b (`2b389130`). The verification leg ran again at
+`240c2e5a` (`/tmp/v13/rg-prepr-verify-p2.md`: no 🔴, three 🟡). The review's round 2 is appended to
+`/tmp/v13/rg-prepr-review.md` and ends `verdict: 🟢 PASS`. I checked the red below myself.
+
+| id | criterion | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| N1 | the records this plan ships state what happened | 🔴 | mine: `.sdlc/baseline.md:302` says the heavy-run count `` was `0` immediately before each of the three runs ``, and the same entry's table (lines 308 to 310) reads hot before `1`, `0`, `3`. The same entry, and the `npm test` row at line 23, cite R53 at `.sdlc/runtime/owner-rulings-2026-09-22.md`, and `git ls-files .sdlc/runtime` prints `0` files, so the citation resolves for no reader; the tracked home is `.sdlc/questions/gg-U2b-p2-time-stale.md`. The runs count under the load ruling either way, so the figures stand; the sentence and the citation do not | the U5b paragraph says `1 or below` against a table of `1`, `1`, `1`, so the read can tell a true sentence from a false one |
+| M | clean merge into today's main | 🟢 | `git merge-tree --write-tree origin/main 240c2e5a` exit `0`; main is an ancestor of the head; #757's `mergeStateStatus` reads `CLEAN` | pass 1: exit `1` with two conflicts at `374f7f1d` |
+| MR | the merge resolutions | 🟢 | `test/engine/anchor.mjs` equals main's but for the dash sweep (`b2287241`, one file, two lines); main's #715 content whole in `.sdlc/baseline.md`; `decision-records.md:7` still reads `**OVERRIDE**: that is exactly` | the review's round 1 and the worker's main-only byte-equality check |
+| P7 | the baseline agrees, under R53 | 🟢 | `ok    tests: baseline 53, test/run.mjs TESTS 53`, `ok    ui.html: baseline 4118.0 KB, tree 4118.0 KB`, one line `STALE time test: baseline 167 to 268 s, adapter 80 to 89 s`, `stale total: 1`; the range is the script's own rounding of the row's `167.45 · 185.81 · 268.26` | `all 53` planted as `all 52`: `stale total: 2` |
+| R16 | the plan cells agree with R53 and the head | 🟢 | P7, U5 step 2, U5-1, U5-2 and Landing now expect `stale total: 1` with the one R53 line; revision 16 relaxes nothing revision 15 had not ruled | pass 1 read the five cells as `stale total: 0` |
+| P1 | `npm test`, no `node_modules` | 🟢 | `✓ all 53 test files passed`, tree clean | the `"scrimX` clone: exit `1` |
+| P2 | `npm run build` | 🟢 | exit `0`, `wrote figma/plugin/ui.html 4118.0 KB` | pass 1's control |
+| U5-2 | three runs, disjoint | 🟢 | `3/3`, `167.45 · 185.81 · 268.26`; spans `17:24:05` to `17:26:52`, `17:27:01` to `17:30:07`, `17:30:18` to `17:34:46` UTC, each within `0.5` s of its wall figure | an overlapping span would share a clock second; none does |
+| RL | the review leg | 🟢 | round 2: `verdict: 🟢 PASS` | round 1 ended `verdict: 🟡 FIX-FIRST` |
+| CI | CI at the full sha | 🟢 | run `36259809510` at `240c2e5a`: `success` on every job | run `35785765215` red at `Run npm run smoke` |
+
+Still 🟡, none a gate: P8 (the plan's per-line filter prints `5`, every hit in a span the gate exempts, gate
+clean), K (DD9 and #755, main's), and the review's low note that `.sdlc/baseline.md:33` and `:45` still point
+"above" at the 51-file row and that U6c-8 has two Superseded headings (`:41`, `:47`).
+
+What unblocks: line 302 made true to its table (`1`, `0`, `3`), and R53 cited at its tracked home in both
+places. The review's pointers can go in the same edit. The change is a record only, so the next pass rereads the
+baseline, the checks and CI at the new head, and the code rows carry.
+
+verdict: 🔴
+sha: 240c2e5a2a8da8a1d8f00c6ecc183558620becba
