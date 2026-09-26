@@ -2,7 +2,7 @@
 kind: verdict
 plan: gate-gaps
 seat: verifier
-pass: 2
+pass: 3
 pr: 756
 ticket: "#715"
 written: 2026-09-26
@@ -101,3 +101,22 @@ that one line only). Then the next pass rereads P2 and the review round.
 
 verdict: 🔴
 sha: ef8afdd90be9a2956c122026177ce6dc6f53474f
+
+## Pass 3 · 2026-09-26 · `5e23cebb`
+
+`ef8afdd9` to `5e23cebb` is one commit that changes only `.sdlc/plans/gate-gaps.md` (`3 insertions(+), 3 deletions(-)`).
+I reran P2 in a clone at `5e23cebb`. The reviewer's round 3 is appended to `/tmp/v13/gg-prepr-review.md` and ends
+`verdict: 🟡 FIX-FIRST`.
+
+| id | criterion | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| P2 | Expected and U2-7 agree with the head | 🟢 | mine: the row's two greps print `1` and `1`, the one line `STALE time test: baseline 151 to 1058 s, adapter 80 to 89 s`; P2 now reads ```1`, then `1` under owner ruling R53`` and U2-7 ``P2's two figures `1`, `1``` | the baseline's test figure planted `50`: `2` and `2` |
+| P2c | P2's written control can tell pass from fail | 🔴 | the control cell still reads `` the first figure prints `1` and so does the second ``, the same as the pass reading; my run of that control prints `2` and `2`. A control whose written result equals the pass result cannot fail the row | the run above: `2`, `2` |
+| RL | the review leg | 🔴 | round 3: `verdict: 🟡 FIX-FIRST`, on P2c alone plus the cosmetic third cell in the revision 8 row | a PASS round ends `verdict: 🟢 PASS` |
+| C | checks, merge, CI | 🟢 | `verdicts 149 graded 149 bad 0`; `branding: clean (739 files scanned)`; added em dashes `0`; `git merge-tree` exit `0`, board lines removed `0`; CI run `36240323582` at `5e23cebb` `success`, `deploy` `skipped` | pass 1's plants; run `35785765215` red at `Run npm run smoke` |
+
+What unblocks: P2's control cell set to `2` and `2` under R53 (and the revision 8 row's stray third cell
+dropped, which is cosmetic). The next pass rereads that row and the review round.
+
+verdict: 🔴
+sha: 5e23cebbf08e60399578d63df15c52d12e79219e
