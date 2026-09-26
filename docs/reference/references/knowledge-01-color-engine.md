@@ -128,7 +128,7 @@ maxChromaInGamut(hue, tone) -> number   // largest chroma that stays in sRGB at 
 - `tone<=0 || tone>=100` → 0.
 - Binary search chroma in [0, 180], 18 iterations: `hctToRgb(hue, mid, tone).inGamut`
   moves `lo` up or `hi` down. Return `lo`.
-- **Memoized** by key `hue.toFixed(2)+'|'+tone.toFixed(2)`.
+- **Memoized** by key `hue + "|" + tone`, the exact float, bounded by `boundedCache(CACHE_CAP)` (#686).
 
 ## 7. `peakC` (per-hue chroma peak)
 
@@ -136,7 +136,7 @@ maxChromaInGamut(hue, tone) -> number   // largest chroma that stays in sRGB at 
 peakC(hue) -> { c:number, tone:number }   // the hue's maximum achievable chroma, and where
 ```
 - Scan `t = 4..96 step 2`, take `max maxChromaInGamut(hue, t)`. Return the peak chroma and
-  its tone. Memoized by `hue.toFixed(2)`.
+  its tone. Memoized by `String(hue)`, the exact float: a truncated key let the first caller into a shared rounded bucket decide every later caller's peak, the order dependence #686 fixed.
 - Used to interpret the per-palette `chroma` control as a **percentage of the hue's own
   peak** (so "100%" means "as saturated as this hue can get in sRGB", not a raw number).
 
@@ -152,7 +152,7 @@ identity color on the stored OKLCH hue:
 oklchToCam16Hue(h, chromaFrac=1):
   // Newton inverse of the render path: find the CAM16 hue whose color, rendered at
   // chromaFrac of that hue's peak chroma, has OKLCH hue == h.
-  memoize by h.toFixed(2)+'|'+chromaFrac.toFixed(3)
+  memoize by target + ":" + cf  // the wrapped hue and the clamped chroma fraction, exact (#686)
 ```
 
 > 💡 This is an **accurate, chroma-aware** inverse. The OKLCH↔CAM16 hue map shifts with
@@ -178,8 +178,8 @@ hctToOklch(hue, chroma, tone) -> [L, C, H°]   // float, the perceptual OKLCH of
 
 - No RNG, no clock, no locale. Same inputs → identical outputs.
 - Three memo caches: `_mc` (maxChroma), `_pk` (peakC), `_oh` (oklch hue, keyed by hue +
-  chromaFrac). Keys use `toFixed(2)` (chromaFrac `toFixed(3)`) so cache hits are exact within
-  0.01° / 0.01 tone.
+  chromaFrac). Keys use the exact float (`hue + "|" + tone`, `String(hue)`, `target + ":" + cf`)
+  so a hit is an identical input, each bounded by `boundedCache(CACHE_CAP)` (#686). The memo `tonal.js` used to keep in front of `okhslLAt` is gone (#738).
 - The engine exists in three implementations (artifact inline, `gen.js`, the plugin shares
   the contrast-free portions). They must agree; see `rubrics/parity-checklist.md`.
 
