@@ -2,13 +2,19 @@
 kind: verdict
 plan: hex-oklch-dedupe
 seat: verifier
-pass: 1
+pass: 2
 pr: 754
 ticket: "#731"
 written: 2026-09-26
 ---
 
-# Pre-PR · hex-oklch-dedupe · pass 1 · 🔴 at `600763ce`: the code is ready, the PR text is not
+# Pre-PR · hex-oklch-dedupe · pass 2 · 🟢 at `600763ce`
+
+Pass 1 read 🔴 on the PR text alone; pass 2 below re-reads it at the same sha. Every other row carries unchanged.
+
+Closes #731
+
+## Pass 1
 
 verdict: 🔴
 sha: 600763ce03fc7dda6d87e69a80c716efdd29b731
@@ -58,4 +64,22 @@ pass 2 re-reads only PR2 and PR3 at the same sha.
 | G | GitHub mergeability | 🟡 | `mergeable: UNKNOWN` when I read it; M1 is the local evidence | re-query before the squash |
 
 verdict: 🔴
+sha: 600763ce03fc7dda6d87e69a80c716efdd29b731
+
+## Pass 2 · 2026-09-26 · same sha `600763ce`
+
+The PR text changed and the branch did not: `origin/plan/hex-oklch-dedupe` and #754's `headRefOid` both read
+`600763ce`, so every pass 1 row other than PR2 and PR3 carries. I re-read the PR and the merge myself.
+
+| id | criterion | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| PR2 | the PR title matches the plan's Landing and adapter §2 | 🟢 | `gh pr view 754`: title `fix(ui): model.mjs keeps one hex-to-OKLCH conversion (#731)`, equal to Landing's pin | pass 1's read of the same field: `plan/hex-oklch-dedupe`, 🔴 |
+| PR3 | the PR body matches the plan's Landing and adapter §2 | 🟢 | body length `3327`: `## Summary`, `## Pre-land record table` with this record's P1 to CI rows, exactly one `Closes #731` line, and the last line `🤖 Generated with [Claude Code](https://claude.com/claude-code)`; em and en dashes `0`. This record carries its own `Closes #731` line too, because a gated land rewrites the body from the record | pass 1's read: body length `0`, 🔴 |
+| M1 | clean merge into today's main | 🟢 | `git merge-tree --write-tree origin/main origin/plan/hex-oklch-dedupe` exit `0` at main `3186582b`, tree `543a0e29` (as pass 1); board diff `0` lines | the worker's conflict plant: exit `1` |
+| G | GitHub mergeability | 🟢 | `mergeable: MERGEABLE`, `mergeStateStatus: CLEAN`, `isDraft: true` (it leaves draft at land) | pass 1's read: `UNKNOWN`, so the field is read, not assumed |
+
+The carried notes K (`doc-drift-rows` `bad 1`, `ceiling-counts: 1 failure(s)` under #755) and T (the one merge
+commit without a trailer, which the squash erases) stand as 🟡, and neither is this plan's.
+
+verdict: 🟢
 sha: 600763ce03fc7dda6d87e69a80c716efdd29b731
