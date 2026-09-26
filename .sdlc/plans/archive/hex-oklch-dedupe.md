@@ -1,5 +1,5 @@
 ---
-status: approved
+status: done
 ticket: #731
 priority: P3
 lane: ui (`src/ui/model.mjs`, `test/ui/model.mjs`, the bundle files `npm test` regenerates)
@@ -136,3 +136,4 @@ One PR from `plan/hex-oklch-dedupe` to `main`, title `fix(ui): model.mjs keeps o
 | 2026-09-22 | revision 2, from the checkability review (`backfill-731-checkability.md`: 8 green, 1 yellow). U1-4's pass line is pinned to `keyOklch agrees with hexToOklch: subjects <n>` so the grep no longer depends on the builder's wording (was yellow); G0 line 2 reads `state` and `stateReason` and expects `CLOSED COMPLETED`; Q1 recorded as ruled: no ticket, one named line in #731's closing comment | checkability review at 827d62e1 |
 | 2026-09-25 | revision: P4 admits `docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md`, one line (B3's `model.mjs` line citations), because U1's deletion shifts `model.mjs`'s numbering and `test/repo/citations.mjs` reds without the repair. The same class okl-memo and achromatic-anchor ratified for sibling files in that directory; found by the U1 builder's P4 run at `34b1ff2a` | orchestrator |
 | 2026-09-26 | revision, from U1's verdict (`.sdlc/verdicts/hex-oklch-dedupe-U1.md`, 🔴 at `f972da4f`, 9 of 9 plan rows 🟢): P4 admits `.sdlc/baseline.md` for the `npm run build` row's ui.html KB cell and one correction paragraph (the okl-memo revision 7 precedent), because U1's deletion shrinks the bundle and `baseline-agrees-check.sh` reads STALE. The figure is measured after `origin/main` is merged into the plan branch (this commit), so it reflects main's 4125.3 minus U1's change | orchestrator |
+| 2026-09-26 | closed: landed as `87b91cf0` (PR #754, squash of `600763ce`), pre-land `.sdlc/verdicts/hex-oklch-dedupe-prepr.md` pass 2 🟢, authorization `.sdlc/verdicts/hex-oklch-dedupe-authz.md`; status done, file archived | the Conductor's go under R1 and R21 |
