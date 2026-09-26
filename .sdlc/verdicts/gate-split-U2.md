@@ -40,3 +40,4 @@ C6 (🟢 nit, from `.sdlc/handoffs/gate-split-review-findings.md`, already logge
 ## Summary
 
 Overall 🟢. No red rows. Every U2-n row and every applicable P-row (P1, P3, P4, P5 rows 1 and 3, P6, P8, P9) reproduced green with this verifier's own fresh evidence and a negative control that actually fails. P2 and P7 are correctly not-yet-green by the plan's own design at this stage of the plan (P2 needs U6b's re-measured baseline; P7 is defined to read STALE until U6b runs), not defects introduced by U2. Loads recorded: 2.97 at session start (1-min), 2.81 immediately before U2-5's timing run, 2.90 immediately after; both readings under the load-under-5 threshold, so U2-5 is graded on this verifier's own quiet reading (12.77s) rather than the host's earlier loud one.
+verdict: 🟢

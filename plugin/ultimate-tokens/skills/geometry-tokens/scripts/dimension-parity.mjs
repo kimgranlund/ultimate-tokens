@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-// dimension-parity.mjs — the DRIFT GATE between geometry-tokens and the product's geometry engine.
+// dimension-parity.mjs, the DRIFT GATE between geometry-tokens and the product's geometry engine.
 // Every --size-* / --radius-* / --space-* / --inset-* / --gap-* / --border-* / --focus-* token and
 // .control-* class named in the skill must be a REAL dimension the engine emits. Runs in the product
 // repo's npm test; outside the repo it exits 0. Sibling of color-tokens' role-parity + type's
-// voice-parity — the same anti-drift mechanization.
+// voice-parity, the same anti-drift mechanization.
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,11 +11,11 @@ import { fileURLToPath } from "node:url";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SKILL_DIR = join(HERE, "..");
 const ENGINE = join(HERE, "../../../../../src/engine/geometry.mjs");
-if (!existsSync(ENGINE)) { console.log("dimension-parity: geometry engine not found (outside the product repo) — skipping"); process.exit(0); }
+if (!existsSync(ENGINE)) { console.log("dimension-parity: geometry engine not found (outside the product repo), skipping"); process.exit(0); }
 
 const { geomScale, RAMP_LADDER } = await import(ENGINE);
 const s = geomScale({ baseHeight: 28 });
-const sLadder = geomScale({ baseHeight: 28, ramp: RAMP_LADDER }); // the opt-in linear-ladder prototype (issue #483) — numbered "0".."9", a DISJOINT naming scheme from the default ramp's t-shirt letters
+const sLadder = geomScale({ baseHeight: 28, ramp: RAMP_LADDER }); // the opt-in linear-ladder prototype (issue #483), numbered "0".."9", a DISJOINT naming scheme from the default ramp's t-shirt letters
 const camel = (k) => k.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
 const STEPS = new Set([...Object.keys(s.sizes), ...Object.keys(sLadder.sizes)].map((x) => x.toLowerCase())); // xs..2xl, plus the ladder's 0..9
 const SIZE_FIELDS = new Set(["height", "icon", "caret", "font", "gap", "padding-narrow", "padding-wide", "padding-narrow-compact", "padding-wide-compact", "radius", "min"]); // the CSS field names (TKT-0010)
@@ -28,7 +28,7 @@ const FOCUS = new Set(Object.keys(s.focus).map(camel)); // ring-width, ring-offs
 
 const files = ["SKILL.md", ...readdirSync(join(SKILL_DIR, "references")).filter((f) => f.endsWith(".md")).map((f) => "references/" + f)];
 let failed = false;
-const err = (f, tok, why) => { console.error(`✗ ${f}: ${tok} — ${why}`); failed = true; };
+const err = (f, tok, why) => { console.error(`✗ ${f}: ${tok}, ${why}`); failed = true; };
 
 // match a whole token including a trailing `}` (a plain \b would stop before the brace).
 const each = (text, re, fn) => { for (const m of text.matchAll(re)) fn(m); };
@@ -58,5 +58,5 @@ for (const f of files) {
   each(text, /\.control-([a-z0-9-]+)\b/g, (m) => { const st = m[1]; if (st !== "{step}" && !STEPS.has(st)) err(f, m[0], `unknown control step "${st}"`); });
 }
 
-console.log(failed ? "dimension-parity FAIL" : `dimension-parity PASS — every dimension token/class in ${files.length} files matches the engine`);
+console.log(failed ? "dimension-parity FAIL" : `dimension-parity PASS, every dimension token/class in ${files.length} files matches the engine`);
 process.exit(failed ? 1 : 0);

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// describe-mcp.mjs — verifier for the downloadable describe-palette generator MCP server (#371). Spawns
-// the (zero-dep) server — no sibling file needed, unlike brand-kit-server.mjs — drives the MCP protocol
+// describe-mcp.mjs, verifier for the downloadable describe-palette generator MCP server (#371). Spawns
+// the (zero-dep) server, no sibling file needed, unlike brand-kit-server.mjs, drives the MCP protocol
 // over stdio, and proves the self-teaching two-step round trip end to end: description → briefing → a
 // constructed brief → a real kit.
 import { spawn } from "node:child_process";
@@ -51,7 +51,7 @@ try {
   ok(generated.kit && generated.kit.$schema === "ultimate-tokens-brand-kit/3" && generated.kit.palettes.length === 8, "generate_kit({brief}) → a real 8-palette kit");
   ok(generated.meta && generated.meta.briefSchema === briefing.schema.$id && JSON.stringify(generated.meta.brief) === JSON.stringify(brief), "the result's meta echoes the brief schema id + the originating brief verbatim (the replay handle)");
 
-  // step 3 (refine): patch the brief and resend — determinism means re-sending the SAME brief reproduces
+  // step 3 (refine): patch the brief and resend, determinism means re-sending the SAME brief reproduces
   // the SAME kit; changing it changes the result predictably.
   const replay = await callTool("generate_kit", { brief });
   ok(JSON.stringify(replay.kit) === JSON.stringify(generated.kit), "resending the identical brief reproduces a byte-identical kit (determinism keeps the refine loop stable)");
@@ -88,5 +88,5 @@ try {
 }
 
 if (fails.length) { console.error("describe-palette MCP FAIL:\n  " + fails.join("\n  ")); process.exit(1); }
-console.log("describe-palette MCP PASS — self-teaching two-step generate_kit round trip over MCP stdio (description → briefing → brief → kit → refine)");
+console.log("describe-palette MCP PASS, self-teaching two-step generate_kit round trip over MCP stdio (description → briefing → brief → kit → refine)");
 process.exit(0);

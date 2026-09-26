@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// okhsl.mjs — validation for src/engine/okhsl.js (Ottosson OKHSL ⇄ sRGB), the foundation for an
+// okhsl.mjs, validation for src/engine/okhsl.js (Ottosson OKHSL ⇄ sRGB), the foundation for an
 // OKHSL palette-generation mode. Verified against the canonical reference during the port (forward
 // matched 0/255 over 1008 samples); these gates lock the contract WITHOUT the external reference:
 // round-trip identity, gamut bijection (s=1 ⇒ on the sRGB boundary), neutrals, and a canonical anchor.

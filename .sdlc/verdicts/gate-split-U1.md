@@ -44,3 +44,4 @@ Measured on the unit head: `0` of the 8 category names contain a slash, `343` cu
 | Rows graded | 🟢 | 🟡 | 🔴 |
 |---|---|---|---|
 | 12 (U1-1 to U1-7, order independence, scope wall, P1, P8, P7) | 11 | 1 (P7, pre-authorized mid-plan staleness) | 0 |
+verdict: 🟢

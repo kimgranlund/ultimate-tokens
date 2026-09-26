@@ -1,12 +1,12 @@
 name: Describe-palette golden eval
 
-# Scheduled + manual only — deliberately NOT on push/pull_request. This calls a real provider model
+# Scheduled + manual only, deliberately NOT on push/pull_request. This calls a real provider model
 # (LLM cost + nondeterminism, #375's own acceptance: "LLM cost/flake makes per-PR gating optional") to
 # catch rubric regressions in mcp/describe-rubric.mjs's teaching, not to gate a merge.
 on:
   workflow_dispatch: {}
   schedule:
-    # weekly — frequent enough to catch a rubric/exemplar regression before it's stale, infrequent enough
+    # weekly, frequent enough to catch a rubric/exemplar regression before it's stale, infrequent enough
     # to keep provider cost negligible for a 15-entry eval set.
     - cron: "0 6 * * 1"
 

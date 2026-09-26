@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// live-diff.mjs — verifier for the PURE apply-vs-live comparison (figma/binder/live-diff.mjs), the
+// live-diff.mjs, verifier for the PURE apply-vs-live comparison (figma/binder/live-diff.mjs), the
 // Geometry/Type counterpart to Color's ad-hoc drift diff (TKT-0020 / collections-arch review C2). No
 // figma calls; the read-back SHAPE this diffs against is proven separately over a mock in
 // test/figma/plugin.mjs's "readfloat" gate.
@@ -21,7 +21,7 @@ ok(D.flattenModePlanValues(null).length === 0 && D.flattenModePlanValues({}).len
 
 // ── flattenModePlanValues ALSO correctly flattens a primitivesModesApplyPlan-shaped fixture (font-mode
 // Phase B): its literals carry the SAME {name,type,values:[{mode,value}]} shape modeApplyPlan uses, so
-// no dedicated Type Primitives flattener is needed — its ALIAS entries (no .values array) are skipped
+// no dedicated Type Primitives flattener is needed, its ALIAS entries (no .values array) are skipped
 // by the SAME !Array.isArray(v.values) guard that already handles a malformed/absent values field,
 // for free.
 const primPlan = {
@@ -37,12 +37,12 @@ ok(primFlat.length === 4, `flattenModePlanValues on a Type Primitives plan: ${pr
 ok(!primFlat.some((p) => p.name === "font/display"), "flattenModePlanValues: the ALIAS entry (no .values array) contributes nothing");
 ok(primFlat.every((p) => primPlan.modes.includes(p.mode)), "flattenModePlanValues: every entry carries one of the plan's own modes");
 
-// ── countChangedValues: the core diff — only a value that's THERE and DIFFERENT counts ──
+// ── countChangedValues: the core diff, only a value that's THERE and DIFFERENT counts ──
 const pairs = [{ name: "a", mode: "Base", value: 10 }, { name: "b", mode: "Base", value: 20 }];
 ok(D.countChangedValues(pairs, { a: { Base: 10 }, b: { Base: 20 } }) === 0, "countChangedValues: identical live values ⇒ 0");
 ok(D.countChangedValues(pairs, { a: { Base: 99 }, b: { Base: 20 } }) === 1, "countChangedValues: one drifted value ⇒ 1");
 ok(D.countChangedValues(pairs, { a: { Base: 1 }, b: { Base: 2 } }) === 2, "countChangedValues: both drifted ⇒ 2");
-// a NEW variable/mode (absent from the live read) is NOT a change — nothing to overwrite yet
+// a NEW variable/mode (absent from the live read) is NOT a change, nothing to overwrite yet
 ok(D.countChangedValues(pairs, {}) === 0, "countChangedValues: nothing live yet (first apply) ⇒ 0, not counted as changed");
 ok(D.countChangedValues(pairs, { a: { Base: 10 } }) === 0, "countChangedValues: 'b' absent from live ⇒ not counted");
 ok(D.countChangedValues([{ name: "a", mode: "Mobile", value: 5 }], { a: { Base: 5 } }) === 0, "countChangedValues: a mode absent from live ⇒ not counted");
@@ -65,5 +65,5 @@ ok(D.countChangedValues(pairs, null) === 0, "countChangedValues: null live (coll
 }
 
 if (fails.length) { console.error(`live-diff FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
-console.log("live-diff PASS — flattenModePlanValues (Geometry + Type Primitives shapes, alias-dropping) · countChangedValues (present+differs only, float epsilon, string-strict)");
+console.log("live-diff PASS, flattenModePlanValues (Geometry + Type Primitives shapes, alias-dropping) · countChangedValues (present+differs only, float epsilon, string-strict)");
 process.exit(0);
