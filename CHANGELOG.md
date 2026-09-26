@@ -8,6 +8,19 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 
 ## [Unreleased]
 
+### 2026-09-26
+
+#### Fixed
+- **A saved default kit regains its anchors on load from the stored set list** (#740). A kit saved
+  before schema v5 has no `anchor`/`sourceAnchor` on any palette, and `hydrate()` keeps that absence
+  absent by design, so the kit used to render through the non-anchored path with no notice, even
+  though its own numbers still matched today's default rows exactly. `hydrateStoredDoc` now backfills
+  a pre-v5 palette's `anchor`/`sourceAnchor` when it still equals a row of the default kit's own hue
+  form (CAM16 or OKLCH, read from the stored doc's `hueSpace`) on name, hue, chroma, skew and lift; a
+  user-built or pre-#681 preset palette, or any palette a slider moved off that one row, including
+  onto the OTHER hue form's own default value, has no matching row there and stays parametric,
+  unchanged.
+
 ### 2026-09-18
 
 #### Fixed
