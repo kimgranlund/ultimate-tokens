@@ -595,6 +595,70 @@ if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs ac
   }
 }
 
+// stored-anchors (#740): imported here, not with the top-of-file imports, for the same reason
+// gate-report.mjs below is, this file is cited by line number from docs/reference/reviews/
+// 2026-08-20-reactivity/03-stores-and-persistence.md (lines 11-12, 448-484), and adding a new
+// top-of-file import would shift every line after it, including that cited range, by one.
+import { hydrateStoredDoc, backfillDefaultAnchors } from "../../src/ui/app-helpers.mjs";
+import { defaultDocument, projectView, DEFAULT_PALETTES } from "../../src/ui/model.mjs";
+
+// stored-anchors (#740): a set saved BEFORE schemaVersion 5 has no anchor on any palette, and
+// hydrateStoredDoc (through backfillDefaultAnchors) restores one only for a palette that still
+// equals a default-kit row exactly. (a)-(c) probe the OKLCH-hue form every doc since hueSpace
+// exists stores; (d) the raw CAM16-hue form a legacy cam16-stamped doc still carries; (e) reruns
+// the clamp block's own absent-stays-absent fixture through the real seam, unweakened by this gate.
+{
+  const fresh = defaultDocument();
+  const rampsOf = (d) => projectView(d).palettes.map((p) => p.fullRamp.map((s) => s.hex).join(","));
+  const freshRamps = rampsOf(fresh);
+
+  // (a) a stripped default doc (no schemaVersion, no anchor/sourceAnchor on any palette) renders
+  // byte-identical to the fresh default through hydrateStoredDoc, with 16 anchors restored.
+  const strippedA = U.serialize(fresh); delete strippedA.schemaVersion;
+  for (const p of strippedA.palettes) { delete p.anchor; delete p.sourceAnchor; }
+  const hydStrippedA = hydrateStoredDoc(strippedA);
+  const ramps16 = rampsOf(hydStrippedA);
+  const diffCount = freshRamps.filter((r, i) => r !== ramps16[i]).length;
+  if (diffCount !== 0) FAIL("stored-anchors", `(a) a stripped default doc must render byte-identical to the fresh default through hydrateStoredDoc, got ${diffCount} of ${freshRamps.length} ramps differing`);
+  const stampedA = hydStrippedA.palettes.filter((p) => p.anchor && p.sourceAnchor).length;
+  if (stampedA !== 16) FAIL("stored-anchors", `(a) a stripped default doc must regain all 16 anchors, got ${stampedA}`);
+
+  // (b) the same with one row (Primary) edited by one hue degree: that row is left alone, the other
+  // 15 are stamped.
+  const strippedB = U.serialize(fresh); delete strippedB.schemaVersion;
+  for (const p of strippedB.palettes) { delete p.anchor; delete p.sourceAnchor; }
+  const primaryIdx = strippedB.palettes.findIndex((p) => p.name === "Primary");
+  strippedB.palettes[primaryIdx].hue += 1;
+  const hydStrippedB = hydrateStoredDoc(strippedB);
+  const stampedB = hydStrippedB.palettes.filter((p) => p.anchor && p.sourceAnchor).length;
+  if (stampedB !== 15) FAIL("stored-anchors", `(b) an edited Primary row must leave 15 of 16 stamped, got ${stampedB}`);
+  if (hydStrippedB.palettes[primaryIdx].anchor) FAIL("stored-anchors", "(b) the edited Primary row itself must not be stamped");
+
+  // (c) the same snapshot stamped schemaVersion: 6 (current) is left untouched: 0 stamped.
+  const strippedC = U.serialize(fresh); delete strippedC.schemaVersion;
+  for (const p of strippedC.palettes) { delete p.anchor; delete p.sourceAnchor; }
+  strippedC.schemaVersion = 6;
+  const hydStrippedC = hydrateStoredDoc(strippedC);
+  const stampedC = hydStrippedC.palettes.filter((p) => p.anchor && p.sourceAnchor).length;
+  if (stampedC !== 0) FAIL("stored-anchors", `(c) a doc already stamped schemaVersion 6 must not be backfilled, got ${stampedC} anchors`);
+
+  // (d) the raw, pre-hueSpace legacy form (DEFAULT_PALETTES' own CAM16 hues, no `anchor`, no
+  // `hueSpace`) also carries 16 anchors after hydrateStoredDoc, and stamps hueSpace "cam16".
+  const rawDoc = { palettes: DEFAULT_PALETTES.map(({ anchor, ...r }) => r) };
+  const hydRaw = hydrateStoredDoc(rawDoc);
+  if (hydRaw.hueSpace !== "cam16") FAIL("stored-anchors", `(d) a raw legacy-form doc must stamp hueSpace "cam16", got ${JSON.stringify(hydRaw.hueSpace)}`);
+  const stampedD = hydRaw.palettes.filter((p) => p.anchor).length;
+  if (stampedD !== 16) FAIL("stored-anchors", `(d) the raw legacy-form default kit must carry 16 anchors, got ${stampedD}`);
+
+  // (e) the clamp block's own identity fixture, run again through the real seam (hydrateStoredDoc,
+  // not U.hydrate alone): a random P0..P3 fixture with no default-kit match and no schemaVersion
+  // still hydrates with no anchor, kept by its OWN message text, not a bare "identity gate" needle
+  // that could not notice this fixture going.
+  const noAnchorE = JSON.parse(JSON.stringify(base)); delete noAnchorE.palettes[0].anchor; delete noAnchorE.palettes[0].sourceAnchor;
+  const hydNoE = hydrateStoredDoc(noAnchorE);
+  if ("anchor" in hydNoE.palettes[0] || "sourceAnchor" in hydNoE.palettes[0]) FAIL("stored-anchors", "(e) absent palette.anchor/sourceAnchor must still stay absent through backfillDefaultAnchors (identity gate)");
+}
+
 // gate-report.mjs is imported here, immediately before its one use, rather than with the top-of-
 // file imports: this file is cited by line number from docs/reference/reviews/2026-08-20-reactivity/
 // 03-stores-and-persistence.md (lines 11-12, 448-484), and ES module imports hoist regardless of
@@ -608,7 +672,7 @@ import { gateReport } from "../gate-report.mjs";
 // "export", "type-fonts", "type-voices", "icons", "voice-style" and "ramp-contrast" were live
 // holes (#699): all 6 had real call sites above but were never declared, so a FAIL under any of
 // them used to exit 1 with no named row.
-const DECLARED = ["roundtrip", "clamp", "field-default", "token-overrides", "huespace-default", "schema-rename", "theme-invariant", "allowlist-parity", "ramp", "dropped-keys", "export", "type-fonts", "type-voices", "icons", "voice-style", "ramp-contrast", "report-static"];
+const DECLARED = ["roundtrip", "clamp", "field-default", "token-overrides", "huespace-default", "schema-rename", "theme-invariant", "allowlist-parity", "ramp", "dropped-keys", "export", "type-fonts", "type-voices", "icons", "voice-style", "ramp-contrast", "report-static", "stored-anchors"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: ui-persistence clears all [gate] predicates");

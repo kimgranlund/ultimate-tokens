@@ -4,7 +4,7 @@
 // migration + multi-set/profile persistence, the offline license seam, font-loading (self-hosted + lazy
 // Google Fonts), app-theme injection, and the per-treatment type specimen copy. No 'this', safe to import
 // from anywhere without creating a cycle back into app.js.
-import { appThemeCSS, defaultDocument, hasDataPalettes, hexToOklch, mintDataPalettes } from "./model.mjs";
+import { DEFAULT_PALETTES, appThemeCSS, defaultDocument, hasDataPalettes, hexToOklch, mintDataPalettes } from "./model.mjs";
 import { STORAGE_KEY, hydrate, serialize } from "./persist.js";
 import { clampProfile } from "../engine/flags.js";
 import { TYPE_FONTS_CSS } from "./type-fonts.js";
@@ -209,7 +209,7 @@ export function newSet(name) {
 // saved with hueSpace already set (every doc since the field landed) round-trips through untouched.
 export function hydrateStoredDoc(stored) {
   const d = stored && typeof stored === "object" && stored.hueSpace == null ? { ...stored, hueSpace: "cam16" } : stored;
-  return hydrate(d);
+  return hydrate(backfillDefaultAnchors(d));
 }
 
 // ── app-theme injection (dogfooding) ────────────────────────────────────────────
@@ -828,4 +828,35 @@ export function posterStripBands(enabled, groups) {
   widths = posterStripNormalize(shown, widths);
   widths = posterStripClampAndFloor(shown, widths);
   return posterStripReorderByChroma(shown, widths);
+}
+
+// backfillDefaultAnchors (#740): a set saved BEFORE schemaVersion 5 (the version that added
+// anchor/sourceAnchor) carries neither field on any palette, and hydrate()/persist.js keep an absent
+// anchor absent by design there (RENAME_MAPS has no entry for it: absence means "user-built, or a
+// pre-#681 preset, with no source color to anchor to", not "provenance lost"). This function
+// restores only the second reading: a pre-v5 palette that still equals a default-kit row exactly
+// (untouched since it was saved) regains that row's own anchor, in either row form a legacy doc may
+// carry, the OKLCH-hue form every doc since hueSpace exists stores (defaultDocument().palettes), or
+// the raw CAM16-hue form a cam16-stamped legacy doc still carries (DEFAULT_PALETTES itself).
+// Equality is === on name, hue, chroma, skew, lift: serialize()/hydrate() keep an in-domain float
+// byte for byte, so an unedited row matches exactly and a slider edit (integer steps) does not. This
+// lives here and not in persist.js: the rule needs defaultDocument(), and model.mjs already imports
+// persist.js, so persist.js importing model.mjs back would cycle. Placed at file end, not beside
+// hydrateStoredDoc above, so it adds no line before docs/reference/references/component-inventory.md's
+// existing app-helpers.mjs:N citations (a hoisted `export function` runs identically wherever it sits).
+export function backfillDefaultAnchors(stored) {
+  if (!stored || typeof stored !== "object" || !Array.isArray(stored.palettes)) return stored;
+  if (Number.isFinite(stored.schemaVersion) && stored.schemaVersion >= 5) return stored;
+  const sameRow = (p, row) =>
+    p.name === row.name && p.hue === row.hue && p.chroma === row.chroma && p.skew === row.skew && p.lift === row.lift;
+  const defaultRows = defaultDocument().palettes;
+  let changed = false;
+  const palettes = stored.palettes.map((p) => {
+    if (!p || typeof p !== "object" || p.anchor) return p;
+    const row = defaultRows.find((r) => sameRow(p, r)) || DEFAULT_PALETTES.find((r) => sameRow(p, r));
+    if (!row) return p;
+    changed = true;
+    return { ...p, anchor: row.anchor, sourceAnchor: row.anchor };
+  });
+  return changed ? { ...stored, palettes } : stored;
 }
