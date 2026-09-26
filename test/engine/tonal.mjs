@@ -652,7 +652,7 @@ for (const mode of ["perceptual", "peak"]) {
 //   already carved (#681 U3 pass 7 carved every even default), all at stops 450/550 (the only stops
 //   inside R): Primary 450/550, Secondary 450/550, Info 550 only (450 already sat on the anchor cap),
 //   Success 450/550, Warning 450 only (550 clipped by the U10 lift-cap above), Danger 450/550, Data
-//   1-8 450/550 — see the diff this unit's handoff quotes verbatim. Neutral and Tertiary are
+//   1-8 450/550 - see the diff this unit's handoff quotes verbatim. Neutral and Tertiary are
 //   untouched (Neutral's intended chroma is 0 at every stop; Tertiary's 450/550 already sat on the
 //   anchor cap, not the damped value, so the plateau never binds there). Patched by hand, cell by
 //   cell, not regenerated.

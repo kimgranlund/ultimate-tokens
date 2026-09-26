@@ -37,8 +37,8 @@ anchor regardless of the plateau). Perceptual and peak never take the `isEven` b
 | gate-path dips (anchor omitted) | 0 | 0 (unchanged; control at 1.6x floor still reads 155) |
 | `--envelope` even cells, gate-path | 10.9/16.2, 39.1/52.2, 39.0/44.6, 16.3/16.5, above100 0 | identical |
 | `--envelope` even cells, rendered | 15.6/37.0, 48.4/113.7, 42.5/80.2, 22.9/52.0, above100 670 | identical |
-| even 25-stop cells moved / 94,500 | 0 | 4,580 (all within two lifted-stop steps of the anchor) |
-| max |dC| at any moved cell | 0 | 19.1356 (Danger, stop 550) |
+| even 25-stop cells moved / 94,900 | 0 | 4,531 (all within two lifted-stop steps of the anchor) |
+| max |dC| CAM16 chroma at any moved cell | 0 | 19.2013 (Danger, stop 550) |
 
 The 500-stop 32-count dip population (the notch class, Q-C/`NOTCH_ALLOW`) is unchanged and not
 this unit's or this plan's - #681's. The 20-at-450 remaining dips are floor-bound (mechanism 2,
@@ -77,10 +77,19 @@ A paste-ready comment for #662 (not posted; the Orchestrator posts it) is at
 
 ## Movement table (blast radius)
 
-- 4,580 of 94,500 even 25-stop cells move (4.8%), all within two lifted-stop steps of the anchor
+Movement script: `scripts/report-chroma-floor-movement.mjs` (new, committed this pass). It reads the
+literal pre-unit `src/engine/tonal.js` from git history at a named base ref (default `git merge-base
+HEAD origin/main`), patches only its two relative imports so it loads from a `data:` URL, wires
+`model.mjs`'s own `tonal.js` import to that base-commit module, and diffs the shipped engine's
+`hydrate()`+`projectView()` 25-stop even output against it for every corpus palette (343 curated
+documents) plus the 16-palette default kit - the same render-path technique `test/engine/anchor.mjs`'s
+lone-spike control uses (post review round 2, F6), so it is independently rerunnable at any base:
+`node scripts/report-chroma-floor-movement.mjs [<base-ref>]`.
+
+- 4,531 of 94,900 even 25-stop cells move (4.77%), all within two lifted-stop steps of the anchor
   (`|sd| <= 0.222`, stops 400/450/550/600 under lift 0; the exact set shifts under `liftStop` for
   lifted defaults, still bounded by the same `R`).
-- Max |dC| 19.1356 CAM16 C, Danger stop 550 (a saturated default, lift 0).
+- Max |dC| 19.2013 CAM16 C, Danger stop 550 (a saturated default, lift 0).
 - Perceptual and peak: 0 cells move (C6's own fingerprint proof).
 - Gate-path (non-anchored) construction: 0 cells move in count terms that matter to any gate (the
   gate-path dip sweep and the `--gate-path` envelope cells are both byte-identical before/after).

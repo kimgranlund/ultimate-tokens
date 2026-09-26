@@ -19,6 +19,6 @@ Re-pinned to `floor(measured, 1dp)` per the table's own stated convention; `FLOO
 against `<base>` (282fca8d) reads 4 changed `even` rows, all `DOWN` (Warning's light+dark move
 together as one row). No `perceptual` or `peak` line moved (mode-isolation gate, `#701` U1's C6).
 
-Nothing here needs #662 to act — the on-color policy is unaffected and every cell holds AA by a
+Nothing here needs #662 to act - the on-color policy is unaffected and every cell holds AA by a
 wide margin (worst case: Info dark at 4.5840:1). Filed per C8's own rule ("any downward move ...
 handed to #662's policy") so the erosion has a record outside the plan.

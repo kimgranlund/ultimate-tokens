@@ -36,10 +36,10 @@
 import { readFileSync } from "node:fs";
 import { primeSwatches, PRIME_STEPS } from "../../src/engine/prime.mjs";
 import { peakC, hctToRgb, lstarFromRgb, cam16FromRgb } from "../../src/engine/hct.js";
-import { effHue, paletteStops, DEFAULT_CONTROLS, RAMP_L_MIN, RAMP_L_MAX, STOPS, EXPORT_STOPS, ACHROMATIC_ANCHOR_C } from "../../src/engine/tonal.js";
+import { effHue, paletteStops, DEFAULT_CONTROLS, RAMP_L_MIN, RAMP_L_MAX, STOPS, ACHROMATIC_ANCHOR_C } from "../../src/engine/tonal.js";
 import { rgbToOkhsl, okhslToRgb, rgbToOklabChroma } from "../../src/engine/okhsl.js";
 import { derivedAll, oklchStr } from "../../src/engine/exports.js";
-import { defaultDocument, projectView, paletteKeyColors, rampChromaOf } from "../../src/ui/model.mjs";
+import { defaultDocument, projectView, paletteKeyColors } from "../../src/ui/model.mjs";
 import { hydrate } from "../../src/ui/persist.js";
 import { sampleCorpus, SAMPLE_SEED } from "./lib/corpus-sample.mjs";
 

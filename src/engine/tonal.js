@@ -395,7 +395,8 @@ export const EVEN_DAMP_FACTOR = 0.25;
 // anchor and 1 by R, replacing the exponent's infinite initial slope with a flat start: near the
 // anchor uG is smaller than the shipped formula gives, so the envelope (1 - damp/100*uG) is CLOSER to
 // 1 there, closing the spike without changing anything beyond R (chromaEnvelope's C5-gated cells sit
-// at |sd| >= 0.222 for the innermost measured stop, 300/700, well outside R).
+// at |sd| >= 0.444 for the innermost measured stop, 300/700 (lift 0; 0.222 is 400/600, not a C5 stop),
+// well outside R).
 //
 // R is a named constant, not a new control (F4): the plan's own feasibility probe (revision 1,
 // scratch patched copies of this file) swept r = 0.2/0.3/0.4 against the real corpus + default kit and

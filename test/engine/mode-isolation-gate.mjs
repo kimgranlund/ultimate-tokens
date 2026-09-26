@@ -1,22 +1,22 @@
 #!/usr/bin/env node
-// mode-isolation-gate.mjs — #701 U1, C6: perceptual and peak render byte-identically before and after
+// mode-isolation-gate.mjs - #701 U1, C6: perceptual and peak render byte-identically before and after
 // this plan's work, which touches `chromaEnvelope`'s even branch only (the `isEven` guard in
 // src/engine/tonal.js). Captures a sha256 fingerprint (first 16 hex digits, the plan's own method) of
 // perceptual and peak's rendered 25-stop hex ramps over the full corpus (343 curated documents, 3,780
 // palettes) plus the 16-palette default kit, via `projectView` (the SAME construction the product
 // renders, not a raw `paletteStops` call), and compares against the frozen fixture
 // (test/engine/fixtures/mode-isolation.json). A change that moves either fingerprint means the change
-// leaked outside even mode — U1's own C6 tripwire, not a re-derivation of chromaEnvelope's own code.
+// leaked outside even mode - U1's own C6 tripwire, not a re-derivation of chromaEnvelope's own code.
 //
 // This is a full-corpus sweep (two `projectView` passes over 3,796 palettes), so per #713 it is its own
 // gate script (`npm run gate:mode-isolation`, a `gate:sweeps` member and a `sweeps` CI matrix leg), not
-// a `test/run.mjs` TESTS entry — always run in full, `--full` accepted for the shared convention but not
+// a `test/run.mjs` TESTS entry - always run in full, `--full` accepted for the shared convention but not
 // read (there is no SAMPLED reading to fall back to; the fixture is a full-corpus capture).
 //
 //   node test/engine/mode-isolation-gate.mjs [--full] [--capture]
 //
 // `--capture` re-generates the fixture at the CURRENT tree's rendered output and writes it, printing the
-// sha to name in this header and in the fixture's own `owner` field — used only by hand, by whichever
+// sha to name in this header and in the fixture's own `owner` field - used only by hand, by whichever
 // plan next moves perceptual or peak (#725 is that plan today, per the plan's revision 8 ruling).
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
