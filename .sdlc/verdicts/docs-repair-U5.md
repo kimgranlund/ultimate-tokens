@@ -7,11 +7,16 @@ branch: unit/dr-U5
 base: plan/docs-repair @ 6cf18c8c
 grade: verifier-l1, the evidence run dispatched by the Verifier seat, which re-read the rows marked mine
 contract: U5-1 to U5-3, the design paragraph they grade (.sdlc/plans/docs-repair.md:85), and the plan rows P1 to P6 of .sdlc/plans/docs-repair.md at 5f6b058a
-pass: 1
+pass: 2
+passes: 1 at 5f6b058a 🔴, 2 at a3bac3b9 🟢
 written: 2026-09-25
 ---
 
-# Verdict docs-repair U5 · 🔴 · U5-1 to U5-3 🟢 as written, the catalog path not the one the plan names, P1, P2 and P5 held by the R47 quiet window
+# Verdict docs-repair U5 · passes 1 to 2 · 🟢 at `a3bac3b9`
+
+Current finding: 🟢 at `a3bac3b9`, in `## Pass 2` below. Pass 1, 🔴 at `5f6b058a`, is history.
+
+## Pass 1, at `5f6b058a`: U5-1 to U5-3 🟢 as written, the catalog path not the one the plan names, P1, P2 and P5 held by the R47 quiet window
 
 verdict: 🔴
 sha: 5f6b058af33d44117a2dbf6cbb2a119be6709222
@@ -53,3 +58,27 @@ after the window closes, P1, P2 and P5 run.
 
 verdict: 🔴
 sha: 5f6b058af33d44117a2dbf6cbb2a119be6709222
+
+## Pass 2, at `a3bac3b9`
+
+verdict: 🟢
+sha: a3bac3b92d2ede66da9e2d3b9b8ae5106027174f
+
+Run by me. The delta from `5f6b058a` is `fa34e3a0` (one line of `.claude/CLAUDE.md`) and `a3bac3b9`
+(the handoff, and the review's last line gains its token): `3 files changed, 7 insertions(+), 6 deletions(-)`.
+The quiet window closed under R50 before P1, P2 and P5 ran.
+
+| id | criterion | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| D1 | the catalog at the plan's path | 🟢 | `.claude/CLAUDE.md:47` now reads ``(whose catalog is `docs/reference/references/component-inventory.md`)``; `ls` finds it; the full-path grep `1` | pass 1's head `5f6b058a`: the full-path grep `0` |
+| U5-1 to U5-3 | as in pass 1 | 🟢 | `1`, `1`; `115` lines, `rows 56 drifted 11 holds 45 undetermined 0 bad 1`, QUOTE `1`; numstat `3 3` | pass 1's controls, same rows |
+| P1 | `npm test` | 🟢 | fresh clone, no `node_modules`: `✓ all 50 test files passed`, TESTS `50`, tree `0` | `scrim` to `scrimX` (`7 insertions(+), 7 deletions(-)`): `✗ 1/50 test file(s) failed`, exit `1` |
+| P2 | build, and the baseline agrees | 🟢 | `wrote figma/plugin/ui.html 4125.3 KB`, exit `0`, tree `0`, `stale total: 0` | the plan's plant (the baseline back to `4125.3`) is a no-op here, since this branch's bundle already reads `4125.3` (U3 has not merged in). Planted `4125.4` instead: `STALE ui.html: baseline 4125.4 KB, tree 4125.3 KB`, `stale total: 1` |
+| P5 | the citations gate, live in `npm test` | 🟢 | `1`; `✓ citations: parser self-test + STALE 0 across 10 discovered docs (HEAD a3bac3b9)`, exit `0` | the plan's `mixinInto` bump: `docs/lld/app-shell.md: 1 STALE/NOFILE citation line(s)`, `✗ 1 citation gate failure(s)`, exit `1` |
+| P3 | branding, no added dash | 🟢 | `branding: clean (723 files scanned)`, added em dash `0` | pass 1's plants |
+| N1 | the review's value | 🟢 | its last line is now `verdict: 🟢 PASS`; the check's `bad 11` at this head are main's records, fixed on main by `2981f6be` after this branch last merged main | pass 1 read `bad 12` with this record the twelfth |
+
+Pass 1's N2 (P6, owed at pre-land) and N3 (line 46's antecedent, line 48's verbless fragment) stand.
+
+verdict: 🟢
+sha: a3bac3b92d2ede66da9e2d3b9b8ae5106027174f
