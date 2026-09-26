@@ -9,9 +9,9 @@ landed at `c9751d21` on `unit/gg-U2b`:
 
 | run | clock | load before | load after | hot before/after | seconds | exit |
 |---|---|---|---|---|---|---|
-| 1 (quiet) | 21:47:35–21:50:07 PDT | 4.98 | 6.83 | 0/0 | 151.04 | 0 |
-| 2 (under load, R50) | 21:41:48–21:59:27 PDT | 69.22/70.00/70.52 | 111.92/103.77/93.01 | 1/3 | 1057.97 | 0 |
-| 3 (under load, R50) | 21:59:53–22:07:26 PDT | 109.79/104.02/93.47 | 48.36/64.83/79.33 | 4/6 | 452.98 | 0 |
+| 1 (quiet) | 2026-09-24 06:47:35–06:50:07 PDT | 4.98 | 6.83 | 0/0 | 151.04 | 0 |
+| 2 (under load, R50) | 2026-09-25 21:41:48–21:59:27 PDT | 69.22/70.00/70.52 | 111.92/103.77/93.01 | 1/3 | 1057.97 | 0 |
+| 3 (under load, R50) | 2026-09-25 21:59:53–22:07:26 PDT | 109.79/104.02/93.47 | 48.36/64.83/79.33 | 4/6 | 452.98 | 0 |
 
 All three green, tree clean after each. Runs 2 and 3 each overlapped rule-gates U5's own
 concurrent `npm test` (run 3 also overlapped its `test/engine/anchor.mjs --full`). Recorded in
@@ -43,3 +43,7 @@ thing R50 says not to do. Leaving `adapter.md` untouched keeps the ceiling meani
 
 Leave `time test` STALE and documented (this file plus the baseline.md commit), or rewrite
 `adapter.md`'s `test` row time cell to the new under-load range?
+
+Chosen: "Keep quiet figure, carry STALE (Recommended)", 2026-09-25, owner ruling R53. `adapter.md`'s
+`test` row stays at 80 to 89 s; the one `STALE time test` line is carried as a documented exception
+under R50 through pre-land.
