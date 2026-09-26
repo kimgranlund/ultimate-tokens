@@ -85,3 +85,4 @@ Head `b41c87ea` (delta from `f300ac87`: `3068fc32` changes 8 lines of `test/repo
 | P3-1 | The delta changes only the R6 before-side fixture text and the habitat fallback; self-test, totals and refusals hold | 🟢 | the fixture line is now `mode-apply-plan.mjs:289`'s real comment; the habitat fallback returns `string`, so `voice-check.mjs:89` now reads `(string)`, not `(comment)` (habitats `comment 31`, `string 26`). The gate prints `self-test: PASS` then `FAIL: 16688 em dashes ... in 343 files`, `exit 1`; the fix prints `R0 92 R1 27 R2 565 R3 439 R4 0 R5 0 R6 280 R7 29 R8 8192` | before-side test removed: `self-test: FAIL 13 case(s)`, `exit 1`; `guardBeforeHolds` forced true: `self-test: FAIL 1 case(s)`, `✗ guard: R6 before-side (placeholder before a line-end dash): matched R6, expected R0`, `exit 1` |
 
 Pass 2's yellows P2-12, P2-13 and P2-14 are unchanged by this delta. P2-16 is unchanged too: `styles.css:6` and `:106` are still labelled `(string)`.
+verdict: 🟢

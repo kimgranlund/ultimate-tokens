@@ -139,3 +139,4 @@ The verdict's "Reds to fix" item 2 names these lines. Revision 13 bounded pass 4
 2. 🔴 The verdict's named reds outside E1 to E4 still stand: `ds-export.js:776` (U4-8), `geometry.js:733`, `typography.js:630`, `color.js:1788`, `brand-kit-core.mjs:61`. Pass 4 needs either to fix them or to have a Conductor ruling that R39's bound retires them. As it stands, the verifier's 🔴 on U4-8 has not been answered.
 3. 🟡 E1's `[^"\`]*` misses a heading whose template carries an inner double quote (`brand-kit-core.mjs:61`). E2 as scoped misses `.md` files under `mcp/` (`mcp/README.md:8`, a real list-reader). Both are fifth-predicate candidates, graded 🟡 on the enumeration as the re-diagnosis says.
 4. Nit: `color.js:2214` `gamut: % of every stop's gamut ceiling: palettes harmonize across hue.` has two colons in one clause; a full stop reads better. `ds-export.js:1141` `Naming standard: **Ultimate Tokens grammar**: ...` has two colons too.
+verdict: 🟡 FIX-FIRST
