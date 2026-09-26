@@ -57,3 +57,23 @@ Neither needs a commit on the plan branch unless the review asks for one.
 
 verdict: 🔴
 sha: 39142e49574a8fcb892cee7f417978f5abe21fff
+
+## Pass 1, review leg added · 2026-09-26 · same sha `39142e49`
+
+The `reviewer-l4` I dispatched read the whole plan diff fresh: `/tmp/v13/gg-prepr-review.md`, last line
+`verdict: 🟡 FIX-FIRST`. The code passes; the block is records only. I checked its two findings myself.
+PR1 is now met: #756's title reads the Landing title, and its body carries `Closes #715`.
+
+| id | criterion | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| RL | the pre-land review leg | 🔴 | `verdict: 🟡 FIX-FIRST`, which reads 🔴 here under the token rule (Q3, #734) | a PASS review would end `verdict: 🟢 PASS` |
+| F1 | the plan records the rulings it lands under | 🔴 | `grep -c R53` on the plan at `39142e49`: `0`, and no `R50` either; its P2 row still reads `stale total: 0` while the head reads `stale total: 1` under R53 | the same grep on `rule-gates.md`, which records R53, prints a nonzero count |
+| F2 | the plan's figures reproduce at the head | 🔴 | plan line 270 pins U2-2 at `2.60`, `4.36`, `0.43`; the head reads `2.1736`, `4.3631`, `0.4290` | peak and even match, so the read can tell a stale figure from a moved one |
+| PR1 | the PR title | 🟢 | `test(color-engine): default kit in every anchor sweep, ramp identity control (#715)` | pass 1's read of the old title |
+
+What unblocks: one plan revision row that records R50 and R53 against P2 and step 7 and re-pins U2-2's
+perceptual figure, then the PR body rewritten from the next pass's record. The revision moves the sha, so
+the next pass reruns P2, P3, P4 and the checks at the new head, and the code rows carry on custody.
+
+verdict: 🔴
+sha: 39142e49574a8fcb892cee7f417978f5abe21fff
