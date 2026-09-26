@@ -44,7 +44,7 @@ Canonical specs + rubrics: `docs/reference/` (e.g. `docs/reference/data/role-tab
   `marketing-manager-agent` + `ultimate-tokens-brand-voice` skill. `docs/tickets/` — the
   pre-2026-07-17 bug/feature archive (`kind: bug`/`kind: feature` TICKETs); routed by the
   `project-docs` skill. `docs/site/`, `docs/lld/`, `docs/img/`: hosting/licensing specs, its
-  architecture doc `docs/lld/app-shell.md` (whose component catalog is `component-inventory.md`),
+  architecture doc `docs/lld/app-shell.md` (whose catalog is `docs/reference/references/component-inventory.md`),
   and the generated README preview SVG, respectively. `.claude/docs/other/`, **PRIVATE** (see below).
 - **Git-native ticket backend (ADR-017).** Bugs/features/issues now route to **GitHub Issues**
   (`gh issue create`), not new `docs/tickets/*.md` files — labels `kind:bug`/`kind:feature` +

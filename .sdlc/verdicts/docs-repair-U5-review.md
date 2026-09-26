@@ -14,4 +14,4 @@ Findings
 
 No blocking issues found.
 
-verdict: PASS
+verdict: 🟢 PASS
