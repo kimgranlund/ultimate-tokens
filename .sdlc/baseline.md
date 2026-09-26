@@ -2,13 +2,15 @@
 kind: baseline
 repo: ultimate-tokens
 ran: 2026-09-23 to 2026-09-25
-ref: main @ a62ec020
+ref: main @ 74859f30
 host: local macOS, Node 24.18, local Chrome for smoke; load under 5 at the start of every counted run (owner ruling 2026-09-20, quiet-host rule, R34 window 1 and its window-2 sequel), full readings in the U6b handoff's Runs table, except the `npm test` row's 2026-09-25 re-point, whose three runs are read under owner ruling R50 instead (`.sdlc/questions/rule-gates-U5-load.md`; run 1 quiet, runs 2 and 3 under load, each marked so beside its own reading)
 extended: 2026-09-19, rows corpus-contrast and fonts, host load 3.97 4.39 4.80 to 6.16 4.94 4.97 on 10 cores across the six runs
 supersedes: the 2026-09-19 baseline at d814500 (kept below as a prior set) and the 2026-09-16 baseline (git show 180eca0:.sdlc/baseline.md); the #713 U6b/U6c re-measurement below moves `npm test` out of the interim ceiling section entirely (the corpus sweeps split into their own gate scripts) and supersedes it as the figure to cite. Every row now carries all three of its counted quiet-host readings; `npm test`'s window-1 figures move to a labelled superseded note once U6c-8 re-timed it. 2026-09-25 (#715 U2b step 7): `npm test`'s row moves again, 50 to 51 files (`engine/ramp-identity.mjs`, K17), read under R50 (accept-runs-under-load) rather than the quiet-host rule; the #713 U6c-8 figures move to their own superseded note below
 ---
 
 # Baseline
+
+Close-out re-point (2026-09-26, #715 landed as PR #756, squash `74859f30`, adapter §5 step 5): `ref` moves from `main @ a62ec020` to the squash sha. The `npm test` row's 51-file figures were taken on the gate-gaps U2b tree that the squash carries; outside `.sdlc/` main also brought in its own merged changes since `a62ec020`. No new run is taken at close-out (the rule-gates pre-land holds the host), so the row stands as U2b measured it, under R50 and R53. CI at the landed head `4d1392ae` is green (run 36240681485).
 
 Close-out re-point (2026-09-24, #713 landed as PR #743, squash `a62ec020`, adapter §5 step 5): `ref` moves from `plan/gate-split @ c87d98fc` to the squash sha. Outside `.sdlc/` the tree moved since `c87d98fc` by comments in `test/engine/prime.mjs` and `.github/workflows/ci.yml`, the `shipping-changes` CI figure, the `.claude/CLAUDE.md` figure (R38), an ADR appended to `decision-records.md`, and main's `scripts/gen-adia-derived-exports.mjs` change. One `npm test` in a `git clone --shared` at `a62ec020`: `✓ all 50 test files passed`, tree clean after. It ran loud (load 5.83 at start, 2 other heavy runs, 3 hot processes; 13.47 at end), so its 139.76 s is not a figure of record; the quiet-host figures above stand.
 
