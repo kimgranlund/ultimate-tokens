@@ -6,7 +6,7 @@ ticket: "#758"
 branch: unit/pa-U4
 base: 8f5c6dc0
 grade: verifier-l1, the evidence run dispatched by the Verifier seat
-pass: 1
+pass: 2
 written: 2026-09-26
 ---
 
@@ -47,3 +47,18 @@ Notes, 🟡:
 
 verdict: 🔴
 sha: b6b1a2601202b74dbca3c4a3e637a48083184d40
+
+## Pass 2 · 2026-09-26 · `f668ba53`: 🟢
+
+`b6b1a260` to `f668ba53` changes only the review record (`1 file changed, 4 insertions(+), 4 deletions(-)`), so the
+code rows carry. I reran P1, P3 and the record checks in a clone at `f668ba53`.
+
+| id | criterion | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| P1 / P3 | `npm test` green; the em dash gate green | 🟢 | mine: `em-dash: clean (794 files scanned)`; `npm test` exit `0`, `✓ all 53 test files passed`, tree `0` after; `branding: clean (786 files scanned)`; `verdicts 163 graded 163 bad 0` | pass 1 at `b6b1a260`: `FAIL: 4 em dashes outside inline code spans in 1 files` |
+
+Pass 1's 🟡 notes stand (E1's `dropped` row should cite `.sdlc/questions/prompt-audit-approval.md:21`; the handoff's
+`#377` sentence).
+
+verdict: 🟢
+sha: f668ba53782d62476c433e4a0a0cd71ae9692a45
