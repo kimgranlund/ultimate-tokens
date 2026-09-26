@@ -7,11 +7,16 @@ branch: unit/cf-U1
 base: plan/chroma-floor @ 650ad34b
 grade: verifier-l2, the evidence run dispatched by the Verifier seat, which re-read the rows marked mine
 contract: C1, C2, C5 to C10 of .sdlc/plans/chroma-floor.md at fb85ed0b, revision 12, and the invariants the plan restates for every unit
-pass: 1
+pass: 2
+passes: 1 at fb85ed0b 🔴, 2 at cbcbf9f4 🟢
 written: 2026-09-26
 ---
 
-# Verdict chroma-floor U1 · 🔴 · the engine change holds every invariant; C7 and C10 red on their written Expected, C2 and C8 yellow, record items open
+# Verdict chroma-floor U1 · passes 1 to 2 · 🟢 at `cbcbf9f4`, four notes
+
+Current finding: 🟢 at `cbcbf9f4`, in `## Pass 2` below. Pass 1, 🔴 at `fb85ed0b`, is history.
+
+## Pass 1, at `fb85ed0b`: the engine change holds every invariant; C7 and C10 red on their written Expected, C2 and C8 yellow, record items open
 
 verdict: 🔴
 sha: fb85ed0b9b80a35d6a7e9b3fc9c0f45c58850f75
@@ -70,3 +75,71 @@ record grades its FIX-FIRST round `🟡`, while the rule adopted for #734 reads 
 
 verdict: 🔴
 sha: fb85ed0b9b80a35d6a7e9b3fc9c0f45c58850f75
+
+## Pass 2, at `cbcbf9f4`
+
+verdict: 🟢
+sha: cbcbf9f4ea2205c2fe90bc4d8ddcd2715a66eabd
+
+The evidence run, verifier-l2 again, is at `/tmp/v13/cf-U1-verify-p2.md`, with logs in `/tmp/v13/cfG/` and
+clones `/tmp/cfv2-*1790404908` (their delete was refused).
+
+No engine line moved since `fb85ed0b`. `tonal.js` changed in comments only (`0` non-comment lines), and
+`chromaEnvelope`'s body md5 is `e2c0a679ce217c070f6567499bf942af` at both. The full rendered dump, 3
+modes × 94,900 cells, is byte-identical: md5 `6c7bd643f493e82e5dd8459090fbac34` at both. So C5, C8's
+ratios and the invariants carry on custody, and every other row was rerun.
+
+Revision 13 was written after pass 1's red and takes its routes. It moves the dip sub-check from C7 at
+U1 to U2's C3, and it does not lose a true red. C3's Expected is `0 dips at stops other than 500` over
+the same predicate and population. At this head its line would read `24` off-anchor, the three
+stop-400 dips among them, so C3 catches all three. Revision 13 also admits C10's four paths and sets
+C2's count to `2`. The run notes that revision 13 lives in the revision log only; the criterion
+bodies were not edited in place.
+
+| id | criterion | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| C1 | `npm test` | 🟢 | `✓ all 50 test files passed`, TESTS `50`, tree `0` | `scrim` to `scrimX`: `✗ 1/50 test file(s) failed` |
+| C2 | the lone-spike gate (rev 13) | 🟢 | `grep -cE 'lone-spike'` `2`; the gate line byte-exact; `a.log` byte-identical to pass 1's | `uG *= 1`: `FAIL  anchor-ramp lone-spike`, exit `1` |
+| C6 | mode isolation | 🟢 | `pass  mode-isolation: perceptual 34e544942d500b9e peak f560f784d8a4883a match fixture` | off-even damping × `1.01`: `do not match fixture`, exit `1` |
+| C7 | uptick and duplicate sub-checks (rev 13) | 🟢 | instrumented full leg: `upticks {"perceptual":0,"peak":0,"even":0}`, `dup {"perceptual":0,"peak":0,"even":0}`, known dups `23/23`; the only red under `chroma-envelope` is the dip sub-check, carried to U2 | a second `export function chromaEnvelope`: the export grep reds |
+| C8 | the floor, R44's re-pins, #662 | 🟢 | `pass  chroma-floor`, `FLOORS changed 4, down 4`, all above AA; the #662 comment is posted with the five measured cells | the comparator exits `1` on any FLOORS move |
+| C9 | the hue solve | 🟢 | `max OKLab dE 0.0048`, even `0.0486` | hue offset by 30: `0.1668`, exit `1` |
+| C10 | `docs/` by the fixed list (rev 13) | 🟢 | exactly the four admitted paths; the three named generated files absent; regen tree `0` | a scratch commit to a fifth doc: listed as a fifth path |
+| B | build and baseline | 🟢 | `wrote figma/plugin/ui.html 4130.1 KB`; `ok    ui.html: baseline 4130.1 KB, tree 4130.1 KB`, `stale total: 0` | the row back at `4125.3`: `STALE ui.html`, `stale total: 1` |
+| P | branding, dashes | 🟢 | `branding: clean (733 files scanned)`; added em or en dash `0` | one planted dash: `1` |
+
+## The two questions the Orchestrator asked
+
+The max dC gap is two measures, and both numbers are right. `19.1356` is the requested CAM16 chroma
+(pass 1's script read `s.chroma`), at "Modal jazz" danger 550. `19.2013` is the CAM16 chroma of the
+rendered 8-bit hex, at "BZZR" Danger 550, whose requested dC is `19.0268`. Both runs cover the same
+4,531 cells. 8-bit rounding moves rendered chroma off the request by up to `2.8690`, enough to reorder
+the top cell. The handoff swapped the number under the same "Danger, stop 550" label, which reads as a
+correction; it should say it reports rendered-hex CAM16 and name its witness.
+
+`scripts/report-chroma-floor-movement.mjs` is outside U1's scope. C10 does not measure `scripts/`, so
+C10 stays 🟢. But the plan's blast-radius text asks for "a scratch script ... and names the script; no
+new report flag", U1's file list names `scripts/report-preset-fidelity.mjs` only, and R54 says "No new
+scope". A committed 114-line file is more than a named scratch script. If it stays, two limits need
+writing into its header:
+
+- Its default base, `git merge-base HEAD origin/main`, becomes the head itself once the plan lands, so
+  it will then print `0` moved.
+- It hard-codes `model.mjs`'s 15 import strings and exits `2` if any move.
+
+## Notes, none a red
+
+| id | item | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| S | the movement script: keep or drop | 🟡 | the Orchestrator rules before pre-land, keep with the two limits in its header or drop at U3's sweep; nothing runs it (`0` references from gates or tests) | the script at base = head prints `0 / 94900`, so it measures what it claims |
+| CT | two citations pass 2 made NEAR | 🟡 | `00-synthesis.md:89` and `04-context-and-messaging.md:71` cite `src/engine/tonal.js:958`; `okhslLAt` moved to `:959` with the new comment line. The gate stays green; the audit at `fb85ed0b` had neither line. Both paths are C10-admitted, so `958` to `959` is inside scope | the audit diff `fb85ed0b` to `cbcbf9f4` adds exactly these two |
+| M | blast-radius fields in the handoff | 🟡 | still missing: presets moved, palettes per mode, max dL*, max dC per stop. The plan has the verifier read the 15% line from its own run, and it does: `4531 / 94900` (`4.77%`), presets `344/344`, palettes `2417/3796`, max dC by stop `2.21 / 18.01 / 19.14 / 1.46` | the base-against-base run moves `0` |
+| T | the mode-isolation timing row | 🟡 | `0/3` quiet-host readings, owed before pre-land | `baseline-agrees` counts the row |
+
+Also carried: `doc-drift-rows` `bad 1` (DD9) and `ceiling-counts: 1 failure(s)` (#755) are identical at
+the base. `verdict-frontmatter`'s `bad 11` are main's records, fixed on main, and clear when main is
+merged in. No reviewer record covers the pass-2 commit. The `tonal.js:398` comment says "well outside
+R" where the lift-±40 bound, `0.2241`, is just outside `0.2`.
+
+verdict: 🟢
+sha: cbcbf9f4ea2205c2fe90bc4d8ddcd2715a66eabd
