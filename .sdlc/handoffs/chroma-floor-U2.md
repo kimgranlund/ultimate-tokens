@@ -43,19 +43,19 @@ The comments in `tonal.js` and `foundations.md` now say it the way the review as
 
 ## C13
 
-| Sub-check | Expected | Read | State |
-|---|---|---|---|
-| (i) sat 9.55 vs 10.05 (straddles the dark edge) | loss differs by at most 2 C | 0.00 | 🟢 |
-| (i) sat 9.99 vs 10.05 | at most 2 | 0.00 (both generate `#051D31`, L* 10.05, so this pair does not straddle; the 9.55 pair above does) | 🟢 |
-| (i) sat 94.95 vs 95.13 | at most 2 | 1.94 | 🟢 |
-| (i) pale 9.55 vs 10.05 | at most 2 | 0.45 | 🟢 |
-| (i) pale 9.99 vs 10.05 | at most 2 | 0.18 | 🟢 |
-| (i) pale 94.95 vs 95.13 | at most 2 | 2.77 | 🟡 |
-| (ii) `#E8EEFA` vs `#ECF1FC`, 700/750/800 | within 2 C | 14.1 / 13.9 / 13.8 vs 13.8 / 13.4 / 13.2 | 🟢 |
-| (ii) `#1C2030` vs `#161A28`, 300 to 450 | within 3 C | 22.9 / 21.3 / 18.2 / 16.1 vs 20.8 / 20.2 / 16.5 / 14.5 | 🟢 |
-| (iii) big cells | at most 20 | 17 in 8 anchors | 🟢 |
-| (iii) anchors L* 88 to 95.05 | 0 | 0 | 🟢 |
-| (iii) anchors below L* 15 | at most 5 | 5 | 🟢 |
+| Sub-check | Expected | Evidence | State | Negative control (pass-1 engine) |
+|---|---|---|---|---|
+| (i) sat 9.55 vs 10.05 (straddles the dark edge) | loss differs by at most 2 C | `0.00` | 🟢 | 13.19 FAIL |
+| (i) sat 9.99 vs 10.05 | at most 2 | 0.00 (both generate `#051D31`, L* 10.05, so this pair does not straddle; the 9.55 pair above does) | 🟢 | 0.00 |
+| (i) sat 94.95 vs 95.13 | at most 2 | `1.94` | 🟢 | 14.42 FAIL |
+| (i) pale 9.55 vs 10.05 | at most 2 | `0.45` | 🟢 | 11.17 FAIL |
+| (i) pale 9.99 vs 10.05 | at most 2 | `0.18` | 🟢 | 0.40 |
+| (i) pale 94.95 vs 95.13 | at most 2 | `2.77` | 🟡 | 20.60 FAIL |
+| (ii) `#E8EEFA` vs `#ECF1FC`, 700/750/800 | within 2 C | `14.1 / 13.9 / 13.8 vs 13.8 / 13.4 / 13.2` | 🟢 | FAIL |
+| (ii) `#1C2030` vs `#161A28`, 300 to 450 | within 3 C | `22.9 / 21.3 / 18.2 / 16.1 vs 20.8 / 20.2 / 16.5 / 14.5` | 🟢 | FAIL |
+| (iii) big cells | at most 20 | `17 in 8 anchors` | 🟢 | 211 FAIL |
+| (iii) anchors L* 88 to 95.05 | 0 | `0` | 🟢 | 1 FAIL |
+| (iii) anchors below L* 15 | at most 5 | `5` | 🟢 | 17 FAIL |
 
 The pale light pair misses by 0.77 C, and the miss is in the pre-#701 reference, not the rule. The new engine's own far-side chroma across that pair differs by 0.55 C at most (the probe's `(i-b)` lines; the pass-1 engine reads 17.71 there). A sweep of pale anchors from L* 94.45 to 95.85 reads the new engine's stop 800 at 13.6 to 14.5 on both sides of the edge, while the pre-#701 floor's stop 800 swings between 20.7 and 25.2 with the 8-bit hue of the quantized anchor. That puts the loss between 6.2 and 11.5 on both sides alike. My generator also differs from the re-diagnosis's for pale anchors (sat reproduces its 6.4 and 4.5 exactly, pale reads 11.5 and 8.7 against its 7.4 and 6.2). Far side: stops 600 to 800 for L* above 50, 200 to 400 below.
 
