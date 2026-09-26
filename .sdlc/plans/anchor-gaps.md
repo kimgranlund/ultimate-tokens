@@ -99,7 +99,7 @@ Post-merge check, the Orchestrator's own step once a unit's gate is green: merge
 
 ## Units
 
-- [r] U1 (M) `backfillDefaultAnchors` in `app-helpers.mjs`, wired into `hydrateStoredDoc`; `DEFAULT_PALETTES` exported; the `stored-anchors` gate; the CHANGELOG line · builder-l3 · reviewer-l2 · verifier-l2 · starts at G0 lines 1 to 4 green
+- [x] U1 (M) `backfillDefaultAnchors` in `app-helpers.mjs`, wired into `hydrateStoredDoc`; `DEFAULT_PALETTES` exported; the `stored-anchors` gate; the CHANGELOG line · builder-l3 · reviewer-l2 · verifier-l2 · starts at G0 lines 1 to 4 green
 - [ ] U2 (S) the hueless rule in `gen-categories.mjs`, `brands.js` regenerated, `KNOWN_BASELINE_DUP` re-frozen; the CHANGELOG line · builder-l2 · reviewer-l2 · verifier-l2 · starts at G0 all six lines green
 
 | Unit | Size | Builder | Reviewer | Verifier | Touches |
