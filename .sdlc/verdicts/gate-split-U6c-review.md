@@ -42,3 +42,4 @@ Every run was in a `git clone -q --shared` of the unit worktree under `u6c-rev/`
 | ⚪ Nit | F4 | Loop body under `for (const { preset, pal } of resetEntries)` kept its old two-level indentation (6 spaces under a 2-space `for`) | Optional reindent; behavior unaffected |
 
 The plan's `21` in U6c-2's Expected cell is stale against every head after #681's merge; the plan owner may want a revision note, not a unit change.
+verdict: 🟡 FIX-FIRST
