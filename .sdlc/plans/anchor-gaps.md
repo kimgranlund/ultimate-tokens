@@ -1,5 +1,5 @@
 ---
-status: draft
+status: approved
 ticket: "#740 (anchor; the plan also closes #744)"
 priority: P2
 lane: color-engine (`src/ui/app-helpers.mjs`, `src/ui/model.mjs`, `test/ui/persist.mjs`, `scripts/gen-categories.mjs`, `src/ui/categories/brands.js`, `test/engine/tonal.mjs`, `CHANGELOG.md`, the bundle files `npm test` regenerates)
