@@ -2,13 +2,15 @@
 kind: baseline
 repo: ultimate-tokens
 ran: 2026-09-23 to 2026-09-26
-ref: main @ 74859f30
+ref: main @ 37b04676
 host: local macOS, Node 24.18, local Chrome for smoke; load under 5 at the start of every counted run (owner ruling 2026-09-20, quiet-host rule, R34 window 1 and its window-2 sequel), full readings in the U6b handoff's Runs table; the `npm test` row is the one exception, rule-gates U5b, load not gated (owner ruling, `.sdlc/questions/rule-gates-U5-load.md`, 2026-09-25, "accept runs under load"), see its own Correction
 extended: 2026-09-19, rows corpus-contrast and fonts, host load 3.97 4.39 4.80 to 6.16 4.94 4.97 on 10 cores across the six runs
 supersedes: the 2026-09-19 baseline at d814500 (kept below as a prior set) and the 2026-09-16 baseline (git show 180eca0:.sdlc/baseline.md); the #713 U6b/U6c re-measurement below moves `npm test` out of the interim ceiling section entirely (the corpus sweeps split into their own gate scripts) and supersedes it as the figure to cite. Every row now carries all three of its counted quiet-host readings; `npm test`'s window-1 figures move to a labelled superseded note once U6c-8 re-timed it. 2026-09-25 (#715 U2b step 7): `npm test`'s row moves again, 50 to 51 files (`engine/ramp-identity.mjs`, K17), read under R50 (accept-runs-under-load) rather than the quiet-host rule; the #713 U6c-8 figures move to their own superseded note below. 2026-09-26 (rule-gates U5b, pre-land sync): `npm test`'s row moves again, 52 to 53 files (main's #715 `engine/ramp-identity.mjs` plus this plan's own `repo/svg-rules.mjs` and `repo/em-dash.mjs`), three runs taken under load per the same load ruling; rule-gates U5's own 52-file under-load set moves to its own superseded note below
 ---
 
 # Baseline
+
+Close-out re-point (2026-09-26, #730 landed as PR #757, squash `37b04676`, adapter §5 step 5): `ref` moves from `main @ 74859f30` to the squash sha. The `npm test` row's 53-file figures were taken by rule-gates U5b on the tree the squash carries; main moved after them only by `.sdlc/verdicts/` record commits. No new run is taken at close-out, so the row stands as U5b measured it, under the load ruling and R53. CI at the landed head `1436563c` is green (run 36261285755).
 
 Close-out re-point (2026-09-26, #715 landed as PR #756, squash `74859f30`, adapter §5 step 5): `ref` moves from `main @ a62ec020` to the squash sha. The `npm test` row's 51-file figures were taken on the gate-gaps U2b tree that the squash carries; outside `.sdlc/` main also brought in its own merged changes since `a62ec020`. No new run is taken at close-out (the rule-gates pre-land holds the host), so the row stands as U2b measured it, under R50 and R53. CI at the landed head `4d1392ae` is green (run 36240681485).
 
