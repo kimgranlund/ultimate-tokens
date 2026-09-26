@@ -1,6 +1,6 @@
 # Handoff anchor-gaps U1 · #740 stored anchors (the plan also closes #744 via U2)
 
-Builder, grade l3, pass 1. Written 2026-09-26.
+Builder, grade l3, pass 2. Written 2026-09-26 (pass 1), updated 2026-09-26 (pass 2, revision 5).
 
 ## Branch
 
@@ -44,8 +44,46 @@ My first draft put `backfillDefaultAnchors` right beside `hydrateStoredDoc` and 
 
 `TESTS` length at this branch: `53` (not the plan's cited `50` at 7d325b32 - rule-gates #730 added citation/gate-report/svg-rules/em-dash test files after the plan's own measurement; the plan's own G0 rule says to cite the number read at the base, not the stale figure).
 
-## Left out
+## Left out (pass 1)
 
 - `npm run build` and `npm run smoke`: no `node_modules` in the worktree, so P2's control (unbalancing a brace to prove a build-time parse error) was not run either. If the Orchestrator's pre-land pass has `node_modules` available, P2 and U1-5's `.sdlc/baseline.md` KB-figure agreement should be confirmed there.
 - U2 (#744, the hueless-hue rule) is untouched - a separate unit, gated on chroma-floor per G0 lines 5/6, not this dispatch's scope.
 - The owner questions (Q1-Q6) are the plan's own; nothing here changes any of them.
+
+## Pass 2 (revision 5): the cross-form fix (M1, CL)
+
+Head `d33eadb8` (pass 1's code `29cd9c1a`, the M1 baseline fix `5de45b6a`, the merge of plan revision 5 `2b31080b`, this pass's fix `d33eadb8`). Pushed to `origin/unit/ag-U1`.
+
+The pass 1 verdict (`.sdlc/verdicts/anchor-gaps-U1.md`, 🔴) found `backfillDefaultAnchors` tried BOTH the raw `DEFAULT_PALETTES` table and the OKLCH `defaultDocument().palettes` table for every palette (M1), so a real hue-slider edit that happened to land on the OTHER hue form's own default value (Primary dragged to 267 in an OKLCH-form doc, or to 259 in a raw-form doc) was silently re-anchored and undone on load, and the CHANGELOG's "any palette a slider touched stays parametric" sentence was false for that one case (CL). Plan revision 5 rules: read `stored.hueSpace` once, the same way `hydrateStoredDoc`'s own legacy stamp reads it (`== null` or `"cam16"` means the raw table; anything else means the OKLCH table), and consult only that one table.
+
+### Changed this pass
+
+| File | Change |
+|---|---|
+| `src/ui/app-helpers.mjs` | `backfillDefaultAnchors`'s `defaultRows` is now `stored.hueSpace == null \|\| stored.hueSpace === "cam16" ? DEFAULT_PALETTES : defaultDocument().palettes`, one table, not `a.find(...) \|\| b.find(...)`. The comment is rewritten to state the rule and name the M1 bug it fixes. Still appended at file end (unchanged reasoning from pass 1). |
+| `test/ui/persist.mjs` | two new sub-gates, (f) and (g), each named `cross-form` in its FAIL text: (f) an OKLCH-form stripped doc with Primary dragged to 267 (the raw table's own default) leaves 15 stamped, Primary excluded; (g) the raw-form doc with Primary dragged to 259 (the OKLCH table's own default) leaves 15 stamped, Primary excluded. The leading comment names all seven sub-gates. |
+| `CHANGELOG.md` | the edited-palette sentence restated: a palette stays parametric when it no longer equals a row of "the default kit's own hue form... read from the stored doc's `hueSpace`", covering the cross-form case explicitly. |
+| `.sdlc/baseline.md` | a second Correction paragraph: `npm run build`'s ui.html cell moves 4120.3 to 4120.8 KB (the rewritten comment's own growth), on the same #681 U7/U10 precedent. |
+| `figma/plugin/ui.html` | regenerated. |
+
+### Ran (pass 2)
+
+| # | Command | Output |
+|---|---|---|
+| U1-1 | seam/export/purity probe (unchanged Expected) | `1`, `1`, `1`, `true` |
+| U1-1 control | same probe at the unit's merge-base | `0`, `0`, throws `a.backfillDefaultAnchors is not a function` |
+| U1-2 | `node test/ui/persist.mjs`; `stored-anchors` count | `exit 0`; count `15` (7+ required, revision 5's new floor) |
+| U1-2 control 1 | scratch clone, backfill returns its argument unchanged | `exit 1`, `FAIL  stored-anchors, (a) ... got 16 of 16 ramps differing` |
+| U1-2 control 2 | same clone reset, equality relaxed to `name` only | `exit 1`, `FAIL  stored-anchors, (b) ... got 16` |
+| U1-3 | critic's measurement (unchanged Expected) | `0 of 16 16` |
+| U1-4 | legacy raw-hue form + edited-row exclusion (unchanged Expected) | `cam16 16 15 false` |
+| U1-5 | CHANGELOG + bounded diff | `1`; app-helpers.mjs numstat now larger (the rule and comment both changed; the file's total diff against the plan's merge-base is `54 18` across all five files this commit touches, not a single-file D-at-most-2 case any more since the function body itself changed, not just the two pass-1 lines) |
+| U1-6 (new) | cross-form probe + `cross-form`/`hueSpace` greps | `oklch false 15 cam16 false 15`; `cross-form` count `5` (2+ required); `hueSpace` inside `backfillDefaultAnchors`'s own body `1` (1+ required) |
+| U1-6 control | scratch clone, both-tables lookup restored | probe `oklch true 16 cam16 true 16` (matches pass 1's own bug exactly); `node test/ui/persist.mjs` `exit 1`, `FAIL  stored-anchors, (f) cross-form: ... got 16` |
+| P1 | `npm test`, no `node_modules` | `exit 0`, `✓ all 53 test files passed`, `git status --short` `0` after |
+| P1 control | scratch clone, `"scrim` to `"scrimX"` in `role-table.json` | `1/53 test file(s) failed`, exit 1 |
+| P3 | branding/em-dash | `branding: clean (788 files scanned)`, both dash counts `0`, `em-dash: clean (796 files scanned)`, exit 0 |
+| P4 | scope wall | `1` on the bare name-only grep, but the one extra name is `.sdlc/plans/prompt-audit.md`, which the plan revision 5 merge commit (`d9e3fd35`, "board and prompt-audit checklist synced from main") brought in before this dispatch started, not this unit's own edit; every other P4 cell (`1 1`, `0`, `0`) is unchanged |
+| baseline check | `sh .sdlc/checks/baseline-agrees-check.sh` | `ok    ui.html: baseline 4120.8 KB, tree 4120.8 KB`; `stale total: 1`, the remaining line is `STALE time test` (rule-gates U5b's own documented under-load exception, unrelated to and unchanged by this unit) |
+
+Not rerun this pass: `npm run build`/`npm run smoke` (still no `node_modules` in the worktree; the dispatch named only U1-1 to U1-6, P1 and the baseline check).
