@@ -8,7 +8,7 @@ owner: Kim Granlund
 review-cadence: weekly
 audience: builder, planner, reviewer
 ---
-# PLAN — Align every export surface with the 0.3.0 color system and stamp the export schema
+# PLAN: Align every export surface with the 0.3.0 color system and stamp the export schema
 
 Intent record: GitHub issue #569 (planning charter, `size:big`). Governing contracts:
 `docs/spec/spec-muted-base-key-spikes.md` 0.3.0 (REQ-030..034, REQ-054, REQ-057) and
@@ -39,7 +39,7 @@ Legend: **E** emitted · **P** partial · **M** missing · **X** deliberately ex
 | DS bundle, Figma Make profile (guidelines tree) | E (same spine) | E, to be gate-proven per profile (the existing `design-system-prime` gate exercises the Claude Design profile) | M | X | P |
 | Figma plugin apply (`figma/plugin/code.js`) | E | E creates/updates `Color Prime` (#540/#554) | X (no Figma folder or metadata; ruled #556) | X | M (collections carry no version; the provenance registry key is the only marker) |
 | Figma binder (`figma/binder/`) | E, binds 53 roles per palette from `role-table.json` defaults | X reads nothing from `Color Prime` (LLD "Figma plugin apply" row); the dry-run report does not mention the collection | X | X | n/a |
-| MCP brand-kit (`brandKit()` in `src/ui/model.mjs`, served as-is by `mcp/brand-kit-core.mjs`) | E, 16 palettes; `list_palettes` gives no family kind | E `get_prime`, `brand://palette/{slug}/prime` | M | M (kit carries no controls) | P `$schema: ultimate-tokens-brand-kit/1` (unbumped after `prime` was added); `SERVER.version 0.1.0` (corrected 2026-09-11, #578: `$schema` is stamped by `brandKit()` itself, not by `brand-kit-core.mjs`, which never reads or writes it — it only serves the kit object `brandKit()` already produced) |
+| MCP brand-kit (`brandKit()` in `src/ui/model.mjs`, served as-is by `mcp/brand-kit-core.mjs`) | E, 16 palettes; `list_palettes` gives no family kind | E `get_prime`, `brand://palette/{slug}/prime` | M | M (kit carries no controls) | P `$schema: ultimate-tokens-brand-kit/1` (unbumped after `prime` was added); `SERVER.version 0.1.0` (corrected 2026-09-11, #578: `$schema` is stamped by `brandKit()` itself, not by `brand-kit-core.mjs`, which never reads or writes it, it only serves the kit object `brandKit()` already produced) |
 | Consumer plugin `color-tokens` skill | P (data-viz prose exists; `data-1..8` and the shadcn chart mapping are not named) | E (prime paragraph, #557) | M | X | n/a |
 | knowledge-04 | P (§1 table predates data/prime; JSON row claims a `meta`) | E §10 | M | X | M (no versioning section) |
 
@@ -62,11 +62,11 @@ ruling, and H-3 records a change from the proposed default.
   folders. **Ratified 2026-09-11 (H-1), exactly as proposed.** (Decided 2026-09-11, #578: E1's
   shipped "DESIGN.md family table gains a Group column" reads, in practice, as **Figma Make's own
   Grammar token reference table only** (`dsMakeColorMd`, rendered into Figma Make's own
-  `guidelines/foundations/color.md` — Make never emits a `DESIGN.md`) — the only one of the three
+  `guidelines/foundations/color.md`, Make never emits a `DESIGN.md`), the only one of the three
   profiles with a literal per-family table. Claude Design's and Stitch's shared canonical Colors section (`dsColorRoles`'s
   `colors` block, byte-identical across both profiles) is prose bullets, not a table, and carries no
   group mention at all; `familiesByGroup` is available to it but unconsumed. This is Make-only by
-  the shape of what shipped, not a stated non-goal — left as-is here rather than grown into a new
+  the shape of what shipped, not a stated non-goal, left as-is here rather than grown into a new
   prose paragraph, since that would be a `ds-export.js` code change outside a docs-of-record pass;
   a follow-up ticket can add an equivalent Colors-section group note to the Claude Design/Stitch
   spine if an agent consumer is ever found to need it there too.)
@@ -76,7 +76,7 @@ ruling, and H-3 records a change from the proposed default.
   generated under; no other format carries controls (values already reflect them). Rationale: the
   brand-kit is the one surface agents interrogate for "why is neutral muted"; CSS consumers never
   need it. **Ratified 2026-09-11 (H-2).** (Corrected 2026-09-11, #594: `baseChroma` is the shipped
-  field name — PR #593/E2 named it per AC-004, `spec-muted-base-key-spikes.md`, which bars the
+  field name, PR #593/E2 named it per AC-004, `spec-muted-base-key-spikes.md`, which bars the
   literal string `baseIntensity` from `src/engine` entirely, consistent with `model.mjs`'s
   `stateOf()` renaming at this same boundary since #566/#567; this RP originally read
   `baseIntensity`, a stale name this correction fixes without reopening the ratification itself.)

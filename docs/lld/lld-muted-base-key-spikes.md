@@ -9,7 +9,7 @@ spec: spec-muted-base-key-spikes
 scope: feature
 audience: builder, reviewer
 ---
-# LLD — Palette groups with an absolute base chroma, a per-palette prime system, data hue derivation
+# LLD: Palette groups with an absolute base chroma, a per-palette prime system, data hue derivation
 
 Spec: `docs/spec/spec-muted-base-key-spikes.md` 0.4.0 (REQ/AC ids below refer to it). Intent: issues
 #503 and #533. Substrate this design leans on and does not restate: `color-math` skill (two ramp
@@ -124,7 +124,7 @@ projectView(doc).palettes[i].prime  -> the primeSwatches() array
 brandKit(doc).palettes[i].prime     -> { [step]: { hex, oklch: "oklch(L C H)" } }
 tokenCount(doc)                     -> enabled * (25 + 11 + 53 + 7)
 
-// exports.js (P4) — emitted names per REQ-054
+// exports.js (P4), emitted names per REQ-054
 // CSS/OKLCH raw block:   --{n}-prime-{step}: #hex | oklch(L C H)
 // JSON:                  palettes[n].prime[step] = { hex, oklch }
 // DTCG raw tree:         {n}.prime.{step} = colorLeaf(rgb, 1)
@@ -224,13 +224,13 @@ P8 documents groups last.
    REPLACED 2026-09-20 (#681 U6, see the superseding note at the end of this entry).** With
    `lPrime` near 0.9 the three light swatches sit 0.013 apart and may read as duplicates, and a
    positive skew (Warning's `40`) pushes them closer still. Detection: user report (R1 is ratified as
-   is) — and the detection signal DID fire, as a user report on 2026-09-13 filed as #641. Measured at
+   is), and the detection signal DID fire, as a user report on 2026-09-13 filed as #641. Measured at
    the time: ten of the sixteen default palettes spanned less than `6 * PRIME_STEP`, the worst being
    Data 5 at 0.2762 through `defaultDocument()` (hueSpace `oklch`, its shipped `chroma`) and 0.2955
-   with the raw `role-table.json` pair read as `cam16` at the same chroma — the two hue spaces reach
+   with the raw `role-table.json` pair read as `cam16` at the same chroma, the two hue spaces reach
    different cusp tones, so the same palette has two different anchors. The cause in both: the clipped
    side's lost travel was never handed to the other side. Remedy taken
-   (owner ruling option A, 2026-09-17): shortfall REDISTRIBUTION in `primeSteps(lPrime)` — each side
+   (owner ruling option A, 2026-09-17): shortfall REDISTRIBUTION in `primeSteps(lPrime)`, each side
    keeps its own even spacing, and a clipped side's lost travel moves to the unclipped side, capped by
    that side's room. The listed `PRIME_L_MAX` bias fallback was NOT taken: biasing the bound moves
    `lPrime` itself, and `l = key.l` is the mechanism by which REQ-056 makes `prime` reproduce
@@ -239,14 +239,14 @@ P8 documents groups last.
    AC-050 (d1)/(d2a)/(d3)/(d4)/(d5)/(d6), which run over both hue spaces.
    Second defect, found while fixing the first and FIXED in the same change (#655, folded into #641 by
    owner ruling 2026-09-17): for yellow-green hues the cusp construction puts `lPrime` ITSELF above the
-   old `PRIME_L_MAX` of 0.94 — it peaks at 0.961183 (cam16 hue 109.75, chroma 0.75; the oklch peak is
-   the same value near hue 98) — so `prime` was out of bounds before any ladder was built, `roomUp`
-   went NEGATIVE, and the three light swatches inverted — reading DARKER than `prime`, not lighter.
-   Affected hues under 0.94, per chroma and as the union across chromas `{0, 50, 100}` — cam16: 15 hues
+   old `PRIME_L_MAX` of 0.94, it peaks at 0.961183 (cam16 hue 109.75, chroma 0.75; the oklch peak is
+   the same value near hue 98), so `prime` was out of bounds before any ladder was built, `roomUp`
+   went NEGATIVE, and the three light swatches inverted, reading DARKER than `prime`, not lighter.
+   Affected hues under 0.94, per chroma and as the union across chromas `{0, 50, 100}`, cam16: 15 hues
    108..122 at chroma 0, six at 110..115 at chroma 50 and the same six at chroma 100, union 15 hues
    108..122. oklch: 13 hues 96..108 at chroma 0, six at 107..112 at chroma 50, six at 109..114 at
    chroma 100, union 19 hues spanning 96..114. So cam16's 15 is both its chroma-0 count AND its union,
-   whereas oklch's 19 is the UNION only — its own chroma-0 count is 13. `oklch` is the product default
+   whereas oklch's 19 is the UNION only, its own chroma-0 count is 13. `oklch` is the product default
    and carries the wider union. Remedy: `PRIME_L_MAX` raised to 0.97 (REQ-051a) and each room floored
    at 0 so travel can never go negative. AC-050 (d4) now asserts ZERO out-of-window anchors across the
    full sweep in both hue spaces.

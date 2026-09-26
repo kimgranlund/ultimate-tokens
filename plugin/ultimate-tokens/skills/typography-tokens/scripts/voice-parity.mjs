@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// voice-parity.mjs — the DRIFT GATE between typography-tokens and the product's type engine. Every
+// voice-parity.mjs, the DRIFT GATE between typography-tokens and the product's type engine. Every
 // --type-* / --font-* token and .type-* class named in the skill must be a REAL voice·step·prop the
 // engine emits, and the claimed voice count must match. Runs in the product repo's npm test; outside
 // the repo it exits 0 (a maintainer gate, not a consumer tool). Sibling of color-tokens' role-parity.
@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SKILL_DIR = join(HERE, "..");
 const ENGINE = join(HERE, "../../../../../src/engine/type.mjs");
-if (!existsSync(ENGINE)) { console.log("voice-parity: type engine not found (outside the product repo) — skipping"); process.exit(0); }
+if (!existsSync(ENGINE)) { console.log("voice-parity: type engine not found (outside the product repo), skipping"); process.exit(0); }
 
 const { typeScale } = await import(ENGINE);
 const scale = typeScale({ treatment: "product" });
@@ -23,7 +23,7 @@ const VOICE_COUNT = Object.keys(scale.categories).length;
 
 const files = ["SKILL.md", ...readdirSync(join(SKILL_DIR, "references")).filter((f) => f.endsWith(".md")).map((f) => "references/" + f)];
 let failed = false;
-const err = (f, tok, why) => { console.error(`✗ ${f}: ${tok} — ${why}`); failed = true; };
+const err = (f, tok, why) => { console.error(`✗ ${f}: ${tok}, ${why}`); failed = true; };
 
 // a voice ref may be one or two segments; try longest match against VOICES.
 const matchVoice = (rest) => {
@@ -62,13 +62,13 @@ for (const f of files) {
   // the voice count claim
   for (const m of text.matchAll(/\b(one|two|three|four|five|six|seven|eight|nine|ten)[-\s]+voices?\b/gi)) {
     const NW = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
-    if (NW[m[1].toLowerCase()] !== VOICE_COUNT) err(f, m[0], `voice count drift — engine has ${VOICE_COUNT}`);
+    if (NW[m[1].toLowerCase()] !== VOICE_COUNT) err(f, m[0], `voice count drift, engine has ${VOICE_COUNT}`);
   }
 }
 
 // SEMANTIC parity (not just token existence): the set of voices the skill says carry -line-single
 // must EQUAL the set the engine actually emits it for. Token-existence checks can't catch a false
-// NEGATIVE ("line-single exists only on ui/code") — this closes that drift class. The engine emits
+// NEGATIVE ("line-single exists only on ui/code"), this closes that drift class. The engine emits
 // singleLineHeight for the ui + mono roles; mono backs Code AND Heading-Kicker.
 {
   const engineSingleLine = new Set(Object.entries(scale.categories)
@@ -77,7 +77,7 @@ for (const f of files) {
   const blob = files.map((f) => readFileSync(join(SKILL_DIR, f), "utf8")).join("\n");
   // Every engine single-line voice must be POSITIVELY ASSOCIATED with -line-single: its name must
   // appear within ~240 chars of a "line-single" mention at least once. This catches the exact
-  // false-negative class the reviewer found (a single-line voice — Heading-Kicker — that the skill
+  // false-negative class the reviewer found (a single-line voice, Heading-Kicker, that the skill
   // omits from every single-line statement), which a plain name-anywhere check would miss (the
   // voice's name also shows up in class tables for unrelated reasons).
   const near = (voice) => {
@@ -93,5 +93,5 @@ for (const f of files) {
   }
 }
 
-console.log(failed ? "voice-parity FAIL" : `voice-parity PASS — every type token/class in ${files.length} files matches the engine (${VOICE_COUNT} voices; -line-single voices verified)`);
+console.log(failed ? "voice-parity FAIL" : `voice-parity PASS, every type token/class in ${files.length} files matches the engine (${VOICE_COUNT} voices; -line-single voices verified)`);
 process.exit(failed ? 1 : 0);

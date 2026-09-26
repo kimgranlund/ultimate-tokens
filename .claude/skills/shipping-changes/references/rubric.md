@@ -1,4 +1,4 @@
-## Rubric — a shipped change
+## Rubric: a shipped change
 
 Scores a ship of ultimate-tokens (one PR landed + local synced). `[gate]` = mechanically checkable
 (grep / a `gh`/`git` command); `[review]` = judgment with cited evidence. Score each 1–5.
@@ -18,6 +18,6 @@ ship that committed on `main` (H1), skipped a required gate (H2), leaked `.claud
 dropped the trailer (H4), or left local `main` unsynced / a branch dangling (H6) is not landed regardless
 of how good the diff is.
 
-**Top failure to look for first:** treating **green Chrome smoke as Safari proof** (H5) — the user previews
+**Top failure to look for first:** treating **green Chrome smoke as Safari proof** (H5), the user previews
 in Safari and WebKit is stricter; a passing CI run is not cross-browser verification. Second: a `git branch
--D` done **before** confirming the squash actually landed on `main` (H6) — the work-loss trap.
+-D` done **before** confirming the squash actually landed on `main` (H6), the work-loss trap.

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// describe-mcp-server.mjs — the zero-dependency STDIO entry for the describe-palette generator MCP (#371).
-// Unlike brand-kit-server.mjs, there is no sibling file to load — generate_kit is fully self-contained, so
+// describe-mcp-server.mjs, the zero-dependency STDIO entry for the describe-palette generator MCP (#371).
+// Unlike brand-kit-server.mjs, there is no sibling file to load, generate_kit is fully self-contained, so
 // this server boots with NO argument. Frames newline-delimited JSON-RPC 2.0 over stdio around the PURE
-// dispatch in describe-mcp-core.mjs. Pure Node, no `npm install` — just `node describe-mcp-server.mjs`.
+// dispatch in describe-mcp-core.mjs. Pure Node, no `npm install`, just `node describe-mcp-server.mjs`.
 // (All logging → STDERR; stdout is the protocol stream.)
 
 import { buildSurface, handle } from "./describe-mcp-core.mjs";

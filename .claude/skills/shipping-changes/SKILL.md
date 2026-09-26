@@ -1,8 +1,8 @@
 ---
 name: shipping-changes
 description: >
-  Use when a change in ultimate-tokens is ready to land — "ship this",
-  "open a PR", "merge and sync", "release this" — or proactively when work is
+  Use when a change in ultimate-tokens is ready to land, "ship this",
+  "open a PR", "merge and sync", "release this", or proactively when work is
   done and green. Covers the full release workflow: branch from origin/main,
   the two gates (npm test, npm run build), PR, CI watch (build · test ·
   smoke), squash-merge, local-main sync, plus commit guards and worktree
@@ -13,7 +13,7 @@ user-invocable: true
 
 # Shipping changes (ultimate-tokens)
 
-`CLAUDE.md`'s Shipping + Always sections have the one-paragraph version — read them; this skill owns
+`CLAUDE.md`'s Shipping + Always sections have the one-paragraph version, read them; this skill owns
 the full procedure and the concurrency recovery. The repo is squash-merge; guards are the
 `PreToolUse` privacy hook plus, under sdlc, the plugin's board hooks via `core.hooksPath`; the
 content guards below stay manual (conventions + CI + the test gate, not enforced pre-commit); and
@@ -24,11 +24,11 @@ the smoke leg is Chrome-only. Landing under sdlc composes this procedure with `a
 
 | Gate | What it runs | Needs | Run it when |
 |---|---|---|---|
-| `npm test` | `gen:figma-assets`+`gen:mcp-assets`+`gen:categories`+`bundle`+`gen:figma-ui` then `node test/run.mjs` | nothing (no browser, no `node_modules` — pure engine + a custom DOM shim) | every change |
+| `npm test` | `gen:figma-assets`+`gen:mcp-assets`+`gen:categories`+`bundle`+`gen:figma-ui` then `node test/run.mjs` | nothing (no browser, no `node_modules`, pure engine + a custom DOM shim) | every change |
 | `npm run build` | `gen:figma-assets`+`gen:mcp-assets`+`gen:categories` → `tsc` → `vite build` → `bundle` → `gen:figma-ui` | `node_modules` (vite/tsc) | only if you touched the build chain (TS, vite config, `scripts/`, bundled fonts) |
 
 `npm test` regenerates the committed artifacts (`figma/plugin/ui.html`, `src/ui/figma-plugin-assets.js`,
-`src/ui/mcp-assets.js`) as its first act — so a green `npm test` also leaves them in sync with source.
+`src/ui/mcp-assets.js`) as its first act, so a green `npm test` also leaves them in sync with source.
 CI (`.github/workflows/ci.yml`) runs four jobs on every PR: `build-test` (`npm ci` → `npm run build` →
 `npm test` → `npm run smoke`, real headless Chrome over CDP), `panda-smoke` (the Panda/Radix codegen
 check), `corpus-contrast` (the full curated-corpus contrast sweep) and `sweeps` (a matrix, one runner
@@ -47,14 +47,14 @@ artifact if a UI change is involved.
 1. Branch from the freshest main: `git fetch origin && git switch -c <branch> origin/main`. Never
    commit straight to `main`.
 2. Change, then `npm test` green (+ `npm run build` if the build chain is touched).
-3. Guard-check (see below) — `git status -s` must show no `.claude/docs/other/` and no `node_modules`.
+3. Guard-check (see below), `git status -s` must show no `.claude/docs/other/` and no `node_modules`.
 4. Commit + push:
    - Commit with the trailer (below), then `git push -u origin <branch>`.
    - Stage each file by name (`git add <your-files>`), not `git add -u`: in a shared tree, `-u` sweeps
-     a concurrent agent's half-finished edits into your commit — that once landed an `src/ui/app.js`
+     a concurrent agent's half-finished edits into your commit, that once landed an `src/ui/app.js`
      change missing its matching test, reddening `main` (see "Concurrency isolation").
    - If `git status` shows files you didn't touch, stop and isolate in a worktree.
-5. PR: `gh pr create --fill` (or `--title`/`--body`); the PR title becomes the squash-commit subject —
+5. PR: `gh pr create --fill` (or `--title`/`--body`); the PR title becomes the squash-commit subject,
    write it as `feat(scope): …` / `fix(scope): …` with the changelog-worthy summary (match `git log`).
    If the body has backticks or `$(…)`, pass it via `--body-file` (see quirk), not inline `--body`.
 6. Watch CI (~265 s wall on a PR, measured on run 35974499577: `build-test` about 260 s is the wall,
@@ -64,26 +64,26 @@ artifact if a UI change is involved.
 7. Squash-merge:
    - **Gate on the run's conclusion first**: `[ "$(gh run view <run> --json conclusion --jq .conclusion)" = success ] && gh pr merge <n> --squash`.
    - The repo has **no branch protection**: `gh pr merge` merges a RED PR without complaint, and
-     `gh run watch` prints the conclusion without blocking the merge — only the conclusion gate blocks.
+     `gh run watch` prints the conclusion without blocking the merge, only the conclusion gate blocks.
    - Skip `--delete-branch` (see quirk); step 8 does both deletes.
 8. Sync local main: `git switch main && git fetch origin && git merge --ff-only origin/main`. A squash
    leaves the feature branch looking unmerged, so delete with `git branch -D <branch>` (capital D),
    and delete the remote branch via the API call below.
 
-## Guards (every commit — manual content guards; hooks cover privacy + the sdlc board only)
+## Guards (every commit: manual content guards; hooks cover privacy + the sdlc board only)
 
 - `git status -s | grep .claude/docs/other` MUST be empty. `.claude/docs/other/` is local-only (ignored
-  via `.git/info/exclude`, not `.gitignore`) — keep it out of every commit.
+  via `.git/info/exclude`, not `.gitignore`), keep it out of every commit.
 - `node_modules` stays untracked: `git ls-files | grep -c node_modules` → 0 and
   `git status -s | grep -c node_modules` → 0. It is de-tracked AND ignored (the rule was tightened to
   `node_modules`, so both a real dir and a stray symlink are caught); re-tracking it is the exit-194
-  regression — anecdote and why CI is blind to it in `references/foundations.md` §4.
+  regression, anecdote and why CI is blind to it in `references/foundations.md` §4.
 - Generated artifacts in sync. `figma/plugin/ui.html` + `src/ui/figma-plugin-assets.js` +
   `src/ui/mcp-assets.js` are build outputs: commit them after a clean `npm test` (which regenerates
-  them) and let the generators write them — a hand-edit is drift.
+  them) and let the generators write them, a hand-edit is drift.
 - **Renamed an emitted variable, collection, or style name? Ship its rename map** in
   `figma/binder/migrations.mjs` (FIGMA_MIGRATIONS) in the SAME change (TKT-0012). Every apply loop
-  reconciles by name — a rename without a map is a prune+recreate that orphans every consumer
+  reconciles by name, a rename without a map is a prune+recreate that orphans every consumer
   binding in every existing user file. The `renamecap` gate proves the channel; your map rides it.
 - Role/step count gates. If you changed a role or step count, the count literals in
   `test/engine|figma|ui` and the `role-table.json` ↔ `semanticRoles` ↔ Figma `code.js` parity must all
@@ -94,26 +94,26 @@ artifact if a UI change is involved.
 - Commit message ends with: the attribution line the harness reminder gives for the running model
 - PR body ends with: `🤖 Generated with [Claude Code](https://claude.com/claude-code)`
 
-## gh quirks (verify the state — the exit code lies)
+## gh quirks (verify the state: the exit code lies)
 
 - **A bare `gh pr checks <n> --watch` races the run's registration and false-greens.** Right after
   `gh pr create`, CI may not be registered yet, so `--watch` prints *"no checks reported"* and exits
-  0 — a merge fired on that false green once and landed a PR before CI ran. Poll for the run, then
+  0, a merge fired on that false green once and landed a PR before CI ran. Poll for the run, then
   watch it: `RUN=$(gh run list --branch <branch> --limit 1 --json databaseId --jq '.[0].databaseId')`
   (loop until non-empty) → `gh run watch "$RUN" --exit-status` → confirm `gh run view "$RUN" --json
   conclusion` is `success` before `gh pr merge`.
 - PR/issue bodies with backticks go through `--body-file`, not inline `--body`. An inline
-  `--body "$(cat <<'EOF' … EOF)"` still lets the shell evaluate any backticks/`$(…)` inside the body —
+  `--body "$(cat <<'EOF' … EOF)"` still lets the shell evaluate any backticks/`$(…)` inside the body,
   it once replaced the body with dumped env vars. Write the body to a file (the Write tool) and pass
   `--body-file <file>` (works for `gh pr create` and `gh pr edit`).
 - `gh pr merge --delete-branch` fails its local-branch step when `main` is checked out in the primary
-  worktree (`'main' is already used by worktree`) — but the remote merge still succeeds. Verify with
+  worktree (`'main' is already used by worktree`), but the remote merge still succeeds. Verify with
   `gh pr view <n> --json state,mergedAt`, then delete the remote branch explicitly:
   `gh api -X DELETE repos/:owner/:repo/git/refs/heads/<branch>`.
 
 ## Concurrency isolation (fan-out: agents editing the shared tree at once)
 
-A churning shared tree is no place to stash or commit — isolate in a worktree off clean main. Full
+A churning shared tree is no place to stash or commit, isolate in a worktree off clean main. Full
 procedure, collision files, and parent-reconcile in `references/best-practices.md`. The one-liner:
 `git worktree add /tmp/wt -b <branch> origin/main` → symlink `node_modules` in → copy only your
 changed files → `npm test` + commit + push from the worktree → `git worktree remove --force` + prune
@@ -124,7 +124,7 @@ changed files → `npm test` + commit + push from the worktree → `git worktree
 `npm test` green locally → push → CI green on every job (per the quirk above) →
 `gh pr view <n> --json state,mergedAt` shows `MERGED` → local `main`
 fast-forwarded to the squash commit (`git log --oneline -1`) → feature branch deleted locally and on
-the remote. Smoke is Chrome-only — green CI is not Safari proof; reason about WebKit from spec (see
+the remote. Smoke is Chrome-only, green CI is not Safari proof; reason about WebKit from spec (see
 `foundations.md`).
 
 ## References

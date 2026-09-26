@@ -1,36 +1,36 @@
 #!/usr/bin/env node
-// anchor.mjs — U1 (ticket #681, plan `preset-intent-fidelity`): the anchor field's own identity gates.
+// anchor.mjs, U1 (ticket #681, plan `preset-intent-fidelity`): the anchor field's own identity gates.
 //
 // C2 anchor-identity. For every REGENERATED corpus palette carrying a stored `anchor` (the sampled +
-// status palettes scripts/gen-categories.mjs mints — direct/authored "brands" palettes and derived
+// status palettes scripts/gen-categories.mjs mints, direct/authored "brands" palettes and derived
 // neutrals never carry one unless a spec JSON opts in, Q5):
-//   (a) primeSwatches(palette, controls)[3].hex === anchor — called DIRECTLY, the same shape
+//   (a) primeSwatches(palette, controls)[3].hex === anchor, called DIRECTLY, the same shape
 //       test/engine/prime.mjs's own gates use.
 //   (b) the ACTUAL export pipeline's prime.DEFAULT (src/engine/exports.js derivePalette ->
 //       primeSwatches, wired at #681 U1 so `anchor` reaches that call) renders the SAME oklch as an
-//       INDEPENDENT hex->oklch conversion of the anchor — a from-scratch sRGB->OKLab->OKLCH copy in
+//       INDEPENDENT hex->oklch conversion of the anchor, a from-scratch sRGB->OKLab->OKLCH copy in
 //       THIS file, never prime.mjs's or exports.js's own private rgbToOklch, so a bug shared between
 //       the code under test and its check cannot cancel out (checks-that-bite's independence law).
 // Plan's stated count is 3,380 (2,028 sampled + 1,352 status) on the plan's own measured base. This
 // repo's actual corpus at U1's branch base (`git merge-base HEAD origin/main`, recorded in the unit
 // handoff) counts EXACTLY 3,380 sampled+status palettes too (62 direct + 338 derived-neutral + 3,380
 // sampled/status = 3,780 total, verified against the spec JSON's own `direct` structural marker before
-// this file was written) — so the count below is asserted, not assumed.
+// this file was written), so the count below is asserted, not assumed.
 //
 // C2's negative control (documented here, per the plan: "patch one spec swatch hex by one byte in a
 // scratch copy and rerun the generator into a temp dir, the gate names that preset and palette"): that
 // full round trip is exercised by hand when touching scripts/gen-categories.mjs's `palette()` anchor
 // lines. This file ALSO runs a cheaper, self-contained simulation of the same fault on every run (never
-// skipped, so a change that breaks the CHECK itself — not just the feature — is caught immediately):
+// skipped, so a change that breaks the CHECK itself, not just the feature, is caught immediately):
 // one real anchored palette's `anchor` is corrupted by a single hex digit in memory and the identity
 // check is proven to catch it, BY NAME (preset + palette), before the real corpus is graded.
 //
-// C4 (prime half) — the non-anchored identity control. `primeSwatches` must be BYTE-IDENTICAL to its
+// C4 (prime half), the non-anchored identity control. `primeSwatches` must be BYTE-IDENTICAL to its
 // pre-#681 behaviour whenever `anchor` is absent, over EVERY corpus palette (3,780, `anchor` stripped
-// whether or not it is present — the point is the CODE PATH, not just the currently-anchored subset)
+// whether or not it is present, the point is the CODE PATH, not just the currently-anchored subset)
 // plus the 16 default-kit palettes. The expectation is a FRESH, independent reimplementation of the
 // pre-#681 algorithm (deriveKeyColor's cusp construction) written directly against hct.js/okhsl.js's
-// validated primitives — never a call back into primeSwatches's own internals — mirroring
+// validated primitives, never a call back into primeSwatches's own internals, mirroring
 // test/engine/prime.mjs's own "Agent verification" anti-tautology note for this exact file. A negative
 // control (one mutated chroma) proves the comparison loop itself can fail before trusting its "0 off".
 import { primeSwatches, PRIME_STEPS } from "../../src/engine/prime.mjs";
@@ -48,7 +48,7 @@ const FULL = process.argv.includes("--full");
 const fails = [];
 const FAIL = (g, m) => { if (!fails.some((f) => f.startsWith(g + ":"))) fails.push(`${g}: ${m}`); };
 
-// ── independent hex<->oklch — a from-scratch conversion, never prime.mjs's/exports.js's own private
+// ── independent hex<->oklch, a from-scratch conversion, never prime.mjs's/exports.js's own private
 //    copy (both are correct, but a shared bug in either must not agree with itself here). ───────────
 const hexToRgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 function rgbToOklchIndep([r, g, b]) {
@@ -67,7 +67,7 @@ function rgbToOklchIndep([r, g, b]) {
   return [L, C, H];
 }
 
-// a minimal single-palette exports.js state — the SAME shape controlsOf()/enabledPalettes() expect
+// a minimal single-palette exports.js state, the SAME shape controlsOf()/enabledPalettes() expect
 // (exports.js:207-241/245-247); `paletteGroups: {}` makes rampChromaOf fall back to `baseChroma`
 // (irrelevant to prime, which never reads the ramp chroma), and `roleOverrides: {}` so
 // applyRoleOverrides has a defined object to iterate.
@@ -107,7 +107,7 @@ function referencePrimeSteps(lPrime) {
   return { up, down };
 }
 
-// referenceNonAnchored(palette, controls) — a FRESH copy of prime.mjs's pre-#681 (deriveKeyColor cusp)
+// referenceNonAnchored(palette, controls), a FRESH copy of prime.mjs's pre-#681 (deriveKeyColor cusp)
 // construction, built directly against hct.js/okhsl.js/tonal.js's validated primitives, never calling
 // primeSwatches. `PRIME_STEPS` is reused (test/engine/prime.mjs's own precedent: it is a pre-existing,
 // unchanged-by-#681 export, not the branching logic under test here); `primeSteps` itself is NOT
@@ -173,8 +173,8 @@ if (FULL) {
 // control below proves the drop mechanism is real and that the presence check would have caught it,
 // before the real corpus is trusted against it.
 if (FULL) {
-  if (presetsByCat.length !== 343) FAIL("anchor-identity", `FULL loaded ${presetsByCat.length} curated documents, want 343 — a category file moved or a preset count changed`);
-  if (corpus.length !== 3780) FAIL("anchor-identity", `corpus loaded ${corpus.length} palettes, want 3780 — a category file moved or a preset count changed`);
+  if (presetsByCat.length !== 343) FAIL("anchor-identity", `FULL loaded ${presetsByCat.length} curated documents, want 343, a category file moved or a preset count changed`);
+  if (corpus.length !== 3780) FAIL("anchor-identity", `corpus loaded ${corpus.length} palettes, want 3780, a category file moved or a preset count changed`);
 } else {
   if (presetsByCat.length < 30) FAIL("anchor-identity", `SAMPLED loaded only ${presetsByCat.length} curated documents, want at least 30`);
   {
@@ -184,7 +184,7 @@ if (FULL) {
     if (!syntheticCats.has("keep")) FAIL("anchor-identity", "negative control setup is broken: the synthetic category that DOES carry `.vol` was also dropped");
   }
   const seenCats = new Set(presetsByCat.map((d) => d.slug));
-  for (const slug of CATS) if (slug !== "brands" && !seenCats.has(slug)) FAIL("anchor-identity", `SAMPLED dropped category "${slug}" entirely — a preset there lost its \`.vol\`, so pickVolume returned undefined and sampleCorpus skipped the category silently`);
+  for (const slug of CATS) if (slug !== "brands" && !seenCats.has(slug)) FAIL("anchor-identity", `SAMPLED dropped category "${slug}" entirely, a preset there lost its \`.vol\`, so pickVolume returned undefined and sampleCorpus skipped the category silently`);
 }
 
 const anchored = corpus.filter((c) => typeof c.palette.anchor === "string");
@@ -192,20 +192,20 @@ const anchored = corpus.filter((c) => typeof c.palette.anchor === "string");
 // ── C2's negative control (runs BEFORE the real count, never skipped) ──────────────────────────────
 {
   const sample = anchored[0];
-  if (!sample) FAIL("anchor-identity", "no anchored palette found to run the negative control against — the corpus lost every anchor");
+  if (!sample) FAIL("anchor-identity", "no anchored palette found to run the negative control against, the corpus lost every anchor");
   else {
     const corruptHex = sample.palette.anchor.slice(0, -1) + (sample.palette.anchor.slice(-1) === "0" ? "1" : "0");
     const corrupted = { ...sample.palette, anchor: corruptHex };
     const ctl = { hueSpace: sample.hueSpace ?? "oklch", primeChroma: 100 };
     const gotHex = primeSwatches(corrupted, ctl)[3].hex;
     if (gotHex === sample.palette.anchor) {
-      FAIL("anchor-identity", `negative control DID NOT bite: corrupting ${sample.slug} "${sample.presetName}" ${sample.palette.name}'s anchor by one hex digit still rendered the ORIGINAL anchor — the identity check cannot discriminate`);
+      FAIL("anchor-identity", `negative control DID NOT bite: corrupting ${sample.slug} "${sample.presetName}" ${sample.palette.name}'s anchor by one hex digit still rendered the ORIGINAL anchor, the identity check cannot discriminate`);
     } else if (gotHex !== corruptHex) {
-      // it changed, but not to the corrupted hex either — primeSwatches isn't rendering the anchor verbatim at all
+      // it changed, but not to the corrupted hex either, primeSwatches isn't rendering the anchor verbatim at all
       FAIL("anchor-identity", `negative control gave an unexpected reading: ${sample.slug} "${sample.presetName}" ${sample.palette.name} rendered ${gotHex} for corrupted anchor ${corruptHex}`);
     }
     // else: correctly rendered the CORRUPTED hex, proving the gate below would have named this exact
-    // preset/palette had the real anchor been wrong — the "prints the preset and palette" procedure.
+    // preset/palette had the real anchor been wrong, the "prints the preset and palette" procedure.
   }
 }
 
@@ -231,7 +231,7 @@ for (const { slug, presetName, hueSpace, palette: p } of anchored) {
   exact++;
 }
 if (FULL) {
-  if (anchored.length !== 3380) FAIL("anchor-identity", `counted ${anchored.length} anchored palettes (want 3380 — 2,028 sampled + 1,352 status per the plan's own measured baseline); report this line, do not force the number`);
+  if (anchored.length !== 3380) FAIL("anchor-identity", `counted ${anchored.length} anchored palettes (want 3380, 2,028 sampled + 1,352 status per the plan's own measured baseline); report this line, do not force the number`);
 } else if (anchored.length === 0) {
   FAIL("anchor-identity", "SAMPLED counted 0 anchored palettes - the sample lost every anchor, C2 measured nothing");
 }
@@ -256,7 +256,7 @@ if (FULL) {
   const mutated = { ...s.palette, anchor: undefined, chroma: ((s.palette.chroma ?? 0) + 37) % 100 };
   const real = primeSwatches(mutated, ctl);
   const ref = referenceNonAnchored(s.palette, ctl); // reference uses the UN-mutated chroma on purpose
-  if (real[3].hex === ref[3].hex) FAIL("prime-identity-control", "negative control DID NOT bite: mutating chroma by 37 left primeSwatches[3].hex unchanged vs the reference — the comparison cannot discriminate");
+  if (real[3].hex === ref[3].hex) FAIL("prime-identity-control", "negative control DID NOT bite: mutating chroma by 37 left primeSwatches[3].hex unchanged vs the reference, the comparison cannot discriminate");
 }
 
 {
@@ -320,7 +320,7 @@ console.log(`  ${fails.some((f) => f.startsWith("prime-identity-control:")) ? "F
 //       but the mechanism it names is real again), never from the anchor's own position, so it holds
 //       UNCONDITIONALLY: 0 exceptions anywhere in the corpus (no allow-list, by design).
 //   (b) all SEVEN rungs render distinct hexes, and `prime` sits strictly between `bright` and `dim`
-//       in `l` — Q3 (b) ruled the token stays exact regardless of the window, so a source whose true
+//       in `l`, Q3 (b) ruled the token stays exact regardless of the window, so a source whose true
 //       CIE L* sits at or past [PRIME_L_MIN, PRIME_L_MAX] can only get a real six-rung ladder by
 //       letting `prime` sit outside it; those sources are a named, counted allow-list (mirroring C5's
 //       "print the list, fail on any other count" shape), not a silent carve-out.
@@ -358,8 +358,8 @@ console.log(`  ${fails.some((f) => f.startsWith("prime-identity-control:")) ? "F
 //       All other members are mechanism (i). A handful of THOSE also sit close enough to the window
 //       floor that even the widening search's full `STEP_L` of reserve cannot keep `prime` distinct
 //       from the rung it ends up beside - a stricter subset of (i), landing them on `DUPE_ALLOW` too.
-// N1 (U1 re-review, 2026-09-18): a count alone lets one corpus source swap for another — one moving
-// in across the window bound, another moving out — and stay green at the same length. Both lists are
+// N1 (U1 re-review, 2026-09-18): a count alone lets one corpus source swap for another, one moving
+// in across the window bound, another moving out, and stay green at the same length. Both lists are
 // frozen BY NAME (sorted), mirroring C5's own "fail on any other count or any other name" shape, and
 // the corpus is compared against the frozen arrays directly, not just their lengths. Printed by the
 // gate itself (`node test/engine/anchor.mjs`), so a real drift is copy-pasteable back into this file.
@@ -405,7 +405,7 @@ const DUPE_ALLOW = [
     const sixIdx = [0, 1, 2, 4, 5, 6]; // every step but prime (index 3)
     let sixMono = true;
     for (let k = 1; k < sixIdx.length; k++) if (!(sw[sixIdx[k - 1]].l > sw[sixIdx[k]].l)) sixMono = false;
-    if (!sixMono) FAIL("anchor-ladder", `${label}: the six ladder rungs (excluding prime) are not strictly decreasing in l — primeSteps or the F1 widening search regressed`);
+    if (!sixMono) FAIL("anchor-ladder", `${label}: the six ladder rungs (excluding prime) are not strictly decreasing in l, primeSteps or the F1 widening search regressed`);
     if (!(sw[2].l > sw[3].l && sw[3].l > sw[4].l)) orderNames.push(label);
     if (new Set(sw.map((x) => x.hex)).size < 7) dupeNames.push(label);
   }
@@ -419,37 +419,37 @@ const DUPE_ALLOW = [
   for (const n of orderNames) console.log(`    r ${n}`);
   console.log(`  ${allowListOk(dupeNames, DUPE_ALLOW) ? "pass" : "FAIL"}  anchor-ladder dupe-allow-list: ${dupeNames.length} (expected ${FULL ? DUPE_ALLOW.length : `at most ${DUPE_ALLOW.length} (SAMPLED reads the recorded count as an upper bound)`})`);
   for (const n of dupeNames) console.log(`    d ${n}`);
-  // Compare the SORTED ARRAYS, not just their lengths (N1) — a swapped name at an unchanged count
+  // Compare the SORTED ARRAYS, not just their lengths (N1), a swapped name at an unchanged count
   // must still fail, naming both the entry that's missing and the one that showed up uninvited. Under
   // FULL, "missing" is graded; under SAMPLED, a listed member the sample never reaches is not a defect.
   if (!allowListOk(orderNames, ORDER_ALLOW)) {
-    if (FULL) for (const n of ORDER_ALLOW) if (!orderNames.includes(n)) FAIL("anchor-ladder", `order-allow-list: expected member missing — ${n}`);
-    for (const n of orderNames) if (!ORDER_ALLOW.includes(n)) FAIL("anchor-ladder", `order-allow-list: unexpected member — ${n}`);
-    if (FULL && !fails.some((f) => f.startsWith("anchor-ladder:"))) FAIL("anchor-ladder", `order-allow-list count ${orderNames.length} !== expected ${ORDER_ALLOW.length} with no single-name diff found — investigate before trusting either count`);
+    if (FULL) for (const n of ORDER_ALLOW) if (!orderNames.includes(n)) FAIL("anchor-ladder", `order-allow-list: expected member missing, ${n}`);
+    for (const n of orderNames) if (!ORDER_ALLOW.includes(n)) FAIL("anchor-ladder", `order-allow-list: unexpected member, ${n}`);
+    if (FULL && !fails.some((f) => f.startsWith("anchor-ladder:"))) FAIL("anchor-ladder", `order-allow-list count ${orderNames.length} !== expected ${ORDER_ALLOW.length} with no single-name diff found, investigate before trusting either count`);
   }
   if (!allowListOk(dupeNames, DUPE_ALLOW)) {
-    if (FULL) for (const n of DUPE_ALLOW) if (!dupeNames.includes(n)) FAIL("anchor-ladder", `dupe-allow-list: expected member missing — ${n}`);
-    for (const n of dupeNames) if (!DUPE_ALLOW.includes(n)) FAIL("anchor-ladder", `dupe-allow-list: unexpected member — ${n}`);
-    if (FULL && !fails.some((f) => f.startsWith("anchor-ladder:"))) FAIL("anchor-ladder", `dupe-allow-list count ${dupeNames.length} !== expected ${DUPE_ALLOW.length} with no single-name diff found — investigate before trusting either count`);
+    if (FULL) for (const n of DUPE_ALLOW) if (!dupeNames.includes(n)) FAIL("anchor-ladder", `dupe-allow-list: expected member missing, ${n}`);
+    for (const n of dupeNames) if (!DUPE_ALLOW.includes(n)) FAIL("anchor-ladder", `dupe-allow-list: unexpected member, ${n}`);
+    if (FULL && !fails.some((f) => f.startsWith("anchor-ladder:"))) FAIL("anchor-ladder", `dupe-allow-list count ${dupeNames.length} !== expected ${DUPE_ALLOW.length} with no single-name diff found, investigate before trusting either count`);
   }
   // every dupe MUST also be an order violation (the F1 widening search cannot fail (b) without also
   // failing (a): a collapsed rung is, by definition, not strictly between its neighbours in l).
-  for (const n of dupeNames) if (!orderNames.includes(n)) FAIL("anchor-ladder", `${n}: has a duplicate hex but passes the prime-between-bright-and-dim check — inconsistent with F1's own mechanism, investigate before trusting either count`);
+  for (const n of dupeNames) if (!orderNames.includes(n)) FAIL("anchor-ladder", `${n}: has a duplicate hex but passes the prime-between-bright-and-dim check, inconsistent with F1's own mechanism, investigate before trusting either count`);
 }
 
 // N1's own negative control: a frozen list with one real member swapped for a plausible-but-wrong
-// one, at the SAME length, must fail the sorted-array comparison — proving a same-count substitution
+// one, at the SAME length, must fail the sorted-array comparison, proving a same-count substitution
 // cannot slip through silently (the exact failure scenario N1 named).
 {
   const swapped = ORDER_ALLOW.slice(0, -1).concat(`film "A Made-Up Title" primary #000001`).sort();
   const realSorted = [...ORDER_ALLOW].sort();
   const sameLength = swapped.length === realSorted.length;
   const identical = sameLength && swapped.every((n, i) => n === realSorted[i]);
-  if (!sameLength || identical) FAIL("anchor-ladder", "negative control DID NOT bite: a same-length, one-member-swapped allow-list compared equal to the real one — the sorted-array comparison cannot discriminate a substitution");
+  if (!sameLength || identical) FAIL("anchor-ladder", "negative control DID NOT bite: a same-length, one-member-swapped allow-list compared equal to the real one, the sorted-array comparison cannot discriminate a substitution");
 }
 
 // negative control: a synthetic anchor pinned at CIE L* 0 (pure black, unambiguously past
-// PRIME_L_MIN) must be caught by the SAME predicate the corpus loop above counts with — proving the
+// PRIME_L_MIN) must be caught by the SAME predicate the corpus loop above counts with, proving the
 // predicate itself discriminates rather than the corpus happening to already contain 23/4.
 {
   const synthetic = { anchor: "#000000" };
@@ -460,12 +460,12 @@ const DUPE_ALLOW = [
 
 // ── anchor-ramp (U2, ticket #681): C3 ramp pass-through + C5 monotone/distinct ─────────────────────
 // C3: for every anchored palette, paletteStops(...) stop 500 equals `anchor` in each of perceptual,
-// peak, even — EXCEPT the named, counted window-clamp population (Q3 (b), same shape as U1's
+// peak, even, EXCEPT the named, counted window-clamp population (Q3 (b), same shape as U1's
 // anchor-ladder allow-lists): the RAMP itself clamps for a source whose CIE L* falls outside
 // [RAMP_L_MIN, RAMP_L_MAX], landing stop 500 at the pivot the OTHER stops are shaped around instead
 // of the verbatim anchor pixel (see tonal.js's own comment on why: forcing the verbatim anchor there
 // would jump away from that pivot and invert the ramp at 550/450, which is exactly what broke before
-// this branch existed). `prime.DEFAULT` (the token, C2 above) stays exact for ALL 3,380 regardless —
+// this branch existed). `prime.DEFAULT` (the token, C2 above) stays exact for ALL 3,380 regardless,
 // only the ramp's own stop 500 clamps.
 const RAMP_WINDOW_ALLOW = [
   `brands "Nike · The Swoosh · Since 1971" secondary #101820`,
@@ -599,7 +599,7 @@ const RAMP_GAP_ALLOW = [
 ].sort();
 
 // RAMP_DISTINCT_ALLOW (Finding 6 fix): the 25-stop export ramp's own duplicate-hex population,
-// gated separately from RAMP_GAP_ALLOW's 19-stop gap population — see the comment above
+// gated separately from RAMP_GAP_ALLOW's 19-stop gap population, see the comment above
 // RAMP_GAP_ALLOW. A source can appear on both lists.
 // Review pass 4, Finding 2 (2026-09-19): same fix, same fallout as RAMP_GAP_ALLOW above - the joint
 // hue/rendered-chroma solve incidentally de-duplicated travel "23° S / Salar de Atacama, 2,305 m"
@@ -684,10 +684,10 @@ const NOTCH_ALLOW = [
 
 const MODES = ["perceptual", "peak", "even"];
 // monotoneOk (R1, review pass 2, 2026-09-18): reads PIXEL L* (`lstarFromRgb` of the actually-emitted
-// hex), not the `tone` field the ramp reports as its OWN target — review 2's own finding: the "even"
+// hex), not the `tone` field the ramp reports as its OWN target, review 2's own finding: the "even"
 // path returns `tone` as `anchorLerp`'s target L*, not the measured pixel, so a real pixel rise can sit
 // invisible to a check that trusts `tone` (Night of the Hunter primary, even mode, stops 925->950: target
-// 5.165->5.000 falls, pixel 5.044->5.070 rises — the same proxy class as re-diagnosis Finding 0, on the
+// 5.165->5.000 falls, pixel 5.044->5.070 rises, the same proxy class as re-diagnosis Finding 0, on the
 // even path specifically). Measuring the rendered hex directly closes that gap on every path, even
 // included.
 function monotoneOk(stops) {
@@ -744,7 +744,7 @@ function distinctOk25(stops) {
 // negative control, run BEFORE the real sweep (checks-that-bite): the predicates above must
 // discriminate a synthetic violation before the corpus is trusted against them.
 {
-  // monotoneOk (R1): a real rising PIXEL L* pair — #101010 is darker than #202020, so reading the
+  // monotoneOk (R1): a real rising PIXEL L* pair, #101010 is darker than #202020, so reading the
   // rendered hex (not a `tone` field, which this synthetic object does not even carry any more) must
   // catch the rise.
   const bad = [{ stop: 50, hex: "#101010" }, { stop: 100, hex: "#202020" }];
@@ -783,18 +783,18 @@ function distinctOk25(stops) {
     const liftedAnchored = { ...sample.palette, lift: 40 };
     const stopsA = paletteStops(liftedAnchored, ctlA, [500]);
     if (stopsA[0].hex !== sample.palette.anchor)
-      FAIL("anchor-ramp", `C3 negative control: lift 40 on an anchored palette moved stop 500 (${stopsA[0].hex} !== ${sample.palette.anchor}) — the anchor is not fixed`);
+      FAIL("anchor-ramp", `C3 negative control: lift 40 on an anchored palette moved stop 500 (${stopsA[0].hex} !== ${sample.palette.anchor}), the anchor is not fixed`);
     const nonAnchored = { ...sample.palette, anchor: undefined, sourceAnchor: undefined, lift: 40 };
     const nonAnchoredBase = { ...sample.palette, anchor: undefined, sourceAnchor: undefined, lift: 0 };
     const stopsB = paletteStops(nonAnchored, ctlA, [500]);
     const stopsB0 = paletteStops(nonAnchoredBase, ctlA, [500]);
     if (stopsB[0].hex === stopsB0[0].hex)
-      FAIL("anchor-ramp", "C3 negative control DID NOT bite: a non-anchored copy's stop 500 did not move between lift 0 and lift 40 — the control cannot discriminate anchored from non-anchored");
+      FAIL("anchor-ramp", "C3 negative control DID NOT bite: a non-anchored copy's stop 500 did not move between lift 0 and lift 40, the control cannot discriminate anchored from non-anchored");
   }
 }
 
 // RENDERED-path sweep (F1 fix, review pif-u2-review-1.md): a raw `paletteStops(p, {...DEFAULT_CONTROLS,
-// toneMode, hueSpace}, EXPORT_STOPS)` proxy call is NOT what the product renders — the product renders
+// toneMode, hueSpace}, EXPORT_STOPS)` proxy call is NOT what the product renders, the product renders
 // `projectView(hydrate(preset))`, which resolves EACH preset's OWN controls (damp/dampCurve/dampAmp/
 // dampBias/relChroma/chromaFloor/lmin/lmax/curve/tension, all preset-authored, not DEFAULT_CONTROLS'
 // values) via `rampChromaOf`. The proxy measured "0 non-monotone" while the rendered path had 16 real
@@ -922,8 +922,8 @@ function loneSpikeStop(ramp25) {
   return null;
 }
 const loneSpikeNames = new Set();
-// F4 gate data (R3, review pass 2): collected FOR FREE inside this same sweep — one hex fingerprint per
-// (label, mode) — so "peak differs from perceptual for every anchored palette" costs no extra renders.
+// F4 gate data (R3, review pass 2): collected FOR FREE inside this same sweep, one hex fingerprint per
+// (label, mode), so "peak differs from perceptual for every anchored palette" costs no extra renders.
 const modeHex = new Map(); // label -> { perceptual, peak, even } each a joined-hex fingerprint string
 for (const { slug, preset } of presetsByCat) {
   for (const mode of MODES) {
@@ -940,16 +940,16 @@ for (const { slug, preset } of presetsByCat) {
       const s500 = ramp25 && ramp25.find((s) => s.stop === 500);
       if (!outsideWindow) {
         if (s500 && s500.hex === p.anchor) rampExact++;
-        else { rampOff++; FAIL("anchor-ramp", `${slug} "${preset.name}" ${p.name} (${mode}, rendered): stop 500 ${s500 && s500.hex} !== anchor ${p.anchor}, and this source is INSIDE the ramp window — it should be exact`); }
+        else { rampOff++; FAIL("anchor-ramp", `${slug} "${preset.name}" ${p.name} (${mode}, rendered): stop 500 ${s500 && s500.hex} !== anchor ${p.anchor}, and this source is INSIDE the ramp window, it should be exact`); }
       }
-      if (!ramp19 || !ramp25) { FAIL("anchor-ramp", `${slug} "${preset.name}" ${p.name} (${mode}): projectView produced no matching palette — the render path changed shape`); continue; }
+      if (!ramp19 || !ramp25) { FAIL("anchor-ramp", `${slug} "${preset.name}" ${p.name} (${mode}): projectView produced no matching palette, the render path changed shape`); continue; }
       // Monotone (Finding 6): gated on BOTH stop sets independently, matching C5's own "43 on the
-      // 19-stop, 11/46 on the 25-stop" reporting shape — a ramp that only rises on the finer 25-stop
+      // 19-stop, 11/46 on the 25-stop" reporting shape, a ramp that only rises on the finer 25-stop
       // export ramp is a real, distinct finding from one that rises on the coarser 19-stop display ramp.
       if (!monotoneOk(ramp19)) nonMonoNames.add(`${label} [${mode}, 19-stop]`);
       if (!monotoneOk(ramp25)) nonMonoNames.add(`${label} [${mode}, 25-stop]`);
       // Gap (0.55 L*, 19-stop display ramp) and distinctness (no duplicate hex, 25-stop export ramp)
-      // gated SEPARATELY on their own matching stop sets (Finding 6 fix — see gapOk19/distinctOk25).
+      // gated SEPARATELY on their own matching stop sets (Finding 6 fix, see gapOk19/distinctOk25).
       if (!gapOk19(ramp19)) gapNames.add(label);
       if (!distinctOk25(ramp25)) distinctNames.add(label);
       // Notch (R2): rendered CAM16 chroma at 450/500/550, both stop sets share the same three values.
@@ -966,7 +966,7 @@ for (const { slug, preset } of presetsByCat) {
   }
 }
 // `anchored` (declared above, from `corpus`) is reused below only as the summary line's denominator.
-// allowListMatches — the ONE comparator every allow-list gate below calls, so the R10 negative controls
+// allowListMatches, the ONE comparator every allow-list gate below calls, so the R10 negative controls
 // (below) exercise the SAME function the real gates use, not a second, independently-written comparison
 // (the tautology the review named: the old N1-style control compared two hardcoded arrays with its OWN
 // copy of this logic, which can never fail regardless of whether the REAL predicate is correct).
@@ -990,8 +990,8 @@ const notchSorted = [...notchNames].sort();
 console.log(`  ${rampOff === 0 ? "pass" : "FAIL"}  anchor-ramp: ${rampExact} exact, ${rampOff} off (in-window sources only, ${anchored.length - windowNames.size} of ${anchored.length})`);
 console.log(`  ${allowListOk(windowSorted, RAMP_WINDOW_ALLOW) ? "pass" : "FAIL"}  anchor-ramp allow-list: ${windowSorted.length} (expected ${FULL ? RAMP_WINDOW_ALLOW.length : `at most ${RAMP_WINDOW_ALLOW.length} (SAMPLED reads the recorded count as an upper bound; run --full for the exact check)`})`);
 if (!allowListOk(windowSorted, RAMP_WINDOW_ALLOW)) {
-  if (FULL) for (const n of RAMP_WINDOW_ALLOW) if (!windowSorted.includes(n)) FAIL("anchor-ramp", `window-clamp allow-list: expected member missing — ${n}`);
-  for (const n of windowSorted) if (!RAMP_WINDOW_ALLOW.includes(n)) FAIL("anchor-ramp", `window-clamp allow-list: unexpected member — ${n}`);
+  if (FULL) for (const n of RAMP_WINDOW_ALLOW) if (!windowSorted.includes(n)) FAIL("anchor-ramp", `window-clamp allow-list: expected member missing, ${n}`);
+  for (const n of windowSorted) if (!RAMP_WINDOW_ALLOW.includes(n)) FAIL("anchor-ramp", `window-clamp allow-list: unexpected member, ${n}`);
 }
 for (const n of RAMP_WINDOW_ALLOW) console.log(`    r ${n}`);
 // R1 (review pass 2, 2026-09-18): monotone is measured on PIXEL L*, not the `tone` field, and the
@@ -1002,14 +1002,14 @@ console.log(`  ${nonMonoSorted.length === 0 ? "pass" : "FAIL"}  anchor-ramp mono
 for (const n of nonMonoSorted) FAIL("anchor-ramp", `monotone: unexpected pixel-L* rise - ${n}`);
 console.log(`  ${allowListOk(gapSorted, RAMP_GAP_ALLOW) ? "pass" : "FAIL"}  anchor-ramp gap (19-stop) allow-list: ${gapSorted.length} (expected ${FULL ? RAMP_GAP_ALLOW.length : `at most ${RAMP_GAP_ALLOW.length} (SAMPLED reads the recorded count as an upper bound; run --full for the exact check)`})`);
 if (!allowListOk(gapSorted, RAMP_GAP_ALLOW)) {
-  if (FULL) for (const n of RAMP_GAP_ALLOW) if (!gapSorted.includes(n)) FAIL("anchor-ramp", `gap allow-list: expected member missing — ${n}`);
-  for (const n of gapSorted) if (!RAMP_GAP_ALLOW.includes(n)) FAIL("anchor-ramp", `gap allow-list: unexpected member — ${n}`);
+  if (FULL) for (const n of RAMP_GAP_ALLOW) if (!gapSorted.includes(n)) FAIL("anchor-ramp", `gap allow-list: expected member missing, ${n}`);
+  for (const n of gapSorted) if (!RAMP_GAP_ALLOW.includes(n)) FAIL("anchor-ramp", `gap allow-list: unexpected member, ${n}`);
 }
 for (const n of RAMP_GAP_ALLOW) console.log(`    r ${n}`);
 console.log(`  ${allowListOk(distinctSorted, RAMP_DISTINCT_ALLOW) ? "pass" : "FAIL"}  anchor-ramp distinct (25-stop) allow-list: ${distinctSorted.length} (expected ${FULL ? RAMP_DISTINCT_ALLOW.length : `at most ${RAMP_DISTINCT_ALLOW.length} (SAMPLED reads the recorded count as an upper bound; run --full for the exact check)`})`);
 if (!allowListOk(distinctSorted, RAMP_DISTINCT_ALLOW)) {
-  if (FULL) for (const n of RAMP_DISTINCT_ALLOW) if (!distinctSorted.includes(n)) FAIL("anchor-ramp", `distinct allow-list: expected member missing — ${n}`);
-  for (const n of distinctSorted) if (!RAMP_DISTINCT_ALLOW.includes(n)) FAIL("anchor-ramp", `distinct allow-list: unexpected member — ${n}`);
+  if (FULL) for (const n of RAMP_DISTINCT_ALLOW) if (!distinctSorted.includes(n)) FAIL("anchor-ramp", `distinct allow-list: expected member missing, ${n}`);
+  for (const n of distinctSorted) if (!RAMP_DISTINCT_ALLOW.includes(n)) FAIL("anchor-ramp", `distinct allow-list: unexpected member, ${n}`);
 }
 for (const n of RAMP_DISTINCT_ALLOW) console.log(`    r ${n}`);
 // R2/Q-C: the notch gate is stop 500's CAM16 chroma under 70% of BOTH 450 and 550, AND an absolute dip
@@ -1073,10 +1073,10 @@ if (!allowListOk(loneSpikeSorted, LONE_SPIKE_ALLOW)) {
 for (const n of LONE_SPIKE_ALLOW) console.log(`    r ${n}`);
 
 // R10 (review pass 2): the OLD "N1-style" control compared two hardcoded arrays with its own duplicate
-// of allowListMatches's logic — a tautology, since that comparison can never pass regardless of whether
+// of allowListMatches's logic, a tautology, since that comparison can never pass regardless of whether
 // the REAL gates above are correct. The real controls below call `allowListOk` ITSELF (the same
 // function the real gates call) against the REAL measured data with one name dropped from the allow
-// list — proving the actual predicate, not a stand-in, reds on a real, silent narrowing.
+// list, proving the actual predicate, not a stand-in, reds on a real, silent narrowing.
 //
 // FULL only (#713 U3): these controls prove the EXACT-match half discriminates a shrink or a
 // same-length swap, which is only what FULL asserts. Under SAMPLED, dropping or swapping the tail of a
@@ -1178,8 +1178,8 @@ kitCheckLine("anchor-ramp", "notch", kitNotch, kitRampSuffix);
 kitCheckLine("anchor-ladder", "order", kitOrder, kitLadderSuffix);
 kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
 
-// ── F4 gate (R3, review pass 2, 2026-09-18): the owner's F4 principle — "no control goes dead" for an
-// anchored palette — on the rendered path. Cheap checks (default kit only, ~16 anchored palettes) plus
+// ── F4 gate (R3, review pass 2, 2026-09-18): the owner's F4 principle, "no control goes dead" for an
+// anchored palette, on the rendered path. Cheap checks (default kit only, ~16 anchored palettes) plus
 // the peak-vs-perceptual compare, which reuses the fingerprints the sweep above already collected (no
 // extra renders needed for that clause).
 {
@@ -1187,19 +1187,19 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
   for (const [label, m] of modeHex) {
     if (m.perceptual === undefined || m.peak === undefined) continue;
     peakChecked++;
-    if (m.perceptual === m.peak) { peakEqPerceptual++; FAIL("anchor-f4", `peak rendered byte-identical to perceptual — ${label}`); }
+    if (m.perceptual === m.peak) { peakEqPerceptual++; FAIL("anchor-f4", `peak rendered byte-identical to perceptual, ${label}`); }
   }
   console.log(`  ${peakEqPerceptual === 0 && peakChecked > 0 ? "pass" : "FAIL"}  anchor-f4 peak-vs-perceptual: ${peakChecked - peakEqPerceptual} of ${peakChecked} differ (0 identical required)`);
 
-  // Default-kit-only control sweep (cheap: a handful of renders, not the full 3,396-palette corpus —
+  // Default-kit-only control sweep (cheap: a handful of renders, not the full 3,396-palette corpus,
   // that fuller measurement is recorded in the handoff from a standalone probe run, not re-run in-suite
   // on every `npm test`). Curve/Tension are only LIVE in perceptual mode at Vibrancy > 0 (evenL/peakL
-  // blend by `t = vibrancy/100` — see okhslStopsAnchored's own header comment; review 1's own accepted
+  // blend by `t = vibrancy/100`, see okhslStopsAnchored's own header comment; review 1's own accepted
   // finding: this matches the non-anchored OKHSL path, which never reads Curve/Tension at all), so their
-  // OWN base document is primed with vibrancy 60 first — a shared vibrancy-0 base would make BOTH sides
+  // OWN base document is primed with vibrancy 60 first, a shared vibrancy-0 base would make BOTH sides
   // reduce to evenL and falsely read "moved 0" regardless of whether Curve/Tension are actually live.
   // `curve` also never toggles TO "linear" (shape("linear",...) ignores tension AND makes peakL equal
-  // evenL's own always-"linear" call, which would cancel Vibrancy's own contribution too) — it cycles
+  // evenL's own always-"linear" call, which would cancel Vibrancy's own contribution too), it cycles
   // between two genuinely reshaping curves instead.
   const dkBase = defaultDocument();
   const baseDoc = hydrate({ ...dkBase, toneMode: "perceptual" });
@@ -1259,9 +1259,9 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
       const srcL = lstarFromRgb(hexToRgb(p.anchor));
       const inWin = srcL >= RAMP_L_MIN && srcL <= RAMP_L_MAX;
       const a500 = a.find((s) => s.stop === 500).hex, b500 = b.find((s) => s.stop === 500).hex;
-      if (inWin && a500 !== b500) { s500moved++; FAIL("anchor-f4", `${key}: stop 500 moved on the default kit — ${p.name} ${a500} !== ${b500}`); }
+      if (inWin && a500 !== b500) { s500moved++; FAIL("anchor-f4", `${key}: stop 500 moved on the default kit, ${p.name} ${a500} !== ${b500}`); }
     }
-    if (moved === 0) FAIL("anchor-f4", `${key}: moved 0 of the default kit's anchored ramps — this control is dead for anchored palettes`);
+    if (moved === 0) FAIL("anchor-f4", `${key}: moved 0 of the default kit's anchored ramps, this control is dead for anchored palettes`);
     if (magnitudeFloor !== undefined && maxDeltaE <= magnitudeFloor) FAIL("anchor-f4", `${key}: max OKLab delta-E ${maxDeltaE.toFixed(4)} does not clear the ${magnitudeFloor} magnitude floor - a rounding-only move would also report "moved >= 1"`);
     const floorNote = magnitudeFloor !== undefined ? `, max OKLab dE ${maxDeltaE.toFixed(4)} (want > ${magnitudeFloor}, a magnitude floor - below the commonly used OKLab JND of about 0.02, not itself a JND), asserted in even only` : "";
     console.log(`  ${moved > 0 && s500moved === 0 && (magnitudeFloor === undefined || maxDeltaE > magnitudeFloor) ? "pass" : "FAIL"}  anchor-f4 ${key}: moved ${moved} default-kit anchored ramps, stop 500 moved ${s500moved} (want >=1, 0)${floorNote}`);
@@ -1509,7 +1509,7 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
 for (const g of ["anchor-identity", "prime-identity-control", "anchor-ladder", "anchor-ramp", "anchor-f4", "key-anchor", "anchor-achromatic", "achromatic-anchor"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   if (!f) continue; // already printed a pass/FAIL summary line above; only surface the FIRST failure detail here
-  console.error(`    — ${f.slice(g.length + 2)}`);
+  console.error(`, ${f.slice(g.length + 2)}`);
 }
 // the mode line (#713): printed regardless of pass/fail, same as curated-contrast.mjs's own - the
 // contract the plan's criteria grep. Counts are computed from what this run actually measured, never

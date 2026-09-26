@@ -2,21 +2,21 @@ import { ICON_SYSTEMS, DEFAULT_ICON_SYSTEM } from "../engine/icon-systems.mjs";
 import { DEFAULT_TYPE } from "../engine/type.mjs";
 import { COLLECTIONS } from "../engine/collections.js";
 
-// PALETTE_GROUPS (ticket #556) — the four canvas group ids. Declared HERE, not in model.mjs: this
+// PALETTE_GROUPS (ticket #556), the four canvas group ids. Declared HERE, not in model.mjs: this
 // codebase's normal dependency direction is model.mjs importing FROM persist.js (never the
-// reverse), so this is the single canonical definition — model.mjs imports this same array back
+// reverse), so this is the single canonical definition, model.mjs imports this same array back
 // (it re-exports it too) rather than carrying its own independently-drifting copy. model.mjs's
 // paletteGroup(p) still owns the RUNTIME default-by-name rule; this export is only the shape
 // persist.js validates a stored `group` value against.
 export const PALETTE_GROUPS = ["material", "brand", "system", "data"];
 
-// GROUP_DEFAULTS (SPEC spec-muted-base-key-spikes 0.3.0, ticket #559 re-ruling) — the four groups'
+// GROUP_DEFAULTS (SPEC spec-muted-base-key-spikes 0.3.0, ticket #559 re-ruling), the four groups'
 // own baseChroma/primeChroma defaults. Declared HERE, same reasoning and same
 // import-back-and-re-export shape as PALETTE_GROUPS above: persist.js must never import model.mjs,
 // so this is the single canonical definition. model.mjs's rampChromaOf/primeChromaOf still own the
 // RESOLUTION rule that reads these numbers; this export is only the shape persist.js defaults an
 // absent/invalid stored group value against. baseChroma is an ABSOLUTE ramp-chroma target now
-// (REQ-002), not a multiplier — same `%`-of-peak units `palette.chroma` already used.
+// (REQ-002), not a multiplier, same `%`-of-peak units `palette.chroma` already used.
 export const GROUP_DEFAULTS = {
   material: { baseChroma: 30, primeChroma: 60 },
   brand: { baseChroma: 100, primeChroma: 100 },
@@ -24,7 +24,7 @@ export const GROUP_DEFAULTS = {
   data: { baseChroma: 100, primeChroma: 100, locked: true },
 };
 
-// persist.js — UI state persistence for the HCT Palette Generator.
+// persist.js, UI state persistence for the HCT Palette Generator.
 //
 // A PURE serialize/hydrate transform pair over the tool's `State` (spec-draft §7,
 // knowledge-02 §2). No storage I/O lives here: the live chain
@@ -39,23 +39,23 @@ export const GROUP_DEFAULTS = {
 // withheld-seed fuzzed State set, so this must be a real identity-preserving clamp,
 // not an identity table and not a clamp-to-default):
 //
-//   (1) ROUNDTRIP IDENTITY — for any State whose every field is already in its
+//   (1) ROUNDTRIP IDENTITY, for any State whose every field is already in its
 //       domain, hydrate(serialize(S)) deep-equals S EXACTLY. In-domain fields are
 //       NEVER mutated, rounded, defaulted, or reset. Fractional and on-the-bound
 //       values survive byte-for-byte; palette array contents and order are preserved.
 //
-//   (2) PER-FIELD CLAMP — when a field is out of its domain, ONLY that field is
+//   (2) PER-FIELD CLAMP, when a field is out of its domain, ONLY that field is
 //       moved to its nearest valid bound; every other (in-domain) field, including
 //       sibling fields inside the same palette object, is preserved byte-for-byte.
 //
 // serialize() also stamps a schemaVersion (CURRENT_SCHEMA_VERSION); hydrate() runs any still-relevant
 // RENAME_MAPS entry BEFORE the domain clamp, so a doc saved before a canon rename (a voice, a
 // treatment id, …) survives translated onto its current name instead of being silently dropped by an
-// allowlist that only ever recognizes the current names (TKT-0016 — see the RENAME_MAPS block below).
+// allowlist that only ever recognizes the current names (TKT-0016, see the RENAME_MAPS block below).
 //
 // No dependencies.
 
-// The persistence key — the exact slot the storage chain reads/writes (spec-draft §11).
+// The persistence key, the exact slot the storage chain reads/writes (spec-draft §11).
 // Renamed hct-palette-state-v1 -> nonoun-color-tokens -> ultimate-tokens (product renames);
 // app.js#migrateStorageKeys walks the WHOLE chain forward so a returning user never loses work.
 export const STORAGE_KEY = "ultimate-tokens";
@@ -65,44 +65,44 @@ export const STORAGE_KEY = "ultimate-tokens";
 //   number : { kind:"number", min, max }    -> clamp into [min, max]; nearest bound.
 //   enum   : { kind:"enum", values, default} -> keep if in `values`, else `default`.
 // `on` is a boolean (coerced), `selected` is a relational integer bound (against
-// palettes.length), and `palettes[i]` fields each get their own descriptor — all
+// palettes.length), and `palettes[i]` fields each get their own descriptor, all
 // handled explicitly below since they aren't plain top-level scalars.
 export const DOMAINS = {
   // top-level State
   curve: { kind: "enum", values: ["linear", "sine", "cubic", "logistic", "exp"], default: "logistic" },
   tension: { kind: "number", min: 0, max: 100 },
   // defaults so an ABSENT field hydrates to the sensible value, NOT the domain floor: a config that
-  // omits these (e.g. a hand-authored or partial import) otherwise gets lmax 60 / lmin 0 / damp 0 —
+  // omits these (e.g. a hand-authored or partial import) otherwise gets lmax 60 / lmin 0 / damp 0,
   // which caps the whole ramp dark. (Present in-domain values still round-trip exactly; ?? only fills null.)
   lmin: { kind: "number", min: 0, max: 40, default: 5 },
   lmax: { kind: "number", min: 60, max: 100, default: 100 },
   damp: { kind: "number", min: 0, max: 100, default: 80 },
-  // differential damping curve — defaults reproduce the legacy edge damp, and a
+  // differential damping curve, defaults reproduce the legacy edge damp, and a
   // doc that predates these fields hydrates to the default (not the floor).
   dampCurve: { kind: "number", min: 0.5, max: 4, default: 1.5 },
   dampAmp: { kind: "number", min: 0, max: 100, default: 0 },
   dampBias: { kind: "number", min: -100, max: 100, default: 0 },
   // baseIntensity: the GLOBAL fallback ramp-chroma target (SPEC spec-muted-base-key-spikes 0.3.0
-  // REQ-002/007) — used only when a palette's group carries no baseChroma of its own. primeChroma:
-  // the prime system's own global fallback chroma control (REQ-008/050..057). Both default 100 — a
+  // REQ-002/007), used only when a palette's group carries no baseChroma of its own. primeChroma:
+  // the prime system's own global fallback chroma control (REQ-008/050..057). Both default 100, a
   // fresh/absent-field doc renders every Brand/System/Data palette exactly as before groups existed
   // (Material is the one group whose default genuinely mutes the ramp, REQ-007). primeChroma was
-  // named keyIntensity through schema v2; REQ-011/R4 renamed it at v3 (RENAME_MAPS below) — DOMAINS
+  // named keyIntensity through schema v2; REQ-011/R4 renamed it at v3 (RENAME_MAPS below), DOMAINS
   // no longer lists keyIntensity at all, so a v3+ doc that still somehow carries it gets it loudly
-  // dropped. The FIELD NAME `baseIntensity` is a deliberate legacy holdover (never renamed) — REQ-010
+  // dropped. The FIELD NAME `baseIntensity` is a deliberate legacy holdover (never renamed), REQ-010
   // keeps the document's own field name stable across the 0.3.0 re-ruling; only its MEANING (a
   // fallback ramp-chroma target, not a per-stop multiplier) and the engine's own copy of the concept
   // (fully retired, AC-004) changed.
   baseIntensity: { kind: "number", min: 0, max: 100, default: 100 },
   primeChroma: { kind: "number", min: 0, max: 100, default: 100 },
-  // paletteGroups (SPEC 0.3.0 REQ-001/010) — the four canvas groups' OWN baseChroma/primeChroma
+  // paletteGroups (SPEC 0.3.0 REQ-001/010), the four canvas groups' OWN baseChroma/primeChroma
   // defaults, sitting between a palette's own resolution and the two global sliders above. Each
   // group's number is its own field (min 0, max 100), defaulted per GROUP_DEFAULTS (the single
-  // source of truth these mirror) — same absent-field-hydrates-to-a-sensible-default shape as
+  // source of truth these mirror), same absent-field-hydrates-to-a-sensible-default shape as
   // lmin/lmax/damp above, no schema-version bump needed for THIS shape alone (the v4 bump below is
   // for the palette.intensity removal). `data`'s `locked:true` is NOT user-settable; it is always
   // stamped by clampPaletteGroups below, never read from the incoming snapshot. The document key is
-  // `paletteGroups`, never `groups` — `story.groups` already names the curated story's own concept
+  // `paletteGroups`, never `groups`, `story.groups` already names the curated story's own concept
   // groups (clampStory reads `s.groups`); a top-level `groups` would collide (Risk 0c).
   paletteGroups: Object.fromEntries(
     PALETTE_GROUPS.map((g) => [
@@ -116,14 +116,14 @@ export const DOMAINS = {
   // Hue space (see tonal.js DEFAULT_CONTROLS.hueSpace). Default "oklch" (the slider value IS the OKLCH
   // hue). A doc PERSISTED with hueSpace:"cam16" round-trips as cam16 (legacy preserved); an absent field
   // hydrates to "oklch" (the new default). The legacy-storage stamp (app.js openSet) keeps a pre-hueSpace
-  // STORED set rendering in cam16 — only a brand-new/imported config without hueSpace adopts oklch here.
+  // STORED set rendering in cam16, only a brand-new/imported config without hueSpace adopts oklch here.
   hueSpace: { kind: "enum", values: ["cam16", "oklch"], default: "oklch" },
   // ramp distribution mode (see tonal.js DEFAULT_CONTROLS.toneMode). Default "perceptual".
   toneMode: { kind: "enum", values: ["even", "perceptual", "peak"], default: "perceptual" },
   // perceptual-path vibrancy: 0 = even lightness, 100 = cusp-anchored center (see tonal.js). Default 0.
   vibrancy: { kind: "number", min: 0, max: 100, default: 0 },
   // on-color policy: "contrast" (WCAG-aware flip + achromatic fall-through, OD-001) | "fixed" (050
-  // both modes, the pre-#662 default). Default contrast — this governs a STORED document that
+  // both modes, the pre-#662 default). Default contrast, this governs a STORED document that
   // carries no onColorMode key, so it must track tonal.js's DEFAULT_CONTROLS or a saved kit would
   // hydrate onto the other policy.
   onColorMode: { kind: "enum", values: ["fixed", "contrast"], default: "contrast" },
@@ -132,7 +132,7 @@ export const DOMAINS = {
   // even-mode light/dark chroma floor, % of gamut (see tonal.js). Default on, so absent → 40 not 0.
   chromaFloor: { kind: "number", min: 0, max: 100, default: 40 },
   theme: { kind: "enum", values: ["auto", "light", "dark"], default: "auto" },
-  // `selected` is an integer in [0, palettes.length-1] — a relational bound, so its
+  // `selected` is an integer in [0, palettes.length-1], a relational bound, so its
   // upper limit depends on the hydrated palette count (see hydrate()).
   selected: { kind: "index" },
   // per-palette numeric fields; `name` is a free string (no domain), `on` is boolean.
@@ -142,30 +142,30 @@ export const DOMAINS = {
     skew: { kind: "number", min: -100, max: 100 },
     lift: { kind: "number", min: -40, max: 40 },
     hueShift: { kind: "number", min: -60, max: 60, default: 0 }, // edge hue rotation
-    // canvas group (ticket #556) — OPTIONAL, same absent-means-derive-on-read shape as
+    // canvas group (ticket #556), OPTIONAL, same absent-means-derive-on-read shape as
     // colorRole below: an explicit member of PALETTE_GROUPS round-trips as-is; absent/invalid
-    // is left absent (NOT stamped with a computed default here) — model.mjs's paletteGroup()
+    // is left absent (NOT stamped with a computed default here), model.mjs's paletteGroup()
     // is the single place the default-by-name rule is computed, at every read site.
     group: { kind: "enum", values: PALETTE_GROUPS },
-    // anchor / sourceAnchor (ticket #681, U1) — a palette's stored SOURCE color, byte-for-byte, as
+    // anchor / sourceAnchor (ticket #681, U1), a palette's stored SOURCE color, byte-for-byte, as
     // "#" + 6 hex digits in either case, normalized to the SAME canonical uppercase shape
     // scripts/gen-categories.mjs, defaultDocument() and src/engine/prime.mjs's own ANCHOR_HEX all
-    // emit/accept (case-folding fixed per the U1 review's F3, 2026-09-18) — never a number to clamp
+    // emit/accept (case-folding fixed per the U1 review's F3, 2026-09-18), never a number to clamp
     // toward a bound, so "kind: hex" is its own domain: a well-formed value normalizes, anything else
     // is DROPPED (like an unknown enum member). Both OPTIONAL, same absent-stays-absent shape as
     // `group` above. `anchor` is the
     // LIVE anchor prime.mjs's `prime` step (and, from U2, the ramp's stop 500) renders verbatim;
-    // `sourceAnchor` is the GENERATOR's own copy — written only by scripts/gen-categories.mjs and by
-    // defaultDocument(), never by the UI — so a Reset action (Q6, U2's C12) has something to
+    // `sourceAnchor` is the GENERATOR's own copy, written only by scripts/gen-categories.mjs and by
+    // defaultDocument(), never by the UI, so a Reset action (Q6, U2's C12) has something to
     // re-derive `anchor` from after a hue/chroma edit detaches it (U2 wires that detach/reset; this
     // file only carries the two fields through serialize/hydrate).
     anchor: { kind: "hex" },
     sourceAnchor: { kind: "hex" },
-    // preDetachHue/Chroma/Lift (ticket #681, U2 re-diagnosis Finding 3 / review F7) — a snapshot of
+    // preDetachHue/Chroma/Lift (ticket #681, U2 re-diagnosis Finding 3 / review F7), a snapshot of
     // `hue`/`chroma`/`lift` taken at the MOMENT a Hue or Chroma edit detaches an anchored palette
     // (color.js's slider handlers, alongside the `delete anchor` that already happens there), so
     // Reset (resetAnchor, color.js) can restore the EXACT pre-detach state instead of RE-DERIVING a
-    // new one via `seedFromKeyColor` — re-deriving is lossy (seedFromKeyColor reads the anchor's own
+    // new one via `seedFromKeyColor`, re-deriving is lossy (seedFromKeyColor reads the anchor's own
     // hue, not whatever `hue` the palette held before the edit) and does not round-trip the default
     // kit's hand-tuned `lift` (e.g. Warning's -36) at all, since it always resets lift to 0. Same
     // absent-stays-absent shape as `anchor`/`sourceAnchor`: only present on a palette that has been
@@ -180,7 +180,7 @@ export const DOMAINS = {
 // ── clamp helpers ────────────────────────────────────────────────────────────────
 
 // Number clamp to the nearest valid bound. Returns the input UNCHANGED when it is
-// already inside [min, max] (inclusive) — that identity is invariant (1). NaN/non-finite
+// already inside [min, max] (inclusive), that identity is invariant (1). NaN/non-finite
 // or a non-number falls back to `min` (the field can't be left invalid).
 function clampNumber(v, min, max) {
   if (typeof v !== "number" || !Number.isFinite(v)) return min;
@@ -197,13 +197,13 @@ function clampEnum(v, values, dflt) {
 
 // Hex clamp (ticket #681, U1; case-folding fixed per the U1 review's F3, 2026-09-18): keep the value
 // iff it is "#" + 6 hex digits in EITHER case, normalized to the canonical uppercase form the
-// generator, defaultDocument() and src/engine/prime.mjs's own ANCHOR_HEX all emit/accept — else
+// generator, defaultDocument() and src/engine/prime.mjs's own ANCHOR_HEX all emit/accept, else
 // undefined. The caller only attaches the field when this returns non-undefined, same absent-stays-
 // absent shape every other optional palette field (cuspPull, primeChroma, group) uses. Lowercase was
 // DROPPED before the fix: an authored Q5 spec JSON or a hand-edited import spelling a valid hex in
 // lowercase rendered correctly for the live session (prime.mjs accepts+normalizes it) but silently
-// lost the anchor on the next save/reload, with no DROPPED_KEYS report — persist.js and prime.mjs now
-// agree on the same domain, a case-insensitive "#RRGGBB". Still not a "nearest bound" clamp — a
+// lost the anchor on the next save/reload, with no DROPPED_KEYS report, persist.js and prime.mjs now
+// agree on the same domain, a case-insensitive "#RRGGBB". Still not a "nearest bound" clamp, a
 // malformed hex (wrong length, non-hex characters) has no well-defined nearest valid hex, so it is
 // simply dropped rather than coerced, same as an unrecognized enum member.
 const HEX6 = /^#[0-9A-Fa-f]{6}$/;
@@ -214,8 +214,8 @@ function clampHex(v) {
 // Per-palette clamp. Builds a fresh object so the result is a clean State, but copies
 // each field through its own rule so an out-of-domain field is clamped ALONE and every
 // in-domain sibling is preserved byte-for-byte (defeats the reset-whole-palette exploit).
-// keyColors — RETAINED brand colors per palette, as EXPRESSIONS: `dominant` (the main
-// brand color) and optional `supportive`. Stored as OKLCH [L 0..1, C ≥0, H 0..360] —
+// keyColors, RETAINED brand colors per palette, as EXPRESSIONS: `dominant` (the main
+// brand color) and optional `supportive`. Stored as OKLCH [L 0..1, C ≥0, H 0..360],
 // less lossy than an 8-bit hex source. One entry per role, dominant first; round-tripped
 // so they survive serialize/hydrate.
 function clampKeyColors(arr) {
@@ -252,17 +252,17 @@ export function clampPalette(p) {
     hueSameDir: src.hueSameDir === true,                        // both-ends-same-direction flag (boolean)
     on: src.on === true,                                        // coerce to boolean
   };
-  // keyColors is OPTIONAL — only attach when present so hydrate stays identity-preserving
+  // keyColors is OPTIONAL, only attach when present so hydrate stays identity-preserving
   // (a palette without key colors must round-trip unchanged, not gain an empty array).
   const kc = clampKeyColors(src.keyColors);
   if (kc.length) out.keyColors = kc;
-  // cuspPull (perceptual path) is OPTIONAL — a per-palette override of the global `vibrancy` (0..100):
+  // cuspPull (perceptual path) is OPTIONAL, a per-palette override of the global `vibrancy` (0..100):
   // how far this palette's richest stop is nudged toward stop 500. Absent → inherit the global vibrancy.
   if (Number.isFinite(src.cuspPull)) out.cuspPull = clampNumber(src.cuspPull, 0, 100);
-  // intensity: REMOVED from the palette domain entirely (SPEC 0.3.0 REQ-002/010/011) — there is no
+  // intensity: REMOVED from the palette domain entirely (SPEC 0.3.0 REQ-002/010/011), there is no
   // per-palette ramp override in any group any more. A stray `src.intensity` is simply never copied
   // to `out` here; hydrate() reports it loudly via DROPPED_KEYS (REQ-011) as part of the v4 migration.
-  // primeChroma (REQ-010) is OPTIONAL — a per-palette override of the global `primeChroma` (0..100),
+  // primeChroma (REQ-010) is OPTIONAL, a per-palette override of the global `primeChroma` (0..100),
   // same absent-means-inherit shape as cuspPull/intensity. Absent → inherit controls.primeChroma.
   if (Number.isFinite(src.primeChroma)) out.primeChroma = clampNumber(src.primeChroma, 0, 100);
   // STORY (optional, from a curated preset): the source color's evocative name, a one-line
@@ -270,18 +270,18 @@ export function clampPalette(p) {
   if (typeof src.colorName === "string" && src.colorName) out.colorName = src.colorName;
   if (typeof src.description === "string" && src.description) out.description = src.description;
   if (src.colorRole === "dominant" || src.colorRole === "supporting" || src.colorRole === "accent") out.colorRole = src.colorRole;
-  // group (ticket #556) is OPTIONAL — a per-palette override of the canvas group it renders
+  // group (ticket #556) is OPTIONAL, a per-palette override of the canvas group it renders
   // under. Absent/invalid stays absent (round-trip preserved); the effective group for a
   // palette with none is computed on demand by model.mjs's paletteGroup(), never here.
   if (DOMAINS.palette.group.values.includes(src.group)) out.group = src.group;
-  // anchor / sourceAnchor (ticket #681, U1) — see DOMAINS.palette.anchor above. OPTIONAL, same
+  // anchor / sourceAnchor (ticket #681, U1), see DOMAINS.palette.anchor above. OPTIONAL, same
   // absent-stays-absent shape as `group`: a present, well-formed hex round-trips as-is; a malformed
   // one is dropped rather than clamped (clampHex has no "nearest valid hex" to fall back to).
   const anchor = clampHex(src.anchor);
   if (anchor) out.anchor = anchor;
   const sourceAnchor = clampHex(src.sourceAnchor);
   if (sourceAnchor) out.sourceAnchor = sourceAnchor;
-  // preDetachHue/Chroma/Lift (ticket #681, U2 re-diagnosis Finding 3) — see DOMAINS.palette above.
+  // preDetachHue/Chroma/Lift (ticket #681, U2 re-diagnosis Finding 3), see DOMAINS.palette above.
   // OPTIONAL, same absent-stays-absent shape: present only on a palette Reset can restore exactly.
   if (Number.isFinite(src.preDetachHue)) out.preDetachHue = clampNumber(src.preDetachHue, 0, 360);
   if (Number.isFinite(src.preDetachChroma)) out.preDetachChroma = clampNumber(src.preDetachChroma, 0, 100);
@@ -289,7 +289,7 @@ export function clampPalette(p) {
   return out;
 }
 
-// clampStory — the set-level concept narrative from a curated preset (optional). Free strings +
+// clampStory, the set-level concept narrative from a curated preset (optional). Free strings +
 // a groups array of {hier,pct,note}; shape-clamped only. Returns null when nothing valid is present.
 export function clampStory(s) {
   if (!s || typeof s !== "object") return null;
@@ -305,11 +305,11 @@ export function clampStory(s) {
   return Object.keys(out).length ? out : null;
 }
 
-// clampPaletteGroups — the four canvas groups' baseChroma/primeChroma facet (SPEC 0.3.0 REQ-001/010).
+// clampPaletteGroups, the four canvas groups' baseChroma/primeChroma facet (SPEC 0.3.0 REQ-001/010).
 // Per-field clamp, same as clampPalette: an in-domain number on one group/field is preserved
 // byte-for-byte; anything absent or out-of-domain falls back to that field's own DOMAINS default
 // (GROUP_DEFAULTS, mirrored above). ALWAYS returns all four groups fully populated (the "required,
-// default-filled" shape, not the "absent stays absent" shape clampPalette's `group` uses) — a doc
+// default-filled" shape, not the "absent stays absent" shape clampPalette's `group` uses), a doc
 // that predates this feature hydrates straight to the ratified defaults. `locked` is never read
 // from `src`; it is stamped `true` for `data` only, per DOMAINS.
 function clampPaletteGroups(src) {
@@ -327,7 +327,7 @@ function clampPaletteGroups(src) {
   return out;
 }
 
-// Per-doc semantic-mapping overrides: { [roleKey]: { light?, dark? } } — a role re-pointed to a
+// Per-doc semantic-mapping overrides: { [roleKey]: { light?, dark? } }, a role re-pointed to a
 // different raw ref per mode (the canonical role table is the default; overrides layer on top).
 // Shape-clamped ONLY (light/dark kept iff strings); ref VALIDITY is the consumer's concern
 // (resolveRoleHex degrades an unknown ref gracefully), so persist stays dependency-free. An
@@ -348,46 +348,46 @@ function clampOverrides(o) {
 
 // ── schemaVersion + rename maps (TKT-0016) ──────────────────────────────────────────────
 // A canon RENAME (a voice, a treatment id, any field this file allowlists) that isn't also
-// translated at hydrate time gets SILENTLY DROPPED by the allowlist clamp below — the 2026-07-13
+// translated at hydrate time gets SILENTLY DROPPED by the allowlist clamp below, the 2026-07-13
 // voice-taxonomy rename (Heading->Headline, UI->Label, Quote/Caption/Legal folded into Lead/Tiny/Body)
 // is a live example: a doc saved before that rename still carries the OLD voice names in
 // `type.voices`, and clampType's VOICES allowlist (only ever the NEW names) drops them on every
 // hydrate since. This is the SAME "translate a legacy doc forward" principle as the hueSpace legacy
 // stamp (app-helpers.mjs#hydrateStoredDoc: a doc predating hueSpace is stamped "cam16" BEFORE
-// hydrate runs, so it keeps rendering as it always did) — generalized here into a versioned,
+// hydrate runs, so it keeps rendering as it always did), generalized here into a versioned,
 // in-file mechanism instead of a one-field, one-off wrapper living outside persist.js.
 //
 // CURRENT_SCHEMA_VERSION is stamped onto every doc serialize() writes. hydrate() reads the incoming
-// snapshot's schemaVersion (an ABSENT field means "before schemaVersion existed", i.e. 0 — every doc
+// snapshot's schemaVersion (an ABSENT field means "before schemaVersion existed", i.e. 0, every doc
 // saved before this ticket) and runs every RENAME_MAPS entry the doc predates, BEFORE the allowlist
 // clamp, so a renamed field survives translated onto its current name instead of being dropped.
 //
-// STANDING CONVENTION — every future canon rename (see type-scale's SKILL.md "new voice group" note)
+// STANDING CONVENTION, every future canon rename (see type-scale's SKILL.md "new voice group" note)
 // MUST add its own RENAME_MAPS entry here and bump CURRENT_SCHEMA_VERSION, in the SAME change that
 // renames it. This is not a one-off fix for the 2026-07-13 voices; it's how every rename ships from
 // now on, the same way a Figma variable rename ships its FIGMA_MIGRATIONS entry (TKT-0012).
 //
-// v4 (SPEC spec-muted-base-key-spikes 0.3.0 REQ-011): palette.intensity retired — no RENAME_MAPS
+// v4 (SPEC spec-muted-base-key-spikes 0.3.0 REQ-011): palette.intensity retired, no RENAME_MAPS
 // entry needed, since its drop+report (hydrate(), by the keyIntensity check above) and
 // paletteGroups' own default-fill (clampPaletteGroups) both already run UNCONDITIONALLY, on every
-// snapshot regardless of schemaVersion — the bump exists to stamp v4 forward on `serialize()`, not
+// snapshot regardless of schemaVersion, the bump exists to stamp v4 forward on `serialize()`, not
 // to gate a value translation the way v1/v2/v3 each needed to.
 //
-// v5 (ticket #681, U1): palette.anchor/sourceAnchor ADDED — same "no RENAME_MAPS entry needed" shape
+// v5 (ticket #681, U1): palette.anchor/sourceAnchor ADDED, same "no RENAME_MAPS entry needed" shape
 // as v4, for the same reason: this is a brand-new optional field, not a rename, so there is no old
 // name to translate FROM. A pre-v5 doc simply has neither field, which is already clampPalette's
 // correct absent-stays-absent behavior with no version gate required. The bump exists only so
 // `serialize()` stamps v5 forward (TKT-0016's standing convention: every schema-affecting change
 // bumps CURRENT_SCHEMA_VERSION in the same change, whether or not it needs a translation entry).
 //
-// v6 (ticket #681, U2 re-diagnosis Finding 3): palette.preDetachHue/Chroma/Lift ADDED — same shape
+// v6 (ticket #681, U2 re-diagnosis Finding 3): palette.preDetachHue/Chroma/Lift ADDED, same shape
 // as v5, brand-new optional fields, no RENAME_MAPS entry needed. A pre-v6 doc simply has none of the
 // three, which is already clampPalette's correct absent-stays-absent behavior.
 export const CURRENT_SCHEMA_VERSION = 6;
 
-// DROPPED_KEYS (TKT-0455) — the loud-fail accounting channel. hydrate() attaches the report of every
+// DROPPED_KEYS (TKT-0455), the loud-fail accounting channel. hydrate() attaches the report of every
 // unknown voice/treatment/tokenOverrides key it dropped as a NON-ENUMERABLE property on its return
-// value, keyed by this symbol — non-enumerable so it never leaks into JSON.stringify/serialize and
+// value, keyed by this symbol, non-enumerable so it never leaks into JSON.stringify/serialize and
 // never disturbs the roundtrip-identity gate, but reachable by a caller (or a test) that wants to
 // assert something was actually dropped instead of silently vanishing. See hydrate() below.
 export const DROPPED_KEYS = Symbol("persist.droppedKeys");
@@ -396,15 +396,15 @@ export const DROPPED_KEYS = Symbol("persist.droppedKeys");
 // schemaVersion is 0, so every pre-schemaVersion doc qualifies for every entry). `renameVoices` is an
 // old-name -> new-name map applied to BOTH voice-keyed facets: `type.voices` keys directly, AND the
 // leading "<voice>|…" segment of `type.tokenOverrides` per-cell keys (clampTokenOverrides now ALSO
-// validates the voice segment's membership in VOICES, TKT-0455 — a stale-name tokenOverrides key that
+// validates the voice segment's membership in VOICES, TKT-0455, a stale-name tokenOverrides key that
 // survives to that check is dropped loudly rather than surviving hydrate unchanged as an inert orphan;
 // this rewrite, when it fires, is what keeps a doc within a covered rename OFF that path). Either side: the OLD key moves onto
 // the NEW key, UNLESS the doc already ALSO has the new key (a doc could plausibly have picked up a
-// fresh override under the new name after upgrading — that later, already-current value is presumed
+// fresh override under the new name after upgrading, that later, already-current value is presumed
 // intentional and is never clobbered by the stale old-name entry).
 const RENAME_MAPS = [
   {
-    version: 1, // the 2026-07-13 voice-taxonomy rename — every doc saved before it has schemaVersion 0/absent
+    version: 1, // the 2026-07-13 voice-taxonomy rename, every doc saved before it has schemaVersion 0/absent
     renameVoices: { Heading: "Headline", UI: "Label", Quote: "Lead", Caption: "Tiny", Legal: "Body" },
   },
   {
@@ -412,7 +412,7 @@ const RENAME_MAPS = [
     // before baseIntensity/keyIntensity existed stamps baseIntensity: 100 (its pre-feature look) BEFORE
     // the domain clamp, so a later default flip (the 45 muted-default follow-up) can never change how an
     // already-saved kit renders. A v2+ doc with the field absent hydrates to the domain default instead
-    // (also 100 today) — this stamp only fires for a doc that PREDATES the field existing at all.
+    // (also 100 today), this stamp only fires for a doc that PREDATES the field existing at all.
     version: 2,
     stampIntensity: true,
   },
@@ -421,13 +421,13 @@ const RENAME_MAPS = [
     // retired ramp-spike control's persisted field now carries the prime system's own chroma control
     // under its real name. Value carried onto primeChroma; the old key dropped; a doc that ALREADY
     // carries primeChroma (e.g. one that picked up a fresh value mid-upgrade) is never clobbered by the
-    // stale keyIntensity — the same never-clobber shape renameKeyedMap already applies to renameVoices.
+    // stale keyIntensity, the same never-clobber shape renameKeyedMap already applies to renameVoices.
     version: 3,
     renameControls: { keyIntensity: "primeChroma" },
   },
 ];
 
-// renameKeyedMap(obj, renameMap, rewriteKey) — generic old->new key migration for a plain map: for every
+// renameKeyedMap(obj, renameMap, rewriteKey), generic old->new key migration for a plain map: for every
 // key whose (renameKeyed-computed) old identity is in `renameMap`, move its value onto `rewriteKey`'s
 // new-identity key, UNLESS that new key already exists (never clobber an already-current value). Returns
 // the SAME object reference when nothing changes (so a current doc isn't defensively cloned for nothing).
@@ -446,13 +446,13 @@ function renameKeyedMap(obj, renameMap, rewriteKey) {
   return changed ? out : obj;
 }
 
-// applyRenameMaps — walk every RENAME_MAPS entry the incoming snapshot predates and translate its
+// applyRenameMaps, walk every RENAME_MAPS entry the incoming snapshot predates and translate its
 // voice-keyed facets forward (`type.voices` keys + `type.tokenOverrides`' leading voice segment). Runs
 // BEFORE any allowlist clamp (see hydrate() below). Pure: returns a new snapshot when a rename actually
 // fires, the SAME snapshot reference otherwise (so a current doc pays no cost).
 function applyRenameMaps(snapshot) {
   const fromVersion = Number.isFinite(snapshot && snapshot.schemaVersion) ? snapshot.schemaVersion : 0;
-  if (fromVersion >= CURRENT_SCHEMA_VERSION) return snapshot; // already current — nothing to translate
+  if (fromVersion >= CURRENT_SCHEMA_VERSION) return snapshot; // already current, nothing to translate
   let s = snapshot;
   for (const entry of RENAME_MAPS) {
     if (fromVersion >= entry.version) continue; // this doc is already past this particular rename
@@ -460,7 +460,7 @@ function applyRenameMaps(snapshot) {
       let type = s.type;
       const voices = renameKeyedMap(type.voices, entry.renameVoices, (k, m) => m[k]);
       if (voices !== type.voices) type = { ...type, voices };
-      // type keys are "<voice>|<step>|<modeKey>" (3 segments) — rename only the leading segment.
+      // type keys are "<voice>|<step>|<modeKey>" (3 segments), rename only the leading segment.
       const tov = renameKeyedMap(type.tokenOverrides, entry.renameVoices, (k, m) => {
         const seg = k.split("|");
         if (seg.length !== 3 || !m[seg[0]]) return null;
@@ -473,7 +473,7 @@ function applyRenameMaps(snapshot) {
       s = { ...s, baseIntensity: 100 };
     }
     // renameControls: an old top-level control name -> new name, carrying the value across (never
-    // clobbering an already-present new-name value) — the REQ-011/R4 keyIntensity->primeChroma rename.
+    // clobbering an already-present new-name value), the REQ-011/R4 keyIntensity->primeChroma rename.
     if (entry.renameControls && s && typeof s === "object") {
       for (const oldKey of Object.keys(entry.renameControls)) {
         if (!(oldKey in s)) continue;
@@ -491,7 +491,7 @@ function applyRenameMaps(snapshot) {
 // transform, no rounding, no reordering of palette contents), so that for an in-domain
 // State the snapshot carries every value unchanged and hydrate can reproduce it exactly.
 // JSON.parse(JSON.stringify(...)) gives a deep, plain, structurally-identical clone. schemaVersion is
-// stamped on top (TKT-0016) — it's a bookkeeping field for hydrate()'s rename maps, not part of the
+// stamped on top (TKT-0016), it's a bookkeeping field for hydrate()'s rename maps, not part of the
 // runtime State, so hydrate() reads and then drops it (never appears in hydrate's return value).
 export function serialize(state) {
   return { ...JSON.parse(JSON.stringify(state)), schemaVersion: CURRENT_SCHEMA_VERSION };
@@ -501,10 +501,10 @@ export function serialize(state) {
 // Turn an (untrusted) snapshot into a valid State with every field clamped to its
 // DOMAIN. Identity-preserving: an already-in-domain field is copied through untouched;
 // only a violated field is moved to its nearest valid bound. NOT a clamp-to-default and
-// NOT a reset — those discard user state and fail the sealed roundtrip/per-field gates.
+// NOT a reset, those discard user state and fail the sealed roundtrip/per-field gates.
 export function hydrate(snapshot) {
   const raw = (snapshot && typeof snapshot === "object") ? snapshot : {};
-  // TKT-0016 — translate an older doc forward through any still-relevant rename maps BEFORE the
+  // TKT-0016, translate an older doc forward through any still-relevant rename maps BEFORE the
   // allowlist clamp below runs, so a renamed voice survives onto its current name instead of being
   // silently dropped by clampType's VOICES allowlist.
   const s = applyRenameMaps(raw);
@@ -523,35 +523,35 @@ export function hydrate(snapshot) {
   else if (selected > maxIndex) selected = maxIndex;
   // (no rounding of an in-range integer: an in-domain integer stays byte-for-byte)
 
-  // optional curated metadata — the set's concept story + its travel volume (both opt-in, so a
+  // optional curated metadata, the set's concept story + its travel volume (both opt-in, so a
   // hand-built doc round-trips unchanged).
   const story = clampStory(s.story);
 
-  // The loud-fail accounting list (TKT-0455) — every unknown voice/treatment/tokenOverrides key this
+  // The loud-fail accounting list (TKT-0455), every unknown voice/treatment/tokenOverrides key this
   // hydrate() call drops, past whatever applyRenameMaps already translated. `drop()` both records the
   // entry and warns immediately, so a future rename shipped without its RENAME_MAPS entry is loud on
   // the very first hydrate that hits it, not a silent, permanent data-loss.
   const dropped = [];
   const drop = (facet, key, reason) => {
     dropped.push({ facet, key, reason });
-    if (typeof console !== "undefined") console.warn(`[persist] dropped unknown ${facet} key ${JSON.stringify(key)} (${reason}) — stored state for it is gone`);
+    if (typeof console !== "undefined") console.warn(`[persist] dropped unknown ${facet} key ${JSON.stringify(key)} (${reason}), stored state for it is gone`);
   };
 
-  // keyIntensity (REQ-011, TKT-0455): DOMAINS no longer lists it — applyRenameMaps already carries it
+  // keyIntensity (REQ-011, TKT-0455): DOMAINS no longer lists it, applyRenameMaps already carries it
   // onto primeChroma for any doc that predates the v3 rename, so a bare keyIntensity surviving to here
   // can only belong to a doc whose schemaVersion already claims v3+ (the rename was skipped). That's a
-  // stray leftover, not a legacy doc — report it loudly instead of letting the allowlist silently drop it.
+  // stray leftover, not a legacy doc, report it loudly instead of letting the allowlist silently drop it.
   if (typeof s.keyIntensity === "number") drop("controls", "keyIntensity", "renamed to primeChroma at schema v3; a v3+ snapshot should never carry it");
 
   // palette.intensity (SPEC spec-muted-base-key-spikes 0.3.0 REQ-002/010/011, TKT-0455): removed
-  // from the palette domain at schema v4 — there is no per-palette ramp override in any group any
+  // from the palette domain at schema v4, there is no per-palette ramp override in any group any
   // more (the group's OWN baseChroma is the only ramp-chroma resolution left). clampPalette already
   // never copies it to `out`; report each one loudly here, unconditionally (same shape as the
-  // keyIntensity check above — a stray leftover on ANY snapshot, not just one that predates v4, is
+  // keyIntensity check above, a stray leftover on ANY snapshot, not just one that predates v4, is
   // worth surfacing), instead of letting the allowlist silently drop it.
   for (const rp of rawPalettes) {
     if (rp && typeof rp === "object" && Number.isFinite(rp.intensity)) {
-      drop("palette", `${rp.name || "?"}.intensity`, "removed at schema v4 — there is no per-palette ramp override in any group (REQ-002)");
+      drop("palette", `${rp.name || "?"}.intensity`, "removed at schema v4, there is no per-palette ramp override in any group (REQ-002)");
     }
   }
 
@@ -586,17 +586,17 @@ export function hydrate(snapshot) {
     ...(typeof s.vol === "string" && s.vol ? { vol: s.vol } : {}),
     ...(story ? { story } : {}),
   };
-  // Non-enumerable: never serialized, never disturbs deepEq/roundtrip — see DROPPED_KEYS above.
+  // Non-enumerable: never serialized, never disturbs deepEq/roundtrip, see DROPPED_KEYS above.
   Object.defineProperty(result, DROPPED_KEYS, { value: dropped, enumerable: false });
   return result;
 }
 
-// clampIcons — the OPTIONAL icon-system facet { id, variant?, name?, variantName? } (Settings › Icons).
+// clampIcons, the OPTIONAL icon-system facet { id, variant?, name?, variantName? } (Settings › Icons).
 // A BRAND decision like a font family: the kit names the library + its stroke/fill variant so a consuming
 // agent binds to it. Identity-gated like every other optional block: the DEFAULT system at its DEFAULT
 // variant round-trips as ABSENT (so an untouched kit's config is byte-identical), and an unknown id drops
 // the whole block. `custom` keeps the user's typed name/variantName verbatim (trimmed + capped).
-// clampFigmaCollections — per-doc overrides for the two Figma color-collection names (Settings ›
+// clampFigmaCollections, per-doc overrides for the two Figma color-collection names (Settings ›
 // Token mapping). OPTIONAL, like icons: only non-empty, non-default names attach, so a config with
 // the standard names round-trips identically (the hydrate identity gate).
 function clampFigmaCollections(fc) {
@@ -617,7 +617,7 @@ function clampIcons(ic) {
   if (sys.id === "custom") {
     const name = typeof ic.name === "string" ? ic.name.trim().slice(0, 60) : "";
     const variantName = typeof ic.variantName === "string" ? ic.variantName.trim().slice(0, 40) : "";
-    if (!name) return {}; // a custom system with no name carries nothing — drop it
+    if (!name) return {}; // a custom system with no name carries nothing, drop it
     return { icons: { id: "custom", name, ...(variantName ? { variantName } : {}) } };
   }
   const variant = sys.variants.includes(ic.variant) ? ic.variant : sys.defaultVariant;
@@ -626,19 +626,19 @@ function clampIcons(ic) {
   return { icons: { id: sys.id, ...(variant ? { variant } : {}) } };
 }
 
-// clampExport — the OPTIONAL export-format prefs { unit?, colorPrefix?, typePrefix?, geomPrefix? }
+// clampExport, the OPTIONAL export-format prefs { unit?, colorPrefix?, typePrefix?, geomPrefix? }
 // (Settings › Export: CSS unit + the naming-scheme prefixes). Each key attaches only when valid, and the
-// whole `export` only when ≥1 valid key — so the hydrate identity gate holds (absent stays absent; invalid
-// keys drop; an all-invalid object drops). (The old `colorFormat` pref was removed — Download-All now
+// whole `export` only when ≥1 valid key, so the hydrate identity gate holds (absent stays absent; invalid
+// keys drop; an all-invalid object drops). (The old `colorFormat` pref was removed, Download-All now
 // always emits BOTH css-hex/ and css-oklch/, so there is nothing to choose.)
 function clampExport(e) {
   if (!e || typeof e !== "object") return {};
   const unit = clampEnum(e.unit, ["px", "rem", "em"], null);
-  // colorPrefix — the CSS custom-property prefix core (the `c` in `--c-*`). OPTIONAL: attach only a
-  // sanitized non-empty value that ISN'T the default "c" (so the default round-trips as absent — the
+  // colorPrefix, the CSS custom-property prefix core (the `c` in `--c-*`). OPTIONAL: attach only a
+  // sanitized non-empty value that ISN'T the default "c" (so the default round-trips as absent, the
   // identity gate). Sanitized to a legal ident core; capped; a bare/edge-hyphen/all-junk value drops.
   // The naming-scheme prefixes (colour · type · geometry). Each: sanitized to a legal ident core,
-  // attached only when non-empty AND not the system's DEFAULT (so a default round-trips as absent —
+  // attached only when non-empty AND not the system's DEFAULT (so a default round-trips as absent,
   // the identity gate). Defaults: colour "c", type "type", geometry "" (native).
   const clean = (s, repair) => typeof s === "string" ? s.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").replace(/^(\d)/, repair + "$1").slice(0, 40) : "";
   const cp = clean(e.colorPrefix, "c"); const colorPrefix = cp && cp !== "c" ? cp : null;
@@ -648,30 +648,30 @@ function clampExport(e) {
   return Object.keys(out).length ? { export: out } : {};
 }
 
-// a breakpoint mode's @media min-width (px) — OPTIONAL: {} when absent/invalid (no media query), or
+// a breakpoint mode's @media min-width (px), OPTIONAL: {} when absent/invalid (no media query), or
 // { minWidth } when a positive width is set. Keeps the hydrate identity gate (absent stays absent).
 const clampMinWidth = (v) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? { minWidth: Math.max(1, Math.min(3840, Math.round(n))) } : {}; };
 
-// clampTokenOverrides — the per-cell SIZE/HEIGHT override map (Phase 3 of the Tokens matrix), flat
+// clampTokenOverrides, the per-cell SIZE/HEIGHT override map (Phase 3 of the Tokens matrix), flat
 // `{ "<voice>|<step>|<modeKey>": <number> }` for type / `{ "<size>|<modeKey>": <number> }` for geom. Each
 // value is a positive number clamped into [min, max]; non-numeric / non-finite / ≤0 entries are DROPPED
 // (an invalid cell is simply not overridden). MALFORMED keys are dropped too: the key must split into
 // exactly `parts` "|"-segments (3 for type "<voice>|<step>|<modeKey>", 2 for geom "<size>|<modeKey>") with a
-// non-empty modeKey (the last segment) — defensive, so a corrupt persisted map can't smuggle junk forward.
-// Returns {} when nothing valid is present so the consumer only attaches when non-empty — keeping the
+// non-empty modeKey (the last segment), defensive, so a corrupt persisted map can't smuggle junk forward.
+// Returns {} when nothing valid is present so the consumer only attaches when non-empty, keeping the
 // hydrate identity gate (absent stays absent, like roleOverrides).
 //
-// `validLead` (TKT-0455) — the leading segment (the voice for type, the size for geom) is now checked
+// `validLead` (TKT-0455), the leading segment (the voice for type, the size for geom) is now checked
 // against the engine's own domain, not just its arity: a key whose voice/size is retired, typo'd, or
 // simply never existed used to survive every hydrate forever as an inert orphan (persist.js's own
-// comment above documented this as a KNOWN gap — see the RENAME_MAPS block). It's dropped here instead,
-// loudly, via `drop(key, reason)` — the same accounting hydrate() surfaces for unknown voices/treatments.
+// comment above documented this as a KNOWN gap, see the RENAME_MAPS block). It's dropped here instead,
+// loudly, via `drop(key, reason)`, the same accounting hydrate() surfaces for unknown voices/treatments.
 function clampTokenOverrides(o, min, max, parts, validLead, drop) {
   if (!o || typeof o !== "object") return {};
   const out = {};
   for (const k of Object.keys(o)) {
     const seg = k.split("|");
-    if (parts && (seg.length !== parts || !seg[seg.length - 1])) continue; // drop malformed (wrong arity / empty modeKey) — silent, pre-existing
+    if (parts && (seg.length !== parts || !seg[seg.length - 1])) continue; // drop malformed (wrong arity / empty modeKey), silent, pre-existing
     if (validLead && !validLead.includes(seg[0])) { drop(k, `unknown leading segment "${seg[0]}"`); continue; }
     const n = Number(o[k]);
     if (!Number.isFinite(n) || n <= 0) continue;          // drop invalid (NaN / non-number / non-positive)
@@ -680,55 +680,55 @@ function clampTokenOverrides(o, min, max, parts, validLead, drop) {
   return out;
 }
 
-// clampType — the typography config (treatment + body base). Treatment to a known id, base size to a
+// clampType, the typography config (treatment + body base). Treatment to a known id, base size to a
 // sane integer range. Identity-preserving for an in-domain value (so the roundtrip gate holds).
 // Exported (with VOICES below and GEOMETRY_TREATMENTS further down) so test/ui/persist.mjs can assert
-// these hand-tracked allowlists stay in lockstep with their engine sources — type.mjs's TYPE_TREATMENTS
+// these hand-tracked allowlists stay in lockstep with their engine sources, type.mjs's TYPE_TREATMENTS
 // ids / the 15 voice names in a treatment's `categories` / geometry.mjs's GEOMETRY_TREATMENTS ids
 // (TKT-0017: the same parity-gate failure class the role-table gate already guards elsewhere, generalized
-// here — nothing else in this file consumes these engine modules, so it's a hand-tracked copy, not an import).
+// here, nothing else in this file consumes these engine modules, so it's a hand-tracked copy, not an import).
 export const TYPE_TREATMENTS = ["product", "luxury", "editorial", "technical", "statement"];
-// The 15 named type VOICES (docs/reference/typography) — MUST track makeVoices in type.mjs. A voice
+// The 15 named type VOICES (docs/reference/typography), MUST track makeVoices in type.mjs. A voice
 // renamed/added/removed there and not here has its per-voice overrides SILENTLY DROPPED on hydrate
-// (2026-07-13's voice renames were a live example of exactly this — see the rename-map note in hydrate()
+// (2026-07-13's voice renames were a live example of exactly this, see the rename-map note in hydrate()
 // below, TKT-0016, which fixes the hydrate-drop for a RENAME; this allowlist itself still needs its own
 // hand update whenever the voice set changes, which is what the allowlist-parity test gate below guards).
 export const VOICES = ["Display", "Headline", "Sub-heading", "Title", "Sub-title", "Lead", "Body", "Body-mono", "Label", "Label-mono", "Kicker", "Tiny", "Tiny-mono", "UI-control", "UI-widget"];
 function clampType(t, drop) {
   t = (t && typeof t === "object") ? t : {};
-  // TKT-0455 — a NON-empty, out-of-allowlist treatment (as opposed to an absent field, the normal
+  // TKT-0455, a NON-empty, out-of-allowlist treatment (as opposed to an absent field, the normal
   // "doc predates this field" case) is a real unknown value: surface it instead of the silent fallback.
   if (t.treatment != null && !TYPE_TREATMENTS.includes(t.treatment)) drop("type.treatment", t.treatment, "unknown treatment id");
   const treatment = TYPE_TREATMENTS.includes(t.treatment) ? t.treatment : "product";
-  // the invalid-value fallback reads DEFAULT_TYPE.bodyBase (never a hardcoded literal here) — it must
+  // the invalid-value fallback reads DEFAULT_TYPE.bodyBase (never a hardcoded literal here), it must
   // track Body's own fixed MD size (SIZES.Body[1] in type.mjs), or an absent bodyBase silently SCALES
   // the whole fixed table instead of leaving it at its unscaled identity (found live: a stale hardcoded
   // "15" here kept resolving documents to a 6.25%-shrunk scale after Body's own base moved to 16).
   const clampBody = (v) => { const n = Number(v); return Math.max(10, Math.min(32, Number.isFinite(n) ? Math.round(n) : DEFAULT_TYPE.bodyBase)); };
   const bodyBase = clampBody(t.bodyBase);
   const out = { treatment, bodyBase };
-  // tokenOverrides (Phase 3) — per-cell size overrides. OPTIONAL: only attach when non-empty so a config
+  // tokenOverrides (Phase 3), per-cell size overrides. OPTIONAL: only attach when non-empty so a config
   // without overrides round-trips identically. Type sizes clamp into [1, 512] px.
   const tov = clampTokenOverrides(t.tokenOverrides, 1, 512, 3, VOICES, (k, reason) => drop("type.tokenOverrides", k, reason)); // type keys: "<voice>|<step>|<modeKey>" (3 segments)
   if (Object.keys(tov).length) out.tokenOverrides = tov;
-  // per-role CUSTOM font overrides — OPTIONAL map { role: family } for known roles; non-empty strings only,
+  // per-role CUSTOM font overrides, OPTIONAL map { role: family } for known roles; non-empty strings only,
   // attached only when non-empty so a config without custom fonts round-trips identically.
   if (t.fonts && typeof t.fonts === "object") {
     const fonts = {};
     for (const r of ["display", "heading", "body", "ui", "mono"]) if (typeof t.fonts[r] === "string" && t.fonts[r].trim()) fonts[r] = t.fonts[r].trim();
     if (Object.keys(fonts).length) out.fonts = fonts;
   }
-  // per-VOICE shaping overrides — OPTIONAL { "<voice>": { weight, tracking, leading } } for the 15 known
+  // per-VOICE shaping overrides, OPTIONAL { "<voice>": { weight, tracking, leading } } for the 15 known
   // voices (module-level VOICES above); each field clamped to a sane range, kept only when finite, attached
-  // only when non-empty. This allowlist MUST track makeVoices's voices — a voice missing here has its
-  // per-voice overrides SILENTLY DROPPED on hydrate. 2026-07-13 — voice set + `ratio` retired: Heading→
+  // only when non-empty. This allowlist MUST track makeVoices's voices, a voice missing here has its
+  // per-voice overrides SILENTLY DROPPED on hydrate. 2026-07-13, voice set + `ratio` retired: Heading→
   // Headline, UI→Label, Quote folded into Lead, Caption folded into Tiny, Legal folded into Body; Title/
-  // Sub-title/Tiny added. `ratio` no longer means anything (size is now a fixed table, not base×ratio^n —
+  // Sub-title/Tiny added. `ratio` no longer means anything (size is now a fixed table, not base×ratio^n,
   // see type.mjs).
   if (t.voices && typeof t.voices === "object") {
-    // TKT-0455 — any stored voice name NOT in VOICES at this point already survived applyRenameMaps
+    // TKT-0455, any stored voice name NOT in VOICES at this point already survived applyRenameMaps
     // (which translates every still-relevant RENAME_MAPS entry before clampType ever runs), so it is
-    // genuinely unknown: a typo, a retired name, or — the failure class this ticket hardens against —
+    // genuinely unknown: a typo, a retired name, or, the failure class this ticket hardens against,
     // a future voice rename that shipped without its own RENAME_MAPS entry. Surface it instead of the
     // old behavior (the `for (const name of VOICES)` loop below simply never reads it, so it silently
     // vanished with no warning and no record).
@@ -742,17 +742,17 @@ function clampType(t, drop) {
       const w = num(v.weight, 100, 1000, true); if (w !== undefined) o.weight = w;
       const tr = num(v.tracking, -0.5, 1, false); if (tr !== undefined) o.tracking = tr;
       const le = num(v.leading, 0.8, 3, false); if (le !== undefined) o.leading = le;
-      // styleName — the Figma weight-style string for non-variable families; trimmed, capped, non-empty only.
+      // styleName, the Figma weight-style string for non-variable families; trimmed, capped, non-empty only.
       if (typeof v.styleName === "string" && v.styleName.trim()) o.styleName = v.styleName.trim().slice(0, 60);
-      // font — the per-voice FONT override (TKT-0002): a voice's own family, overriding its shared role
+      // font, the per-voice FONT override (TKT-0002): a voice's own family, overriding its shared role
       // default (resolvedFontFor in type.mjs). Same shape as styleName: trimmed, capped, non-empty only.
       if (typeof v.font === "string" && v.font.trim()) o.font = v.font.trim().slice(0, 60);
-      // weights — SIBLING weight variants [{name, weight}] around the voice's core (the styles feature).
+      // weights, SIBLING weight variants [{name, weight}] around the voice's core (the styles feature).
       // Capped at 8 per voice; each entry needs a finite clamped weight AND a non-empty name (name capped
-      // at 40 chars). ALWAYS set when the input WAS an array (even if it filters down to empty) — an
+      // at 40 chars). ALWAYS set when the input WAS an array (even if it filters down to empty), an
       // explicit `weights: []` is a deliberate OPT-OUT (typeScale/buildCategory treats it differently
       // from an ABSENT weights key: absent auto-populates via siblingWeightDefaults, [] stays bare, no
-      // siblings at all) — dropping the key here on an empty result silently reverted an opt-out back to
+      // siblings at all), dropping the key here on an empty result silently reverted an opt-out back to
       // auto-populate on the very next hydrate (found live: a real-font preset with only one available
       // weight for a voice, correctly opted out with `weights: []`, un-opted-out itself on reload).
       if (Array.isArray(v.weights)) {
@@ -769,11 +769,11 @@ function clampType(t, drop) {
     }
     if (Object.keys(voices).length) out.voices = voices;
   }
-  // breakpoint MODES (Phase 5) — each a named bodyBase override. OPTIONAL: only attach when present, so a
+  // breakpoint MODES (Phase 5), each a named bodyBase override. OPTIONAL: only attach when present, so a
   // config without modes round-trips identically (the hydrate identity gate). Each mode = { id, name, bodyBase }.
   if (Array.isArray(t.modes) && t.modes.length) {
     // a mode carries EITHER a bodyBase override (legacy custom modes) or a hierarchy-aware compression
-    // `factor` in (0,1] (the desktop-anchored Standard set) — attach each only when present, so both
+    // `factor` in (0,1] (the desktop-anchored Standard set), attach each only when present, so both
     // shapes round-trip identically.
     const clampFactor = (v) => { const n = Number(v); return Number.isFinite(n) && n > 0 && n <= 1 ? { factor: Math.round(n * 1000) / 1000 } : {}; };
     const modes = t.modes
@@ -781,7 +781,7 @@ function clampType(t, drop) {
       .map((m) => ({ id: m.id, name: typeof m.name === "string" ? m.name : "Mode", ...(Number.isFinite(Number(m.bodyBase)) ? { bodyBase: clampBody(m.bodyBase) } : {}), ...clampFactor(m.factor), ...clampMinWidth(m.minWidth) }));
     if (modes.length) out.modes = modes;
   }
-  // baseName — the RENAMED base layer (the standard set writes "Mobile"; desktop-first order derives from
+  // baseName, the RENAMED base layer (the standard set writes "Mobile"; desktop-first order derives from
   // it). OPTIONAL: attach only when meaningfully set, so a legacy config round-trips identically.
   if (typeof t.baseName === "string" && t.baseName.trim() && t.baseName.trim().toLowerCase() !== "base") {
     out.baseName = t.baseName.trim().slice(0, 40);
@@ -789,47 +789,47 @@ function clampType(t, drop) {
   return out;
 }
 
-// clampGeometry — the dimensional config (treatment + base control height). Treatment to a known id, base
+// clampGeometry, the dimensional config (treatment + base control height). Treatment to a known id, base
 // height to a sane integer range. Identity-preserving for an in-domain value (so the roundtrip gate holds).
 // Exported so test/ui/persist.mjs's allowlist-parity gate can assert this stays in lockstep with
-// geometry.mjs's GEOMETRY_TREATMENTS ids (see the TYPE_TREATMENTS/VOICES note above — TKT-0017).
+// geometry.mjs's GEOMETRY_TREATMENTS ids (see the TYPE_TREATMENTS/VOICES note above, TKT-0017).
 export const GEOMETRY_TREATMENTS = ["comfortable", "compact", "spacious", "touch", "pill"];
-// The canonical size names — the leading segment of a geom tokenOverrides key ("<size>|<modeKey>"),
+// The canonical size names, the leading segment of a geom tokenOverrides key ("<size>|<modeKey>"),
 // the geometry analog of VOICES above. The default ramp's six t-shirt names (geometry.mjs's
-// SIZE_KEYS) and the linear-ladder's ten NUMBERED steps "0".."9" (geometry.mjs's LADDER_SIZE_KEYS —
+// SIZE_KEYS) and the linear-ladder's ten NUMBERED steps "0".."9" (geometry.mjs's LADDER_SIZE_KEYS,
 // the full 10-step CSV table, owner ruling 2026-09-02, TWO rulings: first 7 t-shirt names, then the
 // full 10 steps renamed numerically since gen-ui-kit binds --size-{0..9}-* directly) use ENTIRELY
-// DISJOINT naming schemes — clampTokenOverrides only ever does a plain string `.includes()` check
+// DISJOINT naming schemes, clampTokenOverrides only ever does a plain string `.includes()` check
 // against this list, so a numeric-looking segment like "3" round-trips exactly like any other string;
 // no parsing change was needed, only this literal list. MUST track the UNION of geometry.mjs's
-// SIZE_KEYS + LADDER_SIZE_KEYS — asserted by the allowlist-parity test (TKT-0017's convention,
+// SIZE_KEYS + LADDER_SIZE_KEYS, asserted by the allowlist-parity test (TKT-0017's convention,
 // extended per TKT-0455 then TKT-0483).
 export const GEOMETRY_SIZES = ["XS", "SM", "MD", "LG", "XL", "2XL", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
-// The opt-in ramp ids (geometry.mjs's GEOMETRY_RAMPS, issue #483) — mirrors the TYPE_TREATMENTS/
+// The opt-in ramp ids (geometry.mjs's GEOMETRY_RAMPS, issue #483), mirrors the TYPE_TREATMENTS/
 // GEOMETRY_TREATMENTS/VOICES/GEOMETRY_SIZES convention above; parity-gated the same way.
 export const GEOMETRY_RAMPS = ["linear4"];
 function clampGeometry(g, drop) {
   g = (g && typeof g === "object") ? g : {};
-  // TKT-0455 — see clampType's matching check above for the absent-vs-unknown distinction.
+  // TKT-0455, see clampType's matching check above for the absent-vs-unknown distinction.
   if (g.treatment != null && !GEOMETRY_TREATMENTS.includes(g.treatment)) drop("geometry.treatment", g.treatment, "unknown treatment id");
   const treatment = GEOMETRY_TREATMENTS.includes(g.treatment) ? g.treatment : "comfortable";
   const clampH = (v) => { const n = Number(v); return Math.max(20, Math.min(48, Number.isFinite(n) ? Math.round(n) : 28)); };
   const baseHeight = clampH(g.baseHeight);
   const out = { treatment, baseHeight };
-  // ramp (the opt-in linear-ladder prototype, issue #483) — OPTIONAL, like rampContrast: attach only a
-  // KNOWN id; absent stays absent (the default ramp round-trips identical — the identity gate). An
+  // ramp (the opt-in linear-ladder prototype, issue #483), OPTIONAL, like rampContrast: attach only a
+  // KNOWN id; absent stays absent (the default ramp round-trips identical, the identity gate). An
   // unknown id drops (reported), same semantics as an unknown treatment.
   if (g.ramp != null && !GEOMETRY_RAMPS.includes(g.ramp)) drop("geometry.ramp", g.ramp, "unknown ramp id");
   if (GEOMETRY_RAMPS.includes(g.ramp)) out.ramp = g.ramp;
-  // rampContrast (the responsive-ramp knob) — OPTIONAL: attach only when a finite value < 1 is set
+  // rampContrast (the responsive-ramp knob), OPTIONAL: attach only when a finite value < 1 is set
   // (1 is the engine default, so absent stays absent and a full-contrast kit round-trips identical).
   const clampContrast = (v) => { const n = Number(v); return Number.isFinite(n) && n >= 0 && n < 1 ? { rampContrast: Math.round(n * 100) / 100 } : {}; };
   Object.assign(out, clampContrast(g.rampContrast));
-  // tokenOverrides (Phase 3) — per-cell control-HEIGHT overrides. OPTIONAL, like type.tokenOverrides (the
+  // tokenOverrides (Phase 3), per-cell control-HEIGHT overrides. OPTIONAL, like type.tokenOverrides (the
   // identity gate holds when absent). Geom heights clamp into [8, 256] px.
   const gov = clampTokenOverrides(g.tokenOverrides, 8, 256, 2, GEOMETRY_SIZES, (k, reason) => drop("geometry.tokenOverrides", k, reason)); // geom keys: "<size>|<modeKey>" (2 segments)
   if (Object.keys(gov).length) out.tokenOverrides = gov;
-  // breakpoint MODES (Phase 5) — each a named baseHeight override (+ optional per-mode rampContrast).
+  // breakpoint MODES (Phase 5), each a named baseHeight override (+ optional per-mode rampContrast).
   // OPTIONAL, like type.modes (the identity gate holds when absent).
   if (Array.isArray(g.modes) && g.modes.length) {
     const modes = g.modes
@@ -837,7 +837,7 @@ function clampGeometry(g, drop) {
       .map((m) => ({ id: m.id, name: typeof m.name === "string" ? m.name : "Mode", baseHeight: clampH(m.baseHeight), ...clampMinWidth(m.minWidth), ...clampContrast(m.rampContrast) }));
     if (modes.length) out.modes = modes;
   }
-  // baseName — the RENAMED base layer (mirrors type.baseName; the standard set writes "Mobile").
+  // baseName, the RENAMED base layer (mirrors type.baseName; the standard set writes "Mobile").
   // OPTIONAL: attach only when meaningfully set, so a legacy config round-trips identically.
   if (typeof g.baseName === "string" && g.baseName.trim() && g.baseName.trim().toLowerCase() !== "base") {
     out.baseName = g.baseName.trim().slice(0, 40);
