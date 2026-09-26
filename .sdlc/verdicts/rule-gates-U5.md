@@ -7,7 +7,7 @@ branch: unit/rg-U5
 base: plan/rule-gates @ 047b2951, main merged in at c2b58d50
 grade: verifier-l2, the evidence run dispatched by the Verifier seat, which re-read the rows marked mine
 contract: U5-1, U5-2, P1 and P7 of .sdlc/plans/rule-gates.md at f5421ad0, revision 15, under the load ruling (.sdlc/questions/rule-gates-U5-load.md) and R53; plus the requester's two checks, the merge and the runs
-pass: 1
+pass: 2
 written: 2026-09-26
 ---
 
@@ -53,3 +53,24 @@ and the em dash gate are read again at the new head.
 
 verdict: 🔴
 sha: 4df34cc87f71b92f6f679a0cc6b46ce47eb4b04a
+
+## Pass 2 · 2026-09-26 · `0acbfd66` (the handoff's pass 3), merged at plan `893fde28`
+
+`4df34cc8` to `0acbfd66` is one commit that changes two files: the handoff, and one line of
+`decision-records.md`. The plan head `1a3971c9` differs from `0acbfd66` only under `.sdlc/`. So pass 1's green
+rows carry on custody, and I reran the rows this change could move myself, in a clone at `0acbfd66`.
+
+| id | criterion | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| M | main's merge loses nothing of this plan's | 🟢 | `decision-records.md:7` reads `**OVERRIDE**: that is exactly`, U4's colon, as at `a9cec2ef`. `git diff --stat 4df34cc8 0acbfd66`: `2 files changed, 31 insertions(+), 2 deletions(-)`, and the non-handoff change is that one line. Pass 1's run traced every other missing plan line to main's rewrites or regenerated mirrors, and nothing else in the tree moved since | the same read at `4df34cc8`: `**OVERRIDE**, that is exactly`, so the trace sees the loss |
+| S | the em dash gate | 🟢 | `em-dash: clean (763 files scanned)` | line 7 planted back to main's spaced dash: `FAIL: 1 em dashes outside inline code spans in 1 files` |
+| B | branding | 🟢 | `branding: clean (755 files scanned)` | pass 1's plant: `FAIL: 3` |
+| P1 | `npm test`, no `node_modules` | 🟢 | mine: `✓ all 52 test files passed`, exit `0`, tree `0` after; wall `9:20` under other seats' load, pass/fail only | pass 1's `scrimX` plant: `✗ 1/52 test file(s) failed`, exit `1` |
+| U5-1 / P7 | the baseline agrees, with R53's one carried line | 🟢 | `STALE time test: baseline 106 to 317 s, adapter 80 to 89 s`, `stale total: 1`, unchanged from pass 1 | pass 1's plants: `stale total: 2` and `0` |
+| RV3 | a review of the pass 3 change | 🟡 | the review record's last round is `` Round 2, at `4df34cc8` ``; no round reads `0acbfd66`. The change is one punctuation mark that restores U4's reviewed text, so I do not hold the unit on it; the pre-land review reads the whole diff | the review file's `Round` headings grep shows only 1 and 2 |
+
+Pass 1's notes RV15 (pin P7 to the exact `STALE time test` line at pre-land), H (the load question lives on
+`origin/main` only; the handoff header is stale) and K (main's carried reds, #755 and DD9) still stand as 🟡.
+
+verdict: 🟢
+sha: 0acbfd664afbf1d766d9468fb29ff2efaa2dcedc
