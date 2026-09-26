@@ -9,6 +9,8 @@
 //   paletteStops(palette, controls, stops)          -> [{ stop, tone, chroma, maxc, rgb:[r,g,b], hex, inGamut }]
 //   EXPORT_STOPS  (number[])   DEFAULT_CONTROLS ({curve,tension,lmin,lmax,damp,hueSpace})
 import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { DOMAINS, hydrate } from "../../src/ui/persist.js";
 import { defaultDocument, rampChromaOf } from "../../src/ui/model.mjs";
 import * as T from "../../src/engine/tonal.js";
@@ -1244,6 +1246,8 @@ for (const mode of ["perceptual", "peak"]) {
   // presets that happen to share the identical mode/hue/chroma/skew/lift/stop-pair signature, so the
   // Set naturally collapses them to one entry each  -  `seenBaselineDup` still marks the key seen either
   // way). The negative control right after this gate still proves an UNLISTED collision is caught.
+  // Ticket #739 adds 2 more unique keys (both Nike tertiary-muted, peak mode - see their own comment
+  // below), for 23 unique / 25 physical.
   const KNOWN_BASELINE_DUP = new Set([
     "peak|240|100.00|0|0|25-stop|825&850",
     "even|240|100.00|0|0|25-stop|900&925",
@@ -1266,6 +1270,14 @@ for (const mode of ["perceptual", "peak"]) {
     "peak|80|100.00|0|0|25-stop|875&900",
     "perceptual|80|100.00|0|0|25-stop|800&825",
     "peak|80|100.00|0|0|25-stop|800&825",
+    // Ticket #739: Nike tertiary-muted (hue 0, the generator's hueless-sample fallback; anchor
+    // #FFFFFF, resolved chroma 100.00 on this group) now renders its ramp at the palette's OWN hue
+    // instead of the anchor's rounding-residue one - two adjacent near-white peak-mode stops round to
+    // the identical 8-bit hex at that hue where they did not before, the same rounding-collision class
+    // every other member of this list already names. A mechanical re-freeze, not a new construction
+    // defect (U1-4 proves every OTHER anchored ramp in the corpus byte-identical).
+    "peak|0|100.00|0|0|25-stop|75&100",
+    "peak|0|100.00|0|0|25-stop|150&175",
   ]);
   const seenBaselineDup = new Set();
 
@@ -1458,11 +1470,23 @@ for (const mode of ["perceptual", "peak"]) {
   // a genuinely different, better-supported result than pass 1's claim (which measured a ramp the
   // product never renders), but the mechanism is not the same as F1's bisection fix alone: these
   // specific presets' REAL anchored ramps (their own picked anchor color driving `paletteStopsAnchored`)
-  // do not reproduce the dip the old non-anchored measurement saw. DIP_BASELINE is retired to empty
+  // do not reproduce the dip the old non-anchored measurement saw. DIP_BASELINE was retired to empty
   // rather than kept with stale names now unreachable by any real corpus ramp; any peak dip that
-  // reappears on a future engine change reds immediately (baseline size 0, so every instance is
+  // reappears on a future engine change reds immediately (baseline size 0 then, so every instance was
   // unlisted). Perceptual has no cap mechanism and measures 0 dips too, so it also gets no baseline.
-  const DIP_BASELINE = new Set([]);
+  // Ticket #739 adds the ONE named exception below - see its own comment; the "reds on anything
+  // unlisted" property is unchanged, only the empty baseline is not.
+  const TICKET_739_DIP = "67° N · January · 03:00 · The Helsinki–Rovaniemi night train, somewhere past Oulu|secondary-muted|500";
+  // Ticket #739: #ACADAE (this preset's own anchor, one of the two corpus anchors under
+  // ACHROMATIC_ANCHOR_C) now renders its ramp at the palette's own hue instead of its rounding-
+  // residue one. That shifts `anchorChromaBasis`'s per-stop blend against `maxChromaInGamut` enough
+  // for stop 500 to dip below both 450 and 550 - the same pivot-notch mechanism EVEN_DIP_BASELINE's
+  // own header describes (32 of its 90 instances), on both the peak and perceptual paths this time
+  // (okhslStopsAnchored shares the same blend for both modes; only their curve/damping fitting
+  // differs). Root-caused, not reintroducing the retired peak population above; PERCEPTUAL_DIP_BASELINE
+  // below is the same single name because perceptual had no baseline (0 dips) before this ticket.
+  const DIP_BASELINE = new Set([TICKET_739_DIP]);
+  const PERCEPTUAL_DIP_BASELINE = new Set([TICKET_739_DIP]);
   // EVEN_DIP_BASELINE: addendum-2 correction (2026-09-19). The 53 names previously here (#681 U3
   // review 3, N1, all at stop 350, all pending owner - the `chromaFloor`-vs-damped-value crossing
   // described below, kept for its own record) were measured with `findDips` omitting
@@ -1612,7 +1636,7 @@ for (const mode of ["perceptual", "peak"]) {
   const defaultKitDoc = defaultDocument();
   defaultKitDoc.__presetName = "default kit";
   const dipDocs = [...docs, defaultKitDoc];
-  const BASELINE_BY_MODE = { peak: DIP_BASELINE, even: EVEN_DIP_BASELINE };
+  const BASELINE_BY_MODE = { peak: DIP_BASELINE, even: EVEN_DIP_BASELINE, perceptual: PERCEPTUAL_DIP_BASELINE };
   const seenModes = new Set();
   // this mode's OWN observed baseline count, in THIS run's scope  -  the negative controls below compare
   // the patched engine's count against this, never against a full-corpus pin a SAMPLED run cannot reach
@@ -1954,6 +1978,65 @@ for (const mode of ["perceptual", "peak"]) {
   }
 }
 
+// ── okl-order (#738): okhslLAt is a pure function of its argument, in two directions ──────
+//    #686 fixed this class in hct.js (maxChromaInGamut/peakC/oklchToCam16Hue key on the exact
+//    float); tonal.js's own instance (_okL, keyed on lstar.toFixed(2)) was owner ruling R26's
+//    half for THIS ticket. U1 deleted the memo rather than re-keying it (measured not
+//    load-bearing: 0.40-0.90 us per uncached call on a quiet host, median 1.54 us at load 67,
+//    two or three calls per palette render), so this gate is the tripwire that stops the memo
+//    -- or any other order-dependent cache -- coming back, checked from both directions: the
+//    function itself, in process, and a real palette render, across two cold worker processes.
+{
+  const L1 = 5.25501, L2 = 5.26499;
+
+  // (1) render-level FIRST, two cold processes through prime-determinism-worker.mjs (#738's extension:
+  //     the optional prelstars/ramps stdin fields). 24 palettes (hue = i*15 + 7.3, chroma 60,
+  //     skew 0, lift 0, cam16, 12 perceptual + 12 peak), each rendered at lmin: 5.25501 -- once in
+  //     a clean process, once in a process that called okhslLAt(5.26499) first, before anything
+  //     else. A cache keyed on the rounded L* serves the wrong lightness to the second bucket's
+  //     lookup and every one of the 24 ramps shifts hex; a pure function cannot be perturbed by an
+  //     earlier, unrelated call. This half is the actual regression the deleted memo could
+  //     reintroduce: the corpus render path only ever passes integer L* today (measured in the
+  //     plan), so a random-hue determinism sweep like prime.mjs's own cannot reach this collision
+  //     -- only a fractional lmin/lmax does, which is why this gate builds its own fixture instead
+  //     of reusing that one.
+  const RAMPS_24 = Array.from({ length: 24 }, (_, i) => ({
+    hue: i * 15 + 7.3, chroma: 60, skew: 0, lift: 0, hueShift: 0, hueSpace: "cam16",
+    toneMode: i < 12 ? "perceptual" : "peak", lmin: L1,
+  }));
+  const OKL_ORDER_WORKER = fileURLToPath(new URL("./prime-determinism-worker.mjs", import.meta.url));
+  const runOklOrderWorker = (prelstars) => JSON.parse(execFileSync(process.execPath, [OKL_ORDER_WORKER], {
+    input: JSON.stringify({ poison: [], cases: [], prelstars, ramps: RAMPS_24 }),
+    encoding: "utf8",
+    maxBuffer: 16 * 1024 * 1024,
+  })).ramps;
+  const cleanRamps = runOklOrderWorker([]);
+  const poisonedRamps = runOklOrderWorker([L2]);
+  let rampMismatch = 0;
+  for (let i = 0; i < RAMPS_24.length; i++) if (cleanRamps[i] !== poisonedRamps[i]) rampMismatch++;
+  if (rampMismatch > 0) FAIL("okl-order", `render-level: ${rampMismatch}/24 ramps shifted hex by call order after a prior okhslLAt(${L2}) in the same process (5.26499 poisons the 5.26 bucket that 5.25501 also falls in)`);
+
+  // (2) function-level, in this process: the same two L* values, in the same toFixed(2) bucket
+  //     ("5.26" under the old key), each checked against the test's OWN derivation -- imported
+  //     from hct.js and okhsl.js, never from tonal.js, so a broken okhslLAt cannot mark its own
+  //     homework -- and checked against each other. On the old code, whichever of the two ran
+  //     first decided the second's value too, so the two collapse to one value and the "differ
+  //     from each other" assertion reds regardless of call order. Checked SECOND, after (1): the
+  //     two L* values collide in the same bucket by construction, so a restored memo always fails
+  //     both halves, and FAIL(...)'s own de-dupe keeps whichever ran first -- (1) runs first so a
+  //     full memo restore is reported through its render-level message (U1-5's own control needs
+  //     both halves independently provable, which is why a separate control below empties (1)'s
+  //     own poison to isolate this half alone).
+  const got1 = T.okhslLAt(L1), got2 = T.okhslLAt(L2);
+  const want1 = rgbToOkhsl(E.hctToRgb(0, 0, L1).rgb).l, want2 = rgbToOkhsl(E.hctToRgb(0, 0, L2).rgb).l;
+  if (got1 !== want1) FAIL("okl-order", `function-level: okhslLAt(${L1}) = ${got1}, expected ${want1} (this test's own hctToRgb/rgbToOkhsl derivation)`);
+  else if (got2 !== want2) FAIL("okl-order", `function-level: okhslLAt(${L2}) = ${got2}, expected ${want2} (this test's own hctToRgb/rgbToOkhsl derivation)`);
+  else if (got1 === got2) FAIL("okl-order", `function-level: okhslLAt(${L1}) and okhslLAt(${L2}) both returned ${got1}; a memo keyed on lstar.toFixed(2) collapses this pair into one bucket`);
+
+  if (!fails.some((f) => f.startsWith("okl-order:")))
+    console.log("okl-order: okhslLAt is a function of its argument; 0/24 ramps shifted hex by call order");
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
 // The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
 // call (#695), so a gate missing from the list below still shows up, loudly, instead of a real
@@ -1965,7 +2048,7 @@ for (const mode of ["perceptual", "peak"]) {
 // keeps every doc citation into the gates above from drifting by a line (same convention as
 // test/ui/persist.mjs's mid-file gate-report.mjs import).
 import { gateReport } from "../gate-report.mjs";
-const DECLARED = ["ingamut", "monotonic", "white-endpoint", "chroma-target", "curve-fidelity", "hue-stability", "damping-curve", "edge-hue", "rel-chroma", "okhsl-modes", "chroma-floor", "cusp-pull", "lift-monotonic", "skew-lift-okhsl", "vibrancy", "oklch-hue-anchor", "hue-solver-best", "intensity-legacy", "ac004-greps", "chroma-envelope", "report-static"];
+const DECLARED = ["ingamut", "monotonic", "white-endpoint", "chroma-target", "curve-fidelity", "hue-stability", "damping-curve", "edge-hue", "rel-chroma", "okhsl-modes", "chroma-floor", "cusp-pull", "lift-monotonic", "skew-lift-okhsl", "vibrancy", "oklch-hue-anchor", "hue-solver-best", "intensity-legacy", "ac004-greps", "chroma-envelope", "okl-order", "report-static"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 console.log(`  (${FULL ? `FULL: ${CORPUS_DOC_COUNT} curated documents, ${CORPUS_PALETTE_COUNT} palettes` : `SAMPLED seed ${SAMPLE_SEED}: ${CORPUS_DOC_COUNT} curated documents, ${CORPUS_PALETTE_COUNT} palettes`})`);
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }

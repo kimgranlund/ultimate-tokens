@@ -35,8 +35,8 @@
 // control (one mutated chroma) proves the comparison loop itself can fail before trusting its "0 off".
 import { primeSwatches, PRIME_STEPS } from "../../src/engine/prime.mjs";
 import { peakC, hctToRgb, lstarFromRgb, cam16FromRgb } from "../../src/engine/hct.js";
-import { effHue, paletteStops, DEFAULT_CONTROLS, RAMP_L_MIN, RAMP_L_MAX, STOPS } from "../../src/engine/tonal.js";
-import { rgbToOkhsl, okhslToRgb } from "../../src/engine/okhsl.js";
+import { effHue, paletteStops, DEFAULT_CONTROLS, RAMP_L_MIN, RAMP_L_MAX, STOPS, ACHROMATIC_ANCHOR_C } from "../../src/engine/tonal.js";
+import { rgbToOkhsl, okhslToRgb, rgbToOklabChroma } from "../../src/engine/okhsl.js";
 import { derivedAll, oklchStr } from "../../src/engine/exports.js";
 import { defaultDocument, projectView, paletteKeyColors } from "../../src/ui/model.mjs";
 import { hydrate } from "../../src/ui/persist.js";
@@ -672,6 +672,14 @@ const NOTCH_ALLOW = [
   `travel "41° N · October · 23:00 · Tbilisi viewed from the Mtatsminda funicular at the upper station" secondary #71716E [even]`,
   `travel "48° N · November · 18:50 · A wet evening in a Viennese kaffeehaus, Mariahilf" secondary-muted #CBCAC5 [even]`,
   `travel "55° N · July · 13:00 · Lowland Kamchatkan taiga in heavy mosquito season, near the Avacha river" tertiary-muted #ABAAA7 [even]`,
+  // Ticket #739: #ACADAE (this preset's own anchor) is one of the two corpus anchors under
+  // ACHROMATIC_ANCHOR_C (the other is Nike tertiary-muted's #FFFFFF, RAMP_WINDOW_ALLOW above); its ramp
+  // now takes the palette's own hue instead of the anchor's rounding-residue one, which shifts the
+  // per-stop gamut ceiling (maxChromaInGamut) enough for stop 500 to newly notch against its neighbours
+  // in peak and perceptual - a mechanical re-freeze, not a new construction defect (U1-4 proves every
+  // OTHER anchored ramp in the corpus byte-identical).
+  `travel "67° N · January · 03:00 · The Helsinki–Rovaniemi night train, somewhere past Oulu" secondary-muted #ACADAE [peak]`,
+  `travel "67° N · January · 03:00 · The Helsinki–Rovaniemi night train, somewhere past Oulu" secondary-muted #ACADAE [perceptual]`,
 ].sort();
 
 const MODES = ["perceptual", "peak", "even"];
@@ -1446,8 +1454,59 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
   console.log(`  ${fails.some((f) => f.startsWith("anchor-achromatic:")) ? "FAIL" : "pass"}  anchor-achromatic: ${seen - bad} of ${seen} ramps real (#000000, #FFFFFF, #010101, #808080 x 3 tone modes x 2 hue spaces), planted-NaN control caught`);
 }
 
+// ── achromatic-anchor (Ticket #739): an achromatic anchor gives the ramp the PALETTE's hue, not its
+// own rounding-residue hue; a chromatic anchor (OKLab C above ACHROMATIC_ANCHOR_C) is untouched. Both
+// sides are pinned so a future edit cannot widen the constant's reach or narrow it silently.
+{
+  // R1 finding 1: the CAM16-C-5 skip must have a floor, or a regression that renders every checked
+  // cell achromatic (e.g. the rejected Q1 (b) shape - pinning chroma to the anchor's own value at
+  // every stop, not just the pivot) passes vacuously ("0 of 0"). skippedOk is the predicate both the
+  // real run and the planted control below call, so the control exercises the SAME check the real
+  // assertion uses, not a second copy that could disagree with it.
+  const skippedOk = (skipped) => skipped <= 3;
+  if (skippedOk(30)) FAIL("achromatic-anchor", "negative control: a planted 30-of-30-skipped run did not fail skippedOk - the floor cannot bite");
+  const HUE = 250, CHROMA = 50;
+  let bound = 0, skipped = 0;
+  for (const anchor of ["#808080", "#808081", "#FFFFFF", "#000000", "#010101"]) {
+    for (const toneMode of ["perceptual", "peak", "even"]) {
+      const controls = { ...DEFAULT_CONTROLS, toneMode };
+      const anchored = paletteStops({ hue: HUE, chroma: CHROMA, skew: 0, lift: 0, anchor }, controls, [300, 500, 700]);
+      const twin = paletteStops({ hue: HUE, chroma: CHROMA, skew: 0, lift: 0 }, controls, [300, 500, 700]);
+      for (const stop of [300, 700]) {
+        const a = cam16FromRgb(hexToRgb(anchored.find((s) => s.stop === stop).hex));
+        // A near-white (or near-black) anchor pulls its OWN nearest light (or dark) stop toward
+        // achromatic too - CAM16 hue is noise below C=5, the same floor U1-3's own row filters on -
+        // so the bound only applies where the anchored stop itself carries a real hue to test.
+        if (a.chroma < 5) { skipped++; continue; }
+        const t = cam16FromRgb(hexToRgb(twin.find((s) => s.stop === stop).hex));
+        const d = Math.abs(((a.hue - t.hue + 540) % 360) - 180);
+        if (d > 12) FAIL("achromatic-anchor", `${anchor} ${toneMode} stop ${stop}: hue ${d.toFixed(0)}deg from the palette-hue twin, want at most 12`);
+        else bound++;
+      }
+    }
+  }
+  if (!skippedOk(skipped)) FAIL("achromatic-anchor", `${skipped} of 30 cells skipped under CAM16 C 5, want at most 3 - too many stops rendered achromatic to trust the ${bound}-cell bound below it`);
+  // Negative control: the predicate must actually bite. Two codes off grey (#808082, OKLab C ~0.0030,
+  // above the 0.002 constant) is chromatic, so this file first proves the achromatic branch would
+  // fail this exact assertion if the constant swallowed it - by asserting #808082's own OKLab C sits
+  // above the constant (never assumed, so a future constant change cannot silently drift past it).
+  const twoOff = rgbToOklabChroma(hexToRgb("#808082"));
+  if (!(twoOff > ACHROMATIC_ANCHOR_C)) FAIL("achromatic-anchor", `negative control setup: #808082's OKLab C ${twoOff} is not above ACHROMATIC_ANCHOR_C ${ACHROMATIC_ANCHOR_C} - the fixture no longer proves the boundary`);
+  // A chromatic anchor renders from ITS OWN hue, never the palette's stored one: the ramp must stay
+  // byte-identical when the palette's stored hue changes underneath it (the pre-#739 behaviour for
+  // every anchor this constant does not catch).
+  let chromaticIdentical = true;
+  for (const toneMode of ["perceptual", "peak", "even"]) {
+    const controls = { ...DEFAULT_CONTROLS, toneMode };
+    const rampA = paletteStops({ hue: 250, chroma: CHROMA, skew: 0, lift: 0, anchor: "#808082" }, controls, STOPS).map((s) => s.hex).join(",");
+    const rampB = paletteStops({ hue: 10, chroma: CHROMA, skew: 0, lift: 0, anchor: "#808082" }, controls, STOPS).map((s) => s.hex).join(",");
+    if (rampA !== rampB) { chromaticIdentical = false; FAIL("achromatic-anchor", `#808082 ${toneMode}: ramp changed with the palette's stored hue (250 vs 10) - a chromatic anchor must render from its own hue only`); }
+  }
+  console.log(`  ${fails.some((f) => f.startsWith("achromatic-anchor:")) ? "FAIL" : "pass"}  achromatic-anchor: ${bound} of ${5 * 3 * 2 - skipped} anchored/twin hue distances at most 12deg (#808080, #808081, #FFFFFF, #000000, #010101 x 3 tone modes x stop 300/700, ${skipped} skipped under CAM16 C 5 - a near-white/black anchor's own nearest stop), #808082 (OKLab C ${twoOff.toFixed(4)}, above the constant) chromatic and hue-stable across a moved palette hue: ${chromaticIdentical}`);
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["anchor-identity", "prime-identity-control", "anchor-ladder", "anchor-ramp", "anchor-f4", "key-anchor", "anchor-achromatic"]) {
+for (const g of ["anchor-identity", "prime-identity-control", "anchor-ladder", "anchor-ramp", "anchor-f4", "key-anchor", "anchor-achromatic", "achromatic-anchor"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   if (!f) continue; // already printed a pass/FAIL summary line above; only surface the FIRST failure detail here
   console.error(`    — ${f.slice(g.length + 2)}`);
@@ -1477,8 +1536,12 @@ if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); pr
 // counts the allow-list gates above already computed) and says plainly that these are read as a
 // subset with no in-file negative control this run, the exact count and the control being the FULL
 // leg's own (U3-4 proves the subset half against a real clone mutation instead, both modes).
+//
+// notch's frozen FULL count is 17, not the pre-#739 15 (Ticket #739): #ACADAE's own hue-seed change
+// shifts its per-stop gamut ceiling enough to newly notch in peak/perceptual, a mechanical re-freeze,
+// not a new construction defect (NOTCH_ALLOW's own comment, above).
 const allowListTail = FULL
-  ? "window-clamp (10), gap-19 (72), distinct-25 (16) and notch (15, Q3-resolved) are named allow-lists, compared by name, each with a biting negative control"
+  ? "window-clamp (10), gap-19 (72), distinct-25 (16) and notch (17, Q3-resolved, +2 at #739) are named allow-lists, compared by name, each with a biting negative control"
   : `window-clamp (${windowSorted.length}), gap-19 (${gapSorted.length}), distinct-25 (${distinctSorted.length}) and notch (${notchSorted.length}) are the same named allow-lists read as a SAMPLED subset this run (upper bound only, no in-file negative control this run - the exact count and the biting control are the FULL leg's, gate:corpus-anchor, and U3-4 proves the subset half against a real clone mutation)`;
 console.log(`\nPASS (${FULL ? "FULL" : "SAMPLED"}): C2, C3, C4 (non-anchored construction totally migrated, Q1), C6/F4 clear; C5 (monotone) is a true 0, no list; ${allowListTail}`);
 process.exit(0);

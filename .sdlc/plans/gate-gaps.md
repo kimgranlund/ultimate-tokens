@@ -189,7 +189,7 @@ Checklist (the Orchestrator ticks it; the sections below carry the detail):
 
 - [x] U1 (S) the default kit joins the seven `anchor.mjs` checks · builder-l3 · reviewer-l2 · verifier-l2
 - [x] U2 (M) `--identity-control` and `--authored` in `report-preset-fidelity.mjs`, the thin registered test, the adapter row · builder-l3 · reviewer-l2 · verifier-l2
-- [~] U2b (S) U2 step 7, the baseline `npm test` row, and U2-7's P2 half, after #713 U6b lands and merges into `plan/gate-gaps` (revision 6) · builder-l3 · reviewer-l2 · verifier-l2
+- [x] U2b (S) U2 step 7, the baseline `npm test` row, and U2-7's P2 half, after #713 U6b lands and merges into `plan/gate-gaps` (revision 6) · builder-l3 · reviewer-l2 · verifier-l2
 
 Grades come from the Orchestrator's table: L3 builders get reviewer-l2 and verifier-l2. Order: U1, then U2. They touch different files, but U2's last step measures the baseline on the tree with U1 merged, so U2's worktree is cut after U1 merges into `plan/gate-gaps`.
 
