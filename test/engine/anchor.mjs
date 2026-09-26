@@ -1178,8 +1178,8 @@ kitCheckLine("anchor-ramp", "notch", kitNotch, kitRampSuffix);
 kitCheckLine("anchor-ladder", "order", kitOrder, kitLadderSuffix);
 kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
 
-// ── F4 gate (R3, review pass 2, 2026-09-18): the owner's F4 principle — "no control goes dead" for an
-// anchored palette — on the rendered path. Cheap checks (default kit only, ~16 anchored palettes) plus
+// ── F4 gate (R3, review pass 2, 2026-09-18): the owner's F4 principle, "no control goes dead" for an
+// anchored palette, on the rendered path. Cheap checks (default kit only, ~16 anchored palettes) plus
 // the peak-vs-perceptual compare, which reuses the fingerprints the sweep above already collected (no
 // extra renders needed for that clause).
 {
