@@ -96,7 +96,7 @@ U7 adds one README section, `## Views and sections`, inserted before `## License
 - [x] U4 (S) `figma/README.md` · builder-l2 · reviewer-l1 · verifier-l1
 - [ ] U6 (S) six fact pins in `test/repo/citations.mjs` · builder-l2 · reviewer-l1 · verifier-l1 · after U3 and U1
 - [ ] U7 (S) `README.md` tour of the views and sections, DD41 re-pointed, DD9 re-quoted · builder-l2 · reviewer-l1 · verifier-l1 · after U1
-- [~] U5 (S) `.claude/CLAUDE.md` links the two records, line count unchanged · builder-l1 · reviewer-l1 · verifier-l1 · Q1 answered yes (R43)
+- [r] U5 (S) `.claude/CLAUDE.md` links the two records, line count unchanged · builder-l1 · reviewer-l1 · verifier-l1 · Q1 answered yes (R43)
 
 Grades follow the Orchestrator's rule: an L2 builder gets reviewer-l1 and verifier-l1; U1 is L3 because it authors the one piece of new prose in the plan and must read three section files to get the ids right, so its reviewer and verifier are l2. U4 is a full unit at L2 with reviewer-l1 and verifier-l1 (owner ruling R43: revisions 1 to 3 had it in the trivial lane, one reviewer and no verifier; the owner wants a verdict on a file that documents two shipped plugins). U5 is L1: a one-sentence rewrite with a mechanical guard. No unit touches `src/engine/semantic.js`, `figma/` code, or `test/ui/headless-boot.mjs`, so X2's reviewer floor does not apply.
 
