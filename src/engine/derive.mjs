@@ -1,7 +1,7 @@
-// derive.mjs — PURE palette-derivation math for the "New Palette" modal. Given the context palettes'
+// derive.mjs, PURE palette-derivation math for the "New Palette" modal. Given the context palettes'
 // representative colors as OKLCH samples ([L,C,H] each), returns a TARGET OKLCH [L,C,H] for the new
 // palette, per a color-theory relationship (A) or the neutral rule (B, color-neutral-derivation.md).
-// No imports, no DOM — the UI extracts samples (from each included palette's key color) + calls these,
+// No imports, no DOM, the UI extracts samples (from each included palette's key color) + calls these,
 // then seeds a palette from the returned OKLCH via seedFromKeyColor.
 //
 // OKLCH hue is degrees; chroma is the OKLCH C (~0..0.4); lightness 0..1. All hue math is circular.
@@ -52,7 +52,7 @@ function bridgeHue(samples) {
   return norm(a + arc(a, b) / 2); // midpoint on the shorter arc from a to b
 }
 
-// B — Neutral / environment (color-neutral-derivation.md): chroma-weighted mean hue + a chroma
+// B, Neutral / environment (color-neutral-derivation.md): chroma-weighted mean hue + a chroma
 // scaled to the palette and clamped firmly into tinted-grey territory. L is the mid-grey the C_max
 // applies to. Returns the neutral's identity OKLCH.
 export function deriveNeutral(samples) {
@@ -61,22 +61,22 @@ export function deriveNeutral(samples) {
   return [0.66, C, hue]; // mid-grey lightness; the ramp tapers chroma off both ends from here
 }
 
-// A — the color-theory relationships. The single-reference relationships (extend/contrast/anchor/
-// recontextualize) pivot on the PRIMARY — `samples[0]`, which the caller orders by priority (the
+// A, the color-theory relationships. The single-reference relationships (extend/contrast/anchor/
+// recontextualize) pivot on the PRIMARY, `samples[0]`, which the caller orders by priority (the
 // first non-neutral palette). The set-geometry ones (complete/bridge) use the whole set. So priority
 // ORDER drives the result, NOT chroma weighting: a low-chroma primary still anchors the relationship.
 export const RELATIONSHIPS = [
-  { id: "extend", label: "Extend", hint: "Analogous — continue the primary's family (+30°)" },
+  { id: "extend", label: "Extend", hint: "Analogous: continue the primary's family (+30°)" },
   { id: "complete", label: "Complete", hint: "Fill the largest open gap on the wheel" },
-  { id: "contrast", label: "Contrast", hint: "Complement — oppose the primary at 180°" },
+  { id: "contrast", label: "Contrast", hint: "Complement: oppose the primary at 180°" },
   { id: "bridge", label: "Bridge", hint: "Mediate between the two most-separated hues" },
   { id: "anchor", label: "Anchor", hint: "Reinforce the primary hue at full chroma" },
-  { id: "recontextualize", label: "Recontextualize", hint: "Albers — the primary's complement, muted (reads shifted in context)" },
+  { id: "recontextualize", label: "Recontextualize", hint: "Albers: the primary's complement, muted (reads shifted in context)" },
 ];
 
 export function deriveRelative(id, samples) {
   if (!samples.length) return [0.6, 0.12, 0];
-  const P = samples[0]; // the PRIMARY — first by priority order (the caller puts non-neutrals first)
+  const P = samples[0]; // the PRIMARY, first by priority order (the caller puts non-neutrals first)
   const mc = meanC(samples), ml = meanL(samples);
   switch (id) {
     case "extend": return [P[0], P[1], norm(P[2] + 30)];

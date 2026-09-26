@@ -1,9 +1,9 @@
-# Controls — heights, the centering law, paddings, radius
+# Controls: heights, the centering law, paddings, radius
 
 A control is ONE size step; everything inside it derives from the height. Use the `.control-{step}`
 class for the box, or compose the `--size-{step}-*` vars when you need the parts.
 
-## The size ramp — pick a step by density
+## The size ramp: pick a step by density
 
 | Step | Typical use |
 |---|---|
@@ -29,18 +29,18 @@ For a chosen `{step}`:
 | gap | `--size-{step}-gap` | icon↔label gap INSIDE the control |
 | padding-narrow | `--size-{step}-padding-narrow` | inline edge padding for a control WITH a leading slot/icon ((h−icon)/2) |
 | padding-wide | `--size-{step}-padding-wide` | inline edge padding for a SLOTLESS (bare text) or caret-side edge ((h−caret)/2) |
-| padding-narrow-compact | `--size-{step}-padding-narrow-compact` | the slot edge with the gap absorbed ((h−gap−icon)/2) — dense layouts |
+| padding-narrow-compact | `--size-{step}-padding-narrow-compact` | the slot edge with the gap absorbed ((h−gap−icon)/2), dense layouts |
 | padding-wide-compact | `--size-{step}-padding-wide-compact` | the caret/bare edge with the gap absorbed ((h−gap−caret)/2) |
 | radius | `--size-{step}-radius` | the control's own corner (its height-linked pill radius) |
-| min | `--size-{step}-min` | the 1:1 floor — an icon-only control is at least square |
+| min | `--size-{step}-min` | the 1:1 floor, an icon-only control is at least square |
 
 **The law:** padding = (height − icon)/2, so a glyph sits optically centered in the height² cell. If
-you set a control's padding independently of its height, you break centering — always use the paired
+you set a control's padding independently of its height, you break centering, always use the paired
 `--size-{step}-padding-narrow` / `-padding-wide` (or their `-compact` twins).
 
 ## Recipes
 
-**Button (text + optional icon)** — box: `.control-md`, OR by hand: `block-size:
+**Button (text + optional icon)**, box: `.control-md`, OR by hand: `block-size:
 var(--size-md-height); padding-inline: var(--size-md-padding-wide); padding-block: 0; gap:
 var(--size-md-gap); border-radius: var(--size-md-radius); min-inline-size: var(--size-md-min);`. Text
 = the UI-control voice at the matching step (typography-tokens: `.type-ui-control-md`, `-line-single`).
@@ -50,17 +50,17 @@ var(--size-md-gap); border-radius: var(--size-md-radius); min-inline-size: var(-
 - **Icon-only:** `inline-size: var(--size-md-min)` (square), padding `--size-md-padding-narrow`.
 - **Dropdown/select:** append a caret at `--size-md-caret`.
 
-**Input / select field** — `block-size: var(--size-md-height)`, `padding-inline:
+**Input / select field**, `block-size: var(--size-md-height)`, `padding-inline:
 var(--size-md-padding-wide)`, border `--border-thin` (color from color-tokens), radius
 `--size-md-radius`. The value text is `.type-ui-md`.
 
-**Toggle / checkbox / radio** — the box tracks a small step (`--size-sm-*` or `-xs-*`); the control's
+**Toggle / checkbox / radio**, the box tracks a small step (`--size-sm-*` or `-xs-*`); the control's
 `min` keeps it square.
 
 ## Don't
 
-- Don't hardcode a control height (`height: 40px`) — pick a step.
-- Don't set padding that isn't one of the four padding props in the table above — you'll un-center the glyph.
-- Don't put `--radius-md` on a control that should scale — use `--size-{step}-radius` (or
+- Don't hardcode a control height (`height: 40px`), pick a step.
+- Don't set padding that isn't one of the four padding props in the table above, you'll un-center the glyph.
+- Don't put `--radius-md` on a control that should scale, use `--size-{step}-radius` (or
   `--radius-full` for a pill).
-- Don't mix steps within one control — height, icon, font, and pad must all be the same `{step}`.
+- Don't mix steps within one control, height, icon, font, and pad must all be the same `{step}`.

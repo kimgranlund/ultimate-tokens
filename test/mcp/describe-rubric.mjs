@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// describe-rubric.mjs — verifier for the interpretation rubric + exemplar corpus + keyword retrieval
+// describe-rubric.mjs, verifier for the interpretation rubric + exemplar corpus + keyword retrieval
 // (mcp/describe-rubric.mjs, #370). Contract: docs/site/describe-palette-spec.md §5.1/§10.
 import { DOMAINS } from "../../src/ui/persist.js";
 import { FAMILY_NAMES, SECONDARY_HARMONY_OFFSET, TERTIARY_ANALOGOUS_OFFSET, generateKit } from "../../mcp/describe-kit-core.mjs";
@@ -24,14 +24,14 @@ for (const heading of [
 const LIFT_SECTION = (RUBRIC.match(/## 7\. Skew \/ lift semantics[\s\S]*?(?=\n## 8\.)/) || [""])[0];
 ok(LIFT_SECTION.length > 0, "RUBRIC contains the \"Skew / lift semantics\" section (§7) to scope the lift-mechanism checks to");
 ok(/displac/i.test(LIFT_SECTION), "RUBRIC's lift section (§7) states that lift DISPLACES the stop (the #648 mechanism), not merely that skew/lift exist");
-ok(!/additive/i.test(LIFT_SECTION), "RUBRIC's lift section (§7) must not describe lift as an ADDITIVE bump — that mechanism was retired in #648 (dampAmp, elsewhere in the rubric, is genuinely additive and must not trip this check)");
+ok(!/additive/i.test(LIFT_SECTION), "RUBRIC's lift section (§7) must not describe lift as an ADDITIVE bump, that mechanism was retired in #648 (dampAmp, elsewhere in the rubric, is genuinely additive and must not trip this check)");
 ok(LIFT_SECTION.includes("\u00b7 w(stop)") || LIFT_SECTION.includes("w(stop)"), "RUBRIC's lift section (\u00a77) names the cosine weight w(stop) the displacement is scaled by");
-// The rubric must state the EXACT same harmony numbers describe-kit-core.mjs actually uses — via
+// The rubric must state the EXACT same harmony numbers describe-kit-core.mjs actually uses, via
 // interpolation of the imported constants, not a hand-typed restatement that could drift.
 ok(RUBRIC.includes(`Primary.hue + ${SECONDARY_HARMONY_OFFSET}°`), `RUBRIC states the Secondary recipe using the core's own SECONDARY_HARMONY_OFFSET (${SECONDARY_HARMONY_OFFSET})`);
 ok(RUBRIC.includes(`Secondary.hue +\n  ${TERTIARY_ANALOGOUS_OFFSET}°`) || RUBRIC.includes(`Secondary.hue + ${TERTIARY_ANALOGOUS_OFFSET}°`), `RUBRIC states the Tertiary recipe using the core's own TERTIARY_ANALOGOUS_OFFSET (${TERTIARY_ANALOGOUS_OFFSET})`);
 ok(SECONDARY_HARMONY_OFFSET === 180 && TERTIARY_ANALOGOUS_OFFSET === 30, "sanity: the imported harmony constants are still the spec's ratified 180/30 (§12 item 7)");
-// The role-table hue/chroma numbers cited in §5's table must be the REAL ones (not hand-typed) —
+// The role-table hue/chroma numbers cited in §5's table must be the REAL ones (not hand-typed),
 // spot-check a few against docs/reference/data/role-table.json via the same schema describe-kit-core reads.
 ok(RUBRIC.includes("| Primary | 267°") && RUBRIC.includes("| Danger | 27°"), "RUBRIC's hue-wheel table cites the real role-table.json hues (Primary 267°, Danger 27°)");
 ok(RUBRIC.includes(FAMILY_NAMES.join(" · ")), "RUBRIC states the family enum using the core's own FAMILY_NAMES, in the core's own order");
@@ -73,7 +73,7 @@ for (const ex of EXEMPLARS) {
   }
 }
 
-// ── integration proof: every exemplar's `families` is a genuinely usable PaletteBrief fragment —
+// ── integration proof: every exemplar's `families` is a genuinely usable PaletteBrief fragment,
 // feed it straight into the REAL deterministic core and confirm a full 8-palette kit comes out. This
 // is what "doubles as a few-shot example of description -> brief mapping" means made concrete: the
 // few-shot is not just illustrative prose, it is a brief the core actually accepts. ──
@@ -116,5 +116,5 @@ ok(retrieveExemplars("zzz_no_overlap_whatsoever_qqq", 5).length === 5, "a query 
 }
 
 if (fails.length) { console.error(`describe-rubric FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
-console.log("describe-rubric PASS — RUBRIC (core-parity citations) · EXEMPLARS (15, spanning, brief-shaped, core-consumable) · retrieveExemplars (deterministic, both canonical asks)");
+console.log("describe-rubric PASS, RUBRIC (core-parity citations) · EXEMPLARS (15, spanning, brief-shaped, core-consumable) · retrieveExemplars (deterministic, both canonical asks)");
 process.exit(0);

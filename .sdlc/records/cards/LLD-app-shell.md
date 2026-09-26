@@ -1,4 +1,4 @@
-# LLD-app-shell · LLD — The App Shell (`HctApp`) · 2026-07-12 (last edit 2026-09-13) · as-built (descriptive; no frontmatter status)
+# LLD-app-shell · LLD: The App Shell (`HctApp`) · 2026-07-12 (last edit 2026-09-13) · as-built (descriptive; no frontmatter status)
 | Field | Value |
 |---|---|
 | Decision | Describes the shipped shell as-built: `HctApp` is one vanilla custom element in light DOM with two top-level views (`gallery`, `editor`), and the editor is a fixed 3×3 CSS grid (header · left 290px / center / right 300px · footer) with pane collapse as a class on `.editor` that zeroes a column track. One `this.section` ∈ {color, typography, geometry} re-routes all three panes; state splits into persisted `this.doc` (mutated only via `editDrag`/`commitDrag`) and ephemeral ui-session fields that are never persisted. Full `render()` rebuilds the whole subtree; `liveRefresh` patches only `.canvas-scene` children, `.an-body`, and the two paint-in-place footers during a drag, bailing to a full render in Both/Compare mode. Assigns stable `SPEC-R1..R12` handles to ui-plan.md's T1–T9 tasks and Revision A; every shell component `LLD-C1..C10` traces to one. |

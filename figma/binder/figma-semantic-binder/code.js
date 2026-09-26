@@ -1,4 +1,4 @@
-// figma-semantic-binder/code.js — the Color Tokens cascade binder runtime.
+// figma-semantic-binder/code.js, the Color Tokens cascade binder runtime.
 //
 // Runs inside Figma (uses the `figma` global). It gives the live raw->semantic cascade that
 // native JSON import cannot (knowledge-05 §1): each semantic role is aliased to the REAL raw
@@ -8,27 +8,27 @@
 // OFFLINE (ADR-010 / AC-P3): no network I/O. No fetch / XMLHttpRequest / WebSocket / dynamic
 // import() of a remote URL / figma.showUI to a remote origin. manifest.networkAccess === "none".
 //
-// PARITY: the binding loop below MIRRORS ../bind-plan.mjs (bindingPlan / bindingTargets) — the
+// PARITY: the binding loop below MIRRORS ../bind-plan.mjs (bindingPlan / bindingTargets), the
 // same role table, the same refKey normaliser, the same "{n}/{refKey(ref)}" target grammar.
 // bind-plan.mjs is the pure, harness-tested source of truth; this file replicates it verbatim
 // because Figma plugin code runs in a non-module sandbox and cannot import the .mjs at run time.
 // Both derive from the validated capability.system.semantic-mapping role table. Because every
 // target is refKey() of a ref from that table (solid stop -> pad3 "050"; scrim base 250/500/750
 // with alpha% = step/10 -> "{base}-{step}" verbatim), every emitted "{n}/{refKey}" is a member of
-// the canonical raw-colors name set — no unpadded "{n}/50", no out-of-range "{n}/500-999".
+// the canonical raw-colors name set, no unpadded "{n}/50", no out-of-range "{n}/500-999".
 //
 // GENERATED SECTIONS (TKT-0019, +COLOR_EXECUTOR at TKT-0024): the three "// === GENERATED:... ==="
 // blocks below (the five float-executor functions + the three color-provenance functions + roleTable())
 // are SPLICED from their canonical sources at build time by scripts/gen-figma-binder-code.mjs (npm test /
-// npm run build run it as gen:figma-binder-code) — not hand-copied. Regenerate:
+// npm run build run it as gen:figma-binder-code), not hand-copied. Regenerate:
 // `node scripts/gen-figma-binder-code.mjs`. Never hand-edit inside a marker pair; edit the canonical
 // source (figma/plugin/code.js or src/engine/semantic.js) and regenerate.
 
 const RAW_COLLECTION = "Color Primitives";
 const SEMANTIC_COLLECTION = "Color Roles"; // #491 (was "Color Semantic", "Color Modes")
-const PRIME_COLLECTION = "Color Prime"; // REQ-054 (#539): this binder reads nothing from it this round (LLD "Figma plugin apply" row) — the literal exists only so `collparity` can diff it against the flagship and src/engine/collections.js
-// SEMANTIC_RENAME_FROM — the old names ensureCollection adopts an existing registry-tracked collection
-// from, in place (renameFrom, mirrors FIGMA_MIGRATIONS.color.collections — this sandbox can't import
+const PRIME_COLLECTION = "Color Prime"; // REQ-054 (#539): this binder reads nothing from it this round (LLD "Figma plugin apply" row), the literal exists only so `collparity` can diff it against the flagship and src/engine/collections.js
+// SEMANTIC_RENAME_FROM, the old names ensureCollection adopts an existing registry-tracked collection
+// from, in place (renameFrom, mirrors FIGMA_MIGRATIONS.color.collections, this sandbox can't import
 // migrations.mjs, so the same list is hand-kept here; see figma/binder/migrations.mjs).
 const SEMANTIC_RENAME_FROM = ["Color Semantic", "Color Modes"];
 
@@ -46,13 +46,13 @@ const PALETTES = [
 
 // ── breakpoint-moded Type/Geometry (baked at download time) ──────────────────────────────
 // Color modes are ALIASES to already-imported raw primitives (the cascade above), so they can only be
-// bound live. Type/Geometry breakpoint modes are pure LITERAL float values — nothing to alias — so they
+// bound live. Type/Geometry breakpoint modes are pure LITERAL float values, nothing to alias, so they
 // can be carried as DATA: app.js's downloadFigmaPlugin() string-replaces this anchor with the current
 // project's _figmaFloatPlans() at download time. Default [] = the generic/asset form (no breakpoints
-// baked in) — a no-op, so the checked-in binder stays palette-agnostic.
+// baked in), a no-op, so the checked-in binder stays palette-agnostic.
 const FLOAT_PLANS = JSON.parse("[]"); /* __ULTIMATE_TOKENS_FLOAT_PLANS__ */
 
-// FLOAT_REGISTRY_KEY — the PROVENANCE registry for the breakpoint-moded Type/Geometry collections, a
+// FLOAT_REGISTRY_KEY, the PROVENANCE registry for the breakpoint-moded Type/Geometry collections, a
 // name→collectionId map stored in root pluginData (travels with the .fig, like the palette set). Kept
 // as the SAME key string as figma/plugin/code.js, but NOT because the two vehicles share a store:
 // Figma namespaces root.setPluginData BY PLUGIN ID (figma/plugin/code.js says so at CONFIG_KEY), and
@@ -64,34 +64,34 @@ const FLOAT_PLANS = JSON.parse("[]"); /* __ULTIMATE_TOKENS_FLOAT_PLANS__ */
 // into an apply that mints a duplicate collection and uplifts nothing.
 const FLOAT_REGISTRY_KEY = "ultimate-tokens-float-collections";
 
-// COLOR_REGISTRY_KEY — TKT-0024: the SAME provenance discipline, back-ported to the Color Roles
+// COLOR_REGISTRY_KEY, TKT-0024: the SAME provenance discipline, back-ported to the Color Roles
 // collection this binder creates/finds (the raw "Color Primitives" collection is only ever READ here,
-// never created — see main() below — so it needs no registry entry of its own). Kept as the SAME key
+// never created, see main() below, so it needs no registry entry of its own). Kept as the SAME key
 // string as figma/plugin/code.js for the same reason FLOAT_REGISTRY_KEY is, and with the same caveat:
 // per-plugin-id pluginData namespacing keeps the two stores disjoint, so this binder adopting a Color
 // Roles collection does not register it for the flagship (correction C7, #629). Before this, main()
 // adopted ANY same-named "Color Roles"
-// collection by NAME alone — a user's own collection with that exact name got silently adopted and
+// collection by NAME alone, a user's own collection with that exact name got silently adopted and
 // populated with aliases on the next bind.
 const COLOR_REGISTRY_KEY = "ultimate-tokens-color-collections";
 
-// LIBRARY_TYPE_VOICE_MAP (#495) — "published library" mode's static old->new Type-voice kebab-segment
-// map (mirrors migrations.mjs's LIBRARY_TYPE_VOICE_MAP — this sandbox can't import it; hand-kept in
+// LIBRARY_TYPE_VOICE_MAP (#495), "published library" mode's static old->new Type-voice kebab-segment
+// map (mirrors migrations.mjs's LIBRARY_TYPE_VOICE_MAP, this sandbox can't import it; hand-kept in
 // lockstep, same discipline as SEMANTIC_RENAME_FROM above). Applies to any OLD-voice-named variable in
-// the merged "Geometry" collection's type/ half (this binder never touches Font/Type Primitives at all
-// — see applyFloatPlans below).
+// the merged "Geometry" collection's type/ half (this binder never touches Font/Type Primitives at all,
+// see applyFloatPlans below).
 const LIBRARY_TYPE_VOICE_MAP = { heading: "headline", ui: "ui-control", caption: "label", legal: "tiny", code: "label-mono" };
 
-// GEOMETRY_FIELD_RENAME_MAP (#498) — "published library" mode's static old->new Geometry size/* field-
-// spelling map (mirrors migrations.mjs's GEOMETRY_FIELD_RENAME_MAP — hand-kept in lockstep, same
-// discipline as LIBRARY_TYPE_VOICE_MAP above). "font" is deliberately excluded — see migrations.mjs's
+// GEOMETRY_FIELD_RENAME_MAP (#498), "published library" mode's static old->new Geometry size/* field-
+// spelling map (mirrors migrations.mjs's GEOMETRY_FIELD_RENAME_MAP, hand-kept in lockstep, same
+// discipline as LIBRARY_TYPE_VOICE_MAP above). "font" is deliberately excluded, see migrations.mjs's
 // own header comment for the cross-collection execution-order reason.
 const GEOMETRY_FIELD_RENAME_MAP = { edgePadding: "padding-wide", gap: "icon-gap", minWidth: "min-width", padding: "padding-narrow", radius: "pill-radius" };
 
 // MIRRORS figma/plugin/code.js's float executor: readFloatRegistry/writeFloatRegistry/
-// ensureFloatCollection/varsByName/applyFloatPlans — a pure DATA executor (no planner to spec-gate
+// ensureFloatCollection/varsByName/applyFloatPlans, a pure DATA executor (no planner to spec-gate
 // against), using only figma.variables.* + figma.root.get/setPluginData, both available to any plugin
-// (no color-specific state). GENERATED (see the file-header note) — the `floatparity` gate in
+// (no color-specific state). GENERATED (see the file-header note), the `floatparity` gate in
 // test/figma/binder.mjs is now a TRIPWIRE proving the splice landed byte-identical, not the mechanism
 // keeping the two copies in lockstep.
 // === GENERATED:FLOAT_EXECUTOR START ===
@@ -137,7 +137,7 @@ async function applyFloatPlans(plans, opts) {
   for (const plan of (Array.isArray(plans) ? plans : [])) {
     if (!plan || !plan.collection || !Array.isArray(plan.modes) || !plan.modes.length) continue;
     const coll = await ensureFloatCollection(plan.collection, reg, plan.renameFrom);
-    // The collection's DEFAULT mode (Figma rejects removing it) — rename it to the plan's first mode ("Base");
+    // The collection's DEFAULT mode (Figma rejects removing it), rename it to the plan's first mode ("Base");
     // the rest are added (or reused) by NAME. Anchor on `defaultModeId`, not modes[0]: for a plugin-created
     // collection they coincide, but a foreign same-named collection's default may not be the first mode, and
     // pruning it would throw. (The headless mock has no defaultModeId → falls back to modes[0].)
@@ -147,7 +147,7 @@ async function applyFloatPlans(plans, opts) {
     const modeId = {};
     modeId[plan.defaultMode] = defaultId;
     for (const nm of plan.addModes) { const ex = findMode(nm); modeId[nm] = ex ? ex.modeId : coll.addMode(nm); }
-    // prune stale modes (a breakpoint the user removed) — never the default, never the last remaining
+    // prune stale modes (a breakpoint the user removed), never the default, never the last remaining
     // mode. #687: removing a mode from a PUBLISHED collection breaks every consumer file pinned to it,
     // exactly like the variable prune below: #629's ruling Q2 already settled that a mode prune must
     // be guarded, the same ruling applyFontPrimitivesModes' and applyBundle's own mode guards cite. The
@@ -171,15 +171,15 @@ async function applyFloatPlans(plans, opts) {
       }
     }
     // #495 "published library" mode: snapshot LIVE values + build the alias map BEFORE the create/
-    // update loop below overwrites anything — the dry-run report needs the value the file ACTUALLY had.
-    // The Geometry collection carries BOTH the type/ half (TKT-0009 merge — an OLD-voice-named
+    // update loop below overwrites anything, the dry-run report needs the value the file ACTUALLY had.
+    // The Geometry collection carries BOTH the type/ half (TKT-0009 merge, an OLD-voice-named
     // "type/heading/md/size" needs the SAME Type-voice map Font/Type Primitives uses) and the size/
-    // half (needs its OWN nearest-by-height map) — the combined alias map is the union of both,
+    // half (needs its OWN nearest-by-height map), the combined alias map is the union of both,
     // applied only to the family (type/ or size/) each existing name actually belongs to.
     const liveVarsByName = readLiveValuesByName(byName, modeId);
     const existingNames = Object.keys(byName);
     // idToName + liveAliasTargets: an old type/ or size/ variable ALREADY aliased by a prior library-mode
-    // apply has no literal value left to derive a fresh mapping from — resolveLiteralHeightVM below
+    // apply has no literal value left to derive a fresh mapping from, resolveLiteralHeightVM below
     // chases the alias chain back to a literal for the height-derivation path, and liveAliasTargets is
     // the belt (recognizes "already correctly aliased to a wanted name" directly off LIVE state) so a
     // re-apply reports/writes nothing for it instead of churning it to _deprecated/ on every apply.
@@ -189,12 +189,12 @@ async function applyFloatPlans(plans, opts) {
     const sizeGeo = geometryPlanStepHeights(plan.variables);
     if (Object.keys(sizeGeo.currentStepHeights).length) {
       // #498: every "size/{step}/height" seeds oldStepHeights, EVEN when {step} already matches a
-      // current step name (unlike #495's original scan, which skipped those as "already fine") — an
+      // current step name (unlike #495's original scan, which skipped those as "already fine"), an
       // identity-matching step's own UNRENAMED fields (height/icon/caret) are already `wanted` names
       // and get skipped by libraryReconcile before ever consulting this map (harmless no-op self-
-      // mapping), but its OLD-SPELLED fields (edgePadding/gap/… — GEOMETRY_FIELD_RENAME_MAP) are NOT
+      // mapping), but its OLD-SPELLED fields (edgePadding/gap/…, GEOMETRY_FIELD_RENAME_MAP) are NOT
       // wanted names, and need this SAME step entry to be bridged at all (#498's field-spelling bridge,
-      // isolated from step drift — see GEOMETRY_FIELD_RENAME_MAP's own header comment).
+      // isolated from step drift, see GEOMETRY_FIELD_RENAME_MAP's own header comment).
       const oldStepHeights = {};
       for (const name of existingNames) {
         const seg = name.split("/");
@@ -218,17 +218,17 @@ async function applyFloatPlans(plans, opts) {
       }
       byName[v.name] = vr; current.add(v.name); variables++;
     }
-    // #495: NEVER prune when "published library" mode is active for this apply — alias mapped names
+    // #495: NEVER prune when "published library" mode is active for this apply, alias mapped names
     // (redirect the value, keep the id), deprecate the rest (id-preserving rename under "_deprecated/").
     // See applyFontPrimitivesModes' matching block above for the FULL decision-channel rationale:
     // opts.libraryMode explicit true/false wins; undefined + opts.askIfUndecided asks interactively
     // (the standalone binder's main() only); undefined alone (the flagship, today) defaults to classic
-    // prune — unchanged behavior, no mid-apply UI disruption, until a proper apply-gate toggle exists.
+    // prune, unchanged behavior, no mid-apply UI disruption, until a proper apply-gate toggle exists.
     let useLibrary = opts.libraryMode;
     if (useLibrary == null) {
       if (report.aliases.length || report.deprecates.length) useLibrary = opts.askIfUndecided ? await confirmLibraryMode(plan.collection, report) : false;
       // #635: empty report + evidence of a prior uplift (an UNWANTED live alias or _deprecated/ name,
-      // judged on the pre-write existingNames snapshot) = library mode, already decided — no dialog, no
+      // judged on the pre-write existingNames snapshot) = library mode, already decided, no dialog, no
       // prune. See applyFontPrimitivesModes' matching block above.
       else useLibrary = priorLibraryUpliftVM(existingNames, wantedNames, liveAliasTargets);
     }
@@ -259,14 +259,14 @@ async function applyFloatPlans(plans, opts) {
         vr.name = r.to; byName[r.to] = vr; delete byName[r.from];
       }
     } else {
-      // #659: never a "_deprecated/" name — pruneCandidatesVM keeps the prune monotonic over them.
+      // #659: never a "_deprecated/" name, pruneCandidatesVM keeps the prune monotonic over them.
       for (const name of pruneCandidatesVM(Object.keys(byName), Array.from(current))) byName[name].remove();
     }
     if (skippedFloat.length) skippedAll.push(...skippedFloat);
     libraryReports.push({ collection: plan.collection, libraryMode: !!useLibrary, renames: report.renames, adds: report.adds, valueUpdates: report.valueUpdates, aliases: useLibrary ? report.aliases : [], deprecates: useLibrary ? report.deprecates : [], removed: useLibrary ? [] : pruneCandidatesVM(report.deprecates.map((r) => r.from).concat(report.aliases.map((r) => r.from)), []), staleModes: staleModes, skipped: skippedFloat });
-    // retire — collections THIS plan supersedes (plan.retire; TKT-0009: the pre-merge "Typography"
+    // retire, collections THIS plan supersedes (plan.retire; TKT-0009: the pre-merge "Typography"
     // moded collection, now folded into "Geometry" as the type/ group): registry-tracked ONLY
-    // (provenance — never a user's own same-named collection), removed with their variables. Styles
+    // (provenance, never a user's own same-named collection), removed with their variables. Styles
     // re-bind to the merged targets in the SAME apply run in the FLAGSHIP, which calls applyStylePlans
     // after this executor. This function is spliced verbatim into the standalone binder, which has no
     // applyStylePlans and no styles at all: there, nothing re-binds, because nothing was bound.
@@ -403,7 +403,7 @@ function libraryReconcile(existingNames, wantedNames, aliasMap, liveAliasTargets
     const target = mappedTarget || liveTargetWanted;
     if (target) {
       if (liveTarget !== target) toAlias.push({ from: name, to: target });
-      // else: already correctly aliased to `target`, live — idempotent no-op, omit entirely.
+      // else: already correctly aliased to `target`, live, idempotent no-op, omit entirely.
     } else if (name.indexOf("_deprecated/") !== 0) {
       toDeprecate.push({ from: name, to: "_deprecated/" + name });
     }
@@ -473,9 +473,9 @@ function libraryModeReportText(collectionName, report) {
   for (const n of report.adds) lines.push("  " + n);
   lines.push("Value updates (" + report.valueUpdates.length + "):");
   for (const n of report.valueUpdates) lines.push("  " + n);
-  lines.push("Aliases — never removed, value redirected (" + report.aliases.length + "):");
+  lines.push("Aliases: never removed, value redirected (" + report.aliases.length + "):");
   for (const r of report.aliases) lines.push("  " + r.from + " -> " + r.to);
-  lines.push("Deprecates — never removed, renamed under _deprecated/ (" + report.deprecates.length + "):");
+  lines.push("Deprecates: never removed, renamed under _deprecated/ (" + report.deprecates.length + "):");
   for (const r of report.deprecates) lines.push("  " + r.from + " -> " + r.to);
   return lines.join("\n");
 }
@@ -492,9 +492,9 @@ async function confirmLibraryMode(collectionName, report) {
       "p{margin:0 0 10px;line-height:1.5}textarea{flex:1;width:100%;box-sizing:border-box;font:11px ui-monospace,SFMono-Regular,monospace;margin-bottom:12px;border:1px solid #ccc;border-radius:6px;padding:8px;white-space:pre}" +
       "button{font:inherit;padding:7px 14px;border-radius:6px;cursor:pointer;margin-right:8px}" +
       "#library{background:#18A0FB;color:#fff;border:1px solid #18A0FB}#classic{background:#fff;border:1px solid #ccc}</style>" +
-      "<p><b>" + escapeHtmlVM(collectionName) + "</b> — this apply would remove " + atRisk + " variable(s) not in the current plan. " +
+      "<p><b>" + escapeHtmlVM(collectionName) + "</b>: this apply would remove " + atRisk + " variable(s) not in the current plan. " +
       "If another file consumes this collection as a published library, removing them breaks those bindings. " +
-      "Preserve them (alias mapped names, deprecate the rest — never removed) or remove them as before?</p>" +
+      "Preserve them (alias mapped names, deprecate the rest, never removed) or remove them as before?</p>" +
       "<textarea readonly>" + escapeHtmlVM(text) + "</textarea>" +
       "<div><button id=\"library\">Preserve (library-safe)</button><button id=\"classic\">Remove (today's behavior)</button></div>" +
       "<script>document.getElementById('library').onclick=()=>parent.postMessage({pluginMessage:{type:'library-mode-confirm',library:true}},'*');" +
@@ -512,10 +512,10 @@ async function confirmLibraryMode(collectionName, report) {
 function escapeHtmlVM(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 // === GENERATED:FLOAT_EXECUTOR END ===
 
-// MIRRORS figma/plugin/code.js's color executor: readColorRegistry/writeColorRegistry/ensureCollection —
+// MIRRORS figma/plugin/code.js's color executor: readColorRegistry/writeColorRegistry/ensureCollection,
 // a pure PROVENANCE executor (no planner to spec-gate against), using only figma.variables.* +
 // figma.root.get/setPluginData, same as the float functions above. GENERATED (see the file-header note,
-// TKT-0024) — the `colorparity` gate in test/figma/binder.mjs is now a TRIPWIRE proving the splice landed
+// TKT-0024), the `colorparity` gate in test/figma/binder.mjs is now a TRIPWIRE proving the splice landed
 // byte-identical, not the mechanism keeping the two copies in lockstep.
 // === GENERATED:COLOR_EXECUTOR START ===
 function readColorRegistry() {
@@ -546,7 +546,7 @@ async function ensureCollection(name, reg, renameFrom) {
 // === GENERATED:COLOR_EXECUTOR END ===
 
 // refKey: mirror of semantic.js refPath / bind-plan.mjs targetName (ADR-016). Solid stops zero-pad
-// to 3 digits ("50" -> "050"); scrim refs NEST — "500-200" -> "scrim/200" (the canonical 500 base is
+// to 3 digits ("50" -> "050"); scrim refs NEST, "500-200" -> "scrim/200" (the canonical 500 base is
 // omitted; a non-500 base would emit "scrim/{base}/{step}").
 function refKey(ref) {
   const s = String(ref);
@@ -557,10 +557,10 @@ function refKey(ref) {
   return (base === "500" ? "scrim/" : "scrim/" + base.padStart(3, "0") + "/") + step;
 }
 
-// roleTable(paletteName) — the 53 roles for a palette, name-substituted exactly as semantic.js /
+// roleTable(paletteName), the 53 roles for a palette, name-substituted exactly as semantic.js /
 // bind-plan.mjs produce them: accent + on-accent keys carry the palette name; shared roles do not.
 // GENERATED (see the file-header note): this is src/engine/semantic.js's semanticRoles() function BODY,
-// spliced verbatim by scripts/gen-figma-binder-code.mjs and re-wrapped under this name — the row shape
+// spliced verbatim by scripts/gen-figma-binder-code.mjs and re-wrapped under this name, the row shape
 // ({key,suffix,light,dark}) is identical, so there is nothing to reimplement, only re-wrap.
 // === GENERATED:ROLE_TABLE START ===
 const SCRIM_STRENGTH_STEPS = [50, 100, 200, 300, 400, 500, 600];
@@ -591,7 +591,7 @@ function roleTable(paletteName) {
   const role = (key, suffix, light, dark) =>
     roles.push({ key, suffix, light, dark });
 
-  // 1. ACCENT — name-prefixed keys; suffix builds --c-{n}{suffix}.
+  // 1. ACCENT, name-prefixed keys; suffix builds --c-{n}{suffix}.
   //    Prime role has empty suffix => --c-{n}. Refs are raw solid stops.
   role(`${n}`, '', '550', '450'); // prime: 550 light / 450 dark
   role(`${n}Dim`, '-dim', '650', '700');
@@ -599,81 +599,81 @@ function roleTable(paletteName) {
   role(`${n}Low`, '-low', '350', '700');
   role(`${n}High`, '-high', '650', '400');
 
-  // 1b. ACCENT INTERACTION STATES — tonal offsets along the palette's own ramp, so they stay in-gamut
+  // 1b. ACCENT INTERACTION STATES, tonal offsets along the palette's own ramp, so they stay in-gamut
   //     and consistent across every palette for free. Emphasis grows by DARKENING on light surfaces and
   //     LIGHTENING on dark (mode-mirrored): hover = prime ±1 step, active = prime ±2 (same direction, so
-  //     pressed reads "more" than hover). DISABLED is NOT a tonal sibling — there is no neutral/desaturate
+  //     pressed reads "more" than hover). DISABLED is NOT a tonal sibling, there is no neutral/desaturate
   //     primitive in the per-palette ref model, so it is a translucent wash of the palette's own 500 at 60%
   //     (a mid-alpha scrim reads clearly inert without vanishing on any surface; light === dark, like outline/container).
   role(`${n}Hover`, '-hover', '650', '350'); // prime +1 step toward emphasis (darker light / lighter dark)
-  role(`${n}Active`, '-active', '750', '250'); // prime +2 steps — pressed is "more" than hover
-  role(`${n}Disabled`, '-disabled', '500-600', '500-600'); // 60% wash — inert but legible, mode-independent
+  role(`${n}Active`, '-active', '750', '250'); // prime +2 steps, pressed is "more" than hover
+  role(`${n}Disabled`, '-disabled', '500-600', '500-600'); // 60% wash, inert but legible, mode-independent
 
-  // 2. ON-ACCENT — name-prefixed; fixed to the light end in BOTH modes (OD-001).
+  // 2. ON-ACCENT, name-prefixed; fixed to the light end in BOTH modes (OD-001).
   role(`on${N}`, `-on-${n}`, '50', '50');
   role(`on${N}Variant`, `-on-${n}-variant`, '200', '200');
 
-  // 2b. ON-ACCENT INTERACTION STATES — the label color on each state fill. Hover/Active TRACK the base
+  // 2b. ON-ACCENT INTERACTION STATES, the label color on each state fill. Hover/Active TRACK the base
   //     on-color (the same fixed light end by default; applyOnColorContrast re-points them against their
-  //     OWN state fill — 650/350 hover, 750/250 active — in "contrast" mode). DISABLED deliberately opts
+  //     OWN state fill, 650/350 hover, 750/250 active, in "contrast" mode). DISABLED deliberately opts
   //     OUT of the contrast guarantee: a translucent label over the faint fill, intentionally sub-4.5:1
   //     so the control reads inert.
   role(`on${N}Hover`, `-on-${n}-hover`, '50', '50');
   role(`on${N}Active`, `-on-${n}-active`, '50', '50');
   role(`on${N}Disabled`, `-on-${n}-disabled`, '500-400', '500-400'); // translucent inert label
 
-  // 3. ON-SURFACE — shared keys (NOT name-prefixed).
+  // 3. ON-SURFACE, shared keys (NOT name-prefixed).
   role('onSurface', '-on-surface', '950', '50');
   role('onSurfaceVariant', '-on-surface-variant', '750', '250');
 
-  // 3b. ON-SURFACE INTERACTION STATES — shared. onSurface sits at the contrast CEILING at rest (950/50),
+  // 3b. ON-SURFACE INTERACTION STATES, shared. onSurface sits at the contrast CEILING at rest (950/50),
   //     so hover/active HOLD there (no stronger solid stop exists; the emphasis is carried by the surface/
   //     container behind the text, like on-accent hover/active). DISABLED is a translucent inert label on
   //     the 500 ramp (opts out of the contrast guarantee). onSurfaceVariant (the secondary-text tier)
-  //     carries NO interaction states — a per-state secondary-text role earns little, so its emphasis is a
+  //     carries NO interaction states, a per-state secondary-text role earns little, so its emphasis is a
   //     `hover:`/`active:` opacity modifier on the base role, not a distinct token.
   role('onSurfaceHover', '-on-surface-hover', '950', '50');
   role('onSurfaceActive', '-on-surface-active', '950', '50');
   role('onSurfaceDisabled', '-on-surface-disabled', '500-400', '500-400'); // translucent inert label
 
-  // placeholder — input/field placeholder text: one mirrored step MORE muted than onSurfaceVariant
+  // placeholder, input/field placeholder text: one mirrored step MORE muted than onSurfaceVariant
   // (650/350 vs 750/250), so it reads as a secondary hint yet still clears a legibility floor against the
-  // field surface. A SOLID stop, NOT a translucent wash — translucent placeholder text is the classic a11y
+  // field surface. A SOLID stop, NOT a translucent wash, translucent placeholder text is the classic a11y
   // failure. Like the other on-surface text it is fixed per mode (it is not contrast-repointed).
   role('placeholder', '-placeholder', '650', '350');
 
-  // 4. OUTLINE — shared; on the 500 scrim ramp (light === dark).
+  // 4. OUTLINE, shared; on the 500 scrim ramp (light === dark).
   role('outline', '-outline', '500-600', '500-600');
-  role('outlineVariant', '-outline-variant', '500-300', '500-300'); // the weaker divider — NO interaction states (see 4b)
+  role('outlineVariant', '-outline-variant', '500-300', '500-300'); // the weaker divider, NO interaction states (see 4b)
 
-  // 4b. OUTLINE INTERACTION STATES — shared; one strength stronger per state (hover +1, active +2 on the
+  // 4b. OUTLINE INTERACTION STATES, shared; one strength stronger per state (hover +1, active +2 on the
   //     500 ramp), disabled a faint border. Mode-independent like the base outline. outlineVariant (the
-  //     weaker divider) carries NONE — a divider rarely needs per-state role tokens; when it does, a
+  //     weaker divider) carries NONE, a divider rarely needs per-state role tokens; when it does, a
   //     `hover:`/`active:` opacity modifier on the base outlineVariant covers it.
   role('outlineHover', '-outline-hover', '500-700', '500-700');
   role('outlineActive', '-outline-active', '500-800', '500-800');
-  role('outlineDisabled', '-outline-disabled', '500-400', '500-400'); // 40% — the disabled content tier (matches on-surface/label), still receding below the 60% resting outline
+  role('outlineDisabled', '-outline-disabled', '500-400', '500-400'); // 40%, the disabled content tier (matches on-surface/label), still receding below the 60% resting outline
 
-  // 5. CONTAINER — shared; on the 500 scrim ramp (light === dark).
+  // 5. CONTAINER, shared; on the 500 scrim ramp (light === dark).
   role('container', '-container', '500-200', '500-200');
   role('containerLow', '-container-low', '500-100', '500-100');
   role('containerHigh', '-container-high', '500-300', '500-300');
 
-  // 5b. CONTAINER INTERACTION STATES — shared; one strength stronger per state (hover +1, active +2),
+  // 5b. CONTAINER INTERACTION STATES, shared; one strength stronger per state (hover +1, active +2),
   //     disabled the faintest. Mode-independent like the base container.
   role('containerHover', '-container-hover', '500-300', '500-300');
   role('containerActive', '-container-active', '500-400', '500-400');
   role('containerDisabled', '-container-disabled', '500-100', '500-100');
 
-  // 6. INVERSE — shared.
+  // 6. INVERSE, shared.
   role('inverseSurface', '-inverse-surface', '900', '100');
   role('inverseOnSurface', '-inverse-on-surface', '50', '950');
 
-  // 7. SURFACE — shared base surfaces.
+  // 7. SURFACE, shared base surfaces.
   role('background', '-background', '100', '900');
   role('surface', '-surface', '125', '875');
 
-  // 8. SURFACE DIM/BRIGHT — shared; non-mirror (light+dark do NOT sum to 1000).
+  // 8. SURFACE DIM/BRIGHT, shared; non-mirror (light+dark do NOT sum to 1000).
   //    Same direction in both modes: a "dim" surface is a darker stop in both.
   role('surfaceDimmest', '-surface-dimmest', '200', '950');
   role('surfaceDimmer', '-surface-dimmer', '175', '925');
@@ -682,7 +682,7 @@ function roleTable(paletteName) {
   role('surfaceBrighter', '-surface-brighter', '75', '825');
   role('surfaceBrightest', '-surface-brightest', '50', '800');
 
-  // 9. SURFACE LOW/HIGH — shared; mirror (light+dark sum toward 1000) so
+  // 9. SURFACE LOW/HIGH, shared; mirror (light+dark sum toward 1000) so
   //     "lower" reads recessed and "higher" raised regardless of mode.
   role('surfaceLowest', '-surface-lowest', '50', '950');
   role('surfaceLower', '-surface-lower', '75', '925');
@@ -691,9 +691,9 @@ function roleTable(paletteName) {
   role('surfaceHigher', '-surface-higher', '175', '825');
   role('surfaceHighest', '-surface-highest', '200', '800');
 
-  // 10. SCRIM — shared; 7 strengths, all on the 500 ramp at alpha% = step/10. Mode-independent
+  // 10. SCRIM, shared; 7 strengths, all on the 500 ramp at alpha% = step/10. Mode-independent
   //     (light === dark === `500-${pad3(step)}`, e.g. `500-050`). Listed LAST so the emitted token order
-  //     groups as regular colors → containers → surfaces → scrims — a cleaner Figma variable / CSS list.
+  //     groups as regular colors → containers → surfaces → scrims, a cleaner Figma variable / CSS list.
   for (let i = 0; i < SCRIM_STRENGTH_STEPS.length; i++) {
     const ref = `500-${String(SCRIM_STRENGTH_STEPS[i]).padStart(3, '0')}`; // ADR-006 3-digit alpha: 50 -> "050"
     role(SCRIM_KEYS[i], SCRIM_SUFFIXES[i], ref, ref);
@@ -703,40 +703,40 @@ function roleTable(paletteName) {
 }
 // === GENERATED:ROLE_TABLE END ===
 
-// The raw-colors target a ref resolves to: "{n}/{refKey(ref)}" — the load-bearing grammar.
+// The raw-colors target a ref resolves to: "{n}/{refKey(ref)}", the load-bearing grammar.
 // Identical to bind-plan.mjs targetName; guarantees membership in the canonical raw name set.
 function targetName(paletteName, ref) {
   return paletteName + "/" + refKey(ref);
 }
 
-// findAdoptionCandidate — #492: is there a LIVE collection named `name` (or one of `renameFrom`) that
-// isn't already tracked by `reg`? PURE / read-only — never mutates `cols` or `reg`. This is the
+// findAdoptionCandidate, #492: is there a LIVE collection named `name` (or one of `renameFrom`) that
+// isn't already tracked by `reg`? PURE / read-only, never mutates `cols` or `reg`. This is the
 // DISCOVERY half of the adoption path; ensureCollection/ensureFloatCollection themselves are UNCHANGED
-// (registry-by-id only, TKT-0024) — the caller checks for a candidate FIRST, and on confirmed consent
+// (registry-by-id only, TKT-0024), the caller checks for a candidate FIRST, and on confirmed consent
 // (confirmAdopt below) pre-seeds `reg[name] = candidate.id` BEFORE calling ensureCollection/
 // ensureFloatCollection, which then takes its normal "known" fast path and returns that exact
-// collection: no change to the provenance functions, no risk to their parity gates. Binder-only (#492)
-// — the flagship app-as-plugin keeps its TKT-0024 "never adopt a same-named collection" guarantee
+// collection: no change to the provenance functions, no risk to their parity gates. Binder-only (#492),
+// the flagship app-as-plugin keeps its TKT-0024 "never adopt a same-named collection" guarantee
 // unchanged; this ticket's root cause (figma-semantic-binder/code.js) and its ADIA Colors scenario are
 // both specific to the standalone binder.
 //
 // REVIEW FIX (#492, MAJOR 1): checking ONLY "is this candidate's id untracked anywhere in reg" is not
-// enough — it ignores whether `name` (or a `renameFrom` name) ALREADY resolves to a DIFFERENT live
+// enough, it ignores whether `name` (or a `renameFrom` name) ALREADY resolves to a DIFFERENT live
 // collection via reg[n], exactly mirroring ensureCollection/ensureFloatCollection's own "known" fast
 // path (reg[name] && cols.find(c => c.id === reg[name]), then the renameFrom loop). Without this check
 // first: a DECLINED orphan leaves the orphan itself forever unregistered while main() still creates and
-// registers a FRESH collection under the same name — so `reg[name]` now resolves live, but the orphan
+// registers a FRESH collection under the same name, so `reg[name]` now resolves live, but the orphan
 // (still a `name`-or-`renameFrom` match, still untracked) is offered again on every later run; and a
 // LATER confirm on that stale re-prompt would silently overwrite reg[name] to point at the ORPHAN,
-// abandoning the fresh collection actually in use — on the ADIA file specifically, that could re-target
+// abandoning the fresh collection actually in use, on the ADIA file specifically, that could re-target
 // the registry onto the GROUPED "Color Semantic"/"Color Modes" collection, the exact inverse of the
 // ruling that the flat scheme is canonical. So: if `name` or ANY `renameFrom` entry already resolves to
-// a live collection, there is NOTHING to adopt — ensureCollection/ensureFloatCollection's own fast path
+// a live collection, there is NOTHING to adopt, ensureCollection/ensureFloatCollection's own fast path
 // already has it, and this function returns null before ever searching for an orphan.
 function findAdoptionCandidate(name, reg, renameFrom, cols) {
   const names = [name].concat(Array.isArray(renameFrom) ? renameFrom : []);
   for (const n of names) {
-    if (reg[n] && cols.some((c) => c.id === reg[n])) return null; // `n` already resolves live — nothing to adopt
+    if (reg[n] && cols.some((c) => c.id === reg[n])) return null; // `n` already resolves live, nothing to adopt
   }
   const registered = new Set(Object.keys(reg).map((k) => reg[k]));
   for (const n of names) {
@@ -746,26 +746,26 @@ function findAdoptionCandidate(name, reg, renameFrom, cols) {
   return null;
 }
 
-// confirmAdopt — #492: the ONE-TIME "adopt this existing collection?" gate, "in the plugin UI" per the
-// ticket's own wording (not a figma.notify toast — a real modal, matching how the flagship app's own
+// confirmAdopt, #492: the ONE-TIME "adopt this existing collection?" gate, "in the plugin UI" per the
+// ticket's own wording (not a figma.notify toast, a real modal, matching how the flagship app's own
 // apply-gate frames a consequential choice as a deliberate dialog, not a dismissible toast). The
-// standalone binder has never shown a UI before this; this is the smallest surface that does — an
+// standalone binder has never shown a UI before this; this is the smallest surface that does, an
 // inline HTML string (no external assets, AC-P3 offline), two buttons, one round-trip message. Escapes
 // `name` (it's a live Figma collection name, not literal user text, but HTML-escaping any interpolated
-// string is free insurance). Resolves `true` (adopt) or `false` (skip — today's create-a-separate-one
+// string is free insurance). Resolves `true` (adopt) or `false` (skip, today's create-a-separate-one
 // behavior, unchanged) exactly once; findAdoptionCandidate's own guard (above, #492 review fix) is what
 // makes this genuinely "once per file": EITHER outcome leaves `reg[name]` resolving to a LIVE collection
-// afterward — a confirmed adopt registers the orphan's own id; a decline lets ensureCollection/
-// ensureFloatCollection create-and-register a fresh one right after — so on every later run,
+// afterward, a confirmed adopt registers the orphan's own id; a decline lets ensureCollection/
+// ensureFloatCollection create-and-register a fresh one right after, so on every later run,
 // findAdoptionCandidate's first check (does `name`/`renameFrom` already resolve live?) is true and it
 // never even looks for an orphan again. Never silently downgrades to "always adopt" or "never adopt"
-// without asking — it just never re-asks once the name is resolved, confirmed or declined.
+// without asking, it just never re-asks once the name is resolved, confirmed or declined.
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
-// `opts.prunes` (#492 review, MINOR): true for the float call site (Geometry/Type Primitives) — the
+// `opts.prunes` (#492 review, MINOR): true for the float call site (Geometry/Type Primitives), the
 // dialog copy must disclose that applyFloatPlans' UNCHANGED full-mirror reconcile applies on adoption
 // (create-or-reuse by name, PRUNE anything not in the current plan), so a foreign variable inside the
 // adopted collection does NOT survive. False (the default) for color: the role-binding loop never
-// prunes, so a foreign variable there survives untouched — see §3b in foundations.md for the full
+// prunes, so a foreign variable there survives untouched, see §3b in foundations.md for the full
 // asymmetry. The user must see this BEFORE confirming, not discover it after the fact.
 async function confirmAdopt(name, opts) {
   const prunes = !!(opts && opts.prunes);
@@ -773,10 +773,10 @@ async function confirmAdopt(name, opts) {
     let settled = false;
     const settle = (v) => { if (!settled) { settled = true; resolve(v); } };
     // #492 review, MINOR: closing the plugin window (the X, not either button) never fired
-    // figma.ui.onmessage — main() hung forever awaiting a promise that would never settle. figma.on
+    // figma.ui.onmessage, main() hung forever awaiting a promise that would never settle. figma.on
     // "close" fires for EVERY dismissal path (a button click that already called figma.ui.close(), OR
     // the user closing the window directly), so it's registered unconditionally; settle() is a no-op
-    // once already settled, so a button click still wins the race normally — this is purely the
+    // once already settled, so a button click still wins the race normally, this is purely the
     // otherwise-unhandled path's safety net, treated as a decline (never touch anything without explicit consent).
     figma.on("close", () => settle(false));
     figma.showUI(
@@ -784,20 +784,20 @@ async function confirmAdopt(name, opts) {
       "p{margin:0 0 14px;line-height:1.5}button{font:inherit;padding:7px 14px;border-radius:6px;cursor:pointer;margin-right:8px}" +
       "#adopt{background:#18A0FB;color:#fff;border:1px solid #18A0FB}#skip{background:#fff;border:1px solid #ccc}</style>" +
       "<p>Found an existing <b>“" + escapeHtml(name) + "”</b> collection this plugin didn’t create. " +
-      "Adopt it and upsert into it — instead of creating a separate collection?" +
+      "Adopt it and upsert into it, instead of creating a separate collection?" +
       (prunes ? " Any variable in it NOT part of this apply will be removed (adoption still fully reconciles the collection it owns)." : "") +
       "</p>" +
       "<button id=\"adopt\">Adopt “" + escapeHtml(name) + "”</button><button id=\"skip\">Skip (create new)</button>" +
       // the closing tag below is written "<\/script>" (a split, backslash-escaped form) so this SOURCE
-      // FILE never contains the LITERAL, contiguous closing-script-tag substring — careful, since even
+      // FILE never contains the LITERAL, contiguous closing-script-tag substring, careful, since even
       // writing that substring in a COMMENT re-triggers the same bug (see the incident below). This
       // whole binder is later embedded as a JS STRING inside the web app's own single inline script
       // block (bundle.mjs's figma-plugin-assets.js splice); the literal substring there closes THAT
       // enclosing tag early, truncating and corrupting the bundled app (real incident: this exact
-      // string, unescaped, broke npm run smoke's real-Chrome "gallery boots" test — the JS after the
+      // string, unescaped, broke npm run smoke's real-Chrome "gallery boots" test, the JS after the
       // truncation point never ran, and the FIRST hand-written comment attempting to explain the fix
       // reintroduced the substring literally, in prose, and broke it again). "<\/script>" evaluates to
-      // the identical runtime string at runtime ("\/" is a no-op JS escape — the backslash is dropped)
+      // the identical runtime string at runtime ("\/" is a no-op JS escape, the backslash is dropped)
       // but never appears as that dangerous contiguous substring in source, comments included.
       "<script>document.getElementById('adopt').onclick=()=>parent.postMessage({pluginMessage:{type:'adopt-confirm',adopt:true}},'*');" +
       "document.getElementById('skip').onclick=()=>parent.postMessage({pluginMessage:{type:'adopt-confirm',adopt:false}},'*');<\/script>",
@@ -805,7 +805,7 @@ async function confirmAdopt(name, opts) {
     );
     figma.ui.onmessage = (msg) => {
       if (!msg || msg.type !== "adopt-confirm") return;
-      // settle() BEFORE figma.ui.close() — if close() synchronously fires the "close" handler above,
+      // settle() BEFORE figma.ui.close(), if close() synchronously fires the "close" handler above,
       // settle is already idempotent-true by then, so the real answer always wins the race regardless
       // of whether "close" fires sync or async.
       settle(!!msg.adopt);
@@ -817,14 +817,14 @@ async function confirmAdopt(name, opts) {
 async function main() {
   const collections = await figma.variables.getLocalVariableCollectionsAsync();
   const rawColl = collections.find((c) => c.name === RAW_COLLECTION);
-  // RP-6 (#575): this binder reads nothing from "Color Prime" (roles never alias prime tokens —
+  // RP-6 (#575): this binder reads nothing from "Color Prime" (roles never alias prime tokens,
   // SPEC REQ-054 non-goal), so its report would otherwise stay silent about the collection even
-  // when the flagship apply path created it — silence a user could misread as a miss rather than
+  // when the flagship apply path created it, silence a user could misread as a miss rather than
   // a deliberate exclusion.
   const primeColl = collections.find((c) => c.name === PRIME_COLLECTION);
   let adopted = 0;
 
-  // Color and Type/Geometry breakpoints are INDEPENDENT — neither aborts the other. Color needs a live
+  // Color and Type/Geometry breakpoints are INDEPENDENT, neither aborts the other. Color needs a live
   // "Color Primitives" collection to alias against (skipped, not fatal, when absent); the breakpoint
   // collections are baked data (FLOAT_PLANS) that need nothing from the file.
   let bound = 0;
@@ -837,11 +837,11 @@ async function main() {
       if (v.variableCollectionId === rawColl.id) rawVars[v.name] = v;
     }
 
-    // 2. Create/find the Color Roles collection with Light + Dark modes — by PROVENANCE (registry id),
+    // 2. Create/find the Color Roles collection with Light + Dark modes, by PROVENANCE (registry id),
     //    never by name (TKT-0024). renameFrom (#491, SEMANTIC_RENAME_FROM) adopts a REGISTRY-TRACKED
     //    collection still under an old name ("Color Semantic"/"Color Modes") in place. #492: an
-    //    UNREGISTERED collection already named "Color Roles" (or SEMANTIC_RENAME_FROM) — e.g. one
-    //    created by hand, or by an older build that never registered it — is offered for adoption
+    //    UNREGISTERED collection already named "Color Roles" (or SEMANTIC_RENAME_FROM), e.g. one
+    //    created by hand, or by an older build that never registered it, is offered for adoption
     //    (confirmed, once) rather than silently duplicated.
     const colorReg = readColorRegistry();
     const semCandidate = findAdoptionCandidate(SEMANTIC_COLLECTION, colorReg, SEMANTIC_RENAME_FROM, collections);
@@ -875,14 +875,14 @@ async function main() {
     }
   }
 
-  // 4. Type/Geometry breakpoint-moded FLOAT collections — baked at download time (see FLOAT_PLANS above).
+  // 4. Type/Geometry breakpoint-moded FLOAT collections, baked at download time (see FLOAT_PLANS above).
   //    A no-op (fp stays null) for the generic/asset checked-in binder, whose FLOAT_PLANS is [].
   //    #492: the SAME adoption-candidate check as the color collection above, once per DISTINCT
   //    plan.collection. FLOAT_PLANS is whatever downloadFigmaPlugin baked in, which is exactly
   //    _figmaFloatPlans() (src/ui/app.js), Geometry only. It never carries a Type Primitives plan:
   //    only typeTokensFigmaPrimitivesModes builds one, and that is called from apply-gate.js alone,
   //    never from the download path. applyFloatPlans() is a SPLICED, byte-identical-to-the-flagship
-  //    function (colorparity/floatparity/collparity gates) — it is NEVER modified for this; instead the
+  //    function (colorparity/floatparity/collparity gates), it is NEVER modified for this; instead the
   //    float registry is pre-seeded here, BEFORE calling it, so its own (unchanged) readFloatRegistry()
   //    picks up the adoption on its very next call.
   let fp = null;
@@ -896,11 +896,11 @@ async function main() {
       if (candidate && (await confirmAdopt(candidate.name, { prunes: true }))) { floatReg[plan.collection] = candidate.id; adopted++; }
     }
     writeFloatRegistry(floatReg);
-    fp = await applyFloatPlans(FLOAT_PLANS, { askIfUndecided: true }); // #495: this binder has no persistent UI a mid-apply dialog could disturb — ask interactively when something's at stake
+    fp = await applyFloatPlans(FLOAT_PLANS, { askIfUndecided: true }); // #495: this binder has no persistent UI a mid-apply dialog could disturb, ask interactively when something's at stake
   }
 
   if (!rawColl && !fp) {
-    figma.notify('No "Color Primitives" collection found — apply your palette in Ultimate Tokens first, then run the Binder.', { error: true });
+    figma.notify('No "Color Primitives" collection found, apply your palette in Ultimate Tokens first, then run the Binder.', { error: true });
     figma.closePlugin();
     return;
   }
@@ -909,7 +909,7 @@ async function main() {
   parts.push(
     rawColl
       ? "Bound " + bound + " colour role" + (bound === 1 ? "" : "s") + (missing.length ? (", " + missing.length + " skipped (raw colour missing)") : "")
-      : 'Colour skipped — no "Color Primitives" collection',
+      : 'Colour skipped, no "Color Primitives" collection',
   );
   if (fp) parts.push(fp.collections + " breakpoint collection" + (fp.collections === 1 ? "" : "s") + ", " + fp.variables + " sized var" + (fp.variables === 1 ? "" : "s"));
   if (adopted) parts.push(adopted + " existing collection" + (adopted === 1 ? "" : "s") + " adopted");
@@ -922,6 +922,6 @@ async function main() {
 // show a friendly message, and close cleanly.
 main().catch((e) => {
   console.error("[Color Tokens Semantic Binder] bind failed:", e);
-  figma.notify("Couldn't bind the semantic variables. Please try again — if it keeps happening, open an issue at github.com/kimgranlund/ultimate-tokens.", { error: true });
+  figma.notify("Couldn't bind the semantic variables. Please try again. If it keeps happening, open an issue at github.com/kimgranlund/ultimate-tokens.", { error: true });
   figma.closePlugin();
 });
