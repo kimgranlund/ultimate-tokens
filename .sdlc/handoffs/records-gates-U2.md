@@ -62,7 +62,7 @@ grep -c 'line 654'              -> 0
 grep -c '#742'                  -> 1
 ```
 Matches expected (`0,0,1+,1+,0,1+`). Negative control (the tree before this edit, i.e. the state
-read at G0/measured-at): `2, 3, 0, 0, 1, 0` — confirmed by reading the file before editing.
+read at G0/measured-at): `2, 3, 0, 0, 1, 0`, confirmed by reading the file before editing.
 
 ### U2-2 (Q2 yes)
 
@@ -86,7 +86,7 @@ Matches expected (`0`, `exit 0`, `0`, `exit 0`, `2 2`). Negative control: in a s
 the fix applied, inserted a blank line above the ADR-026 heading -> `range mismatches: 4` with the
 four lines the plan names (start/end mismatches for both ADR-026 and ADR-027); exit stayed `0`
 since U1 (the exit-on-count fix) has not merged into this worktree yet, per the plan's own note
-("and, after U1, `exit 1`") — the count-side assertion is what this row grades and it matches.
+("and, after U1, `exit 1`"): the count-side assertion is what this row grades and it matches.
 
 ### Plan-level rows scoped to U2's diff
 
@@ -103,9 +103,9 @@ since U1 (the exit-on-count fix) has not merged into this worktree yet, per the 
 ## Left out
 
 - U2's own criteria table lists no verifier pass unless Q2 is yes; Q2 is yes here (a file outside
-  `.sdlc/` changed), so per the plan's unit row this needs verifier-l1, not just reviewer-l1 — the
-  Orchestrator should route it there.
+  `.sdlc/` changed), so per the plan's unit row this needs verifier-l1, not just reviewer-l1, and
+  the Orchestrator should route it there.
 - U1 (the card-script exit fix) has not landed in this worktree; both card checks still print
-  their count without exiting nonzero. That's U1's own unit, not a gap here — U2-3's control notes
+  their count without exiting nonzero. That's U1's own unit, not a gap here: U2-3's control notes
   the dependency explicitly.
 - No design question surfaced; Q2 was answered as recommended (yes).
