@@ -7,11 +7,16 @@ branch: unit/hx-U1
 base: plan/hex-oklch-dedupe @ 91ac5168
 grade: verifier-l2, the evidence run dispatched by the Verifier seat, which re-read the rows marked mine
 contract: P1 to P4 and U1-1 to U1-5 of .sdlc/plans/hex-oklch-dedupe.md at f972da4f, and the repo checks at the head
-pass: 1
+pass: 2
+passes: 1 at f972da4f 🔴, 2 at eb5fac84 🟢
 written: 2026-09-26
 ---
 
-# Verdict hex-oklch-dedupe U1 · 🔴 · 9 of 9 plan rows 🟢; the baseline figure the unit moved is left stale, and the scope wall forbids the repair
+# Verdict hex-oklch-dedupe U1 · passes 1 to 2 · 🟢 at `eb5fac84`
+
+Current finding: 🟢 at `eb5fac84`, in `## Pass 2` below. Pass 1, 🔴 at `f972da4f`, is history.
+
+## Pass 1, at `f972da4f`: 9 of 9 plan rows 🟢; the baseline figure the unit moved is left stale, and the scope wall forbids the repair
 
 verdict: 🔴
 sha: f972da4f0517ba0abe4e44dffb550fc36c433db6
@@ -53,3 +58,41 @@ measured after `origin/main` is merged in. Main now reads `4125.3 KB` and has ch
 
 verdict: 🔴
 sha: f972da4f0517ba0abe4e44dffb550fc36c433db6
+
+## Pass 2, at `eb5fac84`
+
+verdict: 🟢
+sha: eb5fac84c4b97d3794e00b2b8e3d1562dbe70948
+
+Run by me at grade L2, in clones `/tmp/v13/hx2h-1790404244` (head) and `/tmp/v13/hx2b-1790404244` (the new
+base `612650b0`, which is `origin/main` merged into the plan plus the P4 revision). Every row was
+rerun on the new base, because the main merge moved code outside the unit (`16` files under `src`,
+`test` and `scripts` between `f972da4f` and `eb5fac84`). The unit's own `src/ui/model.mjs` and
+`test/ui/model.mjs` are the same blobs as at `f972da4f`.
+
+The revision. P4 now admits `.sdlc/baseline.md` for the build row's KB cell and one correction
+paragraph. It was written after pass 1's red and is the route that verdict named. It widens the wall
+by one file for one cell, and the file carries exactly that: numstat `3 1` (the row, a blank and the
+paragraph). No criterion gets weaker.
+
+| id | criterion | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| K1 | the unit leaves no check red that it caused | 🟢 | `baseline-agrees-check.sh`: `stale total: 0`; the row reads `wrote figma/plugin/ui.html 4122.4 KB` and my build prints `wrote figma/plugin/ui.html 4122.4 KB` | the figure planted as `4122.5`: `STALE ui.html: baseline 4122.5 KB, tree 4122.4 KB`, `stale total: 1` |
+| P1 | `npm test` | 🟢 | `✓ all 50 test files passed`, TESTS `50`, tree `0` | U1-4's plant below reds `test/ui/model.mjs`, a file inside `npm test` |
+| P2 | `npm run build` | 🟢 | exit `0`, `wrote figma/plugin/ui.html 4122.4 KB`, tree `0` | K1's plant |
+| P3 | branding, no added dash | 🟢 | `branding: clean (728 files scanned)`; added em or en dash, backticks stripped: `0` | pass 1's plants |
+| P4 | scope wall, as revised | 🟢 | `0`; `.sdlc/baseline.md` numstat `3 1` | the wall without the new baseline entry would print `1` for that file |
+| U1-1 | one conversion, the false comment gone | 🟢 | `0`, `1`, `1`, `1` | pass 1's control |
+| U1-2 | the anchor gate agrees | 🟢 | exit `0`, `key-anchor` `2`, FAIL `0` | pass 1's `keyHex` control |
+| U1-3 | behaviour-neutral on the new base | 🟢 | the plan's probe at `612650b0` and at `eb5fac84`: `3780 3380` both, `cmp 0` | the coefficient `0.4122214708` to `0.4122214709` at the head: `cmp 1` |
+| U1-4 | the assertion bites | 🟢 | exit `0`, subjects `16` | `keyOklch: hexToOklch("#000000")` planted: exit `1`, FAIL `1` |
+| U1-5 | the deletion is the whole source change | 🟢 | `1 20` against `612650b0` | pass 1's control |
+| K2 | the other checks | 🟢 | `stale total: 0`, `range mismatches: 0`, `verdicts 145 graded 145 bad 0` | each with its figure read |
+
+Carried, not this unit's: `doc-drift-rows` reads `bad 1` (`QUOTE DD9: not found at .claude/CLAUDE.md:95`)
+and `ceiling-counts: 1 failure(s)` (`adapter pointer found`), identical at the base `612650b0`, so both
+are red on main. The correction paragraph is dated `2026-09-25` though written on the 26th. Pass 1's N1
+(U1-2's written control) is now noted in the handoff.
+
+verdict: 🟢
+sha: eb5fac84c4b97d3794e00b2b8e3d1562dbe70948
