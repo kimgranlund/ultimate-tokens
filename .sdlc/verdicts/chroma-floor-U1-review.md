@@ -89,4 +89,4 @@ C1 was not re-run here: `npm test` was not run in the worktree, as the dispatch 
 2. F2: make the `mode-isolation` output match C6 and the adapter row (palette count, the pass line last, `dk.palettes.length`, the FAIL wording), or get C6 amended to the real output.
 3. F3: print the control's spike count.
 
-verdict: FIX-FIRST
+verdict: 🟡 FIX-FIRST

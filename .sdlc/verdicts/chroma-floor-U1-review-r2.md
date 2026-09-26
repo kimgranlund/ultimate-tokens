@@ -56,4 +56,4 @@ Note for the Orchestrator: the worktree `.worktrees/cf-U1` carries an uncommitte
 
 1. F6: make the in-gate control take the `projectView` path and print 65 on a full run; commit it, then rerun `anchor.mjs --full` and quote the line in the handoff.
 
-verdict: FAIL
+verdict: 🔴 FAIL

@@ -25,4 +25,4 @@ F6 is fixed. The in-gate control now renders through `hydrate()` plus a patched 
 - ⚪ The per-gate first-FAIL rule (`anchor.mjs:50`) means that with the plateau text removed, the red names the first unexpected lone-spike member, not the "patch target string was not found" guard. Round 2 already showed the guard firing when the text moves without a behaviour change. When the behaviour changes too, the gate still reds, so either diagnosis is acceptable.
 - ⚪ The handoff's new prose paragraph contains one em dash, just before "together undercounting". Repair it in the next handoff edit, per the no-em-dash rule for records.
 
-verdict: PASS
+verdict: 🟢 PASS
