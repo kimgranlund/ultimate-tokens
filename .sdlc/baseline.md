@@ -3,7 +3,7 @@ kind: baseline
 repo: ultimate-tokens
 ran: 2026-09-23 to 2026-09-26
 ref: main @ a62ec020
-host: local macOS, Node 24.18, local Chrome for smoke; load under 5 at the start of every counted run (owner ruling 2026-09-20, quiet-host rule, R34 window 1 and its window-2 sequel), full readings in the U6b handoff's Runs table; the `npm test` row is the one exception, rule-gates U5, load not gated (owner ruling R47, heavy-run count 0 still held), see its own Correction
+host: local macOS, Node 24.18, local Chrome for smoke; load under 5 at the start of every counted run (owner ruling 2026-09-20, quiet-host rule, R34 window 1 and its window-2 sequel), full readings in the U6b handoff's Runs table; the `npm test` row is the one exception, rule-gates U5, load not gated (owner ruling, `.sdlc/questions/rule-gates-U5-load.md`, 2026-09-25, heavy-run count 0 still held), see its own Correction
 extended: 2026-09-19, rows corpus-contrast and fonts, host load 3.97 4.39 4.80 to 6.16 4.94 4.97 on 10 cores across the six runs
 supersedes: the 2026-09-19 baseline at d814500 (kept below as a prior set) and the 2026-09-16 baseline (git show 180eca0:.sdlc/baseline.md); the #713 U6b/U6c re-measurement below moves `npm test` out of the interim ceiling section entirely (the corpus sweeps split into their own gate scripts) and supersedes it as the figure to cite. Every row now carries all three of its counted quiet-host readings; `npm test`'s window-1 figures move to a labelled superseded note once U6c-8 re-timed it
 ---
@@ -18,7 +18,7 @@ The `npm test`, `npm run build` and `npm run smoke` rows were each run three tim
 
 | command | runs | exit | seconds | summary |
 |---|---|---|---|---|
-| `npm test` | 3/3 | 0 | 151 · 106 · 317 | `✓ all 52 test files passed` `re-measured rule-gates U5, under load, owner ruling R47 (.sdlc/questions/rule-gates-U5-load.md, "accept runs under load") and R53 (.sdlc/runtime/owner-rulings-2026-09-22.md, "keep quiet figure, carry STALE"); replaces the #713 U6c-8 quiet-host set, which moves to the superseded note below; see the Correction below for each run's clock time, load and heavy-run count` |
+| `npm test` | 3/3 | 0 | 151 · 106 · 317 | `✓ all 52 test files passed` `re-measured rule-gates U5, under load, owner ruling .sdlc/questions/rule-gates-U5-load.md (2026-09-25, "accept runs under load") and R53 (.sdlc/runtime/owner-rulings-2026-09-22.md, "keep quiet figure, carry STALE"); replaces the #713 U6c-8 quiet-host set, which moves to the superseded note below; see the Correction below for each run's clock time, load and heavy-run count` |
 | `npm run gate:corpus-tonal` | 3/3 | 0 | 86.09 · 116.31 · 92.56 | `PASS: tonal-generation clears all [gate] predicates` `new row, gate-split #713 U6b` |
 | `npm run gate:corpus-anchor` | 3/3 | 0 | 78.98 · 99.90 · 86.02 | `PASS (FULL): C2, C3, C4 (non-anchored construction totally migrated, Q1), C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (72), distinct-25 (16) and notch (17, Q3-resolved, +2 at #739) are named allow-lists, compared by name, each with a biting negative control` `new row, gate-split #713 U6b; summary text re-measured after achromatic-anchor #739 merged into plan/achromatic-anchor (notch 15 -> 17, exit 0 confirmed - `.sdlc/checks/baseline-agrees-check.sh` does not compare this cell's text, only its timing, so the #713 seconds carry forward unchanged)` |
 | `npm run gate:sweep-prime` | 3/3 | 0 | 86.25 · 70.40 · 67.00 | `PASS: prime-system clears all AC-050 gates` `new row, gate-split #713 U6b; first reading window 1 (not recorded, before clock logging), other two window 2, 2026-09-23` |
@@ -32,7 +32,7 @@ The `npm test`, `npm run build` and `npm run smoke` rows were each run three tim
 
 ### Superseded: `npm test`'s #713 U6c-8 quiet-host figures (2026-09-23/24, pre-rule-gates-U5)
 
-Before rule-gates U5 re-measured under load (owner ruling R47), `npm test`'s three quiet-host
+Before rule-gates U5 re-measured under load (owner ruling, `.sdlc/questions/rule-gates-U5-load.md`, 2026-09-25), `npm test`'s three quiet-host
 readings were 89.10, 79.93 and 80.07 s (`✓ all 50 test files passed`, load under 5 at the start of
 each), inside the 120 s ceiling. Rule-gates U1 to U4 and U6 raised `TESTS.length` from 50 to 52
 (`repo/svg-rules.mjs`, `repo/em-dash.mjs`) between this reading and U5's re-time, so the file count
@@ -277,7 +277,7 @@ Correction (2026-09-24, plan okl-memo U1, #738): the ui.html figure moves again,
 
 Correction (2026-09-25/26, plan rule-gates U5, #730): `npm test`'s row moves from the #713
 U6c-8 quiet-host set (89.10, 79.93, 80.07 s, 50 files) to three runs taken UNDER LOAD, per owner
-ruling R47 (`.sdlc/questions/rule-gates-U5-load.md`, "accept runs under load": concurrent sessions
+ruling recorded in `.sdlc/questions/rule-gates-U5-load.md` (owner, 2026-09-25, "accept runs under load": concurrent sessions
 held load between 18 and 152 through two polling windows totalling almost four hours, so the owner
 ruled the unit may count green runs taken under load rather than wait for load under 5) and R53
 (`.sdlc/runtime/owner-rulings-2026-09-22.md`, "keep quiet figure, carry STALE": `.sdlc/adapter.md`
@@ -297,7 +297,7 @@ Every run printed `✓ all 52 test files passed` (`TESTS.length` moved 50 to 52:
 registered `repo/svg-rules.mjs`, U4 registered `repo/em-dash.mjs`) and left `git status --short`
 empty. Run 3's load climbed well past the quiet-host figure mid-run (other agents' concurrent gate
 runs on the shared host, confirmed not this seat's own processes each time by the heavy-run pgrep),
-which is exactly the wall-time variance R47 anticipated; the wall column is the figure of record
+which is exactly the wall-time variance the `rule-gates-U5-load.md` ruling anticipated; the wall column is the figure of record
 regardless, per the ruling. The `figma/plugin/ui.html` figure also moved in this pass, from 4125.3
 KB to 4120.9 KB (the em-dash sweep's punctuation-only rewrite shrank several inlined comments); see
 the `npm run build` row above and its own note.

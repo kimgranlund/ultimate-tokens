@@ -4,7 +4,7 @@ plan: rule-gates
 unit: U5
 branch: unit/rg-U5
 written: 2026-09-26
-pass: 3
+pass: 2
 ---
 
 # rule-gates U5: figures of record
@@ -71,9 +71,9 @@ lowest single load reading was `16.39`, momentarily, immediately followed by a c
 No 10-second sample cleared all three conditions (load under 5, heavy-run `0`, hot `0`) at once.
 Stopped at the cap; no code or record changed in this window, so no new commit that pass.
 
-## Third window: owner ruling R47, count runs under load
+## Third window: owner ruling (`.sdlc/questions/rule-gates-U5-load.md`), count runs under load
 
-The owner ruled (`.sdlc/questions/rule-gates-U5-load.md`): U5 may count three green `npm test` runs
+The owner ruled (`.sdlc/questions/rule-gates-U5-load.md`, 2026-09-25): U5 may count three green `npm test` runs
 taken under load; the heavy-run count (not the 1-minute load average) still has to read `0`
 immediately before each run starts. That condition is far easier to clear than load under 5 on this
 host, and did clear three times, each within a few minutes of polling. All three ran in
@@ -88,10 +88,12 @@ host, and did clear three times, each within a few minutes of polling. All three
 Heavy-run count was `0` immediately before each run (confirmed by the same pgrep line the brief
 names, read right before `npm test` started). All three exit `0`, all three tree-clean after. Run
 3's load climbed past 90 mid-search and mid-run (other agents' own concurrent gate runs, not this
-seat's), which is the source of its much longer wall time; per R47 the wall time counts regardless.
+seat's), which is the source of its much longer wall time; per the load ruling the wall time counts
+regardless.
 
 `.sdlc/baseline.md` updated: the `npm test` row's three figures (151, 106, 317 s), its `3/3`/`0`
-columns, and its summary span citing R47 and R53 and this handoff; a new superseded-note section for
+columns, and its summary span citing `.sdlc/questions/rule-gates-U5-load.md` and R53 and this
+handoff; a new superseded-note section for
 the #713 U6c-8 quiet-host figures it replaces; the `npm run build` row's `ui.html` KB figure moved
 4125.3 to 4120.9 KB (the em-dash sweep's own byte shrink, confirmed byte-identical on all three
 runs); a Correction paragraph with the full per-run table and both ruling citations; the `host:`
@@ -104,11 +106,11 @@ resulting `STALE time test` line is the documented exception, not a defect.
 | # | Result |
 |---|---|
 | U5-1 (P7) | `sh .sdlc/checks/baseline-agrees-check.sh; echo "exit $?"` → `ok tests: baseline 52, test/run.mjs TESTS 52`; `ok ui.html: baseline 4120.9 KB, tree 4120.9 KB`; `STALE time test: baseline 106 to 317 s, adapter 80 to 89 s` (the documented R53 exception); every other `time` row `ok`; `note head:` (tree moved outside `.sdlc/` since the baseline ran, expected); `ok head:` (in origin/main's history); `stale total: 1`; `exit 1`. Every line but the one documented exception reads `ok`, matching the team lead's instruction exactly |
-| U5-2 | Three `npm test` runs taken under load per owner ruling R47, heavy-run count `0` before each, none overlapping; table above. `TESTS.length` confirmed `52`. `.sdlc/baseline.md`'s `npm test` row and `.sdlc/adapter.md` §1's test-row range both updated (adapter's own figure held unchanged per R53) |
+| U5-2 | Three `npm test` runs taken under load per the owner ruling recorded in `.sdlc/questions/rule-gates-U5-load.md`, heavy-run count `0` before each, none overlapping; table above. `TESTS.length` confirmed `52`. `.sdlc/baseline.md`'s `npm test` row and `.sdlc/adapter.md` §1's test-row range both updated (adapter's own figure held unchanged per R53) |
 
 `node test/repo/em-dash.mjs | tail -1` → `em-dash: clean (763 files scanned)`.
 `node test/repo/branding.mjs | tail -1` → `branding: clean (755 files scanned)`.
 `git status --short | wc -l` → `0` after every commit in this pass.
 
-No question for the owner: both rulings this pass needed (R47, R53) already exist and are cited
-above.
+No question for the owner: both rulings this pass needed (`.sdlc/questions/rule-gates-U5-load.md`,
+R53) already exist and are cited above.
