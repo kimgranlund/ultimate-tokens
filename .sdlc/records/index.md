@@ -37,6 +37,9 @@ Decision order: ADRs by number, then everything else by first commit date. All d
 | ADR-022 | Preset typography declares REGISTERS, not slots | 2026-07-30 | decided (#405) | | cards/ADR-022.md |
 | ADR-023 | Scrims are one 500-based alpha ramp, mode-flat | 2026-09-16 | decided | supersedes ADR-004 | cards/ADR-023.md |
 | ADR-024 | vite is the dev server and type check; bundle.mjs is the shipped artifact | 2026-09-16 | decided | amends ADR-010, complements ADR-020 | cards/ADR-024.md |
+| ADR-025 | WCAG-safe on-colors are the DEFAULT, with an achromatic fall-through | 2026-09-18 | decided (#662) | amends ADR-003; closes OD-001 | cards/ADR-025.md |
+| ADR-026 | A palette's anchor is STORED, not fitted | 2026-09-20 | decided (#681) | | cards/ADR-026.md |
+| ADR-027 | A seat cites only what it measured, at the ref it is writing about | 2026-09-22 | proposed (#721), ratification is the owner's | generalises adapter §1's Ran-row rule | cards/ADR-027.md |
 
 ## Specs, LLDs, plans, open decisions (carded)
 

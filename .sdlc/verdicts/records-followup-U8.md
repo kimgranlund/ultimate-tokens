@@ -6,7 +6,7 @@ branch: unit/rf-U8 @ 0c690c73
 base: 8cf8eb57
 seat: independent verifier
 written: 2026-09-20
-verdict: green-with-one-note
+verdict: 🟢 green-with-one-note
 ---
 
 # Verdict U8 records-followup, the `note head:` line that said the tree had not moved

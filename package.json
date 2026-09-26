@@ -28,6 +28,11 @@
     "preview": "vite preview",
     "test": "npm run gen:figma-assets && npm run gen:mcp-assets && npm run gen:categories && npm run gen:adia-exports && npm run bundle && npm run gen:figma-ui && node test/run.mjs",
     "gate:corpus-contrast": "node test/engine/curated-contrast.mjs --full",
+    "gate:corpus-tonal": "node test/engine/tonal.mjs --full",
+    "gate:corpus-anchor": "node test/engine/anchor.mjs --full",
+    "gate:sweep-prime": "node test/engine/prime.mjs --full",
+    "gate:corpus-reset": "node test/ui/headless-boot.mjs --full",
+    "gate:sweeps": "npm run gate:corpus-tonal && npm run gate:corpus-anchor && npm run gate:sweep-prime && npm run gate:corpus-reset && npm run gate:corpus-contrast",
     "smoke": "npm run build && node test/smoke/launcher.mjs && node test/smoke/smoke.mjs"
   },
   "devDependencies": {

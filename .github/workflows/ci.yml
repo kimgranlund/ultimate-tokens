@@ -99,6 +99,29 @@ jobs:
           node-version: 24
       - run: npm run gate:corpus-contrast
 
+  # FULL sweeps matrix (#713): one runner per heavy gate script, each running the full-corpus
+  # sweep U1 registered, on every PR. Own runners, fail-fast false so one red leg never hides
+  # another, no needs: and no npm ci for the same zero-dependency reasoning as corpus-contrast
+  # above, and no if: or continue-on-error: on any leg, so a red leg reds this job's own
+  # conclusion and nothing here can mask it.
+  sweeps:
+    strategy:
+      fail-fast: false
+      matrix:
+        gate:
+          - gate:corpus-tonal
+          - gate:corpus-anchor
+          - gate:sweep-prime
+          - gate:corpus-reset
+          - gate:corpus-contrast
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm run ${{ matrix.gate }}
+
   # ── Pages deploy (#489), push-to-main only, consumes the artifact build-test already uploaded
   # above (no rebuild). A separate JOB-LEVEL concurrency group (not the workflow-level one above,
   # which is keyed per-ref and would let two main pushes' deploys race), preserves pages.yml's own

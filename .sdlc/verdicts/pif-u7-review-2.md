@@ -1,5 +1,4 @@
 # U7 review, pass 2: delta `285f66ec` to `43033841`
-verdict: 🟢
 
 Fresh-context reviewer, grade l3. Delta only; pass 1 (`pif-u7-review-1.md`) stands for everything
 else. Two commits, four files: `test/ui/shell.mjs`, `test/engine/prime.mjs`, the plan, the handoff.
@@ -97,3 +96,5 @@ assertion did not disturb the file. `test/ui/shell.mjs` at head: PASS, exit 0.
 changes, and the record change cites an owner ruling that exists on the plan branch. Nothing
 blocks. Pass 1's scope-wall, gate and blast-radius readings stand unchanged for the rest of the
 unit.
+
+verdict: 🟢

@@ -1,4 +1,5 @@
 # Verdict adopt-hygiene U10 · 🟢
+verdict: 🟢
 
 Graded by sdlc-verifier on 2026-09-17 (evidence run: adopt-hygiene-U10-verifier-l3-p1, grade l3, Fable 5.1; the branch-sweep row and the regrade re-measured by the Verifier seat at plan 1d48971). Branch `unit/hygiene-U10` @ a6e32b2, merge-base 6c83520, graded against the `sdlc/adopt` plan copy at 6636b74 (the branch copy differs only in a 162-vs-161 prose count, which the head proves wrong, and the last revision row). Worktree left at status 0; controls at 279ae0f and on a mutable scratch copy of head, both removed; root checkout untouched. The handoff and `.sdlc/verdicts/adopt-hygiene-U10-review.md` were not used as evidence.
 Tally: 9 rows (6 criteria + 3 gap rows). 🟢 9 · 🟡 0 · 🔴 0 after the 1d48971 plan revision. The unit's own files are correct: the card and index amendments are complete, and the `Source` range check holds across all 24 ADR cards. The one open gap and both concerns were plan text or check text, and all three are now measured true by me.

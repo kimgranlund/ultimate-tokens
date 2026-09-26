@@ -1,4 +1,5 @@
 # Verdict adopt-hygiene U8 · 🟢 (pass 2)
+verdict: 🟢
 
 Graded by sdlc-verifier on 2026-09-17 (evidence run: adopt-hygiene-U8-verifier-l3-p2, grade l3, Fable 5.1). Replaces the pass 1 🔴 on d7cf7f4. Branch `unit/hygiene-U8` @ 266d13e, merge-base 0aec4a8, graded against the `sdlc/adopt` plan copy at 2ee32f0 (revised criteria 1 and 3). Worktree left at status 0; controls in detached scratch worktrees at b44883d, 61a3f90, d7cf7f4, and a mutable copy of head (removed); root checkout untouched. The handoff, the review, and the re-diagnosis were not used as evidence.
 Tally: 23 rows. 🟢 21 · 🟡 2 · 🔴 0. Both pass 1 blockers are closed, and the closure check now fails on a false closure rather than on a missing note. The two 🟡 are record parity on the unit branch, which the merge resolves.

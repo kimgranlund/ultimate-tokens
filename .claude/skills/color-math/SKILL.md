@@ -88,7 +88,8 @@ A palette carrying a valid 6-hex `anchor` (a STORED source colour, never fitted)
    stops (`hue-stability`, where emitted chroma > 20). `effHue` is computed ONCE per palette and fed to every stop.
 4. **Tone monotone non-increasing** 050→950 (lift 0), all 5 curves × skew. Damping touches chroma ONLY.
 5. **Determinism.** No RNG, no clock, no locale. `VC` is computed once at load; the memo caches (`_mc`, `_pk`,
-   `_oh` in `hct.js`; `_okL` in `tonal.js`) key on `toFixed(2)`. Same input → identical bytes.
+   `_oh` in `hct.js`) key on the exact float (#686); `tonal.js`'s `okhslLAt` has no cache at all (#738: a
+   memo there was never load-bearing). Same input → identical bytes.
 
 ## Procedure: change → check → fix → re-check
 

@@ -1,4 +1,5 @@
 # Verdict baseline-regex U1 · 🟢 at f57f99d3
+verdict: 🟢
 
 | # | Criterion | State | Evidence | Negative control |
 |---|---|---|---|---|

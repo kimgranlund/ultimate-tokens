@@ -31,9 +31,12 @@
 //
 // BUMP POLICY (per artifact, independent cadence, #616's per-artifact tag ruling):
 //   patch  provenance/comment-only change, exporter bytes identical.
-//   minor  the same document re-exported under a bumped EXPORT_SCHEMA_VERSION or a new
-//          `adia-brand-document` tag.
+//   minor  the same document re-exported under a bumped EXPORT_SCHEMA_VERSION, a new
+//          `adia-brand-document` tag, OR with token values moved by an engine change under an
+//          unchanged document, schema and tag (#681 at 1.2.0): a consumer re-pins, its contract holds.
 //   major  a shape change a consumer's byte-compare cannot absorb (format keys renamed/removed).
+//   The distinguishing question is whether a consumer's CONTRACT changed, never whether a version
+//   string did: bytes moved under the same keys is minor, a key gone or renamed is major.
 //   Any change to one file bumps THAT file's `version` below and cuts THAT file's tag; the other
 //   file is untouched. The tag family is the file basename without extension: e.g.
 //   docs/reference/data/adia-oklch-export.css -> `adia-oklch-export@1.0.0`.

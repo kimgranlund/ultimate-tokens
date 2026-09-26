@@ -18,14 +18,35 @@
 // is what a corpus generator or the live editor actually does, and is the realistic poisoner). Then
 // renders every `cases` spec and writes their hexes, in order, as one JSON array of comma-joined
 // per-rung hex strings to stdout.
+//
+// Two optional stdin fields extend this shape for the `okl-order` gate (#738, test/engine/tonal.mjs):
+// `prelstars`, an array of L* values passed through `okhslLAt` before anything else renders (the
+// earliest possible poison, ahead of even `poison`), and `ramps`, an array of
+// `{ hue, chroma, skew, lift, hueShift, hueSpace, toneMode, lmin }` specs, each rendered through
+// `paletteStops` and reduced to its comma-joined per-rung hex string. When `ramps` is absent this
+// worker's behaviour and stdout (a bare JSON array of `primeSwatches` hexes) are byte-identical to
+// before this extension, so `prime.mjs`'s own `determinism` gate does not change.
 import { primeSwatches } from "../../src/engine/prime.mjs";
+import { okhslLAt, paletteStops, DEFAULT_CONTROLS, STOPS } from "../../src/engine/tonal.js";
 
 let raw = "";
 process.stdin.setEncoding("utf8");
 for await (const chunk of process.stdin) raw += chunk;
-const { poison, cases } = JSON.parse(raw);
+const { poison, cases, prelstars, ramps } = JSON.parse(raw);
+
+if (prelstars) for (const lstar of prelstars) okhslLAt(lstar);
 
 for (const p of poison) primeSwatches(p, { hueSpace: p.hueSpace });
 
 const hexes = cases.map((p) => primeSwatches(p, { hueSpace: p.hueSpace }).map((s) => s.hex).join(","));
-process.stdout.write(JSON.stringify(hexes));
+
+if (ramps) {
+  const rampHexes = ramps.map((r) => paletteStops(
+    { hue: r.hue, chroma: r.chroma, skew: r.skew, lift: r.lift, hueShift: r.hueShift },
+    { ...DEFAULT_CONTROLS, hueSpace: r.hueSpace, toneMode: r.toneMode, lmin: r.lmin },
+    STOPS,
+  ).map((s) => s.hex).join(","));
+  process.stdout.write(JSON.stringify({ hexes, ramps: rampHexes }));
+} else {
+  process.stdout.write(JSON.stringify(hexes));
+}

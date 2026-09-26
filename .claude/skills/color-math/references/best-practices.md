@@ -62,9 +62,10 @@ distribution-mode / chroma-floor history.
 
 ### Determinism
 
-- No RNG, no `Date`, no locale. The memo caches (`_mc`, `_pk`, `_oh` in `hct.js`; `_okL` in `tonal.js`) key on
-  `toFixed(2)`, if you add a cache, match that discipline. The `oklch-deterministic` gate runs each hue
-  thrice and demands identical results.
+- No RNG, no `Date`, no locale. The memo caches (`_mc`, `_pk`, `_oh` in `hct.js`) key on the exact float
+  (#686) - if you add a cache, match that discipline. `tonal.js`'s `okhslLAt` carries no cache at all
+  (#738: a memo there was never load-bearing; see `test/engine/tonal.mjs`'s `okl-order` gate). The
+  `oklch-deterministic` gate runs each hue thrice and demands identical results.
 
 ## Worked walkthrough: the "even → perceptual default + chromaFloor" change (condensed)
 
