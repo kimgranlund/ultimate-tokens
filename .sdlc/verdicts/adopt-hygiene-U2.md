@@ -1,4 +1,5 @@
 # Verdict adopt-hygiene U2 · 🟢
+verdict: 🟢
 
 Graded by sdlc-verifier on 2026-09-16, pass 2. Branch `unit/hygiene-U2` @ 0ad0faa, worktree `.worktrees/hygiene-U2`. I used the criteria from `.sdlc/plans/adopt-hygiene.md` §U2 (rows 3 and 9 revised) plus P1 to P5. The Orchestrator asked for grade L3, but this seat has no Agent tool to dispatch a `verifier-l3` worker, so this seat (L1) ran every command itself. Pre-land still requires a fresh `verifier-l3`. Negative controls ran against `origin/main`, in mktemp scratch dirs, or as edits in the worktree that I reverted. The tree was back to 0 dirty paths afterwards. I did not use the handoff or the review as evidence.
 Tally: 17 criteria. 🟢 16 · 🟡 1 · 🔴 0. The unit's diff against base `b885e67` touches exactly the plan's file set (10 files). CLAUDE.md has 3 hunks, which matches the C9 limit of three edits.

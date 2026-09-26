@@ -1,4 +1,5 @@
 # Verdict adopt-hygiene U3 · 🟢
+verdict: 🟢
 
 Graded by sdlc-verifier on 2026-09-16. Branch `unit/hygiene-U3` @ d731a9e, worktree `.worktrees/hygiene-U3`. Every command run by me, in that worktree or live against GitHub; negative controls in throwaway worktrees (removed). The handoff's `Ran` row and the review were not used as evidence.
 Tally: 10 criteria. 🟢 8 · 🟡 2 · 🔴 0. Both 🟡 rows miss a literal plan number for a cause outside the unit; neither blocks.

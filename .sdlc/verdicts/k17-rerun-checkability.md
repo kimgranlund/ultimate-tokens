@@ -139,3 +139,5 @@ Re-run because the fixture text changed, not because the blocks did.
 10 of 10 checkable. Every value the revision claims reproduced in a clone I made myself, in both
 directions, including the five P5 legs and the three controls that were blind in pass 1. The plan is
 mobilizable. Nothing here grades the unit; that is a separate verdict after it is built.
+
+verdict: 🟢

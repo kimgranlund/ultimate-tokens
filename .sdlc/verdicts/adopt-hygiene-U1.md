@@ -1,4 +1,5 @@
 # Verdict adopt-hygiene U1 · 🟢
+verdict: 🟢
 
 Graded by sdlc-verifier on 2026-09-16, pass 2. Branch `unit/hygiene-U1` @ 89c9538, worktree `.worktrees/hygiene-U1`. I used the criteria from `.sdlc/plans/adopt-hygiene.md` §U1 (rows 6 and 7 revised) plus P1 to P5. The Orchestrator asked for grade L3, but this seat has no Agent tool to dispatch a `verifier-l3` worker, so this seat (L1) ran every command itself. Pre-land still requires a fresh `verifier-l3`. Negative controls were edits in the worktree that I reverted, or ran against `origin/main`, the base `b885e67`, or the pass 1 commit `9b7051e`. The tree was back to 0 dirty paths afterwards. I did not use the handoff or the review as evidence.
 Tally: 17 criteria. 🟢 17 · 🟡 0 · 🔴 0. Pass 2 changed three files since 9b7051e: the two archived plans' revision rows and the handoff. I re-ran every row anyway.
