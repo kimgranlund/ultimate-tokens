@@ -12,7 +12,7 @@ pass: 1
 | Field | Value |
 |---|---|
 | Branch | unit/gg-U2b, five commits: `2603690c` (step 0 merge), `75d13c88` (color.js correction), `c9751d21` (baseline row), `f2ace6a7` (question doc), `cfd1edf8` (date fix) |
-| Head | `cfd1edf88d14d7e617e717ae6ab162dcb0da5056` |
+| Head | `e6011b01e81872b2f1d37a00256ce83761aa78df` |
 | Merge parent | `8bb8d875b78c20f44aff2bcb225403b510563fe6` (origin/main at the moment of step 0; origin/main has since moved further as other plans landed, so the diff-stat proof below is read against this pinned sha, not the live `origin/main`) |
 | Files this unit's own commits touch | `.sdlc/adapter.md`, `.sdlc/baseline.md`, `.sdlc/board.md`, `.sdlc/handoffs/gate-gaps-U1.md`, `.sdlc/handoffs/gate-gaps-U2.md`, `.sdlc/plans/gate-gaps.md`, `.sdlc/questions/gate-gaps-approval.md`, `.sdlc/questions/gg-U2b-p2-time-stale.md`, `.sdlc/verdicts/gate-gaps-U1.md`, `.sdlc/verdicts/gate-gaps-U2.md`, `scripts/report-preset-fidelity.mjs`, `test/engine/anchor.mjs`, `test/engine/ramp-identity.mjs`, `test/run.mjs` |
 | Ran | `npm test` clean at HEAD (below); `npm test`'s three baseline reruns (below); `sh .sdlc/checks/baseline-agrees-check.sh` clean and its negative control, both in fresh `git clone --shared` copies; the P1 negative control in its own clone |
@@ -53,7 +53,7 @@ Fourteen files, all this plan's own; no `src/` file outside `color.js` (correcte
 
 ## U2 step 7: the baseline `npm test` row
 
-Three runs at `cfd1edf8` (51 test files, `engine/ramp-identity.mjs` now registered in `test/run.mjs`'s `TESTS`, K17):
+Three runs at `75d13c88` (the head right after step 0's merge and the color.js correction, before any of this pass's own baseline/question/handoff commits; 51 test files, `engine/ramp-identity.mjs` now registered in `test/run.mjs`'s `TESTS`, K17):
 
 | run | clock (PDT) | load before | load after | hot before/after | seconds | exit |
 |---|---|---|---|---|---|---|
@@ -102,13 +102,7 @@ The plan's stated expectation for this control is `1` and `1`; today it reads `2
 
 Clean, at HEAD, in the unit worktree: `exit 0`, `` `✓ all 51 test files passed` ``, `git status --short` empty after.
 
-Negative control, in a fresh `git clone --shared` copy at the same head (`git rev-parse HEAD` matches): `sed -i '' 's/"scrim/"scrimX/' docs/reference/data/role-table.json`, then `npm test`:
-
-```
-▶ engine/semantic.mjs      FAIL
-  FAIL  refs-canonical  — ordered key set != canonical
-✗ 1/51 test file(s) failed
-```
+Negative control, in a fresh `git clone --shared` copy at the same head (`git rev-parse HEAD` matches): `sed -i '' 's/"scrim/"scrimX/' docs/reference/data/role-table.json`, then `npm test`. Three lines quoted from the run: `▶ engine/semantic.mjs      FAIL`, `  FAIL  refs-canonical  — ordered key set != canonical`, `✗ 1/51 test file(s) failed`.
 
 `exit 1`, `grep -c FAIL` -> `3` (measured, matching the shape the adapter's own P1 control note describes, count stated rather than assumed).
 
