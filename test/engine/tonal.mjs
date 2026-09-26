@@ -365,10 +365,10 @@ for (const mode of ["perceptual", "peak"]) {
   //     EVEN_DAMP_FACTOR) now starves those stops enough that NO input chroma keeps them gamut-clamped,
   //     so the floor legitimately starts to matter there too  -  an expansion of what the floor rescues,
   //     not a mistuned probe.
-  //     #701 U2 re-derivation: 10 stops, 300 dropped. The floor's gamut reference is now capped at the
-  //     anchor stop's ceiling, so at 300 (hue 145, a light-cusp green) the floor no longer reaches the
-  //     damped value and the vibrant ramp is byte-identical with and without it there.
-  const SAT_FLOOR_EXCEPT = new Set([100, 125, 150, 175, 200, 250, 875, 900, 925, 950]);
+  //     #701 U2 re-derivation (revision 14): the same 11 stops. The floor's gamut reference is now
+  //     min(maxc, floorRef), floorRef the widest ceiling among stops 450/500/550; at this probe the
+  //     cap leaves every one of the 11 still diverging and adds none.
+  const SAT_FLOOR_EXCEPT = new Set([100, 125, 150, 175, 200, 250, 300, 875, 900, 925, 950]);
   const s0 = ramp(145, 99, 0), sF = ramp(145, 99, 40);
   let satExceptSeen = new Set();
   for (let i = 0; i < s0.length; i++) {
@@ -659,15 +659,16 @@ for (const mode of ["perceptual", "peak"]) {
 //   untouched (Neutral's intended chroma is 0 at every stop; Tertiary's 450/550 already sat on the
 //   anchor cap, not the damped value, so the plateau never binds there). Patched by hand, cell by
 //   cell, not regenerated.
-//   #701 U2 re-pin: `evenChroma`'s floor now reads its gamut reference as min(maxc, floorRef), the
-//   ceiling at the anchor stop, so on the side where the gamut widens away from the anchor (the hue's
-//   cusp side) the floor holds flat instead of following maxc up. 37 cells moved, all even, all already
-//   carved (pass 7 carved every even default), each a stop where the floor bound before: Secondary
-//   175-300, Info 250-450, Success 125-400, Warning 300/350, Danger 400, Data 1 650, Data 4 350, Data 5
-//   125-300, Data 6 175-300, Data 7 150-300; the light side of the light-cusp hues (greens, cyans,
-//   yellows) is where the old floor rose with maxc. Perceptual: 0 cells. The cell list is in
-//   .sdlc/handoffs/chroma-floor-U2.md. Patched cell by cell by a scratch script that rewrites only the
-//   differing even cells, not regenerated.
+//   #701 U2 re-pin (revision 14): `evenChroma`'s floor reads its gamut reference as min(maxc, floorRef),
+//   floorRef the largest ceiling among stop 500 and its first display step either side (450, 550), so on
+//   the side where the gamut widens away from the anchor (the hue's cusp side) the floor holds flat
+//   instead of following maxc up. 33 cells moved against U1's pins, all even, all already carved (pass 7
+//   carved every even default), each a stop where the floor bound before: Secondary 175-300, Info
+//   250-400, Success 125-400, Warning 350, Danger 400, Data 1 650, Data 4 350, Data 5 125-300, Data 6
+//   200-300, Data 7 175-300; the light side of the light-cusp hues (greens, cyans, yellows) is where the
+//   old floor rose with maxc. Perceptual: 0 cells. Patched cell by cell by a scratch script that
+//   rewrites only the differing even cells, not regenerated; the list is in
+//   .sdlc/handoffs/chroma-floor-U2.md.
 {
   const FX = JSON.parse(readFileSync(new URL("./fixtures/tonal-legacy.json", import.meta.url), "utf8")).paths;
   const dc = T.DEFAULT_CONTROLS || {};

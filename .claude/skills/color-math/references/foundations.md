@@ -84,8 +84,8 @@ per stop:
   m        = chromaEnvelope(stop, 500, lift, controls)   # the ONE shared multiplier (#681 U3, below)
   intended = relChroma ? (chroma/100)·maxc : target   # per-stop ceiling basis vs base-peak basis
   damped   = min(intended·m, maxc)
-  floorC   = min((chromaFloor/100)·min(maxc, maxc500), intended)  # NEVER above intended → muted stays muted, neutral stays neutral
-                                                  # maxc500 = the ceiling AT the anchor stop (#701): the floor never rises moving outward
+  floorC   = min((chromaFloor/100)·min(maxc, floorRef), intended)  # NEVER above intended → muted stays muted, neutral stays neutral
+                                                  # floorRef = max ceiling of stops 450/500/550 (#701): the floor never rises past the first step
   chroma   = min(maxc, max(damped, floorC))
   rgb      = hctToRgb(hue, chroma, tone)
 ```
@@ -129,12 +129,15 @@ chromaEnvelope(stop, anchorStop, lift, controls):        # src/engine/tonal.js, 
   `intended` (kills the near-white "dead zone") but is capped at `intended` — so it never over-saturates a
   muted palette and never tints a true neutral (`intended≈0` → floorC 0). Saturated ramps already clamp at
   `maxc`, so the floor never binds. (The `chroma-floor` gate proves all four.) Its gamut reference is
-  `min(maxc, maxc500)` (#701 U2): near white and black `maxc` is the smaller, so the floor stays gamut-relative
-  there; on the side where the gamut widens away from the anchor it holds flat at `maxc500`. The old
-  `chromaFloor%·maxc` followed `maxc` down toward a dark or light anchor while the damped value rose toward it,
-  and the two met in a valley beside the anchor (the retired 90-name even dip baseline). The floor and the
-  damped value are now both non-increasing outward, so no off-anchor dip can form; `test/engine/tonal.mjs`
-  (`dip-gate-even`, rendered path) and `npm run gate:even-dips` (gate path) gate it at 0 with no list.
+  `min(maxc, floorRef)` (#701 U2, revision 14), `floorRef` the largest ceiling among the anchor stop and its
+  first display step either side (450, 550): near white and black `maxc` is the smaller, so the floor stays
+  gamut-relative there; on the side where the gamut widens away from the anchor it holds flat. The old
+  `chromaFloor%·maxc` followed `maxc` up that side while the damped value fell, and the two met in a valley
+  beside the anchor (the retired 90-name even dip baseline). With a damped value that is non-increasing
+  outward (constant `intended`) no off-anchor dip can form; with `relChroma` or the anchored basis blend that
+  is a measurement, not a guarantee, gated at 0 by `test/engine/tonal.mjs` (`dip-gate-even`, rendered path)
+  and `npm run gate:even-dips` (gate path) with no list. Capping at the anchor stop alone drains the far half
+  of a near-white or near-black ramp; the first-step reference is continuous across the tone window.
 
 ### 6. The OKHSL-path pipeline (`okhslStops`, perceptual/peak)
 

@@ -131,14 +131,14 @@ hue    = hueSpace=="oklch" ? solveCam16Hue(palette.hue, chroma@500, tone@500)  /
                         : palette.hue                        // cam16 hue passes straight through
 pk     = peakC(hue).c                     // hue's own max chroma in sRGB
 target = (palette.chroma / 100) * pk      // chroma control is % of the hue's peak
-cm500  = maxChromaInGamut(hue, toneAt(500, skew, lift))   // the gamut ceiling AT the anchor stop (the floor's reference)
+ref    = max(cm at stops 450, 500, 550)   // the floor's gamut reference: the anchor stop or its first step, whichever is wider
 
 for each stop:
   tone  = toneAt(stop, skew, lift)
   cm    = maxChromaInGamut(hue, tone)     // gamut ceiling at this tone
   env   = chromaEnvelope(stop, 500, lift, controls)    // the shared multiplier, below
-  C     = evenChroma(cm, target, env, chromaFloor, cm500)   // min(cm, max(min(target*env, cm), floorC))
-                                          // floorC = min((chromaFloor/100) * min(cm, cm500), target)  (#701)
+  C     = evenChroma(cm, target, env, chromaFloor, ref)   // min(cm, max(min(target*env, cm), floorC))
+                                          // floorC = min((chromaFloor/100) * min(cm, ref), target)  (#701)
   rgb   = hctToRgb(hue, C, tone).rgb
 
 chromaEnvelope(stop, anchorStop, lift, controls):      // src/engine/tonal.js, ONE definition
