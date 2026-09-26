@@ -41,3 +41,4 @@ In the even-only sweep the warmed base cache returns `#FFFAF8` against the head'
 | P5 (pre-land only) | The adapter command at this head reads `exit 1`, `143592 differing cells`, because `git merge-base origin/main HEAD` is `3ce50daa` and #681's engine work is not on `origin/main` yet (`src` differs by 18 files). It is the same figure as U2-2. Expected until #681 lands and the plan branch takes main; the pre-land verifier reads it then |
 | Step 7, U2-7 P2 half | deferred to U2b by revision 6 |
 | Cleanup | clones and the scratch worktree removed by exact name after this verdict |
+verdict: 🟢

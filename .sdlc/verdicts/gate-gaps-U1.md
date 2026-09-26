@@ -32,3 +32,4 @@ written: 2026-09-22
 - G0 waived for U1 by plan revision 5; the baseline's two non-head STALE lines at `557b6c0c` (handoff's observation) are owed by #713 U6b before pre-land, not by this unit.
 - Vacuity keys on palette names in a `Set`, so two kit palettes sharing a name would trip it falsely. Not a defect today (16 distinct names visited).
 - P2 and P5 are pre-land or U2 rows; not graded here.
+verdict: 🟢
