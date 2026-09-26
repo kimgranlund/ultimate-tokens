@@ -11,10 +11,10 @@
 // google-chrome. Screenshots land in smoke-out/ (gitignored).
 import { createServer } from "node:http";
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from "node:fs";
-import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { CATEGORIES, CATEGORY_PRESETS, CATEGORY_VOLUMES, VOICES, TYPE_STEPS, CORE_RAMP_STOPS, GEOM_SIZES } from "../ui/counts.mjs";
+import { launchChrome, onExit } from "./chrome.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "../..");
@@ -41,9 +41,14 @@ const server = createServer((_req, res) => { res.writeHead(200, { "content-type"
 await new Promise((r) => server.listen(0, "127.0.0.1", r));
 const url = `http://127.0.0.1:${server.address().port}/`;
 
-const PORT = 9333;
-const proc = spawn(CHROME, ["--headless=new", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage",
-  `--remote-debugging-port=${PORT}`, "--hide-scrollbars", "--window-size=1440,900", "about:blank"], { stdio: "ignore" });
+// launchChrome() returns close() SYNCHRONOUSLY (before discovery finishes), so onExit(close) is
+// wired in this same tick, so a signal landing during the 45s CDP start-up wait below is cleaned up
+// too, not just one after `ready` resolves; close() is idempotent, so the finally block's own call
+// is safe either way. `ready` is awaited inside the try below, so a start-up failure (deadline or
+// early exit) reports as a SMOKE FAIL line, not an uncaught rejection.
+const { close, ready } = launchChrome(CHROME, []);
+onExit(close);
+let PORT;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let ws, idc = 0; const pending = new Map();
@@ -55,6 +60,7 @@ const evalJS = async (expression, awaitPromise = false) => {
 };
 
 try {
+  ({ port: PORT } = await ready);
   // Wait for the CDP endpoint, then open the page target. Cold CI runners can take well over 15s to
   // start Chrome's debugger, so this is generous + two-phase: (1) poll /json/version until the debugger
   // is LISTENING, then (2) create the tab (/json/new can briefly lag the version endpoint). Both report
@@ -285,7 +291,7 @@ try {
   fails.push("smoke threw: " + e.message);
 } finally {
   try { ws && ws.close(); } catch { /* */ }
-  proc.kill("SIGKILL");
+  close();
   server.close();
 }
 

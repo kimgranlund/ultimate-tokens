@@ -22,7 +22,7 @@ Substitutions (mechanical, none changes a criterion): `gh run view` needs `-R ki
 |---|---|---|---|
 | P1 `npm test`, no node_modules | 🟢 | `✓ all 48 test files passed`, exit 0, `git status --short` 0 lines, twice (159.0 s and 186.7 s wall, load 22.9 / 32.0 at end, user CPU 135 s both) | `"scrim`→`"scrimX` in role-table.json: `FAIL` x3 (`refs-canonical`), `✗ 1/48 test file(s) failed`, exit 1 |
 | P2 `npm ci` + `npm run build` | 🟢 | ci exit 0 (5.8 s, node v24.18.0, vite@8.3.0); build exit 0, `ui.html 3780.5 KB` built = `ui.html 3780.5 KB` in baseline, status 0; 15.3 s cold under load 23, warm rerun 2.52 s | no node_modules: exit 127, `tsc: command not found` |
-| P3 `npm run smoke` | 🟢 | `SMOKE PASS` count 1, exit 0, 21.6 s, status 0 | no `dist/`: `smoke: missing .../dist/ultimate-tokens.html`, no SMOKE PASS line |
+| P3 `npm run smoke` | 🟢 | `SMOKE PASS` count 1, exit 0, 21.6 s, status 0 | no `dist/`: `` `smoke: missing <ROOT>/dist/ultimate-tokens.html — run `npm run build` first` `` `altered: absolute path written as <ROOT>`, no SMOKE PASS line |
 | P4 branding | 🟢 | `branding: clean (460 files scanned)`, exit 0 | decision-records.md copied to docs/x.md: `FAIL: 3 branding violation(s) across 461 files` |
 | P5 scope wall | 🟢 | `0` | `// probe` in src/engine/motion.mjs: `1` |
 | baseline.md three summaries | 🟢 | 48 test files, 3780.5 KB, SMOKE PASS, each matches the recorded row | the U1-1 plants below (47 files, 3798.0 KB) each print STALE |

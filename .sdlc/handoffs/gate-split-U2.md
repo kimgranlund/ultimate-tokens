@@ -217,7 +217,7 @@ Observed `EVEN_DIP_BASELINE` names under SAMPLED (10 of 91, clone `neg3`, tempor
 ```
 exit 1
 ```
-Named line: `FAIL  chroma-envelope  — (iv dip gate) even: 1 dip instance(s) beyond the cited baseline, e.g. Trulli of Alberobello ...|primary|500`.
+Named line: `FAIL  chroma-envelope  — (iv dip gate) even: 1 dip instance(s) beyond the cited baseline, e.g. Trulli of Alberobello · vernacular · Puglia, Italy|primary|500`.
 
 (b) Added the fictitious `zz-not-in-corpus|primary|500` to `EVEN_DIP_BASELINE`:
 ```

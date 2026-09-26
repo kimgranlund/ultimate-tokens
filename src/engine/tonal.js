@@ -386,7 +386,9 @@ const ANCHOR_STOP = 500;
 // dispatch guarantees that string exactly, never a default fallthrough  -  see paletteStops above).
 export const EVEN_DAMP_FACTOR = 0.25;
 export function chromaEnvelope(stop, anchorStop, lift, controls) {
-  const sd = (liftStop(stop, lift) - liftStop(anchorStop, lift)) / 450; // position vs the anchor's OWN lifted reading (R2)
+  // Capped at +/-1 (#681 U10, F3): under lift the raw distance can pass 450, and |sd| > 1 clipped the
+  // envelope to 0 over whole bands (neutral greys). At the cap a stop takes the 50/950 edge floor.
+  const sd = Math.max(-1, Math.min(1, (liftStop(stop, lift) - liftStop(anchorStop, lift)) / 450)); // position vs the anchor's OWN lifted reading (R2)
   const isEven = controls.toneMode === "even";
   const damp = isEven ? 100 - (100 - controls.damp) * EVEN_DAMP_FACTOR : controls.damp;
   const dampCurve = (isEven ? EVEN_DAMP_FACTOR : 1) * (controls.dampCurve ?? 1.5);
@@ -473,10 +475,10 @@ export function liftStop(stop, lift) {
   return stop - a * w; // lift>0 -> read a LIGHTER stop -> lighter mids
 }
 
-// chromaEnvelope — U2 used to carry its own verbatim copy of this function here (copied from U3's own
+// chromaEnvelope - U2 used to carry its own verbatim copy of this function here (copied from U3's own
 // tonal.js at fa8f072, per the U2 re-diagnosis's Finding 1/9 seam fix) so U2's anchored branches could
 // route through the same formula while U2 and U3 were still built in parallel on separate branches.
-// At U4 integration the two definitions collided (both exported the same name from the same module —
+// At U4 integration the two definitions collided (both exported the same name from the same module -
 // C7's "one envelope" gate exists precisely so this can't ship silently forked) and U3's own version,
 // which additionally composes EVEN_DAMP_FACTOR for the even path (pass 7 step 1, defined above), is the
 // one that wins: it is a strict superset of what this copy did (isEven=false reduces to the same
@@ -487,20 +489,20 @@ export function liftStop(stop, lift) {
 // shoulder/damp multiplier gets applied to (Q-U2-5 ruling, addendum 2, u2-p2-brief.md, 2026-09-18):
 // the anchor's own measured chroma/saturation exactly AT the pivot (w=0), blending to the group's
 // resolved ramp target (`groupValue`, `rampChroma`-derived) at each side's true endpoint (w=1), BY
-// THE LIFTSTOP POSITION — the SAME `sd` chromaEnvelope itself keys on, not `anchorWarp`'s skew-warped
+// THE LIFTSTOP POSITION - the SAME `sd` chromaEnvelope itself keys on, not `anchorWarp`'s skew-warped
 // `w` (a local construction this ruling retired: tying the chroma BLEND to skew was never asked for,
 // and it re-threaded `anchorLiftPos` back into the chroma path chromaEnvelope's own liftStop routing
 // was built to replace).
 //
 // R2 (review pass 2, fix-first-2, 2026-09-18): the raw linear blend (`w = min(1, sd)`) has a NONZERO
-// slope at the pivot — for a near-grey anchor (s/chroma close to 0) inside a chroma-100 group, one
+// slope at the pivot - for a near-grey anchor (s/chroma close to 0) inside a chroma-100 group, one
 // stop away from 500 already reads a noticeable fraction of the way toward `groupValue`, so the pivot
 // sits in a visible "notch" relative to its own immediate neighbours even though chromaEnvelope's own
 // continuity proof (env(500)=1 exactly) holds. Easing the WEIGHT to zero slope at sd=0 (smoothstep,
 // `3t^2-2t^3` on `t=min(1,sd)`) fixes that: the blend still reaches 0 exactly at the pivot and 1
 // exactly at each side's endpoint (smoothstep(0)=0, smoothstep(1)=1, same fixed ends as the raw linear
 // form), but its derivative is 0 at t=0 too, so the chroma trajectory leaves the pivot flat instead of
-// with a kink. `chromaEnvelope` itself stays verbatim (untouched) — only the BASIS this weight blends
+// with a kink. `chromaEnvelope` itself stays verbatim (untouched) - only the BASIS this weight blends
 // is different; the envelope's own shoulder/damp shaping is unaffected.
 export function anchorChromaBasis(stop, anchorStop, lift, anchorValue, groupValue) {
   const sd = Math.abs(liftStop(stop, lift) - liftStop(anchorStop, lift)) / 450;
@@ -529,10 +531,10 @@ export function toneAt(stop, skew, lift, { curve, lmin, lmax, tension }) {
 }
 
 // ── Anchored ramp (ticket #681, U2) ────────────────────────────────────────────────────────────
-// A palette carrying a valid, stored `anchor` (see persist.js DOMAINS.palette.anchor — a source hex,
+// A palette carrying a valid, stored `anchor` (see persist.js DOMAINS.palette.anchor - a source hex,
 // never fitted) renders stop 500 as that anchor's OWN color VERBATIM, in every tone mode, and builds
 // the OTHER eighteen (plus six EXTRA_STOPS) stops as a two-sided ladder pivoting on (500, the
-// anchor's own lightness) — the ramp's analog of prime.mjs's anchor branch (U1), continuous in
+// anchor's own lightness) - the ramp's analog of prime.mjs's anchor branch (U1), continuous in
 // `stop` where prime.mjs is seven discrete rungs. A palette with no (or malformed) `anchor` takes
 // the ORIGINAL, byte-identical path below (C4's non-anchored identity control): `resolveAnchor`
 // returns null and every other line executes exactly as it did before this ticket.
@@ -541,7 +543,7 @@ function hexToRgbLocal(hex) {
   const s = hex.slice(1);
   return [parseInt(s.slice(0, 2), 16), parseInt(s.slice(2, 4), 16), parseInt(s.slice(4, 6), 16)];
 }
-// resolveAnchor(palette) -> { hex, rgb, okhsl:{h,s,l}, lstar, cam:{hue,chroma,J} } | null — every
+// resolveAnchor(palette) -> { hex, rgb, okhsl:{h,s,l}, lstar, cam:{hue,chroma,J} } | null - every
 // measured quantity the two anchored branches below need, computed ONCE per call from the SAME
 // stored hex (never re-derived through a lossy round trip): OKHSL identity for the perceptual/peak
 // path, CIE L*/CAM16 for the even path. Reused by both so they can never read the anchor as two
@@ -552,26 +554,26 @@ function resolveAnchor(palette) {
   const rgb = hexToRgbLocal(hex);
   return { hex, rgb, okhsl: rgbToOkhsl(rgb), lstar: lstarFromRgb(rgb), cam: cam16FromRgb(rgb) };
 }
-// Q3 (b), ruled (Q-U2-1, see .sdlc/questions/pif-u2.md): the TOKEN stays exact — prime.mjs's own
-// DEFAULT rung (U1) always renders the source hex verbatim, whatever its L* — but the RAMP clamps:
+// Q3 (b), ruled (Q-U2-1, see .sdlc/questions/pif-u2.md): the TOKEN stays exact - prime.mjs's own
+// DEFAULT rung (U1) always renders the source hex verbatim, whatever its L* - but the RAMP clamps:
 // a source whose CIE L* falls outside this window renders stop 500 at the window edge nearest it,
 // not the raw anchor hex. Rendering the raw anchor there would put a rising/falling kink right next
 // to a pivot the OTHER stops are built to approach monotonically (measured: an out-of-window anchor
-// verbatim at 500 broke monotonicity at its immediate neighbor). Clamping the pivot itself — both
-// stop 500's own value AND the value the ladder's other stops shape toward — keeps the whole ramp a
+// verbatim at 500 broke monotonicity at its immediate neighbor). Clamping the pivot itself - both
+// stop 500's own value AND the value the ladder's other stops shape toward - keeps the whole ramp a
 // single monotone curve while a near-white or near-black source still gets a real eighteen-stop
 // ladder instead of a pivot past both ends inverting it. C5 asserts the exact, by-name allow-list of
 // sources this fires for (measured 9.95..95.05, the window a 9-stop-per-side ladder with a 0.55 L*
 // minimum gap needs against the corpus's actual source L* distribution).
 export const RAMP_L_MIN = 9.95, RAMP_L_MAX = 95.05;
 
-// anchorLerp(pivot, edgeLight, edgeDark, stop, skew, lift, curve, tension) — the piecewise ladder VALUE
-// at `stop` (never called at stop===500 — callers special-case the exact pivot/anchor separately),
+// anchorLerp(pivot, edgeLight, edgeDark, stop, skew, lift, curve, tension) - the piecewise ladder VALUE
+// at `stop` (never called at stop===500 - callers special-case the exact pivot/anchor separately),
 // shared by okhslStopsAnchored (OKHSL l) and paletteStopsAnchored (CIE L*) so the two paths' tone math
 // can never drift apart (the codebase's own "computed identically in both paths" invariant).
 //
 // R6 (review pass 2, fix-first-2, owner-ruled construction question, 2026-09-18): NOT a per-side
-// double-S (warp the position with `anchorWarp`, THEN reshape THAT with `shape(w,curve,tension)` — a
+// double-S (warp the position with `anchorWarp`, THEN reshape THAT with `shape(w,curve,tension)` - a
 // SECOND composition stacked on top of toneAt's own p^g -> shape order, which put the anchor at 500 on
 // the FLATTEST part of each side's S instead of toneAt's own steepest point there, and read as toneAt's
 // shape remapped through the pivot when it measurably was not: reverting to a straight lerp dropped the
@@ -579,16 +581,16 @@ export const RAMP_L_MIN = 9.95, RAMP_L_MAX = 95.05;
 // piecewise-AFFINE remap of `toneAt` itself instead: `t = toneAt(stop, skew, lift, {curve, lmin:0,
 // lmax:1, tension})` reuses toneAt's OWN composition (skew's gamma, then curve/tension's shape) in a
 // UNIT range, so both true endpoints read EXACTLY 1 (light, stop 050) and 0 (dark, stop 950) for any
-// skew/lift/curve/tension — liftStop fixes 050/950 exactly (see liftStop's own header) so p is exactly
+// skew/lift/curve/tension - liftStop fixes 050/950 exactly (see liftStop's own header) so p is exactly
 // 0/1 there, and shape(0)=0, shape(1)=1 for every curve (toneAt's own invariant). `t500` is that same
-// unit-range read at stop 500 — strictly between 0 and 1, since 500 is strictly interior. Each side then
+// unit-range read at stop 500 - strictly between 0 and 1, since 500 is strictly interior. Each side then
 // maps t's own already-monotone range AFFINELY onto [edgeValue, pivot]: light side maps [t(050)=1,
 // t500] onto [edgeLight, pivot], dark side maps [t500, t(950)=0] onto [pivot, edgeDark]. An affine
 // remap of a monotone function is monotone, so the whole pivot-to-edge blend is monotone BY
-// CONSTRUCTION — no separate warp/shape proof needed — both true ends stay exactly edgeLight/edgeDark
+// CONSTRUCTION - no separate warp/shape proof needed - both true ends stay exactly edgeLight/edgeDark
 // (t at either true endpoint maps to the interval's own end), and F4 stays satisfied: skew, lift, curve
 // and tension all act through the SAME `toneAt` the non-anchored path calls, not a second construction.
-// `curve` "linear" still reduces `shape(...)` to skew's own p^g (no reshaping) — used below by the
+// `curve` "linear" still reduces `shape(...)` to skew's own p^g (no reshaping) - used below by the
 // OKHSL path's own vibrancy blend (see okhslStopsAnchored) as the "even" side of that mix.
 function anchorLerp(pivot, edgeLight, edgeDark, stop, skew, lift, curve, tension) {
   const ctl = { curve, lmin: 0, lmax: 1, tension: tension ?? 0 };
@@ -602,26 +604,26 @@ function anchorLerp(pivot, edgeLight, edgeDark, stop, skew, lift, curve, tension
   return edgeDark + (pivot - edgeDark) * (t / span);
 }
 
-// paletteStopsAnchored — the even (CIE L*) path's anchored branch: `toneAt`'s piecewise analog,
+// paletteStopsAnchored - the even (CIE L*) path's anchored branch: `toneAt`'s piecewise analog,
 // pivoting on (500, the anchor's own measured L*), now composing toneAt's own curve/tension shape
 // through anchorLerp (F4, see its comment) instead of a straight lerp. Hue: "cam16" hueSpace (F4) holds
-// the anchor's OWN measured CAM16 hue constant across the ramp — no Abney solve needed, we already have
-// the real value; "oklch" hueSpace solves, AT EVERY STOP (R3, review pass 2, 2026-09-18 — a solve done
+// the anchor's OWN measured CAM16 hue constant across the ramp - no Abney solve needed, we already have
+// the real value; "oklch" hueSpace solves, AT EVERY STOP (R3, review pass 2, 2026-09-18 - a solve done
 // only once, at the anchor's own chroma/tone, is degenerate: that point IS the anchor's own point, so it
 // always resolves back to the anchor's own CAM16 hue and never moves the ramp), the CAM16 hue that
 // reproduces the anchor's OWN OKLCH hue at THAT STOP's actual chroma/tone, so a stop's PERCEIVED
-// (OKLCH) hue stays close to the anchor's real OKLCH hue throughout the ramp, not only at the pivot —
+// (OKLCH) hue stays close to the anchor's real OKLCH hue throughout the ramp, not only at the pivot -
 // see the per-stop solve inside the stops.map below. Chroma is routed through the shared `chromaEnvelope` (see its
-// own comment above `liftStop`) — verbatim, not forked. Q-U2-5 ruling (revision 17, team-lead, applying
+// own comment above `liftStop`) - verbatim, not forked. Q-U2-5 ruling (revision 17, team-lead, applying
 // the owner's F4 principle: keep REQ-002 as ratified, fix the construction to satisfy it), addendum 2
-// (basis keyed on liftStop, not anchorWarp — see `anchorChromaBasis`'s own header comment): the BASIS
+// (basis keyed on liftStop, not anchorWarp - see `anchorChromaBasis`'s own header comment): the BASIS
 // chromaEnvelope's shoulder/damp multiplier is applied to is a BLEND, not the anchor's own chroma read
-// unconditionally at every stop — exactly the anchor's own measured CAM16 chroma AT the pivot (liftStop
+// unconditionally at every stop - exactly the anchor's own measured CAM16 chroma AT the pivot (liftStop
 // position 0, stop 500, byte-exact, matching the explicit stop-500 special case below), shading to the
-// group's resolved ramp target (`palette.chroma`, i.e. `rampChromaOf`'s output — REQ-002's own "Base
+// group's resolved ramp target (`palette.chroma`, i.e. `rampChromaOf`'s output - REQ-002's own "Base
 // chroma moves every ramp in the group" contract) at each side's true endpoint (liftStop position 1).
 // This is a SEPARATE position measure from the tone construction above (`anchorLerp`'s own toneAt-based
-// remap, R6) — the two are no longer tied to a single shared `w`, which is intentional: R4 retired the
+// remap, R6) - the two are no longer tied to a single shared `w`, which is intentional: R4 retired the
 // skew-warped `w` from the chroma path specifically because tying the chroma blend to skew was never
 // asked for.
 // enforceMonotonePixelL (R1, review pass 2, 2026-09-18, team-lead correction on top of the fix-first-2
@@ -699,40 +701,40 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
   const shift = palette.hueShift ?? 0;
   const sameDir = palette.hueSameDir === true;
   // hueSpace (F4/R3, review pass 2, 2026-09-18): "cam16" holds the anchor's own measured CAM16 hue
-  // constant across every stop (no solve, we already have the real value — `seedHue` below). "oklch"
+  // constant across every stop (no solve, we already have the real value - `seedHue` below). "oklch"
   // used to solve the CAM16 hue reproducing the anchor's own OKLCH hue reading AT THE ANCHOR'S OWN
-  // chroma/tone — a degenerate solve, since that point IS the anchor's own point: it always returned
+  // chroma/tone - a degenerate solve, since that point IS the anchor's own point: it always returned
   // anchor.cam.hue back unchanged (to solve precision), so hueSpace measured as dead for every anchored
   // ramp (0 of 3,396 moved). The fix solves PER STOP instead, inside the stops.map below: at each
   // stop's OWN tone (and an estimated chroma at that tone), so the ramp's OKLCH hue stays close to the
-  // anchor's real OKLCH hue THROUGHOUT the ramp, not only at the pivot — the correction the non-anchored
+  // anchor's real OKLCH hue THROUGHOUT the ramp, not only at the pivot - the correction the non-anchored
   // path's own stop-500-only calibration also only partially gives (see its own comment in paletteStops).
   const targetOklchHue = rgbToOklchHue(anchor.rgb);
   const seedHue = anchor.cam.hue; // "cam16" mode's fixed hue; also the gamut/chroma-estimate seed for "oklch"
   // Q3 (b): a source outside the window still stores/reports its byte-exact anchor everywhere else
-  // (prime.DEFAULT, C2) — "the token stays exact" — but the RAMP itself "clamps": stop 500 is built
+  // (prime.DEFAULT, C2) - "the token stays exact" - but the RAMP itself "clamps": stop 500 is built
   // from the SAME continuous piecewise construction as every other stop, evaluated exactly at the
   // pivot (anchorLerp's w=0 point gives the pivot value at stop 500 with no special case needed),
   // rather than forcing the verbatim anchor pixel there. That keeps stop 500 CONTINUOUS with its
   // neighbours (built by the identical formula), where forcing the verbatim anchor at a clamped
-  // pivot would jump AWAY from the window edge its neighbours are shaped around — the exact
+  // pivot would jump AWAY from the window edge its neighbours are shaped around - the exact
   // discontinuity that broke monotonicity before this branch existed. Only sources strictly inside
   // the window get the verbatim, byte-exact stop-500 special case below.
   const clamped = anchor.lstar < RAMP_L_MIN || anchor.lstar > RAMP_L_MAX;
   const pivotTone = Math.min(RAMP_L_MAX, Math.max(RAMP_L_MIN, anchor.lstar));
-  // Chroma basis (re-diagnosis Finding 1, Q-U2-5 ruled — see `anchorChromaBasis`'s own header
+  // Chroma basis (re-diagnosis Finding 1, Q-U2-5 ruled - see `anchorChromaBasis`'s own header
   // comment): routed through the shared envelope function (copied from U3, see its own comment above
   // `liftStop`), keyed on `liftStop` like the non-anchored path. The envelope, called below with an
   // anchor stop of 500, is exactly 1 at stop 500 for any lift, so at the pivot `evenChroma` reduces to
-  // the BASIS's own pivot value exactly — no notch, by construction. The basis itself is
+  // the BASIS's own pivot value exactly - no notch, by construction. The basis itself is
   // `anchorChromaBasis`'s blend: the anchor's own measured CAM16 chroma at the pivot (`anchorIntended`,
   // liftStop position 0), shading to the group's resolved ramp target (`groupIntended`,
   // `palette.chroma`-derived, mirroring `paletteStops`'s own `target`/relChroma formulas exactly) at
-  // each side's endpoint (liftStop position 1) — never the anchor's value read unconditionally at
+  // each side's endpoint (liftStop position 1) - never the anchor's value read unconditionally at
   // every stop, and never `palette.chroma` alone either.
   const maxc500 = maxChromaInGamut(seedHue, anchor.lstar);
   const anchorRelFrac = maxc500 > 0 ? Math.min(1, anchor.cam.chroma / maxc500) : 0;
-  const pk = peakC(seedHue).c; // the SEED hue's max chroma in sRGB — same basis paletteStops's own `target` uses
+  const pk = peakC(seedHue).c; // the SEED hue's max chroma in sRGB - same basis paletteStops's own `target` uses
   const groupTarget = (palette.chroma / 100) * pk;
   const lift = palette.lift ?? 0;
   const oklchSpace = controls.hueSpace === "oklch";
@@ -913,15 +915,15 @@ export function okhslLAt(lstar) {
 }
 
 // okhslLAtChromatic(targetLstar, hue, s) -> the OKHSL l whose (hue, s, l) renders at measured CIE L*
-// `targetLstar`, for a GIVEN (possibly non-zero) saturation — re-diagnosis Finding 7 (review F9): the
+// `targetLstar`, for a GIVEN (possibly non-zero) saturation - re-diagnosis Finding 7 (review F9): the
 // anchored OKHSL branch's window-clamp pivot used `okhslLAt`'s own achromatic (s=0) lookup even though
 // the clamped stop renders at the anchor's REAL saturation (chromaEnvelope's own env=1 there), and
-// OKHSL l is only a proxy for CIE L* at s=0 — the SAME lightness-vs-saturation coupling #668 names
+// OKHSL l is only a proxy for CIE L* at s=0 - the SAME lightness-vs-saturation coupling #668 names
 // elsewhere, which put 9 of the 10 named window-clamp sources 0.18-2.26 L* short of the window bound
 // instead of landing exactly on it. Bisection (not a Newton step guessing a slope): for a fixed
 // hue/s, measured CIE L* is monotone non-decreasing in OKHSL l (a brighter HSL-style lightness
 // parameter never measures darker at fixed hue/saturation), so 24 steps converge to within 2^-24 of
-// the true root — negligible cost, called only for the handful of window-clamped sources.
+// the true root - negligible cost, called only for the handful of window-clamped sources.
 function okhslLAtChromatic(targetLstar, hue, s) {
   let lo = 0, hi = 1;
   for (let i = 0; i < 24; i++) {
@@ -955,25 +957,25 @@ function effStop(stop, palette) {
   return 50 + 900 * p;
 }
 
-// okhslStopsAnchored — the perceptual/peak path's anchored branch: a piecewise OKHSL-`l` ladder
+// okhslStopsAnchored - the perceptual/peak path's anchored branch: a piecewise OKHSL-`l` ladder
 // pivoting on (500, the anchor's own OKHSL lightness), replacing `lightnessAt`'s even/cusp blend with
 // a pivot-preserving analog (F4, re-diagnosis Finding 2, owner-ruled 2026-09-18: the controls stay
-// live — both perceptual and peak still hit stop 500 exactly, C3's own claim, but `mode`/vibrancy now
+// live - both perceptual and peak still hit stop 500 exactly, C3's own claim, but `mode`/vibrancy now
 // DO move the rest of the ramp, and Curve/Tension/hueSpace are no longer dead for an anchored palette).
 // `l` blends TWO curve/tension-composed anchorLerp constructions (see anchorLerp's own comment) the
 // SAME way the non-anchored `okhslStops` blends its own evenL/peakL by `vibrancy`: `evenL` is the
-// STRAIGHT pivot-to-edge lerp (curve "linear" reduces anchorLerp's shape(w,...) to w exactly — the
+// STRAIGHT pivot-to-edge lerp (curve "linear" reduces anchorLerp's shape(w,...) to w exactly - the
 // ORIGINAL, pre-F4 construction), `peakL` is the curve/tension-shaped one, and `t = mode==="peak" ? 1
-// : vibrancy/100` blends them — "peak" pins full curve/tension shaping, "perceptual" moves continuously
+// : vibrancy/100` blends them - "peak" pins full curve/tension shaping, "perceptual" moves continuously
 // with Vibrancy, and at vibrancy 0 (DEFAULT_CONTROLS) perceptual mode reduces to `evenL` exactly, so
 // existing perceptual-mode renders at default vibrancy are UNCHANGED by this fix. Hue: "cam16" hueSpace
 // holds the anchor's own measured OKHSL hue constant (matching prime.mjs's `hOk = key.h`, no solve
 // needed, we already have the real value). "oklch" hueSpace (R3, review pass 2, 2026-09-18) used to
 // solve the OKHSL hue reproducing the anchor's own OKLCH hue reading AT THE ANCHOR'S OWN saturation/
-// lightness — a degenerate solve (that point IS the anchor's own point, so it always returned
+// lightness - a degenerate solve (that point IS the anchor's own point, so it always returned
 // anchor.okhsl.h back unchanged) that measured as dead (0 of 3,396 moved). The fix solves PER STOP
 // instead, inside the stops.map below, at that stop's OWN `l`/`s` (both already stop-dependent and,
-// unlike the CIE-L* path, independent of hue — OKHSL saturation never reads the resolved hue here — so
+// unlike the CIE-L* path, independent of hue - OKHSL saturation never reads the resolved hue here - so
 // no seed/second-pass is needed, unlike paletteStopsAnchored's own per-stop solve).
 function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
   const shift = palette.hueShift ?? 0;
@@ -985,23 +987,23 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
   const lDark = okhslLAt(controls.lmin ?? 5);
   // Q3 (b): clamp the ladder's OWN pivot into the ramp's window (RAMP_L_MIN/MAX, in CIE L*),
   // expressed in OKHSL l via the same neutral-grey lookup okhslLAt uses elsewhere. A source outside
-  // the window still reports its byte-exact anchor everywhere else (prime.DEFAULT, C2) — "the token
-  // stays exact" — but the ramp itself "clamps": stop 500 is built from the SAME continuous
+  // the window still reports its byte-exact anchor everywhere else (prime.DEFAULT, C2) - "the token
+  // stays exact" - but the ramp itself "clamps": stop 500 is built from the SAME continuous
   // piecewise construction as every other stop (anchorLerp's w=0 point gives the pivot value at
   // stop 500 with no special case needed), rather than forcing the verbatim anchor pixel there,
-  // which would jump away from the window edge its neighbours are shaped around — the exact
+  // which would jump away from the window edge its neighbours are shaped around - the exact
   // discontinuity that broke monotonicity before this branch existed. Only sources strictly inside
   // the window get the verbatim, byte-exact stop-500 special case below.
   //
   // The ladder is built directly in OKHSL l (not converted through CIE L* and back): l feeds
-  // okhslToRgb ALONGSIDE a non-zero saturation, and OKHSL l is only a proxy for CIE L* at s=0 — a
+  // okhslToRgb ALONGSIDE a non-zero saturation, and OKHSL l is only a proxy for CIE L* at s=0 - a
   // ladder that targets L* directly and converts to l via a s=0 lookup drifts by the SAME chroma-vs-
   // lightness coupling #668 already names (measured worse: more, not fewer, sub-0.55-L*-gap misses),
-  // so interpolating in l — where the saturation the ramp actually renders at is a constant multiplier
-  // and does not re-enter the lightness computation — is the more faithful ladder.
+  // so interpolating in l - where the saturation the ramp actually renders at is a constant multiplier
+  // and does not re-enter the lightness computation - is the more faithful ladder.
   const clamped = anchor.lstar < RAMP_L_MIN || anchor.lstar > RAMP_L_MAX;
   // Clamp pivot (Finding 7 fix): solved at the anchor's OWN saturation via `okhslLAtChromatic`, never
-  // the achromatic `okhslLAt` — the clamped stop renders at `anchor.okhsl.s` (chromaEnvelope's env=1
+  // the achromatic `okhslLAt` - the clamped stop renders at `anchor.okhsl.s` (chromaEnvelope's env=1
   // at the pivot, unconditionally, clamped or not), so the achromatic lookup was solving for the
   // WRONG color and landing short of the window bound. See okhslLAtChromatic's own comment.
   const pivotL = anchor.lstar < RAMP_L_MIN ? okhslLAtChromatic(RAMP_L_MIN, hOkSeed, anchor.okhsl.s)
@@ -1023,15 +1025,15 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
     const dir = sameDir ? -Math.abs(sp) : sp;
     // Saturation basis (re-diagnosis Finding 1, Q-U2-5 ruled): routed through the shared
     // `chromaEnvelope`, keyed on `liftStop` (dropping `anchorLiftPos`'s own separate lift-position/
-    // damping math entirely — the envelope's own `sd = (liftStop(stop,lift) - liftStop(anchorStop,
+    // damping math entirely - the envelope's own `sd = (liftStop(stop,lift) - liftStop(anchorStop,
     // lift))/450` already IS that computation, parametrized so env(500)=1 exactly for any lift). The
     // BASIS multiplied by that envelope is `anchorChromaBasis` (see its own header comment, shared
     // verbatim with `paletteStopsAnchored`): the anchor's own OKHSL `s` at the pivot (liftStop position
-    // 0), shading to `palette.chroma/100` — the group's resolved ramp target, mirroring `okhslStops`'s
-    // own `s = (palette.chroma/100)*m` formula exactly — at each side's endpoint (liftStop position 1),
+    // 0), shading to `palette.chroma/100` - the group's resolved ramp target, mirroring `okhslStops`'s
+    // own `s = (palette.chroma/100)*m` formula exactly - at each side's endpoint (liftStop position 1),
     // by the SAME liftStop position the envelope itself keys on. No notch by construction: env(500)=1
     // and the basis's own liftStop position is 0 at the pivot, so `s` reduces to `anchor.okhsl.s`
-    // exactly as a stop approaches 500. Computed BEFORE hue resolution — unlike the CIE-L* path, `s`
+    // exactly as a stop approaches 500. Computed BEFORE hue resolution - unlike the CIE-L* path, `s`
     // never reads the resolved hue, so the R3 per-stop hue solve below needs no seed/second pass.
     const env = chromaEnvelope(stop, 500, palette.lift ?? 0, controls);
     const anchorIntendedS = anchor.okhsl.s;
@@ -1039,7 +1041,7 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
     const intendedS = anchorChromaBasis(stop, 500, palette.lift ?? 0, anchorIntendedS, groupIntendedS);
     const s = Math.min(1, Math.max(0, intendedS * env));
     // hueSpace (R3): "oklch" solves the OKHSL hue that reproduces the anchor's OWN OKLCH hue AT THIS
-    // STOP'S own (s, l) — see this function's own header comment for why the ANCHOR's own point was
+    // STOP'S own (s, l) - see this function's own header comment for why the ANCHOR's own point was
     // a degenerate, dead solve.
     const hOkStop = oklchSpace ? solveOkhslHue(targetOklchHue, s, l) : hOkSeed;
     const hue = (((hOkStop + shift * dir) % 360) + 360) % 360;

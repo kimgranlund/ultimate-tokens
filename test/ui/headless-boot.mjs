@@ -10,7 +10,9 @@
 // (querySelector takes a single class only, no `id`/`textContent`, etc).
 
 import { ROLES, DEFAULT_PALETTES, CATEGORIES, CATEGORY_PRESETS, BRAND_PRESETS, CATEGORY_PRESET_PALETTES, CATEGORY_VOLUMES, CORE_RAMP_STOPS, EXTENDED_RAMP_STOPS, VOICES, TYPE_STEPS, GEOM_SIZES } from "./counts.mjs";
+import { sampleCorpus, SAMPLE_SEED } from "../engine/lib/corpus-sample.mjs";
 
+const FULL = process.argv.includes("--full");
 const fails = [];
 const ok = (cond, msg) => { if (!cond) fails.push(msg); };
 
@@ -1517,7 +1519,21 @@ const colorOf = (i) => { const m = /background:\s*([^;]+)/.exec(i.getAttribute("
 const stripWidths = (preset) => [...app.presetTile(preset).querySelector(".strip").children].map(flexOf);
 const { paletteKeyColors: jjPaletteKeyColors, hexToOklch: jjHexToOklch } = await import("../../src/ui/model.mjs");
 const { hydrate: jjHydrate } = await import("../../src/ui/persist.js");
-const { posterStripBands: jjPosterStripBands, posterStripDominantCap: jjDominantCap, POSTER_STRIP_MAX_BAND_PCT_LOW: jjCapLow, POSTER_STRIP_MAX_BAND_PCT_HIGH: jjCapHigh } = await import("../../src/ui/app-helpers.mjs");
+const { posterStripBands: jjPosterStripBands, posterStripDominantCap: jjDominantCap, POSTER_STRIP_MAX_BAND_PCT_LOW: jjCapLow, POSTER_STRIP_MAX_BAND_PCT_HIGH: jjCapHigh, POSTER_STRIP_CAP_CHROMA_LOW: jjCapCLow, POSTER_STRIP_CAP_CHROMA_HIGH: jjCapCHigh } = await import("../../src/ui/app-helpers.mjs");
+// jjOwnChroma - this group's OWN sRGB(0..255) -> OKLCH chroma, on Bjorn Ottosson's matrices, so the
+// #681 S1 prediction below is derived from the sampled hex and the module's documented endpoints
+// rather than routed back through the same converter `posterStripChroma` uses. Independence is the
+// point: a shared bug in that conversion must not make the prediction agree with the engine.
+const jjOwnChroma = (hex) => {
+  const inv = (a) => (a <= 0.04045 ? a / 12.92 : Math.pow((a + 0.055) / 1.055, 2.4));
+  const [r, g, b] = [1, 3, 5].map((i) => inv(parseInt(hex.slice(i, i + 2), 16) / 255));
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return Math.hypot(1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s, 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s);
+};
+// jjPredictCap - the documented chroma scaling, re-expressed from the module's exported endpoints.
+const jjPredictCap = (hex) => jjCapLow + Math.min(1, Math.max(0, (jjOwnChroma(hex) - jjCapCLow) / (jjCapCHigh - jjCapCLow))) * (jjCapHigh - jjCapLow);
 const jjEnabled = (preset) => jjPaletteKeyColors(jjHydrate(preset)).filter((p) => p.on);
 const jjChroma = (hex) => jjHexToOklch(hex)[1];
 // bands rendered by the REAL presetTile() DOM, annotated with each swatch's own name/colorRole
@@ -1562,7 +1578,30 @@ ok(jjWPBands.length === 6, `(jj) #646: War and Peace still shows 6 bands (got ${
 const jjWPDominant = jjWPBands.find((b) => b.colorRole === "dominant");
 const jjWPAccents = jjWPBands.filter((b) => b.colorRole === "accent");
 ok(jjWPAccents.length === 2, `(jj) #646 fix 2: War and Peace shows BOTH accent swatches (icon crimson + gilt gold), never just one (got ${jjWPAccents.length})`);
-ok(Math.abs(jjWPDominant.width - jjDominantCap(jjWPDominant.key)) < 0.01 && jjDominantCap(jjWPDominant.key) < 39, `(jj) #646 fix 1: the candle-gold dominant (authored 50% -> ~46% uncapped) is clamped to its chroma-scaled cap near the low end (want ${jjDominantCap(jjWPDominant.key).toFixed(2)}, got ${jjWPDominant.width.toFixed(2)})`);
+// RE-DERIVED at #681 pre-land S1, and the move is the point, not noise. This assertion read
+// `cap < 39` against a key colour of `#D5BE98`, the CUSP RECONSTRUCTION of candle gold off the
+// preset's fitted hue/chroma. S1 makes `paletteKeyColors` return the palette's stored `anchor`, the
+// real sampled `#C49F60`, which is MORE chromatic than its own reconstruction was. So the poster
+// strip's chroma weighting now reads the sampled colour instead of a desaturated approximation of
+// it, which is what ADR-026 says the product does everywhere else, and the strip's band widths move
+// for every anchored curated preset. The old `< 39` described the reconstruction, not candle gold,
+// so "near the low end" is retired with it.
+//
+// The new expectation is DERIVED before it is read off a run, not fitted to one. `#C49F60`'s OKLCH
+// chroma is 0.092275 (this group's own Ottosson conversion, `jjOwnChroma`, never
+// `posterStripChroma`). The documented scaling puts that at
+// t = (0.092275 - 0.02) / (0.15 - 0.02) = 0.555958 of the way from `POSTER_STRIP_CAP_CHROMA_LOW` to
+// `POSTER_STRIP_CAP_CHROMA_HIGH`, so the cap is 35 + 0.555958 * (45 - 35) = 40.5596. That number
+// comes from the sampled hex and the module's own exported endpoints alone. The same arithmetic on
+// the retired cusp key `#D5BE98` (chroma 0.057194, t 0.286108) predicts 37.8611, which is exactly
+// the cap this assertion used to sit under, so the prediction reproduces BOTH sides of the move.
+// The three checks below are, in order: the prediction is 40.5596; the engine agrees with the
+// prediction; and the rendered band equals the engine, strictly inside (LOW, HIGH).
+const jjWPCap = jjDominantCap(jjWPDominant.key);
+const jjWPPredicted = jjPredictCap(jjWPDominant.key);
+ok(jjWPDominant.key === "#C49F60" && Math.abs(jjWPPredicted - 40.5596) < 0.001, `(jj) #681 S1: the strip reads War and Peace's SAMPLED dominant #C49F60, and the documented chroma scaling PREDICTS its cap at 40.5596 from that hex alone (key ${jjWPDominant.key}, predicted ${jjWPPredicted.toFixed(4)})`);
+ok(Math.abs(jjWPCap - jjWPPredicted) < 1e-9, `(jj) #681 S1: posterStripDominantCap agrees with the independently derived prediction (engine ${jjWPCap.toFixed(4)}, derived ${jjWPPredicted.toFixed(4)})`);
+ok(Math.abs(jjWPDominant.width - jjWPCap) < 0.01 && jjWPCap > jjCapLow && jjWPCap < jjCapHigh, `(jj) #646 fix 1 + #681 S1: the candle-gold dominant (authored 50% -> ~46% uncapped) is clamped to the chroma-scaled cap of its sampled colour, strictly between ${jjCapLow} and ${jjCapHigh} (cap ${jjWPCap.toFixed(2)}, rendered ${jjWPDominant.width.toFixed(2)})`);
 ok(jjWPAccents.every((b) => b.width >= 10 - 0.01), `(jj) #646 fix 1: both accent bands are floored to >= ~10% each — no longer slivers (got ${jjWPAccents.map((b) => b.width.toFixed(2)).join(",")})`);
 // #646 fix 4 (owner ruling): neutral is pinned to the LEADING edge and the highest-chroma band
 // sits at the FAR edge, so the strip reads grounded-then-vivid instead of split around a mid-strip
@@ -3945,6 +3984,70 @@ flushRaf();
   }
 }
 
+// ── (sfk) `seedFromKey` detaches exactly as the Hue and Chroma sliders do (ticket #681, Q6, C12;
+//        pre-land review at b4be472c, S2) ────────────────────────────────────────────────────────
+// The defect. `seedFromKey` writes the SAME two fields the Hue and Chroma sliders write, `hue` and
+// `chroma`, so under Q6 it is the same detach event. It committed those two alone: no
+// `detachSnapshot`, no `delete anchor`. The palette therefore kept rendering its stored source
+// colour while claiming the seeded family, and Reset had no snapshot to restore from.
+//
+// Why the suite did not already catch it. The (kc) group above calls `app.seedFromKey(0, "dominant")`
+// and has been green throughout, because its fixture is the NON-ANCHORED default kit set: with no
+// `anchor` on the palette there is nothing to drop and nothing to snapshot, so the bug cannot show.
+// This group runs the same method against an ANCHORED preset copy, the population it lives in, and
+// reopens (rst)'s own preset fresh rather than inheriting the state that group leaves behind.
+{
+  const { projectView: pvSFK } = await import("../../src/ui/model.mjs");
+  app.openConfigAsSet(TP[1], null, { mintData: false });
+  app.setSection("color"); app.colorMode = "light";
+  const sfkIdx = 1;
+  app.selectPalette(sfkIdx); app.render(); flushRaf();
+  ok(!!app.doc.palettes[sfkIdx].anchor && !!app.doc.palettes[sfkIdx].sourceAnchor,
+    "(sfk0) the reopened preset's primary palette starts anchored, with a sourceAnchor to restore from");
+  // A non-zero lift and a key color to seed from. The lift matters for the same reason it does in
+  // (rst): the pre-fix code path never wrote a snapshot at all, and a fixture at lift 0 would let a
+  // Reset that re-derives look identical to one that restores.
+  app.commit((d) => {
+    d.palettes[sfkIdx].lift = -12;
+    d.palettes[sfkIdx].keyColors = [{ role: "dominant", oklch: [0.32, 0.05, 150] }];
+  });
+  const sp = app.doc.palettes[sfkIdx];
+  const sfkAnchor = sp.anchor, sfkSource = sp.sourceAnchor, sfkHue = sp.hue, sfkChroma = sp.chroma, sfkLift = sp.lift;
+  const sfkViewBefore = pvSFK(app.doc).palettes[sfkIdx];
+  const sfkRampBefore = sfkViewBefore.ramp.map((s) => s.hex);
+  const sfkPrimeBefore = JSON.stringify(sfkViewBefore.prime);
+  ok(sfkRampBefore.length === 19 && sfkViewBefore.prime.length === 7,
+    `(sfk0b) test setup: the pre-seed capture holds 19 ramp hexes and 7 prime rungs (got ${sfkRampBefore.length}/${sfkViewBefore.prime.length})`);
+
+  app.seedFromKey(sfkIdx, "dominant"); flushRaf();
+  const sfkAfter = app.doc.palettes[sfkIdx];
+  ok(sfkAfter.hue !== sfkHue || sfkAfter.chroma !== sfkChroma,
+    `(sfk1a) test setup: the seed actually moved hue or chroma (got ${sfkAfter.hue}/${sfkAfter.chroma}, was ${sfkHue}/${sfkChroma})`);
+  ok(sfkAfter.anchor === undefined, "(sfk1) seedFromKey drops `anchor`, the same detach the Hue and Chroma sliders perform");
+  ok(sfkAfter.sourceAnchor === sfkSource, "(sfk2) `sourceAnchor` survives the seed untouched");
+  ok(sfkAfter.preDetachHue === sfkHue && sfkAfter.preDetachChroma === sfkChroma && sfkAfter.preDetachLift === sfkLift,
+    `(sfk3) seedFromKey stamps the exact pre-detach snapshot detachSnapshot writes (got hue=${sfkAfter.preDetachHue}/chroma=${sfkAfter.preDetachChroma}/lift=${sfkAfter.preDetachLift}, want ${sfkHue}/${sfkChroma}/${sfkLift})`);
+  ok(JSON.stringify(pvSFK(app.doc).palettes[sfkIdx].prime) !== sfkPrimeBefore,
+    "(sfk3b) the prime strip actually moved (a real detach, not a no-op)");
+
+  // Reset, through the button itself, which renders only while sourceAnchor is present and anchor absent.
+  app.render(); flushRaf();
+  const sfkText = (e) => (e._text || "") + (e.children || []).map(sfkText).join("");
+  const sfkBtn = walk(app.querySelector(".right-pane") || app, (e) => e.tagName === "BUTTON" && /Reset to source color/.test(sfkText(e)))[0];
+  ok(!!sfkBtn, "(sfk4) the Reset button renders after a seed-driven detach, exactly as it does after a slider detach");
+  if (sfkBtn) sfkBtn.click();
+  flushRaf();
+  const sfkReset = app.doc.palettes[sfkIdx];
+  ok(sfkReset.anchor === sfkAnchor, `(sfk4b) Reset restores anchor after a seed-driven detach (got ${sfkReset.anchor}, want ${sfkAnchor})`);
+  ok(sfkReset.hue === sfkHue && sfkReset.chroma === sfkChroma && sfkReset.lift === sfkLift,
+    `(sfk4c) Reset restores the EXACT pre-seed hue/chroma/lift snapshot (got ${sfkReset.hue}/${sfkReset.chroma}/${sfkReset.lift}, want ${sfkHue}/${sfkChroma}/${sfkLift})`);
+  const sfkViewAfter = pvSFK(app.doc).palettes[sfkIdx];
+  ok(JSON.stringify(sfkViewAfter.ramp.map((s) => s.hex)) === JSON.stringify(sfkRampBefore),
+    "(sfk5) all 19 ramp hexes are byte-identical to the pre-seed capture after Reset");
+  ok(JSON.stringify(sfkViewAfter.prime) === sfkPrimeBefore,
+    "(sfk6) all 7 prime rungs are byte-identical to the pre-seed capture after Reset");
+}
+
 // (rst-corpus) extend C12's coverage from one sample palette to the FULL anchored corpus across ALL
 // EIGHT categories plus the default kit (R9, review pass 2, 2026-09-18 — the prior pass covered 4 of 8
 // categories and checked fields only, never a rendered ramp; review 2 flagged both gaps) —
@@ -3960,19 +4063,55 @@ flushRaf();
 // state (a cache, a second copy) diverged from the fields Reset itself writes — the ramp comparison is
 // a strictly stronger claim than the field-only check the prior pass shipped.
 {
-  const corpusPresets = [...TPm.PRESETS, ...LITm, ...FILMm, ...BRANDSm];
+  const byCategory = { travel: TPm.PRESETS, literature: LITm, film: FILMm, brands: BRANDSm };
   for (const slug of ["architecture", "cuisine", "music", "nature"]) {
     const { PRESETS } = await LS(slug);
-    corpusPresets.push(...PRESETS);
+    byCategory[slug] = PRESETS;
   }
+  const corpusDocs = FULL ? Object.values(byCategory).flat() : sampleCorpus(byCategory);
   const { defaultDocument: defaultDocumentRSTC, projectView: pvRSTC } = await import("../../src/ui/model.mjs");
   const { hydrate: hydrateRSTC } = await import("../../src/ui/persist.js");
   const dkDoc = defaultDocumentRSTC();
-  corpusPresets.push({ name: "default kit", palettes: dkDoc.palettes, ...dkDoc });
-  let corpusChecked = 0, corpusFails = 0, rampChecked = 0, rampFails = 0;
-  for (const preset of corpusPresets) {
+  const defaultKitPreset = { name: "default kit", palettes: dkDoc.palettes, ...dkDoc };
+  // RESET_STRIDE: SAMPLED keeps every fourth anchored palette of the sampled corpus (first kept),
+  // in the sorted sample's own order, and keeps the default kit whole (#713 U6c, owner ruling R35).
+  // The skip is keyed on identity with `defaultKitPreset`, not `preset.name`, because the spread
+  // `...dkDoc` after `name: "default kit"` replaces that name with `defaultDocument().name`
+  // (`"Default"`), so a name-keyed skip on `=== "default kit"` never matches the kit.
+  const RESET_STRIDE = 4;
+  const corpusAnchoredEntries = [];
+  for (const preset of corpusDocs) {
     for (const pal of preset.palettes) {
       if (typeof pal.anchor !== "string") continue;
+      corpusAnchoredEntries.push({ preset, pal });
+    }
+  }
+  const sampledCorpusEntries = FULL ? corpusAnchoredEntries : corpusAnchoredEntries.filter((_, i) => i % RESET_STRIDE === 0);
+  const defaultKitEntries = [];
+  for (const pal of defaultKitPreset.palettes) {
+    if (typeof pal.anchor !== "string") continue;
+    defaultKitEntries.push({ preset: defaultKitPreset, pal });
+  }
+  const resetEntries = [...sampledCorpusEntries, ...defaultKitEntries];
+  const resetTotalBeforeStride = corpusAnchoredEntries.length + defaultKitEntries.length;
+  // What the stride gives up, per the plan's own wording ("the builder prints how many documents
+  // contribute none and cites it"): count sampled documents with zero anchored palettes before the
+  // stride (no anchored palette in either mode) against sampled documents that had at least one
+  // before the stride but lost every one of them to the stride (a real coverage loss).
+  let docsWithNoAnchorEver = 0, docsLostToStride = 0;
+  if (!FULL) {
+    const beforeStrideByDoc = new Map();
+    for (const e of corpusAnchoredEntries) beforeStrideByDoc.set(e.preset, (beforeStrideByDoc.get(e.preset) || 0) + 1);
+    const afterStrideByDoc = new Map();
+    for (const e of sampledCorpusEntries) afterStrideByDoc.set(e.preset, (afterStrideByDoc.get(e.preset) || 0) + 1);
+    for (const doc of corpusDocs) {
+      const before = beforeStrideByDoc.get(doc) || 0;
+      if (before === 0) docsWithNoAnchorEver++;
+      else if (!afterStrideByDoc.has(doc)) docsLostToStride++;
+    }
+  }
+  let corpusChecked = 0, corpusFails = 0, rampChecked = 0, rampFails = 0;
+  for (const { preset, pal } of resetEntries) {
       const detunedHue = (pal.hue + 37) % 360;
       const detunedChroma = Math.max(0, Math.min(100, pal.chroma - 13));
       const detunedLift = -17;
@@ -4003,11 +4142,16 @@ flushRaf();
         rampFails++;
         if (rampFails <= 3) ok(false, `(rst-corpus-ramp) ${preset.name} ${pal.name}: the restored palette's rendered ramp does not deep-equal the reference ramp captured before detach/detune`);
       }
-    }
   }
-  ok(corpusChecked > 3000, `(rst-corpus-setup) exercised Reset over the FULL anchored corpus, all 8 categories plus the default kit (${corpusChecked} palettes, want > 3000)`);
+  const corpusFloor = FULL ? 3000 : 60;
+  ok(corpusChecked > corpusFloor, `(rst-corpus-setup) exercised Reset over the ${FULL ? "FULL" : "SAMPLED"} anchored corpus, all 8 categories plus the default kit (${corpusChecked} palettes, want > ${corpusFloor})`);
   ok(corpusFails === 0, `(rst-corpus) ${corpusFails} of ${corpusChecked} anchored palettes failed the exact-snapshot field round trip`);
   ok(rampFails === 0, `(rst-corpus-ramp) ${rampFails} of ${rampChecked} anchored palettes failed the full projectView ramp round trip`);
+  if (!FULL) console.log(`  (rst-corpus SAMPLED: stride ${RESET_STRIDE}, ${corpusChecked} anchored palettes checked of ${resetTotalBeforeStride}, default kit whole)`);
+  if (!FULL) console.log(`  (rst-corpus SAMPLED: ${docsWithNoAnchorEver} of ${corpusDocs.length} sampled documents contribute no anchored palette in either mode, ${docsLostToStride} of the rest lost every anchored palette to the stride)`);
+  const docCount = corpusDocs.length;
+  const paletteCount = corpusDocs.reduce((n, p) => n + p.palettes.length, 0);
+  console.log(`  (${FULL ? `FULL: ${docCount} curated documents, ${paletteCount} palettes` : `SAMPLED seed ${SAMPLE_SEED}: ${docCount} curated documents, ${paletteCount} palettes`})`);
 }
 
 // ── report ──────────────────────────────────────────────────────────────────────────

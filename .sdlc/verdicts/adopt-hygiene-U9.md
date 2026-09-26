@@ -1,4 +1,5 @@
 # Verdict adopt-hygiene U9 · 🟢
+verdict: 🟢
 
 Graded by sdlc-verifier on 2026-09-17 (evidence run: adopt-hygiene-U9-verifier-l3-p1, grade l3, Fable 5.1; rows 1 and 3 regraded twice by the Verifier seat itself, at 7afd45a and again at f39a640). Branch `unit/hygiene-U9` @ 10072b4 (unchanged through both regrades), merge-base 5d4492d, graded against the `sdlc/adopt` plan copy at f39a640. Worktree left at status 0; controls in two detached scratch worktrees (4f30855 and a mutable copy of head), both removed; root checkout untouched. The handoff and `.sdlc/verdicts/adopt-hygiene-U9-review.md` were not used as evidence.
 Tally: 16 rows. 🟢 14 · 🟡 2 · 🔴 0. All four pre-land gaps are closed in the tree, and at f39a640 both previously false plan cells now match what the commands actually print, measured by me at head and at the control. The two remaining 🟡 are record parity on the branch and the self-declared checker family, neither a unit defect.

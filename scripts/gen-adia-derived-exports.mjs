@@ -31,9 +31,12 @@
 //
 // BUMP POLICY (per artifact, independent cadence — #616's per-artifact tag ruling):
 //   patch  provenance/comment-only change, exporter bytes identical.
-//   minor  the same document re-exported under a bumped EXPORT_SCHEMA_VERSION or a new
-//          `adia-brand-document` tag.
+//   minor  the same document re-exported under a bumped EXPORT_SCHEMA_VERSION, a new
+//          `adia-brand-document` tag, OR with token values moved by an engine change under an
+//          unchanged document, schema and tag (#681 at 1.2.0): a consumer re-pins, its contract holds.
 //   major  a shape change a consumer's byte-compare cannot absorb (format keys renamed/removed).
+//   The distinguishing question is whether a consumer's CONTRACT changed, never whether a version
+//   string did: bytes moved under the same keys is minor, a key gone or renamed is major.
 //   Any change to one file bumps THAT file's `version` below and cuts THAT file's tag; the other
 //   file is untouched. The tag family is the file basename without extension: e.g.
 //   docs/reference/data/adia-oklch-export.css -> `adia-oklch-export@1.0.0`.
@@ -62,8 +65,13 @@ export const ARTIFACTS = [
   // 1.1.0 (#638): both artifacts re-exported from the SAME tagged document under
   // EXPORT_SCHEMA_VERSION 3 — the bump policy's `minor` case. Only the schema stamp and this
   // provenance block moved; no token value, name or ordering changed.
-  { name: "adia-oklch-export", file: "adia-oklch-export.css", key: "oklch", version: "1.1.0" },
-  { name: "adia-radix-export", file: "adia-radix-export.mjs", key: "radix", version: "1.1.0" },
+  // 1.2.0 (#681, plan revision 28): the #681 engine (stored anchor, shared chroma envelope, CIE-L*
+  // prime ladder) moved TOKEN VALUES in both artifacts from the same unchanged document at the same
+  // EXPORT_SCHEMA_VERSION 3, so `minor` again, since a consumer's byte-compare breaks while the shape
+  // it compares does not: no key, name or ordering moved. SOURCE_TAG stays `adia-brand-document@1.0.0`
+  // because `brands.json` is byte-identical to origin/main, so no document tag is cut (C9).
+  { name: "adia-oklch-export", file: "adia-oklch-export.css", key: "oklch", version: "1.2.0" },
+  { name: "adia-radix-export", file: "adia-radix-export.mjs", key: "radix", version: "1.2.0" },
 ];
 
 // exportRadix's own reserved alias keys (I4, ticket #637): promoted into src/engine/exports.js as

@@ -1,4 +1,5 @@
 # Criteria review records-refresh · 🟢 mobilize
+verdict: 🟢
 
 Reviewed by sdlc-verifier on 2026-09-18 on `plan/records-refresh` @ `8919292` (the plan's front matter still says `746f93d`, 4 commits over `cf8e61a`; the branch is now 6 commits over it, the plan commit included). Plan: `.sdlc/plans/records-refresh.md`.
 All 14 criteria are 🟢 checkable: 🟢 14 · 🔴 0. Nothing goes back to the planner.
@@ -9,7 +10,7 @@ Method: I ran 11 of the 14 stated commands verbatim at `8919292` and compared th
 |---|---|---|
 | P1 | 🟢 | `npm test 2>&1 \| tail -1` then `git status --short \| wc -l`. Ran it today with no `node_modules`: `✓ all 46 test files passed`, then `0`. A standing regression gate, so it passes at the pre-state by design; the mutation control (a changed ref in `src/engine/semantic.js`) took `node test/engine/semantic.mjs` to exit 1, so the suite does bite |
 | P2 | 🟢 | the stated command, comparing the built size with the one the baseline records. Ran build today: `wrote figma/plugin/ui.html 3753.6 KB` against `3695.6` in `.sdlc/baseline.md`, so the criterion is red at the pre-state and turns green only when U1 rewrites the number. `npm run build` with no `node_modules` exits 127. Note: `$CLAUDE_JOB_DIR` may be unset in a plain shell, which turns the log path into `/tmp/build.log`; harmless, but the clone path in the P1 and P2 controls becomes `/tmp/neg`, so the builder should give it a unique name |
-| P3 | 🟢 | `npm run smoke 2>&1 \| grep -c 'SMOKE PASS'`. Ran it today: exit 0 and exactly one `SMOKE PASS` line. Control confirmed separately: `node test/smoke/smoke.mjs` with no `dist/` exits 1 with `smoke: missing dist/ultimate-tokens.html` |
+| P3 | 🟢 | `npm run smoke 2>&1 \| grep -c 'SMOKE PASS'`. Ran it today: exit 0 and exactly one `SMOKE PASS` line. Control confirmed separately: `node test/smoke/smoke.mjs` with no `dist/` exits 1 with `` `smoke: missing <ROOT>/dist/ultimate-tokens.html — run `npm run build` first` `` `altered: absolute path written as <ROOT>` |
 | P4 | 🟢 | `node test/repo/branding.mjs \| tail -1`. Ran it today: `branding: clean (441 files scanned)`, exit 0. It reads `.sdlc/`, so it is the gate that catches a bad word in the very files U1 rewrites |
 | P5 | 🟢 | `git diff --name-only $(git merge-base origin/main HEAD) \| grep -vcE '^\.sdlc/\|^\.gitignore$'`. Printed `0`. A scope guard: it cannot fail from the unit being missing, it fails when the unit reaches outside its wall, which is what it is for |
 | U1-1 | 🟢 | `sh .sdlc/checks/baseline-agrees-check.sh`. I extracted the script from the plan and ran it: `STALE tests: baseline 44, test/run.mjs TESTS 46`, `STALE ui.html: baseline 3695.6 KB, tree 3753.6 KB`, three `ok` timing lines, `STALE head`, `ok` ancestry, `stale total: 3`, exit 1. Exactly the planner's control. The two figures it compares are computed the same way the build prints them (the script's `length/1024` returns 3753.6, the build line's own number), so U1-1 and P2 cannot contradict each other |

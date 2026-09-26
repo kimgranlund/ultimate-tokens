@@ -1,4 +1,5 @@
 # Verdict adopt-hygiene U6 · 🟢
+verdict: 🟢
 
 Graded by sdlc-verifier on 2026-09-17 (evidence run: adopt-hygiene-U6-verifier-l2-p1, grade l2). Branch `unit/hygiene-U6` @ e26d023 (80ae4d8 is an ancestor via d62207f), worktree `.worktrees/hygiene-U6`, left at status 0. Negative controls ran against 80ae4d8 or a scratch copy at e26d023 (removed after). The handoff and `.sdlc/verdicts/adopt-hygiene-U6-review.md` were not used as evidence.
 Tally: 6 rows (5 criteria + scope). 🟢 6 · 🟡 0 · 🔴 0. Three non-blocking notes below.

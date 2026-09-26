@@ -1,4 +1,5 @@
 # Verdict A3 records · 🟡
+verdict: 🟡
 
 Graded by sdlc-verifier on 2026-09-16 against `.sdlc/records/decisions.md`, its cards, and the code at `sdlc/adopt` @ f9e20c5. Mutation controls ran in a `git archive HEAD` copy (`/tmp/ut-a3.8VL1`) and a throwaway worktree (since removed), never the root checkout.
 Key: 🟢 implemented · 🟡 drifted (code and record disagree) · 🔴 never done. A superseded record is 🟢 when the superseding state is what the code does.

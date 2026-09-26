@@ -1,4 +1,5 @@
 # Verdict A2 architecture · pass 6 · 🟢 18 of 18 (pass 5: 17 of 18, K17 🔴; pass 6 reruns K17)
+verdict: 🟢
 
 Graded by sdlc-verifier on 2026-09-16 against `.sdlc/architecture.md` (152 lines) at `sdlc/adopt` @ f9e20c5. Every control rerun in a throwaway git worktree of HEAD (since removed), plants reset between runs. Pass 1 gaps listed at the bottom with their disposition.
 
@@ -64,6 +65,8 @@ Graded 2026-09-19 at `d46ae48` (branch `plan/records-refresh`), whose merge base
 Result: 17 of 18 🟢, 0 🟡, 1 🔴 (K17). No 🟡 row was needed: every other own-run number either equals its map cell or differs only in a way the convention does not assert (bundle byte size under K7, line-number drift under K10 and K12), and each of those is quoted in its row.
 
 One further observation for the Orchestrator, outside the per-convention grading: `.sdlc/architecture.md` §8, the rerun note and the §7 Counts bullet all name `d814500`, while the merge base of this head with `origin/main` is at `20298cc`. That is criterion 2's subject, not a K row, and is left to whoever grades the unit's criteria.
+
+Note (2026-09-19, plan records-followup U6, #709): the closing observation of pass 5 above was resolved by U3 of plan records-refresh on 2026-09-19, which re-measured §8, the rerun note and the Counts bullet at `20298cc`. It is not an open finding.
 
 ## Pass 6 (U1 of plan k17-rerun, K17 only)
 

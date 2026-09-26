@@ -6,6 +6,7 @@ sha: 266d13e
 base: 0aec4a8
 pass: 2
 reviewed: 2026-09-17
+verdict: 🟢
 ---
 
 # Verdict adopt-hygiene U8 (pass 2 review) · 🟢
