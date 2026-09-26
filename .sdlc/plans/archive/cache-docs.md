@@ -1,5 +1,5 @@
 ---
-status: approved
+status: done
 ticket: "#750"
 priority: P3
 lane: docs (`docs/reference/references/knowledge-01-color-engine.md`, `.claude/skills/geometry-system/references/best-practices.md`)
@@ -141,3 +141,4 @@ One PR from `plan/cache-docs` to `main`, title `docs(engine): the cache-key line
 | 2026-09-25 | revision 2, from the checkability review at 65f8171c (8 green, 3 yellow, 1 red): U1-4's numstat reads `5 5` (§9's claim wraps onto a second physical line, which the `0.01°` needle requires to go); design item 4 drops "never a neighbour within 0.01", which the U1-1 needle would have counted; the geometry best-practices line leaves this plan for prompt-audit U6 (the collision the review found; Q4), so the scope wall is one file, P4 refuses `.claude/skills/`, and U1-2 proves the hand-over; P3's Today names the checkout its count came from; the cf-U1 note reads the tip e8627655, where the rewritten line carries no dash; probes print one template string or run under `NO_COLOR=1` | checkability review, 2026-09-25 |
 | 2026-09-25 | revision 3, from the lead's review notes: the depends line states the prompt-audit overlap in full (its wall admits the file, its U6 rewrites three other lines of it, the stale claim is at line 78, its U6-4 strips ticket ids so the repaired line there carries no `#686`, while knowledge-01 keeps its cites), so the lead can square it without this plan editing prompt-audit | lead's notes, 2026-09-25 |
 | 2026-09-25 | revision 4, from the conductor's revision 4 notes: the geometry `best-practices.md` line is this plan's again (its section differs from prompt-audit U6's lines 9, 49 and 100, so the hunks merge and `Closes #750` stays honest); the scope wall is two files, P4 admits the geometry file and refuses `color-math` and the reviews dir, U1-2 grades the rewritten line by needles (`toFixed` 0, `no cache` and `exact float` present, no `#NNN`, numstat `1 1`), U1-4 reads both files' numstat, design item 5 and the Not in scope row follow, Q4 is withdrawn; probes run under `FORCE_COLOR=0`, which `NO_COLOR=1` did not achieve on this host | revision 4 notes, 2026-09-25 |
+| 2026-09-26 | closed: landed as `c6e33837` (PR #760, squash of `99219abb`), pre-land `.sdlc/verdicts/cache-docs-prepr.md` pass 2 🟢, authorization `.sdlc/verdicts/cache-docs-authz.md`; status done, file archived | the Conductor's go under R1 |
