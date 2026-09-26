@@ -64,3 +64,5 @@ A `schemaVersion` stored as the string `"6"` is backfilled. `applyRenameMaps` (`
 ## Not rerun
 
 P1's generic role-table control (adapter §1's own control; U1 changes nothing it depends on). `npm run smoke` was not run.
+
+verdict: 🟢
