@@ -6,7 +6,7 @@ ticket: "#750"
 branch: unit/cd-U1
 base: 6d243283
 grade: verifier-l1, the evidence run dispatched by the Verifier seat
-pass: 1
+pass: 2
 written: 2026-09-26
 ---
 
@@ -37,3 +37,15 @@ The unit's rows carry on custody if only that record changes.
 
 verdict: 🔴
 sha: 26c046e506ffef06de3f116facadf6b4111e8998
+
+## Pass 2 · 2026-09-26 · `127fef33`: 🟢
+
+`26c046e5` to `127fef33` is one commit that adds two lines to `.sdlc/verdicts/cache-docs-U1-review.md` and nothing
+else (`1 file changed, 2 insertions(+)`), so every pass 1 row carries on custody. I reread the records in a clone at `127fef33`.
+
+| id | criterion | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| R | the unit's records pass the repo's record checks | 🟢 | mine: the review record's line 53 reads `verdict: 🟢`; `verdicts 163 graded 163 bad 0`; `verdict.py check` exit `0`; `branding: clean (788 files scanned)`, `em-dash: clean (796 files scanned)` | a planted verdict file with no `verdict:` line: `verdicts 164 graded 164 bad 1` |
+
+verdict: 🟢
+sha: 127fef33eec25edf63008c852215d47405a35ae3
