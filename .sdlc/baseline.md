@@ -1,11 +1,11 @@
 ---
 kind: baseline
 repo: ultimate-tokens
-ran: 2026-09-23 to 2026-09-24
+ran: 2026-09-23 to 2026-09-25
 ref: main @ a62ec020
-host: local macOS, Node 24.18, local Chrome for smoke; load under 5 at the start of every counted run (owner ruling 2026-09-20, quiet-host rule, R34 window 1 and its window-2 sequel), full readings in the U6b handoff's Runs table
+host: local macOS, Node 24.18, local Chrome for smoke; load under 5 at the start of every counted run (owner ruling 2026-09-20, quiet-host rule, R34 window 1 and its window-2 sequel), full readings in the U6b handoff's Runs table, except the `npm test` row's 2026-09-25 re-point, whose three runs are read under owner ruling R50 instead (`.sdlc/questions/rule-gates-U5-load.md`; run 1 quiet, runs 2 and 3 under load, each marked so beside its own reading)
 extended: 2026-09-19, rows corpus-contrast and fonts, host load 3.97 4.39 4.80 to 6.16 4.94 4.97 on 10 cores across the six runs
-supersedes: the 2026-09-19 baseline at d814500 (kept below as a prior set) and the 2026-09-16 baseline (git show 180eca0:.sdlc/baseline.md); the #713 U6b/U6c re-measurement below moves `npm test` out of the interim ceiling section entirely (the corpus sweeps split into their own gate scripts) and supersedes it as the figure to cite. Every row now carries all three of its counted quiet-host readings; `npm test`'s window-1 figures move to a labelled superseded note once U6c-8 re-timed it
+supersedes: the 2026-09-19 baseline at d814500 (kept below as a prior set) and the 2026-09-16 baseline (git show 180eca0:.sdlc/baseline.md); the #713 U6b/U6c re-measurement below moves `npm test` out of the interim ceiling section entirely (the corpus sweeps split into their own gate scripts) and supersedes it as the figure to cite. Every row now carries all three of its counted quiet-host readings; `npm test`'s window-1 figures move to a labelled superseded note once U6c-8 re-timed it. 2026-09-25 (#715 U2b step 7): `npm test`'s row moves again, 50 to 51 files (`engine/ramp-identity.mjs`, K17), read under R50 (accept-runs-under-load) rather than the quiet-host rule; the #713 U6c-8 figures move to their own superseded note below
 ---
 
 # Baseline
@@ -18,7 +18,7 @@ The `npm test`, `npm run build` and `npm run smoke` rows were each run three tim
 
 | command | runs | exit | seconds | summary |
 |---|---|---|---|---|
-| `npm test` | 3/3 | 0 | 89.10 · 79.93 · 80.07 | `✓ all 50 test files passed` `re-measured window 2, 2026-09-23 22:58 to 2026-09-24 00:19 PDT, gate-split #713 U6c-8, quiet-host set (below); replaces the U6b/window-1 figures, which move to the superseded note below` |
+| `npm test` | 3/3 | 0 | 151.04 · 1057.97 · 452.98 | `✓ all 51 test files passed` `#715 U2b step 7, run 1 on 2026-09-24 06:47 to 06:50 PDT, runs 2 and 3 on 2026-09-25 21:41 to 22:07 PDT; replaces the #713 U6c-8 figures, which move to the superseded note below` |
 | `npm run gate:corpus-tonal` | 3/3 | 0 | 86.09 · 116.31 · 92.56 | `PASS: tonal-generation clears all [gate] predicates` `new row, gate-split #713 U6b` |
 | `npm run gate:corpus-anchor` | 3/3 | 0 | 78.98 · 99.90 · 86.02 | `PASS (FULL): C2, C3, C4 (non-anchored construction totally migrated, Q1), C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (72), distinct-25 (16) and notch (17, Q3-resolved, +2 at #739) are named allow-lists, compared by name, each with a biting negative control` `new row, gate-split #713 U6b; summary text re-measured after achromatic-anchor #739 merged into plan/achromatic-anchor (notch 15 -> 17, exit 0 confirmed - `.sdlc/checks/baseline-agrees-check.sh` does not compare this cell's text, only its timing, so the #713 seconds carry forward unchanged)` |
 | `npm run gate:sweep-prime` | 3/3 | 0 | 86.25 · 70.40 · 67.00 | `PASS: prime-system clears all AC-050 gates` `new row, gate-split #713 U6b; first reading window 1 (not recorded, before clock logging), other two window 2, 2026-09-23` |
@@ -28,7 +28,19 @@ The `npm test`, `npm run build` and `npm run smoke` rows were each run three tim
 | `npm run gate:corpus-contrast` | 3/3 | 0 | 20.12 · 22.89 · 22.29 | `PASS: every measured curated preset's accent clears 4.5:1 against its own on-color` |
 | `npm run gen:type-fonts` | 3/3 | 0 | 0.77 · 0.78 · 0.70 | `wrote src/ui/type-fonts.js  (229 KB · fonts 171 KB woff2)` |
 
-`npm test`'s summary line moved from 49 to 50 test files: U1 registered `engine/corpus-sample.mjs` in `test/run.mjs`'s `TESTS` alongside the existing `engine/anchor.mjs`. Every row above now carries all three of its counted quiet-host readings (load under 5 at start, 0 hot processes and a clean `pgrep` before and after, exit 0, tree clean); the readings taken in window 2 (2026-09-23 21:58 PDT to 2026-09-24 00:21 PDT) closed out the three gate-script rows' second and third readings and re-timed `npm test`'s three under U6c's narrower SAMPLED draw. See `.sdlc/handoffs/gate-split-U6b.md`'s Runs table for each row's own clock time and Rejected runs table for every attempt, counted and not.
+`npm test`'s summary line moved from 50 to 51 test files: #715 U2 registered `engine/ramp-identity.mjs` in `test/run.mjs`'s `TESTS` (K17). Only the `npm test` row above moves; the other rows are unaffected by this unit and are not re-timed here. Read under owner ruling R50 (`.sdlc/questions/rule-gates-U5-load.md`, extended to gg-U2b by the team lead 2026-09-25): U2b counts three green `npm test` runs taken under load, run 1 counting if green, each recording its own load average and elapsed time rather than requiring the quiet-host rule's load-under-5 gate. Run 1 happened to be quiet (load 4.98 before / 6.83 after, 10 cores, hot 0/0, no other heavy process); runs 2 and 3 ran under load, each overlapping another session's own `npm test` (rule-gates U5, running concurrently per the owner's same ruling):
+
+- Run 1: 2026-09-24 06:47:35 to 06:50:07 PDT, 151.04 s, `exit 0`, load 4.98 before / 6.83 after, hot 0/0, `pgrep` clean before and after, tree clean after. Taken the day before runs 2 and 3, right after the merge (step 0) and before the team lead's hold for rule-gates U5's own window; not concurrent with run 2 despite the close clock reading below, which is a different day.
+- Run 2 (under load, R50): 2026-09-25 21:41:48 to 21:59:27 PDT, 1057.97 s (205.18 s user, 12.62 s system, 20% cpu), `exit 0`, load 69.22/70.00/70.52 before, 111.92/103.77/93.01 after, hot 1 before / 3 after; `pgrep` matched another session's `npm test` (`test/run.mjs`) and an unrelated project's `vite build` at the start, tree clean after.
+- Run 3 (under load, R50): 2026-09-25 21:59:53 to 22:07:26 PDT, 452.98 s (205.92 s user, 7.69 s system, 47% cpu), `exit 0`, load 109.79/104.02/93.47 before, 48.36/64.83/79.33 after, hot 4 before / 6 after; `pgrep` matched another session's `npm test` plus `test/engine/anchor.mjs --full` (rule-gates U5's own FULL leg) and the same unrelated project's `vite build`, tree clean after.
+
+The `ui.html` KB figure is unchanged (`figma/plugin/ui.html` reads the same 4119.1 KB `baseline-agrees-check.sh` already prints `ok` for), so that cell is a no-op per the plan's step 7.
+
+### Superseded: `npm test`'s #713 U6c-8 figures (2026-09-23/24, 50 files)
+
+`npm test`'s summary line moved from 49 to 50 test files at #713: U1 registered `engine/corpus-sample.mjs` in `test/run.mjs`'s `TESTS` alongside the existing `engine/anchor.mjs`. Every row below now carries all three of its counted quiet-host readings (load under 5 at start, 0 hot processes and a clean `pgrep` before and after, exit 0, tree clean); the readings taken in window 2 (2026-09-23 21:58 PDT to 2026-09-24 00:21 PDT) closed out the three gate-script rows' second and third readings and re-timed `npm test`'s three under U6c's narrower SAMPLED draw. See `.sdlc/handoffs/gate-split-U6b.md`'s Runs table for each row's own clock time and Rejected runs table for every attempt, counted and not.
+
+`npm test` (superseded, #713 U6c-8, 50 files): 89.10 · 79.93 · 80.07 s, `✓ all 50 test files passed`, quiet-host set, re-measured window 2, 2026-09-23 22:58 to 2026-09-24 00:19 PDT; superseded above by #715 U2b's 51-file re-point. `#715 U2b`'s own runs are not quiet-host readings (R50), so this is the most recent quiet-host figure of record for the pre-U2b tree, kept as history.
 
 ### Superseded: `npm test`'s window-1 figures (2026-09-23, pre-U6c-8)
 

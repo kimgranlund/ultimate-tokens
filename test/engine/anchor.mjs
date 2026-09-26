@@ -1103,6 +1103,81 @@ if (FULL) {
   swapCheck("lone-spike", loneSpikeSorted, LONE_SPIKE_ALLOW, `film "A Made-Up Title" primary #000006 stop 500`);
 }
 
+// ── U1 (#715 row 25): the default kit joins all seven named checks ────────────────────────────────
+// #681's own gates walked the 8 curated categories only for window (the clamp population above),
+// gap-19, distinct-25, notch, monotone (anchor-ramp) and order/dupe (anchor-ladder); addendum 2
+// put the kit in the lone-spike sweep alone. The kit read a true 0 on all seven, but by never
+// being visited, not by being clean, so a kit regression on any of them would have passed in
+// silence. This block runs the kit through the SAME predicates the curated sweeps already call
+// (monotoneOk, gapOk19, distinctOk25, notchOk, the RAMP_L_MIN/MAX window, and the anchor-ladder
+// order/dupe expressions on primeSwatches, all top level in this file), so no predicate is copied
+// or rewritten. It runs unconditionally in both legs: 48 rendered ramps (16 palettes x 3 modes)
+// plus 16 ladders, free next to the corpus's 10,140 and 3,380. No allow-list: the plan's own four
+// planted defects (K1-K4) found the kit clean today, so a hit here is a real regression, not
+// churn to name.
+const kitDoc = defaultDocument();
+const kitPalettes = kitDoc.palettes.filter((p) => typeof p.anchor === "string");
+const kitWindow = [], kitMonotone = [], kitGap = [], kitDistinct = [], kitNotch = [];
+const kitRampVisited = new Set();
+for (const mode of MODES) {
+  const doc = hydrate({ ...kitDoc, toneMode: mode });
+  const view = projectView(doc);
+  for (const p of kitPalettes) {
+    kitRampVisited.add(p.name);
+    const vp = view.palettes.find((v) => v.name === p.name);
+    const ramp19 = vp ? vp.ramp : null, ramp25 = vp ? vp.fullRamp : null;
+    if (!ramp19 || !ramp25) { kitWindow.push(`${p.name} ${p.anchor} [${mode}]: projectView produced no matching palette, the render path changed shape`); continue; }
+    const srcL = lstarFromRgb(hexToRgb(p.anchor));
+    if (srcL < RAMP_L_MIN || srcL > RAMP_L_MAX) kitWindow.push(`${p.name} ${p.anchor} [${mode}] L* ${srcL.toFixed(2)} outside [${RAMP_L_MIN}, ${RAMP_L_MAX}]`);
+    if (!monotoneOk(ramp19)) kitMonotone.push(`${p.name} ${p.anchor} [${mode}, 19-stop]: pixel L* rose between two stops`);
+    if (!monotoneOk(ramp25)) kitMonotone.push(`${p.name} ${p.anchor} [${mode}, 25-stop]: pixel L* rose between two stops`);
+    if (!gapOk19(ramp19)) kitGap.push(`${p.name} ${p.anchor} [${mode}]: a 19-stop pixel gap fell under 0.55 L*`);
+    if (!distinctOk25(ramp25)) kitDistinct.push(`${p.name} ${p.anchor} [${mode}]: the 25-stop export ramp has a duplicate hex`);
+    if (!notchOk(ramp25)) kitNotch.push(`${p.name} ${p.anchor} [${mode}]: stop 500 notched below both neighbours`);
+  }
+}
+// order/dupe (anchor-ladder): the SAME two expressions the curated anchor-ladder loop above uses on
+// primeSwatches at primeChroma 100 (lines defining orderNames/dupeNames), copied verbatim, not
+// re-derived, since neither is factored into its own top-level function in this file.
+const kitOrder = [], kitDupe = [];
+const kitLadderVisited = new Set();
+const kitLadderCtl = { hueSpace: kitDoc.hueSpace ?? "oklch", primeChroma: 100 };
+for (const p of kitPalettes) {
+  kitLadderVisited.add(p.name);
+  const sw = primeSwatches(p, kitLadderCtl);
+  if (!(sw[2].l > sw[3].l && sw[3].l > sw[4].l)) kitOrder.push(`${p.name} ${p.anchor}: prime does not sit strictly between bright and dim`);
+  if (new Set(sw.map((x) => x.hex)).size < 7) kitDupe.push(`${p.name} ${p.anchor}: two ladder rungs share a hex`);
+}
+// vacuity (U1-3): a check that can pass without looking at anything is worse than no check. Read at
+// runtime, a Set filled inside each loop body, never `kitPalettes.length` computed outside it, so
+// emptying either loop's own iterable, not just shrinking the kit itself, still bites. Silent on the
+// clean path (U1-1's own "0 FAIL lines" already proves this side), same as the file's other
+// negative controls above, which print nothing when they correctly stay quiet: this keeps the
+// pass-line count exactly the seven named checks below, per leg, no separate line to grep.
+const kitVacuityFloor = Math.max(kitDoc.palettes.length, 16);
+const kitVacuityOk = kitRampVisited.size >= kitVacuityFloor && kitLadderVisited.size >= kitVacuityFloor;
+if (!kitVacuityOk) {
+  const detail = `visited ${kitRampVisited.size} (ramp), ${kitLadderVisited.size} (ladder) of ${kitVacuityFloor} kit palettes - a check that never looked would otherwise pass in silence`;
+  console.log(`  FAIL  anchor-ramp default-kit vacuity: ${detail}`);
+  FAIL("anchor-ramp", `default-kit vacuity: ${detail}`);
+}
+// one line per check, the count computed and never typed in; a hit prints the first violation in
+// place of the count, opening with the same `default-kit <check>:` token the pass line carries.
+const kitCheckLine = (group, check, violations, expectedSuffix) => {
+  const ok = violations.length === 0;
+  console.log(`  ${ok ? "pass" : "FAIL"}  ${group} default-kit ${check}: ${ok ? `0 (expected 0; ${expectedSuffix})` : violations[0]}`);
+  if (!ok) FAIL(group, `default-kit ${check}: ${violations[0]}`);
+};
+const kitRampSuffix = `${kitPalettes.length} palettes, ${MODES.length} modes`;
+const kitLadderSuffix = `${kitPalettes.length} palettes`;
+kitCheckLine("anchor-ramp", "window", kitWindow, kitRampSuffix);
+kitCheckLine("anchor-ramp", "monotone", kitMonotone, kitRampSuffix);
+kitCheckLine("anchor-ramp", "gap", kitGap, kitRampSuffix);
+kitCheckLine("anchor-ramp", "distinct", kitDistinct, kitRampSuffix);
+kitCheckLine("anchor-ramp", "notch", kitNotch, kitRampSuffix);
+kitCheckLine("anchor-ladder", "order", kitOrder, kitLadderSuffix);
+kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
+
 // ── F4 gate (R3, review pass 2, 2026-09-18): the owner's F4 principle — "no control goes dead" for an
 // anchored palette — on the rendered path. Cheap checks (default kit only, ~16 anchored palettes) plus
 // the peak-vs-perceptual compare, which reuses the fingerprints the sweep above already collected (no
