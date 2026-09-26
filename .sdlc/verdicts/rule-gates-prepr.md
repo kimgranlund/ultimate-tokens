@@ -2,7 +2,7 @@
 kind: verdict
 plan: rule-gates
 seat: verifier
-pass: 2
+pass: 3
 pr: 757
 ticket: "#730, #727, #728, #724"
 written: 2026-09-26
@@ -87,3 +87,28 @@ baseline, the checks and CI at the new head, and the code rows carry.
 
 verdict: 🔴
 sha: 240c2e5a2a8da8a1d8f00c6ecc183558620becba
+
+## Pass 3 · 2026-09-26 · `1436563c`: 🟢
+
+`240c2e5a` to `1436563c` is one records commit (`.sdlc/baseline.md`, `.sdlc/board.md`, `8 insertions(+), 8 deletions(-)`),
+so pass 2's code rows carry on custody. I reread the baseline and the checks in a clone at `1436563c`. The review's
+round 3 is appended to `/tmp/v13/rg-prepr-review.md` and ends `verdict: 🟢 PASS`.
+
+| id | criterion | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| N1 | the records this plan ships state what happened | 🟢 | mine: the U5 sentence now reads `` read `1`, `` then ``` `0` and `3` immediately before the three runs ```, as its table's hot-before column; `grep -c owner-rulings-2026-09-22` on the baseline prints `0`; the new citation `.sdlc/questions/gg-U2b-p2-time-stale.md` holds `Chosen: "Keep quiet figure, carry STALE (Recommended)", 2026-09-25, owner ruling R53` at line 47 | pass 2 read `` was `0` `` against a table of `1`, `0`, `3` |
+| P7 | the baseline agrees, under R53 | 🟢 | `STALE time test: baseline 167 to 268 s, adapter 80 to 89 s`, `stale total: 1`, the only STALE line | `all 53` planted as `all 52`: `stale total: 2` |
+| C | checks and gates | 🟢 | `verdicts 162 graded 162 bad 0`, `stale total: 0`, `range mismatches: 0`; `branding: clean (784 files scanned)`; `em-dash: clean (792 files scanned)`; added dashes in the commit `0` | pass 1's plants |
+| M | clean merge into today's main | 🟢 | `git merge-tree --write-tree origin/main 1436563c` exit `0` at main `68e90c52`; #757 `mergeStateStatus` `CLEAN`, body carries `Closes #730, #727, #728, #724` | pass 1: exit `1` at `374f7f1d` |
+| RL | the review leg | 🟢 | round 3: `verdict: 🟢 PASS` | round 1 ended `verdict: 🟡 FIX-FIRST` |
+| CI | CI at the full sha | 🟢 | run `36261285755` at `1436563c`: `success` on every job, `deploy` `skipped` | run `35785765215` red at `Run npm run smoke` |
+
+Still 🟡, none a gate:
+- P10 wants a head that contains main. Main has moved past the head by the verifier's own record commits, which
+  are `.sdlc/verdicts/` only, so the final sync before the squash is the Orchestrator's; the merge above is clean.
+- The review's two low leftovers: a duplicate U6c-8 Superseded heading (`baseline.md:41`, `:47`), and
+  `.sdlc/handoffs/rule-gates-U5.md:101` still cites the `.sdlc/runtime/` path. That handoff is a pass record of its own sha.
+- P8 (the per-line filter's `5` exempt hits), and K (DD9, #755), both main's or gate-exempt.
+
+verdict: 🟢
+sha: 1436563cbb50e46ac5d249386f5fcab1e267a68c
