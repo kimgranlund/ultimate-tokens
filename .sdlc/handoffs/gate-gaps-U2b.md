@@ -84,7 +84,7 @@ stale total: 1
 
 `exit 1`. `grep -c -E '^STALE (tests|ui\.html|time )'` -> `1`. `grep '^STALE ' | grep -v -c '^STALE head'` -> `1`. `grep -E '^(STALE|note|ok) +head'` -> the two lines quoted above.
 
-This does not read `0`, `0` as the plan's P2 criterion states. `tests` and `ui.html` agree (51 = 51, 4119.1 = 4119.1). `time test` is genuinely `STALE`: two of the three counted runs are R50 under-load readings (1057.97 s, 452.98 s), which R50 rules must be marked as under-load and not folded into the quiet-machine ceiling figure `adapter.md`'s `test` row states (80 to 89 s, `#713` U6c-8's last quiet reading). Rewriting that cell to the new 151-to-1058 s range would do exactly what R50 says not to: treat contention-dominated readings as the ceiling's figure of record. `adapter.md`'s `test` row is left untouched; the STALE line is recorded here and in `.sdlc/questions/gg-U2b-p2-time-stale.md`, routed to the Conductor per the team lead, rather than resolved by rewriting the ceiling cell. Left open pending that answer.
+This does not read `0`, `0` as the plan's P2 criterion states. `tests` and `ui.html` agree (51 = 51, 4119.1 = 4119.1). `time test` is genuinely `STALE`: two of the three counted runs are R50 under-load readings (1057.97 s, 452.98 s), which R50 rules must be marked as under-load and not folded into the quiet-machine ceiling figure `adapter.md`'s `test` row states (80 to 89 s, `#713` U6c-8's last quiet reading). Rewriting that cell to the new 151-to-1058 s range would do exactly what R50 says not to: treat contention-dominated readings as the ceiling's figure of record. `adapter.md`'s `test` row is left untouched; the STALE line is recorded here and in `.sdlc/questions/gg-U2b-p2-time-stale.md`. Owner ruling R53 (2026-09-25, "Keep quiet figure, carry STALE (Recommended)") answers it: `adapter.md`'s row stays at 80 to 89 s, and the one `STALE time test` line is carried as a documented exception under R50 through pre-land, not resolved by rewriting the ceiling cell.
 
 ### P2's negative control
 
@@ -112,6 +112,6 @@ Negative control, in a fresh `git clone --shared` copy at the same head (`git re
 
 `exit 1`, `grep -c FAIL` -> `3` (measured, matching the shape the adapter's own P1 control note describes, count stated rather than assumed).
 
-## Open
+## Closed
 
-`.sdlc/questions/gg-U2b-p2-time-stale.md`: whether `adapter.md`'s `test` row time cell moves to the new under-load range or stays as the last quiet-host figure with the STALE line documented. Routed to the Conductor. Nothing else in U2-7's P2 half or step 7 is blocked on it; the reviewer and verifier can grade every other row now.
+`.sdlc/questions/gg-U2b-p2-time-stale.md`: answered by owner ruling R53, quoted above. Nothing in U2-7's P2 half or step 7 is left open; the one `STALE time test` line is the expected, documented reading under R50, carried through pre-land.
