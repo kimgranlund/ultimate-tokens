@@ -7,14 +7,14 @@ branch: unit/cf-U1
 base: plan/chroma-floor @ 650ad34b
 grade: verifier-l2, the evidence run dispatched by the Verifier seat, which re-read the rows marked mine
 contract: C1, C2, C5 to C10 of .sdlc/plans/chroma-floor.md at fb85ed0b, revision 12, and the invariants the plan restates for every unit
-pass: 2
-passes: 1 at fb85ed0b 🔴, 2 at cbcbf9f4 🟡
+pass: 3
+passes: 1 at fb85ed0b 🔴, 2 at cbcbf9f4 🟡, 3 at ec618987 🟢
 written: 2026-09-26
 ---
 
-# Verdict chroma-floor U1 · passes 1 to 2 · 🟡 at `cbcbf9f4`, every criterion met, record items open
+# Verdict chroma-floor U1 · passes 1 to 3 · 🟢 at `ec618987`
 
-Current finding: 🟡 at `cbcbf9f4`, in `## Pass 2` below. Pass 1, 🔴 at `fb85ed0b`, is history.
+Current finding: 🟢 at `ec618987`, in `## Pass 3` below. Passes 1 (🔴 at `fb85ed0b`) and 2 (🟡 at `cbcbf9f4`) are history.
 
 ## Pass 1, at `fb85ed0b`: the engine change holds every invariant; C7 and C10 red on their written Expected, C2 and C8 yellow, record items open
 
@@ -152,3 +152,28 @@ R" where the lift-±40 bound, `0.2241`, is just outside `0.2`.
 
 verdict: 🟡
 sha: cbcbf9f4ea2205c2fe90bc4d8ddcd2715a66eabd
+
+## Pass 3, at `ec618987`
+
+verdict: 🟢
+sha: ec618987b21aad0b3ce3e44530468d69fd27a21b
+
+Run by me. `git diff --stat cbcbf9f4 ec618987` is 4 files: the handoff, the two cited docs, and
+`scripts/report-chroma-floor-movement.mjs` removed (`114` lines). No `src/` or `test/` file moved, so
+pass 2's criterion rows carry on custody. I reran the rows the delta can touch.
+
+| id | criterion | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| CT | the two citations | 🟢 | both now cite `src/engine/tonal.js:959`, where `export function okhslLAt` sits; the audit reads `OK` on both; `✓ citations: parser self-test + STALE 0 across 10 discovered docs (HEAD ec618987)` | at `cbcbf9f4` the same two lines read NEAR at `:958` |
+| S | the script dropped, per the Orchestrator's ruling | 🟢 | `git ls-tree ec618987 scripts/` lists it `0` times; `0` references from any `.mjs`, `.json` or `.yml`; the scratch copy the handoff names, `/private/tmp/claude-501/report-chroma-floor-movement.mjs`, differs from the committed version only in its header comment | at `cbcbf9f4` the file is tracked |
+| M | the blast-radius fields | 🟢 | the handoff's movement table now carries presets `344 / 344`, palettes per mode `0`, `0`, `2,417 / 3,796`, cells `4,531 of 94,900` (`4.77%`), max dC by stop on the rendered hex `2.25 / 18.40 / 19.20 / 1.52`, overall `19.2013` with its measure named, and max dL* `0.3848`; each matches pass 2's own run (the requested-chroma figures differ by the named measure) | pass 2's handoff lacked every one of these |
+| C1 | `npm test` | 🟢 | fresh clone at `ec618987`, no `node_modules`: `✓ all 50 test files passed`, tree `0` | pass 2's `scrim` plant, same test path |
+| P | branding, dashes | 🟢 | `branding: clean (732 files scanned)`; added em or en dash `0`; `baseline-agrees` `stale total: 0` | pass 2's plants |
+
+Carried: the handoff's C12 row still quotes `STALE ui.html` at `4125.3`, `stale total: 1`, which was
+true before the correction paragraph and is stale now (`stale total: 0`). That's for the close-out. The
+mode-isolation timing row (T) is owed before pre-land. `doc-drift-rows` `bad 1` (DD9) and #755's
+ceiling-counts failure are main's.
+
+verdict: 🟢
+sha: ec618987b21aad0b3ce3e44530468d69fd27a21b
