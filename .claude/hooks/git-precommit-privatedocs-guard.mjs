@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// git-precommit-privatedocs-guard.mjs — PreToolUse guard on Bash: blocks a `git commit` if
+// git-precommit-privatedocs-guard.mjs, PreToolUse guard on Bash: blocks a `git commit` if
 // `.claude/docs/other/` (the local-only working folder, ignored via `.git/info/exclude`) would
-// be swept into the commit. Mechanizes CLAUDE.md's own "Always" guard — the check itself was
+// be swept into the commit. Mechanizes CLAUDE.md's own "Always" guard, the check itself was
 // already a one-line grep; this makes it fire before the commit, not just when someone remembers
 // to run it. Zero-dep, ESM, matches this repo's own scripting convention.
 //
@@ -10,7 +10,7 @@ import { execSync } from "node:child_process";
 
 const COMMIT_RE = /\bgit\s+(?:.*\s)?commit\b/;
 
-// isPrivateDirStaged(statusOutput) — the pass/fail core, pure and testable: `git status --short`
+// isPrivateDirStaged(statusOutput), the pass/fail core, pure and testable: `git status --short`
 // output → true if any line touches .claude/docs/other/ (any status code, any of the two path
 // columns a rename can occupy).
 export function isPrivateDirStaged(statusOutput) {
@@ -31,7 +31,7 @@ function runSelftest() {
   ok(isPrivateDirStaged(" M .claude/docs/other-thing.md") === false, "lookalike path (no trailing slash match) → false");
 
   if (fails.length) { console.error(`git-precommit-privatedocs-guard FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
-  console.log("git-precommit-privatedocs-guard PASS — staged/untracked/renamed private-dir detection, lookalike-path exclusion");
+  console.log("git-precommit-privatedocs-guard PASS, staged/untracked/renamed private-dir detection, lookalike-path exclusion");
   process.exit(0);
 }
 
@@ -52,9 +52,9 @@ else {
     if (isPrivateDirStaged(status)) {
       console.error(
         "git-precommit-privatedocs-guard · .claude/docs/other/ would reach this commit\n" +
-        "  .claude/docs/other/ is local-only (ignored via .git/info/exclude) — it must never reach a commit.\n" +
+        "  .claude/docs/other/ is local-only (ignored via .git/info/exclude), it must never reach a commit.\n" +
         "  Fix: `git restore --staged .claude/docs/other/` (or unstage the specific file), then commit again.\n" +
-        "  If this looks wrong, report it against CLAUDE.md's own guard — do not bypass with --no-verify."
+        "  If this looks wrong, report it against CLAUDE.md's own guard, do not bypass with --no-verify."
       );
       process.exit(2); // block; stderr is fed back
     }

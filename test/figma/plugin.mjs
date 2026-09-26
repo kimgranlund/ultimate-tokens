@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// verify.mjs — the figma-plugin-app validation adapter (CRITIC side).
+// verify.mjs, the figma-plugin-app validation adapter (CRITIC side).
 // Gates the generator-as-Figma-plugin without Figma: manifest shape + offline, code.js
 // parses + uses no network APIs, ui.html carries the generator + the bridge, AND the
-// load-bearing contract — model.figmaBundle() fed to code.applyBundle() (on a MOCK figma)
+// load-bearing contract, model.figmaBundle() fed to code.applyBundle() (on a MOCK figma)
 // builds a Color Primitives collection + a Color Roles (Light/Dark) collection in which EVERY
 // semantic var, in BOTH modes, is aliased to a raw var that was actually created.
 import { readFileSync, existsSync } from "node:fs";
@@ -18,8 +18,8 @@ import { LIBRARY_TYPE_VOICE_MAP, GEOMETRY_FIELD_RENAME_MAP } from "../../figma/b
 import { googleSafeFontFor } from "../../src/engine/font-fallbacks.mjs";
 import { gateReport } from "../gate-report.mjs";
 
-// stateOfDefault — a minimal engine State over role-table.json's default palettes, for building a
-// custom-themes DTCG bundle directly (figmaBundle() itself takes no themes option — TKT-0021
+// stateOfDefault, a minimal engine State over role-table.json's default palettes, for building a
+// custom-themes DTCG bundle directly (figmaBundle() itself takes no themes option, TKT-0021
 // generalizes the engine/bind/apply axis; a per-doc UI control for extra themes is a later ticket).
 function stateOfDefault() {
   const RT = JSON.parse(readFileSync(new URL("../../docs/reference/data/role-table.json", import.meta.url), "utf8"));
@@ -37,29 +37,29 @@ if (mani.ui !== "ui.html") FAIL("manifest", `ui=${mani.ui}, want ui.html`);
 if (!Array.isArray(mani.editorType) || !mani.editorType.includes("figma")) FAIL("manifest", "editorType must include 'figma'");
 const na = mani.networkAccess;
 const offline = na === "none" || (na && Array.isArray(na.allowedDomains) && na.allowedDomains.length === 1 && na.allowedDomains[0] === "none");
-if (!offline) FAIL("manifest", "networkAccess must be 'none' — the plugin is offline by design (AC-P3)");
+if (!offline) FAIL("manifest", "networkAccess must be 'none', the plugin is offline by design (AC-P3)");
 
 // ── code.js: parses + uses no network / dynamic-import APIs ──────────────────────
 const code = readFileSync(`${HERE}/code.js`, "utf8");
 const codeNoComments = code.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, ""); // ignore the comment that NAMES these
 if (/\bfetch\s*\(|new\s+(XMLHttpRequest|WebSocket)|\bimport\s*\(/.test(codeNoComments)) FAIL("offline", "code.js calls a network or dynamic-import API");
 
-// Figma's plugin VM (jsvm-cpp) is NOT modern V8: optional catch binding (ES2019 — `catch {`
-// with no param) PARSE-fails there, yet loads fine in Node — so this verifier's own
+// Figma's plugin VM (jsvm-cpp) is NOT modern V8: optional catch binding (ES2019, `catch {`
+// with no param) PARSE-fails there, yet loads fine in Node, so this verifier's own
 // new Function() load below can't catch it (real incident 2026-06-17: the whole plugin failed
 // to run with "Syntax error: Unexpected token {"). Guard it statically. Write `catch (e) {`.
-if (/\bcatch\s*\{/.test(codeNoComments)) FAIL("vmsyntax", "code.js uses optional catch binding (`catch {`) — Figma's plugin VM rejects it; use `catch (e) {`");
+if (/\bcatch\s*\{/.test(codeNoComments)) FAIL("vmsyntax", "code.js uses optional catch binding (`catch {`), Figma's plugin VM rejects it; use `catch (e) {`");
 
 // ── compliance: no RAW developer error surfaced to users, no stale product branding ─────────────
 // Figma policy rejects plugins that show raw error text / stack traces. The catch must notify a
 // friendly, handled message (technical detail goes to console.error, not figma.notify).
 if (/figma\.notify\([^;]*\b(?:e\.message|String\(e\)|err\.message|\.stack)\b/.test(codeNoComments))
-  FAIL("compliance", "code.js surfaces a raw error in figma.notify — show a friendly message; log the detail to console only");
+  FAIL("compliance", "code.js surfaces a raw error in figma.notify, show a friendly message; log the detail to console only");
 if (/figma\.notify\([^;]*HCT/.test(codeNoComments))
-  FAIL("compliance", "a user-facing figma.notify still says 'HCT' (stale branding) — the product is 'Ultimate Tokens'");
+  FAIL("compliance", "a user-facing figma.notify still says 'HCT' (stale branding), the product is 'Ultimate Tokens'");
 
 // ── ui.html: the generator + the Figma bridge ───────────────────────────────────
-if (!existsSync(`${HERE}/ui.html`)) FAIL("ui", "ui.html not generated — run gen-ui.mjs");
+if (!existsSync(`${HERE}/ui.html`)) FAIL("ui", "ui.html not generated, run gen-ui.mjs");
 else {
   const ui = readFileSync(`${HERE}/ui.html`, "utf8");
   if (!ui.includes("<ultimate-tokens>")) FAIL("ui", "ui.html does not embed the generator (<ultimate-tokens>)");
@@ -94,7 +94,7 @@ function mockFigma() {
       if (typeof html !== "string" || html.indexOf("adopt-confirm") === -1) {
         // the app bundle, not a dialog: this is a BOOT (module top) or a restoreAppUI REBOOT. Record what
         // the file's embedded config reads as right now, because that is exactly what the freshly booted
-        // app would load back (#632 MAJOR-1) — a real iframe the mock cannot otherwise model.
+        // app would load back (#632 MAJOR-1), a real iframe the mock cannot otherwise model.
         this._restoreCalls++;
         this._configAtRestore = this.root.getPluginData("ultimate-tokens-config");
         return;
@@ -115,7 +115,7 @@ function mockFigma() {
     root: { _pd: {}, setPluginData(k, v) { this._pd[k] = String(v); }, getPluginData(k) { return this._pd[k] || ""; } },
     ui: { _h: null, _posted: [], postMessage(m) { this._posted.push(m); }, close() {}, set onmessage(fn) { this._h = fn; }, get onmessage() { return this._h; } },
     clientStorage: { _s: {}, async setAsync(k, v) { this._s[k] = v; }, async getAsync(k) { return this._s[k]; } },
-    // ── styles (paint + text) — the styles executor's surface ──
+    // ── styles (paint + text), the styles executor's surface ──
     _styles: [],
     async getLocalPaintStylesAsync() { return this._styles.filter((s) => s._kind === "PAINT"); },
     async getLocalTextStylesAsync() { return this._styles.filter((s) => s._kind === "TEXT"); },
@@ -128,7 +128,7 @@ function mockFigma() {
       this._styles.push(st); return st;
     },
     // the "installed" font universe: a few families with REALISTIC face lists (note: no exact
-    // "SemiBold" on Inter Tight — nearest-weight resolution must cope) and italics to be skipped.
+    // "SemiBold" on Inter Tight, nearest-weight resolution must cope) and italics to be skipped.
     _fonts: { "Inter": ["Thin", "Light", "Regular", "Medium", "SemiBold", "Bold", "Black", "Italic", "Bold Italic"],
               "Inter Tight": ["Light", "Regular", "Medium", "Bold", "Black"],
               "Source Serif 4": ["Regular", "SemiBold", "Bold"],
@@ -173,10 +173,10 @@ function mockFigma() {
 
 // ── END-TO-END contract: figmaBundle() -> applyBundle() on the mock ──────────────
 let applyBundle, applyFloatPlans, applyFontPrimitivesModes, applyStylePlans, setCollectionNames, resolveFace, sweepCandidates, styleNameWeight;
-// #495 "published library" mode — the hand-written VM mirrors of mode-apply-plan.mjs's pure planner
+// #495 "published library" mode, the hand-written VM mirrors of mode-apply-plan.mjs's pure planner
 // functions, extracted for the `libraryparity` behavioral-parity gate below (see its own header comment).
 let vmLibraryReconcile, vmValueChanged, vmLibraryModeReport, vmNearestStepByHeight, vmExpandGeometryAliasMap, vmExpandVoiceAliasMap, vmGeometryPlanStepHeights, vmLibraryTypeVoiceMap, vmResolveLiteralHeight, vmLiveAliasTargetsByName, vmPriorLibraryUplift, vmPruneCandidates;
-// #498 grammar bridge — the hand-written VM mirrors, extracted for the same libraryparity gate.
+// #498 grammar bridge, the hand-written VM mirrors, extracted for the same libraryparity gate.
 let vmParseOldTypeStepName, vmTypeStepAliasMap, vmTypeWeightAliasMap, vmTypeStepFieldMap, vmGeometryFieldRenameMap;
 const F = mockFigma();
 try {
@@ -206,7 +206,7 @@ if (applyBundle) {
     }, 0);
     return walk(tree);
   };
-  // primeLeafCount — the "{n}/prime/{step}" leaves nested under each family (REQ-054): P5/#540 routes
+  // primeLeafCount, the "{n}/prime/{step}" leaves nested under each family (REQ-054): P5/#540 routes
   // these into their OWN "Color Prime" collection, not "Color Primitives", so they're carved out of
   // rawExpect below and counted separately as primeExpect.
   const primeLeafCount = (tree) => Object.keys(tree).filter((k) => k[0] !== "$").reduce((a, n) => {
@@ -217,12 +217,12 @@ if (applyBundle) {
   const rawExpect = expect(bundle["palette.tokens.json"]) - primeExpect;
   const semExpect = expect(bundle["Light_tokens.json"]);
 
-  // ── schema stamp tolerance (SPEC 0.3.0 RP-8, ticket #577, plan PR #571 step E6) — the bundle
+  // ── schema stamp tolerance (SPEC 0.3.0 RP-8, ticket #577, plan PR #571 step E6), the bundle
   // already carries the new root $extensions["com.ultimate-tokens"].schemaVersion on all 3 files
   // (exportDTCG's figmaMode, unconditional); confirm it's actually there (not silently dropped by
   // figmaBundle's own aliasing pass) before proving below that applyBundle still parses/applies it
   // with the SAME variable counts as an unstamped bundle would (childKeys() skips any "$"-prefixed
-  // root key, so the stamp is inert to the reader — this proves that, rather than assuming it).
+  // root key, so the stamp is inert to the reader, this proves that, rather than assuming it).
   for (const file of ["palette.tokens.json", "Light_tokens.json", "Dark_tokens.json"]) {
     const ext = bundle[file].$extensions && bundle[file].$extensions["com.ultimate-tokens"];
     if (!ext || ext.schemaVersion !== 3) FAIL("apply", `bundle["${file}"] missing root $extensions["com.ultimate-tokens"].schemaVersion=3 (got ${JSON.stringify(ext)})`);
@@ -245,7 +245,7 @@ if (applyBundle) {
     if (prime) {
       const primeNames = F.variables.filter((v) => v.variableCollectionId === prime.id).map((v) => v.name);
       if (primeNames.length !== primeExpect) FAIL("apply", `Color Prime has ${primeNames.length} vars, expected ${primeExpect}`);
-      // REQ-054 naming: "{n}/{step}" — no "raw/" prefix, no leftover "/prime/" segment (that's the
+      // REQ-054 naming: "{n}/{step}", no "raw/" prefix, no leftover "/prime/" segment (that's the
       // DTCG source path this leaf was routed FROM, not the Figma variable name).
       if (!primeNames.includes("primary/brightest")) FAIL("apply", `Color Prime is missing "primary/brightest" (REQ-054 {n}/{step} naming); got e.g. ${primeNames.slice(0, 5).join(", ")}`);
       const badName = primeNames.find((nm) => nm.indexOf("raw/") === 0 || /\/prime\//.test(nm));
@@ -288,8 +288,8 @@ if (applyBundle) {
     if (res2.prime !== primeExpect) FAIL("idempotent", `re-apply reported prime=${res2.prime} vars, want ${primeExpect}`);
 
     // ── ORPHAN PRUNE: re-apply removes any var NOT in the current bundle, in ALL THREE generated
-    //    collections — old-format scrims (250-*/500-0..6/750-*), removed/renamed/disabled palettes,
-    //    and a stale prime var — so the file mirrors the generator exactly (full-mirror pruning). ──
+    //    collections, old-format scrims (250-*/500-0..6/750-*), removed/renamed/disabled palettes,
+    //    and a stale prime var, so the file mirrors the generator exactly (full-mirror pruning). ──
     F.figma.variables.createVariable("neutral/500-0", raw, "COLOR"); // old base-index scrim
     F.figma.variables.createVariable("neutral/750-3", raw, "COLOR"); // old 750-base scrim
     F.figma.variables.createVariable("ghost/050", raw, "COLOR");     // removed-palette raw solid
@@ -335,7 +335,7 @@ if (applyBundle) {
       const bsem = F.collections.find((c) => c.name === "Brand Modes");
       if (!braw || !bsem) FAIL("collnames", "override apply did not create the custom-named collections");
       if (res5.raw !== rawExpect || res5.semantic !== semExpect) FAIL("collnames", `override apply created ${res5.raw}/${res5.semantic} vars, want ${rawExpect}/${semExpect}`);
-      // Color Prime has NO Settings override (figmaCollectionNames only covers raw/semantic) — it stays
+      // Color Prime has NO Settings override (figmaCollectionNames only covers raw/semantic), it stays
       // "Color Prime" even while raw/semantic are overridden, and its own var count is unaffected.
       if (res5.prime !== primeExpect) FAIL("collnames", `override apply created ${res5.prime} prime vars, want ${primeExpect} (Color Prime has no name override)`);
       if (F.collections.filter((c) => c.name === "Color Prime").length !== 1) FAIL("collnames", "override apply should not rename or duplicate Color Prime");
@@ -347,7 +347,7 @@ if (applyBundle) {
     }
   } catch (e) { FAIL("apply", "applyBundle threw: " + e.message); }
 
-  // ── PRIME RE-APPLY updates VALUES IN PLACE (AC-052's "re-applying updates in place" half — the
+  // ── PRIME RE-APPLY updates VALUES IN PLACE (AC-052's "re-applying updates in place" half, the
   //    idempotent leg above proves count stability, not that a CHANGED prime color actually lands).
   //    A fresh mock/load so this leg's own state can't be confused with the shared `F` above. ──
   {
@@ -368,12 +368,12 @@ if (applyBundle) {
           if (!brightestVar) FAIL("primevalue", "Color Prime is missing 'primary/brightest'");
           else {
             const before = JSON.stringify(brightestVar.values[primeA.modes[0].modeId]);
-            // primeChroma (REQ-052) scales every prime swatch's saturation — a value-only mutation
+            // primeChroma (REQ-052) scales every prime swatch's saturation, a value-only mutation
             // with no structural effect (same 7 steps, same names). Set it on the PALETTE itself
             // (Primary's own override), not the top-level doc.primeChroma: ticket #559 put a GROUP
             // layer between the two (Primary's "brand" group has its own explicit primeChroma
             // default), so the global slider alone no longer reaches a grouped palette once
-            // resolveGroups() has filled every group's default — a per-palette override still does.
+            // resolveGroups() has filled every group's default, a per-palette override still does.
             const doc10b = defaultDocument();
             doc10b.palettes.find((p) => p.name === "Primary").primeChroma = 50;
             const bundleB = figmaBundle(doc10b);
@@ -393,10 +393,10 @@ if (applyBundle) {
     }
   }
 
-  // ── THEMES (TKT-0021 — the theme axis flows generically all the way to the apply executor): a
+  // ── THEMES (TKT-0021, the theme axis flows generically all the way to the apply executor): a
   //    3-theme bundle (Light/Dark/Dim, Dim on the "dark" side) creates a THREE-mode Color Roles
   //    collection, every var aliased in all three modes, and re-applying a plain 2-theme bundle prunes
-  //    the now-unwanted "Dim" mode back down to two — proves N-way, not just "2 still works". Built
+  //    the now-unwanted "Dim" mode back down to two, proves N-way, not just "2 still works". Built
   //    directly off exportDTCG (the same engine call figmaBundle wraps) since figmaBundle itself takes
   //    no themes option (this ticket generalizes the engine/bind/apply axis; a per-doc UI control for
   //    extra themes is a separate, later ticket). ──
@@ -483,7 +483,7 @@ if (applyBundle) {
   }
 }
 
-// ── breakpoint-moded FLOAT apply (Type + Geometry) — the NATIVE side of #125's interchange export ──
+// ── breakpoint-moded FLOAT apply (Type + Geometry), the NATIVE side of #125's interchange export ──
 // applyFloatPlans executes the UI-computed plans (figma/binder/mode-apply-plan.mjs.modeApplyPlan) against
 // the figma API: since TKT-0009 the type + geometry halves land as ONE merged "Geometry" collection
 // (type/ + box-geometry variables), mode[0]="Base" + one mode per breakpoint, value-complete FLOAT vars.
@@ -518,7 +518,7 @@ if (applyFloatPlans) {
       else if (bodyMd.valuesByMode[baseId] === bodyMd.valuesByMode[mobId]) FAIL("floatapply", "type/body/md/size Base == Mobile (per-mode values should differ at bodyBase 16 vs 13)");
     }
 
-    // IDEMPOTENT re-apply — no duplicate collection / modes / variables.
+    // IDEMPOTENT re-apply, no duplicate collection / modes / variables.
     await applyFloatPlans(modeApplyPlan(mergeModeInterchanges(typeIx, geomIx)));
     if (F.collections.filter((c) => c.name === "Geometry").length !== 1) FAIL("floatidem", "re-apply duplicated the Geometry collection");
     if (geo && geo.modes.length !== 2) FAIL("floatidem", `re-apply left ${geo && geo.modes.length} Geometry modes, want 2`);
@@ -532,7 +532,7 @@ if (applyFloatPlans) {
     )));
     if (geo && geo.modes.map((m) => m.name).join() !== "Base") FAIL("floatprune", `after removing the breakpoint, Geometry modes = ${geo && geo.modes.map((m) => m.name)}, want Base`);
 
-    // ORPHAN VAR pruned — a synthetic collection: apply {a,b} then {a} ⇒ b removed, a updated to 9.
+    // ORPHAN VAR pruned, a synthetic collection: apply {a,b} then {a} ⇒ b removed, a updated to 9.
     const synthVar = (name, value) => ({ name, type: "FLOAT", values: [{ mode: "Base", value }] });
     await applyFloatPlans([{ collection: "Synth", modes: ["Base"], defaultMode: "Base", addModes: [], variables: [synthVar("a", 1), synthVar("b", 2)] }]);
     await applyFloatPlans([{ collection: "Synth", modes: ["Base"], defaultMode: "Base", addModes: [], variables: [synthVar("a", 9)] }]);
@@ -543,7 +543,7 @@ if (applyFloatPlans) {
     if (!aVar) FAIL("floatprune", "variable 'a' missing after re-apply");
     else if (aVar.valuesByMode[synth.modes[0].modeId] !== 9) FAIL("floatprune", "variable 'a' not updated to 9 on re-apply");
 
-    // PROVENANCE: apply must NEVER canonicalize a USER's own pre-existing same-named collection — it tracks
+    // PROVENANCE: apply must NEVER canonicalize a USER's own pre-existing same-named collection, it tracks
     // the collections IT created by id in root pluginData and makes a SEPARATE one. Fresh mock so the user's
     // "Geometry" is the only one until apply runs.
     const F2 = mockFigma();
@@ -558,7 +558,7 @@ if (applyFloatPlans) {
     if (F2.collections.filter((c) => c.name === "Geometry").length !== 2) FAIL("floatprov", "re-apply made a 3rd Geometry (provenance registry not persisted to root pluginData)");
 
     // RETIREMENT (TKT-0009 migration): a registry-tracked two-collection-era "Typography" is removed by a
-    // merged plan carrying retire:["Typography"] (what _figmaFloatPlans attaches) — while a user's OWN
+    // merged plan carrying retire:["Typography"] (what _figmaFloatPlans attaches), while a user's OWN
     // same-named collection survives (provenance: retire matches by registry id, never by name).
     const F8 = mockFigma();
     const a8 = new Function("figma", "__html__", "module", code + "\nreturn { applyFloatPlans };")(F8.figma, "<html>", undefined).applyFloatPlans;
@@ -648,7 +648,7 @@ if (applyFloatPlans) {
   FAIL("floatlibrary", "code.js exported no applyFloatPlans");
 }
 
-// ── TKT-0012: the id-preserving RENAME capability — the migration channel every renaming ticket uses.
+// ── TKT-0012: the id-preserving RENAME capability, the migration channel every renaming ticket uses.
 //    Proven on the mock: (a) a plan.renames var rename keeps the SAME variable id (no prune+recreate),
 //    (b) a plan.renameFrom collection rename adopts the registry-tracked collection by id, renames it
 //    in place, and re-keys the registry, (c) empty maps are byte-identical no-ops. ──
@@ -656,14 +656,14 @@ if (applyFloatPlans) {
   try {
     const F9 = mockFigma();
     const a9 = new Function("figma", "__html__", "module", code + "\nreturn { applyFloatPlans };")(F9.figma, "<html>", undefined).applyFloatPlans;
-    // era 1: a synthetic OLD-shape interchange ("Geometry" collection, camel var names) — hand-built,
+    // era 1: a synthetic OLD-shape interchange ("Geometry" collection, camel var names), hand-built,
     // since the live emitters now speak the ADR-016 grammar.
     const oldIx = JSON.parse(JSON.stringify(TYPE.typeTokensFigmaModes(TYPE.typeScale({ treatment: "product", bodyBase: 16 }), [])).replaceAll("Geometry", "Breakpoints").replaceAll("type/body/md/", "type/Body/MD/").replaceAll("line-height", "lineHeight").replaceAll("letter-spacing", "letterSpacing").replaceAll("paragraph-spacing", "paragraphSpacing").replaceAll("single-lineHeight", "singleLineHeight"));
     await a9(modeApplyPlan(oldIx)); // era 1: the old-shape collection ("Breakpoints", camel var names)
     const geoOld = F9.collections.find((c) => c.name === "Breakpoints");
     const oldVar = F9.variables.find((v) => v.variableCollectionId === geoOld.id && v.name === "type/Body/MD/size");
     const keepCollId = geoOld.id, keepVarId = oldVar.id, varCountBefore = F9.variables.filter((v) => v.variableCollectionId === geoOld.id).length;
-    // era 2: the renamed shape — collection "Breakpoints-Test", var "type/body/md/size" — via the capability
+    // era 2: the renamed shape, collection "Breakpoints-Test", var "type/body/md/size", via the capability
     const renamedIx = JSON.parse(JSON.stringify(oldIx).replaceAll("type/Body/MD/", "type/body/md/"));
     const plans9 = modeApplyPlan({ collections: { "Breakpoints-Test": renamedIx.collections.Breakpoints } });
     plans9[0].renameFrom = ["Breakpoints"];
@@ -672,13 +672,13 @@ if (applyFloatPlans) {
     const bp = F9.collections.find((c) => c.name === "Breakpoints-Test");
     if (!bp) FAIL("renamecap", "renameFrom did not produce the renamed collection");
     else {
-      if (bp.id !== keepCollId) FAIL("renamecap", "collection rename minted a NEW collection (id changed — bindings would orphan)");
+      if (bp.id !== keepCollId) FAIL("renamecap", "collection rename minted a NEW collection (id changed, bindings would orphan)");
       if (F9.collections.filter((c) => c.name === "Breakpoints").length !== 0) FAIL("renamecap", "the old-name collection lingers after renameFrom");
       const nv = F9.variables.find((v) => v.variableCollectionId === bp.id && v.name === "type/body/md/size");
       if (!nv) FAIL("renamecap", "renamed variable missing");
-      else if (nv.id !== keepVarId) FAIL("renamecap", "variable rename minted a NEW variable (id changed — bindings would orphan)");
+      else if (nv.id !== keepVarId) FAIL("renamecap", "variable rename minted a NEW variable (id changed, bindings would orphan)");
       // NOTE: the plan renames only 2 vars; the rest of the old camel names differ from the new plan's
-      // names WITHOUT a map entry → reconcile prunes and recreates them (fresh ids) — exactly why every
+      // names WITHOUT a map entry → reconcile prunes and recreates them (fresh ids), exactly why every
       // renaming ticket MUST ship its full map. The two mapped ones prove the channel.
     }
     // registry re-keyed: a THIRD apply under the new name must reuse the same collection, not mint another
@@ -711,7 +711,7 @@ if (applyBundle && applyStylePlans) {
     const FA = mockFigma();
     const la = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle, applyStylePlans };")(FA.figma, "<html>", undefined);
     const bundleB = figmaBundle(defaultDocument()); // the CURRENT (kebab) grammar
-    // era 1: a synthetic OLD-grammar bundle (camel role leaves) — hand-built, the live export is kebab now.
+    // era 1: a synthetic OLD-grammar bundle (camel role leaves), hand-built, the live export is kebab now.
     const bundleOld = JSON.parse(JSON.stringify(bundleB).replaceAll('"on-surface"', '"onSurface"'));
     await la.applyBundle(bundleOld, {});
     const semA = FA.collections.find((c) => c.name === "Color Roles");
@@ -727,8 +727,8 @@ if (applyBundle && applyStylePlans) {
   } catch (e) { FAIL("renamecap", "color rename capability threw: " + e.message); }
 }
 
-// ── TKT-0024: PROVENANCE — apply must NEVER canonicalize a USER's own pre-existing same-named collection
-//    for Color Primitives/Color Roles either — the exact guarantee the float path has had since #155
+// ── TKT-0024: PROVENANCE, apply must NEVER canonicalize a USER's own pre-existing same-named collection
+//    for Color Primitives/Color Roles either, the exact guarantee the float path has had since #155
 //    (see "floatprov" above), back-ported to ensureCollection via COLOR_REGISTRY_KEY. Fresh mock so the
 //    user's "Color Primitives"/"Color Roles" are the ONLY ones of that name until apply runs. ──
 if (applyBundle) {
@@ -1216,7 +1216,7 @@ if (applyBundle) {
 }
 
 // ── TKT-0024: the color collections' id-preserving RENAME capability still works once ensureCollection
-//    switched from name-only to registry-by-id matching — a plan.renames.collections rename adopts the
+//    switched from name-only to registry-by-id matching, a plan.renames.collections rename adopts the
 //    REGISTRY-TRACKED collection by id, renames it in place, and re-keys the registry (mirrors the float
 //    "renamecap" collection leg above). ──
 if (applyBundle) {
@@ -1232,7 +1232,7 @@ if (applyBundle) {
     const semD1 = FD.collections.find((c) => c.name === "Brand Colors");
     if (!semD1) FAIL("colorrenamecap", "renameFrom did not produce the renamed Color Roles collection");
     else {
-      if (semD1.id !== keepId) FAIL("colorrenamecap", "collection rename minted a NEW collection (id changed — bindings would orphan)");
+      if (semD1.id !== keepId) FAIL("colorrenamecap", "collection rename minted a NEW collection (id changed, bindings would orphan)");
       if (FD.collections.filter((c) => c.name === "Color Roles").length !== 0) FAIL("colorrenamecap", "the old-name Color Roles collection lingers after renameFrom");
     }
     // registry re-keyed: a THIRD apply under the new name must reuse the same collection, not mint another
@@ -1263,10 +1263,10 @@ if (applyBundle) {
   if (!F4.figma.ui._posted.some((m) => m && m.type === "apply-error")) FAIL("applydone", "a FAILED apply posted no {apply-error} message to the UI");
 }
 
-// ── resolveFace: separator/case-insensitive fuzzy match — a REAL font's style catalog doesn't agree
+// ── resolveFace: separator/case-insensitive fuzzy match, a REAL font's style catalog doesn't agree
 // on hyphen vs. space for compound weight names (this kit's own WEIGHT_NAMES: "Extra-bold",
 // "Semi-bold"), and an exact-string-only match silently missed the real face, falling back to the
-// nearest-weight guess (which doesn't even preserve italic) — found live via BZZR's real GT America
+// nearest-weight guess (which doesn't even preserve italic), found live via BZZR's real GT America
 // styles ("Condensed Extra Bold Italic", space, vs. the templated "Condensed Extra-bold Italic",
 // hyphen) resolving to plain "Bold". ──
 if (resolveFace) {
@@ -1280,7 +1280,7 @@ if (resolveFace) {
   const noMatch = resolveFace(styles, { styleName: "Totally Unrelated Name", weight: 800 });
   if (noMatch === "Totally Unrelated Name") FAIL("resolveface", "a genuinely absent style name must still fall back to the nearest-weight guess, not itself");
   if (!styles.includes(noMatch)) FAIL("resolveface", `the nearest-weight fallback must return a REAL style from the list (got ${noMatch})`);
-  // CONCATENATED compound names — found live researching New Caledonia's real catalog ("SemiBold", no
+  // CONCATENATED compound names, found live researching New Caledonia's real catalog ("SemiBold", no
   // separator at all) while auditing preset font/weight configs: collapsing hyphen/space to ONE space
   // (the previous fix) matched "Extra Bold" but not a foundry that runs the words together entirely.
   const concatStyles = ["Regular", "SemiBold", "Bold", "Black"];
@@ -1288,8 +1288,8 @@ if (resolveFace) {
   if (concatFuzzy !== "SemiBold") FAIL("resolveface", `a hyphenated name must fuzzy-match a real font's fully-concatenated style ("SemiBold", no separator) (got ${concatFuzzy})`);
   const concatFuzzySpace = resolveFace(concatStyles, { styleName: "Semi Bold", weight: 600 });
   if (concatFuzzySpace !== "SemiBold") FAIL("resolveface", `a space-separated name must ALSO fuzzy-match a fully-concatenated real style (got ${concatFuzzySpace})`);
-  // DETERMINISTIC tie-break — found live via GT America's real ladder (Ultra Light/Thin/Light/Regular/
-  // Medium/Bold/Black — no Extra-bold cut at all), where a wanted 800 sits EXACTLY between the real
+  // DETERMINISTIC tie-break, found live via GT America's real ladder (Ultra Light/Thin/Light/Regular/
+  // Medium/Bold/Black, no Extra-bold cut at all), where a wanted 800 sits EXACTLY between the real
   // Bold (700) and Black (900): must always prefer the heavier one, never whichever style happened to
   // come first in Figma's own listAvailableFontsAsync() array order (unpredictable, install-dependent).
   const tieStyles = ["Regular", "Bold", "Black"];
@@ -1299,7 +1299,7 @@ if (resolveFace) {
   if (tieHeavyReversed !== "Black") FAIL("resolveface", `the tie-break must NOT depend on array order (reversed list, got ${tieHeavyReversed})`);
 }
 
-// ── styleNameWeight / resolveFace: NUMERIC instance names — Figma exposes NO variable-font axis
+// ── styleNameWeight / resolveFace: NUMERIC instance names, Figma exposes NO variable-font axis
 // metadata at all (listAvailableFontsAsync returns only {family, style} strings), so a variable font
 // whose named instances are numeric ("350", "Text 550") can only be read from the style STRING itself.
 // Before parsing numbers, every numerically-named style fell back to the SAME default (400) and the
@@ -1319,27 +1319,27 @@ if (resolveFace) {
 }
 
 // ── sweepCandidates: find real styles that LOOK like ours (top "/" segment matches a namespace the
-// current plan still uses) but aren't anything the current plan would produce — leftovers from an older
+// current plan still uses) but aren't anything the current plan would produce, leftovers from an older
 // naming generation that predate this plugin's own registry, so no ordinary apply/prune can reach them.
 // Pure + read-only: never touches a user's own unrelated style (a different namespace entirely). ──
 if (sweepCandidates) {
   const knownTexts = ["Body/lg/• regular", "Body/lg/medium", "Headline/lg/• black"];
   const knownPaints = ["Primary/onPrimary"];
   const localTexts = [
-    { id: "t1", name: "Body/lg/• regular" },          // current — not a candidate
-    { id: "t2", name: "Body/lg/regular" },             // legacy (no dot-prefix) — candidate
-    { id: "t3", name: "Body/lg/regular-single" },      // legacy (old hyphen-suffix era) — candidate
-    { id: "t4", name: "MyOwnCustomStyle/heading" },    // a namespace we don't use at all — NEVER a candidate
+    { id: "t1", name: "Body/lg/• regular" },          // current, not a candidate
+    { id: "t2", name: "Body/lg/regular" },             // legacy (no dot-prefix), candidate
+    { id: "t3", name: "Body/lg/regular-single" },      // legacy (old hyphen-suffix era), candidate
+    { id: "t4", name: "MyOwnCustomStyle/heading" },    // a namespace we don't use at all, NEVER a candidate
   ];
   const localPaints = [
-    { id: "p1", name: "Primary/onPrimary" },           // current — not a candidate
-    { id: "p2", name: "Primary/onPrimaryOld" },         // legacy — candidate
+    { id: "p1", name: "Primary/onPrimary" },           // current, not a candidate
+    { id: "p2", name: "Primary/onPrimaryOld" },         // legacy, candidate
   ];
   const cand = sweepCandidates(knownTexts, knownPaints, localTexts, localPaints);
   const candTextIds = cand.texts.map((x) => x.id).sort();
   if (candTextIds.join(",") !== "t2,t3") FAIL("sweep", `sweepCandidates must flag exactly the legacy Body/lg text styles, not the current one or the unrelated namespace (got ${candTextIds.join(",")})`);
   if (cand.paints.map((x) => x.id).join(",") !== "p2") FAIL("sweep", `sweepCandidates must flag exactly the legacy paint style (got ${cand.paints.map((x) => x.id).join(",")})`);
-  if (cand.texts.some((x) => x.id === "t4") || cand.paints.some((x) => x.name.startsWith("MyOwnCustomStyle"))) FAIL("sweep", "a namespace this plan never uses at all must NEVER be flagged — only prefixes we currently own");
+  if (cand.texts.some((x) => x.id === "t4") || cand.paints.some((x) => x.name.startsWith("MyOwnCustomStyle"))) FAIL("sweep", "a namespace this plan never uses at all must NEVER be flagged, only prefixes we currently own");
 
   // end-to-end via the real message handlers: sweep-scan never mutates; sweep-delete removes ONLY the
   // confirmed ids and reports how many.
@@ -1360,12 +1360,12 @@ if (sweepCandidates) {
   const doneMsg = F6.figma.ui._posted.find((m) => m && m.type === "sweep-done");
   if (!doneMsg || doneMsg.removed !== 1) FAIL("sweep", `sweep-delete must report removing exactly 1 (got ${doneMsg && doneMsg.removed})`);
   if (F6.figma._styles.some((s) => s.id === legacyStyle.id)) FAIL("sweep", "sweep-delete must actually remove the confirmed style");
-  if (!F6.figma._styles.some((s) => s.id === currentStyle.id) || !F6.figma._styles.some((s) => s.id === foreignStyle.id)) FAIL("sweep", "sweep-delete must touch ONLY the confirmed ids — nothing else");
+  if (!F6.figma._styles.some((s) => s.id === currentStyle.id) || !F6.figma._styles.some((s) => s.id === foreignStyle.id)) FAIL("sweep", "sweep-delete must touch ONLY the confirmed ids, nothing else");
 
-  // #454 — sweep-scan/sweep-delete are the only inbound pair besides `apply` gating a busy flag
+  // #454, sweep-scan/sweep-delete are the only inbound pair besides `apply` gating a busy flag
   // (sweepBusy) on the UI side; a sandbox-side throw here must still post a reply, or the Cleanup
   // panel's Scan/Delete buttons stay disabled for the rest of the session. Mirrors the existing
-  // apply carve-out — the outer catch must answer sweep-scan/sweep-delete too.
+  // apply carve-out, the outer catch must answer sweep-scan/sweep-delete too.
   const F6err = mockFigma();
   F6err.figma.getLocalTextStylesAsync = async () => { throw new Error("sandbox boom"); };
   new Function("figma", "__html__", "module", code)(F6err.figma, "<html>", undefined);
@@ -1388,7 +1388,7 @@ if (sweepCandidates) {
 // this file's own gates (compliance, regroup, primevalue) went unprinted for so long (#699).
 // ── STYLES apply: paint styles bound to Color Roles vars; text styles set + bound; registry prune ──
 // Runs on the SAME mock F: applyBundle already created Color Roles, the float e2e already created the
-// merged Geometry collection with its type/ half (base "product/16" scale) — exactly the state a real
+// merged Geometry collection with its type/ half (base "product/16" scale), exactly the state a real
 // apply leaves behind.
 if (applyStylePlans && applyFontPrimitivesModes) {
   try {
@@ -1421,9 +1421,9 @@ if (applyStylePlans && applyFontPrimitivesModes) {
 
     const textStyles = F.figma._styles.filter((x) => x._kind === "TEXT");
     if (sr.texts !== plans.texts.length || textStyles.length !== plans.texts.length) FAIL("styles", `text styles ${textStyles.length}/${sr.texts}, expected ${plans.texts.length}`);
-    // Display's core weight (the product treatment's 700) + its 1 sibling (Medium/500) — 2 distinct
+    // Display's core weight (the product treatment's 700) + its 1 sibling (Medium/500), 2 distinct
     // weights; the core (700, heavier of the two) gets the NORMALIZED relative label "heavier"
-    // (2026-07-13 — supersedes the literal ladder-name "bold"); the sibling (500) ranks "lighter".
+    // (2026-07-13, supersedes the literal ladder-name "bold"); the sibling (500) ranks "lighter".
     const core = textStyles.find((x) => x.name === "Display/md/heavier •");
     const sib = textStyles.find((x) => x.name === "Display/md/lighter");
     if (!core || !sib) FAIL("styles", "Display/md/heavier • core or Display/md/lighter sibling text style missing");
@@ -1438,16 +1438,16 @@ if (applyStylePlans && applyFontPrimitivesModes) {
     if (sib && !sib._bound.fontWeight) FAIL("styles", "sibling fontWeight not bound to weight/<voice>/<slug>");
 
     // a voice WITH a custom styleName (a named cut like "Condensed Black Italic", not derivable from a
-    // bare weight number) must bind fontStyle ONLY, never fontWeight alongside it — real Figma resolves
+    // bare weight number) must bind fontStyle ONLY, never fontWeight alongside it, real Figma resolves
     // a bound fontWeight to "the closest valid weight for the font" independently of fontStyle, which
     // silently overrode the named cut back to the nearest plain face (found live via BZZR's Display core
-    // not rendering its bound "Condensed Black Italic" style at all — this mock's own setBoundVariable
+    // not rendering its bound "Condensed Black Italic" style at all, this mock's own setBoundVariable
     // is too permissive to catch that on its own, so the plan itself must never emit both).
     {
       const namedScale = TYPE.typeScale({ treatment: "statement", voices: { Display: { weight: 900, styleName: "Condensed Black Italic", weights: [{ name: "Bold", weight: 700 }] } } });
       const namedPlans = stylePlans({ families, scale: namedScale });
       const namedCore = namedPlans.texts.find((t) => t.voice === "Display" && t.name.startsWith("Display/lg/") && t.name.endsWith(" •"));
-      // core (900) + 1 sibling (Bold/700) — the sibling ranks "lighter" of the 2; the literal styleName
+      // core (900) + 1 sibling (Bold/700), the sibling ranks "lighter" of the 2; the literal styleName
       // still carries the full templated cut ("Condensed Bold Italic"), only the LABEL is relative now.
       const namedSib = namedPlans.texts.find((t) => t.voice === "Display" && t.name === "Display/lg/lighter");
       if (!namedCore || !namedSib) FAIL("styles", "named-style-cut fixture: Display core or sibling plan entry missing");
@@ -1462,12 +1462,12 @@ if (applyStylePlans && applyFontPrimitivesModes) {
       if (!namedCoreStyle || !namedCoreStyle._bound.fontStyle) FAIL("styles", "named-style-cut core text style must carry a bound fontStyle field");
     }
 
-    // STALE fontWeight/fontStyle binding clears across a re-apply — an EXPLICIT, isolated repro (found
+    // STALE fontWeight/fontStyle binding clears across a re-apply, an EXPLICIT, isolated repro (found
     // live via a naming coincidence between two OTHER fixtures in this file: relative labels are RANKS,
     // not literal weight/style names, so the SAME Figma style name can legitimately carry a
     // fontWeight-bound style in one apply and a fontStyle-bound one in the next, e.g. a voice gaining a
     // custom styleName later while its rank-based label happens to stay the same). bindField only ever
-    // ADDS a binding, never clears one the CURRENT plan omits — so a style reused by name must have its
+    // ADDS a binding, never clears one the CURRENT plan omits, so a style reused by name must have its
     // NOW-unused half of the pair explicitly unbound, or Figma's own "closest valid weight" snap on the
     // stale fontWeight could silently override a freshly-bound fontStyle's precise named cut.
     {
@@ -1480,7 +1480,7 @@ if (applyStylePlans && applyFontPrimitivesModes) {
       const reusedName = genericPlans.texts.find((t) => t.voice === "Kicker" && t.name.startsWith("Kicker/lg/") && t.name.endsWith(" •")).name;
       const afterGeneric = F7.figma._styles.find((x) => x._kind === "TEXT" && x.name === reusedName);
       if (!afterGeneric || !afterGeneric._bound.fontWeight) FAIL("styles", "stale-bind repro setup: the generic (no styleName) core must bind fontWeight first");
-      // SAME Figma style name, SAME rank shape, but NOW with a custom styleName — fontStyle binds
+      // SAME Figma style name, SAME rank shape, but NOW with a custom styleName, fontStyle binds
       // instead. Re-applying under the reused name must not leave the OLD fontWeight bind behind.
       const namedScale2 = TYPE.typeScale({ treatment: "product", voices: { Kicker: { weight: 700, styleName: "Custom Bold Cut", weights: [{ name: "Medium", weight: 500 }] } } });
       const namedPlans2 = stylePlans({ families: [], scale: namedScale2 });
@@ -1491,10 +1491,10 @@ if (applyStylePlans && applyFontPrimitivesModes) {
       if (!afterNamed || !afterNamed._bound.fontStyle) FAIL("styles", "the reused style must carry the NEW fontStyle bind");
     }
 
-    // Figma's lineHeight/letterSpacing bind as ABSOLUTE PIXELS, not a % — a Figma-bound percent FLOAT
+    // Figma's lineHeight/letterSpacing bind as ABSOLUTE PIXELS, not a %, a Figma-bound percent FLOAT
     // displays as a bare, unit-less number in Figma's own Properties panel, indistinguishable from a
     // pixel value at a glance; an absolute pixel reads unambiguously there instead (CSS/DTCG keep the
-    // ratio/em relative units, unaffected — see test/engine/type.mjs). Each step legitimately gets its
+    // ratio/em relative units, unaffected, see test/engine/type.mjs). Each step legitimately gets its
     // OWN pixel value (unlike percent, a differing per-step pixel number is expected, not drift).
     {
       const driftScale = TYPE.typeScale({ treatment: "statement", voices: { "Sub-heading": { leading: 1.125, weights: [] } } });
@@ -1509,7 +1509,7 @@ if (applyStylePlans && applyFontPrimitivesModes) {
     }
 
     // a family Figma does not have: the style is BUILT on a placeholder face (Inter), reported as
-    // SUBSTITUTED (not skipped), and its fontFamily stays BOUND to the true-family variable — so the
+    // SUBSTITUTED (not skipped), and its fontFamily stays BOUND to the true-family variable, so the
     // style self-heals once the font is installed. The ghost rides the FULL plan (a partial plan
     // would legitimately prune the rest).
     {
@@ -1525,7 +1525,7 @@ if (applyStylePlans && applyFontPrimitivesModes) {
         if (g.fontSize !== 20) FAIL("styles", "the substituted style lost its metrics");
         if (!g._bound.fontFamily) FAIL("styles", "the substituted style did not keep fontFamily BOUND to the true-family variable (the whole point)");
       }
-      // a Figma with NO fonts at all cannot scaffold — then, and only then, we skip honestly.
+      // a Figma with NO fonts at all cannot scaffold, then, and only then, we skip honestly.
       const saved = F.figma._fonts; F.figma._fonts = {};
       const none = await applyStylePlans({ paints: [], texts: [{ name: "Nofont/md", voice: "N", step: "MD", bind: {}, literal: { family: "Anything", weight: 400, size: 12, lineHeight: 16, letterSpacing: 0, textCase: "none" } }] });
       F.figma._fonts = saved;
@@ -1545,13 +1545,13 @@ if (applyStylePlans && applyFontPrimitivesModes) {
     await applyStylePlans(plans);
     if (F.figma._styles.length !== before) FAIL("styles", "re-apply is not idempotent (style count moved)");
     // siblings dropped via an EXPLICIT weights:[] opt-out (2026-07-13: omitting voices config no longer
-    // means "no siblings" — every voice auto-populates by default — so an explicit opt-out is the only
+    // means "no siblings", every voice auto-populates by default, so an explicit opt-out is the only
     // way left to get a bare, undisambiguated core).
     const reduced = stylePlans({ families, scale: TYPE.typeScale({ treatment: "product", bodyBase: 16, voices: { Display: { weights: [] } } }) });
     const sr2 = await applyStylePlans(reduced);
     if (F.figma._styles.some((x) => x.name === "Display/md/lighter")) FAIL("styles", "prune did not remove the dropped sibling style");
     // the core RENAMES too when its siblings disappear (Display/md/heavier • → bare Display/md, nothing
-    // left to disambiguate) — the old suffixed name must prune, and the bare name must exist fresh.
+    // left to disambiguate), the old suffixed name must prune, and the bare name must exist fresh.
     if (F.figma._styles.some((x) => x.name === "Display/md/heavier •")) FAIL("styles", "prune did not remove the core's old suffixed name after its siblings were dropped");
     if (!F.figma._styles.some((x) => x.name === "Display/md")) FAIL("styles", "the core did not revert to its bare name once siblings were dropped");
     if (!F.figma._styles.some((x) => x.name === "My Own/keep-me")) FAIL("styles", "prune touched a USER style (provenance violated)");
@@ -1615,7 +1615,7 @@ if (applyStylePlans && applyFontPrimitivesModes) {
 }
 
 // ── FONT-MODE PHASE B: applyFontPrimitivesModes carries the real Premium/Google-Fonts axis (Figma's
-// native addMode/setValueForMode mechanism, mirroring Geometry/Light-Dark). Runs on a FRESH mock —
+// native addMode/setValueForMode mechanism, mirroring Geometry/Light-Dark). Runs on a FRESH mock,
 // the axis mechanics are orthogonal to the "styles" e2e above, which already proved the plan/executor
 // wiring on the shared F mock. ──
 if (applyFontPrimitivesModes) {
@@ -1632,24 +1632,24 @@ if (applyFontPrimitivesModes) {
       if (prim.modes.map((m) => m.name).join() !== "Premium,Google Fonts") FAIL("fontmodes", `Type Primitives modes = ${prim.modes.map((m) => m.name)}, want Premium,Google Fonts`);
       const [premiumId, googleId] = prim.modes.map((m) => m.modeId);
       const vars = FM.variables.filter((v) => v.variableCollectionId === prim.id);
-      // every variable — literal or alias — gets an explicit value for BOTH mode ids (constraint #7:
+      // every variable, literal or alias, gets an explicit value for BOTH mode ids (constraint #7:
       // "same as every other mode" is a value, never an omission).
       const unset = vars.filter((v) => v.values[premiumId] === undefined || v.values[googleId] === undefined);
       if (unset.length) FAIL("fontmodes", `${unset.length} variable(s) missing a value for one of the 2 modes (e.g. ${unset[0].name})`);
 
-      // Söhne has a curated Google-Fonts substitute (font-fallbacks.mjs) — its override primitive must
+      // Söhne has a curated Google-Fonts substitute (font-fallbacks.mjs), its override primitive must
       // actually DIVERGE between modes, not just carry two identical copies.
       const displayFam = vars.find((v) => v.name === "override/display");
       if (!displayFam || displayFam.values[premiumId] !== "Söhne" || displayFam.values[googleId] !== googleSafeFontFor("Söhne") || displayFam.values[googleId] === "Söhne") FAIL("fontmodes", `Söhne's override primitive should diverge to its curated substitute (Premium=${displayFam && displayFam.values[premiumId]}, Google Fonts=${displayFam && displayFam.values[googleId]})`);
 
-      // the alias resolves to the SAME target id under both modes — no per-mode retargeting (the
+      // the alias resolves to the SAME target id under both modes, no per-mode retargeting (the
       // load-bearing simplification this feature rests on, verified live against a real Figma file).
       const fontAlias = vars.find((v) => v.name === "font/display");
       const aP = fontAlias.values[premiumId], aG = fontAlias.values[googleId];
       if (!aP || !aG || aP.type !== "VARIABLE_ALIAS" || aG.type !== "VARIABLE_ALIAS" || aP.id !== aG.id) FAIL("fontmodes", "font/display does not alias the SAME target id under both modes");
     }
 
-    // IDEMPOTENT re-apply after a family change — no duplicate collection, and the new family lands.
+    // IDEMPOTENT re-apply after a family change, no duplicate collection, and the new family lands.
     const scaleM2 = TYPE.typeScale({ treatment: "product", bodyBase: 16, voices: { Display: { font: "Tiempos Text" } } });
     const planM2 = primitivesModesApplyPlan(TYPE.typeTokensFigmaPrimitivesModes(scaleM2));
     await lm.applyFontPrimitivesModes(planM2);
@@ -1660,8 +1660,8 @@ if (applyFontPrimitivesModes) {
     if (!overrideVar || overrideVar.values[pId2] !== "Tiempos Text") FAIL("fontmodes", "re-apply after a family change did not land the new family");
 
     // RETURNING FILE: a collection this plugin created under the OLD Phase-A single-"Value"-mode shape
-    // (same registry key, "Type Primitives") must self-heal — rename "Value" → "Premium" in place (SAME
-    // collection id, no data loss) and add "Google Fonts" — never mint a second collection.
+    // (same registry key, "Type Primitives") must self-heal, rename "Value" → "Premium" in place (SAME
+    // collection id, no data loss) and add "Google Fonts", never mint a second collection.
     const F11 = mockFigma();
     const l11 = new Function("figma", "__html__", "module", code + "\nreturn { applyFontPrimitivesModes };")(F11.figma, "<html>", undefined);
     const eraOnePlan = { collection: "Type Primitives", modes: ["Value"], defaultMode: "Value", addModes: [], variables: [
@@ -1676,10 +1676,10 @@ if (applyFontPrimitivesModes) {
     await l11.applyFontPrimitivesModes(eraTwoPlan);
     if (F11.collections.filter((c) => c.name === "Type Primitives").length !== 1) FAIL("fontmodes", "returning-file: self-healing minted a SECOND Type Primitives collection instead of renaming in place");
     const healed = F11.collections.find((c) => c.name === "Type Primitives");
-    if (healed.id !== keepCollId) FAIL("fontmodes", "returning-file: self-healing minted a NEW collection (id changed — bindings would orphan)");
+    if (healed.id !== keepCollId) FAIL("fontmodes", "returning-file: self-healing minted a NEW collection (id changed, bindings would orphan)");
     if (healed.modes.map((m) => m.name).join() !== "Premium,Google Fonts") FAIL("fontmodes", `returning-file: modes after self-heal = ${healed.modes.map((m) => m.name)}, want Premium,Google Fonts`);
     const healedFam = F11.variables.find((v) => v.variableCollectionId === healed.id && v.name === "family/display");
-    if (!healedFam || healedFam.id !== keepVarId) FAIL("fontmodes", "returning-file: family/display was pruned+recreated instead of updated in place (id changed — no data loss means SAME id)");
+    if (!healedFam || healedFam.id !== keepVarId) FAIL("fontmodes", "returning-file: family/display was pruned+recreated instead of updated in place (id changed, no data loss means SAME id)");
 
     // ── #629 ruling Q2: "published library" mode guards the Type Primitives MODE prune too, not just
     // the variable prune. Removing a MODE from a published collection breaks every consumer file that
@@ -1717,7 +1717,7 @@ if (applyFontPrimitivesModes) {
 // ── libraryparity (#495): code.js's HAND-WRITTEN VM mirrors of mode-apply-plan.mjs's pure
 //    "published library" planner functions (libraryModeReconcile/valueChanged/libraryModeReport/
 //    nearestStepByHeight/geometrySizeAliasMap) are NOT spliced (they're independent hand-written
-//    functions inside a non-module VM — see the code.js header comment above each one) — this gate
+//    functions inside a non-module VM, see the code.js header comment above each one), this gate
 //    proves BEHAVIORAL parity instead: the SAME inputs must produce the SAME outputs on both sides. ──
 {
   // libraryModeReconcile / libraryReconcile
@@ -1729,7 +1729,7 @@ if (applyFontPrimitivesModes) {
   if (!vmRec) FAIL("libraryparity", "code.js exported no libraryReconcile");
   else if (JSON.stringify(mjsRec) !== JSON.stringify(vmRec)) FAIL("libraryparity", `libraryModeReconcile/libraryReconcile disagree: mjs=${JSON.stringify(mjsRec)} vm=${JSON.stringify(vmRec)}`);
 
-  // libraryModeReconcile's 4th-arg idempotency fix (#495 follow-up — a real defect found in review): a
+  // libraryModeReconcile's 4th-arg idempotency fix (#495 follow-up, a real defect found in review): a
   // name already CORRECTLY aliased (whether re-derivable via aliasMap, or only recognizable via the
   // liveAliasTargets belt) must be an omit-entirely no-op, never re-aliased or misclassified as unmapped
   // -> deprecate on a re-apply. font/heading: aliasMap says font/headline, ALREADY live-aliased there ->
@@ -1752,7 +1752,7 @@ if (applyFontPrimitivesModes) {
   if (!mjsRec2.toDeprecate.some((d) => d.from === "font/quote")) FAIL("libraryparity", `font/quote (unmapped) should be deprecated, got ${JSON.stringify(mjsRec2.toDeprecate)}`);
   if (mjsRec2.toDeprecate.some((d) => d.from === "_deprecated/font/legacy")) FAIL("libraryparity", "an already-_deprecated/ name must never be re-deprecated");
 
-  // resolveLiteralHeight / resolveLiteralHeightVM — chase an ALIAS chain to the underlying literal
+  // resolveLiteralHeight / resolveLiteralHeightVM, chase an ALIAS chain to the underlying literal
   const liveHeights = {
     "size/small/height": { Base: { type: "VARIABLE_ALIAS", id: "id-sm" } }, // one hop -> a literal
     "size/sm/height": { Base: 24 },
@@ -1769,7 +1769,7 @@ if (applyFontPrimitivesModes) {
     else if (mjsH !== vmH) FAIL("libraryparity", `resolveLiteralHeight/resolveLiteralHeightVM disagree for ${name}: mjs=${mjsH} vm=${vmH}`);
   }
 
-  // liveAliasTargetsByName / liveAliasTargetsByNameVM — the one-hop {name: liveTargetName} map
+  // liveAliasTargetsByName / liveAliasTargetsByNameVM, the one-hop {name: liveTargetName} map
   const liveTargetsInput = { ...liveHeights, "size/literal/height": { Base: 40 } }; // a literal, not an alias -> excluded
   const existingHeightNames = ["size/small/height", "size/sm/height", "size/broken/height", "size/literal/height"];
   const mjsTargets = liveAliasTargetsByName(existingHeightNames, "Base", liveTargetsInput, idToNameHeights);
@@ -1796,7 +1796,7 @@ if (applyFontPrimitivesModes) {
   if (!vmGeo) FAIL("libraryparity", "code.js exported no expandGeometryAliasMap");
   else if (JSON.stringify(mjsGeo) !== JSON.stringify(vmGeo)) FAIL("libraryparity", `geometrySizeAliasMap/expandGeometryAliasMap disagree: mjs=${JSON.stringify(mjsGeo)} vm=${JSON.stringify(vmGeo)}`);
 
-  // valueChanged / valueChangedVM — both literal and ALIAS-typed plan variables
+  // valueChanged / valueChangedVM, both literal and ALIAS-typed plan variables
   const litVar = { type: "FLOAT", values: [{ mode: "Base", value: 16 }] };
   const aliasVar = { type: "ALIAS", target: "family/x" };
   for (const [live, planVar] of [[{ Base: 16 }, litVar], [{ Base: 18 }, litVar], [{}, aliasVar]]) {
@@ -1805,7 +1805,7 @@ if (applyFontPrimitivesModes) {
     if (mjsV !== vmV) FAIL("libraryparity", `valueChanged disagree for ${JSON.stringify({ live, planVar })}: mjs=${mjsV} vm=${vmV}`);
   }
 
-  // libraryModeReport / libraryModeReportVM — the FULL report, on the SAME representative inputs
+  // libraryModeReport / libraryModeReportVM, the FULL report, on the SAME representative inputs
   const plan = { renames: { "weight/heading": "weight/headline" }, variables: [{ name: "weight/headline", type: "FLOAT", values: [{ mode: "Base", value: 700 }] }, { name: "font/body", type: "STRING", values: [{ mode: "Base", value: "Inter" }] }] };
   const live = { "weight/heading": { Base: 700 }, "font/body": { Base: "Georgia" }, "font/quote": { Base: "Times" } };
   const mjsReport = libraryModeReport(plan, live, {});
@@ -1815,7 +1815,7 @@ if (applyFontPrimitivesModes) {
 
   // libraryModeReport's 4th-arg idempotency fix, end-to-end at the report level (#495 follow-up): a
   // variable ALREADY correctly aliased (font/heading -> font/headline, live) must not reappear in the
-  // report's aliases on a re-apply — this is the exact bug a strict "run 2 = 0 aliases" e2e check
+  // report's aliases on a re-apply, this is the exact bug a strict "run 2 = 0 aliases" e2e check
   // (test/figma/plugin.mjs's librarymode, test/figma/binder.mjs's librarygeom) exists to catch.
   const plan2 = { variables: [{ name: "font/headline", type: "STRING", values: [{ mode: "Base", value: "Inter" }] }, { name: "font/body", type: "STRING", values: [{ mode: "Base", value: "Inter" }] }] };
   const live2 = { "font/heading": { Base: { type: "VARIABLE_ALIAS", id: "id-headline" } }, "font/body": { Base: "Inter" } };
@@ -1828,7 +1828,7 @@ if (applyFontPrimitivesModes) {
   if (mjsReport2.aliases.length) FAIL("libraryparity", `libraryModeReport must omit an already-correctly-aliased name (idempotency fix), got ${JSON.stringify(mjsReport2.aliases)}`);
   if (mjsReport2.deprecates.length) FAIL("libraryparity", `libraryModeReport must not deprecate an already-correctly-aliased name, got ${JSON.stringify(mjsReport2.deprecates)}`);
 
-  // priorLibraryUplift / priorLibraryUpliftVM (#635, tightened in review round 1) — the gate's "already
+  // priorLibraryUplift / priorLibraryUpliftVM (#635, tightened in review round 1), the gate's "already
   // uplifted" evidence rule: an existing name NOT in wantedNames that carries a live alias target OR sits
   // under "_deprecated/". A wanted name's alias (the plan's own ALIAS variables) is NOT evidence.
   const upliftCases = [
@@ -1850,7 +1850,7 @@ if (applyFontPrimitivesModes) {
   if (priorLibraryUplift(["_deprecated/a"], ["_deprecated/a"], {}) !== false) FAIL("libraryparity", "priorLibraryUplift must be false when the only _deprecated/ name is itself wanted");
   if (priorLibraryUplift(["a", "b"], ["b"], { a: "b" }) !== true || priorLibraryUplift(["_deprecated/a", "b"], ["b"], {}) !== true) FAIL("libraryparity", "priorLibraryUplift must be true on an UNWANTED live alias or an UNWANTED _deprecated/ name");
 
-  // pruneCandidates / pruneCandidatesVM (#659) — the classic prune's candidate set is MONOTONIC over
+  // pruneCandidates / pruneCandidatesVM (#659), the classic prune's candidate set is MONOTONIC over
   // "_deprecated/" names: existing - wanted - "_deprecated/*", whatever else the collection holds.
   const pruneCases = [
     [["size/sm/height"], ["size/sm/height"]],
@@ -1867,10 +1867,10 @@ if (applyFontPrimitivesModes) {
   if (JSON.stringify(pruneCandidates(["_deprecated/size/small/height", "size/old", "size/sm/height"], ["size/sm/height"])) !== JSON.stringify(["size/old"])) FAIL("libraryparity", "pruneCandidates must list the unrelated stale name and STILL skip the _deprecated/ name beside it (monotonic)");
   if (JSON.stringify(pruneCandidates(["size/sm/height"], ["size/sm/height"])) !== "[]") FAIL("libraryparity", "pruneCandidates must be empty when existing == wanted");
 
-  // LIBRARY_TYPE_VOICE_MAP — the same static map, migrations.mjs vs the code.js literal copy
+  // LIBRARY_TYPE_VOICE_MAP, the same static map, migrations.mjs vs the code.js literal copy
   if (JSON.stringify(LIBRARY_TYPE_VOICE_MAP) !== JSON.stringify(vmLibraryTypeVoiceMap)) FAIL("libraryparity", `LIBRARY_TYPE_VOICE_MAP drifted: migrations.mjs=${JSON.stringify(LIBRARY_TYPE_VOICE_MAP)} code.js=${JSON.stringify(vmLibraryTypeVoiceMap)}`);
 
-  // #498 grammar bridge — TYPE_STEP_FIELD_MAP / GEOMETRY_FIELD_RENAME_MAP static maps, parseOldTypeStepName,
+  // #498 grammar bridge, TYPE_STEP_FIELD_MAP / GEOMETRY_FIELD_RENAME_MAP static maps, parseOldTypeStepName,
   // and the two new pure alias-map builders, mjs vs the code.js literal/VM copies.
   if (JSON.stringify(TYPE_STEP_FIELD_MAP) !== JSON.stringify(vmTypeStepFieldMap)) FAIL("libraryparity", `TYPE_STEP_FIELD_MAP drifted: mjs=${JSON.stringify(TYPE_STEP_FIELD_MAP)} code.js=${JSON.stringify(vmTypeStepFieldMap)}`);
   if (JSON.stringify(GEOMETRY_FIELD_RENAME_MAP) !== JSON.stringify(vmGeometryFieldRenameMap)) FAIL("libraryparity", `GEOMETRY_FIELD_RENAME_MAP drifted: migrations.mjs=${JSON.stringify(GEOMETRY_FIELD_RENAME_MAP)} code.js=${JSON.stringify(vmGeometryFieldRenameMap)}`);
@@ -1912,7 +1912,7 @@ if (applyFontPrimitivesModes) {
   const bareWeightMap = typeWeightAliasMap(weightRecs, voiceMapT, { headline: { bare: true, bySlug: { regular: 400 } } });
   if (bareWeightMap["Heading/MD/weight"] !== "weight/headline") FAIL("libraryparity", `typeWeightAliasMap should prefer a bare weight/<voice> candidate, got ${JSON.stringify(bareWeightMap)}`);
 
-  // geometrySizeAliasMap's 4th-arg field-rename bridge (#498) — same nearest-by-height step match,
+  // geometrySizeAliasMap's 4th-arg field-rename bridge (#498), same nearest-by-height step match,
   // an OLD-SPELLED field name landing on the translated CURRENT field.
   const mjsFieldGeo = geometrySizeAliasMap({ xs: 20 }, { xs: 20, sm: 24 }, ["height", "icon"], GEOMETRY_FIELD_RENAME_MAP);
   const vmFieldGeo = vmExpandGeometryAliasMap ? vmExpandGeometryAliasMap({ xs: 20 }, { xs: 20, sm: 24 }, ["height", "icon"], vmGeometryFieldRenameMap) : null;
@@ -1921,12 +1921,12 @@ if (applyFontPrimitivesModes) {
   if (mjsFieldGeo["size/xs/edgePadding"] !== "size/xs/padding-wide") FAIL("libraryparity", `geometrySizeAliasMap should bridge size/xs/edgePadding -> size/xs/padding-wide, got ${JSON.stringify(mjsFieldGeo)}`);
 }
 
-// ── librarymode (#495): "published library" mode — the ADIA-file scenario, mirrored: an 11-voice
+// ── librarymode (#495): "published library" mode, the ADIA-file scenario, mirrored: an 11-voice
 //    Font Primitives collection (Heading/UI/Caption/Legal/Code/Body/Display/Lead/Kicker/Sub-heading/
-//    Quote — #495's own scope item 3, verbatim) predating the current 15-voice set. Only `font/<voice>`
+//    Quote, #495's own scope item 3, verbatim) predating the current 15-voice set. Only `font/<voice>`
 //    is fixtured (not `family/<voice>`): typeTokensFigmaPrimitivesModes dedupes `family/*` by resolved
 //    font string (famKey[fam] = family/<firstRole>, first-writer-wins), so it is NOT reliably one-per-
-//    voice — e.g. the product treatment only emits family/display, family/body, family/mono. `font/*`
+//    voice, e.g. the product treatment only emits family/display, family/body, family/mono. `font/*`
 //    IS emitted unconditionally per voice (an ALIAS to whichever family/* key backs it), so it's the
 //    reliable per-voice name a real old file's aliasing/deprecation would ride. A normal apply would
 //    PRUNE the 6 with no current-name match (5 renamed + Quote); library mode must NEVER remove any of
@@ -1939,7 +1939,7 @@ if (applyFontPrimitivesModes) {
     const ll = new Function("figma", "__html__", "module", code + "\nreturn { applyFontPrimitivesModes };")(FL.figma, "<html>", undefined);
     const OLD_VOICES = ["heading", "ui", "caption", "legal", "code", "body", "display", "lead", "kicker", "sub-heading", "quote"]; // 11, per #495's own list
     // Create the OLD-era collection THROUGH the executor itself (not a raw figma.variables call) so it
-    // gets registered in FLOAT_REGISTRY_KEY — ensureFloatCollection resolves its target by REGISTRY id
+    // gets registered in FLOAT_REGISTRY_KEY, ensureFloatCollection resolves its target by REGISTRY id
     // (or renameFrom), never by a bare name match (same provenance discipline as #492's color registry),
     // so an out-of-band collection would be invisible to the library-mode apply below and a SECOND, empty
     // "Type Primitives" would be created instead. Mirrors the "RETURNING FILE" fontmodes fixture above.
@@ -1973,14 +1973,14 @@ if (applyFontPrimitivesModes) {
       }
     }
     // IDEMPOTENT second run, STRICT: a variable already correctly aliased/deprecated from run 1 needs NO
-    // further action on an unchanged re-apply — a published library must not churn names/values on every
+    // further action on an unchanged re-apply, a published library must not churn names/values on every
     // apply (a real defect found in review: run 1's alias write leaves no LITERAL value behind, so a
     // naive re-derive of the alias map on run 2 loses the mapping and misclassifies an already-correctly-
     // ALIASED variable as unmapped -> deprecate, renaming it out from under itself every single apply).
     const res2 = await ll.applyFontPrimitivesModes(planFP, { libraryMode: true });
     const stillThere2 = OLD_VOICES.every((v) => FL.variables.some((va) => va.variableCollectionId === oldCollFP.id && (va.name === "font/" + v || va.name.indexOf("_deprecated/font/" + v) === 0)));
     if (!stillThere2) FAIL("librarymode", "second run removed something library mode should have preserved");
-    if (res2 && res2.libraryReport && res2.libraryReport.deprecates.some((d) => d.to.indexOf("_deprecated/_deprecated/") === 0)) FAIL("librarymode", "second run double-prefixed an already-deprecated variable — not idempotent");
+    if (res2 && res2.libraryReport && res2.libraryReport.deprecates.some((d) => d.to.indexOf("_deprecated/_deprecated/") === 0)) FAIL("librarymode", "second run double-prefixed an already-deprecated variable, not idempotent");
     if (!res2 || !res2.libraryReport) FAIL("librarymode", "second run returned no libraryReport");
     else {
       const rpt2 = res2.libraryReport;
@@ -1993,7 +1993,7 @@ if (applyFontPrimitivesModes) {
   // #635 review round 1, negative control: a NEVER-touched Font Primitives collection re-applied with the
   // SAME plan (empty report) and an UNDECIDED library mode must read libraryMode:false. The plan carries
   // plan-level ALIAS variables (font/<voice> -> font/<face>), so liveAliasTargets is non-empty on a
-  // collection nobody ever uplifted — the evidence must be scoped to existing names the plan does NOT
+  // collection nobody ever uplifted, the evidence must be scoped to existing names the plan does NOT
   // want, or every Font Primitives collection reads as "already uplifted".
   try {
     const FN = mockFigma();
@@ -2006,18 +2006,18 @@ if (applyFontPrimitivesModes) {
     else {
       const r = resN.libraryReport;
       if (r.aliases.length || r.deprecates.length) FAIL("librarymode", `fixture broken: never-touched re-apply must have an EMPTY report, got aliases=${JSON.stringify(r.aliases)} deprecates=${JSON.stringify(r.deprecates)}`);
-      else if (r.libraryMode !== false) FAIL("librarymode", `never-touched Font Primitives + empty report must read libraryMode:false, got ${r.libraryMode} — the plan's own ALIAS variables were mistaken for a prior uplift`);
+      else if (r.libraryMode !== false) FAIL("librarymode", `never-touched Font Primitives + empty report must read libraryMode:false, got ${r.libraryMode}, the plan's own ALIAS variables were mistaken for a prior uplift`);
     }
   } catch (e) { FAIL("librarymode", "never-touched Font Primitives control threw: " + e.message); }
 }
 
-// ── librarygrammar (#498): the ADIA file's TWO older grammars, bridged instead of deprecated — a
+// ── librarygrammar (#498): the ADIA file's TWO older grammars, bridged instead of deprecated, a
 //    Geometry size/* collection using pre-current field spellings (edgePadding/gap/minWidth/padding/
-//    radius/font — #498's own example list) AND a pre-collection-split Type Primitives collection using
-//    the "Voice/STEP/field" grammar (Title-Case voice, UPPERCASE step, camelCase field — e.g.
+//    radius/font, #498's own example list) AND a pre-collection-split Type Primitives collection using
+//    the "Voice/STEP/field" grammar (Title-Case voice, UPPERCASE step, camelCase field, e.g.
 //    "Heading/MD/size", "UI/3XS/weight"). Both collections are set up via their OWN executor first (so
-//    they're properly REGISTERED — ensureFloatCollection resolves by registry id only, same discipline
-//    as every other fixture in this file), Geometry BEFORE Type Primitives — the SAME order the flagship's
+//    they're properly REGISTERED, ensureFloatCollection resolves by registry id only, same discipline
+//    as every other fixture in this file), Geometry BEFORE Type Primitives, the SAME order the flagship's
 //    real message handler uses, and the order this bridge's cross-collection Type->Geometry alias target
 //    resolution depends on (see applyFontPrimitivesModes' own header comment on the bridge group). ──
 if (applyFloatPlans && applyFontPrimitivesModes) {
@@ -2026,7 +2026,7 @@ if (applyFloatPlans && applyFontPrimitivesModes) {
     const lg = new Function("figma", "__html__", "module", code + "\nreturn { applyFloatPlans, applyFontPrimitivesModes };")(FG.figma, "<html>", undefined);
 
     // ── Geometry: 9 old fields (height/icon/caret unrenamed; edgePadding/gap/minWidth/padding/radius
-    //    renamed; font — no clean same-collection target, deliberately deprecated, see
+    //    renamed; font, no clean same-collection target, deliberately deprecated, see
     //    GEOMETRY_FIELD_RENAME_MAP's own header comment) × 6 SAME-NAMED steps (isolates the field-
     //    spelling bridge from step-drift, which #495's own librarygeom/binder.mjs fixture already covers).
     const GEO_STEPS = { xs: 20, sm: 24, md: 28, lg: 36, xl: 48, "2xl": 64 }; // matches comfortable/baseHeight-28
@@ -2051,17 +2051,17 @@ if (applyFloatPlans && applyFontPrimitivesModes) {
       oldTypeVars.push({ name: `${voice}/${step}/weight`, type: "FLOAT", values: [{ mode: "Value", value: weight }] });
     };
     addStep("Heading", "MD", 34, 44, 0.2, 8, 620); // nearest headline step by size: sm(32,dist2) over md(40,dist6); weight exact-matches semi-bold(620)
-    addStep("UI", "3XS", 10, 14, 0.1, 4, 450); // outside ui-control's own range (xs=12 is its smallest) — clamps to nearest (xs, dist 2); weight nearest regular(440,dist10) over medium(500,dist50)
-    addStep("Code", "2XS", 10, 13, 0.05, 2, 460); // outside label-mono's own range — clamps to nearest (sm, dist 2); weight nearest regular(440,dist20) over medium(500,dist40)
-    addStep("Body", "MD", 15.5, 24, 0, 8, 460); // IDENTITY voice (unchanged name) — nearest body step by size: md(16,dist0.5) over sm(14,dist1.5) — NOT 17, a tie between md(dist1) and lg(dist1); weight nearest regular(440,dist20)
-    oldTypeVars.push({ name: "UI/3XS/singleLineHeight", type: "FLOAT", values: [{ mode: "Value", value: 16 }] }); // no bridge at all — deprecates
+    addStep("UI", "3XS", 10, 14, 0.1, 4, 450); // outside ui-control's own range (xs=12 is its smallest), clamps to nearest (xs, dist 2); weight nearest regular(440,dist10) over medium(500,dist50)
+    addStep("Code", "2XS", 10, 13, 0.05, 2, 460); // outside label-mono's own range, clamps to nearest (sm, dist 2); weight nearest regular(440,dist20) over medium(500,dist40)
+    addStep("Body", "MD", 15.5, 24, 0, 8, 460); // IDENTITY voice (unchanged name), nearest body step by size: md(16,dist0.5) over sm(14,dist1.5), NOT 17, a tie between md(dist1) and lg(dist1); weight nearest regular(440,dist20)
+    oldTypeVars.push({ name: "UI/3XS/singleLineHeight", type: "FLOAT", values: [{ mode: "Value", value: 16 }] }); // no bridge at all, deprecates
     await lg.applyFontPrimitivesModes({ collection: "Type Primitives", modes: ["Value"], defaultMode: "Value", addModes: [], variables: oldTypeVars });
     const oldType = FG.collections.find((c) => c.name === "Type Primitives");
 
-    // ── apply the REAL current plans, library mode, Geometry FIRST (matches the flagship's own order —
+    // ── apply the REAL current plans, library mode, Geometry FIRST (matches the flagship's own order,
     //    Type Primitives' cross-collection bridge below depends on Geometry's type/ vars already existing).
     //    The Geometry plan must carry BOTH halves (TKT-0009 merge, mirroring #495's own floatcreate
-    //    test) — geomTokensFigmaModes alone is box-only and carries no type/ vars at all, which the
+    //    test), geomTokensFigmaModes alone is box-only and carries no type/ vars at all, which the
     //    Type Primitives cross-collection bridge needs to alias against.
     const scaleG = TYPE.typeScale({ treatment: "product", bodyBase: 16 });
     const typeIxG = TYPE.typeTokensFigmaModes(scaleG, []);
@@ -2071,8 +2071,8 @@ if (applyFloatPlans && applyFontPrimitivesModes) {
     const planFP = primitivesModesApplyPlan(TYPE.typeTokensFigmaPrimitivesModes(scaleG));
     const resType = await lg.applyFontPrimitivesModes(planFP, { libraryMode: true });
 
-    // 0 removals — every old var, in BOTH collections, still exists by name.
-    // "font" is deliberately DEPRECATED (renamed under _deprecated/, id-preserving — see
+    // 0 removals, every old var, in BOTH collections, still exists by name.
+    // "font" is deliberately DEPRECATED (renamed under _deprecated/, id-preserving, see
     // GEOMETRY_FIELD_RENAME_MAP's own header comment), so "still there" tolerates that rename, same as
     // #495's own librarygeom/librarymode fixtures.
     const geoStillThere = oldGeoVars.every((v) => FG.variables.some((va) => va.variableCollectionId === oldGeo.id && (va.name === v.name || va.name === "_deprecated/" + v.name)));
@@ -2081,7 +2081,7 @@ if (applyFloatPlans && applyFontPrimitivesModes) {
     if (!typeStillThere) FAIL("librarygrammar", "library mode removed an old Type Primitives Voice/STEP/field variable");
 
     // Geometry: exactly the 5 renamed fields × 6 steps aliased, "font" × 6 steps deprecated (documented
-    // scope decision — see GEOMETRY_FIELD_RENAME_MAP's own header comment) — height/icon/caret are
+    // scope decision, see GEOMETRY_FIELD_RENAME_MAP's own header comment), height/icon/caret are
     // ALREADY-wanted names (identity steps + identity spelling), so they never enter the alias/deprecate
     // report at all; they're ordinary create/update entries.
     const geoRpt = resGeo && resGeo.libraryReports && resGeo.libraryReports[0];
@@ -2119,7 +2119,7 @@ if (applyFloatPlans && applyFontPrimitivesModes) {
     const newHeadlineSmSize = FG.variables.find((v) => v.variableCollectionId === oldGeo.id && v.name === "type/headline/sm/size");
     if (!oldHeadingSize || !newHeadlineSmSize || oldHeadingSize.valuesByMode[oldType.modes[0].modeId].type !== "VARIABLE_ALIAS" || oldHeadingSize.valuesByMode[oldType.modes[0].modeId].id !== newHeadlineSmSize.id) FAIL("librarygrammar", "Heading/MD/size's value was not redirected to the CROSS-COLLECTION type/headline/sm/size via a real alias");
 
-    // ── IDEMPOTENT second run, STRICT — both collections, 0 aliases/deprecates/renames.
+    // ── IDEMPOTENT second run, STRICT, both collections, 0 aliases/deprecates/renames.
     const resGeo2 = await lg.applyFloatPlans(geoPlans, { libraryMode: true });
     const resType2 = await lg.applyFontPrimitivesModes(planFP, { libraryMode: true });
     const geoRpt2 = resGeo2 && resGeo2.libraryReports && resGeo2.libraryReports[0];
@@ -2203,10 +2203,10 @@ if (applyFontPrimitivesModes) {
 }
 
 // ── READ-FLOAT-VARIABLES (TKT-0020, Geometry/Type drift reference): the live Geometry + Type
-// Primitives values come back in a shape comparable to a modeApplyPlan/primitivesModesApplyPlan entry — the
+// Primitives values come back in a shape comparable to a modeApplyPlan/primitivesModesApplyPlan entry, the
 // apply gate's pre-overwrite diff (collections-arch review C2). Runs on the SAME mock F: by this point
 // the float e2e + styles sections above have left a real, registry-tracked Geometry AND Type
-// Primitives collection in place — exactly the state a real apply leaves behind.
+// Primitives collection in place, exactly the state a real apply leaves behind.
 if (applyFloatPlans) {
   try {
     F.figma.ui._posted.length = 0;
@@ -2229,7 +2229,7 @@ if (applyFloatPlans) {
       }
     }
     // PROVENANCE: a user's OWN pre-existing "Geometry" this plugin never created (no registry entry)
-    // must be invisible to the read too — exactly as it's invisible to applyFloatPlans/ensureFloatCollection.
+    // must be invisible to the read too, exactly as it's invisible to applyFloatPlans/ensureFloatCollection.
     const F10 = mockFigma();
     new Function("figma", "__html__", "module", code)(F10.figma, "<html>", undefined); // registers figma.ui.onmessage as a side effect
     F10.figma.variables.createVariableCollection("Geometry");
@@ -2251,5 +2251,5 @@ if (applyFloatPlans) {
 const DECLARED = ["manifest", "offline", "vmsyntax", "ui", "parse", "apply", "cascade", "idempotent", "prune", "themes", "collnames", "floatapply", "floatidem", "floatprune", "floatprov", "floatretire", "floatlibrary", "renamecap", "colorprov", "colorlibrary", "staleskip", "staleskipfloat", "staleskipfontprim", "staleskipnotice", "colorrenamecap", "applysys", "applydone", "config", "read", "fonts", "resolveface", "sweep", "compliance", "regroup", "primevalue", "readfloat", "styles", "fontmodes", "libraryparity", "librarymode", "adoptconsent", "librarygrammar", "fontprimslibrary", "report-static"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)\n  ` + fails.join("\n  ")); process.exit(1); }
-console.log("\nPASS: figma-plugin-app — manifest + offline code.js + bridged ui.html + the figmaBundle→variables cascade + the Type/Geometry breakpoint-mode apply + the styles apply (bound paints/texts, registry prune)");
+console.log("\nPASS: figma-plugin-app, manifest + offline code.js + bridged ui.html + the figmaBundle→variables cascade + the Type/Geometry breakpoint-mode apply + the styles apply (bound paints/texts, registry prune)");
 process.exit(0);

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// verify.mjs — the color-engine validation adapter (CRITIC side; deny-on-write to the advancer).
+// verify.mjs, the color-engine validation adapter (CRITIC side; deny-on-write to the advancer).
 // Runs rubric.system.color-engine's [gate] predicates against ./hct.js and exits 0=pass / 1=fail.
 // validate.py mints the signal from this exit status. Deterministic (seeded PRNG, no clock/RNG).
 //
@@ -14,7 +14,7 @@ import * as E from "../../src/engine/hct.js";
 import { oklchToRgb } from "../../src/engine/okhsl.js";
 import { gateReport } from "../gate-report.mjs";
 
-// ── deterministic PRNG (LCG) — pristine: the worker never sees this seed stream ──────────
+// ── deterministic PRNG (LCG), pristine: the worker never sees this seed stream ──────────
 let _s = 0x9e3779b1 >>> 0;
 const rnd = () => { _s = (Math.imul(_s, 1103515245) + 12345) >>> 0; return _s / 0x100000000; };
 
@@ -86,12 +86,12 @@ for (let i = 0; i < 50; i++) {
   if (a !== b || b !== c) { FAIL("oklch-deterministic", `non-deterministic at h=${h.toFixed(2)}: ${a},${b},${c}`); break; }
 }
 
-// ── GATE hct-oklch-inverse — oklchToCam16Hue is the ACCURATE inverse of the render path: the CAM16 hue
+// ── GATE hct-oklch-inverse, oklchToCam16Hue is the ACCURATE inverse of the render path: the CAM16 hue
 // it returns must render (at its cusp) back to the requested OKLCH hue. This is what makes an OKLCH-native
-// palette land on its stored hue — the old fixed-sample version drifted 6-15° at the blue/violet pole. ──
+// palette land on its stored hue, the old fixed-sample version drifted 6-15° at the blue/violet pole. ──
 let invMaxD = 0;
 for (let H = 0; H < 360 && invMaxD <= 3; H += 3) {
-  // CHROMA-AWARE: the inverse must round-trip at the anchored chroma fraction (the Abney-correct fix —
+  // CHROMA-AWARE: the inverse must round-trip at the anchored chroma fraction (the Abney-correct fix,
   // a fixed anchor drifts at the other end). Check vivid (cusp) AND muted (half-peak).
   for (const cf of [1, 0.5]) {
     const x = E.oklchToCam16Hue(H, cf);
@@ -103,7 +103,7 @@ for (let H = 0; H < 360 && invMaxD <= 3; H += 3) {
   }
 }
 
-// ── GATE hct-oklch — the FLOAT HCT→OKLCH readout (no 8-bit round-trip). It must describe the SAME
+// ── GATE hct-oklch, the FLOAT HCT→OKLCH readout (no 8-bit round-trip). It must describe the SAME
 // color hctToRgb renders, so oklchToRgb(hctToOklch(...)) ≈ hctToRgb(...).rgb for in-gamut colors;
 // values stay in range; it's deterministic; a neutral collapses to ~0 chroma. ──────────────────
 let okOklchMaxD = 0;
@@ -123,34 +123,34 @@ for (let i = 0; i < 200; i++) {
 }
 if (E.hctToOklch(120, 0, 50)[1] > 0.02) FAIL("hct-oklch", `near-neutral not achromatic (C=${E.hctToOklch(120, 0, 50)[1]})`);
 
-// ── GATE cache-bound — maxChromaInGamut/peakC/oklchToCam16Hue memoize behind an LRU cap (a long
-// editing session — continuous hue/chroma slider drags — mints a new float key on nearly every
+// ── GATE cache-bound, maxChromaInGamut/peakC/oklchToCam16Hue memoize behind an LRU cap (a long
+// editing session, continuous hue/chroma slider drags, mints a new float key on nearly every
 // pointermove; an unbounded Map would grow for the page's whole lifetime). `boundedCache` is exported
-// SPECIFICALLY so this can be proven on cheap synthetic keys — a genuinely-new peakC call alone costs
+// SPECIFICALLY so this can be proven on cheap synthetic keys, a genuinely-new peakC call alone costs
 // several ms (the 47-tone × 18-iteration gamut search), so forcing real eviction through 5000+ REAL
 // calls would take the better part of a minute; that cost lives in the gamut math, not in the cache. ──
 {
   // (a) the mechanism itself, on trivial synthetic data: never exceeds its cap, evicts the LEAST
-  // recently used entry (not insertion order — a `get` must bump an entry's recency), and a `get` after
+  // recently used entry (not insertion order, a `get` must bump an entry's recency), and a `get` after
   // eviction correctly reports a miss (undefined) rather than a stale/wrong hit.
   const cap = 100;
   const c = E.boundedCache(cap);
   for (let i = 0; i < cap; i++) c.set(i, i * i);
   c.get(0); // touch key 0 → now the MOST recently used, so it should survive the next eviction
   c.set(cap, cap * cap); // one over cap → evicts the LRU entry, which is key 1 (0 was just touched)
-  if (c.get(0) !== 0) FAIL("cache-bound", `a just-touched entry (key 0) was evicted instead of the true LRU (key 1) — get() must bump recency`);
+  if (c.get(0) !== 0) FAIL("cache-bound", `a just-touched entry (key 0) was evicted instead of the true LRU (key 1), get() must bump recency`);
   if (c.get(1) !== undefined) FAIL("cache-bound", "the true LRU entry (key 1, never touched) survived an eviction it should have lost");
   if (c.get(cap) !== cap * cap) FAIL("cache-bound", "the newly-set entry that triggered eviction is missing");
-  // fill well past the cap with fresh keys; the cache must never grow beyond it (probe every key —
-  // exactly `cap` hits, the rest misses — since boundedCache exposes no `.size` to check directly).
+  // fill well past the cap with fresh keys; the cache must never grow beyond it (probe every key,
+  // exactly `cap` hits, the rest misses, since boundedCache exposes no `.size` to check directly).
   for (let i = 0; i < cap * 20; i++) c.set(1000 + i, i);
   let hits = 0;
   for (let i = 0; i < cap; i++) if (c.get(0) !== undefined) { /* checked once below, not per-iter */ }
   for (let i = 0; i < cap * 20; i++) if (c.get(1000 + i) !== undefined) hits++;
-  if (hits !== cap) FAIL("cache-bound", `after ${cap * 20} inserts, ${hits} keys remain resident — want exactly the cap (${cap}); the cache is not staying bounded`);
+  if (hits !== cap) FAIL("cache-bound", `after ${cap * 20} inserts, ${hits} keys remain resident, want exactly the cap (${cap}); the cache is not staying bounded`);
 
-  // (b) a small REAL smoke check — genuinely-new peakC calls still recompute correctly once evicted
-  // (proves the actual _pk cache, not just the generic mechanism, is wired the same way) — kept cheap
+  // (b) a small REAL smoke check, genuinely-new peakC calls still recompute correctly once evicted
+  // (proves the actual _pk cache, not just the generic mechanism, is wired the same way), kept cheap
   // (well under the cap) since each fresh call costs real gamut-search time.
   const early = E.peakC(1.11);
   for (let i = 0; i < 200; i++) E.peakC(2 + i * 0.7); // 200 distinct, never-repeating hues
@@ -165,7 +165,7 @@ if (E.hctToOklch(120, 0, 50)[1] > 0.02) FAIL("hct-oklch", `near-neutral not achr
 const DECLARED = ["anchor-roundtrip", "random-roundtrip", "gamut-ceiling", "branches", "oklch-deterministic", "hct-oklch", "hct-oklch-inverse", "cache-bound", "report-static"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 console.log(`  (random roundtrip max channel Δ = ${rtMax})`);
-console.log("  defer  hpg-engine-parity — differential, needs the 2nd impl (gen.js); validated at integration");
+console.log("  defer  hpg-engine-parity, differential, needs the 2nd impl (gen.js); validated at integration");
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: color-engine clears its checkable [gate] predicates (parity deferred)");
 process.exit(0);

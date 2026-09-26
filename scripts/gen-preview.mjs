@@ -1,4 +1,4 @@
-// gen-preview.mjs — render docs/img/palette-preview.svg straight from the engine.
+// gen-preview.mjs, render docs/img/palette-preview.svg straight from the engine.
 //
 // The README hero is the tool's REAL output, not a mockup: it goes through the
 // exact same projection the app renders from (defaultDocument -> projectView),
@@ -53,7 +53,7 @@ const parts = [];
 parts.push(
   `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">`,
 );
-// Card background — explicit light surface so swatches read on either GitHub theme.
+// Card background, explicit light surface so swatches read on either GitHub theme.
 parts.push(
   `<rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="14" fill="#ffffff" stroke="#e8eaed"/>`,
 );
@@ -90,9 +90,9 @@ palettes.forEach((p, r) => {
   );
 });
 
-// Footer caption — self-describing if the image is shared on its own.
+// Footer caption, self-describing if the image is shared on its own.
 parts.push(
-  `<text x="${PAD}" y="${H - PAD + FOOT_H - 6}" font-size="11" fill="#9aa0a6">HCT Palette Generator — the ${palettes.length} default palettes, perceptually-even tonal ramps (050 → 950). Generated from the engine.</text>`,
+  `<text x="${PAD}" y="${H - PAD + FOOT_H - 6}" font-size="11" fill="#9aa0a6">HCT Palette Generator, the ${palettes.length} default palettes, perceptually-even tonal ramps (050 → 950). Generated from the engine.</text>`,
 );
 parts.push(`</svg>`);
 

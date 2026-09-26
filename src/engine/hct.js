@@ -1,4 +1,4 @@
-// hct.js — HCT color engine (CAM16 hue/chroma + CIELAB L* tone), vanilla ESM, no deps.
+// hct.js, HCT color engine (CAM16 hue/chroma + CIELAB L* tone), vanilla ESM, no deps.
 //
 // HCT = Hue/Chroma from CAM16 (material-color-utilities viewing conditions) +
 //       Tone from CIELAB L*. The viewing conditions VC are computed once at load
@@ -6,20 +6,20 @@
 //
 // Public contract (the grading harness imports exactly these):
 //   hctToRgb(hue, chroma, tone) -> { rgb:[r,g,b] (0-255 ints), inGamut:boolean, lstar }
-//   hctToOklch(hue, chroma, tone) -> [L, C, H°] (FLOAT — high-res, no 8-bit round-trip)
+//   hctToOklch(hue, chroma, tone) -> [L, C, H°] (FLOAT, high-res, no 8-bit round-trip)
 //   cam16FromRgb([r,g,b])       -> { hue, chroma, J }
 //   lstarFromRgb([r,g,b])       -> CIELAB L* (0-100)
 //   maxChromaInGamut(hue, tone) -> number
 //   peakC(hue)                  -> { c, tone }
 //   oklchToCam16Hue(h)          -> CAM16 hue (degrees)
-//   boundedCache(cap)           -> { get(key), set(key,value) } — an LRU memo, exported ONLY so its
+//   boundedCache(cap)           -> { get(key), set(key,value) }, an LRU memo, exported ONLY so its
 //                                  eviction mechanics are testable on cheap synthetic data, without
 //                                  driving thousands of genuinely-expensive real gamut searches to
 //                                  force real eviction (maxChromaInGamut/peakC/oklchToCam16Hue's own
 //                                  memoization uses it internally; that wiring, not this cache's own
 //                                  correctness, is what the rest of this file's contract is about).
 
-// ── Constants (literal — material-color-utilities) ───────────────────────────
+// ── Constants (literal, material-color-utilities) ───────────────────────────
 const SRGB_TO_XYZ = [
   [0.41233895, 0.35762064, 0.18051042],
   [0.2126, 0.7152, 0.0722],
@@ -176,15 +176,15 @@ function xyzFromCam16(J, C, hue) {
   return matMul(CAT16_INV, [rF, gF, bF]);
 }
 
-// ── hctToRgb — branches in order (endpoints, neutral gray, then J tone-search) ─
-// _hctToLinRGB — the shared CAM16 solve: HCT -> converged linear sRGB (0..100 scale) + lstar + inGamut.
-// hctToRgb delins this to 0..255 ints; hctToOklch converts the SAME float pixel to OKLab — so a
+// ── hctToRgb, branches in order (endpoints, neutral gray, then J tone-search) ─
+// _hctToLinRGB, the shared CAM16 solve: HCT -> converged linear sRGB (0..100 scale) + lstar + inGamut.
+// hctToRgb delins this to 0..255 ints; hctToOklch converts the SAME float pixel to OKLab, so a
 // perceptual readout reflects the high-res model, never an 8-bit round-trip.
 function _hctToLinRGB(hue, chroma, tone) {
   // 1) tone clamps to pure black / white.
   if (tone <= 0) return { linRGB: [0, 0, 0], inGamut: true, lstar: 0 };
   if (tone >= 100) return { linRGB: [100, 100, 100], inGamut: true, lstar: 100 };
-  // 3) near-neutral: CAM16 inversion is noisy below 0.4 chroma — emit gray at the tone.
+  // 3) near-neutral: CAM16 inversion is noisy below 0.4 chroma, emit gray at the tone.
   if (chroma < 0.4) { const y = yFromL(tone); return { linRGB: [y, y, y], inGamut: true, lstar: tone }; }
   // 4) binary-search CAM16 lightness J so the resulting Y reproduces the target tone (L*).
   let lo = 0;
@@ -210,7 +210,7 @@ export function hctToRgb(hue, chroma, tone) {
 }
 
 // hctToOklch(hue, chroma, tone) -> [L, C, H°] in FLOAT. Reuses the CAM16 solve, then sends the
-// converged linear sRGB straight through OKLab (Björn Ottosson's matrices — the same constants as
+// converged linear sRGB straight through OKLab (Björn Ottosson's matrices, the same constants as
 // okhsl.js linearSrgbToOklab; inlined to keep hct.js dependency-free). NO 8-bit step, so analysis /
 // readouts read the perceptual coords from the high-res model, not the rendered pixel.
 export function hctToOklch(hue, chroma, tone) {
@@ -239,12 +239,12 @@ export function lstarFromRgb(rgb) {
   return lFromY(y);
 }
 
-// ── boundedCache(cap) — an LRU-evicting memo cache, so a long editing session (continuous hue/chroma
+// ── boundedCache(cap), an LRU-evicting memo cache, so a long editing session (continuous hue/chroma
 // slider drags each mint a new float key) has BOUNDED memory instead of growing for the page's whole
 // lifetime. Map preserves insertion order in JS; re-`set`ting an existing key (on a hit, in the caller)
-// bumps it to the "most recently used" end, and the LEAST recently used entry — the Map's first key —
+// bumps it to the "most recently used" end, and the LEAST recently used entry, the Map's first key,
 // is evicted once size exceeds `cap`. Pure capacity management: never changes a computed VALUE, only
-// how many of them stay resident — an evicted entry is simply recomputed on its next request. ────────
+// how many of them stay resident, an evicted entry is simply recomputed on its next request. ────────
 export function boundedCache(cap) {
   const map = new Map();
   return {
@@ -262,13 +262,13 @@ export function boundedCache(cap) {
   };
 }
 const CACHE_CAP = 5000; // generous for a single session (curated-library browsing + active editing);
-// bounded regardless of session length — the actual point.
+// bounded regardless of session length, the actual point.
 
-// ── maxChromaInGamut — tight gamut ceiling at (hue, tone), memoized ───────────
+// ── maxChromaInGamut, tight gamut ceiling at (hue, tone), memoized ───────────
 // Cache key, EXACT (#686, U6): `hue`/`tone` are plain JS numbers, concatenated via their own default
-// `toString()` (lossless, round-trips bit-for-bit — no `.toFixed(2)` truncation). The prior key
+// `toString()` (lossless, round-trips bit-for-bit, no `.toFixed(2)` truncation). The prior key
 // truncated to 2 decimals, a MANY-to-one mapping (measured over a real (hue,chroma,hueSpace) input
-// population, #686: 7,967 of 21,928 buckets held more than one distinct hue) — so whichever caller's
+// population, #686: 7,967 of 21,928 buckets held more than one distinct hue), so whichever caller's
 // hue happened to populate a bucket first silently decided every later, DIFFERENT hue's answer in
 // that bucket, making this "pure" function history-dependent (a real shipped defect: `exportPanda`
 // emitted different bytes for the same state depending on unrelated earlier renders, #686). An exact
@@ -282,27 +282,27 @@ const CACHE_CAP = 5000; // generous for a single session (curated-library browsi
 // alone. That claim was wrong, and the measurement it rested on cannot show this cost at all:
 // `prime.mjs`'s own sweeps dominate that gate's runtime, and at the PRIOR head `prime.mjs` already
 // carried a private, exact-keyed 20,000-slot cache of its own, so both sides of that comparison were
-// already paying exact-key behaviour — it measures the same thing twice, not the regression.
+// already paying exact-key behaviour, it measures the same thing twice, not the regression.
 //
 // Measured where the cost actually lands: a corpus-scale render (343 curated documents, 3,780
 // palettes, 3 tone modes, `paletteStops` + `primeSwatches`) in a FRESH, unwarmed node process per
-// measurement (matching a real one-shot invocation — `npm test`'s own `gen:*` steps, a generator
-// script — not a long-lived warmed process, which hides the cost by letting later passes hit a cache
+// measurement (matching a real one-shot invocation, `npm test`'s own `gen:*` steps, a generator
+// script, not a long-lived warmed process, which hides the cost by letting later passes hit a cache
 // the first pass already populated), two engine variants differing ONLY in these three cache keys
 // (`prime.mjs` byte-identical between them, confirmed via `cmp`), CPU time (`user`+`system`, the
-// signal to trust — wall clock is noisy on a shared host and directionally misleading):
+// signal to trust, wall clock is noisy on a shared host and directionally misleading):
 //
 //   truncated keys (prior): 14,863ms / 15,074ms / 14,809ms / 15,255ms  (mean ~15,000ms)
 //   exact keys (this fix):  18,672ms / 17,740ms / 18,229ms / 17,778ms  (mean ~18,105ms)
 //
 // A real, consistent +21% CPU cost, four clean pairs, no inversions. This corroborates an independent
-// reviewer's own corpus-scale measurement (+26% and +32%, on a more contended host) — same direction,
+// reviewer's own corpus-scale measurement (+26% and +32%, on a more contended host), same direction,
 // same order of magnitude, from two different methodologies. `npm test`'s own `user` CPU time moved
 // with it (~102s at the prior head to ~144-156s here, contention-sensitive but consistently higher).
 //
 // Tried and did NOT help: raising `CACHE_CAP` (below) from 5,000 to 60,000 measured 19,072ms /
-// 19,157ms / 20,616ms — no improvement, slightly worse. Exact keys make a hit rare for the genuinely
-// distinct hues a real corpus sweeps (that IS the correctness fix — a hit now only ever fires for a
+// 19,157ms / 20,616ms, no improvement, slightly worse. Exact keys make a hit rare for the genuinely
+// distinct hues a real corpus sweeps (that IS the correctness fix, a hit now only ever fires for a
 // bit-identical repeat), so a bigger cache has little more to capture and only adds Map/GC overhead.
 //
 // Accepted anyway: the correctness gain is the whole point of #686 (a shipped export defect,
@@ -327,12 +327,12 @@ export function maxChromaInGamut(hue, tone) {
   return lo;
 }
 
-// ── peakC — the hue's maximum achievable chroma and the tone where it peaks ───
-// Cache key, EXACT (#686, U6) — see `maxChromaInGamut`'s comment above; same hazard, same fix. This
+// ── peakC, the hue's maximum achievable chroma and the tone where it peaks ───
+// Cache key, EXACT (#686, U6), see `maxChromaInGamut`'s comment above; same hazard, same fix. This
 // is the cache `src/ui/model.mjs`'s `deriveKeyColor` and `src/engine/prime.mjs`'s `primeSwatches` both
 // read for their shared "key colour" construction (`peakC(baseHue)`), so an exact key here is what
 // makes the two agree byte-for-byte regardless of what else has rendered in the same process
-// (REQ-056) — a private, exact-keyed re-implementation in one caller only closes ITS OWN order-
+// (REQ-056), a private, exact-keyed re-implementation in one caller only closes ITS OWN order-
 // dependence, not the cross-caller identity, since the two callers must read the SAME cache to agree
 // (#681 U6 review passes 2 and 4: a private `localPeakC` fixed `prime.mjs` in isolation but then
 // diverged from `deriveKeyColor`, which still read the shared, coarser-keyed cache).
@@ -355,13 +355,13 @@ export function peakC(hue) {
   return res;
 }
 
-// ── oklchToCam16Hue — sample a fixed mid OKLCH color, read its CAM16 hue ──────
-// Cache key, EXACT (#686, U6) — same shape of fix as `maxChromaInGamut`/`peakC` above, applied here
+// ── oklchToCam16Hue, sample a fixed mid OKLCH color, read its CAM16 hue ──────
+// Cache key, EXACT (#686, U6), same shape of fix as `maxChromaInGamut`/`peakC` above, applied here
 // too: `target`/`cf` are already normalised/clamped floats, so concatenating their own `toString()` is
 // exact and still hits on every bit-identical repeat. This one's own Newton loop calls `peakC(x)`
 // internally (now exact, see above), which was the actual channel #686's review traced 11 of 4,000
 // order-dependent palettes to (`effHue`'s oklch path calling this function, whose loop converged on a
-// neighbour's cusp when `peakC`'s OWN cache was warmed by an unrelated hue first) — fixing `peakC`
+// neighbour's cusp when `peakC`'s OWN cache was warmed by an unrelated hue first), fixing `peakC`
 // alone already closes that channel, since a miss here always recomputes the same true `x` once
 // `peakC` is pure; this key change additionally removes the (smaller, order-INDEPENDENT but still
 // many-to-one) risk of two distinct (target, cf) pairs sharing a truncated bucket.
@@ -373,10 +373,10 @@ export function oklchToCam16Hue(h, chromaFrac = 1) {
   const hit = _oh.get(key);
   if (hit !== undefined) return hit;
   // The ACCURATE, CHROMA-AWARE inverse of the render path: find the CAM16 hue X such that a color at
-  // `chromaFrac` of X's peak chroma (and peak tone) renders at OKLCH hue `target` — so the palette's
+  // `chromaFrac` of X's peak chroma (and peak tone) renders at OKLCH hue `target`, so the palette's
   // IDENTITY color (the key, at its own chroma) lands on the requested OKLCH hue. The OKLCH↔CAM16 hue
   // map shifts with chroma (Abney), so a fixed sample is wrong at one end (the old L=0.72/C=0.1 drifted
-  // ~15° on vivid blues; a cusp-only anchor drifts ~11° on muted hues) — anchoring at the palette's own
+  // ~15° on vivid blues; a cusp-only anchor drifts ~11° on muted hues), anchoring at the palette's own
   // chroma is right across the board. f(X) is ~monotonic, slope ≈1, so the step X ← X − (f(X) − target)
   // is Newton with derivative ≈1; a chroma floor keeps the hue well-defined for near-greys.
   let x = target; // first-order seed: CAM16 hue ≈ OKLCH hue
