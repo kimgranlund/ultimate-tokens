@@ -175,7 +175,7 @@ Checklist (the Orchestrator ticks it; the table below carries grades and paths):
 - [x] U3 (S) `em-dash.mjs`: the gate, its self-test and `--fix`, unregistered until U4 · builder-l3 · reviewer-l2 · verifier-l2
 - [x] U4 (M) the sweep of main after G0, the gate registered, the hand edits (R0 lines, `voice-check.mjs:89`, one entry-file line) · builder-l3 · reviewer-l2 · verifier-l2
 - [x] U6 (S) the empty-value placeholder becomes `n/a` on every surface (UI inspectors, the volume label, the font sentinel, the Make export cells, the MCP kit summary), one test per surface, the doc line that quotes it · builder-l2 · reviewer-l1 · verifier-l1
-- [~] U5 (S) figures of record: baseline `npm test` row and N, adapter §1 test-row range · builder-l2 · reviewer-l1 · verifier-l1
+- [x] U5 (S) figures of record: baseline `npm test` row and N, adapter §1 test-row range · builder-l2 · reviewer-l1 · verifier-l1
 
 Grades come from the Orchestrator's table: L1 and L2 builders get reviewer-l1 and verifier-l1; L3 builders get reviewer-l2 and verifier-l2. Order: U1, U2, U3 and U6 in any order or in parallel (different files; U1 alone touches `test/run.mjs`; U6 touches `src/` and `mcp/` files no other unit touches), none of them waiting for #681; then U4 after G0 and after U6 has merged (so the sweep meets no lone token); then U5 last. U3 is L3 because the masking rules (Markdown spans, lone tokens, nothing else) and the nine fix rules are easy to get subtly wrong in either direction (revision 1 got three of them wrong and the review caught them); U4 is L3 because its diff is 343 files and its review is by invariant plus a sampled read, not by reading it all.
 
