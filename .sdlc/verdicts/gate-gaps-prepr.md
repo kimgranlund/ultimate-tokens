@@ -2,7 +2,7 @@
 kind: verdict
 plan: gate-gaps
 seat: verifier
-pass: 3
+pass: 4
 pr: 756
 ticket: "#715"
 written: 2026-09-26
@@ -120,3 +120,26 @@ dropped, which is cosmetic). The next pass rereads that row and the review round
 
 verdict: 🔴
 sha: 5e23cebbf08e60399578d63df15c52d12e79219e
+
+## Pass 4 · 2026-09-26 · `4d1392ae`: 🟢
+
+`5e23cebb` to `4d1392ae` is one commit that changes only `.sdlc/plans/gate-gaps.md` (revision 9). The code has
+not changed since `39142e49`, so pass 1's code rows carry on custody. I reran P2 and its control in a clone at
+`4d1392ae`. The reviewer's round 4 is appended to `/tmp/v13/gg-prepr-review.md` and ends `verdict: 🟢 PASS`.
+
+| id | criterion | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| P2 | the baseline agrees by line, under R53 | 🟢 | mine: `1`, `1`, the one line `STALE time test: baseline 151 to 1058 s, adapter 80 to 89 s`, as P2's Expected and U2-7 read | the plan's written control, `all 51` planted as `all 50`: exit `1`, `2`, `2`, `STALE tests: baseline 50, test/run.mjs TESTS 51` added, which is what the control cell now says |
+| RL | the review leg | 🟢 | round 4: `verdict: 🟢 PASS`; every Revisions row has two cells | rounds 1 to 3 ended `verdict: 🟡 FIX-FIRST`, so the leg can fail |
+| C | checks and gates | 🟢 | `verdicts 149 graded 149 bad 0`; `branding: clean (739 files scanned)`; added em and en dashes in revision 9 `0` | pass 1's plants |
+| M | clean merge into today's main | 🟢 | `git merge-tree --write-tree origin/main 4d1392ae` exit `0` at main `cd91b753`; board lines removed `0` | the conflicting `TESTS` plant: exit `1` |
+| CI | CI at the full sha | 🟢 | run `36240681485` at `4d1392ae`: `success`, every job `success`, `deploy` `skipped` | run `35785765215` red at `Run npm run smoke` |
+| PR | PR #756 | 🟢 | `headRefOid` `4d1392ae`, title `test(color-engine): default kit in every anchor sweep, ramp identity control (#715)`, `mergeStateStatus` `CLEAN`; this record carries `Closes #715` for the gated body rewrite | pass 1 read the old title |
+
+Still 🟡, none this plan's gate: K (#755 and DD9, main's), EN (four en dashes in a question record), and the
+review's low notes: `identity-control` compares only the shared prefix of two ramps (F5), a render exception
+is swallowed without its message (F6), and the U2b worktree rows on the board (F4) are the Orchestrator's
+close-out. The PR body is rewritten from this record at the gated land.
+
+verdict: 🟢
+sha: 4d1392ae674ff2f5b7613143db0d91f67e4d3b5d
