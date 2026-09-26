@@ -85,3 +85,14 @@ Not used for any figure below; U5-2's three runs are still owed.
 
 No question for the owner: the brief's own stop condition fired, this is a status report, not a
 ruling to ask for.
+
+## Second polling window (owner R47, "window open")
+
+Resumed on the team lead's word that the window was open and load was falling. Polled load, the
+heavy-run pgrep count, and the hot-process count every 10 s for about 118 minutes (the team lead's
+2-hour cap). The heavy-run count never reached `0` for more than a few checks running (it moved
+between `0` and `9` across the window, `1` other agent's own concurrent gate runs on this host); the
+lowest single load reading was `16.39`, momentarily, immediately followed by a climb back past `40`.
+No 10-second sample cleared all three conditions (load under 5, heavy-run `0`, hot `0`) at once.
+Stopping at the cap; no code or record changed in this window, so no new commit. Same three owed
+items as above (Runs table, baseline row, adapter range), still gated on a quiet slot.
