@@ -5,7 +5,7 @@ ran: 2026-09-23 to 2026-09-26
 ref: main @ 74859f30
 host: local macOS, Node 24.18, local Chrome for smoke; load under 5 at the start of every counted run (owner ruling 2026-09-20, quiet-host rule, R34 window 1 and its window-2 sequel), full readings in the U6b handoff's Runs table; the `npm test` row is the one exception, rule-gates U5b, load not gated (owner ruling, `.sdlc/questions/rule-gates-U5-load.md`, 2026-09-25, "accept runs under load"), see its own Correction
 extended: 2026-09-19, rows corpus-contrast and fonts, host load 3.97 4.39 4.80 to 6.16 4.94 4.97 on 10 cores across the six runs
-supersedes: the 2026-09-19 baseline at d814500 (kept below as a prior set) and the 2026-09-16 baseline (git show 180eca0:.sdlc/baseline.md); the #713 U6b/U6c re-measurement below moves `npm test` out of the interim ceiling section entirely (the corpus sweeps split into their own gate scripts) and supersedes it as the figure to cite. Every row now carries all three of its counted quiet-host readings; `npm test`'s window-1 figures move to a labelled superseded note once U6c-8 re-timed it. 2026-09-25 (#715 U2b step 7): `npm test`'s row moves again, 50 to 51 files (`engine/ramp-identity.mjs`, K17), read under R50 (accept-runs-under-load) rather than the quiet-host rule; the #713 U6c-8 figures move to their own superseded note below
+supersedes: the 2026-09-19 baseline at d814500 (kept below as a prior set) and the 2026-09-16 baseline (git show 180eca0:.sdlc/baseline.md); the #713 U6b/U6c re-measurement below moves `npm test` out of the interim ceiling section entirely (the corpus sweeps split into their own gate scripts) and supersedes it as the figure to cite. Every row now carries all three of its counted quiet-host readings; `npm test`'s window-1 figures move to a labelled superseded note once U6c-8 re-timed it. 2026-09-25 (#715 U2b step 7): `npm test`'s row moves again, 50 to 51 files (`engine/ramp-identity.mjs`, K17), read under R50 (accept-runs-under-load) rather than the quiet-host rule; the #713 U6c-8 figures move to their own superseded note below. 2026-09-26 (rule-gates U5b, pre-land sync): `npm test`'s row moves again, 52 to 53 files (main's #715 `engine/ramp-identity.mjs` plus this plan's own `repo/svg-rules.mjs` and `repo/em-dash.mjs`), three runs taken under load per the same load ruling; rule-gates U5's own 52-file under-load set moves to its own superseded note below
 ---
 
 # Baseline
@@ -20,7 +20,7 @@ The `npm test`, `npm run build` and `npm run smoke` rows were each run three tim
 
 | command | runs | exit | seconds | summary |
 |---|---|---|---|---|
-| `npm test` | 3/3 | 0 | 151 · 106 · 317 | `✓ all 52 test files passed` `PLACEHOLDER pending U5b step 3 rewrite at the merged N; see the Correction below` |
+| `npm test` | 3/3 | 0 | 167.45 · 185.81 · 268.26 | `✓ all 53 test files passed` `re-measured rule-gates U5b at the merged N (#715 registered engine/ramp-identity.mjs on main), under load, owner ruling .sdlc/questions/rule-gates-U5-load.md (2026-09-25, "accept runs under load") and R53 (.sdlc/runtime/owner-rulings-2026-09-22.md, "keep quiet figure, carry STALE"); replaces rule-gates U5's 52-file under-load set, which moves to the superseded note below; see the Correction below for each run's clock time, load and heavy-run count` |
 | `npm run gate:corpus-tonal` | 3/3 | 0 | 86.09 · 116.31 · 92.56 | `PASS: tonal-generation clears all [gate] predicates` `new row, gate-split #713 U6b` |
 | `npm run gate:corpus-anchor` | 3/3 | 0 | 78.98 · 99.90 · 86.02 | `PASS (FULL): C2, C3, C4 (non-anchored construction totally migrated, Q1), C6/F4 clear; C5 (monotone) is a true 0, no list; window-clamp (10), gap-19 (72), distinct-25 (16) and notch (17, Q3-resolved, +2 at #739) are named allow-lists, compared by name, each with a biting negative control` `new row, gate-split #713 U6b; summary text re-measured after achromatic-anchor #739 merged into plan/achromatic-anchor (notch 15 -> 17, exit 0 confirmed - `.sdlc/checks/baseline-agrees-check.sh` does not compare this cell's text, only its timing, so the #713 seconds carry forward unchanged)` |
 | `npm run gate:sweep-prime` | 3/3 | 0 | 86.25 · 70.40 · 67.00 | `PASS: prime-system clears all AC-050 gates` `new row, gate-split #713 U6b; first reading window 1 (not recorded, before clock logging), other two window 2, 2026-09-23` |
@@ -319,3 +319,25 @@ KB to 4120.9 KB (the em-dash sweep's punctuation-only rewrite shrank several inl
 the `npm run build` row above and its own note.
 
 Correction (2026-09-26, plan rule-gates pre-land sync, #730/#731): `origin/main` merged in again (main's own pre-land sync), bringing hex-oklch-dedupe U1's `model.mjs` deletion (the correction above, 4125.3 to 4122.4 KB) together with this branch's own em-dash sweep (4125.3 to 4120.9 KB); the two independent reductions from the same 4125.3 KB base now combine on one tree, moving the figure again to 4118.0 KB. The reconciled figure is program output, measured after `npm test` regenerated `figma/plugin/ui.html` from the merged sources: `gen:figma-ui` printed `wrote figma/plugin/ui.html 4118.0 KB`, and measuring the committed file the way `baseline-agrees-check.sh` measures it gives the same 4118.0. Only the KB cell moves.
+
+Correction (2026-09-26, plan rule-gates U5b, #730): `origin/main` merged in again at `276bc3ba` (#715 landed as PR #756, squash `74859f30`, registering `engine/ramp-identity.mjs` in `test/run.mjs`'s `TESTS`), raising `TESTS.length` 52 to 53. The merge conflicted `test/engine/anchor.mjs` (main's own U1 default-kit block against this branch's em-dash-swept F4 comment, resolved keeping main's block plus a fresh em-dash sweep, `node test/repo/em-dash.mjs --fix`, R8 caught both, 0 refused) and `.sdlc/baseline.md` itself (this file, resolved keeping main's `ref` and both close-out notes). `npm test`'s row moves from rule-gates U5's own 52-file under-load set (151, 106, 317 s) to three fresh runs at the merged 53-file N, again taken UNDER LOAD per the same owner ruling (`.sdlc/questions/rule-gates-U5-load.md`, "accept runs under load") and R53 (`.sdlc/adapter.md` §1's quiet-host figure, 80 to 89 s, stays as written; the resulting `STALE time test` line is the documented exception). The heavy-run count (`pgrep -fl 'test/(run|engine|ui|repo)|smoke' | grep -cE '^[0-9]+ (/[^ ]*/)?node '`) was 1 or below immediately before each of the three runs; the 1-minute load average was not gated. All three ran in `.worktrees/rg-U5`, no `node_modules`, none overlapping:
+
+| run | start (UTC) | end (UTC) | load before | load after | hot before | hot after | exit | wall (s) | git status lines |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | 2026-09-26 17:24:05 | 2026-09-26 17:26:52 | 48.70 64.61 62.18 | 15.24 45.56 54.95 | 1 | 1 | 0 | 167.45 | 0 |
+| 2 | 2026-09-26 17:27:01 | 2026-09-26 17:30:07 | 13.35 44.16 54.34 | 56.89 40.53 50.16 | 1 | 1 | 0 | 185.81 | 0 |
+| 3 | 2026-09-26 17:30:18 | 2026-09-26 17:34:46 | 71.73 44.27 51.38 | 23.86 40.36 48.48 | 1 | 0 | 0 | 268.26 | 0 |
+
+Every run printed `✓ all 53 test files passed` and left `git status --short` empty; all three ran
+under load (load before 5 or over on every run, per the load ruling), which is exactly the
+wall-time variance the ruling anticipated. No rejected runs: all three succeeded on the first
+attempt. `figma/plugin/ui.html` printed the same `4118.0 KB` on all three runs, unchanged by the
+merge (the em-dash fix touched only a test file, and origin/main's own new commit was the pre-land
+verdict record, no source change); the `npm run build` row's KB cell does not move.
+
+### Superseded: `npm test`'s rule-gates U5 under-load set (2026-09-26, 52 files)
+
+Before U5b merged `origin/main` and registered `engine/ramp-identity.mjs`, `npm test`'s three
+under-load readings were 151, 106 and 317 s (`✓ all 52 test files passed`), taken per the same
+`.sdlc/questions/rule-gates-U5-load.md` ruling. Superseded above by U5b's 53-file re-time; kept
+here as history, not as a range to grade against.
