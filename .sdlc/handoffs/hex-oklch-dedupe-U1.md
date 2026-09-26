@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Branch | unit/hx-U1 @ 52ad7ddc (includes 91ac5168, the plan's P4 revision merged in) |
+| Branch | unit/hx-U1 @ ed5b716a (includes 91ac5168 and 612650b0, the plan's two P4 revisions merged in) |
 | Files | src/ui/model.mjs, test/ui/model.mjs, figma/plugin/ui.html, src/ui/describe-mcp-assets.js, .sdlc/plans/hex-oklch-dedupe.md (merged), .sdlc/handoffs/hex-oklch-dedupe-U1.md |
 | B | 625248316db62d7ed55947507c7300161db29f31 (`git merge-base origin/main HEAD`) |
 | Deleted lines (B numbering) | model.mjs:871 (false comment), :874-878 (5 comment lines), :880-892 (anchorRgbOf + rgbToOklchLocal, 13 lines), :913 changed to the hexToOklch(keyHex) call. numstat 1 added / 20 deleted |
@@ -31,6 +31,21 @@ docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md (model
 :1081, shifted by the deletion). Resolved by the team lead's plan revision 91ac5168, which admits
 that file by name in P4's exclude list; rerun after merging plan/hex-oklch-dedupe into this branch
 is 0, 0.
+
+Second, merging plan/hex-oklch-dedupe 612650b0 (origin/main's own drift folded in) made
+.sdlc/baseline.md's committed ui.html figure stale: the deletion shrinks the bundle from 4125.3 KB
+to 4122.4 KB. `npm test` in this worktree and `npm run build` in a scratch clone (node_modules
+symlinked from the repo root) both print `wrote figma/plugin/ui.html 4122.4 KB`, and measuring the
+committed file the way baseline-agrees-check.sh measures it (`fs.readFileSync(f, "utf8").length /
+1024`) gives the same 4122.4. baseline.md's Pass-table KB cell and a new dated correction paragraph
+are updated; `sh .sdlc/checks/baseline-agrees-check.sh` now reads `stale total: 0`.
+
+N1: U1-2's negative control (`node test/engine/anchor.mjs` against the clone with `keyOklch` forced
+to `hexToOklch("#000000")`) cannot go red by construction. The `key-anchor` gate that row reads
+checks the identity swatch against the stored hex, never against `keyOklch`, so no edit to
+`keyOklch` alone can fail it; the row's job is only to show it stays green under that edit, which is
+why U1-4 (reading `test/ui/model.mjs`, which does assert on `keyOklch`) is the row that catches this
+class of regression, and its own control does go red (see the Ran table).
 
 ## Left out
 
