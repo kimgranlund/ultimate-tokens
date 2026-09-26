@@ -8,13 +8,13 @@ base: plan/chroma-floor @ 650ad34b
 grade: verifier-l2, the evidence run dispatched by the Verifier seat, which re-read the rows marked mine
 contract: C1, C2, C5 to C10 of .sdlc/plans/chroma-floor.md at fb85ed0b, revision 12, and the invariants the plan restates for every unit
 pass: 2
-passes: 1 at fb85ed0b 🔴, 2 at cbcbf9f4 🟢
+passes: 1 at fb85ed0b 🔴, 2 at cbcbf9f4 🟡
 written: 2026-09-26
 ---
 
-# Verdict chroma-floor U1 · passes 1 to 2 · 🟢 at `cbcbf9f4`, four notes
+# Verdict chroma-floor U1 · passes 1 to 2 · 🟡 at `cbcbf9f4`, every criterion met, record items open
 
-Current finding: 🟢 at `cbcbf9f4`, in `## Pass 2` below. Pass 1, 🔴 at `fb85ed0b`, is history.
+Current finding: 🟡 at `cbcbf9f4`, in `## Pass 2` below. Pass 1, 🔴 at `fb85ed0b`, is history.
 
 ## Pass 1, at `fb85ed0b`: the engine change holds every invariant; C7 and C10 red on their written Expected, C2 and C8 yellow, record items open
 
@@ -78,7 +78,7 @@ sha: fb85ed0b9b80a35d6a7e9b3fc9c0f45c58850f75
 
 ## Pass 2, at `cbcbf9f4`
 
-verdict: 🟢
+verdict: 🟡
 sha: cbcbf9f4ea2205c2fe90bc4d8ddcd2715a66eabd
 
 The evidence run, verifier-l2 again, is at `/tmp/v13/cf-U1-verify-p2.md`, with logs in `/tmp/v13/cfG/` and
@@ -136,10 +136,19 @@ writing into its header:
 | M | blast-radius fields in the handoff | 🟡 | still missing: presets moved, palettes per mode, max dL*, max dC per stop. The plan has the verifier read the 15% line from its own run, and it does: `4531 / 94900` (`4.77%`), presets `344/344`, palettes `2417/3796`, max dC by stop `2.21 / 18.01 / 19.14 / 1.46` | the base-against-base run moves `0` |
 | T | the mode-isolation timing row | 🟡 | `0/3` quiet-host readings, owed before pre-land | `baseline-agrees` counts the row |
 
+Why 🟡 and not 🟢. Every criterion U1 owns is met, but pass 1 named three routes to 🟢, and one of them
+is unmet: the handoff still lacks the blast-radius fields (M). Pass 2 also made two citations stale (CT),
+and the stale-context rule treats that as a defect. Neither needs an engine change. The script ruling (S)
+and the timing row (T) are due before pre-land. An earlier text of this pass read 🟢; it is corrected
+here to agree with pass 1's own routes.
+
+One plan-text mismatch: C7's control that keys the term on `stop` does red, but on `damping-curve` and
+`intensity-legacy`, not on the `skew-lift-okhsl (iii c)` gate the plan names.
+
 Also carried: `doc-drift-rows` `bad 1` (DD9) and `ceiling-counts: 1 failure(s)` (#755) are identical at
 the base. `verdict-frontmatter`'s `bad 11` are main's records, fixed on main, and clear when main is
 merged in. No reviewer record covers the pass-2 commit. The `tonal.js:398` comment says "well outside
 R" where the lift-±40 bound, `0.2241`, is just outside `0.2`.
 
-verdict: 🟢
+verdict: 🟡
 sha: cbcbf9f4ea2205c2fe90bc4d8ddcd2715a66eabd
