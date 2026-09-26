@@ -6,7 +6,7 @@
 // then test/ui/headless-boot.mjs's (dpa) group only exercises them THROUGH button clicks. This
 // file imports and calls them directly, pure, no DOM — covering SPEC
 // docs/spec/spec-muted-base-key-spikes.md REQ-020..024 at the model layer.
-import { PALETTE_GROUPS, brandKit, defaultDocument, exportDesignSystemBundle, geomScaleFor, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixCollisionBadge, radixExportKey, radixKeyCollision, RADIX_COLLISION_BADGE, rederiveDataHues, resolvedPalettes, slug, typeScaleFor } from "../../src/ui/model.mjs";
+import { PALETTE_GROUPS, brandKit, defaultDocument, exportDesignSystemBundle, geomScaleFor, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixCollisionBadge, radixExportKey, radixKeyCollision, RADIX_COLLISION_BADGE, rederiveDataHues, resolvedPalettes, slug, typeScaleFor } from "../../src/ui/model.mjs";
 import { deriveDataHues } from "../../src/engine/data-hues.mjs";
 import { RESERVED_ALIAS_KEYS, isDataPalette, exportRadixModule } from "../../src/engine/exports.js";
 import { PRESETS as BRAND_PRESETS } from "../../src/ui/categories/brands.js";
@@ -362,6 +362,35 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
     const wantKeys = ["none", "xs", "sm", "md", "lg", "xl", "full"];
     ok(JSON.stringify(Object.keys(radii)) === JSON.stringify(wantKeys), `radixPreset.theme.extend.tokens.radii keys = ${JSON.stringify(Object.keys(radii))}, want ${JSON.stringify(wantKeys)}`);
   }
+}
+
+// ── U1 (#731): the anchored branch of deriveKeyColor, reached through projectView, must agree
+// byte-for-byte with hexToOklch(anchor), the one hex-to-OKLCH conversion this file now keeps.
+// The default kit's 16 families all carry `anchor` (asserted below rather than assumed); if a
+// future default kit drops it, one anchored palette is built here from a corpus hex so the
+// subject count never silently falls to 0.
+{
+  const doc = defaultDocument();
+  let anchored = doc.palettes.filter((p) => typeof p.anchor === "string");
+  ok(anchored.length > 0, "the default document must carry at least one anchored palette (field the test feeds deriveKeyColor)");
+  if (anchored.length === 0) {
+    anchored = [{ ...doc.palettes[0], anchor: "#576485" }];
+    doc.palettes = [...doc.palettes, anchored[0]];
+  }
+  const view = projectView(doc);
+  let subjects = 0;
+  for (const src of anchored) {
+    const keyHex = src.anchor.toUpperCase();
+    const viewPalette = view.palettes.find((p) => p.name === src.name);
+    ok(!!viewPalette, `projectView must carry a palette named "${src.name}" matching the anchored source`);
+    if (!viewPalette) continue;
+    ok(viewPalette.key === keyHex, `anchored palette "${src.name}": .key = ${viewPalette.key}, want the anchor ${keyHex}`);
+    ok(JSON.stringify(viewPalette.keyOklch) === JSON.stringify(hexToOklch(keyHex)),
+      `anchored palette "${src.name}": keyOklch ${JSON.stringify(viewPalette.keyOklch)} must deep-equal hexToOklch(${keyHex}) = ${JSON.stringify(hexToOklch(keyHex))}`);
+    subjects++;
+  }
+  ok(subjects >= 1, `at least one anchored subject must be exercised (got ${subjects})`);
+  console.log(`keyOklch agrees with hexToOklch: subjects ${subjects}`);
 }
 
 if (fails.length) { console.error(`model FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
