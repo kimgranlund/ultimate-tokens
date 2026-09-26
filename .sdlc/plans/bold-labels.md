@@ -1,5 +1,5 @@
 ---
-status: draft
+status: approved
 ticket: #752
 priority: P2
 lane: docs (Markdown prose only; no `src/`, no `test/`, no `scripts/`, no generated file)
