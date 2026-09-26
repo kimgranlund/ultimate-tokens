@@ -24,4 +24,4 @@ Head `54c7be66` on `unit/hx-U1`, B `625248316db62d7ed55947507c7300161db29f31` (`
 4. The test block at `test/ui/model.mjs:367` to `:394` asserts `anchored.length > 0` before its fallback, so an empty default kit reds rather than silently building a synthetic subject; the pinned pass line matches U1-4's grep exactly.
 5. Nit, no action needed: the handoff's Branch row (`.sdlc/handoffs/hex-oklch-dedupe-U1.md:5`) names `52ad7ddc`; the head is `54c7be66`. The two later commits touch only the handoff, so every result it states still describes the head's code.
 
-verdict: PASS, U1 at 54c7be66 meets U1-1 to U1-5 and P3 to P4 as rerun; no blocking findings
+verdict: 🟢 PASS, U1 at 54c7be66 meets U1-1 to U1-5 and P3 to P4 as rerun; no blocking findings
