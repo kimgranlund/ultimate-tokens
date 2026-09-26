@@ -13,12 +13,12 @@ import { lemonActivation, lemonEntitlement, lemonDeactivation } from "./engine/f
 
 // ── Pro licensing (WEB ONLY) ────────────────────────────────────────────────────────────────────────
 // app.js exposes a pluggable license SEAM (el._licenseService) with an OFFLINE default, so the file stays
-// network-free inside the offline Figma plugin bundle (manifest networkAccess:"none" — the bundle is rooted
+// network-free inside the offline Figma plugin bundle (manifest networkAccess:"none", the bundle is rooted
 // at app.js by scripts/bundle.mjs and NEVER includes this entry). Here in the WEB entry we assign the REAL
 // service that talks to Lemon Squeezy's public License API: activate (consumes a SEAT, returns an instance
-// id), validate (re-check), deactivate (frees the seat). No API key is needed — the license key itself is
+// id), validate (re-check), deactivate (frees the seat). No API key is needed, the license key itself is
 // the credential, and these endpoints are designed for client-side use. The pure response→result mapping
-// lives in the engine (lemonActivation/lemonEntitlement/lemonDeactivation — unit-tested); this is the fetch.
+// lives in the engine (lemonActivation/lemonEntitlement/lemonDeactivation, unit-tested); this is the fetch.
 type LicenseResult = { ok: boolean; entitlement?: { status: string; expiresAt?: number }; instanceId?: string; error?: string };
 type LicenseService = {
   activate: (key: string, instanceName: string) => Promise<LicenseResult>;
@@ -27,10 +27,10 @@ type LicenseService = {
 };
 type LicensedElement = HTMLElement & { _licenseService?: LicenseService; revalidateLicense?: () => void };
 
-// PIN activation to the Ultimate Tokens Lemon Squeezy store (id 420293) — the mappers are FAIL-CLOSED on this, so a
+// PIN activation to the Ultimate Tokens Lemon Squeezy store (id 420293), the mappers are FAIL-CLOSED on this, so a
 // valid key issued by any OTHER store is rejected. null would accept any active key from any store.
 const LEMON_STORE_ID: number | null = 420293;
-// PIN to OUR products too (Pro 1182548 · Studio 1182535) — layered on the store pin, so even a key for a
+// PIN to OUR products too (Pro 1182548 · Studio 1182535), layered on the store pin, so even a key for a
 // DIFFERENT product in the same store is rejected (FAIL-CLOSED). null/[] would accept any product's key.
 const LEMON_PRODUCT_IDS: number[] | null = [1182548, 1182535];
 const LEMON_LICENSE_API = "https://api.lemonsqueezy.com/v1/licenses";
@@ -42,8 +42,8 @@ async function lsPost(path: string, params: Record<string, string>): Promise<unk
     body: new URLSearchParams(params).toString(),
     signal: AbortSignal.timeout(10000), // bound the round-trip so activate/validate can't hang the UI
   });
-  // 5xx is a transient server error — throw so callers treat it as a network failure (no false downgrade on
-  // revalidate). A 4xx still carries a meaningful JSON body (e.g. an invalid/expired key) — parse it.
+  // 5xx is a transient server error, throw so callers treat it as a network failure (no false downgrade on
+  // revalidate). A 4xx still carries a meaningful JSON body (e.g. an invalid/expired key), parse it.
   if (resp.status >= 500) throw new Error(`license service responded ${resp.status}`);
   try {
     return await resp.json();

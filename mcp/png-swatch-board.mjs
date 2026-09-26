@@ -1,19 +1,19 @@
-// png-swatch-board.mjs — a zero-dependency PNG encoder for the describe-palette generator's swatch-board
+// png-swatch-board.mjs, a zero-dependency PNG encoder for the describe-palette generator's swatch-board
 // preview (#373). Hand-rolled rather than depending on a real PNG/zlib library, per the ticket's own
 // scope: flat-color shapes need no real compression, and staying this minimal keeps the encoder auditable
-// in one file. The board is TWO stacked scheme blocks (light on top, dark below, #395) — each the same
-// 4×2 family grid (gapped, on that scheme's own surface color) plus a mock CONTROL STRIP — Button ·
+// in one file. The board is TWO stacked scheme blocks (light on top, dark below, #395), each the same
+// 4×2 family grid (gapped, on that scheme's own surface color) plus a mock CONTROL STRIP, Button ·
 // Select · Switch, flat shapes sized from the kit's own geometry LG tokens and painted from its real
 // semantic roles (the PNG sibling of the app's Geometry ramp mocks, #383). Two blocks because the
-// `contrast` lint (spec §6.3) checks the prime/on-prime pairing in BOTH schemes — a light-only board was
+// `contrast` lint (spec §6.3) checks the prime/on-prime pairing in BOTH schemes, a light-only board was
 // blind to a dark-mode-only finding it might be warning about. The swatch grid itself is scheme-agnostic
 // (a palette's ramp stop has one hex, not a light/dark pair) and paints identically in both blocks; only
-// the role-resolved control strip differs — which is exactly the thing worth seeing side by side. Resist
-// the urge to add text, gradients, anti-aliasing, or real compression — the zero-dep constraint is
+// the role-resolved control strip differs, which is exactly the thing worth seeing side by side. Resist
+// the urge to add text, gradients, anti-aliasing, or real compression, the zero-dep constraint is
 // load-bearing (spec §13). Deterministic: the same kit always encodes to byte-identical PNG bytes (no
-// timestamps, no randomness, no ancillary chunks) — spec §6.4's "byte-identical PNG" replay guarantee.
+// timestamps, no randomness, no ancillary chunks), spec §6.4's "byte-identical PNG" replay guarantee.
 
-// ── CRC-32 (IEEE 802.3 / zlib's polynomial) — every PNG chunk is trailed by one ──
+// ── CRC-32 (IEEE 802.3 / zlib's polynomial), every PNG chunk is trailed by one ──
 const CRC_TABLE = (() => {
   const t = new Uint32Array(256);
   for (let n = 0; n < 256; n++) {
@@ -29,7 +29,7 @@ function crc32(bytes) {
   return (c ^ 0xffffffff) >>> 0;
 }
 
-// ── Adler-32 — the checksum a zlib stream's trailer carries over the UNCOMPRESSED data ──
+// ── Adler-32, the checksum a zlib stream's trailer carries over the UNCOMPRESSED data ──
 function adler32(bytes) {
   let a = 1, b = 0;
   const MOD = 65521;
@@ -40,11 +40,11 @@ function adler32(bytes) {
   return ((b << 16) | a) >>> 0;
 }
 
-// deflateStored(data) — DEFLATE's "stored" (uncompressed) block type (RFC 1951 §3.2.4): no Huffman coding,
+// deflateStored(data), DEFLATE's "stored" (uncompressed) block type (RFC 1951 §3.2.4): no Huffman coding,
 // just literal bytes framed for the format. Each block's header is a single byte (1-bit BFINAL + 2-bit
-// BTYPE=00, padded to the byte with zero bits — BTYPE 00 contributes nothing itself), then LEN/NLEN (2
+// BTYPE=00, padded to the byte with zero bits, BTYPE 00 contributes nothing itself), then LEN/NLEN (2
 // bytes each, little-endian; NLEN is LEN's one's complement) and the literal bytes. Split into <=65535-byte
-// blocks — the format's own per-block cap.
+// blocks, the format's own per-block cap.
 function deflateStored(data) {
   const MAX = 65535;
   const blocks = Math.max(1, Math.ceil(data.length / MAX)); // at least one block, even for empty data
@@ -61,7 +61,7 @@ function deflateStored(data) {
   return Buffer.concat(parts);
 }
 
-// zlibStore(data) — the zlib wrapper a PNG IDAT chunk needs: a 2-byte header (0x78 0x01 — deflate, 32K
+// zlibStore(data), the zlib wrapper a PNG IDAT chunk needs: a 2-byte header (0x78 0x01, deflate, 32K
 // window, "fastest" level; the level is only a hint, meaningless over stored blocks) + the deflate stream
 // + a 4-byte BIG-ENDIAN Adler-32 of the uncompressed data.
 function zlibStore(data) {
@@ -70,7 +70,7 @@ function zlibStore(data) {
   return Buffer.concat([Buffer.from([0x78, 0x01]), deflateStored(data), trailer]);
 }
 
-// chunk(type, data) — one PNG chunk: 4-byte big-endian length + 4-byte ASCII type + data + a CRC-32 over
+// chunk(type, data), one PNG chunk: 4-byte big-endian length + 4-byte ASCII type + data + a CRC-32 over
 // (type + data).
 function chunk(type, data) {
   const typeBuf = Buffer.from(type, "ascii");
@@ -89,17 +89,17 @@ function hexToRgb(hex) {
   return [0, 2, 4].map((i) => parseInt(m.slice(i, i + 2), 16));
 }
 
-// encodePNG(pixels, width, height) — pixels: a flat Buffer of width*height*3 RGB bytes. Color type 2 (RGB,
-// 8-bit, no palette, no alpha) — the simplest shape for solid swatches. Filter type 0 (None) on every
-// scanline — filtering only helps REAL compression, which stored blocks skip entirely.
+// encodePNG(pixels, width, height), pixels: a flat Buffer of width*height*3 RGB bytes. Color type 2 (RGB,
+// 8-bit, no palette, no alpha), the simplest shape for solid swatches. Filter type 0 (None) on every
+// scanline, filtering only helps REAL compression, which stored blocks skip entirely.
 function encodePNG(pixels, width, height) {
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(width, 0);
   ihdr.writeUInt32BE(height, 4);
   ihdr[8] = 8; // bit depth
   ihdr[9] = 2; // color type: RGB
-  ihdr[10] = 0; // compression method (deflate — the only value the spec defines)
-  ihdr[11] = 0; // filter method (adaptive filtering — but every scanline below uses filter type 0/None)
+  ihdr[10] = 0; // compression method (deflate, the only value the spec defines)
+  ihdr[11] = 0; // filter method (adaptive filtering, but every scanline below uses filter type 0/None)
   ihdr[12] = 0; // interlace method (none)
 
   const rowBytes = width * 3;
@@ -113,8 +113,8 @@ function encodePNG(pixels, width, height) {
   return Buffer.concat([SIGNATURE, chunk("IHDR", ihdr), chunk("IDAT", zlibStore(raw)), chunk("IEND", Buffer.alloc(0))]);
 }
 
-// SWATCH_SIZE / GRID_COLS / GRID_ROWS — a 4×2 grid, one solid swatch per family, in FAMILY_NAMES order
-// (the 4 brand-ish families — Neutral/Primary/Secondary/Tertiary — top row; the 4 status families bottom
+// SWATCH_SIZE / GRID_COLS / GRID_ROWS, a 4×2 grid, one solid swatch per family, in FAMILY_NAMES order
+// (the 4 brand-ish families, Neutral/Primary/Secondary/Tertiary, top row; the 4 status families bottom
 // row). MARGIN pads the whole board, GAP separates swatches, CONTROL_STRIP_H reserves a fixed-height band
 // under the grid for the mock controls (fixed so the board's dimensions never depend on the kit's
 // geometry treatment). Named constants so a future build can retune the board without hunting literals.
@@ -125,7 +125,7 @@ export const MARGIN = 16;
 export const GAP = 8;
 export const CONTROL_STRIP_H = 48;
 
-// ── flat-shape rasterizers — pixel-center point tests, no anti-aliasing (AA would smuggle in blending
+// ── flat-shape rasterizers, pixel-center point tests, no anti-aliasing (AA would smuggle in blending
 // math for zero visual payoff at swatch scale; hard edges keep the deep-match tests exact) ──
 function fillRect(px, W, x, y, w, h, [r, g, b]) {
   for (let j = y; j < y + h; j++) {
@@ -136,7 +136,7 @@ function fillRect(px, W, x, y, w, h, [r, g, b]) {
   }
 }
 
-// fillRoundRect — the rounded-rect SDF test: a pixel center's distance to the radius-inset core rect
+// fillRoundRect, the rounded-rect SDF test: a pixel center's distance to the radius-inset core rect
 // must be ≤ rad. rad is clamped to the half-extent so a pill (rad = h/2) is just the degenerate case.
 function fillRoundRect(px, W, x, y, w, h, rad, [r, g, b]) {
   rad = Math.min(rad, Math.floor(Math.min(w, h) / 2));
@@ -168,7 +168,7 @@ function fillCircle(px, W, cx, cy, radius, [r, g, b]) {
   }
 }
 
-// fillCaretDown — the select's disclosure triangle: rows of shrinking half-width, apex at the bottom.
+// fillCaretDown, the select's disclosure triangle: rows of shrinking half-width, apex at the bottom.
 function fillCaretDown(px, W, cx, top, w, h, rgb) {
   for (let t = 0; t < h; t++) {
     const half = (w / 2) * (1 - t / h);
@@ -177,20 +177,20 @@ function fillCaretDown(px, W, cx, top, w, h, rgb) {
   }
 }
 
-// boardLayout(kit) — every rect the renderer paints, shared with the verifier so the test samples the
+// boardLayout(kit), every rect the renderer paints, shared with the verifier so the test samples the
 // exact geometry the renderer used (colors stay independently resolved from the kit). The control strip's
-// mocks are sized from the kit's OWN geometry LG tokens — height, pill radius, icon (the switch thumb,
-// per the app's centering law: inset = paddingNarrow), caret — so the preview shows the kit's real
+// mocks are sized from the kit's OWN geometry LG tokens, height, pill radius, icon (the switch thumb,
+// per the app's centering law: inset = paddingNarrow), caret, so the preview shows the kit's real
 // geometry, not an invented one; the SAME geometry drives both scheme blocks (geometry has no light/dark
 // axis). Widths derive from the remaining row space so any treatment fits. Returns { width, height,
-// light, dark } — `light`/`dark` each carry their OWN { swatch(i), button, select, switchCtl,
+// light, dark }, `light`/`dark` each carry their OWN { swatch(i), button, select, switchCtl,
 // blockTop, blockBottom } at that block's own Y origin; every rect's SHAPE is identical between the two,
 // only the Y offset differs, since only COLOR (resolved separately, per scheme) is meant to vary.
 export function boardLayout(kit) {
   const width = MARGIN * 2 + GRID_COLS * SWATCH_SIZE + (GRID_COLS - 1) * GAP;
   const gridH = GRID_ROWS * SWATCH_SIZE + (GRID_ROWS - 1) * GAP;
   // the opt-in linear-ladder ramp (ultimate-tokens issue #483) names its steps numerically ("0".."9"),
-  // no "LG" key at all — a bare `.sizes.LG` silently resolved to {} for a ladder-active kit and the
+  // no "LG" key at all, a bare `.sizes.LG` silently resolved to {} for a ladder-active kit and the
   // control strip fell to the hardcoded defaults below instead of following the kit's real geometry.
   // LG's ladder-equivalent is step "4" (mirrors geometry.mjs's sizeAnchor, reimplemented inline here
   // rather than imported: this module is intentionally zero-dependency, spec §13).
@@ -209,8 +209,8 @@ export function boardLayout(kit) {
   const btnW = Math.round(rest * 0.45);
   const selW = rest - btnW;
 
-  // blockAt(originY) — one scheme block: its own top margin, the swatch grid, a margin gap, the control
-  // strip, its own bottom margin. Two blocks stack back to back (no shared/neutral divider — each side
+  // blockAt(originY), one scheme block: its own top margin, the swatch grid, a margin gap, the control
+  // strip, its own bottom margin. Two blocks stack back to back (no shared/neutral divider, each side
   // of the seam is that block's own surface color, a clean, exactly-testable boundary).
   const blockH = MARGIN + gridH + MARGIN + CONTROL_STRIP_H + MARGIN;
   function blockAt(originY) {
@@ -241,8 +241,8 @@ export function boardLayout(kit) {
   return { width, height: blockH * 2, light, dark };
 }
 
-// _kitColors(kit, familyNames, scheme) — the semantic roles the mocks paint from, for ONE scheme
-// ("light" | "dark", #395). Every color is the kit's real resolved role for that scheme — surface
+// _kitColors(kit, familyNames, scheme), the semantic roles the mocks paint from, for ONE scheme
+// ("light" | "dark", #395). Every color is the kit's real resolved role for that scheme, surface
 // grounds the block, primary/onPrimary fill the button + switch (exactly what the app's Geometry ramp
 // mocks use), outlineVariant borders the select (the app's own input-border mapping), placeholder colors
 // its text bar. Fallbacks only guard a kit missing its roles tree (not a shape generateKit ever emits);
@@ -267,8 +267,8 @@ function _kitColors(kit, familyNames, scheme) {
   };
 }
 
-// paintBlock(pixels, width, kit, familyNames, block, scheme) — one scheme block: its own surface fill,
-// the 8 family swatches (scheme-agnostic — a ramp stop has one hex, not a light/dark pair; see the module
+// paintBlock(pixels, width, kit, familyNames, block, scheme), one scheme block: its own surface fill,
+// the 8 family swatches (scheme-agnostic, a ramp stop has one hex, not a light/dark pair; see the module
 // header), then the Button · Select · Switch mock strip resolved from THIS scheme's roles.
 function paintBlock(pixels, width, kit, familyNames, block, scheme) {
   const C = _kitColors(kit, familyNames, scheme);
@@ -281,12 +281,12 @@ function paintBlock(pixels, width, kit, familyNames, block, scheme) {
     fillRect(pixels, width, x, y, SWATCH_SIZE, SWATCH_SIZE, hexToRgb(stop500 ? stop500.hex : "#808080"));
   });
 
-  // Button — a filled pill (primary/onPrimary), its label a flat bar (shapes, never text — spec §13).
+  // Button, a filled pill (primary/onPrimary), its label a flat bar (shapes, never text, spec §13).
   const b = block.button;
   fillRoundRect(pixels, width, b.x, b.y, b.w, b.h, b.r, C.prime);
   fillRoundRect(pixels, width, b.bar.x, b.bar.y, b.bar.w, b.bar.h, 3, C.onPrime);
 
-  // Select — an outlined, unfilled field (outlineVariant border on the surface ground, matching the
+  // Select, an outlined, unfilled field (outlineVariant border on the surface ground, matching the
   // app's own input-border mapping) + a placeholder bar + the disclosure caret.
   const s = block.select;
   fillRoundRect(pixels, width, s.x, s.y, s.w, s.h, s.r, C.outline);
@@ -294,8 +294,8 @@ function paintBlock(pixels, width, kit, familyNames, block, scheme) {
   fillRoundRect(pixels, width, s.bar.x, s.bar.y, s.bar.w, s.bar.h, 3, C.placeholder);
   fillCaretDown(pixels, width, s.caret.cx, s.caret.top, s.caret.w, s.caret.h, C.onSurface);
 
-  // Switch (ON) — primary track, onPrimary thumb inset per the centering law (thumb = icon, inset =
-  // paddingNarrow — the same literal rendering the app's Geometry ramp shows).
+  // Switch (ON), primary track, onPrimary thumb inset per the centering law (thumb = icon, inset =
+  // paddingNarrow, the same literal rendering the app's Geometry ramp shows).
   const w = block.switchCtl;
   fillRoundRect(pixels, width, w.x, w.y, w.w, w.h, w.r, C.prime);
   fillCircle(pixels, width, w.thumb.cx, w.thumb.cy, w.thumb.d / 2, C.onPrime);
@@ -303,8 +303,8 @@ function paintBlock(pixels, width, kit, familyNames, block, scheme) {
 
 // swatchBoardPNG(kit, familyNames) → a Buffer (the PNG bytes). Two stacked scheme blocks (light on top,
 // dark below, #395). One flat-color swatch per family, sourced from that palette's OWN ramp 500-stop hex
-// (the identity color) — the exact value #373's acceptance checks against ("swatch colors deep-match the
-// kit") — identical in both blocks; each block's control strip differs since it resolves that scheme's
+// (the identity color), the exact value #373's acceptance checks against ("swatch colors deep-match the
+// kit"), identical in both blocks; each block's control strip differs since it resolves that scheme's
 // own roles. A missing palette (shouldn't happen for a real generated kit, which always carries all 8)
 // falls back to a neutral grey rather than throwing.
 export function swatchBoardPNG(kit, familyNames) {

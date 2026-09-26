@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// verify.mjs — ui-app validation adapter (CRITIC side). Checks the pure model core (projectView over
+// verify.mjs, ui-app validation adapter (CRITIC side). Checks the pure model core (projectView over
 // the real modules) + that the shell files exist and app.js is syntactically valid. Exit 0=pass / 1=fail.
 import { readFileSync, existsSync } from "node:fs";
 import { execSync } from "node:child_process";
@@ -46,8 +46,8 @@ if (!Array.isArray(v.contrast) || v.contrast.length === 0) FAIL("model", "no con
 // detach, for the key probe below; `skewOnly` carries skew alone on the still-anchored copy, for
 // the ramp probe. They used to be one fixture mutating both fields. Every DEFAULT_PALETTES entry carries `anchor`
 // (ticket #681, U1/Q2 (b)); an anchored ramp deliberately ignores `hue`/`chroma` (tonal.js's
-// anchored branch — those two fields are the UI-level detach trigger, Q6/U2's C12, never read by
-// the engine while `anchor` is present), so `hue` ALONE no longer moves projectView's ramp — `skew`
+// anchored branch, those two fields are the UI-level detach trigger, Q6/U2's C12, never read by
+// the engine while `anchor` is present), so `hue` ALONE no longer moves projectView's ramp, `skew`
 // still warps an anchored ramp on both sides of its fixed pivot.
 //
 // CORRECTED at #681 pre-land S1. The sentence that stood here said `deriveKeyColor` "is plain
@@ -85,9 +85,9 @@ if (typeof skewOnly.palettes[1].anchor !== "string") FAIL("model", "test setup: 
 const vSkew = M.projectView(skewOnly);
 if (vSkew.palettes[1].ramp[12] && v.palettes[1].ramp[12] && vSkew.palettes[1].ramp[12].hex === v.palettes[1].ramp[12].hex) FAIL("model", `editing skew on a still-anchored palette did not change the projected ramp (stale/stored derived state?): ramp[12] ${v.palettes[1].ramp[12].hex} both before and after`);
 
-// ── paletteKeyColors: the cheap tile-only alternative to projectView (gallery/list rendering —
+// ── paletteKeyColors: the cheap tile-only alternative to projectView (gallery/list rendering,
 // presetTile, buildTiles). Must stay identity-matched to projectView's own .key/.name/.on/.colorRole,
-// never cache/retain anything of its own (each call is a fresh, independent computation — nothing here
+// never cache/retain anything of its own (each call is a fresh, independent computation, nothing here
 // should outlive the call, so there is nothing for a long-lived session to leak), and re-project live
 // edits exactly like projectView does. ──
 {
@@ -98,12 +98,12 @@ if (vSkew.palettes[1].ramp[12] && v.palettes[1].ramp[12] && vSkew.palettes[1].ra
     if (a.name !== b.name || a.on !== b.on || a.key !== b.key) { FAIL("model", `paletteKeyColors[${i}] (${a.name}) diverges from projectView: key ${a.key} vs ${b.key}`); break; }
     if (!!a.colorRole !== !!b.colorRole || (a.colorRole && a.colorRole !== b.colorRole)) { FAIL("model", `paletteKeyColors[${i}] colorRole ${a.colorRole} != projectView's ${b.colorRole}`); break; }
   }
-  // a curated preset's colorRole (dominant/supporting/accent) passes through verbatim — no derivation.
+  // a curated preset's colorRole (dominant/supporting/accent) passes through verbatim, no derivation.
   const curated = NATURE_PRESETS[0];
   const kcCurated = M.paletteKeyColors(curated);
   const withRole = kcCurated.find((p) => p.colorRole);
   if (!withRole) FAIL("model", "paletteKeyColors dropped colorRole on a curated preset (none of its palettes carry one)");
-  // live edit re-projects here too — no stale/cached derived state.
+  // live edit re-projects here too, no stale/cached derived state.
   const kc2 = M.paletteKeyColors(edited);
   // Compared against the SAME palette detached with its hue UNCHANGED, never against `kc`. Detaching
   // alone swaps the key from the anchor to the cusp colour, so `kc2 !== kc` would pass even if the
@@ -126,10 +126,10 @@ if (vSkew.palettes[1].ramp[12] && v.palettes[1].ramp[12] && vSkew.palettes[1].ra
     const kc3 = M.paletteKeyColors(stillAnchored);
     if (kc3[1].key !== doc.palettes[1].anchor.toUpperCase()) FAIL("model", `an ANCHORED palette's identity swatch moved on a raw hue edit: ${kc3[1].key} != anchor ${doc.palettes[1].anchor}`);
   }
-  // NOT memoized: two independent calls over the SAME doc return distinct array/object instances —
+  // NOT memoized: two independent calls over the SAME doc return distinct array/object instances,
   // nothing is retained or shared across calls (the "extremely careful with memory leakage" bar).
   const kcAgain = M.paletteKeyColors(doc);
-  if (kcAgain === kc || kcAgain[0] === kc[0]) FAIL("model", "paletteKeyColors returned a cached/shared reference across calls — should recompute fresh every time");
+  if (kcAgain === kc || kcAgain[0] === kc[0]) FAIL("model", "paletteKeyColors returned a cached/shared reference across calls, should recompute fresh every time");
 }
 
 // ── shell files exist + app.js is syntactically valid ────────────────────────────────────
@@ -144,7 +144,7 @@ const rampRgbDist = (a, b) => { let m = 0; for (let i = 0; i < a.length; i++) { 
 
 // (a) defaultDocument is OKLCH-native and each starter renders ≈ its intended (cam16) color: the
 //     on-the-fly cam16→oklch hue conversion round-trips through the engine within the hue-space
-//     precision (a few RGB units; the blue Primary is the loose pole — see fidelity note).
+//     precision (a few RGB units; the blue Primary is the loose pole, see fidelity note).
 {
   const RT = JSON.parse(readFileSync(join(HERE, "..", "..", "docs", "reference", "data", "role-table.json"), "utf8"));
   const dd = M.defaultDocument();
@@ -157,7 +157,7 @@ const rampRgbDist = (a, b) => { let m = 0; for (let i = 0; i < a.length; i++) { 
     const or = paletteStops({ hue: op.hue, chroma: op.chroma, skew: op.skew, lift: op.lift }, { ...ctl, hueSpace: "cam16" }, STOPS);
     const d = rampRgbDist(nr, or); if (d > worst) { worst = d; wname = np.name; }
     // the conversion must MOVE the stored hue off the raw cam16 value (it's now an OKLCH hue), except
-    // where the two spaces coincide (small Δ rounds to the same integer) — so assert it's a valid degree.
+    // where the two spaces coincide (small Δ rounds to the same integer), so assert it's a valid degree.
     if (!(np.hue >= 0 && np.hue <= 360)) FAIL("oklch-native", `starter ${np.name} hue ${np.hue} out of range`);
   }
   // 30 RGB units (~Δ8° cam16 at the blue pole × high chroma) is the documented worst-case fidelity bound.
@@ -199,12 +199,12 @@ const rampRgbDist = (a, b) => { let m = 0; for (let i = 0; i < a.length; i++) { 
 }
 
 // ── resolver gates (SPEC spec-muted-base-key-spikes 0.3.0, ticket #559: absolute per-group base
-// chroma + prime chroma resolution) — AC-002, AC-003(b), AC-007, AC-008. ─────────────────────────
+// chroma + prime chroma resolution), AC-002, AC-003(b), AC-007, AC-008. ─────────────────────────
 
 // (AC-002) rampChromaOf(p, doc) equals paletteGroups[g].baseChroma when present, else
 // controls.baseIntensity; it ignores palette.chroma AND palette.intensity entirely. A probe at
 // chroma:10, intensity:100 (a dead legacy field, still readable if stored) in a group whose
-// baseChroma is set to 60 must render the chroma-60 ramp — on BOTH of tonal.js's own ramp paths
+// baseChroma is set to 60 must render the chroma-60 ramp, on BOTH of tonal.js's own ramp paths
 // (toneMode "even" and "perceptual"), never the palette's own chroma:10.
 {
   const probeBase = { name: "Probe", hue: 210, chroma: 10, intensity: 100, skew: 0, lift: 0, group: "material", on: true };
@@ -219,7 +219,7 @@ const rampRgbDist = (a, b) => { let m = 0; for (let i = 0; i < a.length; i++) { 
     const got = view.palettes[0].fullRamp.map((s) => s.hex);
     const ctl = { ...M.DEFAULT_CONTROLS, toneMode };
     const want = paletteStops({ hue: probeBase.hue, chroma: 60, skew: probeBase.skew, lift: probeBase.lift }, ctl, EXPORT_STOPS).map((s) => s.hex);
-    if (JSON.stringify(got) !== JSON.stringify(want)) FAIL("ac002", `probe ramp at toneMode ${toneMode} did not match a direct chroma-60 call — palette.chroma/intensity leaked into the ramp`);
+    if (JSON.stringify(got) !== JSON.stringify(want)) FAIL("ac002", `probe ramp at toneMode ${toneMode} did not match a direct chroma-60 call, palette.chroma/intensity leaked into the ramp`);
   }
 }
 
@@ -230,7 +230,7 @@ const rampRgbDist = (a, b) => { let m = 0; for (let i = 0; i < a.length; i++) { 
 // p.chroma; for every other default palette it must differ.
 {
   const fixturePath = join(HERE, "fixtures", "default-doc-ramps.json");
-  if (!existsSync(fixturePath)) FAIL("ac003b", "test/ui/fixtures/default-doc-ramps.json is missing — run node scripts/gen-ramp-fixture.mjs");
+  if (!existsSync(fixturePath)) FAIL("ac003b", "test/ui/fixtures/default-doc-ramps.json is missing, run node scripts/gen-ramp-fixture.mjs");
   else {
     const fixture = JSON.parse(readFileSync(fixturePath, "utf8"));
     const dd = M.defaultDocument();
@@ -240,7 +240,7 @@ const rampRgbDist = (a, b) => { let m = 0; for (let i = 0; i < a.length; i++) { 
       const row = fixture.palettes[p.name];
       const got = dv.palettes.find((v) => v.name === p.name).fullRamp.map((s) => s.hex);
       if (!row) { FAIL("ac003b", `fixture missing palette "${p.name}"`); continue; }
-      if (JSON.stringify(row) !== JSON.stringify(got)) FAIL("ac003b", `projectView(defaultDocument()) has drifted from the pinned fixture at palette "${p.name}" — regenerate with scripts/gen-ramp-fixture.mjs only if the drift is intentional`);
+      if (JSON.stringify(row) !== JSON.stringify(got)) FAIL("ac003b", `projectView(defaultDocument()) has drifted from the pinned fixture at palette "${p.name}", regenerate with scripts/gen-ramp-fixture.mjs only if the drift is intentional`);
       const rc = M.rampChromaOf(p, dd);
       const direct = paletteStops({ hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift, anchor: p.anchor }, ctl, EXPORT_STOPS).map((s) => s.hex);
       if (rc === p.chroma) {
@@ -288,7 +288,7 @@ const rampRgbDist = (a, b) => { let m = 0; for (let i = 0; i < a.length; i++) { 
 
   const dataIdx = dd.palettes.findIndex((p) => M.paletteGroup(p) === "data");
   dd.palettes[dataIdx] = { ...dd.palettes[dataIdx], primeChroma: 12 };
-  if (M.primeChromaOf(dd.palettes[dataIdx], dd) !== 100) FAIL("ac008", `a Data palette's stored primeChroma override must be ignored (Data is locked) — got ${M.primeChromaOf(dd.palettes[dataIdx], dd)}, want the group default 100`);
+  if (M.primeChromaOf(dd.palettes[dataIdx], dd) !== 100) FAIL("ac008", `a Data palette's stored primeChroma override must be ignored (Data is locked), got ${M.primeChromaOf(dd.palettes[dataIdx], dd)}, want the group default 100`);
   const movedOut = { ...dd.palettes[dataIdx], group: "brand" };
   if (M.primeChromaOf(movedOut, dd) !== 12) FAIL("ac008", "moving a Data palette out of Data must restore its stored primeChroma override");
 
@@ -304,7 +304,7 @@ const rampRgbDist = (a, b) => { let m = 0; for (let i = 0; i < a.length; i++) { 
 
 // (resolver-agree, conductor ruling 2026-09-11 on PR #566) The two ramp paths cannot drift apart:
 // projectView (src/ui/model.mjs) and derivePalette (src/engine/exports.js, via the exported
-// derivedAll) must both import the SAME engine/resolve.mjs rampChromaOf/primeChromaOf — this proves
+// derivedAll) must both import the SAME engine/resolve.mjs rampChromaOf/primeChromaOf, this proves
 // it, over all 16 default palettes, at every one of the 25 EXPORT_STOPS, rather than trusting the
 // two call sites stay hand-in-sync.
 {
@@ -319,7 +319,7 @@ const rampRgbDist = (a, b) => { let m = 0; for (let i = 0; i < a.length; i++) { 
     for (const s of viewP.fullRamp) {
       const pad = String(s.stop).padStart(3, "0");
       const got = dp.stops[pad] && dp.stops[pad].hex;
-      if (got !== s.hex) { FAIL("resolver-agree", `"${viewP.name}" stop ${s.stop}: projectView ${s.hex} != derivedAll ${got} — the two ramp paths resolved a different chroma`); break; }
+      if (got !== s.hex) { FAIL("resolver-agree", `"${viewP.name}" stop ${s.stop}: projectView ${s.hex} != derivedAll ${got}, the two ramp paths resolved a different chroma`); break; }
     }
   }
 }

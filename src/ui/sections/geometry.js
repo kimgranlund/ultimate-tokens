@@ -5,10 +5,10 @@ import { icon } from "../icons.js";
 import { btn, chip, ensureTypeFonts, field, fmt, h, swatch } from "../app-helpers.mjs";
 
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
-// methods — copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
+// methods, copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
 export class GeomSectionImpl {
   // _geomOverridesFor / _geomEffectiveModes / _geomScaleFor / _geomModeScales are now PURE `doc -> ...`
-  // functions lifted into model.mjs (A1, #456) — thin delegates here so the section's many call sites
+  // functions lifted into model.mjs (A1, #456), thin delegates here so the section's many call sites
   // don't churn. See model.mjs for the implementations + rationale.
   _geomOverridesFor(modeKey) {
     return geomOverridesFor(this.doc, modeKey);
@@ -18,7 +18,7 @@ export class GeomSectionImpl {
     return geomEffectiveModes(this.doc);
   }
 
-  // _ensureGeomModesMaterialized(d) — if d.geometry has no real modes yet AND modeKey is one of the
+  // _ensureGeomModesMaterialized(d), if d.geometry has no real modes yet AND modeKey is one of the
   // Standard-set rungs, materialize BOTH rungs (same stable ids _geomEffectiveModes already previewed)
   // so a write against modeKey has a real entry to land in. Mutates d.geometry in place; call inside a
   // commit/editDrag closure BEFORE writing the actual per-mode value. A no-op for "base", a real custom
@@ -30,13 +30,13 @@ export class GeomSectionImpl {
     d.geometry.modes = STANDARD_GEOM_RUNGS.map((r) => ({ id: r.id, name: r.name, baseHeight: Math.max(20, bh - r.drop), minWidth: r.w }));
   }
 
-  // _geomScaleFor(modeKey) — see model.mjs#geomScaleFor for the implementation + rationale.
+  // _geomScaleFor(modeKey), see model.mjs#geomScaleFor for the implementation + rationale.
   _geomScaleFor(modeKey) {
     return geomScaleFor(this.doc, modeKey);
   }
 
   // A first edit against a not-yet-materialized Standard-set rung (std-tablet/std-mobile) materializes
-  // BOTH rungs in the SAME commit — one undo step, matching addStandardGeomModes' existing contract —
+  // BOTH rungs in the SAME commit, one undo step, matching addStandardGeomModes' existing contract,
   // using the SAME stable ids so this write keeps resolving once real.
   setGeomTokenOverride(size, modeKey, height) {
     let n = Math.round(Number(height));
@@ -60,12 +60,12 @@ export class GeomSectionImpl {
     });
   }
 
-  // _geomActiveModeKey — the tokenOverride mode key for the ramp tab's active breakpoint (Compare shows Base).
+  // _geomActiveModeKey, the tokenOverride mode key for the ramp tab's active breakpoint (Compare shows Base).
   _geomActiveModeKey() { return this.geomMode === "base" || this.geomMode === "compare" ? "base" : this.geomMode; }
 
-  // _setGeomSize(size, height) — the LIVE (editDrag) per-size Height override for the active mode. Height is
+  // _setGeomSize(size, height), the LIVE (editDrag) per-size Height override for the active mode. Height is
   // geometry's ONE authored lever (icon/font/pad/radius derive from it by the centering law), so this is the
-  // geometry analog of _setTypeVoice — and it writes the SAME tokenOverrides store the token matrix uses.
+  // geometry analog of _setTypeVoice, and it writes the SAME tokenOverrides store the token matrix uses.
   _setGeomSize(size, height) {
     let n = Math.round(Number(height));
     if (!Number.isFinite(n)) return;
@@ -78,9 +78,9 @@ export class GeomSectionImpl {
   }
 
 
-  // _geomTokenColumns — the ordered column set for the Geometry token matrix: Base first, then one column
+  // _geomTokenColumns, the ordered column set for the Geometry token matrix: Base first, then one column
   // per breakpoint MODE sorted ascending by minWidth. Mirrors _typeTokenColumns / _geomModeScales but
-  // prepends Base = the DOCUMENT base composed geometry scale (mode-independent — NOT _activeGeomScale).
+  // prepends Base = the DOCUMENT base composed geometry scale (mode-independent, NOT _activeGeomScale).
   _geomTokenColumns() {
     const { baseName: bn, baseLast } = this._geomBaseOpts();
     const baseCol = { id: "base", modeKey: "base", name: bn, minWidth: null, scale: this._geomScaleFor("base") };
@@ -92,7 +92,7 @@ export class GeomSectionImpl {
   }
 
 
-  // renderGeomTokensTable — the EDITABLE Geometry token MATRIX (Phase 3). Rows = the six control sizes
+  // renderGeomTokensTable, the EDITABLE Geometry token MATRIX (Phase 3). Rows = the six control sizes
   // (XS..2XL, largest→smallest) with a group-header row; the first (sticky) column is the token NAME
   // (--size-{step}). Columns = Base + each breakpoint mode (≥{minWidth}px). Each value cell is a HEIGHT
   // number input (the lever): editing it writes doc.geometry.tokenOverrides[<size>|<mode>] and
@@ -102,7 +102,7 @@ export class GeomSectionImpl {
     const base = cols[0].scale;
     const ov = (this.doc.geometry && this.doc.geometry.tokenOverrides) || {};
     const kebab = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-    // largest → smallest, EXPLICITLY by height (issue #483 — the ladder's numeric "0".."9" step names
+    // largest → smallest, EXPLICITLY by height (issue #483, the ladder's numeric "0".."9" step names
     // are integer-like object keys, which JS forces into ascending enumeration order regardless of
     // insertion order; orderedSizeNames sorts by height instead, so it's correct either way). Ramp is
     // document-level, so every column shares the same set: 6 names on the default ramp, 10 on the
@@ -110,7 +110,7 @@ export class GeomSectionImpl {
     const present = orderedSizeNames(base).reverse();
     const cell = (col, name) => {
       const s = col.scale.sizes[name];
-      if (!s) return h("td", { class: "tok-cell" }, h("span", { class: "tok-na" }, "—"));
+      if (!s) return h("td", { class: "tok-cell" }, h("span", { class: "tok-na" }, "n/a"));
       const overridden = (name + "|" + col.modeKey) in ov;
       return h(
         "td",
@@ -150,7 +150,7 @@ export class GeomSectionImpl {
       h("div", { class: "tok-head" },
         h("b", {}, "Geometry tokens"),
         h("small", {}, `${base.baseHeight}px base · ${present.length} sizes · ${cols.length} column${cols.length === 1 ? "" : "s"} (Base${cols.length > 1 ? " + " + (cols.length - 1) + " breakpoint" + (cols.length === 2 ? "" : "s") : ""})`),
-        h("small", { class: "tok-hint" }, "Each edit is per-cell and mode-local — Base does not cascade into breakpoint columns; icon, font, padding + radius re-derive from the height.")),
+        h("small", { class: "tok-hint" }, "Each edit is per-cell and mode-local, Base does not cascade into breakpoint columns; icon, font, padding + radius re-derive from the height.")),
       h(
         "table",
         { class: "map-table tok-table" },
@@ -160,7 +160,7 @@ export class GeomSectionImpl {
     );
   }
 
-  // ── Geometry section — the dimensional system as a full editor section (canvas + analysis rail +
+  // ── Geometry section, the dimensional system as a full editor section (canvas + analysis rail +
   // inspector), the spatial analog of the Color and Typography sections. Phase 3 retired the Geometry
   // modal: all geometry comes from geometryScale(doc), COMPOSED with the type UI scale (a control's text
   // `font` per step is the brand's Typography UI size). Binds to doc.geometry = { treatment, baseHeight };
@@ -168,9 +168,9 @@ export class GeomSectionImpl {
   setGeomSpecMode(v) { this.geomSpecMode = v; this.render(); }
 
 
-  // ── Geometry breakpoint modes (Phase 5) — named baseHeight variants over doc.geometry. Mirrors the
+  // ── Geometry breakpoint modes (Phase 5), named baseHeight variants over doc.geometry. Mirrors the
   // Typography mode helpers; the ACTIVE mode drives the canvas preview + the inspector. Export stays on Base.
-  // _effGeomMode — the mode the ACTIVE resolvers paint in: a Compare column's _geomModeOverride wins (so its
+  // _effGeomMode, the mode the ACTIVE resolvers paint in: a Compare column's _geomModeOverride wins (so its
   // scene + scale build at THAT breakpoint while it renders, like _schemeOverride), else this.geomMode.
   _effGeomMode() { return this._geomModeOverride != null ? this._geomModeOverride : this.geomMode; }
 
@@ -182,7 +182,7 @@ export class GeomSectionImpl {
     return m ? { ...g, baseHeight: m.baseHeight } : g;
   }
 
-  // the resolved scale at the active mode — composes geometry with the type scale at the SAME mode AND
+  // the resolved scale at the active mode, composes geometry with the type scale at the SAME mode AND
   // applies that mode's per-cell height overrides (so the canvas/inspector reflect the matrix). Routed
   // through _geomScaleFor so overrides are consistent with the matrix + every export.
   _activeGeomScale() {
@@ -209,13 +209,13 @@ export class GeomSectionImpl {
       .map((m) => ({ name: `${prefix}.${Math.round(m.minWidth)}.tokens.json`, data: JSON.stringify(geomTokensDTCG(m.scale, opts), null, 2) }));
   }
 
-  // Mirrors typeModeControl: a NAMED base (doc.geometry.baseName, e.g. "Mobile") renders LAST — the
+  // Mirrors typeModeControl: a NAMED base (doc.geometry.baseName, e.g. "Mobile") renders LAST, the
   // canonical desktop-first order (Desktop · Tablet · Mobile), matching the Figma mode-column order.
   geomModeControl() {
     const g = this.doc.geometry || DEFAULT_GEOMETRY;
     const modes = this._geomEffectiveModes();
     const { baseName: bn, baseLast } = this._geomBaseOpts();
-    // reset an unknown/deleted mode to base — but "compare" (Phase 5.3) is a valid pseudo-mode, allow it.
+    // reset an unknown/deleted mode to base, but "compare" (Phase 5.3) is a valid pseudo-mode, allow it.
     if (this.geomMode !== "base" && this.geomMode !== "compare" && !modes.some((m) => m.id === this.geomMode)) this.geomMode = "base";
     const baseItem = { id: "base", label: bn, title: `${bn} size ramp · ${g.baseHeight ?? 28}px` };
     const modeItems = modes.map((m) => ({ id: m.id, label: m.name || "Mode", title: `${m.name || "Mode"} · ${m.baseHeight}px base height` }));
@@ -229,20 +229,20 @@ export class GeomSectionImpl {
       { class: "mode-control" },
       this.segmented(items, this.geomMode, (id) => { this.geomMode = id; this.render(); },
         { cls: "canvas-seg", ariaLabel: "Geometry breakpoint mode", role: "group", idPrefix: "gmode" }),
-      btn(icon("plus"), { cls: "mode-add", ariaLabel: "Add a breakpoint mode", title: "Add a breakpoint — a named ramp with its own base control height", onclick: () => this.addGeomMode() }),
+      btn(icon("plus"), { cls: "mode-add", ariaLabel: "Add a breakpoint mode", title: "Add a breakpoint: a named ramp with its own base control height", onclick: () => this.addGeomMode() }),
     );
   }
 
-  // addStandardGeomModes — materialize the intrinsic standard set as editable doc modes (the ratified
-  // desktop-anchored law): the designed ramp IS Desktop (the base, first, Figma's default mode —
+  // addStandardGeomModes, materialize the intrinsic standard set as editable doc modes (the ratified
+  // desktop-anchored law): the designed ramp IS Desktop (the base, first, Figma's default mode,
   // baseName "Desktop", nothing about it changes); Tablet (992, heights −2) and Mobile (≤476, marker
-  // minWidth 476, heights −4, floor 20) derive DOWN — the same values the synthesized (no-modes) shape
+  // minWidth 476, heights −4, floor 20) derive DOWN, the same values the synthesized (no-modes) shape
   // exports; committing just makes them matrix-editable. The split CSS export (geomTokensCSS for the
   // unconditional Desktop base + geomTokensBreakpointCSS per mode) reads these directly, no re-anchor.
   // One commit = one undo step.
   addStandardGeomModes() {
     const bh = (this.doc.geometry && this.doc.geometry.baseHeight) ?? 28;
-    this.geomMode = "base"; // stay on Desktop (the designed ramp — nothing about it changed)
+    this.geomMode = "base"; // stay on Desktop (the designed ramp, nothing about it changed)
     this.commit((d) => {
       d.geometry = { ...(d.geometry || DEFAULT_GEOMETRY), baseName: "Desktop" };
       const modes = d.geometry.modes ? [...d.geometry.modes] : [];
@@ -269,7 +269,7 @@ export class GeomSectionImpl {
       if (!d.geometry || !Array.isArray(d.geometry.modes)) return;
       d.geometry = { ...d.geometry, modes: d.geometry.modes.filter((m) => m.id !== id) };
       if (d.geometry.modes.length === 0) delete d.geometry.modes;
-      // strip this mode's per-cell overrides too — orphaned "...|<id>" keys would otherwise survive
+      // strip this mode's per-cell overrides too, orphaned "...|<id>" keys would otherwise survive
       // serialize→hydrate forever (a stale-override leak with no UI to reach them).
       if (d.geometry.tokenOverrides) {
         d.geometry = { ...d.geometry, tokenOverrides: { ...d.geometry.tokenOverrides } };
@@ -299,8 +299,8 @@ export class GeomSectionImpl {
     });
   }
 
-  // _setGeomRamp — the opt-in linear-ladder toggle (issue #483, a prototype of AdiaUI's scale-ladder).
-  // Document-level (like `treatment`), NOT per-mode — the ladder is a wholesale alternate ramp SHAPE,
+  // _setGeomRamp, the opt-in linear-ladder toggle (issue #483, a prototype of AdiaUI's scale-ladder).
+  // Document-level (like `treatment`), NOT per-mode, the ladder is a wholesale alternate ramp SHAPE,
   // not a per-breakpoint tuning knob. One commit = one undo step.
   _setGeomRamp(on) {
     this.commit((d) => {
@@ -327,8 +327,8 @@ export class GeomSectionImpl {
     if (this.geomMode === "base") {
       const n = (g.modes || []).length;
       return h("p", { class: "insp-sub tyi-future" }, n
-        ? `${n} breakpoint mode${n > 1 ? "s" : ""} — switch them from the canvas header; each carries its own base control height (per-mode export is coming).`
-        : "Add a breakpoint (the + in the canvas header) to give this ramp a second base height for another screen — e.g. taller touch targets on mobile.");
+        ? `${n} breakpoint mode${n > 1 ? "s" : ""}, switch them from the canvas header; each carries its own base control height (per-mode export is coming).`
+        : "Add a breakpoint (the + in the canvas header) to give this ramp a second base height for another screen, e.g. taller touch targets on mobile.");
     }
     const m = (g.modes || []).find((x) => x.id === this.geomMode);
     if (!m) return false;
@@ -343,7 +343,7 @@ export class GeomSectionImpl {
           onchange: (e) => this.renameGeomMode(m.id, e.target.value.trim()) }),
         btn(icon("trash"), { ariaLabel: "Delete this breakpoint", title: "Delete this breakpoint mode", onclick: () => this.deleteGeomMode(m.id) }),
       ),
-      h("label", { class: "mode-editor-label", for: "fld-gmode-mw" }, "Breakpoint width — @media min-width"),
+      h("label", { class: "mode-editor-label", for: "fld-gmode-mw" }, "Breakpoint width: @media min-width"),
       h(
         "div",
         { class: "mode-editor-row" },
@@ -353,7 +353,7 @@ export class GeomSectionImpl {
       ),
       this._modeWidthPresets(m.minWidth, (w) => this.setGeomModeMinWidth(m.id, w)),
       h("p", { class: "insp-sub tyi-future" }, m.minWidth
-        ? `Exports as @media (min-width: ${m.minWidth}px) — the size vars re-declare at this base height above ${m.minWidth}px.`
+        ? `Exports as @media (min-width: ${m.minWidth}px), the size vars re-declare at this base height above ${m.minWidth}px.`
         : "Set a width to emit a CSS @media breakpoint in the export; blank = preview-only."),
     );
   }
@@ -371,7 +371,7 @@ export class GeomSectionImpl {
     });
   }
 
-  // renderGeomCanvasHeader — the Geometry section's canvas header: pane toggles + the Controls·Tokens mode
+  // renderGeomCanvasHeader, the Geometry section's canvas header: pane toggles + the Controls·Tokens mode
   // segment + the reused fit/scheme/zoom controls (mirrors renderTypeCanvasHeader).
   renderGeomCanvasHeader() {
     return h(
@@ -380,8 +380,8 @@ export class GeomSectionImpl {
       !this.panesLeft ? this.paneToggle("left") : false,
       this.geomMode === "compare" ? false : this.segmented(
         [
-          { id: "controls", label: "Controls", title: "Live mock controls — render each ramp step as a real box" },
-          { id: "tokens", label: "Tokens", title: "Editable token matrix — every size × Base + each breakpoint" },
+          { id: "controls", label: "Controls", title: "Live mock controls: render each ramp step as a real box" },
+          { id: "tokens", label: "Tokens", title: "Editable token matrix: every size × Base + each breakpoint" },
         ],
         this.geomSpecMode,
         (id) => this.setGeomSpecMode(id),
@@ -390,8 +390,8 @@ export class GeomSectionImpl {
       this.geomModeControl(),
       h("div", { class: "spacer" }),
       btn(icon("crosshair"), {
-        title: "Fit — reset the canvas view to centre at 100%",
-        ariaLabel: "Fit — reset the canvas view to centre at 100%",
+        title: "Fit: reset the canvas view to centre at 100%",
+        ariaLabel: "Fit: reset the canvas view to centre at 100%",
         onclick: () => { this.fit(); this.render(); },
       }),
       this.canvasThemeBtn(),
@@ -403,20 +403,20 @@ export class GeomSectionImpl {
   }
 
 
-  // renderGeomCanvas — the Geometry center. Controls mode renders the full dimensional dataset (the 6-size
+  // renderGeomCanvas, the Geometry center. Controls mode renders the full dimensional dataset (the 6-size
   // control ramp + radius + space) in the pannable/zoomable .canvas-area + .canvas-scene shell. Tokens mode
-  // renders an EDITABLE token MATRIX (Phase 3 — per-cell size/height overrides + ↺) (rows = sizes, cols = Base + each breakpoint) in the scrolling
-  // .is-table shell instead — mirrors renderTypeCanvas / Color's Mapping flip.
+  // renders an EDITABLE token MATRIX (Phase 3, per-cell size/height overrides + ↺) (rows = sizes, cols = Base + each breakpoint) in the scrolling
+  // .is-table shell instead, mirrors renderTypeCanvas / Color's Mapping flip.
   renderGeomCanvas(view) {
-    // Compare (Phase 5.3) — all breakpoints side by side. A Controls view, so it wins over the tokens table.
+    // Compare (Phase 5.3), all breakpoints side by side. A Controls view, so it wins over the tokens table.
     if (this.geomMode === "compare") return this.renderGeomCompareArea(view);
-    if (this.geomSpecMode === "tokens") return this._tokensTableArea("Geometry tokens — Base + breakpoints", this.renderGeomTokensTable());
+    if (this.geomSpecMode === "tokens") return this._tokensTableArea("Geometry tokens: Base + breakpoints", this.renderGeomTokensTable());
     const area = h(
       "div",
       {
         class: "canvas-area geom-canvas canvas-scheme-" + this.resolvedCanvasScheme(),
         role: "group",
-        "aria-label": "Geometry specimen — drag to pan, wheel to zoom, double-click to reset",
+        "aria-label": "Geometry specimen: drag to pan, wheel to zoom, double-click to reset",
       },
       h("div", { class: "canvas-scene" }, this.renderGeometryScene(view)),
     );
@@ -426,7 +426,7 @@ export class GeomSectionImpl {
   }
 
 
-  // renderGeomCompareArea — the Geometry "Compare" mode: the control ramp rendered at Base AND each breakpoint
+  // renderGeomCompareArea, the Geometry "Compare" mode: the control ramp rendered at Base AND each breakpoint
   // mode, side by side, in ONE pannable .canvas-scene. Mirrors renderTypeCompareArea / Color's renderCompareArea;
   // each column forces its breakpoint via _geomModeOverride while it builds.
   renderGeomCompareArea(view) {
@@ -434,7 +434,7 @@ export class GeomSectionImpl {
     const area = h(
       "div",
       { class: "canvas-area canvas-compare geom-canvas canvas-scheme-" + this.resolvedCanvasScheme(),
-        role: "group", "aria-label": "Compare — every geometry breakpoint side by side · drag to pan, wheel to zoom" },
+        role: "group", "aria-label": "Compare: every geometry breakpoint side by side · drag to pan, wheel to zoom" },
       h("div", { class: "canvas-scene compare" },
         this._geomCompareColumn(view, "base", "Base"),
         ...modes.map((m) => this._geomCompareColumn(view, m.id, m.name || "Mode"))),
@@ -457,7 +457,7 @@ export class GeomSectionImpl {
   }
 
 
-  // renderGeometryScene — the canvas "Geometry" view: the FULL dataset. (1) the 6-size CONTROL ramp, each
+  // renderGeometryScene, the canvas "Geometry" view: the FULL dataset. (1) the 6-size CONTROL ramp, each
   // step a live mock control (leading glyph · label · caret) at its real height/icon/font/pad/radius with a
   // metrics readout; (2) the RADIUS ladder; (3) the SPACE scale. Tokens mode drops the live boxes for
   // metrics only. The control text size (font) comes from the type UI scale (the composition), so
@@ -465,15 +465,15 @@ export class GeomSectionImpl {
   renderGeometryScene(view) {
     ensureTypeFonts();
     const cfg = this.doc.geometry || DEFAULT_GEOMETRY;
-    const scale = this._activeGeomScale(); // composed with the type scale — per-step `font` is the brand UI size
+    const scale = this._activeGeomScale(); // composed with the type scale, per-step `font` is the brand UI size
     const t = GEOMETRY_TREATMENTS.find((x) => x.id === cfg.treatment) || GEOMETRY_TREATMENTS[0];
     const kebab = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-    // painted in the SELECTED palette's own roles — same resolution geomExampleCard uses, so
+    // painted in the SELECTED palette's own roles, same resolution geomExampleCard uses, so
     // the canvas ramp isn't a generic-accent mock while the pinned inspector card is palette-real.
     const { pick, byKey, main, onMain } = this._geomPaletteColors(view);
-    // the control ramp renders LARGEST → smallest (biggest example first) — EXPLICITLY by height
+    // the control ramp renders LARGEST → smallest (biggest example first), EXPLICITLY by height
     // (issue #483: the ladder's numeric step names trap a bare Object.keys reversal, since JS forces
-    // integer-like keys into ascending order regardless of insertion order) — 6 names on the default
+    // integer-like keys into ascending order regardless of insertion order), 6 names on the default
     // ramp, 10 numbered steps on the linear-ladder prototype.
     const SIZE_NAMES = orderedSizeNames(scale).reverse();
     const ctlLine = (name) => {
@@ -490,7 +490,7 @@ export class GeomSectionImpl {
         h("span", { class: "geom-ctl-label" }, "Button"),
         h("span", { class: "geom-caret", style: `width:${s.caret}px;height:${s.caret}px` }, icon("caret-left")),
       );
-      // Select — the outlined sibling (outlineVariant border, per the app's own input-border mapping):
+      // Select, the outlined sibling (outlineVariant border, per the app's own input-border mapping):
       // same height/font/pad/gap/radius tokens on a bordered, unfilled shape.
       const sel = h(
         "div",
@@ -502,7 +502,7 @@ export class GeomSectionImpl {
         h("span", { class: "geom-ctl-label" }, "Select"),
         h("span", { class: "geom-caret", style: `width:${s.caret}px;height:${s.caret}px` }, icon("caret-left")),
       );
-      // Switch (ON) — the thumb IS the glyph cell: diameter = icon, inset = paddingNarrow, so the
+      // Switch (ON), the thumb IS the glyph cell: diameter = icon, inset = paddingNarrow, so the
       // centering law renders literally ((height − icon)/2 on all sides). Track ≈ 1.75× height.
       const swW = Math.round(s.height * 1.75);
       const sw = h(
@@ -537,11 +537,11 @@ export class GeomSectionImpl {
       { class: "geom-spec" },
       h("div", { class: "geom-spec-head" }, h("b", {}, t.label), h("small", {}, `${scale.baseHeight}px base · ${SIZE_NAMES.length} sizes · ${scale.density}× density`)),
       h("p", { class: "geom-spec-note" }, scale.ramp === RAMP_LADDER
-        ? "Prototype: the 10-step linear scale-ladder (issue #483) — a SEPARATE anatomy, not the centering law below (padding ≠ (height − glyph)/2 here); every field is its own closed form of height. Toggle it off in the Ramp tab to see the default ramp."
-        : t.note + " — every glyph centers in a square cell of side = the control height, so edge padding = (height − glyph)/2. The ramp + paddings are computed, not authored."),
+        ? "Prototype: the 10-step linear scale-ladder (issue #483), a SEPARATE anatomy, not the centering law below (padding ≠ (height − glyph)/2 here); every field is its own closed form of height. Toggle it off in the Ramp tab to see the default ramp."
+        : t.note + ", every glyph centers in a square cell of side = the control height, so edge padding = (height − glyph)/2. The ramp + paddings are computed, not authored."),
       h("p", { class: "geom-shared-note" }, icon("type"), h("span", {}, scale.ramp === RAMP_LADDER
-        ? "Text size (font) here is the ladder's OWN formula, not Typography's UI-control voice — composition is skipped while the ladder is active, so you see the ladder as authored."
-        : ["Text size (", h("b", {}, "font"), ") per step composes from Typography's UI-control voice (its own full XS..2XL ramp — decoupled from the Label voice, which the interactive text used to ride before TKT-0008); it surfaces in Figma as the Typography collection's UI-widget/UI-control size variables."])),
+        ? "Text size (font) here is the ladder's OWN formula, not Typography's UI-control voice, composition is skipped while the ladder is active, so you see the ladder as authored."
+        : ["Text size (", h("b", {}, "font"), ") per step composes from Typography's UI-control voice (its own full XS..2XL ramp, decoupled from the Label voice, which the interactive text used to ride before TKT-0008); it surfaces in Figma as the Typography collection's UI-widget/UI-control size variables."])),
       h(
         "div",
         { class: "geom-spec-group" },
@@ -567,7 +567,7 @@ export class GeomSectionImpl {
 
 
   // ── Geometry analysis (left rail, READ-ONLY) ──────────────────────────────────────────
-  // The geometry analog of analysisCards(): diagrams of the resolved dimensional system — pure functions
+  // The geometry analog of analysisCards(): diagrams of the resolved dimensional system, pure functions
   // of geometryScale(doc), no inputs. Reuses .an-card / .an-svg / legend(). `view` is accepted for dispatch
   // parity but unused (geometry is doc-driven, not palette-view-driven).
   geomAnalysisCards(view) {
@@ -575,21 +575,21 @@ export class GeomSectionImpl {
     const ladder = scale.ramp === RAMP_LADDER;
     const card = (label, body) => h("div", { class: "an-card" }, h("div", { class: "an-label" }, label), body);
     return [
-      card(ladder ? "Ladder anatomy — pad = inset (a separate law)" : "Centering law — pad = ½(height − glyph)", this.graphGeomCentering(scale)),
-      card("Power-law ramp — icon & font vs height", this.graphGeomPower(scale)),
-      card(ladder ? "Linear ramp — height per step (no gear change)" : "Two-band ramp — height per step", this.graphGeomBands(scale)),
-      card(ladder ? "Font — the ladder's own formula" : "Font ← Typography UI — shared text size", this.graphGeomComposition(scale)),
+      card(ladder ? "Ladder anatomy: pad = inset (a separate law)" : "Centering law: pad = ½(height − glyph)", this.graphGeomCentering(scale)),
+      card("Power-law ramp: icon & font vs height", this.graphGeomPower(scale)),
+      card(ladder ? "Linear ramp: height per step (no gear change)" : "Two-band ramp: height per step", this.graphGeomBands(scale)),
+      card(ladder ? "Font: the ladder's own formula" : "Font ← Typography UI: shared text size", this.graphGeomComposition(scale)),
     ];
   }
 
 
   // the centering law, drawn: a square CELL (side = control height) with the glyph centred in it; the equal
   // gaps either side ARE the derived edge padding ½(height − glyph). Numbers are the MD-equivalent size's
-  // real px — mdAnchor (not a bare `.sizes.LG`/`Object.values(...)[0]`), since the ladder's numeric step
+  // real px, mdAnchor (not a bare `.sizes.LG`/`Object.values(...)[0]`), since the ladder's numeric step
   // names carry no "LG" key and a values-first fallback would land on step "0" (issue #483).
   graphGeomCentering(scale) {
     const { name, size: s } = mdAnchor(scale);
-    if (!s) return h("div", { class: "an-empty" }, "—");
+    if (!s) return h("div", { class: "an-empty" }, "n/a");
     const ladder = scale.ramp === RAMP_LADDER;
     const W = 244, H = 116, side = 80;
     const x0 = (W - side) / 2, y0 = (H - side) / 2;
@@ -602,7 +602,7 @@ export class GeomSectionImpl {
         <line class="gc-pad" x1="${x0}" y1="${gy.toFixed(1)}" x2="${gx.toFixed(1)}" y2="${gy.toFixed(1)}"/>
         <line class="gc-pad" x1="${(gx + g).toFixed(1)}" y1="${(gy + g).toFixed(1)}" x2="${(x0 + side).toFixed(1)}" y2="${(gy + g).toFixed(1)}"/>
       </svg>`;
-    // caption reads the RESOLVED paddingNarrow directly (not a recomputed ½(height−icon)) — identical
+    // caption reads the RESOLVED paddingNarrow directly (not a recomputed ½(height−icon)), identical
     // to that formula on the default ramp, but accurate on the ladder too, whose own law differs.
     const label = ladder ? `step ${name}` : name;
     return h(
@@ -615,14 +615,14 @@ export class GeomSectionImpl {
 
 
   // icon & font vs control height across every size (6 on the default ramp, 10 numbered steps on the
-  // linear-ladder prototype) — both glyphs scale SUBLINEARLY (a power law of height, exponent < 1) on
+  // linear-ladder prototype), both glyphs scale SUBLINEARLY (a power law of height, exponent < 1) on
   // the default ramp, so the curves bend below the faint height diagonal. fill:none on the lines.
-  // orderedSizeNames (not Object.values) — the ladder's numeric keys would otherwise reorder ascending
+  // orderedSizeNames (not Object.values), the ladder's numeric keys would otherwise reorder ascending
   // regardless of the line's drawing order, which happens to be harmless here (ascending IS wanted)
   // but the explicit form keeps this consistent with every other size-ordered loop (issue #483).
   graphGeomPower(scale) {
     const rows = orderedSizeNames(scale).map((n) => scale.sizes[n]);
-    if (!rows.length) return h("div", { class: "an-empty" }, "—");
+    if (!rows.length) return h("div", { class: "an-empty" }, "n/a");
     const W = 244, H = 132, pad = 26;
     const maxH = Math.max(...rows.map((s) => s.height)) * 1.05;
     const maxV = Math.max(...rows.map((s) => Math.max(s.icon, s.font, s.height))) * 1.05;
@@ -649,14 +649,14 @@ export class GeomSectionImpl {
   }
 
 
-  // control height per step index — the default ramp's two-band shape (compact +4 linear below MD,
+  // control height per step index, the default ramp's two-band shape (compact +4 linear below MD,
   // expressive ×4/3 geometric above LG), with a marker at the MD|LG seam where the ramp changes gear.
-  // The linear-ladder prototype (issue #483) has no seam (one straight +4-per-step line, steps 0→9) —
+  // The linear-ladder prototype (issue #483) has no seam (one straight +4-per-step line, steps 0→9),
   // orderedSizeNames (not Object.entries) so it renders correctly at either 6 or 10 steps regardless
   // of naming scheme, and skips the seam marker (meaningless off the default ramp's own 6-point shape).
   graphGeomBands(scale) {
     const rows = orderedSizeNames(scale).map((n) => ({ n, hh: scale.sizes[n].height }));
-    if (rows.length < 2) return h("div", { class: "an-empty" }, "—");
+    if (rows.length < 2) return h("div", { class: "an-empty" }, "n/a");
     const ladder = scale.ramp === RAMP_LADDER;
     const W = 244, H = 124, pad = 26;
     const maxH = Math.max(...rows.map((r) => r.hh)) * 1.05;
@@ -678,14 +678,14 @@ export class GeomSectionImpl {
   }
 
 
-  // the composition link — when the geometry is composed with a type scale, each control's text size
+  // the composition link, when the geometry is composed with a type scale, each control's text size
   // (font) IS the Typography UI voice at the matching step. Lists the six steps + their derived rhythm.
   graphGeomComposition(scale) {
     return h(
       "div",
       { class: "geom-comp" },
       h("p", { class: "geom-comp-note" }, scale.ramp === RAMP_LADDER
-        ? "The ladder's own text formula is in effect — composition from Typography's UI-control voice is skipped while it's active (see the Ramp tab to toggle back)."
+        ? "The ladder's own text formula is in effect, composition from Typography's UI-control voice is skipped while it's active (see the Ramp tab to toggle back)."
         : "Each control's text size composes from Typography's UI-control voice (decoupled from the Label voice, which interactive text used to ride before TKT-0008); gap = font/2, caret has its own power law."),
       h(
         "div",
@@ -720,7 +720,7 @@ export class GeomSectionImpl {
   }
 
 
-  // geomRampTab — the WRITABLE controls (treatment + base height), then a READ-ONLY per-size summary of
+  // geomRampTab, the WRITABLE controls (treatment + base height), then a READ-ONLY per-size summary of
   // what the centering law yields (icon · font · pad · gap · radius), + the composition note + download.
   geomRampTab() {
     const cfg = this.doc.geometry || DEFAULT_GEOMETRY;
@@ -730,7 +730,7 @@ export class GeomSectionImpl {
       "div",
       { class: "insp-body" },
       h("h3", { class: "insp-title" }, icon("ruler"), "Size ramp"),
-      h("div", { class: "insp-sub" }, "Choose a treatment + base height — icon, font, padding, gap & radius follow by the centering law."),
+      h("div", { class: "insp-sub" }, "Choose a treatment + base height: icon, font, padding, gap & radius follow by the centering law."),
       field(
         "Treatment",
         h(
@@ -739,11 +739,11 @@ export class GeomSectionImpl {
           ...GEOMETRY_TREATMENTS.map((x) => h("option", { value: x.id, selected: cfg.treatment === x.id ? true : undefined }, this._treatmentLocked(x.id, "comfortable") ? x.label + " · Pro" : x.label)),
         ),
       ),
-      // opt-in ladder prototype (issue #483) — a WHOLESALE alternate ramp shape, document-level like
+      // opt-in ladder prototype (issue #483), a WHOLESALE alternate ramp shape, document-level like
       // Treatment. Off (default) is byte-identical to every export today.
       h(
         "label",
-        { class: "mini-check geom-ramp-check", title: "Prototype: an alternate 10-step linear ramp (evaluating AdiaUI's scale-ladder, issue #483) — every export renders it while on; off is the byte-identical default ramp." },
+        { class: "mini-check geom-ramp-check", title: "Prototype: an alternate 10-step linear ramp (evaluating AdiaUI's scale-ladder, issue #483), every export renders it while on; off is the byte-identical default ramp." },
         h("input", {
           type: "checkbox",
           checked: cfg.ramp === RAMP_LADDER,
@@ -754,10 +754,10 @@ export class GeomSectionImpl {
       ),
       this.slider(this.geomMode === "base" || this.geomMode === "compare" ? "Base height" : "Base height · this breakpoint", scale.baseHeight, 20, 48, 2, (v) => fmt(v) + "px", (v) => this._setActiveGeomBaseHeight(v)),
       // the responsive-ramp knob: 100% = the full ×4/3 expressive gear; 0% = the band goes linear
-      // (+4 past MD) — the compressed ramp small screens want. Per-mode, like the height slider. A
+      // (+4 past MD), the compressed ramp small screens want. Per-mode, like the height slider. A
       // no-op on the ladder (it has no gear change to blend), so the slider hides in favour of a note.
       cfg.ramp === RAMP_LADDER
-        ? h("p", { class: "insp-sub tyi-future" }, "Ramp contrast has no effect on the linear ladder — it blends the default ramp's own gear change at the MD|LG seam, and the ladder is already one straight line.")
+        ? h("p", { class: "insp-sub tyi-future" }, "Ramp contrast has no effect on the linear ladder, it blends the default ramp's own gear change at the MD|LG seam, and the ladder is already one straight line.")
         : this.slider(this.geomMode === "base" || this.geomMode === "compare" ? "Ramp contrast" : "Ramp contrast · this breakpoint", scale.rampContrast ?? 1, 0, 1, 0.05, (v) => Math.round(v * 100) + "%", (v) => this._setActiveGeomRampContrast(v)),
       this._geomModeEditor(),
       h("p", { class: "insp-sub tyi-note" }, t.note),
@@ -800,11 +800,11 @@ export class GeomSectionImpl {
           );
         }),
       ),
-      h("p", { class: "insp-sub tyi-future" }, "Text size (font) per step is the control-text ramp — decoupled from the type scale; in Figma it lives in the Typography collection as UI-widget/UI-control sizes."),    );
+      h("p", { class: "insp-sub tyi-future" }, "Text size (font) per step is the control-text ramp, decoupled from the type scale; in Figma it lives in the Typography collection as UI-widget/UI-control sizes."),    );
   }
 
 
-  // geomRadiusTab — the corner ladder the treatment resolves to (none·sm·md·lg·full). The radius STYLE is
+  // geomRadiusTab, the corner ladder the treatment resolves to (none·sm·md·lg·full). The radius STYLE is
   // set by the treatment (read-only here, like the type fonts).
   geomRadiusTab() {
     const cfg = this.doc.geometry || DEFAULT_GEOMETRY;
@@ -832,7 +832,7 @@ export class GeomSectionImpl {
   }
 
 
-  // geomSpaceTab — the layout-spacing scale (--space-*): the rhythm BETWEEN components (gutters, gaps,
+  // geomSpaceTab, the layout-spacing scale (--space-*): the rhythm BETWEEN components (gutters, gaps,
   // section rhythm), a separate concern from the in-control padding the centering law governs.
   geomSpaceTab() {
     const cfg = this.doc.geometry || DEFAULT_GEOMETRY;
@@ -843,7 +843,7 @@ export class GeomSectionImpl {
       "div",
       { class: "insp-body" },
       h("h3", { class: "insp-title" }, icon("ruler"), "Space scale"),
-      h("div", { class: "insp-sub" }, `Layout rhythm in ${t.spaceBase}px multiples — the space between components, not the padding inside one.`),
+      h("div", { class: "insp-sub" }, `Layout rhythm in ${t.spaceBase}px multiples, the space between components, not the padding inside one.`),
       h(
         "div",
         { class: "geom-lad" },
@@ -860,10 +860,10 @@ export class GeomSectionImpl {
   }
 
 
-  // _geomPaletteColors(view) — the SELECTED palette's resolved roles, ready to paint a mock control:
+  // _geomPaletteColors(view), the SELECTED palette's resolved roles, ready to paint a mock control:
   // surface/onSurface (the card ground) + the palette's own prime/on-prime (a "primary button" look).
-  // Shared by geomExampleCard and the canvas ramp's ctlLine so every mock control — canvas or inspector
-  // — reflects the actual palette being designed, not a generic fallback accent.
+  // Shared by geomExampleCard and the canvas ramp's ctlLine so every mock control, canvas or inspector,
+  // reflects the actual palette being designed, not a generic fallback accent.
   _geomPaletteColors(view) {
     const p = view.palettes[this.selectedIndex()];
     const roles = (p && p.roles) || [];
@@ -877,9 +877,9 @@ export class GeomSectionImpl {
     return { pick, byKey, main, onMain };
   }
 
-  // geomExampleCard — the pinned live card: a few real controls (Button · Chip · Input) built from the
+  // geomExampleCard, the pinned live card: a few real controls (Button · Chip · Input) built from the
   // resolved geometry AND painted in the SELECTED palette's roles. Mirrors typeExampleCard's resolution.
-  // mdAnchor (not `.sizes.MD || Object.values(...)[0]`) — the ladder's numeric step names carry no
+  // mdAnchor (not `.sizes.MD || Object.values(...)[0]`), the ladder's numeric step names carry no
   // "MD" key, and a values-first fallback would silently land on step "0" (the smallest control),
   // since JS forces integer-like keys into ascending enumeration order (issue #483).
   geomExampleCard(view) {
@@ -905,7 +905,7 @@ export class GeomSectionImpl {
           "Button",
           h("span", { class: "geom-ex-caret", style: `width:${s.caret}px;height:${s.caret}px` }, icon("caret-left")),
         ),
-        // Chip — a smaller, pill-only affordance (no caret): containerHigh, a visible-but-quieter tint
+        // Chip, a smaller, pill-only affordance (no caret): containerHigh, a visible-but-quieter tint
         // of the palette's own hue rather than its full-strength prime, since a chip is lower-emphasis.
         h(
           "span",
@@ -916,7 +916,7 @@ export class GeomSectionImpl {
           "Chip",
           h("span", { class: "geom-ex-chip-x", style: `width:${s.icon}px;height:${s.icon}px` }, icon("x", { size: s.icon })),
         ),
-        // Input — an outlined field (never filled with the prime color; a field's own ground is surface).
+        // Input, an outlined field (never filled with the prime color; a field's own ground is surface).
         // outlineVariant matches how this app's own shadcn export maps an input border (exports.js);
         // placeholder is the role built specifically for this exact text archetype (semantic.js).
         h(

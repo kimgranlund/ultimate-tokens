@@ -1,6 +1,6 @@
-# Knowledge 01 — Color Engine (HCT: CAM16 H/C + CIELAB L\*)
+# Knowledge 01: Color Engine (HCT: CAM16 H/C + CIELAB L\*)
 
-> Topic: the perceptual color engine. This is the **rate-limiting core** of the tool —
+> Topic: the perceptual color engine. This is the **rate-limiting core** of the tool,
 > every swatch, plot point, and exported token derives from it. Specify it exactly;
 > describing it in prose is not enough for regeneration.
 
@@ -37,7 +37,7 @@ sRGB8  --lin-->  linear sRGB  --SRGB_TO_XYZ-->  XYZ  --cam16FromXyz-->  CAM16 (J
                                                   +-- Y --lstarFromY--> L*
 ```
 
-Constants (literal — regenerate from these, do not approximate):
+Constants (literal, regenerate from these, do not approximate):
 
 ```
 SRGB_TO_XYZ = [[0.41233895, 0.35762064, 0.18051042],
@@ -84,7 +84,7 @@ n, z, nbb, ncb, aw (achromatic response of white)`. The exact derivation is in `
 it is deterministic and must reproduce the same `VC` every run.
 
 > 💡 The VC is fixed, not user-controllable. The tool does not expose viewing-condition
-> controls because the target is screen sRGB under average surround — a single, stable
+> controls because the target is screen sRGB under average surround, a single, stable
 > appearance context. Exposing VC would make exports non-portable.
 
 ## 4. CAM16 forward / inverse
@@ -168,7 +168,7 @@ oklchToCam16Hue(h, chromaFrac=1):
 hctToOklch(hue, chroma, tone) -> [L, C, H°]   // float, the perceptual OKLCH of an HCT color
 ```
 - Reuses the CAM16 J-solve from `hctToRgb`, then converts the converged **linear sRGB**
-  straight through OKLab — **no 8-bit round-trip**. This is the high-res HCT→OKLCH used for
+  straight through OKLab, **no 8-bit round-trip**. This is the high-res HCT→OKLCH used for
   analysis and readouts.
 - **Principle:** HEX is only ever derived for consumption; perceptual coordinates come from
   the model at full precision (never measured back off an 8-bit hex). `projectView` emits
@@ -188,7 +188,7 @@ hctToOklch(hue, chroma, tone) -> [L, C, H°]   // float, the perceptual OKLCH of
 `data/verification-anchors.json` holds the canonical correctness test: forward
 (`cam16FromRgb` + L\*) then inverse (`hctToRgb`) roundtrip for red/green/blue/white/black/
 mid-gray. Acceptance: `max_channel_delta <= 2` per anchor (current engine: 0). If a change
-moves any anchor past tolerance, the engine is broken — revert.
+moves any anchor past tolerance, the engine is broken, revert.
 
 Representative values (current engine):
 
@@ -197,5 +197,5 @@ Representative values (current engine):
 | red    | 27.41 | 113.36 | 53.23 | 0 |
 | green  | 142.14 | 108.41 | 87.74 | 0 |
 | blue   | 282.79 | 87.23 | 32.30 | 0 |
-| white  | — | ~0 | 100 | 0 |
-| black  | — | 0 | 0 | 0 |
+| white  | none | ~0 | 100 | 0 |
+| black  | none | 0 | 0 | 0 |

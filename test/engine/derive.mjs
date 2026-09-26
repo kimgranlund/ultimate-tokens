@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// derive.mjs — verifier for the New-Palette derivation math (src/engine/derive.mjs). Pure, no DOM.
+// derive.mjs, verifier for the New-Palette derivation math (src/engine/derive.mjs). Pure, no DOM.
 import * as D from "../../src/engine/derive.mjs";
 
 const fails = [];
@@ -7,7 +7,7 @@ const ok = (c, m) => { if (!c) fails.push(m); };
 const norm = (d) => ((d % 360) + 360) % 360;
 const angClose = (a, b, tol = 1) => Math.min(norm(a - b), norm(b - a)) <= tol;
 
-// samples: [L, C, H] OKLCH — a warm-leaning context (brass-ish 78°, maroon 28°) + a near-grey 215°.
+// samples: [L, C, H] OKLCH, a warm-leaning context (brass-ish 78°, maroon 28°) + a near-grey 215°.
 const CTX = [[0.62, 0.068, 78], [0.32, 0.045, 28], [0.92, 0.005, 215]];
 
 // ── weighted circular mean: near-grey barely contributes; result leans warm (between 28° and 78°) ──
@@ -67,5 +67,5 @@ const CTX = [[0.62, 0.068, 78], [0.32, 0.045, 28], [0.92, 0.005, 215]];
 }
 
 if (fails.length) { console.error(`derive FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
-console.log("derive PASS — weighted-mean hue, neutral clamp, and the 6 relationships hold");
+console.log("derive PASS, weighted-mean hue, neutral clamp, and the 6 relationships hold");
 process.exit(0);

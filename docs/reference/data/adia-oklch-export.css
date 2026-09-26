@@ -10,7 +10,7 @@
   --c-black: oklch(0 0 0);
 
   /* Neutral · material */
-  /* Neutral — flat mode-independent primitives */
+  /* Neutral, flat mode-independent primitives */
   --c-neutral-100: oklch(0.9195 0.0068 277.16);
   --c-neutral-125: oklch(0.8892 0.0111 274.88);
   --c-neutral-150: oklch(0.8616 0.0155 273.82);
@@ -54,7 +54,7 @@
   --c-neutral-scrim-800: oklch(0.5348 0.0348 266.92 / 80%);
   --c-neutral-scrim-900: oklch(0.5348 0.0348 266.92 / 90%);
   --c-neutral-scrim-950: oklch(0.5348 0.0348 266.92 / 95%);
-  /* Neutral — semantic roles */
+  /* Neutral, semantic roles */
   --c-neutral: light-dark(var(--c-neutral-550), var(--c-neutral-450));
   --c-neutral-dim: light-dark(var(--c-neutral-650), var(--c-neutral-700));
   --c-neutral-bright: light-dark(var(--c-neutral-350), var(--c-neutral-400));
@@ -110,7 +110,7 @@
   --c-neutral-scrim-strongest: light-dark(var(--c-neutral-scrim-600), var(--c-neutral-scrim-600));
 
   /* Primary · brand */
-  /* Primary — flat mode-independent primitives */
+  /* Primary, flat mode-independent primitives */
   --c-primary-100: oklch(0.9112 0.011 234.83);
   --c-primary-125: oklch(0.8797 0.0204 233.88);
   --c-primary-150: oklch(0.8493 0.03 236.97);
@@ -154,7 +154,7 @@
   --c-primary-scrim-800: oklch(0.5245 0.0476 234.94 / 80%);
   --c-primary-scrim-900: oklch(0.5245 0.0476 234.94 / 90%);
   --c-primary-scrim-950: oklch(0.5245 0.0476 234.94 / 95%);
-  /* Primary — semantic roles */
+  /* Primary, semantic roles */
   --c-primary: light-dark(var(--c-primary-550), var(--c-primary-450));
   --c-primary-dim: light-dark(var(--c-primary-650), var(--c-primary-700));
   --c-primary-bright: light-dark(var(--c-primary-350), var(--c-primary-400));
@@ -210,7 +210,7 @@
   --c-primary-scrim-strongest: light-dark(var(--c-primary-scrim-600), var(--c-primary-scrim-600));
 
   /* Secondary · brand */
-  /* Secondary — flat mode-independent primitives */
+  /* Secondary, flat mode-independent primitives */
   --c-secondary-100: oklch(0.9564 0.0079 216.62);
   --c-secondary-125: oklch(0.9345 0.0149 218.05);
   --c-secondary-150: oklch(0.9132 0.0243 212.9);
@@ -254,7 +254,7 @@
   --c-secondary-scrim-800: oklch(0.5999 0.0544 213.72 / 80%);
   --c-secondary-scrim-900: oklch(0.5999 0.0544 213.72 / 90%);
   --c-secondary-scrim-950: oklch(0.5999 0.0544 213.72 / 95%);
-  /* Secondary — semantic roles */
+  /* Secondary, semantic roles */
   --c-secondary: light-dark(var(--c-secondary-550), var(--c-secondary-450));
   --c-secondary-dim: light-dark(var(--c-secondary-650), var(--c-secondary-700));
   --c-secondary-bright: light-dark(var(--c-secondary-350), var(--c-secondary-400));
@@ -310,7 +310,7 @@
   --c-secondary-scrim-strongest: light-dark(var(--c-secondary-scrim-600), var(--c-secondary-scrim-600));
 
   /* Tertiary · brand */
-  /* Tertiary — flat mode-independent primitives */
+  /* Tertiary, flat mode-independent primitives */
   --c-tertiary-100: oklch(0.9278 0.0134 286.13);
   --c-tertiary-125: oklch(0.8988 0.0231 283.23);
   --c-tertiary-150: oklch(0.8711 0.0357 283.88);
@@ -354,7 +354,7 @@
   --c-tertiary-scrim-800: oklch(0.5443 0.0986 284.76 / 80%);
   --c-tertiary-scrim-900: oklch(0.5443 0.0986 284.76 / 90%);
   --c-tertiary-scrim-950: oklch(0.5443 0.0986 284.76 / 95%);
-  /* Tertiary — semantic roles */
+  /* Tertiary, semantic roles */
   --c-tertiary: light-dark(var(--c-tertiary-550), var(--c-tertiary-450));
   --c-tertiary-dim: light-dark(var(--c-tertiary-650), var(--c-tertiary-700));
   --c-tertiary-bright: light-dark(var(--c-tertiary-350), var(--c-tertiary-400));
@@ -410,7 +410,7 @@
   --c-tertiary-scrim-strongest: light-dark(var(--c-tertiary-scrim-600), var(--c-tertiary-scrim-600));
 
   /* Info · system */
-  /* Info — flat mode-independent primitives */
+  /* Info, flat mode-independent primitives */
   --c-info-100: oklch(0.9223 0.0077 241.67);
   --c-info-125: oklch(0.8927 0.0137 240.97);
   --c-info-150: oklch(0.8651 0.0197 235.76);
@@ -454,7 +454,7 @@
   --c-info-scrim-800: oklch(0.5424 0.0377 237.58 / 80%);
   --c-info-scrim-900: oklch(0.5424 0.0377 237.58 / 90%);
   --c-info-scrim-950: oklch(0.5424 0.0377 237.58 / 95%);
-  /* Info — semantic roles */
+  /* Info, semantic roles */
   --c-info: light-dark(var(--c-info-550), var(--c-info-450));
   --c-info-dim: light-dark(var(--c-info-650), var(--c-info-700));
   --c-info-bright: light-dark(var(--c-info-350), var(--c-info-400));
@@ -510,7 +510,7 @@
   --c-info-scrim-strongest: light-dark(var(--c-info-scrim-600), var(--c-info-scrim-600));
 
   /* Success · system */
-  /* Success — flat mode-independent primitives */
+  /* Success, flat mode-independent primitives */
   --c-success-100: oklch(0.9292 0.0243 141.52);
   --c-success-125: oklch(0.8987 0.0472 141.31);
   --c-success-150: oklch(0.8713 0.0768 141.5);
@@ -554,7 +554,7 @@
   --c-success-scrim-800: oklch(0.5444 0.0887 141.92 / 80%);
   --c-success-scrim-900: oklch(0.5444 0.0887 141.92 / 90%);
   --c-success-scrim-950: oklch(0.5444 0.0887 141.92 / 95%);
-  /* Success — semantic roles */
+  /* Success, semantic roles */
   --c-success: light-dark(var(--c-success-550), var(--c-success-450));
   --c-success-dim: light-dark(var(--c-success-650), var(--c-success-700));
   --c-success-bright: light-dark(var(--c-success-350), var(--c-success-400));
@@ -610,7 +610,7 @@
   --c-success-scrim-strongest: light-dark(var(--c-success-scrim-600), var(--c-success-scrim-600));
 
   /* Warning · system */
-  /* Warning — flat mode-independent primitives */
+  /* Warning, flat mode-independent primitives */
   --c-warning-100: oklch(0.9886 0.0017 67.8);
   --c-warning-125: oklch(0.9806 0.0051 67.76);
   --c-warning-150: oklch(0.9696 0.0086 67.72);
@@ -654,7 +654,7 @@
   --c-warning-scrim-800: oklch(0.7107 0.0678 70.94 / 80%);
   --c-warning-scrim-900: oklch(0.7107 0.0678 70.94 / 90%);
   --c-warning-scrim-950: oklch(0.7107 0.0678 70.94 / 95%);
-  /* Warning — semantic roles */
+  /* Warning, semantic roles */
   --c-warning: light-dark(var(--c-warning-550), var(--c-warning-450));
   --c-warning-dim: light-dark(var(--c-warning-650), var(--c-warning-700));
   --c-warning-bright: light-dark(var(--c-warning-350), var(--c-warning-400));
@@ -710,7 +710,7 @@
   --c-warning-scrim-strongest: light-dark(var(--c-warning-scrim-600), var(--c-warning-scrim-600));
 
   /* Danger · system */
-  /* Danger — flat mode-independent primitives */
+  /* Danger, flat mode-independent primitives */
   --c-danger-100: oklch(0.8632 0.0265 29.44);
   --c-danger-125: oklch(0.8255 0.0438 30.56);
   --c-danger-150: oklch(0.7916 0.0619 31.16);
@@ -754,7 +754,7 @@
   --c-danger-scrim-800: oklch(0.4701 0.0831 31.57 / 80%);
   --c-danger-scrim-900: oklch(0.4701 0.0831 31.57 / 90%);
   --c-danger-scrim-950: oklch(0.4701 0.0831 31.57 / 95%);
-  /* Danger — semantic roles */
+  /* Danger, semantic roles */
   --c-danger: light-dark(var(--c-danger-550), var(--c-danger-450));
   --c-danger-dim: light-dark(var(--c-danger-650), var(--c-danger-700));
   --c-danger-bright: light-dark(var(--c-danger-350), var(--c-danger-400));
@@ -810,7 +810,7 @@
   --c-danger-scrim-strongest: light-dark(var(--c-danger-scrim-600), var(--c-danger-scrim-600));
 
   /* Data 1 · data */
-  /* Data 1 — flat mode-independent primitives */
+  /* Data 1, flat mode-independent primitives */
   --c-data-1-100: oklch(0.9522 0.0042 271.37);
   --c-data-1-125: oklch(0.9282 0.0084 271.32);
   --c-data-1-150: oklch(0.905 0.0137 277.05);
@@ -854,7 +854,7 @@
   --c-data-1-scrim-800: oklch(0.5894 0.0424 272.11 / 80%);
   --c-data-1-scrim-900: oklch(0.5894 0.0424 272.11 / 90%);
   --c-data-1-scrim-950: oklch(0.5894 0.0424 272.11 / 95%);
-  /* Data 1 — semantic roles */
+  /* Data 1, semantic roles */
   --c-data-1: light-dark(var(--c-data-1-550), var(--c-data-1-450));
   --c-data-1-dim: light-dark(var(--c-data-1-650), var(--c-data-1-700));
   --c-data-1-bright: light-dark(var(--c-data-1-350), var(--c-data-1-400));
@@ -910,7 +910,7 @@
   --c-data-1-scrim-strongest: light-dark(var(--c-data-1-scrim-600), var(--c-data-1-scrim-600));
 
   /* Data 2 · data */
-  /* Data 2 — flat mode-independent primitives */
+  /* Data 2, flat mode-independent primitives */
   --c-data-2-100: oklch(0.9782 0.0034 325.6);
   --c-data-2-125: oklch(0.9624 0.0068 325.63);
   --c-data-2-150: oklch(0.9475 0.0119 325.67);
@@ -954,7 +954,7 @@
   --c-data-2-scrim-800: oklch(0.6574 0.0686 326.32 / 80%);
   --c-data-2-scrim-900: oklch(0.6574 0.0686 326.32 / 90%);
   --c-data-2-scrim-950: oklch(0.6574 0.0686 326.32 / 95%);
-  /* Data 2 — semantic roles */
+  /* Data 2, semantic roles */
   --c-data-2: light-dark(var(--c-data-2-550), var(--c-data-2-450));
   --c-data-2-dim: light-dark(var(--c-data-2-650), var(--c-data-2-700));
   --c-data-2-bright: light-dark(var(--c-data-2-350), var(--c-data-2-400));
@@ -1010,7 +1010,7 @@
   --c-data-2-scrim-strongest: light-dark(var(--c-data-2-scrim-600), var(--c-data-2-scrim-600));
 
   /* Data 3 · data */
-  /* Data 3 — flat mode-independent primitives */
+  /* Data 3, flat mode-independent primitives */
   --c-data-3-100: oklch(0.9732 0.0043 17.23);
   --c-data-3-125: oklch(0.9584 0.0086 17.31);
   --c-data-3-150: oklch(0.941 0.0142 22.77);
@@ -1054,7 +1054,7 @@
   --c-data-3-scrim-800: oklch(0.6462 0.078 21.48 / 80%);
   --c-data-3-scrim-900: oklch(0.6462 0.078 21.48 / 90%);
   --c-data-3-scrim-950: oklch(0.6462 0.078 21.48 / 95%);
-  /* Data 3 — semantic roles */
+  /* Data 3, semantic roles */
   --c-data-3: light-dark(var(--c-data-3-550), var(--c-data-3-450));
   --c-data-3-dim: light-dark(var(--c-data-3-650), var(--c-data-3-700));
   --c-data-3-bright: light-dark(var(--c-data-3-350), var(--c-data-3-400));
@@ -1110,7 +1110,7 @@
   --c-data-3-scrim-strongest: light-dark(var(--c-data-3-scrim-600), var(--c-data-3-scrim-600));
 
   /* Data 4 · data */
-  /* Data 4 — flat mode-independent primitives */
+  /* Data 4, flat mode-independent primitives */
   --c-data-4-100: oklch(0.9571 0.0069 67.74);
   --c-data-4-125: oklch(0.9353 0.0128 63.92);
   --c-data-4-150: oklch(0.9113 0.0197 60.15);
@@ -1154,7 +1154,7 @@
   --c-data-4-scrim-800: oklch(0.5967 0.0558 61.59 / 80%);
   --c-data-4-scrim-900: oklch(0.5967 0.0558 61.59 / 90%);
   --c-data-4-scrim-950: oklch(0.5967 0.0558 61.59 / 95%);
-  /* Data 4 — semantic roles */
+  /* Data 4, semantic roles */
   --c-data-4: light-dark(var(--c-data-4-550), var(--c-data-4-450));
   --c-data-4-dim: light-dark(var(--c-data-4-650), var(--c-data-4-700));
   --c-data-4-bright: light-dark(var(--c-data-4-350), var(--c-data-4-400));
@@ -1210,7 +1210,7 @@
   --c-data-4-scrim-strongest: light-dark(var(--c-data-4-scrim-600), var(--c-data-4-scrim-600));
 
   /* Data 5 · data */
-  /* Data 5 — flat mode-independent primitives */
+  /* Data 5, flat mode-independent primitives */
   --c-data-5-100: oklch(0.9167 0.0461 105.93);
   --c-data-5-125: oklch(0.8858 0.091 106.75);
   --c-data-5-150: oklch(0.8556 0.1342 106.1);
@@ -1254,7 +1254,7 @@
   --c-data-5-scrim-800: oklch(0.5286 0.1008 107.29 / 80%);
   --c-data-5-scrim-900: oklch(0.5286 0.1008 107.29 / 90%);
   --c-data-5-scrim-950: oklch(0.5286 0.1008 107.29 / 95%);
-  /* Data 5 — semantic roles */
+  /* Data 5, semantic roles */
   --c-data-5: light-dark(var(--c-data-5-550), var(--c-data-5-450));
   --c-data-5-dim: light-dark(var(--c-data-5-650), var(--c-data-5-700));
   --c-data-5-bright: light-dark(var(--c-data-5-350), var(--c-data-5-400));
@@ -1310,7 +1310,7 @@
   --c-data-5-scrim-strongest: light-dark(var(--c-data-5-scrim-600), var(--c-data-5-scrim-600));
 
   /* Data 6 · data */
-  /* Data 6 — flat mode-independent primitives */
+  /* Data 6, flat mode-independent primitives */
   --c-data-6-100: oklch(0.93 0.016 148.4);
   --c-data-6-125: oklch(0.9021 0.0323 148.19);
   --c-data-6-150: oklch(0.8758 0.051 148.68);
@@ -1354,7 +1354,7 @@
   --c-data-6-scrim-800: oklch(0.5498 0.0686 149.78 / 80%);
   --c-data-6-scrim-900: oklch(0.5498 0.0686 149.78 / 90%);
   --c-data-6-scrim-950: oklch(0.5498 0.0686 149.78 / 95%);
-  /* Data 6 — semantic roles */
+  /* Data 6, semantic roles */
   --c-data-6: light-dark(var(--c-data-6-550), var(--c-data-6-450));
   --c-data-6-dim: light-dark(var(--c-data-6-650), var(--c-data-6-700));
   --c-data-6-bright: light-dark(var(--c-data-6-350), var(--c-data-6-400));
@@ -1410,7 +1410,7 @@
   --c-data-6-scrim-strongest: light-dark(var(--c-data-6-scrim-600), var(--c-data-6-scrim-600));
 
   /* Data 7 · data */
-  /* Data 7 — flat mode-independent primitives */
+  /* Data 7, flat mode-independent primitives */
   --c-data-7-100: oklch(0.9345 0.0118 190.43);
   --c-data-7-125: oklch(0.9061 0.0223 193.29);
   --c-data-7-150: oklch(0.8802 0.0338 194.24);
@@ -1454,7 +1454,7 @@
   --c-data-7-scrim-800: oklch(0.5545 0.0485 195.84 / 80%);
   --c-data-7-scrim-900: oklch(0.5545 0.0485 195.84 / 90%);
   --c-data-7-scrim-950: oklch(0.5545 0.0485 195.84 / 95%);
-  /* Data 7 — semantic roles */
+  /* Data 7, semantic roles */
   --c-data-7: light-dark(var(--c-data-7-550), var(--c-data-7-450));
   --c-data-7-dim: light-dark(var(--c-data-7-650), var(--c-data-7-700));
   --c-data-7-bright: light-dark(var(--c-data-7-350), var(--c-data-7-400));
@@ -1510,7 +1510,7 @@
   --c-data-7-scrim-strongest: light-dark(var(--c-data-7-scrim-600), var(--c-data-7-scrim-600));
 
   /* Data 8 · data */
-  /* Data 8 — flat mode-independent primitives */
+  /* Data 8, flat mode-independent primitives */
   --c-data-8-100: oklch(0.9542 0.0034 247.86);
   --c-data-8-125: oklch(0.9321 0.0069 247.9);
   --c-data-8-150: oklch(0.9092 0.0111 243.66);
@@ -1554,7 +1554,7 @@
   --c-data-8-scrim-800: oklch(0.5929 0.0309 240.01 / 80%);
   --c-data-8-scrim-900: oklch(0.5929 0.0309 240.01 / 90%);
   --c-data-8-scrim-950: oklch(0.5929 0.0309 240.01 / 95%);
-  /* Data 8 — semantic roles */
+  /* Data 8, semantic roles */
   --c-data-8: light-dark(var(--c-data-8-550), var(--c-data-8-450));
   --c-data-8-dim: light-dark(var(--c-data-8-650), var(--c-data-8-700));
   --c-data-8-bright: light-dark(var(--c-data-8-350), var(--c-data-8-400));

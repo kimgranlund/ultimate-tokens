@@ -1,4 +1,4 @@
-// plugin/geometry-tokens.mjs — the ultimate-tokens PLUGIN gate for the geometry-tokens consumption
+// plugin/geometry-tokens.mjs, the ultimate-tokens PLUGIN gate for the geometry-tokens consumption
 // skill: every --size-*/--radius-*/--space-*/--inset-*/--gap-*/--border-*/--focus-* token and
 // .control-* class it names must match the geometry engine. The check lives WITH the skill
 // (plugin/.../scripts/dimension-parity.mjs); this wrapper runs it in npm test so a dimension change
@@ -16,5 +16,5 @@ const r = spawnSync(process.execPath, [SCRIPT], { encoding: "utf8" });
 process.stdout.write(r.stdout || "");
 process.stderr.write(r.stderr || "");
 if (r.status !== 0) { console.error("plugin FAIL: geometry-tokens skill drifted from the geometry engine"); process.exit(1); }
-console.log("plugin PASS — geometry-tokens skill in parity with the geometry engine");
+console.log("plugin PASS, geometry-tokens skill in parity with the geometry engine");
 process.exit(0);

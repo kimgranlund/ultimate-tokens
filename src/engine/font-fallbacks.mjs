@@ -1,13 +1,13 @@
-// font-fallbacks.mjs — the Google-Fonts-safe substitute table. Pure, no DOM. A "premium" family
+// font-fallbacks.mjs, the Google-Fonts-safe substitute table. Pure, no DOM. A "premium" family
 // (a licensed/commercial release, or any face not servable from the Google Fonts CDN) maps to a
 // real Google Fonts family chosen to preserve its character (serif→serif, mono→mono, condensed→
-// condensed-ish) — the safety net under Figma's networkAccess:"none" (a premium font can never
+// condensed-ish), the safety net under Figma's networkAccess:"none" (a premium font can never
 // load there) and the web app's silent Google-Fonts-CDN 404 (ensureWebFonts, app-helpers.mjs).
 //
-// Hand-maintained, not generated — this is a content/curation table like font-cuts.json, not
+// Hand-maintained, not generated, this is a content/curation table like font-cuts.json, not
 // derived data. Seeded with the corpus's highest-recurrence premium families first (the revision
 // program's own most-used foundry picks); grows incrementally (Phase C of the font-mode plan).
-// An unlisted family is NOT an error — googleSafeFontFor returns it unchanged, so an unclassified
+// An unlisted family is NOT an error, googleSafeFontFor returns it unchanged, so an unclassified
 // premium font falls through to genericFor's CSS-generic safety net exactly as it does today.
 // Never worse than current behavior; only ever an improvement as entries are added.
 export const FONT_FALLBACKS = {
@@ -42,7 +42,7 @@ export const FONT_FALLBACKS = {
   "Trade Gothic": "Oswald",
   "Trajan Pro": "Cinzel",
 
-  // TKT-451 — corpus-wide sweep, batch 2. Grouped by lineage/character, not foundry, since most
+  // TKT-451, corpus-wide sweep, batch 2. Grouped by lineage/character, not foundry, since most
   // remaining premium names are grotesque/geometric/serif REVIVALS rather than one shop's catalog.
 
   // Grotesques & signage faces (Berthold/Linotype/Monotype/Font Bureau/ATF lineage)
@@ -94,7 +94,7 @@ export const FONT_FALLBACKS = {
   "Clash Display": "Space Grotesk",
 
   // Licensed system/OS fonts (Linotype/Monotype originals bundled with Windows/macOS but not
-  // servable from the Google Fonts CDN) — same grotesque-lineage precedent as Helvetica Now Text/
+  // servable from the Google Fonts CDN), same grotesque-lineage precedent as Helvetica Now Text/
   // Neue Haas Grotesk above for the sans pair; the two serifs use Google's own purpose-built
   // metric-compatible replacements rather than a generic pick.
   "Helvetica": "Inter",
@@ -166,7 +166,7 @@ export const FONT_FALLBACKS = {
   "Cooper Std": "Fraunces",
   "Data 70": "Orbitron",
 
-  // Druk family (Commercial Type) — ultra-bold condensed display
+  // Druk family (Commercial Type), ultra-bold condensed display
   "Druk": "Anton",
   "Druk Text": "Anton",
   "Druk Condensed": "Anton",
@@ -179,26 +179,26 @@ export const FONT_FALLBACKS = {
   "OCR-B": "Fragment Mono",
   "FF Trixie": "Special Elite",
 
-  // Trajan Pro's newer Adobe revision — same fallback as the base cut already above
+  // Trajan Pro's newer Adobe revision, same fallback as the base cut already above
   "Trajan Pro 3": "Cinzel",
 
-  // Burger King "Flame" identity — an in-house commissioned brand face, never licensable
+  // Burger King "Flame" identity, an in-house commissioned brand face, never licensable
   "Flame": "Alfa Slab One",
   "Flame Sans": "Poppins",
 };
 
-// FONT_FALLBACKS_BY_ROLE — role-aware refinements over the family-keyed table (2026-08-14, at
-// request): when a family serves several roles, the fallback can differ per role — GT America's
+// FONT_FALLBACKS_BY_ROLE, role-aware refinements over the family-keyed table (2026-08-14, at
+// request): when a family serves several roles, the fallback can differ per role, GT America's
 // display slot degrades better to Inter Tight (the tighter display cut) while body/ui/mono-adjacent
 // text reads better in plain Inter. Sparse: only list the roles that differ from FONT_FALLBACKS.
 export const FONT_FALLBACKS_BY_ROLE = {
   "GT America": { display: "Inter Tight" },
 };
 
-// googleSafeFontFor(family, role?) — the pure lookup. The role-aware refinement wins when one is
+// googleSafeFontFor(family, role?), the pure lookup. The role-aware refinement wins when one is
 // curated for (family, role); else the family-keyed substitute; else the family itself unchanged
-// (already a Google Font, or not yet classified — identical to prior behavior in those cases).
-// role is optional — omitted, the lookup is family-keyed exactly as before.
+// (already a Google Font, or not yet classified, identical to prior behavior in those cases).
+// role is optional, omitted, the lookup is family-keyed exactly as before.
 export function googleSafeFontFor(family, role) {
   const byRole = FONT_FALLBACKS_BY_ROLE[family];
   return (byRole && role && byRole[role]) ?? FONT_FALLBACKS[family] ?? family;

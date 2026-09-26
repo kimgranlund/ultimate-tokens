@@ -1,10 +1,10 @@
-# LLD — The App Shell (`HctApp`)
+# LLD: The App Shell (`HctApp`)
 
-> **Status:** as-built (descriptive LLD for the shipped shell — the *how* below is read from the
+> **Status:** as-built (descriptive LLD for the shipped shell, the *how* below is read from the
 > current source, not proposed).
-> **Governing spec:** `docs/reference/references/ui-plan.md` — the front-end plan. There is no
+> **Governing spec:** `docs/reference/references/ui-plan.md`, the front-end plan. There is no
 > separate numbered SPEC for the shell, so §0.1 assigns stable **`SPEC-R#`** handles to ui-plan's own
-> clauses (its **tasks T1–T9** and **Revision A** arrangement) — the IDs are new, the requirements are
+> clauses (its **tasks T1–T9** and **Revision A** arrangement), the IDs are new, the requirements are
 > not. Every component traces to a `SPEC-R#`. Engine/role contracts live in `knowledge-01…06` +
 > `data/role-table.json`.
 > **Source of record:** `src/ui/app.js` (the `HctApp` custom element: state, render dispatch, header,
@@ -12,8 +12,8 @@
 > pane bodies) · `src/ui/overlays/{drawer,settings,apply-gate}.js` (the overlays); both sets are mixed
 > onto the `HctApp` prototype (`mixinInto`, `app.js:2570`) ·
 > `src/ui/app-helpers.mjs` (`h` + the shared primitives) · `src/ui/styles.css` (the grid) ·
-> `src/ui/model.mjs` (`projectView` — the read-model each render consumes).
-> **Scope:** the shell — the frame, its regions, the render pipeline, and the state that routes them.
+> `src/ui/model.mjs` (`projectView`, the read-model each render consumes).
+> **Scope:** the shell, the frame, its regions, the render pipeline, and the state that routes them.
 > The *contents* of a region (the L\*×C graph, the 53-role table, the type specimen) are out of scope;
 > they are named where they mount and owned by their own sections.
 
@@ -26,18 +26,18 @@ hyperscript into **light DOM**. It has exactly two top-level views and forks bet
 render (`render`, `app.js:570`):
 
 ```
-render() ─┬─ this.view === "gallery" → renderGallery()   (the home / set browser — UI:T9)
-          └─ this.view === "editor"  → renderEditor()    (the creative-editor shell — UI:T1–T8)
+render() ─┬─ this.view === "gallery" → renderGallery()   (the home / set browser, UI:T9)
+          └─ this.view === "editor"  → renderEditor()    (the creative-editor shell, UI:T1–T8)
 ```
 
 The **editor shell** is the subject of this LLD. Its posture is *creating / configuring / analyzing*
-(UI §1), so it is the canonical creative-editor frame — **header + dual rail + canvas + footers** —
+(UI §1), so it is the canonical creative-editor frame, **header + dual rail + canvas + footers**,
 never a dashboard.
 
 One more axis crosses the whole editor: **`this.section` ∈ {color, typography, geometry}**. It is a
 single ui-session field that re-routes all three panes; the frame is invariant, the region *bodies*
 branch on it. A brand kit is one document with three composing systems surfaced as sections of one
-editor — the shell is what makes them one editor.
+editor, the shell is what makes them one editor.
 
 ### 0.1 Shell requirements (`SPEC-R#`)
 
@@ -60,7 +60,7 @@ Stable handles for the ui-plan clauses the shell realizes. These are the *what*;
 
 ---
 
-## 1. The frame — CSS grid (`renderEditor` `app.js:1344` · `.editor` `styles.css:369`)
+## 1. The frame: CSS grid (`renderEditor` `app.js:1344` · `.editor` `styles.css:369`)
 
 `renderEditor()` returns a `.editor` grid plus its overlay siblings (drawer, dialogs, toast). The grid
 is a fixed 3×3:
@@ -84,7 +84,7 @@ is a fixed 3×3:
 Collapsing a pane is a **class on `.editor`** that zeroes one column track (`toggleLeftPane` `app.js:1448` /
 `toggleRightPane` `app.js:1450`); the `.18s` transition on `grid-template-columns` animates it. The
 pane element stays in the DOM (`.left-pane` keeps its box, its padding/border zero out,
-`styles.css:502`) — collapse is layout,
+`styles.css:502`), collapse is layout,
 not teardown.
 
 ### 1.1 Editor shell wireframe
@@ -138,42 +138,42 @@ anchor. "Interface" is the method's contract, not its body.
 
 ### 2.1 Region responsibilities (the non-obvious contracts)
 
-- **LLD-C3 App-header** — brand (→ `toGallery`, keyboard-operable), the doc-name `<input>` (rename
+- **LLD-C3 App-header**: brand (→ `toGallery`, keyboard-operable), the doc-name `<input>` (rename
   coalesces into one undo step via `editDrag`, settles on `change`), the centered **section switcher**
   (a `.spacer` on each side keeps it centered), then the trailing cluster: undo · redo · theme · settings
   · New · **Export** (primary). The header is the one region a color drag deliberately does **not**
   touch (see §4.2) so the doc-name caret survives typing.
 
-- **LLD-C4 Section switcher** — the single `segmented()` tablist that writes `this.section`. `setSection`
+- **LLD-C4 Section switcher**: the single `segmented()` tablist that writes `this.section`. `setSection`
   (`:1434`) is the crossover point: on leaving `color` it **stashes** the pan/zoom viewport
   (`this._colorViewport`) and on return **restores** it; typography/geometry scenes are static, so it
   `fit()`s them; entering typography lazily injects the base type fonts (`ensureTypeFonts`). Every pane
   method (`renderLeftPane`, `renderCenter`, `renderRightPane`) branches on `this.section` first.
 
-- **LLD-C5 Left pane** — `<aside class=left-pane>` = a `.pane-label` (section label + selected-palette name
+- **LLD-C5 Left pane**: `<aside class=left-pane>` = a `.pane-label` (section label + selected-palette name
   + the open-state left toggle) over a **`.an-body`** wrapper. `.an-body` exists so `liveRefresh` can
   `replaceChildren` the analysis cards in place without disturbing the label or shell. Body branches:
   color → `analysisCards` (5 graphs), typography → `typeAnalysisCards` (4), geometry → `geomAnalysisCards`.
 
-- **LLD-C6 Center** — `.center` = `[canvas-header] + [canvas-area] + [canvas-footer]`, one triple per
+- **LLD-C6 Center**: `.center` = `[canvas-header] + [canvas-area] + [canvas-footer]`, one triple per
   section. **LLD-C6b canvas-area** wraps the pannable **`.canvas-scene`**, which holds the *entire* dataset
   (all ramps / the full specimen / the full size ramp) transformed as one unit. Table-shaped views
   (color "Mapping", and any "Both"/Compare mode) swap the pannable scene for a scrolling `.is-table`
   shell instead of pan/zoom.
 
-- **LLD-C7 Right pane** — `<aside class=right-pane>` = `.pane-head` (open-state right toggle + the inspector
+- **LLD-C7 Right pane**: `<aside class=right-pane>` = `.pane-head` (open-state right toggle + the inspector
   `segmented()` tabs) + **`.seg-body`** (`role=tabpanel`, the active panel) + **`.seg-example`** (a live
   component preview wired to the selected palette's roles, pinned below **every** tab). Color tabs:
   `[Palette │ Global │ Roles]`, plus `Story` only when `view.story` exists (the tab is dropped and the
   selection falls back to `palette` when absent). Typography/geometry return their own whole inspector
   (`renderTypeInspector` / `renderGeomInspector`).
 
-- **LLD-C8 App-footer** — a static shell of empty `<span>`s that `paintAppFooter` fills in place: enabled-
+- **LLD-C8 App-footer**: a static shell of empty `<span>`s that `paintAppFooter` fills in place: enabled-
   palette count · token count · theme · save state (`✓ saved` / `● unsaved`) · a right-aligned contrast
   warning (`⚠ k on-color < 4.5:1`). Painted by the full render **and** by `liveRefresh`, so counts track
   a drag without a re-render.
 
-- **LLD-C6a canvas-header (color)** — the collapsed-left toggle (when applicable) · the view segmented
+- **LLD-C6a canvas-header (color)**: the collapsed-left toggle (when applicable) · the view segmented
   `[Palettes · Scrims · Mapping · Radix]` · a stops-density `[Core · All]` segmented (hidden in Mapping
   and Radix) · a spacer · **Fit** · the unified **Mode** control `[Light · Dark · Both]` (Both =
   side-by-side Compare) · zoom −/readout/+.
@@ -184,17 +184,17 @@ anchor. "Interface" is the method's contract, not its body.
 
 State lives on the element instance. Two tiers, and the split is load-bearing:
 
-### 3.1 Persisted (the document — survives reload, undoable)
-- **`this.doc`** — the palette SET: `{ name, palettes[], type, geometry, … }`. Mutated only through
+### 3.1 Persisted (the document: survives reload, undoable)
+- **`this.doc`**: the palette SET: `{ name, palettes[], type, geometry, … }`. Mutated only through
   `editDrag`/`commitDrag` (undo/redo history). `projectView(this.doc)` (`model.mjs`) derives the
-  per-render read-model **`view`** (`{ palettes[], contrast[], story, … }`) — the shell never reads raw
+  per-render read-model **`view`** (`{ palettes[], contrast[], story, … }`), the shell never reads raw
   doc geometry, only `view`.
 
 ### 3.2 Ephemeral ui-session (routes the shell; **never persisted**)
 | Field | Values | Routes |
 |-------|--------|--------|
 | `this.view` | `gallery` \| `editor` | LLD-C1 top-level fork |
-| `this.section` | `color` \| `typography` \| `geometry` | LLD-C4 — all three panes |
+| `this.section` | `color` \| `typography` \| `geometry` | LLD-C4, all three panes |
 | `this.canvasView` | `palettes` \| `scrims` \| `mapping` \| `radix` | LLD-C6b color scene shape |
 | `this.stopsMode` | `core` \| `extended` | LLD-C6b ramp density |
 | `this.colorMode` | `light` \| `dark` \| `both` | LLD-C6 preview scheme / Compare |
@@ -206,7 +206,7 @@ State lives on the element instance. Two tiers, and the split is load-bearing:
 | `this.inFigma` | bool | env gate (disables web-only paths) |
 
 Rule of thumb: **anything that changes what you see but not what you'd export is ephemeral** and is set
-directly then `render()`ed — no undo entry, no persistence.
+directly then `render()`ed, no undo entry, no persistence.
 
 ---
 
@@ -231,7 +231,7 @@ static hint (`renderCanvasFooter`, `app.js:1886`) and is painted by `applyTransf
 canvas pointer handlers and `_liveRefreshNow` (`app.js:293`); each calls
 `paintCanvasFooter` (`app.js:1704`, `app.js:1837`, `app.js:326`).
 
-### 4.2 Live refresh (partial — during a continuous drag, `liveRefresh` `app.js:278` → `_liveRefreshNow` `app.js:293`)
+### 4.2 Live refresh (partial: during a continuous drag, `liveRefresh` `app.js:278` → `_liveRefreshNow` `app.js:293`)
 A slider/swatch drag must not full-render (it would blow away the active control's focus/caret). Instead
 `liveRefresh` surgically updates only what the drag changed, leaving the header, panes shell, and the
 active control untouched:
@@ -240,7 +240,7 @@ liveRefresh():
   if section !== "color": return         (type/geom have no live color-drag)
   if colorMode === "both": full render() (Compare's two columns rebuild wholesale)
   else:
-    • replace the CHILDREN of the existing .canvas-scene (keep the element — the transform lives on it)
+    • replace the CHILDREN of the existing .canvas-scene (keep the element, the transform lives on it)
     • replaceChildren the left rail's .an-body cards
     • paintCanvasFooter() + paintAppFooter()
   the drag's settle ('change') does one full render() to commit the undo step.
@@ -252,7 +252,7 @@ targets.
 `this.viewport = {x,y,zoom}` applied as an origin-**centered** transform on `.canvas-scene` (origin
 (0,0) = viewport center). Pointer-capture drag translates; a **4px drag threshold** distinguishes a pan
 from a row-select/click; wheel zooms about the cursor; `fit()` recenters to 100%. Only the color scene
-pans — its viewport is preserved across section switches (§2.1 LLD-C4); type/geom scenes are static and
+pans, its viewport is preserved across section switches (§2.1 LLD-C4); type/geom scenes are static and
 start fit.
 
 ### 4.4 Section switch (LLD-C4) & pane collapse (LLD-C9)
@@ -267,19 +267,19 @@ the toggle relocates (see §6).
 | Case | Where | Handling |
 |------|-------|----------|
 | **No palette enabled / empty set** | LLD-C6, LLD-C8 | `projectView` yields an empty `view.palettes`; footer paints `0 palettes`; canvas renders an empty scene (no throw). Export of an all-disabled set yields tokens-only JSON with a `$note` (engine-side). |
-| **Selected index out of range** | LLD-C5, LLD-C7 | `selectedIndex()` + `view.palettes[idx]` guarded; name falls back to `""`, cards render `—` empties (`an-empty`). |
+| **Selected index out of range** | LLD-C5, LLD-C7 | `selectedIndex()` + `view.palettes[idx]` guarded; name falls back to `""`, cards render `n/a` empties (`an-empty`). |
 | **`Story` tab absent** | LLD-C7 | `hasStory=false` → the tab is not pushed and a `segment==="story"` selection falls back to `palette` (`hasStory`, `app.js:1932`). |
-| **Both/Compare + live drag** | LLD-C6b, §4.2 | `liveRefresh` bails to a full `render()` — the two scheme columns can't be patched in place. |
+| **Both/Compare + live drag** | LLD-C6b, §4.2 | `liveRefresh` bails to a full `render()`, the two scheme columns can't be patched in place. |
 | **Render mid-open-drawer** | LLD-C10, §4.1 | Fresh closed `<dialog>` each render; the open drawer is re-`showModal()`'d post-mount so it survives. |
 | **Focus/caret during a drag** | LLD-C3, §4.2 | Partial `liveRefresh` never rebuilds the header or the active control; the doc-name `<input>` keeps focus + caret while typing (rename settles on `change`). |
-| **Collapsed pane has no in-pane toggle** | LLD-C9 | The toggle is the *same* button rendered in two places by state: in the pane header while open, and popped to the canvas-header's edge once collapsed — so there is always an affordance to reopen. |
+| **Collapsed pane has no in-pane toggle** | LLD-C9 | The toggle is the *same* button rendered in two places by state: in the pane header while open, and popped to the canvas-header's edge once collapsed, so there is always an affordance to reopen. |
 | **In Figma (no web-only APIs)** | LLD-C1, LLD-C3 | `this.inFigma` gates: gallery probes the Figma file once (`probeFigmaProject`); license activation is refused with a message ("available in the web app"); runtime Google-Fonts loading is disabled (base faces only). |
 | **Typography font not bundled** | LLD-C4, LLD-C6b | Only 4 base faces are self-hosted; entering typography injects the rest from Google Fonts in the web app (`ensureTypeFonts`); if a face never loads the specimen falls back to a generic (`genericFor`), exports are unaffected. |
 | **System scheme changes while `system` selected** | LLD-C1 | A `prefers-color-scheme` listener re-`render()`s when `theme` or `canvasTheme` is `system` (`app.js:172`). |
 
 ---
 
-## 6. Wireframes — key states
+## 6. Wireframes: key states
 
 **Section = Typography** (same frame; the three region *bodies* swap):
 ```
@@ -299,7 +299,7 @@ the toggle relocates (see §6).
 │              │ canvas-area / scene                                       │0│
 ```
 
-**Gallery** (`this.view==="gallery"`, `renderGallery` :887 — the other top-level fork):
+**Gallery** (`this.view==="gallery"`, `renderGallery` :887, the other top-level fork):
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
 │ Ultimate Tokens                        [⤓ Project] [⤒ Import] [+ New]  ◐   │
@@ -319,17 +319,17 @@ the toggle relocates (see §6).
 The shell mounts center-out; to extend it, follow the same order so each step is independently
 verifiable against `npm test` (the headless-DOM shim, lettered groups):
 
-1. **Frame** (LLD-C2) — the `.editor` grid + overlay siblings. Verify: grid areas resolve; overlays are
+1. **Frame** (LLD-C2), the `.editor` grid + overlay siblings. Verify: grid areas resolve; overlays are
    closed `<dialog>`s.
-2. **State axes** (§3.2) — add the ui-session field + its default in the constructor; it must be
+2. **State axes** (§3.2), add the ui-session field + its default in the constructor; it must be
    ephemeral (never written to `doc`).
-3. **Header + switcher** (LLD-C3/LLD-C4) — if adding a *section*, extend `sectionSwitcher`'s list and
+3. **Header + switcher** (LLD-C3/LLD-C4), if adding a *section*, extend `sectionSwitcher`'s list and
    `setSection`'s viewport/font handling.
-4. **Panes** (LLD-C5/LLD-C6/LLD-C7) — add the `this.section` branch in each of `renderLeftPane`, `renderCenter`,
+4. **Panes** (LLD-C5/LLD-C6/LLD-C7), add the `this.section` branch in each of `renderLeftPane`, `renderCenter`,
    `renderRightPane`; a new section needs all three or it renders a stale sibling.
-5. **Paint-in-place hooks** (LLD-C6c/LLD-C8) — if the region shows live counts, wire it into `paintAppFooter` /
+5. **Paint-in-place hooks** (LLD-C6c/LLD-C8), if the region shows live counts, wire it into `paintAppFooter` /
    `paintCanvasFooter` **and** the `liveRefresh` path, not just the full render.
-6. **Shim assertions** — bump the lettered-group count literals in `test/ui/headless-boot.mjs` when a
+6. **Shim assertions**: bump the lettered-group count literals in `test/ui/headless-boot.mjs` when a
    region/tab/step count changes; `querySelector` there takes a **single class only** and elements
    expose no `id`/`textContent` (match via `getAttribute`/`txtOf`).
 

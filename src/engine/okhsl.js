@@ -1,11 +1,11 @@
-// okhsl.js — OKHSL ⇄ sRGB (Björn Ottosson's perceptual HSL over OKLab).
+// okhsl.js, OKHSL ⇄ sRGB (Björn Ottosson's perceptual HSL over OKLab).
 //
 // Ported VERBATIM from the canonical reference (bottosson.github.io/posts/colorpicker/,
-// misc/colorpicker/colorconversion.js) — the magic constants are load-bearing and copied exactly.
+// misc/colorpicker/colorconversion.js), the magic constants are load-bearing and copied exactly.
 // OKHSL is gamut-BIJECTIVE: for a given (hue, lightness), saturation s=1 lands exactly on the sRGB
 // gamut boundary, and a fixed (s, l) reads as the same perceived colorfulness across hue. That is the
 // property that lets palettes harmonize regardless of hue (a blue and a yellow at the same s/l feel
-// equally saturated) — the principled version of the relChroma "gamut" basis.
+// equally saturated), the principled version of the relChroma "gamut" basis.
 //
 // Boundary conventions for THIS repo: hue in DEGREES (converted to Ottosson's [0,1] turns inside),
 // RGB as 0-255 integers (the reference works in 0..1). Pure, dependency-free, deterministic.
@@ -143,7 +143,7 @@ function getCs(L, a, b) {
 
 const clamp255 = (v) => Math.round(Math.min(255, Math.max(0, v)));
 
-// okhslToRgb(hueDeg, s, l) — OKHSL (hue °, saturation 0..1, lightness 0..1) → [r,g,b] 0..255 ints.
+// okhslToRgb(hueDeg, s, l), OKHSL (hue °, saturation 0..1, lightness 0..1) → [r,g,b] 0..255 ints.
 export function okhslToRgb(hueDeg, s, l) {
   if (l >= 1) return [255, 255, 255];
   if (l <= 0) return [0, 0, 0];
@@ -162,7 +162,7 @@ export function okhslToRgb(hueDeg, s, l) {
   return [clamp255(255 * srgbTransfer(rgb[0])), clamp255(255 * srgbTransfer(rgb[1])), clamp255(255 * srgbTransfer(rgb[2]))];
 }
 
-// oklchToRgb(L, C, H) — OKLCH (L 0..1, C ≥0, H degrees) → [r,g,b] 0..255 ints, gamut-clamped.
+// oklchToRgb(L, C, H), OKLCH (L 0..1, C ≥0, H degrees) → [r,g,b] 0..255 ints, gamut-clamped.
 // Used to place/seed RETAINED key colors stored as OKLCH (less lossy than an 8-bit hex source).
 export function oklchToRgb(L, C, H) {
   if (L >= 1) return [255, 255, 255];
@@ -172,7 +172,7 @@ export function oklchToRgb(L, C, H) {
   return [clamp255(255 * srgbTransfer(rgb[0])), clamp255(255 * srgbTransfer(rgb[1])), clamp255(255 * srgbTransfer(rgb[2]))];
 }
 
-// rgbToOklchHue([r,g,b]) — the OKLCH HUE (degrees) of an sRGB color. The tonal engine uses it to anchor
+// rgbToOklchHue([r,g,b]), the OKLCH HUE (degrees) of an sRGB color. The tonal engine uses it to anchor
 // an OKLCH-hue palette DIRECTLY in the space its perceptual ramp renders (OKHSL→sRGB→OKLCH), landing the
 // key stop on the set hue without a CAM16 round-trip. (Same OKLab basis as rgbToOkhsl below.)
 export function rgbToOklchHue([r, g, b]) {
@@ -190,7 +190,7 @@ export function rgbToOklabChroma([r, g, b]) {
   return Math.hypot(lab[1], lab[2]);
 }
 
-// rgbToOkhsl([r,g,b]) — inverse. Returns { h: degrees, s: 0..1, l: 0..1 }.
+// rgbToOkhsl([r,g,b]), inverse. Returns { h: degrees, s: 0..1, l: 0..1 }.
 export function rgbToOkhsl([r, g, b]) {
   const lab = linearSrgbToOklab(srgbTransferInv(r / 255), srgbTransferInv(g / 255), srgbTransferInv(b / 255));
   const C = Math.sqrt(lab[1] * lab[1] + lab[2] * lab[2]);

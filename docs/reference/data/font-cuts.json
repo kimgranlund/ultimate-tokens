@@ -1,5 +1,5 @@
 {
-  "$comment": "Real cut inventory per font family, hand-curated — the face-existence gate (test/engine/categories.mjs, per docs/reference/typography/intended-use.md Layer 2) checks preset styleName/weights ONLY against families listed here; an unlisted family is unresolvable and skipped. Static families: cut names generate as width × weight (+ Italic). Variable families: any weight inside the range is real. Verify against the actual name tables (fontTools) before adding a family — assumed cuts are how the GT America Semi-bold defect shipped (#402).",
+  "$comment": "Real cut inventory per font family, hand-curated, the face-existence gate (test/engine/categories.mjs, per docs/reference/typography/intended-use.md Layer 2) checks preset styleName/weights ONLY against families listed here; an unlisted family is unresolvable and skipped. Static families: cut names generate as width × weight (+ Italic). Variable families: any weight inside the range is real. Verify against the actual name tables (fontTools) before adding a family, assumed cuts are how the GT America Semi-bold defect shipped (#402).",
   "GT America": {
     "widths": ["", "Condensed", "Compressed", "Extended", "Expanded"],
     "weights": { "Thin": 100, "Ultra Light": 200, "Light": 300, "Regular": 400, "Medium": 500, "Bold": 700, "Black": 900 },
@@ -15,7 +15,7 @@
   "Source Serif 4": { "variable": [200, 900] },
   "JetBrains Mono": { "variable": [100, 800] },
 
-  "$comment2": "Below: added 2026-07-31 (#418) — well-documented Google Fonts / open-source families the preset revision program (epic #407) verified and cited repeatedly across categories. Variable ranges and static weight sets per each family's published Google Fonts metadata; none of these carry a styleName claim anywhere in the corpus, so italics coverage was left unclaimed.",
+  "$comment2": "Below: added 2026-07-31 (#418), well-documented Google Fonts / open-source families the preset revision program (epic #407) verified and cited repeatedly across categories. Variable ranges and static weight sets per each family's published Google Fonts metadata; none of these carry a styleName claim anywhere in the corpus, so italics coverage was left unclaimed.",
   "Oswald": { "variable": [200, 700] },
   "Cormorant": { "variable": [300, 700] },
   "Cormorant Garamond": { "variable": [300, 700] },
@@ -43,7 +43,7 @@
   "Clarendon URW": { "widths": [""], "weights": { "Light": 300, "Regular": 400, "Medium": 500, "Bold": 700, "Extra Bold": 800 } },
   "Linotype Clarendon": { "widths": [""], "weights": { "Light": 300, "Roman": 400, "Bold": 700 } },
 
-  "$comment3": "Below: added 2026-07-31 — independent digital foundries (Klim, Lineto, Pangram Pangram), each ONE canonical release with no competing-lineage ambiguity (unlike the vintage-revival Clarendon/Trade-Gothic class above). Verified against each foundry's own product page; entries were DROPPED rather than guessed where the foundry didn't publish numeric weight-class values and the style names weren't unambiguous standard OpenType vocabulary (GT Sectra, GT Pressura, GT Walsheim — 'Book'/'Text' aren't a universal number; Dalton Maag's Aktiv Grotesk and Type Type's TT Norms Pro similarly withheld for the same reason). GT America/GT America Mono above are ALSO Grilli Type — already represented.",
+  "$comment3": "Below: added 2026-07-31, independent digital foundries (Klim, Lineto, Pangram Pangram), each ONE canonical release with no competing-lineage ambiguity (unlike the vintage-revival Clarendon/Trade-Gothic class above). Verified against each foundry's own product page; entries were DROPPED rather than guessed where the foundry didn't publish numeric weight-class values and the style names weren't unambiguous standard OpenType vocabulary (GT Sectra, GT Pressura, GT Walsheim, 'Book'/'Text' aren't a universal number; Dalton Maag's Aktiv Grotesk and Type Type's TT Norms Pro similarly withheld for the same reason). GT America/GT America Mono above are ALSO Grilli Type, already represented.",
   "Söhne": { "widths": [""], "weights": { "Extraleicht": 200, "Leicht": 300, "Buch": 400, "Kräftig": 500, "Halbfett": 600, "Dreiviertelfett": 700, "Fett": 800, "Extrafett": 900 }, "italics": true },
   "Söhne Mono": { "widths": [""], "weights": { "Extraleicht": 200, "Leicht": 300, "Buch": 400, "Kräftig": 500, "Halbfett": 600, "Dreiviertelfett": 700, "Fett": 800, "Extrafett": 900 }, "italics": true },
   "Tiempos Text": { "widths": [""], "weights": { "Regular": 400, "Medium": 500, "Semibold": 600, "Bold": 700 }, "italics": true },

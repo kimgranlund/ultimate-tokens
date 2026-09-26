@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// verify.mjs — ui-persistence validation adapter (CRITIC side; deny-on-write to the advancer).
+// verify.mjs, ui-persistence validation adapter (CRITIC side; deny-on-write to the advancer).
 import * as U from "../../src/ui/persist.js";
 import * as X from "../../src/engine/exports.js";   // theme-invariance tests the exporters against state.theme
 import * as Ty from "../../src/engine/type.mjs";     // allowlist-parity: canonical TYPE_TREATMENTS ids + voice set
@@ -17,12 +17,12 @@ const inDomainState = () => {
   const n = 1 + Math.floor(rnd() * 4);
   const palettes = Array.from({ length: n }, (_, i) => {
     const p = { name: "P" + i, hue: rnd() * 360, chroma: rnd() * 100, skew: -100 + rnd() * 200, lift: -40 + rnd() * 80, hueShift: -60 + rnd() * 120, hueSameDir: rnd() > 0.5, on: rnd() > 0.3 };
-    if (rnd() > 0.5) p.cuspPull = rnd() * 100; // OPTIONAL per-palette override — must round-trip when present, and stay absent when not
-    // intensity: REMOVED from the palette domain entirely (SPEC 0.3.0 REQ-002/010) — no in-domain
+    if (rnd() > 0.5) p.cuspPull = rnd() * 100; // OPTIONAL per-palette override, must round-trip when present, and stay absent when not
+    // intensity: REMOVED from the palette domain entirely (SPEC 0.3.0 REQ-002/010), no in-domain
     // fuzzed palette carries it any more; the field's own drop+report is covered separately below.
-    if (rnd() > 0.5) p.primeChroma = rnd() * 100; // OPTIONAL per-palette primeChroma override (REQ-010) — same absent/round-trip shape as cuspPull
-    if (rnd() > 0.5) p.group = pick(["material", "brand", "system", "data"]); // OPTIONAL canvas group (ticket #556) — same absent/round-trip shape as cuspPull/primeChroma
-    // anchor / sourceAnchor (ticket #681, U1) — OPTIONAL, well-formed "#RRGGBB" only (an in-domain
+    if (rnd() > 0.5) p.primeChroma = rnd() * 100; // OPTIONAL per-palette primeChroma override (REQ-010), same absent/round-trip shape as cuspPull
+    if (rnd() > 0.5) p.group = pick(["material", "brand", "system", "data"]); // OPTIONAL canvas group (ticket #556), same absent/round-trip shape as cuspPull/primeChroma
+    // anchor / sourceAnchor (ticket #681, U1), OPTIONAL, well-formed "#RRGGBB" only (an in-domain
     // fuzzed value never exercises the malformed-drop path; that's the dedicated clamp block above).
     if (rnd() > 0.5) { const hex = "#" + Math.floor(rnd() * 0x1000000).toString(16).padStart(6, "0").toUpperCase(); p.anchor = hex; p.sourceAnchor = hex; }
     return p;
@@ -35,10 +35,10 @@ const inDomainState = () => {
   // the modeKey suffix; values are in-domain integers so they must round-trip byte-for-byte when present.
   const tyTok = {}; for (const [k, v] of [["Body|MD|base", 40], ["Display|XL|base", 90], ["Label|SM|base", 13]]) if (rnd() > 0.5) tyTok[k] = v;
   const geTok = {}; for (const [k, v] of [["MD|base", 30], ["2XL|base", 72], ["XS|base", 18]]) if (rnd() > 0.5) geTok[k] = v;
-  // paletteGroups (SPEC 0.3.0, ticket #559) — the four canvas groups' own baseChroma/primeChroma, a
+  // paletteGroups (SPEC 0.3.0, ticket #559), the four canvas groups' own baseChroma/primeChroma, a
   // REQUIRED, always-present field (like lmin/lmax/damp above), not an OPTIONAL per-palette one like
-  // cuspPull/primeChroma/group above. `data.locked` is never user-writable — persist.js always
-  // stamps it `true` regardless of input — so an in-domain S must already carry it for round-trip
+  // cuspPull/primeChroma/group above. `data.locked` is never user-writable, persist.js always
+  // stamps it `true` regardless of input, so an in-domain S must already carry it for round-trip
   // identity.
   const paletteGroups = Object.fromEntries(
     ["material", "brand", "system", "data"].map((g) => [g, { baseChroma: rnd() * 100, primeChroma: rnd() * 100, ...(g === "data" ? { locked: true } : {}) }]),
@@ -67,7 +67,7 @@ if (hyd2.palettes[0].hue !== 360) FAIL("clamp", `palette hue 410 -> ${hyd2.palet
 if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "clamping palette hue disturbed sibling chroma");
 // intensity controls (REQ-010): baseIntensity/primeChroma (the two GLOBAL fallbacks) clamp alone;
 // the optional per-palette `primeChroma` override clamps alone when present and stays absent when
-// not set. There is no per-palette ramp-chroma override any more (REQ-002) — `palette.intensity` is
+// not set. There is no per-palette ramp-chroma override any more (REQ-002), `palette.intensity` is
 // removed from the domain entirely; its drop+report is covered separately below (dropped-keys).
 {
   const mut3 = JSON.parse(JSON.stringify(base)); mut3.baseIntensity = 140; mut3.primeChroma = -20; // out of [0,100]
@@ -77,9 +77,9 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   for (const k of ["curve", "tension", "lmin", "damp", "hueSpace", "selected"]) if (!deepEq(hyd3[k], base[k])) FAIL("clamp", `clamping baseIntensity/primeChroma disturbed ${k}`);
 
   // a stray palette.intensity is dropped silently by the allowlist AND reported loudly (REQ-011,
-  // TKT-0455) — covered together with keyIntensity's own drop test in the dropped-keys group below.
+  // TKT-0455), covered together with keyIntensity's own drop test in the dropped-keys group below.
   const withStrayIntensity = JSON.parse(JSON.stringify(base)); withStrayIntensity.palettes[0].intensity = 55;
-  if ("intensity" in U.hydrate(U.serialize(withStrayIntensity)).palettes[0]) FAIL("clamp", "palette.intensity must never survive hydrate (REQ-002/010 — the field no longer exists in any group)");
+  if ("intensity" in U.hydrate(U.serialize(withStrayIntensity)).palettes[0]) FAIL("clamp", "palette.intensity must never survive hydrate (REQ-002/010, the field no longer exists in any group)");
 
   const withPrimeChroma = JSON.parse(JSON.stringify(base)); withPrimeChroma.palettes[0].primeChroma = 240; // out of [0,100]
   const hydPC = U.hydrate(U.serialize(withPrimeChroma));
@@ -90,7 +90,7 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   if ("primeChroma" in U.hydrate(U.serialize(noPrimeChroma)).palettes[0]) FAIL("clamp", "absent palette.primeChroma must stay absent (identity gate)");
 }
 // canvas group (ticket #556): an explicit valid `group` round-trips as-is; an invalid one is
-// dropped (left absent) rather than defaulted here — model.mjs's paletteGroup() is the single
+// dropped (left absent) rather than defaulted here, model.mjs's paletteGroup() is the single
 // place the default-by-name rule is computed, never persist.js.
 {
   const withGroup = JSON.parse(JSON.stringify(base)); withGroup.palettes[0].group = "system";
@@ -103,9 +103,9 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   if ("group" in hydBad.palettes[0]) FAIL("clamp", `an invalid palette.group must be DROPPED (left absent), not defaulted or kept (got ${JSON.stringify(hydBad.palettes[0].group)})`);
 
   const noGroup = JSON.parse(JSON.stringify(base)); delete noGroup.palettes[0].group;
-  if ("group" in U.hydrate(U.serialize(noGroup)).palettes[0]) FAIL("clamp", "absent palette.group must stay absent (identity gate) — the default is computed on read, never stamped by hydrate");
+  if ("group" in U.hydrate(U.serialize(noGroup)).palettes[0]) FAIL("clamp", "absent palette.group must stay absent (identity gate), the default is computed on read, never stamped by hydrate");
 
-  // a doc with NO group data at ALL (every palette) still gets sensible defaults on load — via
+  // a doc with NO group data at ALL (every palette) still gets sensible defaults on load, via
   // model.mjs's paletteGroup(), not a persist.js-side default.
   const noGroupsDoc = { palettes: [
     { name: "Neutral", hue: 267, chroma: 29, on: true },
@@ -118,10 +118,10 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
 // anchor / sourceAnchor (ticket #681, U1; case-folding fixed per the U1 review's F3, 2026-09-18): a
 // well-formed "#RRGGBB" round-trips as-is; a LOWERCASE well-formed hex is NORMALIZED to uppercase
 // (matching src/engine/prime.mjs's own ANCHOR_HEX, which accepts and normalizes the same way, so the
-// engine and persistence no longer disagree on whether a lowercase anchor is valid — an authored Q5
+// engine and persistence no longer disagree on whether a lowercase anchor is valid, an authored Q5
 // spec JSON or a hand-edited import spelling a valid hex in lowercase used to render correctly for
 // the live session, then silently lose the anchor on the next save/reload); anything else malformed
-// (wrong length, no "#", non-hex characters) is DROPPED (left absent), same shape as `group` above —
+// (wrong length, no "#", non-hex characters) is DROPPED (left absent), same shape as `group` above,
 // persist.js's clampHex has no "nearest valid hex" to clamp a truly malformed value toward.
 {
   const withAnchor = JSON.parse(JSON.stringify(base)); withAnchor.palettes[0].anchor = "#0C5DCC"; withAnchor.palettes[0].sourceAnchor = "#0C5DCC";
@@ -146,9 +146,9 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
 }
 // paletteGroups (SPEC 0.3.0, ticket #559): the four canvas groups' own baseChroma/primeChroma.
 // Unlike palette.group above (an OPTIONAL, absent-stays-absent field), `paletteGroups` is REQUIRED
-// and default-filled — a doc missing it entirely (or missing one group, or one field) hydrates
+// and default-filled, a doc missing it entirely (or missing one group, or one field) hydrates
 // straight to GROUP_DEFAULTS, same shape as lmin/lmax/damp. `data.locked` is never user-writable.
-// The key is `paletteGroups`, never `groups` (Risk 0c — `story.groups` owns that name already).
+// The key is `paletteGroups`, never `groups` (Risk 0c, `story.groups` owns that name already).
 {
   // per-field clamp: an out-of-domain group field clamps alone; every sibling (the other field on
   // the SAME group, and every OTHER group) is preserved byte-for-byte.
@@ -159,7 +159,7 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   for (const g of ["brand", "system", "data"]) if (!deepEq(hydMutG.paletteGroups[g], base.paletteGroups[g])) FAIL("clamp", `clamping paletteGroups.material.baseChroma disturbed paletteGroups.${g}`);
 
   // a doc predating this feature (no `paletteGroups` at all) hydrates straight to the ratified
-  // defaults — Material 30/60, Brand/System 100/100, Data 100/100 locked — no migration step, just
+  // defaults, Material 30/60, Brand/System 100/100, Data 100/100 locked, no migration step, just
   // the same absent-field-hydrates-to-a-sensible-default shape lmin/lmax/damp already use.
   const noGroupsAtAll = { palettes: base.palettes };
   const hydNoGroupsAtAll = U.hydrate(U.serialize(noGroupsAtAll));
@@ -207,7 +207,7 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   if (hydBoth.primeChroma !== 90) FAIL("schema-rename", `v3 rename never-clobber: primeChroma ${hydBoth.primeChroma}, want 90 (the doc's own value, not the stale keyIntensity)`);
   if ("keyIntensity" in hydBoth) FAIL("schema-rename", "v3 rename never-clobber: keyIntensity must not survive onto the hydrated state");
 
-  // a doc already at schemaVersion 3 (or later) predates no rename — an absent field defaults as usual.
+  // a doc already at schemaVersion 3 (or later) predates no rename, an absent field defaults as usual.
   const atV3 = { schemaVersion: 3, palettes: base.palettes };
   const hydV3 = U.hydrate(atV3);
   if (hydV3.primeChroma !== 100) FAIL("schema-rename", `v3 snapshot with absent field -> primeChroma ${hydV3.primeChroma}, want domain default 100`);
@@ -222,17 +222,17 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   if (!hydWI[U.DROPPED_KEYS].some((d) => d.facet === "palette" && d.key === "Primary.intensity")) FAIL("schema-rename", `EX-9 v4: palette.intensity must be reported in DROPPED_KEYS, named by palette (got ${JSON.stringify(hydWI[U.DROPPED_KEYS])})`);
   const wantDefaults4 = { material: { baseChroma: 30, primeChroma: 60 }, brand: { baseChroma: 100, primeChroma: 100 }, system: { baseChroma: 100, primeChroma: 100 }, data: { baseChroma: 100, primeChroma: 100, locked: true } };
   if (!deepEq(hydWI.paletteGroups, wantDefaults4)) FAIL("schema-rename", `EX-9 v4: paletteGroups must default-fill to the REQ-001 ratified defaults, got ${JSON.stringify(hydWI.paletteGroups)}`);
-  if ("group" in hydWI.palettes[0]) FAIL("schema-rename", "EX-9 v4: palette.group must NOT be written by migration — it stays absent (derive-on-read)");
+  if ("group" in hydWI.palettes[0]) FAIL("schema-rename", "EX-9 v4: palette.group must NOT be written by migration, it stays absent (derive-on-read)");
 }
-// export-format prefs (doc.export = { unit, colorPrefix, … }) — each valid key round-trips; absent stays
-// absent; invalid keys drop; an all-invalid object drops the whole `export`. (colorFormat was REMOVED —
+// export-format prefs (doc.export = { unit, colorPrefix, … }), each valid key round-trips; absent stays
+// absent; invalid keys drop; an all-invalid object drops the whole `export`. (colorFormat was REMOVED,
 // Download-All now emits BOTH css-hex/ and css-oklch/, so a legacy colorFormat key is simply dropped.)
 {
   const both = JSON.parse(JSON.stringify(base)); both.export = { unit: "rem", colorPrefix: "brand" };
   const r = U.hydrate(U.serialize(both)).export;
   if (!r || r.unit !== "rem" || r.colorPrefix !== "brand") FAIL("export", `doc.export {unit,colorPrefix} did not round-trip (got ${JSON.stringify(r)})`);
   if ("export" in U.hydrate(U.serialize(base))) FAIL("export", "absent export must stay absent (identity gate)");
-  // a legacy/unknown colorFormat key is ignored — never re-appears; the valid `unit` is kept.
+  // a legacy/unknown colorFormat key is ignored, never re-appears; the valid `unit` is kept.
   const legacy = JSON.parse(JSON.stringify(base)); legacy.export = { unit: "rem", colorFormat: "oklch" };
   const lr = U.hydrate(U.serialize(legacy)).export;
   if (!lr || lr.unit !== "rem" || "colorFormat" in lr) FAIL("export", `a legacy colorFormat key must drop, keeping unit (got ${JSON.stringify(lr)})`);
@@ -250,7 +250,7 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   if (U.hydrate(U.serialize(junk)).export.colorPrefix !== "md-sys") FAIL("export", `colorPrefix must sanitize to a legal ident core (got ${JSON.stringify(U.hydrate(U.serialize(junk)).export)})`);
   const dig = JSON.parse(JSON.stringify(base)); dig.export = { colorPrefix: "3x" };
   if (U.hydrate(U.serialize(dig)).export.colorPrefix !== "c3x") FAIL("export", "a leading-digit colorPrefix must be repaired (CSS idents can't start with a digit)");
-  // typePrefix (default "type" drops) + geomPrefix (default "" absent) — the type/geometry naming scheme.
+  // typePrefix (default "type" drops) + geomPrefix (default "" absent), the type/geometry naming scheme.
   const sch = JSON.parse(JSON.stringify(base)); sch.export = { typePrefix: "md-sys-typescale", geomPrefix: "md-sys" };
   const rs = U.hydrate(U.serialize(sch)).export;
   if (rs.typePrefix !== "md-sys-typescale" || rs.geomPrefix !== "md-sys") FAIL("export", `type/geom prefixes must round-trip (got ${JSON.stringify(rs)})`);
@@ -258,10 +258,10 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   if ("export" in U.hydrate(U.serialize(dflt))) FAIL("export", "default typePrefix 'type' + empty geomPrefix must drop (identity gate)");
 }
 
-// clamp-to-default hydrator would fail the above (it discards in-domain values) — that's the anti-hack
+// clamp-to-default hydrator would fail the above (it discards in-domain values), that's the anti-hack
 
 // ── hpg-persistence-field-default: a doc PREDATING the differential-damping fields hydrates
-//    to the legacy-equivalent defaults (1.5/0/0) — the 0.6 byte-unchanged-reload promise ─────
+//    to the legacy-equivalent defaults (1.5/0/0), the 0.6 byte-unchanged-reload promise ─────
 {
   const canon = inDomainState();
   canon.dampCurve = 1.5; canon.dampAmp = 0; canon.dampBias = 0;     // explicit legacy defaults
@@ -298,15 +298,15 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   const Rf0 = U.hydrate(U.serialize({ ...inDomainState(), type: { treatment: "product", bodyBase: 16 } }));
   if ("fonts" in Rf0.type) FAIL("type-fonts", "an absent fonts override must NOT materialize a fonts key (round-trip identity)");
   // per-voice shaping overrides round-trip; unknown voices drop; out-of-range fields clamp. `ratio` is
-  // RETIRED (2026-07-13 — size is now a fixed table, not base×ratio^n) and no longer a recognized field.
+  // RETIRED (2026-07-13, size is now a fixed table, not base×ratio^n) and no longer a recognized field.
   const Rv = U.hydrate(U.serialize({ ...inDomainState(), type: { treatment: "product", bodyBase: 16, voices: { Body: { weight: 600, leading: 1.8, ratio: 1.3, tracking: 0.01 }, Bogus: { weight: 500 }, Display: { weight: 99999 } } } }));
   if (!deepEq(Rv.type.voices.Body, { weight: 600, leading: 1.8, tracking: 0.01 })) FAIL("type-voices", `type.voices.Body did not round-trip (and 'ratio' should be silently dropped, not a recognized field): ${JSON.stringify(Rv.type.voices.Body)}`);
   if ("Bogus" in Rv.type.voices) FAIL("type-voices", "an unknown voice name must drop");
   if (Rv.type.voices.Display.weight !== 1000) FAIL("type-voices", `weight 99999 should clamp to 1000, got ${Rv.type.voices.Display.weight}`);
   // SIBLING WEIGHTS round-trip: valid entries survive (name trimmed/capped, weight clamped); invalid drop;
-  // an ABSENT list never materializes a weights key (the hydrate identity gate) — but an EXPLICIT empty
+  // an ABSENT list never materializes a weights key (the hydrate identity gate), but an EXPLICIT empty
   // array `weights: []` DOES materialize (as `[]`), since it's a deliberate opt-out (typeScale treats
-  // undefined vs [] differently: undefined auto-populates via siblingWeightDefaults, [] stays bare) —
+  // undefined vs [] differently: undefined auto-populates via siblingWeightDefaults, [] stays bare),
   // dropping it here would silently un-opt-out a voice on the very next hydrate (found live via a
   // real-font preset's Display voice, whose only real weight left no real sibling to offer).
   const Rw = U.hydrate(U.serialize({ ...inDomainState(), type: { treatment: "product", bodyBase: 16, voices: { Display: { weights: [{ name: "Bold", weight: 700 }, { name: "  Medium ", weight: 99999 }, { name: "", weight: 500 }, { weight: 400 }] }, Body: { weights: [] } } } }));
@@ -349,7 +349,7 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   if ("tokenOverrides" in D.type) FAIL("token-overrides", "an all-invalid type tokenOverrides must hydrate ABSENT (not an empty object)");
   if ("tokenOverrides" in D.geometry) FAIL("token-overrides", "an all-invalid geom tokenOverrides must hydrate ABSENT (not an empty object)");
 
-  // MALFORMED keys are DROPPED defensively (type requires 3 "|"-segments, geom 2, non-empty modeKey) — a
+  // MALFORMED keys are DROPPED defensively (type requires 3 "|"-segments, geom 2, non-empty modeKey), a
   // valid sibling key survives, proving only the junk is stripped (forward-safe persisted maps).
   const M = U.hydrate(U.serialize({ ...inDomainState(),
     type: { treatment: "product", bodyBase: 16, tokenOverrides: { "Body|MD|base": 40, "Body|MD": 30, "too|many|parts|here": 22, "Body|MD|": 18 } },
@@ -357,7 +357,7 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   if (!deepEq(M.type.tokenOverrides, { "Body|MD|base": 40 })) FAIL("token-overrides", `malformed type keys not dropped (kept only the well-formed): ${JSON.stringify(M.type.tokenOverrides)}`);
   if (!deepEq(M.geometry.tokenOverrides, { "MD|base": 30 })) FAIL("token-overrides", `malformed geom keys not dropped (kept only the well-formed): ${JSON.stringify(M.geometry.tokenOverrides)}`);
 
-  // ABSENT stays absent — a config without tokenOverrides round-trips identically (the identity gate).
+  // ABSENT stays absent, a config without tokenOverrides round-trips identically (the identity gate).
   const A = U.hydrate(U.serialize({ ...inDomainState(), type: { treatment: "product", bodyBase: 16 }, geometry: { treatment: "comfortable", baseHeight: 28 } }));
   if ("tokenOverrides" in A.type || "tokenOverrides" in A.geometry) FAIL("token-overrides", "absent tokenOverrides must stay absent after hydrate");
 }
@@ -406,7 +406,7 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   // serialize() always stamps the current schemaVersion.
   const stamped = U.serialize(inDomainState());
   if (stamped.schemaVersion !== U.CURRENT_SCHEMA_VERSION) FAIL("schema-rename", `serialize() must stamp schemaVersion ${U.CURRENT_SCHEMA_VERSION}, got ${JSON.stringify(stamped.schemaVersion)}`);
-  // schemaVersion is a bookkeeping field for hydrate's rename maps, NOT part of the runtime State — it
+  // schemaVersion is a bookkeeping field for hydrate's rename maps, NOT part of the runtime State, it
   // must never leak into hydrate()'s return value (would break the roundtrip-identity gate elsewhere).
   if ("schemaVersion" in U.hydrate(stamped)) FAIL("schema-rename", "hydrate() must not carry schemaVersion into the returned State");
 
@@ -441,7 +441,7 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   if (!deepEq(U.hydrate(resaved).type.voices, v)) FAIL("schema-rename", "a doc already on the current schemaVersion must hydrate identically on a second pass (no double-rename)");
 
   // COLLISION: a legacy doc that (implausibly, but possibly, e.g. hand-edited) carries BOTH the old
-  // AND the new key — the already-current new-name override must NOT be clobbered by the stale old one.
+  // AND the new key, the already-current new-name override must NOT be clobbered by the stale old one.
   const collideDoc = { ...U.serialize(inDomainState()), type: { treatment: "product", bodyBase: 16, voices: { Heading: { weight: 300 }, Headline: { weight: 900 } } } };
   delete collideDoc.schemaVersion;
   const cv = U.hydrate(collideDoc).type.voices;
@@ -449,14 +449,14 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   if (cv && "Heading" in cv) FAIL("schema-rename", "the stale old key must still drop even when the new key already existed");
 
   // a doc with only the NEW voice names (any doc saved since 2026-07-13, before schemaVersion existed)
-  // is completely unaffected by the rename — nothing to translate, nothing spuriously created.
+  // is completely unaffected by the rename, nothing to translate, nothing spuriously created.
   const modernDoc = { ...U.serialize(inDomainState()), type: { treatment: "product", bodyBase: 16, voices: { Headline: { weight: 800 } } } };
   delete modernDoc.schemaVersion;
   const mv = U.hydrate(modernDoc).type.voices;
   if (!deepEq(mv, { Headline: { weight: 800 } })) FAIL("schema-rename", `a modern-only doc's voices must be untouched by the rename (got ${JSON.stringify(mv)})`);
 
   // tokenOverrides (Tokens-matrix Phase 3): a per-cell SIZE override keyed "<voice>|<step>|<modeKey>"
-  // under an OLD voice name must migrate its leading segment too — clampTokenOverrides only checks key
+  // under an OLD voice name must migrate its leading segment too, clampTokenOverrides only checks key
   // ARITY, not voice membership, so an un-migrated stale key would otherwise survive as an inert orphan
   // (never dropped, never applied) instead of visibly carrying the user's override forward. Also covers
   // the collision case: a stale key AND its already-current renamed sibling both present.
@@ -478,10 +478,10 @@ const oL = out("light"), oD = out("dark"), oA = out("auto");
 if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs across theme light/dark/auto");
 
 // ── allowlist-parity (TKT-0017): persist.js hand-tracks TYPE_TREATMENTS / VOICES / GEOMETRY_TREATMENTS
-// as copies of what type.mjs / geometry.mjs already define canonically — nothing enforced they stay in
+// as copies of what type.mjs / geometry.mjs already define canonically, nothing enforced they stay in
 // sync until now. A voice/treatment renamed in the engine and not mirrored here has its hydrate-time
 // clamp silently reject every doc using it (VOICES) or fall the whole facet back to its default
-// (TYPE_TREATMENTS/GEOMETRY_TREATMENTS) — the same failure class the role-table↔semanticRoles parity gate
+// (TYPE_TREATMENTS/GEOMETRY_TREATMENTS), the same failure class the role-table↔semanticRoles parity gate
 // guards elsewhere, generalized to this file. Compared as SETS (sorted), not literal array order, since
 // persist.js only ever consults these via `.includes()`. ────────────────────────────────────────────────
 {
@@ -502,21 +502,21 @@ if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs ac
   if (!eqSet(U.VOICES, engineVoices))
     FAIL("allowlist-parity", `persist.js VOICES ${JSON.stringify(sorted(U.VOICES))} != type.mjs voice set ${JSON.stringify(sorted(engineVoices))}`);
 
-  // GEOMETRY_SIZES (TKT-0455, extended TKT-0483/issue #483) — the leading segment of a geom
+  // GEOMETRY_SIZES (TKT-0455, extended TKT-0483/issue #483), the leading segment of a geom
   // tokenOverrides key; must track the UNION of geometry.mjs's SIZE_KEYS (the default ramp's six) and
   // LADDER_SIZE_KEYS (the linear ladder's seven, "2XS" included) the same way VOICES tracks type.mjs's
-  // voice set — a size the ladder can expose but SIZE_KEYS alone doesn't carry must still round-trip.
+  // voice set, a size the ladder can expose but SIZE_KEYS alone doesn't carry must still round-trip.
   const engineAllSizeKeys = [...new Set([...Ge.SIZE_KEYS, ...Ge.LADDER_SIZE_KEYS])];
   if (!eqSet(U.GEOMETRY_SIZES, engineAllSizeKeys))
     FAIL("allowlist-parity", `persist.js GEOMETRY_SIZES ${JSON.stringify(sorted(U.GEOMETRY_SIZES))} != geometry.mjs SIZE_KEYS ∪ LADDER_SIZE_KEYS ${JSON.stringify(sorted(engineAllSizeKeys))}`);
 
-  // GEOMETRY_RAMPS (issue #483) — the opt-in ramp ids; must track geometry.mjs's own GEOMETRY_RAMPS.
+  // GEOMETRY_RAMPS (issue #483), the opt-in ramp ids; must track geometry.mjs's own GEOMETRY_RAMPS.
   if (!eqSet(U.GEOMETRY_RAMPS, Ge.GEOMETRY_RAMPS))
     FAIL("allowlist-parity", `persist.js GEOMETRY_RAMPS ${JSON.stringify(sorted(U.GEOMETRY_RAMPS))} != geometry.mjs GEOMETRY_RAMPS ${JSON.stringify(sorted(Ge.GEOMETRY_RAMPS))}`);
 }
 
 // ── geometry ramp (the opt-in linear-ladder prototype, issue #483): a known id persists; absent stays
-// absent (the default ramp round-trips identical — the identity gate); an unknown id drops + reports ──
+// absent (the default ramp round-trips identical, the identity gate); an unknown id drops + reports ──
 {
   const seed = inDomainState();
   const R = U.hydrate(U.serialize({ ...seed, geometry: { treatment: "comfortable", baseHeight: 28, ramp: "linear4" } }));
@@ -528,7 +528,7 @@ if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs ac
   if (!X[U.DROPPED_KEYS].some((d) => d.facet === "geometry.ramp" && d.key === "bogus-ramp")) FAIL("ramp", `an unknown geometry.ramp id must be reported in DROPPED_KEYS (got ${JSON.stringify(X[U.DROPPED_KEYS])})`);
 
   // the ladder's numbered steps ("0".."9", issue #483's final mapping ruling) are valid tokenOverrides
-  // leading segments even though none of them exist on the default ramp — GEOMETRY_SIZES must accept
+  // leading segments even though none of them exist on the default ramp, GEOMETRY_SIZES must accept
   // a purely-numeric segment (clampTokenOverrides only ever does a plain string `.includes()` check,
   // so this is really pinning the allowlist content, not new parsing logic).
   const S2 = U.hydrate(U.serialize({ ...seed, geometry: { treatment: "comfortable", baseHeight: 28, ramp: "linear4", tokenOverrides: { "0|base": 22, "3|base": 34 } } }));
@@ -538,7 +538,7 @@ if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs ac
 
 // ── dropped-keys (TKT-0455): a stored voice/treatment/tokenOverrides key unknown to the current
 // allowlist AND untranslated by RENAME_MAPS is now surfaced (console.warn + the DROPPED_KEYS report),
-// not silently filtered — guarding the "a future rename ships without its RENAME_MAPS entry" data-loss
+// not silently filtered, guarding the "a future rename ships without its RENAME_MAPS entry" data-loss
 // class, and the §B5 "unknown tokenOverrides voice/size segment survives forever as an inert orphan" gap.
 {
   const warns = [];
@@ -559,7 +559,7 @@ if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs ac
     const withBogusGeomTreatment = U.hydrate(U.serialize({ ...seed, geometry: { treatment: "bogus-geom", baseHeight: 28 } }));
     if (!withBogusGeomTreatment[U.DROPPED_KEYS].some((d) => d.facet === "geometry.treatment" && d.key === "bogus-geom")) FAIL("dropped-keys", `an unknown geometry treatment must be reported in DROPPED_KEYS (got ${JSON.stringify(withBogusGeomTreatment[U.DROPPED_KEYS])})`);
 
-    // an unknown voice/size segment on a tokenOverrides key is DROPPED and reported — not silently
+    // an unknown voice/size segment on a tokenOverrides key is DROPPED and reported, not silently
     // surviving forever as an inert orphan (persist.js:425-436's documented §B5 gap, now closed).
     const withBogusTov = U.hydrate(U.serialize({ ...seed, type: { treatment: "product", bodyBase: 16, tokenOverrides: { "Bogus|MD|base": 40, "Body|MD|base": 40 } } }));
     if ("Bogus|MD|base" in (withBogusTov.type.tokenOverrides || {})) FAIL("dropped-keys", "a tokenOverrides key with an unknown leading voice segment must drop");
@@ -570,13 +570,13 @@ if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs ac
     if ("XXL|base" in (withBogusGeomTov.geometry.tokenOverrides || {})) FAIL("dropped-keys", "a geom tokenOverrides key with an unknown leading size segment must drop");
     if (!withBogusGeomTov[U.DROPPED_KEYS].some((d) => d.facet === "geometry.tokenOverrides" && d.key === "XXL|base")) FAIL("dropped-keys", `an unknown geom tokenOverrides size segment must be reported (got ${JSON.stringify(withBogusGeomTov[U.DROPPED_KEYS])})`);
 
-    // a stray keyIntensity on a doc that already claims schemaVersion 3+ predates no rename (REQ-011) —
+    // a stray keyIntensity on a doc that already claims schemaVersion 3+ predates no rename (REQ-011),
     // it's a leftover, not a legacy doc, so it must be reported loudly rather than silently vanish.
     const withStrayKeyIntensity = U.hydrate({ schemaVersion: 3, palettes: seed.palettes, keyIntensity: 55 });
     if ("keyIntensity" in withStrayKeyIntensity) FAIL("dropped-keys", "a stray post-v3 keyIntensity must not survive onto the hydrated state");
     if (!withStrayKeyIntensity[U.DROPPED_KEYS].some((d) => d.facet === "controls" && d.key === "keyIntensity")) FAIL("dropped-keys", `a stray post-v3 keyIntensity must be reported in DROPPED_KEYS (got ${JSON.stringify(withStrayKeyIntensity[U.DROPPED_KEYS])})`);
 
-    // palette.intensity (SPEC 0.3.0 REQ-002/010/011): removed from the palette domain at schema v4 —
+    // palette.intensity (SPEC 0.3.0 REQ-002/010/011): removed from the palette domain at schema v4,
     // a stray value on ANY snapshot (predating v4 or not) is dropped AND reported loudly, named by
     // its palette, the same "leftover, not a legacy doc" treatment keyIntensity gets above.
     const seedWithIntensity = { schemaVersion: 4, palettes: seed.palettes.map((p, i) => (i === 0 ? { ...p, intensity: 42 } : p)) };
@@ -584,10 +584,10 @@ if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs ac
     if ("intensity" in withStrayIntensity.palettes[0]) FAIL("dropped-keys", "a stray palette.intensity must not survive onto the hydrated state");
     if (!withStrayIntensity[U.DROPPED_KEYS].some((d) => d.facet === "palette" && d.key === `${seed.palettes[0].name}.intensity`)) FAIL("dropped-keys", `a stray palette.intensity must be reported in DROPPED_KEYS, named by palette (got ${JSON.stringify(withStrayIntensity[U.DROPPED_KEYS])})`);
 
-    // a fully in-domain doc reports NOTHING dropped — the accounting must not false-positive.
+    // a fully in-domain doc reports NOTHING dropped, the accounting must not false-positive.
     const clean = U.hydrate(U.serialize(seed));
     if (clean[U.DROPPED_KEYS].length !== 0) FAIL("dropped-keys", `a fully in-domain doc must report an empty droppedKeys list (got ${JSON.stringify(clean[U.DROPPED_KEYS])})`);
-    // DROPPED_KEYS is non-enumerable — it must never disturb JSON.stringify / the roundtrip-identity gate.
+    // DROPPED_KEYS is non-enumerable, it must never disturb JSON.stringify / the roundtrip-identity gate.
     if (Object.prototype.propertyIsEnumerable.call(withBogusVoice, U.DROPPED_KEYS)) FAIL("dropped-keys", "DROPPED_KEYS must not be enumerable");
     if (JSON.stringify(withBogusVoice).includes("Bogus")) FAIL("dropped-keys", "DROPPED_KEYS must never leak into JSON.stringify of the hydrated state");
   } finally {

@@ -1,4 +1,4 @@
-# SITE-runbook · Ultimate Tokens — Monetization go-live runbook · 2026-07-12 · none stated
+# SITE-runbook · Ultimate Tokens: Monetization go-live runbook · 2026-07-12 · none stated
 | Field | Value |
 |---|---|
 | Decision | The soft launch (built, nothing withheld) becomes a hard launch by flipping `TIERS_ENFORCED = true` in `src/engine/flags.js` in a single merge of a prepared draft PR, after: step 0 wires the Pro gates in code (`maxSets`, `proExport`, `advancedTreatments`, `hostedMcp`) since the flag resolver is complete but no feature surface consumes `flagOf()` yet; step 1 configures the Lemon Squeezy dashboard (enable license keys on Pro and Studio, Pro activation limit high e.g. 25 per the 2026-07-02 licensing decision, Studio activation limit 5 with +1 per additional seat, confirm the variant belongs to store `420293`); step 2 confirms CORS from the deployed origin's browser console against `api.lemonsqueezy.com/v1/licenses/validate`, with a same-origin proxy pointed at by `LEMON_LICENSE_API` in `src/main.ts` as the fallback if blocked. Rollback is flipping `TIERS_ENFORCED` back to `false` and redeploying. |

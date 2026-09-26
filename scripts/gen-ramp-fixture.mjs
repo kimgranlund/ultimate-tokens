@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// gen-ramp-fixture.mjs — regenerates test/ui/fixtures/default-doc-ramps.json, the AC-003(b) document-
+// gen-ramp-fixture.mjs, regenerates test/ui/fixtures/default-doc-ramps.json, the AC-003(b) document-
 // level byte-diff fixture (SPEC spec-muted-base-key-spikes 0.3.0, ticket #559): projectView(defaultDocument())'s
 // 25-stop hex (fullRamp) per palette, at the ratified GROUP_DEFAULTS. Run ONLY by hand, once, from the
 // resolver you want to pin; `npm test` only COMPARES against this file, it never regenerates it.

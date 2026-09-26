@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// brand-kit-merged-core.mjs — verifier for the PURE merged MCP surface (mcp/brand-kit-merged-core.mjs,
+// brand-kit-merged-core.mjs, verifier for the PURE merged MCP surface (mcp/brand-kit-merged-core.mjs,
 // #374): kitless boot, generate_kit rebinding, the read tools serving a GENERATED kit, and export_tokens.
 // No process spawn; the stdio end-to-end lives in test/mcp/brand-kit-merged.mjs.
 import { createSession } from "../../mcp/brand-kit-merged-core.mjs";
@@ -18,7 +18,7 @@ const callTool = (session, name, args) => JSON.parse(req(session, "tools/call", 
   const toolNames = req(session, "tools/list").result.tools.map((t) => t.name);
   ok(toolNames.join() === "generate_kit,export_tokens", `kitless boot has ONLY generate_kit + export_tokens (got ${toolNames.join()})`);
   const resUris = req(session, "resources/list").result.resources.map((r) => r.uri);
-  ok(resUris.join() === "brand://kit,brand://guide", `kitless boot has only the two ALWAYS-served resources (brand://kit for the empty {} kit, brand://guide) — no palette/type/geometry resources (got ${resUris.join()})`);
+  ok(resUris.join() === "brand://kit,brand://guide", `kitless boot has only the two ALWAYS-served resources (brand://kit for the empty {} kit, brand://guide), no palette/type/geometry resources (got ${resUris.join()})`);
   const exp = callTool(session, "export_tokens", { format: "css" });
   ok(exp.error && /generated kit first/.test(exp.error), `export_tokens before any generate is a graceful error, not a crash (got ${JSON.stringify(exp)})`);
 }
@@ -38,10 +38,10 @@ const callTool = (session, name, args) => JSON.parse(req(session, "tools/call", 
   const pal = callTool(session, "list_palettes", {});
   ok(Array.isArray(pal) && pal.length === 16, "the read tools serve the LOADED initial kit correctly");
   const exp = callTool(session, "export_tokens", { format: "css" });
-  ok(exp.error, "export_tokens is STILL unavailable for a loaded-kit-only session — no doc exists for it (spec §7)");
+  ok(exp.error, "export_tokens is STILL unavailable for a loaded-kit-only session, no doc exists for it (spec §7)");
 }
 
-// ── generate_kit rebinds the surface — the read tools + export_tokens immediately serve the GENERATED kit ──
+// ── generate_kit rebinds the surface, the read tools + export_tokens immediately serve the GENERATED kit ──
 {
   const session = createSession(); // kitless
   const brief = { name: "Generated Kit", families: { Primary: { hue: 210, chroma: 70 } } };
@@ -72,19 +72,19 @@ const callTool = (session, name, args) => JSON.parse(req(session, "tools/call", 
   const pal = callTool(session, "list_palettes", {});
   const primaryStop500 = pal && callTool(session, "get_ramp", { palette: "Primary" }).ramp.find((s) => s.stop === 500).hex;
   const secondStop500 = second.kit.palettes.find((p) => p.name === "Primary").ramp.find((s) => s.stop === 500).hex;
-  ok(primaryStop500 === secondStop500, `the read surface reflects the SECOND (latest) generate, not the first — last generate wins (got ${primaryStop500} vs ${secondStop500})`);
+  ok(primaryStop500 === secondStop500, `the read surface reflects the SECOND (latest) generate, not the first, last generate wins (got ${primaryStop500} vs ${secondStop500})`);
 }
 {
-  // teaching mode (mode 1) must NOT rebind — exploring the method mid-session doesn't clobber a bound kit.
+  // teaching mode (mode 1) must NOT rebind, exploring the method mid-session doesn't clobber a bound kit.
   const session = createSession();
   const generated = callTool(session, "generate_kit", { brief: { families: { Primary: { hue: 30, chroma: 90 } } } });
-  callTool(session, "generate_kit", { description: "something else entirely" }); // mode 1 — must not rebind
+  callTool(session, "generate_kit", { description: "something else entirely" }); // mode 1, must not rebind
   const pal = callTool(session, "list_palettes", {});
   const stillBound = pal.find((p) => p.name === "Primary");
   ok(!!stillBound, "a teaching-mode (description-only) call after a generate does NOT clear/replace the bound kit");
 }
 
-// ── export_tokens — content matches projectView(doc).exports exactly, for every named format + "all" ──
+// ── export_tokens, content matches projectView(doc).exports exactly, for every named format + "all" ──
 {
   const session = createSession();
   const brief = { name: "Export Check", families: { Primary: { hue: 40, chroma: 90 } } };
@@ -102,10 +102,10 @@ const callTool = (session, name, args) => JSON.parse(req(session, "tools/call", 
   const bad = callTool(session, "export_tokens", { format: "nope" });
   ok(bad.error && /unknown format/.test(bad.error), "an unknown format is a graceful error naming the valid enum, not a crash");
   // "figma" is a REAL key in projectView(doc).exports (model.mjs) but is NOT one of the 8 documented
-  // export_tokens enum values — the trickiest rejection case, since a naive `format in view.exports` check
+  // export_tokens enum values, the trickiest rejection case, since a naive `format in view.exports` check
   // would have silently served it. The enum guard must run BEFORE any projectView read.
   const figma = callTool(session, "export_tokens", { format: "figma" });
-  ok(figma.error && /unknown format/.test(figma.error), `"figma" is rejected even though it's a real projectView().exports key — not one of the 8 documented formats (got ${JSON.stringify(figma)})`);
+  ok(figma.error && /unknown format/.test(figma.error), `"figma" is rejected even though it's a real projectView().exports key, not one of the 8 documented formats (got ${JSON.stringify(figma)})`);
 }
 
 // ── #373's attachImageBlock threads through the MERGED server too (it post-processes handleRead's own
@@ -128,5 +128,5 @@ const callTool = (session, name, args) => JSON.parse(req(session, "tools/call", 
 }
 
 if (fails.length) { console.error(`brand-kit-merged-core FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
-console.log("brand-kit-merged-core PASS — kitless boot · generate_kit rebinding (last-generate-wins, teach-never-rebinds) · the read surface serving a GENERATED kit · export_tokens (7 named formats + all, matching projectView exactly) · the #373 image block threading through the merged dispatch");
+console.log("brand-kit-merged-core PASS, kitless boot · generate_kit rebinding (last-generate-wins, teach-never-rebinds) · the read surface serving a GENERATED kit · export_tokens (7 named formats + all, matching projectView exactly) · the #373 image block threading through the merged dispatch");
 process.exit(0);

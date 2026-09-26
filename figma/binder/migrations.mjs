@@ -1,10 +1,10 @@
-// migrations.mjs — the ACTIVE rename/retire migration maps (TKT-0012 capability). TKT-0013 carries
+// migrations.mjs, the ACTIVE rename/retire migration maps (TKT-0012 capability). TKT-0013 carries
 // the ADR-016 kebab wave below. One module, imported by the app (float plans, color apply message,
 // style plans) so every executor path receives the same maps.
 //
 // MIGRATION MAPS ARE FROZEN HISTORY: the old-name derivations below encode the PRE-wave grammar
 // exactly as it shipped (Title-case voices, UPPER steps, camel props, "500-{step}" scrim leaves,
-// camel role keys) — never "modernize" them to track live canon; they exist to find yesterday's
+// camel role keys), never "modernize" them to track live canon; they exist to find yesterday's
 // variables in a user's file and rename them in place.
 //
 // CONVENTION (TKT-0012, recorded in shipping-changes): every ticket that renames an emitted
@@ -68,11 +68,11 @@ export function kebabWaveColorRenames(paletteSlugs) {
 
 export const FIGMA_MIGRATIONS = {
   // floats: stamped by the app AFTER planning (the var map derives from the live plan's names via
-  // kebabWaveVarRenames — see _figmaFloatPlans); the collection renames are static.
-  // "Geometry" (#491, 2026-09-02): a REVERT — the merged type/+box-geometry collection was briefly
+  // kebabWaveVarRenames, see _figmaFloatPlans); the collection renames are static.
+  // "Geometry" (#491, 2026-09-02): a REVERT, the merged type/+box-geometry collection was briefly
   // "Breakpoints" (TKT-0009/ADR-016); a file still carrying either name (incl. one that never got the
   // Geometry->Breakpoints rename applied, e.g. an older ADIA Colors export) adopts in place.
-  // "Type Primitives" (#491): was "Font Primitives" — matches the product's own "Type" vocabulary.
+  // "Type Primitives" (#491): was "Font Primitives", matches the product's own "Type" vocabulary.
   // retire (TKT-0009, extracted to retirementsFor at TKT-0018): the merged "Geometry" collection
   // supersedes the old two-collection era's "Typography" once it actually lands type/ variables.
   floats: {
@@ -82,36 +82,36 @@ export const FIGMA_MIGRATIONS = {
     },
     retire: [{ collection: "Geometry", ifVariablePrefix: "type/", retire: ["Typography"] }],
   },
-  // "Color Roles" (#491): was "Color Semantic", was "Color Modes" — both old names adopt in place.
+  // "Color Roles" (#491): was "Color Semantic", was "Color Modes", both old names adopt in place.
   color: { collections: { "Color Roles": ["Color Semantic", "Color Modes"] } },
   styles: { paints: {}, texts: {} },
 };
 
-// LIBRARY_TYPE_VOICE_MAP (#495) — the STATIC old->new Type-voice KEBAB-SEGMENT map "published library"
+// LIBRARY_TYPE_VOICE_MAP (#495), the STATIC old->new Type-voice KEBAB-SEGMENT map "published library"
 // mode uses to ALIAS an old-voice-named Font/Type Primitives (or Geometry type/ half) variable to its
 // current counterpart, instead of pruning it, when the file is a published library other files depend
 // on. Voices NOT listed here (body/display/lead/kicker/sub-heading) need no entry: their OLD kebab
 // segment is ALREADY byte-identical to a CURRENT voice's, so ordinary create-or-reuse-by-name already
-// covers them — no alias/deprecate involvement at all. "quote" has no entry either — no current
-// counterpart — so it falls straight to DEPRECATE (renamed under "_deprecated/", id preserved).
-// figma/plugin/code.js carries the SAME map as a literal (LIBRARY_TYPE_VOICE_MAP) — the VM can't import
+// covers them, no alias/deprecate involvement at all. "quote" has no entry either, no current
+// counterpart, so it falls straight to DEPRECATE (renamed under "_deprecated/", id preserved).
+// figma/plugin/code.js carries the SAME map as a literal (LIBRARY_TYPE_VOICE_MAP), the VM can't import
 // this file; kept in lockstep by hand, same discipline as SEMANTIC_RENAME_FROM in the standalone binder.
 export const LIBRARY_TYPE_VOICE_MAP = { heading: "headline", ui: "ui-control", caption: "label", legal: "tiny", code: "label-mono" };
 
-// GEOMETRY_FIELD_RENAME_MAP (#498) — the STATIC old->new Geometry size/* FIELD-SPELLING map "published
+// GEOMETRY_FIELD_RENAME_MAP (#498), the STATIC old->new Geometry size/* FIELD-SPELLING map "published
 // library" mode uses to ALIAS an old-spelled size/* field to its current counterpart (same step, same
-// nearest-by-height match #495 already established — this bridges the FIELD segment only). A real file
+// nearest-by-height match #495 already established, this bridges the FIELD segment only). A real file
 // (the ADIA Tokens library) predates the current field spelling: "edgePadding"/"gap"/"minWidth"/
 // "padding"/"radius" instead of "padding-wide"/"icon-gap"/"min-width"/"padding-narrow"/"pill-radius".
 // NOT the same grammar as this file's own ADR-016 kebab-wave OLD_FIELD table above (that one documents
-// THIS repo's own "paddingWide"/"paddingNarrow" intermediate spelling, TKT-0013 — a different, unrelated
-// naming history than the ADIA file's own external one) — kept as an independent, purpose-specific
-// const rather than derived from it. "font" (size/{step}/font, no clean size/* counterpart — its only
+// THIS repo's own "paddingWide"/"paddingNarrow" intermediate spelling, TKT-0013, a different, unrelated
+// naming history than the ADIA file's own external one), kept as an independent, purpose-specific
+// const rather than derived from it. "font" (size/{step}/font, no clean size/* counterpart, its only
 // sensible target lives in a DIFFERENT collection, "Type Primitives"' font/ui-control) is deliberately
 // left OUT: applyFloatPlans (Geometry) runs BEFORE applyFontPrimitivesModes (Type Primitives) in every
-// real caller, so on a first-time apply the cross-collection target wouldn't exist yet — an
+// real caller, so on a first-time apply the cross-collection target wouldn't exist yet, an
 // old size/{step}/font name is left unmapped (deprecates, id-preserving), a documented scope decision
 // rather than a cross-collection create from the wrong execution phase. figma/plugin/code.js carries
-// the SAME map as a literal — the VM can't import this file; kept in lockstep by hand, same discipline
+// the SAME map as a literal, the VM can't import this file; kept in lockstep by hand, same discipline
 // as LIBRARY_TYPE_VOICE_MAP above.
 export const GEOMETRY_FIELD_RENAME_MAP = { edgePadding: "padding-wide", gap: "icon-gap", minWidth: "min-width", padding: "padding-narrow", radius: "pill-radius" };

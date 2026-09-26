@@ -1,13 +1,13 @@
-// zip.mjs — a tiny, dependency-free ZIP writer (STORE / no compression). PURE: a file list -> a
+// zip.mjs, a tiny, dependency-free ZIP writer (STORE / no compression). PURE: a file list -> a
 // Uint8Array of a valid .zip. Used by the Export drawer's "Download all" to bundle every format into
 // one foldered archive, fully offline (the app pulls no libraries and the Figma sandbox has no network).
-// Store (method 0) keeps it lib-free — no DEFLATE — at a small size cost; the export text is tiny.
+// Store (method 0) keeps it lib-free, no DEFLATE, at a small size cost; the export text is tiny.
 //
-// Spec refs: PKWARE APPNOTE — local file header (PK\x03\x04), central directory (PK\x01\x02),
+// Spec refs: PKWARE APPNOTE, local file header (PK\x03\x04), central directory (PK\x01\x02),
 // end-of-central-directory (PK\x05\x06). All multi-byte fields are little-endian. Folders are IMPLIED
-// by "/"-separated names (no explicit directory entries needed — unzippers create the paths).
+// by "/"-separated names (no explicit directory entries needed, unzippers create the paths).
 
-// crc32 — standard CRC-32 (reflected, poly 0xEDB88320), table built once.
+// crc32, standard CRC-32 (reflected, poly 0xEDB88320), table built once.
 const CRC_TABLE = (() => {
   const t = new Uint32Array(256);
   for (let n = 0; n < 256; n++) {
@@ -26,9 +26,9 @@ export function crc32(bytes) {
 const enc = new TextEncoder();
 const toBytes = (d) => (typeof d === "string" ? enc.encode(d) : d);
 
-// dosDateTime(d) — encode a JS Date as the ZIP timestamp pair { time, date } (two u16s, little-endian).
+// dosDateTime(d), encode a JS Date as the ZIP timestamp pair { time, date } (two u16s, little-endian).
 // The DOS epoch is 1980-01-01, so earlier dates clamp to it. NOTE: a zero date/time (the old behaviour)
-// is exactly what unzippers render as ~1979 — so we stamp a REAL time, giving exported files a sane date.
+// is exactly what unzippers render as ~1979, so we stamp a REAL time, giving exported files a sane date.
 // Time packs (hours<<11 | minutes<<5 | seconds/2); date packs ((year-1980)<<9 | month<<5 | day).
 function dosDateTime(d) {
   if (!(d instanceof Date) || isNaN(d.getTime()) || d.getFullYear() < 1980) return { time: 0, date: 0x21 }; // 1980-01-01
@@ -37,8 +37,8 @@ function dosDateTime(d) {
   return { time: time & 0xffff, date: date & 0xffff };
 }
 
-// zipStore — files: [{ name, data }] (data: string | Uint8Array) -> Uint8Array (a complete .zip).
-// opts.date stamps every entry's modification time (default: now — what a user expects on a download).
+// zipStore, files: [{ name, data }] (data: string | Uint8Array) -> Uint8Array (a complete .zip).
+// opts.date stamps every entry's modification time (default: now, what a user expects on a download).
 // Pass a fixed Date for a byte-reproducible archive.
 export function zipStore(files, { date = new Date() } = {}) {
   const dt = dosDateTime(date);
@@ -64,7 +64,7 @@ export function zipStore(files, { date = new Date() } = {}) {
     u16(20);         // version needed to extract (2.0)
     u16(0);          // general-purpose flags
     u16(0);          // method = 0 (store)
-    u16(dt.time); u16(dt.date); // mod time, mod date (a real timestamp — 0 reads as ~1979 in unzippers)
+    u16(dt.time); u16(dt.date); // mod time, mod date (a real timestamp, 0 reads as ~1979 in unzippers)
     u32(it.crc);     // crc-32
     u32(it.data.length); // compressed size (== uncompressed for store)
     u32(it.data.length); // uncompressed size

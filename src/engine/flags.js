@@ -1,15 +1,15 @@
-// flags.js — the feature-flag + entitlement SUBSTRATE (item 7, Layer 1). Pure, no DOM, no storage, no
+// flags.js, the feature-flag + entitlement SUBSTRATE (item 7, Layer 1). Pure, no DOM, no storage, no
 // network. Resolves what a user is entitled to from their per-machine `profile` ({ tier, flagOverrides }).
-// The SINGLE place a gate is decided — every gated surface reads `flagOf(flags, key)`, never a raw
+// The SINGLE place a gate is decided, every gated surface reads `flagOf(flags, key)`, never a raw
 // `tier === "pro"` check, so the line moves in one place. Flags are BOOLEAN or VALUED (a numeric cap).
 //
-// Layers (build order): (1) THIS substrate — engine + persisted profile + the resolver (tier hardcoded
-// free, zero payment code); (2) entitlement — a Lemon-Squeezy license key, validated client-side in the
+// Layers (build order): (1) THIS substrate, engine + persisted profile + the resolver (tier hardcoded
+// free, zero payment code); (2) entitlement, a Lemon-Squeezy license key, validated client-side in the
 // WEB APP, flips tier→pro; (3) the Settings « Account » home. The offline Figma plugin stays free.
 
 // The flag keys + their per-tier values (the product's Pro line, from the item-7 Ratified Design).
 // `maxSets` is VALUED (the free brand-kit cap); the rest are boolean capability gates. `describePalette`
-// (#379, ruled 2026-07-18) gates the describe-palette generator (both the local and hosted flavors) —
+// (#379, ruled 2026-07-18) gates the describe-palette generator (both the local and hosted flavors),
 // a premium, recurring-revenue-adjacent capability, not bundled with the free downloadable brand kit.
 export const FLAG_KEYS = ["maxSets", "proExport", "advancedTreatments", "hostedMcp", "describePalette"];
 
@@ -19,7 +19,7 @@ export const TIER_FLAGS = {
 };
 
 // Master enforcement switch. Ships FALSE pre-launch: with NO purchase path yet, gating a feature OFF would
-// just remove it from current users — so everyone resolves to the UNLOCKED (pro) values until Layer 2 wires
+// just remove it from current users, so everyone resolves to the UNLOCKED (pro) values until Layer 2 wires
 // payment and the product flips this to true. (The free/pro split below is defined + tested now, ready.)
 export const TIERS_ENFORCED = false;
 
@@ -27,7 +27,7 @@ export const TIERS_ENFORCED = false;
 // unlocked (pro) values; then any explicit flagOverrides (dev / QA / early-access) win.
 export function resolveFlags(profile = {}, { enforced = TIERS_ENFORCED, nowMs } = {}) {
   // resolve the EFFECTIVE tier from the entitlement (a stored tier:"pro" with no valid entitlement is
-  // free) — so the entitlement gate can't be bypassed by a direct caller, not just app.flagOf. Clockless:
+  // free), so the entitlement gate can't be bypassed by a direct caller, not just app.flagOf. Clockless:
   // pass nowMs to ALSO enforce expiry; without it only the no-entitlement spoof is caught, not staleness.
   const tier = resolveTier(profile, nowMs);
   const base = enforced ? TIER_FLAGS[tier] || TIER_FLAGS.free : TIER_FLAGS.pro;
@@ -45,9 +45,9 @@ export function flagOf(flags, key) {
 }
 
 // ── Layer 2: entitlement → tier ──────────────────────────────────────────────────────────────────────
-// PURE — no DOM, no clock. The CALLER supplies `nowMs` (never Date.now here), so these stay deterministic +
-// testable. An entitlement is the validated proof of purchase ({ status, expiresAt? } — Lemon-Squeezy-shaped);
-// the stored `tier` alone can't fake Pro — it must be BACKED by a currently-active entitlement (resolveTier).
+// PURE, no DOM, no clock. The CALLER supplies `nowMs` (never Date.now here), so these stay deterministic +
+// testable. An entitlement is the validated proof of purchase ({ status, expiresAt? }, Lemon-Squeezy-shaped);
+// the stored `tier` alone can't fake Pro, it must be BACKED by a currently-active entitlement (resolveTier).
 
 // entitlementActive(entitlement, nowMs) → true iff the entitlement is "active" AND not past its expiry.
 // A missing/blank expiresAt = perpetual (never expires). A malformed entitlement → false (restrictive).
@@ -88,7 +88,7 @@ function clampEntitlement(raw) {
 // activation count, for display) · entitlement = a sane {status, expiresAt?} · checkedAt = a finite ms ≥ 0.
 // Emit order is stable (tier → flagOverrides → licenseKey → instanceId → seats → entitlement → checkedAt).
 // NOTE (2026-08-20 reactivity review, H5): unlike persist.js's doc store, this clamp has no
-// schemaVersion/RENAME_MAPS analog — a future FLAG_KEYS rename has no forward-translation path and
+// schemaVersion/RENAME_MAPS analog, a future FLAG_KEYS rename has no forward-translation path and
 // would silently drop existing flagOverrides for the old key on next load. If FLAG_KEYS ever renames
 // a key, add the equivalent translate-forward step here (or fold this into persist.js's mechanism).
 export function clampProfile(raw) {
@@ -122,7 +122,7 @@ export function clampProfile(raw) {
 }
 
 // ── Layer 2 (web wiring): Lemon-Squeezy responses → entitlement / seat ─────────────────────────────────
-// These map the parsed JSON from Lemon-Squeezy's public License API to the seam's result shapes. ALL PURE —
+// These map the parsed JSON from Lemon-Squeezy's public License API to the seam's result shapes. ALL PURE,
 // no fetch, no clock: the WEB entry (src/main.ts) does the network calls and hands the JSON here, so this
 // stays in the engine (testable) while app.js + the offline Figma bundle stay network-free. A license is
 // good only when LS reports the key `active`; an ISO `expires_at` maps to entitlement.expiresAt (ms,
@@ -155,7 +155,7 @@ function licenseKeyResult(lk) {
   const key = lk && typeof lk === "object" ? lk : {};
   if (key.status !== "active") {
     const error =
-      key.status === "expired" ? "That license has expired — renew it from your account to continue." :
+      key.status === "expired" ? "That license has expired, renew it from your account to continue." :
       key.status === "disabled" ? "That license has been disabled. Contact support if that's unexpected." :
       LICENSE_GENERIC_ERROR;
     return { error };
@@ -180,8 +180,8 @@ function seatsOf(lk) {
 }
 
 // lemonEntitlement(json, opts?) → { ok, entitlement?, seats?, error?, revoked? } from a POST
-// /v1/licenses/validate response — the (re)check path. Requires valid:true AND an active key.
-// `revoked: true` marks a RECOGNIZED revocation — LS explicitly reports the key not-valid or carries an
+// /v1/licenses/validate response, the (re)check path. Requires valid:true AND an active key.
+// `revoked: true` marks a RECOGNIZED revocation, LS explicitly reports the key not-valid or carries an
 // explicit inactive status (expired/disabled/inactive). An ambiguous/empty/unparseable body returns
 // `{ ok:false }` WITHOUT `revoked`, so a caller re-validating on boot keeps the cached license (a flaky
 // 200/4xx body or a proxy page must never strip a paying user of Pro). A store mismatch is an anomaly, not
@@ -207,7 +207,7 @@ export function lemonEntitlement(json, { storeId = null, productIds = null } = {
 }
 
 // lemonActivation(json, opts?) → { ok, entitlement?, instanceId?, error? } from a POST /v1/licenses/activate
-// response — the SEAT-CONSUMING path. activated:true means a seat was taken AND instance.id is the handle to
+// response, the SEAT-CONSUMING path. activated:true means a seat was taken AND instance.id is the handle to
 // release it later (deactivate). activated:false is the rejection: a seat-limit hit becomes a friendly
 // message that names the seat count; otherwise the key's own status (expired/disabled) or LS's error message.
 export function lemonActivation(json, { storeId = null, productIds = null } = {}) {

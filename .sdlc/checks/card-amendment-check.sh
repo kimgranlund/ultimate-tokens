@@ -13,7 +13,7 @@ for c in .sdlc/records/cards/*.md; do
     ADR-*:"$DR")
       num=${id#ADR-}
       next=$(printf "%03d" $((10#$num + 1)))
-      body=$(awk "/^## ADR-$num /,/^## ADR-$next /" "$src") ;;
+      body=$(awk "/^## ADR-$num[: ]/,/^## ADR-$next[: ]/" "$src") ;;
     *) body=$(cat "$src") ;;
   esac
   printf '%s' "$body" | grep -q 'Amendment (2026-09-16)' || continue

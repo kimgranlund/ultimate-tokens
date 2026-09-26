@@ -4,7 +4,7 @@
   "eyebrow": "Biome Palette · Sourced from real ecosystems",
   "tagline": "Forty-eight biomes, <em>read for their colour,</em> not their postcard.",
   "metaNote": "Color sourced from flora,<br/>mineral, water &amp; seasonal light",
-  "sourcing": "Every palette is sampled from a specific ecosystem at a specific season and hour — its dominant flora, its mineral ground, the colour of its water, and the quality of its light. The aim is the colour you would actually see standing there, not the saturated idea of 'nature' that stock imagery sells.",
+  "sourcing": "Every palette is sampled from a specific ecosystem at a specific season and hour, its dominant flora, its mineral ground, the colour of its water, and the quality of its light. The aim is the colour you would actually see standing there, not the saturated idea of 'nature' that stock imagery sells.",
   "volumes": [
     {
       "roman": "I",
@@ -12,7 +12,7 @@
       "eyebrow": "Biome · Vol I · Sourced Palette Study",
       "h1": "Four palettes from <em>above the treeline,</em> each in its working season.",
       "preface": [
-        "High mountains share a grammar — bleached rock, wind-pruned scrub, glacial water that is never the blue of a swimming pool — but the species and stone change with the hemisphere. These four are sampled at the elevation where forest gives out.",
+        "High mountains share a grammar, bleached rock, wind-pruned scrub, glacial water that is never the blue of a swimming pool, but the species and stone change with the hemisphere. These four are sampled at the elevation where forest gives out.",
         "Each refuses the travel-poster snowcap: the colour that actually fills the eye at altitude is rock, lichen, and dead grass, not white."
       ],
       "palettes": [
@@ -73,7 +73,7 @@
             },
             "s": {
               "pct": 35,
-              "text": "Larch gold, creeping-pine dark, and glacial jade — the living slope.",
+              "text": "Larch gold, creeping-pine dark, and glacial jade, the living slope.",
               "c": "#D4A24D"
             },
             "a": {
@@ -127,7 +127,7 @@
                 "tracking": "13%"
               }
             },
-            "note": "Kōyō above the treeline is documented in club journals, hut boards and 1:25,000 survey sheets, not on a monument — Cinzel's Trajan caps were the brochure-sublime reflex this palette refuses, so the display is Archivo Narrow Bold (axis 400–700, so the derived 800 sibling is fiction and the ladder is authored SemiBold/Medium) over its own Archivo; the engraved Copperplate Sub-title is dropped for the quiet default, and IBM Plex Mono is static (100–700 plus Text 450) so 520 becomes the real Medium. Plex Text 450 is real in IBM's own release; the Google Fonts static subset omits it and falls back to Regular 400 - harmless, still labels Regular."
+            "note": "Kōyō above the treeline is documented in club journals, hut boards and 1:25,000 survey sheets, not on a monument, Cinzel's Trajan caps were the brochure-sublime reflex this palette refuses, so the display is Archivo Narrow Bold (axis 400–700, so the derived 800 sibling is fiction and the ladder is authored SemiBold/Medium) over its own Archivo; the engraved Copperplate Sub-title is dropped for the quiet default, and IBM Plex Mono is static (100–700 plus Text 450) so 520 becomes the real Medium. Plex Text 450 is real in IBM's own release; the Google Fonts static subset omits it and falls back to Regular 400 - harmless, still labels Regular."
           }
         },
         {
@@ -299,7 +299,7 @@
             },
             "s": {
               "pct": 35,
-              "text": "Schist, beech, and glacial milk — the frame around the gold.",
+              "text": "Schist, beech, and glacial milk, the frame around the gold.",
               "c": "#7F848A"
             },
             "a": {
@@ -402,7 +402,7 @@
             },
             "s": {
               "pct": 40,
-              "text": "Granite, lake blue, and bare lenga — the massif and its water.",
+              "text": "Granite, lake blue, and bare lenga, the massif and its water.",
               "c": "#978985"
             },
             "a": {
@@ -587,7 +587,7 @@
                 "tracking": "8%"
               }
             },
-            "note": "The Nordic forestry-survey set holds — Oswald's axis stops at 700, so the derived 800 sibling was fiction and the ladder is authored (SemiBold/Medium); the Inter core drops to 450 because the Label voice clamps there anyway, so a declared 500 shipped a Medium the kit never labels as one."
+            "note": "The Nordic forestry-survey set holds, Oswald's axis stops at 700, so the derived 800 sibling was fiction and the ladder is authored (SemiBold/Medium); the Inter core drops to 450 because the Label voice clamps there anyway, so a declared 500 shipped a Medium the kit never labels as one."
           }
         },
         {
@@ -598,7 +598,7 @@
             {
               "name": "Larch needles, autumn amber",
               "oklch": "0.712 0.116 70",
-              "note": "Siberian larch — a conifer that turns gold and sheds.",
+              "note": "Siberian larch, a conifer that turns gold and sheds.",
               "hier": "d",
               "hex": "#D0944A"
             },
@@ -655,7 +655,7 @@
               "c": "#9F3930"
             }
           },
-          "refuses": "Uniform evergreen. The larch taiga's defining trick is that it turns gold and bare — a conifer that behaves like a birch.",
+          "refuses": "Uniform evergreen. The larch taiga's defining trick is that it turns gold and bare, a conifer that behaves like a birch.",
           "type": {
             "base": "editorial",
             "registers": {
@@ -705,7 +705,7 @@
                 "tracking": "12%"
               }
             },
-            "note": "Oswald tops out at 700 on its variable axis, so the auto ladder's 800 stop was unreachable — authored SemiBold/Medium instead — and the Inter control core states the 450 it renders; everything else in the two-week amber window stays as designed."
+            "note": "Oswald tops out at 700 on its variable axis, so the auto ladder's 800 stop was unreachable, authored SemiBold/Medium instead, and the Inter control core states the 450 it renders; everything else in the two-week amber window stays as designed."
           }
         },
         {
@@ -952,7 +952,7 @@
       "eyebrow": "Biome · Vol III · Sourced Palette Study",
       "h1": "Four palettes from <em>the wet forest,</em> where everything is green on green.",
       "preface": [
-        "Temperate rainforest is the densest green on earth — moss on bark on fern on nurse log — but read closely it is a dozen greens plus the brown of decay and the tannin-black of its streams. The challenge is to find the structure inside the green.",
+        "Temperate rainforest is the densest green on earth, moss on bark on fern on nurse log, but read closely it is a dozen greens plus the brown of decay and the tannin-black of its streams. The challenge is to find the structure inside the green.",
         "Each refuses the flat 'jungle green': the real forest separates into moss, conifer, fern, and rot, each a distinct hue."
       ],
       "palettes": [
@@ -1129,7 +1129,7 @@
               "c": "#D6CDBC"
             }
           },
-          "refuses": "Tropical-reef colour. This is a cold green coast — the brightness is salmon and lichen, not coral.",
+          "refuses": "Tropical-reef colour. This is a cold green coast, the brightness is salmon and lichen, not coral.",
           "type": {
             "base": "product",
             "registers": {
@@ -1169,7 +1169,7 @@
                 "tracking": "9%"
               }
             },
-            "note": "Only the actionable core moves: Mulish 470 declared a Medium the Label clamp eats at 450, so it now states the Regular it renders — the rest of the salmon-coast set (Fraunces, the agency-sans Sub-title in Public Sans, Spline Sans Mono) is all real cuts on real axes and stands."
+            "note": "Only the actionable core moves: Mulish 470 declared a Medium the Label clamp eats at 450, so it now states the Regular it renders, the rest of the salmon-coast set (Fraunces, the agency-sans Sub-title in Public Sans, Spline Sans Mono) is all real cuts on real axes and stands."
           }
         },
         {
@@ -1344,7 +1344,7 @@
               "c": "#AC3330"
             }
           },
-          "refuses": "Tropical saturation. Valdivian forest is a cool, dark, ancient green — the brights are a single flower, not the whole scene.",
+          "refuses": "Tropical saturation. Valdivian forest is a cool, dark, ancient green, the brights are a single flower, not the whole scene.",
           "type": {
             "base": "technical",
             "registers": {
@@ -1384,7 +1384,7 @@
                 "tracking": "9%"
               }
             },
-            "note": "Mulish's 480 actionable core clamps to 450 at generation, so it is declared at 450 and the Regular/Bolder/Boldest ladder reads true; the ancient-forest set is otherwise unchanged — every Fraunces, Crimson Pro and Spline Sans Mono stop is inside its family's real axis."
+            "note": "Mulish's 480 actionable core clamps to 450 at generation, so it is declared at 450 and the Regular/Bolder/Boldest ladder reads true; the ancient-forest set is otherwise unchanged, every Fraunces, Crimson Pro and Spline Sans Mono stop is inside its family's real axis."
           }
         }
       ]
@@ -1395,7 +1395,7 @@
       "eyebrow": "Biome · Vol IV · Sourced Palette Study",
       "h1": "Four palettes from <em>beyond the trees,</em> where ground-cover replaces forest.",
       "preface": [
-        "Above and beyond the treeline the world flattens to lichen, dwarf shrub, rock, and ice. The colour is low and wide — but in autumn the tundra briefly burns red and gold across whole hillsides.",
+        "Above and beyond the treeline the world flattens to lichen, dwarf shrub, rock, and ice. The colour is low and wide, but in autumn the tundra briefly burns red and gold across whole hillsides.",
         "Each refuses the all-white polar cliché: the Arctic is rust, ochre, and ground-hugging crimson far more of the year than it is snow."
       ],
       "palettes": [
@@ -1510,7 +1510,7 @@
                 ]
               }
             },
-            "note": "The modern-face display is earned — Nordic polar-expedition volumes were set in didones — but the text was not: Spectral is static (200–800, no 440), so the reading core is its real Regular, and Courier Prime is a 400/700 duo, so the field-notebook data voice sits on Regular with Bold as its one authored sibling instead of a 700 core that would crush Tiny-mono."
+            "note": "The modern-face display is earned, Nordic polar-expedition volumes were set in didones, but the text was not: Spectral is static (200–800, no 440), so the reading core is its real Regular, and Courier Prime is a 400/700 duo, so the field-notebook data voice sits on Regular with Bold as its one authored sibling instead of a 700 core that would crush Tiny-mono."
           }
         },
         {
@@ -1625,7 +1625,7 @@
                 ]
               }
             },
-            "note": "Spectral ships static 200/300/400/500/600/700/800 — 410 was fiction, so the polar-desert prose takes the real Regular; Courier Prime's duo puts the data voice on Regular with an authored Bold, and Inter's core drops to the 450 the Label actually renders."
+            "note": "Spectral ships static 200/300/400/500/600/700/800, 410 was fiction, so the polar-desert prose takes the real Regular; Courier Prime's duo puts the data voice on Regular with an authored Bold, and Inter's core drops to the 450 the Label actually renders."
           }
         },
         {
@@ -1867,7 +1867,7 @@
       "eyebrow": "Biome · Vol V · Sourced Palette Study",
       "h1": "Four palettes from <em>the dry lands,</em> where the rock outshouts the plants.",
       "preface": [
-        "Deserts are mineral landscapes: the dominant colour is almost always the ground itself — iron-red sand, salt-white pan, copper rock — with sparse vegetation reduced to silver and grey. Light is hard and shadows are sharp.",
+        "Deserts are mineral landscapes: the dominant colour is almost always the ground itself, iron-red sand, salt-white pan, copper rock, with sparse vegetation reduced to silver and grey. Light is hard and shadows are sharp.",
         "Each refuses the empty-golden-dune cliché: real deserts are specific reds, whites, and ochres set by the local mineralogy, with one or two living greens."
       ],
       "palettes": [
@@ -1937,7 +1937,7 @@
               "c": "#B7BCC0"
             }
           },
-          "refuses": "Golden-hour generic dune. The Namib's signature is brick-red sand against white clay and black trees — a hard tricolour, not a soft glow.",
+          "refuses": "Golden-hour generic dune. The Namib's signature is brick-red sand against white clay and black trees, a hard tricolour, not a soft glow.",
           "type": {
             "base": "statement",
             "registers": {
@@ -2007,7 +2007,7 @@
                 ]
               }
             },
-            "note": "Clarendon is the right slab (it is the routed park-sign face of desert reserves) but URW ships Light/Regular/Medium/Bold/Extra Bold — 820 was fiction, so the hard tricolour takes Extra Bold with an authored 700/500 ladder; Alegreya Sans has no 600 (100/300/400/500/700/800/900) so its framing takes the real Bold with an authored ladder, and DM Mono's 300/400/500 trio puts the data voice on Medium."
+            "note": "Clarendon is the right slab (it is the routed park-sign face of desert reserves) but URW ships Light/Regular/Medium/Bold/Extra Bold, 820 was fiction, so the hard tricolour takes Extra Bold with an authored 700/500 ladder; Alegreya Sans has no 600 (100/300/400/500/700/800/900) so its framing takes the real Bold with an authored ladder, and DM Mono's 300/400/500 trio puts the data voice on Medium."
           }
         },
         {
@@ -2066,7 +2066,7 @@
             },
             "s": {
               "pct": 40,
-              "text": "Sage, juniper, and buff wash — the sparse living ground.",
+              "text": "Sage, juniper, and buff wash, the sparse living ground.",
               "c": "#737F65"
             },
             "a": {
@@ -2145,7 +2145,7 @@
                 ]
               }
             },
-            "note": "The NPS-signage slab stays but lands on a real cut — URW Clarendon Bold, with Extra Bold/Medium authored because the family has no 600 — Alegreya Sans's 460 becomes its real Medium with a stated 400/700 ladder, and DM Mono (300/400/500 only) takes Regular so the buttes' data voice is not a weight the family never cut."
+            "note": "The NPS-signage slab stays but lands on a real cut, URW Clarendon Bold, with Extra Bold/Medium authored because the family has no 600, Alegreya Sans's 460 becomes its real Medium with a stated 400/700 ladder, and DM Mono (300/400/500 only) takes Regular so the buttes' data voice is not a weight the family never cut."
           }
         },
         {
@@ -2214,7 +2214,7 @@
               "c": "#D27C87"
             }
           },
-          "refuses": "Mars-red monochrome. The Atacama's drama is white salt and turquoise brine against the red — not red alone.",
+          "refuses": "Mars-red monochrome. The Atacama's drama is white salt and turquoise brine against the red, not red alone.",
           "type": {
             "base": "product",
             "registers": {
@@ -2352,7 +2352,7 @@
               "c": "#3D3928"
             }
           },
-          "refuses": "Flat orange tourist sunset. The Centre is a red-and-silver pairing — burning rock over pale grass — not a uniform orange.",
+          "refuses": "Flat orange tourist sunset. The Centre is a red-and-silver pairing, burning rock over pale grass, not a uniform orange.",
           "type": {
             "base": "editorial",
             "registers": {
@@ -2433,7 +2433,7 @@
       "eyebrow": "Biome · Vol VI · Sourced Palette Study",
       "h1": "Four palettes from <em>the hot forest,</em> where the brights live in flashes.",
       "preface": [
-        "Tropical rainforest reads as a wall of green, but its identity is set by the flashes that punctuate it — a macaw, a poison frog, a heliconia — against muddy water and leaf-litter brown. The structure is dark green base, loud rare accent.",
+        "Tropical rainforest reads as a wall of green, but its identity is set by the flashes that punctuate it, a macaw, a poison frog, a heliconia, against muddy water and leaf-litter brown. The structure is dark green base, loud rare accent.",
         "Each refuses the candy-bright jungle: the forest is mostly shadow and mud, and the colour earns its loudness by being rare."
       ],
       "palettes": [
@@ -2543,7 +2543,7 @@
                 "tracking": "15%"
               }
             },
-            "note": "Abril Fatface is a single cut — 840 was fiction, so the core is 400 with the ladder opted out — and because that one cut is optically black, the Mulish framing stays under it (390) rather than re-inflating past a display face it cannot out-shout; the fat-face-titled natural-history plate is the register, and IBM Plex Mono's static grid (100–700 plus Text 450) gives the data voice its real SemiBold."
+            "note": "Abril Fatface is a single cut, 840 was fiction, so the core is 400 with the ladder opted out, and because that one cut is optically black, the Mulish framing stays under it (390) rather than re-inflating past a display face it cannot out-shout; the fat-face-titled natural-history plate is the register, and IBM Plex Mono's static grid (100–700 plus Text 450) gives the data voice its real SemiBold."
           }
         },
         {
@@ -2882,7 +2882,7 @@
       "eyebrow": "Biome · Vol VII · Sourced Palette Study",
       "h1": "Four palettes from <em>where land and water blur,</em> reed by reed.",
       "preface": [
-        "Wetlands are horizontal worlds of reed, water, and sky, their colour set by the plant that dominates the marsh and the way light lies flat across open water. They shift hard between seasons — green flood to gold dry.",
+        "Wetlands are horizontal worlds of reed, water, and sky, their colour set by the plant that dominates the marsh and the way light lies flat across open water. They shift hard between seasons, green flood to gold dry.",
         "Each refuses the murky-swamp cliché: wetlands are luminous, with sky-water and reed-gold doing most of the work."
       ],
       "palettes": [
@@ -2951,7 +2951,7 @@
               "c": "#6969AF"
             }
           },
-          "refuses": "Dark murky swamp. The Okavango is clear, luminous water and bright reed — a mirror, not a bog.",
+          "refuses": "Dark murky swamp. The Okavango is clear, luminous water and bright reed, a mirror, not a bog.",
           "type": {
             "base": "luxury",
             "registers": {
@@ -3001,7 +3001,7 @@
                 "tracking": "14%"
               }
             },
-            "note": "Cormorant's axis is 300–700, so a 660 core derived an 800 sibling that cannot exist — the display sits on its real Bold with an authored SemiBold/Medium ladder; the rest of the mirror-water set (Newsreader, Mulish, Spline Sans Mono) is already on real cuts and stands."
+            "note": "Cormorant's axis is 300–700, so a 660 core derived an 800 sibling that cannot exist, the display sits on its real Bold with an authored SemiBold/Medium ladder; the rest of the mirror-water set (Newsreader, Mulish, Spline Sans Mono) is already on real cuts and stands."
           }
         },
         {
@@ -3120,7 +3120,7 @@
                 "tracking": "9%"
               }
             },
-            "note": "Cormorant tops out at 700, so 720 was past the axis — clamped, with an authored SemiBold/Medium ladder — and Source Sans drops from 680 to 600 so a delicate high-contrast display is not optically outweighed by its own headline on a muted mauve moor."
+            "note": "Cormorant tops out at 700, so 720 was past the axis, clamped, with an authored SemiBold/Medium ladder, and Source Sans drops from 680 to 600 so a delicate high-contrast display is not optically outweighed by its own headline on a muted mauve moor."
           }
         },
         {
@@ -3228,7 +3228,7 @@
                 "tracking": "10%"
               }
             },
-            "note": "The pale delta set is already inside every family's axis (Cormorant 580 derives 700/500/400, all real) — only the Mulish control core moves to the 450 the Label voice clamps at, so nothing declares a Medium it never renders."
+            "note": "The pale delta set is already inside every family's axis (Cormorant 580 derives 700/500/400, all real), only the Mulish control core moves to the 450 the Label voice clamps at, so nothing declares a Medium it never renders."
           }
         },
         {
@@ -3336,7 +3336,7 @@
                 "tracking": "12%"
               }
             },
-            "note": "The framing was heavier than the display it frames (620 over 600) — Source Sans drops to 560 so the luminous dawn keeps its hierarchy, and Cormorant's SemiBold core stays because its derived 700/500/400 siblings are all inside the 300–700 axis."
+            "note": "The framing was heavier than the display it frames (620 over 600), Source Sans drops to 560 so the luminous dawn keeps its hierarchy, and Cormorant's SemiBold core stays because its derived 700/500/400 siblings are all inside the 300–700 axis."
           }
         }
       ]
@@ -3347,7 +3347,7 @@
       "eyebrow": "Biome · Vol VIII · Sourced Palette Study",
       "h1": "Four palettes from <em>the open ground,</em> all grass and sky and dust.",
       "preface": [
-        "Grasslands are dominated by two huge fields — the grass and the sky — with everything else a small punctuation: a tree, an animal, a flower. The grass colour is set by the season: green flush, gold cure, grey dormancy.",
+        "Grasslands are dominated by two huge fields, the grass and the sky, with everything else a small punctuation: a tree, an animal, a flower. The grass colour is set by the season: green flush, gold cure, grey dormancy.",
         "Each refuses the lush-green-meadow default: most of the year, grassland is cured gold and dust, not spring green."
       ],
       "palettes": [
@@ -3472,7 +3472,7 @@
                 ]
               }
             },
-            "note": "National Park runs 200–800 (Herstowski/Hoepner/Shellhorn; seven named weights), so 820 and its derived 900 sibling were both off the axis — core 800 with an authored Bold/SemiBold ladder; Barlow is static, so 640 becomes the real SemiBold, and Space Mono's 400/700 duo puts the data voice on Regular with Bold authored so Tiny-mono still holds at 9px."
+            "note": "National Park runs 200–800 (Herstowski/Hoepner/Shellhorn; seven named weights), so 820 and its derived 900 sibling were both off the axis, core 800 with an authored Bold/SemiBold ladder; Barlow is static, so 640 becomes the real SemiBold, and Space Mono's 400/700 duo puts the data voice on Regular with Bold authored so Tiny-mono still holds at 9px."
           }
         },
         {
@@ -3586,7 +3586,7 @@
                 ]
               }
             },
-            "note": "Barlow is a static nine-weight family with no 520, so the framing takes the real Medium; Space Mono is a 400/700 duo, so the data voice sits on Regular with an authored Bold, and the Source Sans control core states the 450 it renders — the display weight itself is inside National Park's 200–800 axis and stands."
+            "note": "Barlow is a static nine-weight family with no 520, so the framing takes the real Medium; Space Mono is a 400/700 duo, so the data voice sits on Regular with an authored Bold, and the Source Sans control core states the 450 it renders, the display weight itself is inside National Park's 200–800 axis and stands."
           }
         },
         {
@@ -3769,7 +3769,7 @@
               "c": "#CAD3D8"
             }
           },
-          "refuses": "Verdant pampa green. The southern steppe is pale, dry, and wind-bleached — green belongs to the wetter pampa far north.",
+          "refuses": "Verdant pampa green. The southern steppe is pale, dry, and wind-bleached, green belongs to the wetter pampa far north.",
           "type": {
             "base": "technical",
             "registers": {
@@ -3826,7 +3826,7 @@
       "eyebrow": "Biome · Vol IX · Sourced Palette Study",
       "h1": "Four palettes from <em>the tide line,</em> where water meets the living rock.",
       "preface": [
-        "The coast is an edge biome, its colour split between the water's blue-green and the dark, encrusted intertidal zone. Each shore is set by its dominant organism — coral, rockweed, mangrove, kelp — and the temperature of its sea.",
+        "The coast is an edge biome, its colour split between the water's blue-green and the dark, encrusted intertidal zone. Each shore is set by its dominant organism, coral, rockweed, mangrove, kelp, and the temperature of its sea.",
         "Each refuses the brochure-beach turquoise: most productive coasts are cold, dark, and weed-covered, with brightness coming from the life, not the water."
       ],
       "palettes": [
@@ -3936,7 +3936,7 @@
                 "tracking": "15%"
               }
             },
-            "note": "Both static families were carrying invented cores: IBM Plex Sans ships 100–700 plus Text 450 (no 460) and Spectral 200–800 (no 445), so the reef-survey framing takes Plex Sans Regular and the prose the real Spectral Regular — a soft mineral turquoise needs no extra weight anywhere, and Playfair's variable 400–900 display is untouched."
+            "note": "Both static families were carrying invented cores: IBM Plex Sans ships 100–700 plus Text 450 (no 460) and Spectral 200–800 (no 445), so the reef-survey framing takes Plex Sans Regular and the prose the real Spectral Regular, a soft mineral turquoise needs no extra weight anywhere, and Playfair's variable 400–900 display is untouched."
           }
         },
         {
@@ -4004,7 +4004,7 @@
               "c": "#B7BCBE"
             }
           },
-          "refuses": "Tropical beach palette. The Gulf of Maine is cold, brown-weeded, and granite-pink — a working northern shore.",
+          "refuses": "Tropical beach palette. The Gulf of Maine is cold, brown-weeded, and granite-pink, a working northern shore.",
           "type": {
             "base": "technical",
             "registers": {
@@ -4044,7 +4044,7 @@
                 "tracking": "9%"
               }
             },
-            "note": "IBM Plex Sans is static — 660 is not a cut — so the tide-table framing takes the real SemiBold, whose derived 700/500/400 siblings all exist; Spectral's 410 becomes Regular, and the Inter control core states the 450 it clamps to on a working northern shore."
+            "note": "IBM Plex Sans is static, 660 is not a cut, so the tide-table framing takes the real SemiBold, whose derived 700/500/400 siblings all exist; Spectral's 410 becomes Regular, and the Inter control core states the 450 it clamps to on a working northern shore."
           }
         },
         {
@@ -4152,7 +4152,7 @@
                 "tracking": "12%"
               }
             },
-            "note": "Plex Sans's 620 and Spectral's 440 are both weights their static families never cut — SemiBold and Regular respectively — leaving the mud-and-one-orange-cat story carried where it belongs, in the display and the rare accent, not in invented text weights."
+            "note": "Plex Sans's 620 and Spectral's 440 are both weights their static families never cut, SemiBold and Regular respectively, leaving the mud-and-one-orange-cat story carried where it belongs, in the display and the rare accent, not in invented text weights."
           }
         },
         {
@@ -4350,7 +4350,7 @@
               "c": "#CBBE5A"
             }
           },
-          "refuses": "Grey-volcanic monotone. Landmannalaugar is a full mineral spectrum — ochre, green, rust — not a field of grey ash.",
+          "refuses": "Grey-volcanic monotone. Landmannalaugar is a full mineral spectrum, ochre, green, rust, not a field of grey ash.",
           "type": {
             "base": "technical",
             "registers": {
@@ -4647,7 +4647,7 @@
                 ]
               }
             },
-            "note": "The display weight is fine (640 snaps inside Space Grotesk's 300–700), but the static families were not: IBM Plex Serif's 440 and Plex Sans's 465 become the real Text 450 that IBM cut for continuous reading, and Space Mono's 400/700 duo takes Regular with Bold authored — a derived 300/500/600 ladder would have resolved onto faces the family does not have."
+            "note": "The display weight is fine (640 snaps inside Space Grotesk's 300–700), but the static families were not: IBM Plex Serif's 440 and Plex Sans's 465 become the real Text 450 that IBM cut for continuous reading, and Space Mono's 400/700 duo takes Regular with Bold authored, a derived 300/500/600 ladder would have resolved onto faces the family does not have."
           }
         },
         {
@@ -4716,7 +4716,7 @@
               "c": "#1965BE"
             }
           },
-          "refuses": "Hot lava-glow red. Ijen's signature is cold blue fire and pale acid turquoise — a chemical palette, not a molten one.",
+          "refuses": "Hot lava-glow red. Ijen's signature is cold blue fire and pale acid turquoise, a chemical palette, not a molten one.",
           "type": {
             "base": "product",
             "registers": {
@@ -4773,7 +4773,7 @@
       "eyebrow": "Biome · Vol XI · Sourced Palette Study",
       "h1": "Four palettes from <em>below the surface,</em> lit by a single shaft.",
       "preface": [
-        "Underground, colour comes from mineral deposition and the quality of the one light source — a shaft, a lamp, a glow. The base is near-black; everything is read against the dark, which makes even pale stone glow.",
+        "Underground, colour comes from mineral deposition and the quality of the one light source, a shaft, a lamp, a glow. The base is near-black; everything is read against the dark, which makes even pale stone glow.",
         "Each refuses the flat-black 'cave' cliché: subterranean palettes are about luminous mineral against shadow, not an absence of colour."
       ],
       "palettes": [
@@ -4843,7 +4843,7 @@
               "c": "#C29B5D"
             }
           },
-          "refuses": "Featureless black void. A cavern is luminous honey stone against the dark — the colour is the formation, lit.",
+          "refuses": "Featureless black void. A cavern is luminous honey stone against the dark, the colour is the formation, lit.",
           "type": {
             "base": "luxury",
             "registers": {
@@ -4879,7 +4879,7 @@
                 "tracking": "15%"
               }
             },
-            "note": "Prata is a single cut, so 760 was fiction — core 400 with the ladder opted out — and because that cut is a Regular-weight didone the Inter framing must stay under it (380) rather than out-shouting the thing it frames; the Rajdhani Sub-title is dropped (nothing in a lamp-lit cavern earns a second display face) and IBM Plex Mono's real static Text 450 carries the data voice."
+            "note": "Prata is a single cut, so 760 was fiction, core 400 with the ladder opted out, and because that cut is a Regular-weight didone the Inter framing must stay under it (380) rather than out-shouting the thing it frames; the Rajdhani Sub-title is dropped (nothing in a lamp-lit cavern earns a second display face) and IBM Plex Mono's real static Text 450 carries the data voice."
           }
         },
         {
@@ -4948,7 +4948,7 @@
               "c": "#9DC2D2"
             }
           },
-          "refuses": "Tropical-water aqua. Glacier-cave blue is a deep, cold cobalt from compression — not a warm lagoon turquoise.",
+          "refuses": "Tropical-water aqua. Glacier-cave blue is a deep, cold cobalt from compression, not a warm lagoon turquoise.",
           "type": {
             "base": "technical",
             "registers": {
@@ -5158,7 +5158,7 @@
               "c": "#D4C8A2"
             }
           },
-          "refuses": "Murky underground gloom. A cenote is luminous — clear blue water lit from a hole in the jungle roof.",
+          "refuses": "Murky underground gloom. A cenote is luminous, clear blue water lit from a hole in the jungle roof.",
           "type": {
             "base": "editorial",
             "registers": {
@@ -5316,7 +5316,7 @@
                 "tracking": "13%"
               }
             },
-            "note": "Sorts Mill Goudy ships Roman and Italic only, so 780 was fiction — core 400 with the ladder opted out — and the Source Sans framing sits under that ceiling, which is the right shape anyway for a hillside where one species' red does all the shouting; the rest of the New England book-type set is on real axes."
+            "note": "Sorts Mill Goudy ships Roman and Italic only, so 780 was fiction, core 400 with the ladder opted out, and the Source Sans framing sits under that ceiling, which is the right shape anyway for a hillside where one species' red does all the shouting; the rest of the New England book-type set is on real axes."
           }
         },
         {
@@ -5386,7 +5386,7 @@
               "c": "#D8D9D0"
             }
           },
-          "refuses": "Summer-green woodland. The May wood is defined by blue below and acid-green above — a fortnight that summer erases.",
+          "refuses": "Summer-green woodland. The May wood is defined by blue below and acid-green above, a fortnight that summer erases.",
           "type": {
             "base": "editorial",
             "registers": {
@@ -5495,7 +5495,7 @@
               "c": "#B3B2AC"
             }
           },
-          "refuses": "Western maple-medley. A Kyoto garden is composed — crimson on green on grey — not a wild scatter of fall colour.",
+          "refuses": "Western maple-medley. A Kyoto garden is composed, crimson on green on grey, not a wild scatter of fall colour.",
           "type": {
             "base": "product",
             "registers": {
@@ -5606,7 +5606,7 @@
               "c": "#CFD6D8"
             }
           },
-          "refuses": "Autumn-Appalachian cliché. In July the Smokies are deep green and pale bloom — the famous fall colour is months away.",
+          "refuses": "Autumn-Appalachian cliché. In July the Smokies are deep green and pale bloom, the famous fall colour is months away.",
           "type": {
             "base": "technical",
             "registers": {
@@ -5647,7 +5647,7 @@
                 "tracking": "8%"
               }
             },
-            "note": "Same single-cut correction as the volume (Goudy 400, weights opted out, framing beneath the ceiling), and the Mulish control core drops from 475 to the 450 the Label voice clamps at — a deep-green July cove needs no manufactured emphasis."
+            "note": "Same single-cut correction as the volume (Goudy 400, weights opted out, framing beneath the ceiling), and the Mulish control core drops from 475 to the 450 the Label voice clamps at, a deep-green July cove needs no manufactured emphasis."
           }
         }
       ]

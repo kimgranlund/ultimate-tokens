@@ -1,8 +1,8 @@
-# Component Inventory — ultimate-tokens UI
+# Component Inventory: ultimate-tokens UI
 
 > Inventory of every interactive primitive + data-viz mark in the UI, profiled as a **contract
 > card** on the COMPOSE axis (layer → anatomy → API → composition). Produced with the
-> `design-skills:component-decomposer` method. This is a **DECOMPOSE of the as-built UI** — it
+> `design-skills:component-decomposer` method. This is a **DECOMPOSE of the as-built UI**, it
 > records reality (including the gaps against the skill's family policy), it does not redesign.
 >
 > ℹ️ **Line numbers are maintained.** Every `file:line` citation below is checked by
@@ -38,20 +38,20 @@ It builds every control inline with a single hyperscript helper `h(tag, attrs, .
   *instances* are `inFigma`-gated buttons ("Read live" `sections/color.js:1396`, "Read approx →" (`readFromFigmaVariables()`, `app.js:1214`),
   `.figma-plugin-btn` `overlays/drawer.js:224`) and the `.figma-files` mode segment (`overlays/drawer.js:221`).
 - **No native-replacement layer + no FACE.** Controls are a mix of *native* elements (`<input
-  type=range/text/search/checkbox>`, `<select>`) and *custom `<div>`/`<button>` widgets* — none are
+  type=range/text/search/checkbox>`, `<select>`) and *custom `<div>`/`<button>` widgets*, none are
   form-associated custom elements. The native ones inherit native a11y for free; the custom ones
   (`.toggle`, `segmented()`) are built on real `<button>`s with ARIA roles (`switchControl`, `app-helpers.mjs:370`;
   `segmented`, `app.js:1594`), so they keep focus and keyboard.
 - **Forced-colors support is one pass**, the `@media (forced-colors: active)` block at
   `styles.css:1582`; custom-painted controls outside it still flatten in Windows High Contrast.
 - **Geometry is ad-hoc, off any ramp.** Buttons are `padding: 4px 9px` (`styles.css:164`), the range
-  thumb is 15px, the toggle track 34×19 — none derived from a documented size ramp or the
+  thumb is 15px, the toggle track 34×19, none derived from a documented size ramp or the
   `(height − glyph)/2` law. Not wrong per se, but undocumented and unenforced.
 
-## Refactor status — primitive extraction (implemented)
+## Refactor status: primitive extraction (implemented)
 
 A primitive-extraction pass has since landed (branch `refactor/primitive-extraction`), at the
-**helper-factory scale** (not full custom-element/FACE — see the rationale in the project's before/after:
+**helper-factory scale** (not full custom-element/FACE, see the rationale in the project's before/after:
 no `<form>`s, one internal surface, native elements already carry most a11y). Six factories now own each
 control's contract in one place; all changes verified by `npm test` (10/10), including 8 new a11y
 regression assertions (`px1`–`px8` in `test/ui/headless-boot.mjs`).
@@ -72,7 +72,7 @@ drawer `role=dialog`; toast `aria-live`. `slider()` was already the model and is
 `.segmented` carries no self-margin (`styles.css:869`) and `.field { margin: 0; }` (`styles.css:928`);
 the parent owns spacing.
 **Still deferred (intentional):** a true drawer focus-trap; migrating the remaining uniform-`ghost`
-buttons + the composite swatch cells (ramp-strip/scrim/footer) — all behavior-neutral, adoptable
+buttons + the composite swatch cells (ramp-strip/scrim/footer), all behavior-neutral, adoptable
 incrementally.
 
 ## Summary table
@@ -82,36 +82,36 @@ incrementally.
 | 1 | **Button** | component | native `<button>` | ~9 (primary · ghost · danger · undo/redo · add-pal · pane-toggle · figma-plugin · ex-btn · copy-float · map-reset) | ~20 sites, 85+ refs | `button`, `.primary`, `.ghost`, `.danger`, `.ex-btn`, `.copy-float`, `.map-reset`, `.pane-toggle` | good (focus-visible, aria-pressed×7, aria-label on icon-only) | no forced-colors; variant sprawl via ad-hoc classes |
 | 2 | **Toggle / switch** | component | custom `<button role=switch>` (`switchControl()`) | 1 | 2 | `.toggle`, `.track` | ✓ role=switch, aria-checked, aria-label, native focus + Space/Enter | palette site has no `<label>` |
 | 3 | **Segmented control** | component (composes buttons) | custom (`<button>`s via `segmented()`) | 2 base stylings (`.segmented` · `.figma-files`) + 4 modifiers (`.canvas-seg` · `.segmented.seg-sm` · `.newpal-seg` · `.settings-seg`) | 15 | `.segmented`, `.canvas-seg`, `.figma-files`, `.newpal-seg`, `.settings-seg` | ✓ one keyboard model: roving tabindex + arrows on every site; `role=tablist` or `group` | drawer format is a native `<select>` now, not a segment |
-| 4 | **Slider / range** | component | native `<input type=range>` | 1 (via `slider()` helper) | 1 helper, ~14 instances | `input[type=range]`, `.field` | partial — `aria-label` set (label sibling NOT associated, noted in code `app.js:2059-2062`); no forced-colors | custom thumb only; consistent — the model primitive |
+| 4 | **Slider / range** | component | native `<input type=range>` | 1 (via `slider()` helper) | 1 helper, ~14 instances | `input[type=range]`, `.field` | partial, `aria-label` set (label sibling NOT associated, noted in code `app.js:2059-2062`); no forced-colors | custom thumb only; consistent, the model primitive |
 | 5 | **Select** | component | native `<select>` | 1 + `.map-raw-select` | 3 | `select`, `.map-raw-select` | ✓ `.map-raw-select` has `aria-label`; Distribution/Curve are `field()` rows (label[for] + fallback aria-label) | two naming paths |
 | 6 | **Text input** | component | native `<input type=text>` | 2 (`.field` name · `.map-raw-input`) | 2 | `input[type=text]`, `.map-raw-input` | ✓ map-raw-input has `aria-label`; Name is a `field()` row (label[for] + fallback aria-label) | two naming paths |
-| 7 | **Search input** | component | native `<input type=search>` | 1 | 1 (singleton, reused) | `input[type=search]` | good — `aria-label` + placeholder | reused node (`ensureSearchInput`, `app.js:864-867`) to preserve focus |
-| 8 | **Checkbox** | component | native `<input type=checkbox>` | 1 | 1 | `.mini-check` | good — label-wrapped (associated), `accent-color` | only one instance |
+| 7 | **Search input** | component | native `<input type=search>` | 1 | 1 (singleton, reused) | `input[type=search]` | good, `aria-label` + placeholder | reused node (`ensureSearchInput`, `app.js:864-867`) to preserve focus |
+| 8 | **Checkbox** | component | native `<input type=checkbox>` | 1 | 1 | `.mini-check` | good, label-wrapped (associated), `accent-color` | only one instance |
 | 9 | **Chip / pill** | component | custom span/button | 3 (tile-tag · preset · drift-sum) | ~6 | `.tile-tag`, `.damp-presets .preset`, `.map-drift-sum` | n/a (status) / preset is a clickable `<button>` | 3 unrelated "pill" stylings |
-| 10 | **Field wrapper** | primitive (layout) | custom `<div>` | 1 | ~7 | `.field`, `.field > label` | n/a — wraps label + control | the only true layout primitive |
+| 10 | **Field wrapper** | primitive (layout) | custom `<div>` | 1 | ~7 | `.field`, `.field > label` | n/a, wraps label + control | the only true layout primitive |
 | 11 | **Swatch / color-cell** | primitive | custom `<i>`/`<span>` | ~6 (ramp · scrim · map · dot · roles · footer) | many | `.ramp-strip i`, `.scrim-cell`, `.map-swatch`, `.swatch-dot`, `.sw` | n/a (decorative; hover outline) | 6 sizes/idioms of one concept |
 | 12 | **Set-tile** | component (composition) | custom `<button>` | 2 (set · preset) | 2 builders | `.set-tile`, `.set-thumb`, `.tile-tag`, `.del` | tile is a `<button>`; nested `.del` is a nested click | nested interactive in a button |
-| 13 | **Ramp-row** | component (composition) | custom `<div>` | 1 | 2 scenes | `.ramp-row`, `.enable`, `.drag-handle`, `.ramp-name`, `.ramp-strip` | partial — selectable/draggable row; `.enable`/`.drag-handle` are `<div>`s | rich interaction, weak semantics |
-| 14 | **Contrast bar** | data-viz | SVG/CSS | 1 | 1 | `.an-bar`, `.an-track`, `.an-fill`, `.an-thresh` | n/a | — |
-| 15 | **Hue wheel** | data-viz | SVG | 1 | 1 | `.hw-circle`, `.hw-dot`, `.hw-ring` | n/a | — |
-| 16 | **Tone / lightness curve** | data-viz | SVG | 1 | 1 | `.lc-axis`, `.lc-ceiling`, `.lc-toneline`, `.lc-applied`, `.lc-dot` | n/a | — |
-| 17 | **Damping graph** | data-viz | SVG | 1 | 1 | `.damp-graph`, `.dg-unity` | n/a | — |
-| 18 | **Graph legend** | data-viz | CSS | 1 | 1 | `.an-legend`, `.an-leg`, `.an-leg-mark` | n/a | — |
-| — | **Radio** | — | **ABSENT** | — | 0 | — | — | deliberate: covered by segmented + select |
-| — | **Drawer / Toast** | overlay | custom | 1 each | 1 each | `.drawer`, `.drawer-scrim`, `.toast` | drawer has no focus-trap/Esc story | overlays, not primitives — noted below |
+| 13 | **Ramp-row** | component (composition) | custom `<div>` | 1 | 2 scenes | `.ramp-row`, `.enable`, `.drag-handle`, `.ramp-name`, `.ramp-strip` | partial, selectable/draggable row; `.enable`/`.drag-handle` are `<div>`s | rich interaction, weak semantics |
+| 14 | **Contrast bar** | data-viz | SVG/CSS | 1 | 1 | `.an-bar`, `.an-track`, `.an-fill`, `.an-thresh` | n/a | none |
+| 15 | **Hue wheel** | data-viz | SVG | 1 | 1 | `.hw-circle`, `.hw-dot`, `.hw-ring` | n/a | none |
+| 16 | **Tone / lightness curve** | data-viz | SVG | 1 | 1 | `.lc-axis`, `.lc-ceiling`, `.lc-toneline`, `.lc-applied`, `.lc-dot` | n/a | none |
+| 17 | **Damping graph** | data-viz | SVG | 1 | 1 | `.damp-graph`, `.dg-unity` | n/a | none |
+| 18 | **Graph legend** | data-viz | CSS | 1 | 1 | `.an-legend`, `.an-leg`, `.an-leg-mark` | n/a | none |
+| none | **Radio** | none | **ABSENT** | none | 0 | none | none | deliberate: covered by segmented + select |
+| none | **Drawer / Toast** | overlay | custom | 1 each | 1 each | `.drawer`, `.drawer-scrim`, `.toast` | drawer has no focus-trap/Esc story | overlays, not primitives, noted below |
 
 ---
 
-## Contract cards — Controls
+## Contract cards: Controls
 
 ### 1 · Button
 
 - **Surface** S1 (+ S2 instances). **Sites** ~20 `h("button"…)`; 85+ refs.
-- **Anatomy** `[ icon? · label? ]` — no caret variant. Icon-only used for zoom (`zoomBy()`, `sections/color.js:854/856`),
+- **Anatomy** `[ icon? · label? ]`, no caret variant. Icon-only used for zoom (`zoomBy()`, `sections/color.js:854/856`),
   drawer close (`_drawerHead()`, `overlays/drawer.js:132-138`).
 - **API** classes-as-variant: `.primary` (`styles.css:171`), `.ghost` (`styles.css:177`), `.danger`
   (modifier on `.ghost`, `app-helpers.mjs:412`), `.add-pal-btn` (dashed, `styles.css:511`),
-  `.ex-btn` (preview, `cursor:default` — non-interactive, `styles.css:900-903`), `.copy-float` (`styles.css:1100`),
+  `.ex-btn` (preview, `cursor:default`, non-interactive, `styles.css:900-903`), `.copy-float` (`styles.css:1100`),
   `.map-reset` (borderless icon, `styles.css:731`), `.pane-toggle` (`styles.css:406`),
   `.figma-plugin-btn`, `.undo-btn`/`.redo-btn` (`app.js:1402/1402`).
 - **States** default · `hover` (`button:hover` `styles.css:170`) · `focus-visible` (`styles.css:179`) ·
@@ -120,7 +120,7 @@ incrementally.
   `aria-pressed` at `app-helpers.mjs:421/548`, `app.js:1466/1610`, `sections/color.js:527/1021/1231`).
 - **a11y** ✓ `:focus-visible` ring; ✓ `aria-pressed` on toggle-buttons; ✓ `aria-label` on icon-only
   (`sections/color.js:854`). ✗ no `forced_colors`.
-- **Geometry** `padding:4px 9px; border-radius:5px; gap:6px` — ad-hoc, not a ramp.
+- **Geometry** `padding:4px 9px; border-radius:5px; gap:6px`, ad-hoc, not a ramp.
 
 ```json
 { "component":"button","layer":"component","role":"button","replaces_native":false,
@@ -144,7 +144,7 @@ incrementally.
   the `.on` class.
 - **a11y** ✓ real `<button>`: focusable, `:focus-visible` ring, Space/Enter toggle from the platform;
   ✓ `role="switch"` + `aria-checked`; ✓ `aria-label` carries the stable purpose ("Palette enabled" /
-  "Chroma basis — …"). The palette site sits in a bare `field` div with no `<label>` at all
+  "Chroma basis: gamut when on, peak when off"). The palette site sits in a bare `field` div with no `<label>` at all
   (`sections/color.js:1770`); the Chroma basis site goes through `field()`, which also associates a
   `label[for]` (`app-helpers.mjs:563`).
 - **Geometry** ad-hoc (34×19 track / 15px thumb).
@@ -167,9 +167,9 @@ incrementally.
   `overlays/settings.js:30` inside the settingRow helper, one live instance per settings row, called
   from 10 call sites (11-12 live rows) across `overlays/settings.js`. **Variants** as found, four stylings of one idea; today two
   base stylings plus four modifiers remain:
-  - **Inspector tabs** `.segmented` `[Palette|Global|Roles]` — `role=tablist`/`tab`, roving
+  - **Inspector tabs** `.segmented` `[Palette|Global|Roles]`, `role=tablist`/`tab`, roving
     tabindex, ArrowLeft/ArrowRight (`app.js:1586-1619`). *Well-built.*
-  - **Canvas view** `.canvas-seg` `[Palettes|Scrims|Mapping|Radix]` — `role=tablist` (`sections/color.js:814-824`).
+  - **Canvas view** `.canvas-seg` `[Palettes|Scrims|Mapping|Radix]`, `role=tablist` (`sections/color.js:814-824`).
   - **Canvas stops** `.canvas-seg` `role=group` (`sections/color.js:829-837`); the Typography and Geometry
     breakpoint-mode and specimen-mode segments reuse the same modifier: `sections/typography.js:177`,
     `sections/typography.js:308`, `sections/geometry.js:230`, `sections/geometry.js:381`.
@@ -189,7 +189,7 @@ incrementally.
   `role=tablist` sites add `role=tab` + `aria-selected` + `aria-controls`, `role=group` sites add
   `aria-pressed`. The former `.drawer-tabs`/`.figma-files` keyboard gap is closed.
 - **Composition** A4: composes the button primitive into a capacity-fixed group. No overflow story
-  (acceptable — fixed 3–4 segments).
+  (acceptable, fixed 3–4 segments).
 
 ```json
 { "component":"segmented","layer":"component","role":"tablist|group","replaces_native":false,
@@ -206,10 +206,10 @@ incrementally.
 - **Anatomy** `.field` `[ label · readout(<b>) · input[type=range] ]`; track + custom `thumb` (`styles.css:936-950`).
 - **API** clean function signature; `fmtFn` for the live readout, `onInput` callback; `data-fk`
   carries a focus key so re-render preserves focus, `app.js:2062`.
-- **a11y** ✓ `aria-label` on the input (the sibling `<label>` is deliberately *not* associated —
+- **a11y** ✓ `aria-label` on the input (the sibling `<label>` is deliberately *not* associated,
   documented at `app.js:2059-2062`). Native keyboard, arrows/Home/End, inherited. ✗ no forced-colors on
   the custom thumb.
-- **Verdict** the one consistently-factored primitive — every slider goes through one helper.
+- **Verdict** the one consistently-factored primitive, every slider goes through one helper.
 
 ```json
 { "component":"slider","layer":"component","role":"slider","replaces_native":false,
@@ -239,7 +239,7 @@ incrementally.
 
 ### 6 · Text input
 
-- **Surface** S1. **Sites** 2 — palette **Name** in `.field` (`sections/color.js:1751-1753`), `.map-raw-input`
+- **Surface** S1. **Sites** 2, palette **Name** in `.field` (`sections/color.js:1751-1753`), `.map-raw-input`
   free-text token editor (`sections/color.js:1344`, `.ov` override state).
 - **a11y** ✓ `.map-raw-input` has `aria-label` (`sections/color.js:1344-1348`); ✓ **Name** is a
   `field()` row (`sections/color.js:1751`): the `<label for>` is associated with the input's stamped
@@ -256,7 +256,7 @@ incrementally.
 
 ### 7 · Search input
 
-- **Surface** S1 (gallery). **Sites** 1 — `this._searchInput` (`ensureSearchInput()`, `app.js:865-867`), **created once and
+- **Surface** S1 (gallery). **Sites** 1, `this._searchInput` (`ensureSearchInput()`, `app.js:865-867`), **created once and
   reused** across renders so typing never loses focus (the documented bug-fix at `app.js:864-865`).
 - **a11y** ✓ `aria-label` "Search palette sets" + placeholder. Native clear/keyboard.
 - **Style** shares the `input[type="text"], input[type="search"], select` base (`styles.css:192`); width pinned in the
@@ -270,12 +270,12 @@ incrementally.
 
 ### 8 · Checkbox
 
-- **Surface** S1. **Sites** 1 — "ends bend same way" (`sections/color.js:1867-1875`, native `type=checkbox`).
+- **Surface** S1. **Sites** 1, "ends bend same way" (`sections/color.js:1867-1875`, native `type=checkbox`).
 - **Anatomy** `.mini-check` `<label>` **wrapping** the native input + text (`styles.css:817-818`) →
   label *is* associated (the correct pattern, unlike the sliders/Name input).
 - **a11y** ✓ associated label, ✓ `accent-color: var(--accent)`, native keyboard (Space).
 - **Note** the only native checkbox; the boolean-toggle role elsewhere is taken by the custom
-  `.toggle` (card 2). The contrast is instructive — this one is accessible because it stayed native.
+  `.toggle` (card 2). The contrast is instructive, this one is accessible because it stayed native.
 
 ```json
 { "component":"checkbox","layer":"component","role":"checkbox(native)","replaces_native":false,
@@ -286,8 +286,8 @@ incrementally.
 
 ### 9 · Chip / pill
 
-Three unrelated "pill" stylings — a naming/coherence drift, not one primitive:
-- **`.tile-tag`** (`styles.css:291-302`) — non-interactive status badge on gallery tiles: palette
+Three unrelated "pill" stylings, a naming/coherence drift, not one primitive:
+- **`.tile-tag`** (`styles.css:291-302`), non-interactive status badge on gallery tiles: palette
   count + "preset"/"ago" (`app.js:727/728/811/812`); `pointer-events:none`, absolute over the thumb.
 - **`.chip` interactive**, the damping presets: `chip(name, { mode: "interactive", on })` renders a
   `<button class="chip" aria-pressed>` inside the `.damp-presets` row (`chip()`, `sections/color.js:168`;
@@ -301,13 +301,13 @@ Three unrelated "pill" stylings — a naming/coherence drift, not one primitive:
 { "component":"chip","layer":"component","role":"status|button","replaces_native":false,
   "parts":["pill"],"states":["on(preset)","in-sync/has-drift(drift)"],"keyboard":["native(preset)"],
   "forced_colors":false,"owns_outer_margin":false,
-  "flags":["3 separate pill stylings (tile-tag / preset / drift-sum) — no shared chip primitive"] }
+  "flags":["3 separate pill stylings (tile-tag / preset / drift-sum), no shared chip primitive"] }
 ```
 
 ### 10 · Field wrapper
 
 - **Surface** S1. **Sites** ~7 (every slider + Name + the selects/toggles in the inspector).
-- **Anatomy** `.field` `[ label[ text · readout(<b>) ] · control ]` — label is `display:flex;
+- **Anatomy** `.field` `[ label[ text · readout(<b>) ] · control ]`, label is `display:flex;
   justify-content:space-between` so the readout right-aligns, `styles.css:929-932`.
 - **Role** the one genuine layout primitive (token-only, no domain name). Owns no outer margin:
   `.field { margin: 0; }` (`styles.css:928`), the parent provides spacing; the only scoped exception is
@@ -321,14 +321,14 @@ Three unrelated "pill" stylings — a naming/coherence drift, not one primitive:
 
 ---
 
-## Contract cards — Data-viz marks (S3)
+## Contract cards: Data-viz marks (S3)
 
-These are non-interactive SVG/CSS marks (hover-outline at most). Cards are lighter — anatomy +
+These are non-interactive SVG/CSS marks (hover-outline at most). Cards are lighter, anatomy +
 classes + flags.
 
 ### 11 · Swatch / color-cell  ★ most-duplicated primitive
 
-One concept — *a rectangle filled with a color, optionally over a transparency checkerboard* — in
+One concept, *a rectangle filled with a color, optionally over a transparency checkerboard*, in
 **six idioms**: `.ramp-strip i` (26×40 ramp cell + `.oog` out-of-gamut hatch + hover outline, `styles.css:619-626`),
 `.scrim-cell` + `.scrim-fill` (checkerboard, `styles.css:640-644`),
 `.map-swatch` + `.map-swatch-fill` (checkerboard token swatch, `styles.css:692-696`), `.swatch-dot`
@@ -341,10 +341,10 @@ cell *shapes* still differ per idiom; `swatch()` covers the dot and the roles-ta
 
 `.set-tile` → `.set-thumb` `[ .strip i[] · .tile-tag×2 · .del ]` + `.set-meta` (`styles.css:271-315`;
 built by `buildTiles()` `app.js:674` / `buildPresetTiles()` `app.js:758`). **Flag (as-found):** the tile was
-a `<button>` with a clickable `.del` **`<span>`** inside it — *not* a button-in-button (so valid HTML),
+a `<button>` with a clickable `.del` **`<span>`** inside it, *not* a button-in-button (so valid HTML),
 but the delete was mouse-only (a span with `onclick`, no keyboard). **→ Fixed:** the editable tile is now
 a `<div role=button>` (Enter/Space) so `.del` is a real, focusable `<button>`. (Preset tiles stay plain
-`<button>`s — no nested interactive.)
+`<button>`s, no nested interactive.)
 
 ### 13 · Ramp-row (composition)
 
@@ -365,17 +365,17 @@ the canvas preview's `color-scheme`, not the chrome's.
 
 ### 15 · Hue wheel
 
-`.hw-circle` (axis) · `.hw-ring` (accent ring) · `.hw-dot` (per-stop dots) — SVG polar plot
+`.hw-circle` (axis) · `.hw-ring` (accent ring) · `.hw-dot` (per-stop dots), SVG polar plot
 (`styles.css:481-483`).
 
 ### 16 · Tone / lightness curve
 
 `.lc-axis` · `.lc-ceiling` (gamut fill) · `.lc-toneline` (dashed reference) · `.lc-applied` (accent
-curve) · `.lc-dot` — SVG L* curve (`styles.css:824-828`).
+curve) · `.lc-dot`, SVG L* curve (`styles.css:824-828`).
 
 ### 17 · Damping graph
 
-`.damp-graph` container + `.dg-unity` (dashed identity line, `styles.css:821-822`) — the differential-damping falloff
+`.damp-graph` container + `.dg-unity` (dashed identity line, `styles.css:821-822`), the differential-damping falloff
 curve (`graphDamping()` `sections/color.js:188`).
 
 ### 18 · Graph legend
@@ -389,22 +389,22 @@ curve (`graphDamping()` `sections/color.js:188`).
 
 Noted for completeness (the "everything interactive" scope) but they are *patterns*, not primitives:
 
-- **Export drawer** `dialog.drawer` (`renderDrawer` in `app.js`) — a native `<dialog>` promoted to the
+- **Export drawer** `dialog.drawer` (`renderDrawer` in `app.js`), a native `<dialog>` promoted to the
   browser **top layer** via `showModal()`, so `role=dialog`, focus-trap, `::backdrop`, background-inert,
   and `Esc`-to-close come for free; open/close is reconciled after each render by `_syncDrawer` (the
   single source of truth is `exportOpen`). A backdrop click closes it.
-- **New-Palette modal** `dialog.newpal` (`renderNewPalette` in `app.js`) — a centered, **header-draggable**
+- **New-Palette modal** `dialog.newpal` (`renderNewPalette` in `app.js`), a centered, **header-draggable**
   native `<dialog>` (top layer, like the drawer; `_syncNewPal`). Two columns: a hue × chroma circle
   (`.newpal-hc`) + the reused chroma curve on the left; the derivation selection/picker + a **live
   proposed-palette preview** (`.newpal-pp-*` swatches + `.newpal-ramp`) on the right. The "Derive from"
   strip is swatch-only chips. See `knowledge-06-palette-derivation.md`.
-- **Toast** `.toast` — transient confirmation (`role=status`, `aria-live=polite`).
+- **Toast** `.toast`, transient confirmation (`role=status`, `aria-live=polite`).
 
-## Notable absence — Radio
+## Notable absence: Radio
 
 **No native radio and no custom radiogroup exists** (`grep type="radio"` → 0). The
 mutually-exclusive-choice need is met by **segmented controls** (Distribution could be one; it's a
-select) and **native `<select>`**. This is a coherent choice, not an oversight — recorded so the
+select) and **native `<select>`**. This is a coherent choice, not an oversight, recorded so the
 inventory is complete.
 
 ---
@@ -412,59 +412,59 @@ inventory is complete.
 ## Findings & recommendations
 
 Scored on the COMPOSE/REALIZE quadrant per group. The whole UI is **built-right-ish, designed-wrong**
-for a *library* (it works, but there's no reusable contract) — except the data-viz marks, which are
+for a *library* (it works, but there's no reusable contract), except the data-viz marks, which are
 fine as bespoke one-offs.
 
 ### Severity-ranked
 
-1. **✅ 🔴 Custom `.toggle` is inaccessible (card 2).** *Fixed* — `switchControl()` now emits a
+1. **✅ 🔴 Custom `.toggle` is inaccessible (card 2).** *Fixed*, `switchControl()` now emits a
    `<button role=switch>` with `aria-checked`, `:focus-visible`, and native Space/Enter. (3 sites
    migrated.)
-2. **✅ 🔴 No forced-colors support anywhere.** *Fixed* — one `@media (forced-colors:active)` block
+2. **✅ 🔴 No forced-colors support anywhere.** *Fixed*, one `@media (forced-colors:active)` block
    (`styles.css`) re-asserts switch/segment/slider-thumb/chip state with `Highlight`/`ButtonText`
    system colors.
-3. **✅ 🟠 Label-association drift.** *Fixed* — `field()` stamps `label[for]` + control `id` (and a
+3. **✅ 🟠 Label-association drift.** *Fixed*, `field()` stamps `label[for]` + control `id` (and a
    fallback `aria-label`); Distribution, Curve, Name, Hue space, Chroma basis now have accessible
    names by construction.
-4. **✅ 🟠 Segmented control had 4 stylings, 2 without the keyboard model.** *Fixed* — one
+4. **✅ 🟠 Segmented control had 4 stylings, 2 without the keyboard model.** *Fixed*, one
    `segmented()` helper (roving tabindex + arrows, `role=tablist`/`group`); all 6 sites migrated,
    incl. drawer-tabs + figma-files. Export tabs now wire `aria-controls`→`role=tabpanel`.
-5. **✅ 🟡 Button variant sprawl.** *Fixed* — `btn()` with a 4-term vocabulary `{ghost, primary,
+5. **✅ 🟡 Button variant sprawl.** *Fixed*, `btn()` with a 4-term vocabulary `{ghost, primary,
    danger, bare}`; layout classes (`figma-plugin-btn`, `figma-apply`, …) ride `cls`, off the variant
    axis. Variant-bearing + header buttons migrated; remaining uniform-`ghost` buttons adopt `btn()`
    opportunistically (no behavior change).
-6. **✅ 🟡 Swatch duplication.** *Fixed (partial, by design)* — `swatch()` + `.swatch` primitive;
+6. **✅ 🟡 Swatch duplication.** *Fixed (partial, by design)*, `swatch()` + `.swatch` primitive;
    the checkerboard is now defined **once** (was copy-pasted ×2, not ×3 as first stated) and reused by
    `.scrim-cell`/`.map-swatch`/`.swatch.alpha`. The simple opaque chips (inspector dot, role refs)
    migrated; the composite cells (ramp-strip, scrim-cell, footer) keep their layout but share the
    checkerboard.
-7. **✅ 🟡 Three "chip/pill" stylings.** *Fixed* — `chip()` + `.chip` primitive with
+7. **✅ 🟡 Three "chip/pill" stylings.** *Fixed*, `chip()` + `.chip` primitive with
    `interactive`/`status` modes + tones; `damp-presets` and `map-drift-sum` migrated. (The
-   absolutely-positioned `.tile-tag` overlay badge stays separate — it is an overlay, not an in-flow
+   absolutely-positioned `.tile-tag` overlay badge stays separate, it is an overlay, not an in-flow
    chip.)
 8. **✅ Self-owned outer margins** on `.field` / `.segmented`: resolved. Both are `margin: 0`
    (`styles.css:928`, `styles.css:869-870`, the latter with a "no self-margin" comment); the parent owns
    spacing. The earlier "deferred, intentional" note described a state that no longer exists.
-9. **✅ ⚪ Set-tile nested interactive.** *Fixed + corrected* — it was a `.del` **`<span>`** (mouse-only)
+9. **✅ ⚪ Set-tile nested interactive.** *Fixed + corrected*, it was a `.del` **`<span>`** (mouse-only)
    inside the tile `<button>`, not a button-in-button (so not invalid HTML, but the delete had no
    keyboard). The tile is now a `<div role=button>` (Enter/Space) so `.del` is a real focusable
    `<button>`.
-10. **✅ ⚪ Drawer/Toast semantics + correction.** *Fixed* — drawer gets `role=dialog` +
+10. **✅ ⚪ Drawer/Toast semantics + correction.** *Fixed*, drawer gets `role=dialog` +
    `aria-modal` + `aria-label`; toasts get `role=status` + `aria-live=polite`. Correction: `Esc`
    **already** closed the drawer (`app.js` keydown handler). A true focus-trap remains a follow-up.
 
-### Extraction candidates — all landed
+### Extraction candidates: all landed
 
 All six are now implemented (see Refactor status). Ranked as originally prioritized:
 
-1. **`slider()`** — was already the model; now the documented reference primitive (unchanged).
-2. **`segmented()`** ✅ — 6 call-sites, 4 stylings → one helper.
-3. **`swatch()`** ✅ — primitive + checkerboard-once (composite cells share it; full cell migration deferred).
-4. **`btn()`** ✅ — variant vocabulary established.
-5. **`switchControl()`** ✅ — rebuilt accessibly (fixed finding #1 + dedup 3 sites).
-6. **`chip()`** ✅ — 3 stylings → one (`.tile-tag` overlay intentionally separate).
+1. **`slider()`**: was already the model; now the documented reference primitive (unchanged).
+2. **`segmented()`** ✅: 6 call-sites, 4 stylings → one helper.
+3. **`swatch()`** ✅: primitive + checkerboard-once (composite cells share it; full cell migration deferred).
+4. **`btn()`** ✅: variant vocabulary established.
+5. **`switchControl()`** ✅: rebuilt accessibly (fixed finding #1 + dedup 3 sites).
+6. **`chip()`** ✅: 3 stylings → one (`.tile-tag` overlay intentionally separate).
 
-### Quadrant snapshot — after the refactor
+### Quadrant snapshot: after the refactor
 
 | Group | COMPOSE | REALIZE | Cell |
 |---|---|---|---|
@@ -474,26 +474,26 @@ All six are now implemented (see Refactor status). Ranked as originally prioriti
 | Data-viz marks (14–18) | ✓ bespoke, fine | ✓ | SHIPPABLE (as one-offs) |
 | Swatch | ✓ primitive; composite cells share the checkerboard | ✓ | SHIPPABLE *(cell migration deferred)* |
 
-## GRADE — the new factories (component-decomposer)
+## GRADE: the new factories (component-decomposer)
 
 A GRADE-mode pass over the six factories, **scored in-context**. Important framing: the
 component-decomposer rubric assumes a *shadow-DOM, FACE-based custom-element library*. This app is
 deliberately **one light-DOM web component with factory helpers** (the documented helper-factory
-scale). So the REALIZE gates the rubric reserves for standalone elements — **B2** autonomous element,
-**B3** FACE/form-association, **B1** a sizing ramp — are **N/A-by-design** here (one host element, no
+scale). So the REALIZE gates the rubric reserves for standalone elements, **B2** autonomous element,
+**B3** FACE/form-association, **B1** a sizing ramp, are **N/A-by-design** here (one host element, no
 `<form>`s, no declared ramp), not failures. They become real only if a factory is ever extracted into
 a standalone library. Graded on that basis:
 
 | Factory | A·COMPOSE (layer→anatomy→API→compose→cohere) | B·REALIZE (geometry→element→semantics→interaction→fidelity) | Cell |
 |---|---|---|---|
-| **`switchControl()`** | 5 — right layer; named parts; tight `{on,onToggle,label,ariaLabel}` API; no self-margin | 5 — native `<button>`; `role=switch`+`aria-checked`; Space/Enter; `:focus-visible`; forced-colors | **SHIPPABLE** |
-| **`segmented()`** | 5 — composes buttons into a group; `role` opt (tablist/group); `controls`→tabpanel; orthogonal | 5 — roving tabindex + arrows (APG); re-focus after render; forced-colors `.on` | **SHIPPABLE** |
-| **`field()`** | 5 — layout primitive; label↔control contract; no self-name leakage | 5 — `label[for]`/`id` association; fallback `aria-label`; preserves control's own name | **SHIPPABLE** |
-| **`btn()`** | 4 — clean `{ghost,primary,danger,bare}` vocab + `cls` for layout; *−1:* `size` not yet an axis | 5 — native button semantics; `ariaPressed`/`disabled`/icon-only `ariaLabel`; forced-colors | **SHIPPABLE** |
-| **`chip()`** | 4 — `interactive`/`status` modes + tones; *−1:* the `.tile-tag` overlay stays a separate primitive (correct, but the family isn't single) | 5 — button(pressed)/span(status); forced-colors border + Highlight | **SHIPPABLE** |
-| **`swatch()`** | 4 — one chip primitive + shared checkerboard; *−1:* composite cells (ramp/scrim/footer) not folded in (by design) | 4 — decorative `aria-hidden`; `--sw` size; *−1:* size is free, not on a ramp | **SHIPPABLE** |
+| **`switchControl()`** | 5, right layer; named parts; tight `{on,onToggle,label,ariaLabel}` API; no self-margin | 5, native `<button>`; `role=switch`+`aria-checked`; Space/Enter; `:focus-visible`; forced-colors | **SHIPPABLE** |
+| **`segmented()`** | 5, composes buttons into a group; `role` opt (tablist/group); `controls`→tabpanel; orthogonal | 5, roving tabindex + arrows (APG); re-focus after render; forced-colors `.on` | **SHIPPABLE** |
+| **`field()`** | 5, layout primitive; label↔control contract; no self-name leakage | 5, `label[for]`/`id` association; fallback `aria-label`; preserves control's own name | **SHIPPABLE** |
+| **`btn()`** | 4, clean `{ghost,primary,danger,bare}` vocab + `cls` for layout; *−1:* `size` not yet an axis | 5, native button semantics; `ariaPressed`/`disabled`/icon-only `ariaLabel`; forced-colors | **SHIPPABLE** |
+| **`chip()`** | 4, `interactive`/`status` modes + tones; *−1:* the `.tile-tag` overlay stays a separate primitive (correct, but the family isn't single) | 5, button(pressed)/span(status); forced-colors border + Highlight | **SHIPPABLE** |
+| **`swatch()`** | 4, one chip primitive + shared checkerboard; *−1:* composite cells (ramp/scrim/footer) not folded in (by design) | 4, decorative `aria-hidden`; `--sw` size; *−1:* size is free, not on a ramp | **SHIPPABLE** |
 
-**One systemic finding (unchanged by the refactor):** geometry is **ad-hoc, off any ramp** — button
+**One systemic finding (unchanged by the refactor):** geometry is **ad-hoc, off any ramp**, button
 padding `4px 9px`, switch track `34×19`, swatch sizes passed per-call. The component-decomposer's
 `(height − glyph)/2` law + XS–2XL ramp is the one thing none of these adopt. Not a regression (it was
 always so), but it's the highest-leverage *next* systematic move if this ever grows toward a real

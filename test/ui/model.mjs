@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-// model.mjs — direct unit coverage for src/ui/model.mjs's data-palette functions: mintDataPalettes
+// model.mjs, direct unit coverage for src/ui/model.mjs's data-palette functions: mintDataPalettes
 // and rederiveDataHues (added by U6/#515). An independent review of #525 flagged that these two
-// functions — plus the private brandHuesOf/isDataSlug helpers they lean on — shipped with ZERO
+// functions, plus the private brandHuesOf/isDataSlug helpers they lean on, shipped with ZERO
 // direct test coverage: nothing called them until U8 (#517) wired UI buttons to them, and even
 // then test/ui/headless-boot.mjs's (dpa) group only exercises them THROUGH button clicks. This
-// file imports and calls them directly, pure, no DOM — covering SPEC
+// file imports and calls them directly, pure, no DOM, covering SPEC
 // docs/spec/spec-muted-base-key-spikes.md REQ-020..024 at the model layer.
 import { PALETTE_GROUPS, brandKit, defaultDocument, exportDesignSystemBundle, geomScaleFor, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixCollisionBadge, radixExportKey, radixKeyCollision, RADIX_COLLISION_BADGE, rederiveDataHues, resolvedPalettes, slug, typeScaleFor } from "../../src/ui/model.mjs";
 import { deriveDataHues } from "../../src/engine/data-hues.mjs";
@@ -21,7 +21,7 @@ const angClose = (a, b, tol = 1e-6) => Math.min(norm(a - b), norm(b - a)) <= tol
 
 // an INDEPENDENT re-implementation of REQ-021's brandHues filter (chroma >= 20, non-data
 // palettes only), so the cross-checks below don't just call back into the module's own
-// private brandHuesOf/isDataSlug — the same "second derivation" discipline data-hues.mjs uses.
+// private brandHuesOf/isDataSlug, the same "second derivation" discipline data-hues.mjs uses.
 const isDataName = (name) => /^data-\d+$/.test(slug(name));
 const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.name) && (p.chroma ?? 0) >= 20).map((p) => p.hue);
 
@@ -34,7 +34,7 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   ok(mintDataPalettes({}).length === 0, "mintDataPalettes on a doc with no palettes field must return []");
 }
 {
-  // a hand-built document — cross-check the REAL mintDataPalettes hues against the real
+  // a hand-built document, cross-check the REAL mintDataPalettes hues against the real
   // deriveDataHues fed an INDEPENDENTLY filtered brand-hue list (REQ-020/REQ-021 wired together).
   const palettes = [
     { name: "Primary", hue: 267, chroma: 95 },
@@ -49,7 +49,7 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   ok(minted.every((p, i) => angClose(p.hue, expectedHues[i])),
     `REQ-020/021: minted hues ${JSON.stringify(minted.map((p) => p.hue))} must match deriveDataHues over the correctly chroma-filtered brand set ${JSON.stringify(expectedHues)}`);
 
-  // REQ-022: shape — name, chroma follows Primary's own (H4), every shaping field reset to
+  // REQ-022: shape, name, chroma follows Primary's own (H4), every shaping field reset to
   // neutral, and no intensity override.
   minted.forEach((p, i) => {
     ok(p.name === `Data ${i + 1}`, `REQ-022: palette ${i} named "${p.name}", want "Data ${i + 1}"`);
@@ -60,14 +60,14 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   });
 }
 {
-  // EX-5 (SPEC's own normative example) — the shipped 8 brand palettes' RAW CAM16 hue/chroma
+  // EX-5 (SPEC's own normative example), the shipped 8 brand palettes' RAW CAM16 hue/chroma
   // values, fed straight to mintDataPalettes, must reproduce the exact literal hues recorded in
-  // model.mjs's own DEFAULT_PALETTES comment ("phi 20, hues [287,332,...]") — proving those
+  // model.mjs's own DEFAULT_PALETTES comment ("phi 20, hues [287,332,...]"), proving those
   // numbers really came from calling this function, not a hand guess. Deliberately NOT
   // defaultDocument()'s OKLCH-converted copies: camHueToOklch is a nonlinear per-hue conversion
   // that does not commute with deriveDataHues's own circular-distance arithmetic, so "convert
   // brand hues to OKLCH, then derive" and "derive in CAM16, then convert the results" are only
-  // approximately similar, not identical — defaultDocument() does the latter (REQ-024 sourced the
+  // approximately similar, not identical, defaultDocument() does the latter (REQ-024 sourced the
   // Data N literals from a CAM16-space derivation, then applied the SAME per-literal OKLCH
   // conversion uniformly to all 16, brand and data alike).
   const brandCam16 = [
@@ -89,7 +89,7 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   // REQ-021 boundary, exercised through the REAL code path: chroma exactly 20 is IN, 19 is OUT.
   // Primary itself is a non-data palette with chroma>=20, so it's ALWAYS its own member of
   // brandHues too (REQ-021 names no Primary exclusion; EX-5's 7-hue brand set, one short of the
-  // 8 qualifying palettes, is exactly Neutral(267) and Primary(267) sharing a value) — both
+  // 8 qualifying palettes, is exactly Neutral(267) and Primary(267) sharing a value), both
   // expected sets below include Primary's own hue for that reason.
   const primary = { name: "Primary", hue: 267, chroma: 95 };
   const gotIncluded = mintDataPalettes({ palettes: [primary, { name: "Edge20", hue: 10, chroma: 20 }] }).map((p) => p.hue);
@@ -115,14 +115,14 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
 {
   // a partial-migration state: only 3 Data N palettes (not the full 8), interspersed with a
   // decoy palette whose SLUG CONTAINS the "data-<digits>" shape ("old-data-5" embeds "data-5")
-  // but isn't an EXACT match — this is the real regression net for isDataSlug's `^`/`$` anchors:
+  // but isn't an EXACT match, this is the real regression net for isDataSlug's `^`/`$` anchors:
   // an unanchored /data-\d+/ would wrongly match it too, so only the anchored regex tells them
   // apart (a plain "Database" decoy wouldn't contain "data-<digits>" at all and so wouldn't
-  // exercise the anchors either way — a vacuous guard).
+  // exercise the anchors either way, a vacuous guard).
   const palettes = [
     { name: "Primary", hue: 100, chroma: 80 },
     { name: "Secondary", hue: 40, chroma: 60 },
-    { name: "Old Data 5", hue: 300, chroma: 80, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true }, // slug "old-data-5" — NOT an exact "data-<digits>" slug, an ordinary brand palette
+    { name: "Old Data 5", hue: 300, chroma: 80, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true }, // slug "old-data-5", NOT an exact "data-<digits>" slug, an ordinary brand palette
     { name: "Data 1", hue: 1, chroma: 80, skew: 5, lift: 3, hueShift: 2, hueSameDir: true, on: false },
     { name: "Data 2", hue: 2, chroma: 80, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
     { name: "Data 3", hue: 3, chroma: 80, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true },
@@ -134,17 +134,17 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   ok(out.palettes[0] === palettes[0] && out.palettes[1] === palettes[1],
     "rederiveDataHues must leave non-Data-N palette OBJECTS untouched (same reference), not clone them needlessly");
   ok(out.palettes[2].name === "Old Data 5" && out.palettes[2].hue === 300,
-    `isDataSlug's anchors must reject "old-data-5" (embeds "data-5" but isn't an exact match) — it must be left completely untouched (got ${JSON.stringify(out.palettes[2])})`);
+    `isDataSlug's anchors must reject "old-data-5" (embeds "data-5" but isn't an exact match), it must be left completely untouched (got ${JSON.stringify(out.palettes[2])})`);
   ok(out.palettes.map((p) => p.name).join(",") === palettes.map((p) => p.name).join(","), "rederiveDataHues must preserve palette order");
 
   const dataOut = out.palettes.filter((p) => /^Data \d+$/.test(p.name));
   ok(dataOut.length === 3, `rederiveDataHues must recompute exactly the 3 real Data N palettes present, no more (got ${dataOut.length})`);
   // brandHues here: Primary(100, its own hue also counts, REQ-021 names no Primary exclusion) +
-  // Secondary(40) + "Old Data 5"(300) — all three chroma>=20, none an exact "Data N" slug.
+  // Secondary(40) + "Old Data 5"(300), all three chroma>=20, none an exact "Data N" slug.
   const expectedHues = deriveDataHues(100, [100, 40, 300], 3).hues;
   ok(dataOut.every((p, i) => angClose(p.hue, expectedHues[i])),
     `REQ-023: recomputed hues ${JSON.stringify(dataOut.map((p) => p.hue))} must match deriveDataHues(100, [40,300], 3) = ${JSON.stringify(expectedHues)}`);
-  // REQ-023: every OTHER field on a recomputed Data N palette is untouched — only hue moves.
+  // REQ-023: every OTHER field on a recomputed Data N palette is untouched, only hue moves.
   ok(dataOut[0].skew === 5 && dataOut[0].lift === 3 && dataOut[0].hueShift === 2 && dataOut[0].hueSameDir === true && dataOut[0].on === false,
     `REQ-023: Re-derive must only touch hue, never skew/lift/hueShift/hueSameDir/on (got ${JSON.stringify(dataOut[0])})`);
 }
@@ -170,11 +170,11 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   }
 
   // explicit `group` wins over the default-by-name rule for ANY name, including a
-  // special-cased one — fully user-assignable (ticket #556's Scope).
+  // special-cased one, fully user-assignable (ticket #556's Scope).
   ok(paletteGroup({ name: "Neutral", group: "data" }) === "data", "an explicit valid group must override Neutral's material default");
   ok(paletteGroup({ name: "Primary", group: "system" }) === "system", "an explicit valid group must override Primary's brand default");
 
-  // an invalid/unknown `group` value is NOT trusted — falls back to the default-by-name rule
+  // an invalid/unknown `group` value is NOT trusted, falls back to the default-by-name rule
   // (persist.js only ever writes a valid enum member, but paletteGroup must be defensive too).
   ok(paletteGroup({ name: "Neutral", group: "bogus" }) === "material", "an invalid group value must fall back to the default-by-name rule");
   ok(paletteGroup({ name: "Palette 5" }) === "data", 'a freshly-minted "Palette N" name (matches no special case) must default to data');
@@ -191,13 +191,13 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
 // by ticket #559, and again for the GROUP METADATA ITSELF by ticket #572/RP-1) ────────────────────
 // #556 shipped `group` as purely editor/organizational metadata with zero export effect. #559 makes
 // a palette's GROUP drive its resolved baseIntensity/primeChroma (Material 30/60 vs Brand/System/Data
-// all 100/100 by default) — so reassigning a palette's group no longer guarantees byte-identical
+// all 100/100 by default), so reassigning a palette's group no longer guarantees byte-identical
 // exports in general; that is the whole point of the ticket. #572/RP-1 then makes the group ITSELF
 // exported metadata (JSON `group`, DTCG raw `$extensions`, a CSS/OKLCH/Tailwind comment line,
-// brandKit `group`) — so even a brand<->system swap (same 100/100 chroma defaults) now legitimately
+// brandKit `group`), so even a brand<->system swap (same 100/100 chroma defaults) now legitimately
 // changes those metadata bytes; that is RP-1's whole point too. What still holds, narrowed twice
 // now: a brand<->system swap changes ONLY the group metadata itself (the new comment line's word,
-// the `group`/`$extensions` field) — every VALUE (ramp colors, role hex, prime swatches) and every
+// the `group`/`$extensions` field), every VALUE (ramp colors, role hex, prime swatches) and every
 // TOKEN NAME is unaffected, on every surface, regardless of group.
 {
   // stripGroupComments (RP-1, ticket #572): drop the ADDED `/* name · group */` comment lines so a
@@ -205,14 +205,14 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   // metadata line itself, which legitimately differs by design.
   const stripGroupComments = (text) => text.split("\n").filter((l) => !/^\s*\/\* .* · (material|brand|system|data) \*\/$/.test(l)).join("\n");
   // stripJsonGroup (RP-1): exportJSON's per-palette `group` field, deleted before comparing (every
-  // OTHER key — stops/scrims/prime/semantic/keyColors — must still match exactly).
+  // OTHER key, stops/scrims/prime/semantic/keyColors, must still match exactly).
   const stripJsonGroup = (jsonText) => {
     const obj = JSON.parse(jsonText);
     for (const k of Object.keys(obj)) { if (k !== "constants" && obj[k] && typeof obj[k].group !== "undefined") delete obj[k].group; }
     return JSON.stringify(obj);
   };
   // stripRawGroupExt (RP-1): a RAW DTCG tree object (palette-slug-keyed) with each palette node's
-  // `$extensions["com.ultimate-tokens"]` removed, mutated in place — the shared step both
+  // `$extensions["com.ultimate-tokens"]` removed, mutated in place, the shared step both
   // stripDtcgGroupExt (the combined 3-file bundle) and the figma.raw comparison below reuse.
   const stripRawGroupExt = (rawTree) => {
     for (const k of Object.keys(rawTree)) {
@@ -222,7 +222,7 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
     return rawTree;
   };
   // stripDtcgGroupExt (RP-1): exportDTCG's raw-file-only `$extensions["com.ultimate-tokens"]` per
-  // palette group node, deleted before comparing (theme files never carry it in the first place —
+  // palette group node, deleted before comparing (theme files never carry it in the first place,
   // "palette.tokens.json" is the only one of the 3 files this ticket's DTCG contract touches).
   const stripDtcgGroupExt = (jsonText) => {
     const obj = JSON.parse(jsonText);
@@ -244,7 +244,7 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   const base = defaultDocument();
   const baseExports = projectView(base).exports;
 
-  // brand <-> system swap: same 100/100 defaults on both sides — must still be byte-identical.
+  // brand <-> system swap: same 100/100 defaults on both sides, must still be byte-identical.
   // Reassign every brand/system palette to the OTHER of the two (not a flat index cycle, which
   // could coincidentally land a palette back on its own default and understate the check, per
   // #556's own review fix).
@@ -257,28 +257,28 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   });
   ok(sameDefaults.palettes.some((p, i) => paletteGroup(p) !== paletteGroup(base.palettes[i])), "test setup: at least one palette must actually change group in the brand<->system swap");
   const sameDefaultsExports = projectView(sameDefaults).exports;
-  // ui3/shadcn carry NO group metadata (RP-1: ruled out — no Figma metadata slot short of
-  // `description`, #556; ShadCN's fixed contract) — still strictly byte-identical.
+  // ui3/shadcn carry NO group metadata (RP-1: ruled out, no Figma metadata slot short of
+  // `description`, #556; ShadCN's fixed contract), still strictly byte-identical.
   for (const fmt of ["ui3", "shadcn"]) {
     ok(baseExports[fmt] === sameDefaultsExports[fmt], `export format "${fmt}" must stay byte-identical when a palette moves between two groups sharing the same baseIntensity/primeChroma default (brand <-> system)`);
   }
-  // css/oklch/tailwind carry a group comment line (RP-1) — byte-identical once that line is
-  // stripped; json/dtcg carry a group field/extension — byte-identical once THAT is stripped.
+  // css/oklch/tailwind carry a group comment line (RP-1), byte-identical once that line is
+  // stripped; json/dtcg carry a group field/extension, byte-identical once THAT is stripped.
   for (const fmt of ["css", "oklch", "tailwind"]) {
     ok(stripGroupComments(baseExports[fmt]) === stripGroupComments(sameDefaultsExports[fmt]), `export format "${fmt}" must stay byte-identical (net of the RP-1 group comment line) when a palette moves between two groups sharing the same baseIntensity/primeChroma default (brand <-> system)`);
-    ok(baseExports[fmt] !== sameDefaultsExports[fmt], `export format "${fmt}" IS expected to differ (only by its RP-1 group comment line) across the brand <-> system swap — if this fails, the swap stopped changing anything`);
+    ok(baseExports[fmt] !== sameDefaultsExports[fmt], `export format "${fmt}" IS expected to differ (only by its RP-1 group comment line) across the brand <-> system swap, if this fails, the swap stopped changing anything`);
   }
   ok(stripJsonGroup(baseExports.json) === stripJsonGroup(sameDefaultsExports.json), `export format "json" must stay byte-identical (net of the RP-1 \`group\` field) when a palette moves between two groups sharing the same baseIntensity/primeChroma default (brand <-> system)`);
   ok(stripDtcgGroupExt(baseExports.dtcg) === stripDtcgGroupExt(sameDefaultsExports.dtcg), `export format "dtcg" must stay byte-identical (net of the RP-1 raw-file $extensions) when a palette moves between two groups sharing the same baseIntensity/primeChroma default (brand <-> system)`);
   ok(stripRawFileGroupExt(baseExports.figma.raw) === stripRawFileGroupExt(sameDefaultsExports.figma.raw), "the Figma DTCG raw file must stay byte-identical (net of the RP-1 $extensions) for a brand <-> system group swap");
-  ok(baseExports.figma.light === sameDefaultsExports.figma.light && baseExports.figma.dark === sameDefaultsExports.figma.dark, "the Figma DTCG semantic (Light/Dark) files must stay strictly byte-identical for a brand <-> system group swap — RP-1 never touches the theme files");
+  ok(baseExports.figma.light === sameDefaultsExports.figma.light && baseExports.figma.dark === sameDefaultsExports.figma.dark, "the Figma DTCG semantic (Light/Dark) files must stay strictly byte-identical for a brand <-> system group swap, RP-1 never touches the theme files");
 
-  // the DS bundle (ds-export.js — Claude Design/Stitch/Figma Make, split out at TKT-0015, NOT one
+  // the DS bundle (ds-export.js, Claude Design/Stitch/Figma Make, split out at TKT-0015, NOT one
   // of the 10 documented formats above) and the MCP brandKit() payload get the same coverage, with
   // the same fixed opts.date so the comparison is deterministic.
   const dsOpts = { date: "2026-01-01" };
   // exportDesignSystemBundle is the Claude Design profile (DESIGN.md/tokens.json/components/
-  // README) — RP-1's familiesByGroup/Group-column additions live ONLY in the Figma Make profile's
+  // README), RP-1's familiesByGroup/Group-column additions live ONLY in the Figma Make profile's
   // foundations/color.md (not part of this bundle), so this stays strictly byte-identical.
   const baseDs = exportDesignSystemBundle(dsDocOf(base), typeScaleFor(base, "base"), geomScaleFor(base, "base"), dsOpts);
   const sameDefaultsDs = exportDesignSystemBundle(dsDocOf(sameDefaults), typeScaleFor(sameDefaults, "base"), geomScaleFor(sameDefaults, "base"), dsOpts);
@@ -286,7 +286,7 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   ok(stripBrandKitGroup(brandKit(base)) === stripBrandKitGroup(brandKit(sameDefaults)), "the MCP brandKit() payload must stay byte-identical (net of the RP-1 `group` field) for a brand <-> system group swap");
 
   // moving Neutral out of Material (default 30/60) into Brand (default 100/100) MUST move the
-  // export bytes on EVERY surface — proves ticket #559's group layer actually reaches every
+  // export bytes on EVERY surface, proves ticket #559's group layer actually reaches every
   // export/DS-bundle/MCP output, not just the UI.
   const neutralToBrand = defaultDocument();
   neutralToBrand.palettes = neutralToBrand.palettes.map((p) => (p.name === "Neutral" ? { ...p, group: "brand" } : p));
@@ -309,7 +309,7 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
 
   const modelSrc = readFileSync(fileURLToPath(new URL("../../src/ui/model.mjs", import.meta.url)), "utf8");
   const slugDeclCount = (modelSrc.match(/^export function slug/gm) || []).length;
-  ok(slugDeclCount === 1, `src/ui/model.mjs must declare "export function slug" exactly once (got ${slugDeclCount}) — radixKeyCollision must reuse it, never redeclare`);
+  ok(slugDeclCount === 1, `src/ui/model.mjs must declare "export function slug" exactly once (got ${slugDeclCount}), radixKeyCollision must reuse it, never redeclare`);
 
   ok(RADIX_COLLISION_BADGE === "Exported as", `RADIX_COLLISION_BADGE must be the pinned #630 prefix verbatim, got ${JSON.stringify(RADIX_COLLISION_BADGE)}`);
   ok(radixCollisionBadge("accent-palette") === "Exported as accent-palette", `radixCollisionBadge("accent-palette") must read "Exported as accent-palette", got ${JSON.stringify(radixCollisionBadge("accent-palette"))}`);
@@ -328,7 +328,7 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   ok(!!mjColors[radixExportKey("Accent", mjDoc.palettes)] && !!mjColors[radixExportKey("Accent", mjDoc.palettes)]["12"], `projectView(...).radixPreset must carry the colliding palette's ladder under radixExportKey(...)`);
 }
 
-// ── U3 (#637): projectView(...).radixPreset — the hoisted OBJECT (OQ-1) ────────────────────
+// ── U3 (#637): projectView(...).radixPreset, the hoisted OBJECT (OQ-1) ────────────────────
 {
   const doc = defaultDocument();
   const view = projectView(doc);
@@ -355,7 +355,7 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   ok(typeof projectView(dataOnly).radixPreset === "string", `a data-palette-only document must yield a STRING radixPreset (I9 sentinel), got ${typeof projectView(dataOnly).radixPreset}`);
 
   // The direct gate for the { geometry: shadGeom } opt: theme.extend.tokens.radii carries exactly
-  // none/xs/sm/md/lg/xl/full — a bare exportRadix(doc) (no opts) omits `tokens` entirely.
+  // none/xs/sm/md/lg/xl/full, a bare exportRadix(doc) (no opts) omits `tokens` entirely.
   const radii = view.radixPreset && view.radixPreset.theme.extend.tokens && view.radixPreset.theme.extend.tokens.radii;
   ok(!!radii, `projectView(defaultDocument()).radixPreset.theme.extend.tokens.radii must be present (the geometry opt must travel with the hoist)`);
   if (radii) {
