@@ -604,9 +604,12 @@ import { defaultDocument, projectView, DEFAULT_PALETTES } from "../../src/ui/mod
 
 // stored-anchors (#740): a set saved BEFORE schemaVersion 5 has no anchor on any palette, and
 // hydrateStoredDoc (through backfillDefaultAnchors) restores one only for a palette that still
-// equals a default-kit row exactly. (a)-(c) probe the OKLCH-hue form every doc since hueSpace
-// exists stores; (d) the raw CAM16-hue form a legacy cam16-stamped doc still carries; (e) reruns
-// the clamp block's own absent-stays-absent fixture through the real seam, unweakened by this gate.
+// equals a row of the ONE default table its own stored hueSpace selects. (a)-(c) probe the
+// OKLCH-hue form every doc since hueSpace exists stores; (d) the raw CAM16-hue form a legacy
+// cam16-stamped doc still carries; (e) reruns the clamp block's own absent-stays-absent fixture
+// through the real seam, unweakened by this gate; (f) and (g) (revision 5, U1 pass 1 verdict M1)
+// pin the cross-form case: a palette dragged onto the OTHER hue form's own default value is a real
+// edit, not an unedited row, and must not be stamped either way.
 {
   const fresh = defaultDocument();
   const rampsOf = (d) => projectView(d).palettes.map((p) => p.fullRamp.map((s) => s.hex).join(","));
@@ -657,6 +660,29 @@ import { defaultDocument, projectView, DEFAULT_PALETTES } from "../../src/ui/mod
   const noAnchorE = JSON.parse(JSON.stringify(base)); delete noAnchorE.palettes[0].anchor; delete noAnchorE.palettes[0].sourceAnchor;
   const hydNoE = hydrateStoredDoc(noAnchorE);
   if ("anchor" in hydNoE.palettes[0] || "sourceAnchor" in hydNoE.palettes[0]) FAIL("stored-anchors", "(e) absent palette.anchor/sourceAnchor must still stay absent through backfillDefaultAnchors (identity gate)");
+
+  // (f) the OKLCH-form stripped doc of (a) with Primary's hue dragged to 267 (the RAW/CAM16 form's
+  // own default value, a real 8-degree edit from the OKLCH default 259): 15 stamped, Primary not
+  // among them - the doc's own hueSpace ("oklch") picks the OKLCH table only, the raw table is
+  // never consulted even though Primary's edited hue happens to equal its row there.
+  const strippedF = U.serialize(fresh); delete strippedF.schemaVersion;
+  for (const p of strippedF.palettes) { delete p.anchor; delete p.sourceAnchor; }
+  const primaryIdxF = strippedF.palettes.findIndex((p) => p.name === "Primary");
+  strippedF.palettes[primaryIdxF].hue = 267;
+  const hydStrippedF = hydrateStoredDoc(strippedF);
+  const stampedF = hydStrippedF.palettes.filter((p) => p.anchor && p.sourceAnchor).length;
+  if (stampedF !== 15) FAIL("stored-anchors", `(f) cross-form: Primary dragged to the raw table's own default (267) in an OKLCH-form doc must leave 15 of 16 stamped, got ${stampedF}`);
+  if (hydStrippedF.palettes[primaryIdxF].anchor) FAIL("stored-anchors", "(f) cross-form: Primary at the raw table's default value must not be stamped from an OKLCH-form doc");
+
+  // (g) the raw-form doc of (d) with Primary's hue dragged to 259 (the OKLCH table's own default
+  // value): 15 stamped, Primary not among them - hueSpace absent picks the raw table only.
+  const rawG = { palettes: DEFAULT_PALETTES.map(({ anchor, ...r }) => r) };
+  const primaryIdxG = rawG.palettes.findIndex((p) => p.name === "Primary");
+  rawG.palettes[primaryIdxG].hue = 259;
+  const hydRawG = hydrateStoredDoc(rawG);
+  const stampedG = hydRawG.palettes.filter((p) => p.anchor).length;
+  if (stampedG !== 15) FAIL("stored-anchors", `(g) cross-form: Primary dragged to the OKLCH table's own default (259) in a raw-form doc must leave 15 of 16 stamped, got ${stampedG}`);
+  if (hydRawG.palettes[primaryIdxG].anchor) FAIL("stored-anchors", "(g) cross-form: Primary at the OKLCH table's default value must not be stamped from a raw-form doc");
 }
 
 // gate-report.mjs is imported here, immediately before its one use, rather than with the top-of-
