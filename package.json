@@ -33,7 +33,8 @@
     "gate:sweep-prime": "node test/engine/prime.mjs --full",
     "gate:corpus-reset": "node test/ui/headless-boot.mjs --full",
     "gate:mode-isolation": "node test/engine/mode-isolation-gate.mjs --full",
-    "gate:sweeps": "npm run gate:corpus-tonal && npm run gate:corpus-anchor && npm run gate:sweep-prime && npm run gate:corpus-reset && npm run gate:corpus-contrast && npm run gate:mode-isolation",
+    "gate:even-dips": "node test/engine/even-dips-gate.mjs --full",
+    "gate:sweeps": "npm run gate:corpus-tonal && npm run gate:corpus-anchor && npm run gate:sweep-prime && npm run gate:corpus-reset && npm run gate:corpus-contrast && npm run gate:mode-isolation && npm run gate:even-dips",
     "smoke": "npm run build && node test/smoke/launcher.mjs && node test/smoke/smoke.mjs"
   },
   "devDependencies": {

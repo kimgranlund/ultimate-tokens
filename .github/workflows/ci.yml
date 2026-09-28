@@ -115,6 +115,7 @@ jobs:
           - gate:corpus-reset
           - gate:corpus-contrast
           - gate:mode-isolation
+          - gate:even-dips
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
