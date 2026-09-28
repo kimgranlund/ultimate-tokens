@@ -20,15 +20,15 @@ properties. Your job is never to invent a color, it is to pick the right **role*
 Each palette also carries a `prime` group: seven raw swatches, `--{n}-prime-brightest` through
 `--{n}-prime-dimmest` (centered on bare `--{n}-prime`). These are primitives, not roles: one
 mode-independent set, the same in light and dark, computed on the key colour's own lightness ladder
-rather than the ramp. No role aliases a prime swatch and none ever will (SPEC REQ-054). Reach for one
+rather than the ramp. No role aliases a prime swatch and none ever will. Reach for one
 only where the design itself steps outside role territory: a hero or brand moment that wants the
 identity colour at full intensity, or a data-viz series that needs several shades of one hue (a
 heatmap, an intensity bar). Every ordinary surface, text, control, and state still binds to a role; a
 bare prime swatch in component code is the same defect as a raw stop.
 
 **Data series.** The default kit's eight-hue `data-1`…`data-8` family (step 2 below) is not a
-special construct, each is an ordinary palette, chroma peers of one another by construction (SPEC
-0.3.0), that happens to make a good chart-series set: the same 53 roles, and its own `prime` swatches
+special construct, each is an ordinary palette, chroma peers of one another by construction, that
+happens to make a good chart-series set: the same 53 roles, and its own `prime` swatches
 for a series that needs several shades of one hue. They bind to shadcn's `--chart-N` slots (read the
 export's own generated CSS for how many the kit at hand defines); use those shadcn vars as a chart
 library's series-color source, and the data palettes' own roles for everything else around the chart
@@ -64,7 +64,7 @@ library's series-color source, and the data palettes' own roles for everything e
    reserved for meaning, never decoration. Remaining palettes are supporting accents.
 4. **Know the grammar.** Semantic = `--c-{p}{suffix}` (the accent itself is bare `--c-{p}`; e.g.
    `--c-neutral-on-surface`, `--c-primary-hover`). Raw = `--c-{p}-050…950` solids and
-   `--c-{p}-scrim-{step}` translucents (ADR-016), **never use raws in UI code**.
+   `--c-{p}-scrim-{step}` translucents, **never use raws in UI code**.
 
 ## The laws (violating any of these is a defect)
 
@@ -84,12 +84,14 @@ library's series-color source, and the data palettes' own roles for everything e
 5. **Elevation is a surface ladder, not a shadow.** Raise/recess with `-surface-low/-high` (…`est`)
    and `-surface-dim/-bright`; shadows are optional garnish on top. See containers.md for the
    mirror/non-mirror distinction, it's exact and easy to get wrong.
-6. **On-colors are fixed light BY DESIGN (do not "fix" this).** `-on-primary` / `-on-primary-variant`
-   resolve to the palette's light end in BOTH modes, for all palettes, a deliberate brand decision
-   (the product's ADR-003/OD-001) that intentionally overrides per-pair contrast math (e.g. white on
-   a warning-yellow fill). Do not swap in black text, auto-contrast logic, or your own dark variant.
-   If a client insists on WCAG-floor text on fills, raise it as a kit-level decision, never patch it
-   locally.
+6. **On-colors follow the kit's on-color mode, default, `onColorMode: contrast`.** In the default
+   mode, `-on-primary` / `-on-primary-variant` resolve per pair for real contrast in each scheme. A
+   kit exported with the other legal mode, `onColorMode: fixed`, pins the on-color to the palette's
+   light end in BOTH modes instead, for all palettes, a deliberate brand decision that intentionally
+   overrides per-pair contrast math (e.g. white on a warning-yellow fill). Read which mode the kit
+   at hand exports before assuming either; whichever mode is active, do not swap in your own
+   auto-contrast logic or dark variant on top of it. If a client wants the other mode's behavior,
+   raise it as a kit-level decision, never patch it locally.
 
 ## Surface map: where to look things up
 

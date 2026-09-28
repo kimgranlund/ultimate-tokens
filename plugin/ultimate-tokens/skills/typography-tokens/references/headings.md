@@ -2,8 +2,8 @@
 
 Display plus three heading-family voices (headline · sub-heading · title) do different jobs, plus
 kicker for the smallest overline, pick by role, then size by step. Use the `.type-{voice}-{step}`
-utility class; the raw vars are listed where you need to compose. Every voice is a 3-step ramp,
-`sm`/`md`/`lg` only.
+utility class; the raw vars are listed where you need to compose. Each heading voice here is its
+own `sm`/`md`/`lg` ramp.
 
 ## The heading voices
 

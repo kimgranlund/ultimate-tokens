@@ -55,6 +55,7 @@ underline). Don't bump the weight or size for a link; that's the color layer's j
 
 ## Don't
 
-- Don't use `label` for paragraphs or `body` for buttons, prose is `body`, chrome is `label`.
+- Don't use `label` for paragraphs or `body` for buttons, prose is `body`; operable chrome is
+  `UI-control`/`UI-widget`, and `label` is the static (non-interactive) labelling voice.
 - Don't set prose `line-height`/`margin` by hand, `-line` and `-para` are derived.
 - Don't scale prose with `vw`/`clamp()`, breakpoint modes (responsive.md) handle size changes.
