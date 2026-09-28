@@ -1,6 +1,6 @@
 # records-gates U2 (#742): adapter §6 current, ADR-026/027 headings normalised
 
-branch@sha: `unit/rc-U2` (pushed; sha in the commit below)
+branch@sha: `unit/rc-U2` at `8766a758` plus the records-only fix commit that carries this refresh (its sha is the branch head). The figures below were measured at `8766a758` with the review r1 line 39 requote applied. The original build commit is `e6ee37e0`.
 
 ## Q2 answer applied
 
@@ -91,14 +91,20 @@ since U1 (the exit-on-count fix) has not merged into this worktree yet, per the 
 ### Plan-level rows scoped to U2's diff
 
 - P2 (no bundled/executable source changed): `0`.
-- P3 (branding/em-dash): `branding: clean (786 files scanned)`; added-lines glyph count `0`
-  (twice, the backtick-stripped and raw forms); `em-dash: clean (794 files scanned)`, exit 0.
-  Removed lines do carry the old em dash glyph in the diff (the sentences being replaced), which
-  is expected and outside the "added line" grade.
+- P3 (branding/em-dash), measured at `8766a758` plus the requote: `branding: clean (789 files scanned)`;
+  the stripped added-line glyph count (row's `s/\x60[^\x60]*\x60//g` strip) prints `0`; the raw non-handoff
+  count prints `4`, and those four lines are review r1 lines 38 to 41, quoting this handoff's old lines
+  65, 89, 106 and 109 word for word, each inside a backtick span; `node test/repo/em-dash.mjs` prints
+  `em-dash: clean (797 files scanned)`, `exit 0`. Historical, at `e6ee37e0`: the count was `4` and review
+  r1 recorded FAIL (`FAIL: 4 em dashes`); `4bfd2ba8` removed those glyphs from this handoff. At
+  `8766a758` before the requote the stripped count printed `1`, because review r1 line 39 used a
+  double-backtick span the strip mis-paired; the requote to a single span fixed it without changing the meaning.
 - P4 (scope wall): unmatched-path count `0`; deleted/renamed verdicts `0`; decision-records numstat
   `2 2` (Q2 yes shape); modified-verdict-not-in-G0-list count `0`.
-- `npm test`: `✓ all 53 test files passed`, exit 0, tree clean after (only the two intended files
-  showed as modified before the commit below).
+- `npm test`, measured at `8766a758` plus the requote: `✓ all 53 test files passed`, exit 0, and the tree
+  showed only the requoted review record as modified. Historical, at `e6ee37e0`: `npm test` could not have
+  been green, since the em-dash gate saw the glyphs review r1 recorded.
+
 
 ## Left out
 

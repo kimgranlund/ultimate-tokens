@@ -36,7 +36,7 @@ quote that legitimately carries the old glyph, at `.sdlc/handoffs/records-gates-
 inside backticks and is correctly not flagged):
 
 - `.sdlc/handoffs/records-gates-U2.md:65`: `read at G0/measured-at): "2, 3, 0, 0, 1, 0" — confirmed by reading the file before editing.`
-- `.sdlc/handoffs/records-gates-U2.md:89`: ``("and, after U1, `exit 1`") — the count-side assertion is what this row grades and it matches.``
+- `.sdlc/handoffs/records-gates-U2.md:89`: `("and, after U1, exit 1") — the count-side assertion is what this row grades and it matches.`
 - `.sdlc/handoffs/records-gates-U2.md:106`: `... this needs verifier-l1, not just reviewer-l1 — the Orchestrator should route it there.`
 - `.sdlc/handoffs/records-gates-U2.md:109`: `... their count without exiting nonzero. That's U1's own unit, not a gap here — U2-3's control notes the dependency explicitly.`
 
