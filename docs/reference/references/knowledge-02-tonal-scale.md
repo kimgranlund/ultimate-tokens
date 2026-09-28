@@ -172,7 +172,10 @@ chromaEnvelope(stop, anchorStop, lift, controls):      // src/engine/tonal.js, O
 - **`even` also has a flat-start shoulder at the anchor (#701).** `|sd|^0.375` has infinite slope at the
   anchor, so a muted anchor's 450 and 550 read far below its full-chroma 500 (the 64 lone spikes).
   In `even` only, `uG` is multiplied by a smoothstep of `|sd| / 0.2` (`EVEN_NEIGHBOURHOOD_R`, a named
-  constant, not a control): 0 at the anchor, 1 from stops 400/600 out. `perceptual` and `peak` never take it.
+  constant, not a control; R = 0.2 in `sd` units, 0.2 of the 450-stop half-ramp, 90 stop units at lift 0):
+  0 at the anchor, 1 from R out. At lift 0 the smoothstep is 1 by stops 400/600 (`|sd|` 0.222), so nothing
+  beyond them moves; under lift `liftStop` sets the reach, and above `|lift|` about 14 the near-side 400 or
+  600 enters it. `perceptual` and `peak` never take it.
 - **Differential damping curve.** The defaults
   `dampCurve 1.5, dampAmp 0, dampBias 0` reduce it to the legacy `1 - (damp/100)·u^1.5`
   edge damp **exactly** (backward-compatible — existing palettes/exports are unchanged).
