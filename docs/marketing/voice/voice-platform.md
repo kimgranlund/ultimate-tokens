@@ -150,7 +150,7 @@ Two layers. Layer 1 is mechanical and merciless; layer 2 is judged and quote-bou
 pinned-fact drift · a non-live feature in the present tense · banned lexicon · hype pricing ·
 exclamation/emoji outside the protected one · internal id in copy (outside code/URLs).
 
-**Layer 2, judged axes**, scored 1–5. **A fail cites a quoted sentence, no quote, no fail.**
+**Layer 2, the judged axes**, scored 1–5. **A fail cites a quoted sentence, no quote, no fail.**
 Shippable = every axis ≥ 4.
 
 | Axis | 5 | 4 (the ship floor) | 3 (the near-miss) | 1 |
