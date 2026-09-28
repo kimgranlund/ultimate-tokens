@@ -1,12 +1,12 @@
 # Handoff prompt-audit U1 · #758 consumer plugin prose
 
-Builder, pass 2, head 3b73f739 (pass 1 was ca3c6cc6, verified 🔴; its review rounds r1 and r2 are in .sdlc/verdicts/prompt-audit-U1-review*.md).
+Builder, pass 2, head e7f99f19 (pass 1 was ca3c6cc6, verified 🔴; its review rounds r1 and r2 are in .sdlc/verdicts/prompt-audit-U1-review*.md).
 
-Written 2026-09-28. The head named above is the pass 2 prose commit; this handoff is committed on top of it.
+Written 2026-09-28. The head named above is the pass 2 prose head, measured with `git rev-parse --short=8 HEAD` after the review-fix commit; this handoff is committed on top of it. Pass 2 prose commits: `3b73f739`, then `e7f99f19` for review p2 finding H1 (`.sdlc/verdicts/prompt-audit-U1-review-p2.md`, 🔴 at 5c03faef).
 
 ## Branch
 
-`unit/pa-U1`, worktree `.worktrees/pa-U1`. Pass 1 prose commits `4b7afda3`, `0fd362bb`, `0e507d10` on top of B = `8f5c6dc0`; revision 4 merged at `53966a8e`; pass 2 prose commit `3b73f739`. `npm test` green at `3b73f739` (tally in the Gates section), tree clean after.
+`unit/pa-U1`, worktree `.worktrees/pa-U1`. Pass 1 prose commits `4b7afda3`, `0fd362bb`, `0e507d10` on top of B = `8f5c6dc0`; revision 4 merged at `53966a8e`; pass 2 prose commits `3b73f739` and `e7f99f19`. `npm test` green at `e7f99f19` (tally in the Gates section), tree clean after.
 
 ## What pass 2 changed
 
@@ -17,15 +17,16 @@ Written 2026-09-28. The head named above is the pass 2 prose commit; this handof
 | F2, re-read | `prose.md:4-5` | the intro said `Interface text is \`label\``; it now names `UI-control`/`UI-widget` for operated text and `label` for static labels (same claim class as T4, found on the whole-file re-read) | `"Label": cat(..., false)` in `makeVoices` |
 | F3 | `color-tokens/SKILL.md:90` | `in both modes instead` to `in both schemes instead`; law 6 now uses `mode` only for the on-colour mode | none (wording) |
 | F4 | `typography-tokens/references/responsive.md:26` and `:44` | the box voices are `Kicker, UI-control, and UI-widget` in both places | `typeScale({})` emits `singleLineHeight` for exactly those three; paragraph ratio `1.00` for exactly those three |
+| H1 (review p2) | `typography-tokens/references/headings.md:31` | `(it rides the \`mono\` role, so it has one; leading 1.0)` becomes `(Kicker is a box voice, so it has one; leading 1.0)`; the rest of headings.md read whole for the box class, no other role-implies-box claim; a plugin-wide `git grep` for role-then-box wording finds only responsive.md:26, which names the right three voices and is qualified at :35 | `makeVoices()` mono-role voices: `Sub-title:false Body-mono:false Label-mono:false Kicker:true Tiny-mono:false`; the old clause prints `0` at the head, `1` at B |
 | F4, re-read | `responsive.md:30`, `:43-44` | the box examples drop `cells` (a table cell is `label`, `-line`, per interface.md:18) for `badges`; the 0.75× prose list gains `body-mono`, `label`, `label-mono`, which left the box list and would otherwise sit in no list | MD-step `para/size`: Body-mono `0.75`, Label and Label-mono `0.77` (rounding of 13 × 0.75), prose fallback `PARA_PROSE` 0.75 |
 
-Whole-file re-reads after each edit, for the claim class: interface.md (ramp and box: lines 5, 55-56 already right), prose.md (ramp, and the label-as-interface claim fixed above), responsive.md (box set: line 36 already right, the reading-voice list at 33-34 has all twelve non-box voices), color-tokens SKILL.md (every `mode` in law 6 now means the on-colour mode; line 7's `dark mode` is a user phrase). A plugin-wide `git grep` for `line-single` and `box voice` found no other box-set claim; the step-ramp sweep (`every|all|each|most ... voices`, `sm/md/lg`, `3-step`, `six-step`, `-only`) found no other universal ramp claim.
+Whole-file re-reads after each edit, for the claim class: headings.md (box class, after review p2), interface.md (ramp and box: lines 5, 55-56 already right), prose.md (ramp, and the label-as-interface claim fixed above), responsive.md (box set: line 36 already right, the reading-voice list at 33-34 has all twelve non-box voices), color-tokens SKILL.md (every `mode` in law 6 now means the on-colour mode; line 7's `dark mode` is a user phrase). A plugin-wide `git grep` for `line-single` and `box voice` found no other box-set claim; the step-ramp sweep (`every|all|each|most ... voices`, `sm/md/lg`, `3-step`, `six-step`, `-only`) found no other universal ramp claim.
 
 Left as is, outside the claim classes: `responsive.md:22` carries `(pre-2026-07)`, a date in a consumer skill (the S3 class, but not a finding on this file); `prose.md:40` sends interface metadata to `.type-label-sm` where interface.md:20 sends metadata to `.type-tiny-md`. Neither is in U1's finding list; flagged for the Orchestrator.
 
 ## Criteria
 
-Positive commands ran in the worktree at `3b73f739`; controls ran in throwaway clones under the job scratch directory: `$F/neg` (`git clone <worktree> $F/neg; git -C $F/neg checkout 8f5c6dc0`) and `$F/pos` (same, `checkout 3b73f739`). No control touched a worktree.
+Positive commands ran in the worktree at `3b73f739`, and U1-8, U1-13 again at `e7f99f19` with the same output (U1-8: `0` on all five files including headings.md, `1`, `0`, `true true 11,13,15,16,19,22`; U1-13: `0`, `2`, `Kicker,UI-control,UI-widget`); controls ran in throwaway clones under the job scratch directory: `$F/neg` (`git clone <worktree> $F/neg; git -C $F/neg checkout 8f5c6dc0`) and `$F/pos` (same, `checkout 3b73f739`). No control touched a worktree.
 
 | Id | Result | Head output | Control output |
 |---|---|---|---|
@@ -79,7 +80,7 @@ Quoted dashed lines (P3): none.
 
 | Gate | Result |
 |---|---|
-| `npm test` at 3b73f739 | 🟢 `✓ all 53 test files passed`, exit 0; `git status --short` after shows only this handoff (tree clean of generated drift) |
+| `npm test` at e7f99f19 | 🟢 `✓ all 53 test files passed`, exit 0 (also green at 3b73f739); `git status --short` after shows only this handoff (tree clean of generated drift) |
 | `node test/repo/em-dash.mjs` | 🟢 `em-dash: clean (806 files scanned)` |
 | `node test/repo/branding.mjs` | 🟢 `branding: clean (798 files scanned)` |
 | records controls | 🟢 U1-11: a copy with a pass 1 style row appended prints `1` on the first leg (head `0`); the file at ca3c6cc6 prints `1`, `0`. U1-12: a copy with the T4 row cut prints `10` on the last leg (head `11`); the file at ca3c6cc6 prints `0`, `1`, `0`, `0`, `10` |
