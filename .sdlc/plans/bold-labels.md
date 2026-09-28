@@ -155,7 +155,7 @@ Green: both `MERGED`, then `ancestor-761` and `ancestor-753`. Today: `OPEN` twic
 
 ## Units
 
-- [~] U1 (S) the 31 lines outside every active wall, and the kept list file · builder-l1 · reviewer-l1 · verifier-l1
+- [x] U1 (S) the 31 lines outside every active wall, and the kept list file · builder-l1 · reviewer-l1 · verifier-l1
 - [x] U2 (S) the 32 store-copy field labels · builder-l1 · reviewer-l1 · verifier-l1 (starts after Q1 is answered; parallel with U1 in its own worktree, both branch from `plan/bold-labels`)
 - [ ] U3 (S) the seven lines inside the prompt-audit and docs-repair walls · builder-l1 · reviewer-l1 · verifier-l1 (starts after G1; last unit, so pre-land runs on its head)
 
