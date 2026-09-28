@@ -28,7 +28,7 @@ There is no fixed voice-per-`<h1>`; map by size and importance. A common app map
 | card / group title (h4) | `.type-title-md` |
 | minor label (h5/h6) | `.type-title-sm` |
 | context heading above a list/grid | `.type-sub-heading-md` |
-| kicker / metadata tag | `.type-kicker-md`, a single-line overline: use `--type-kicker-{step}-line-single` (it rides the `mono` role, so it has one; leading 1.0) |
+| kicker / metadata tag | `.type-kicker-md`, a single-line overline: use `--type-kicker-{step}-line-single` (Kicker is a box voice, so it has one; leading 1.0) |
 
 Keep the ladder monotonic, don't skip so far that h2 and h3 look identical, and don't jump the
 display voice into a document where an editorial heading belongs.
