@@ -156,7 +156,7 @@ Green: both `MERGED`, then `ancestor-761` and `ancestor-753`. Today: `OPEN` twic
 ## Units
 
 - [~] U1 (S) the 31 lines outside every active wall, and the kept list file · builder-l1 · reviewer-l1 · verifier-l1
-- [~] U2 (S) the 32 store-copy field labels · builder-l1 · reviewer-l1 · verifier-l1 (starts after Q1 is answered; parallel with U1 in its own worktree, both branch from `plan/bold-labels`)
+- [x] U2 (S) the 32 store-copy field labels · builder-l1 · reviewer-l1 · verifier-l1 (starts after Q1 is answered; parallel with U1 in its own worktree, both branch from `plan/bold-labels`)
 - [ ] U3 (S) the seven lines inside the prompt-audit and docs-repair walls · builder-l1 · reviewer-l1 · verifier-l1 (starts after G1; last unit, so pre-land runs on its head)
 
 Grades: every unit is a hand edit of prose from an enumeration with a count control, the floor of the ladder (`agent-writing-rules` §Model tiering); the reviewer's job is the read of each line against the rule, which l1 does with the table in hand. Points: 1 each, 3 total.
