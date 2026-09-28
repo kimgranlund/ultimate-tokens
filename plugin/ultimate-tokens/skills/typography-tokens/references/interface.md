@@ -52,5 +52,5 @@ the UI voices' job.
 - Don't use `label` for a button or badge, `label` is static text; it has no
   `-line-single` and its rhythm is prose.
 - Don't set control `line-height` by hand, use `-line-single`; that IS the fit.
-- Don't invent sizes between steps, each voice's own ramp is fixed (sm/md/lg, or the box voices'
+- Don't invent sizes between steps, each voice's own ramp is fixed (sm/md/lg, or the two interactive voices'
   xs/sm/md/lg/xl/2xl); there's a step for it.

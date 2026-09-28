@@ -87,7 +87,7 @@ library's series-color source, and the data palettes' own roles for everything e
 6. **On-colors follow the kit's on-color mode, default, `onColorMode: contrast`.** In the default
    mode, `-on-primary` / `-on-primary-variant` resolve per pair for real contrast in each scheme. A
    kit exported with the other legal mode, `onColorMode: fixed`, pins the on-color to the palette's
-   light end in BOTH modes instead, for all palettes, a deliberate brand decision that intentionally
+   light end in both modes instead, for all palettes, a deliberate brand decision that intentionally
    overrides per-pair contrast math (e.g. white on a warning-yellow fill). Read which mode the kit
    at hand exports before assuming either; whichever mode is active, do not swap in your own
    auto-contrast logic or dark variant on top of it. If a client wants the other mode's behavior,

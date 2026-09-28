@@ -77,8 +77,8 @@ labels and table cells, not something you operate. A button label is `UI-control
 chrome voice, never `body` and never `label`. A paragraph is `body`, not `label`. **Sub-title** and **tiny**
 are prose too, even though they render in the *mono*/*ui* font respectively; they wrap (use `-line`,
 not `-line-single`). Reach for `tiny` on a figure caption, not `label`. There's no separate
-"quote"/"caption"/"legal"/"UI" voice, those jobs live on `lead`, `tiny`, `body`, and `label`
-respectively. **body-mono**, **label-mono**, and **tiny-mono** are mono-font SIBLINGS of `body`,
+"quote"/"caption"/"legal" voice, those jobs live on `lead`, `tiny`, and `body` respectively, and UI
+text lives on `UI-control`/`UI-widget`. **body-mono**, **label-mono**, and **tiny-mono** are mono-font SIBLINGS of `body`,
 `label`, and `tiny` respectively, same sizes, same flow (box vs. prose), just the mono family, for
 when the text itself is code-like (an ID, a version tag, a snippet) rather than prose or chrome that
 merely LOOKS technical. Don't reach for a `-mono` voice just because the surrounding UI is a dev tool.

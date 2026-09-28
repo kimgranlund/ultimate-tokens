@@ -4,7 +4,7 @@ Builder, pass 1 (resumed after a session restart mid-pass). Written 2026-09-28.
 
 ## Branch
 
-`unit/pa-U1`, worktree `.worktrees/pa-U1`. Prose commit `4b7afda3` on top of `8f5c6dc0`. `npm test` green in the worktree (53 test files passed, tree clean after: only the eight U1 files modified).
+`unit/pa-U1`, worktree `.worktrees/pa-U1`. Prose commits `4b7afda3`, `0fd362bb`, and the review-fix commit (see `git log`) on top of `8f5c6dc0`. `npm test` green at the final head (53 test files passed, tree clean after).
 
 ## Criteria
 
@@ -29,9 +29,17 @@ Positive commands ran in the worktree; expected values are the plan's.
 
 ## Findings (P5)
 
-| Id | Finding | State |
+| Id | State | Fate and proof |
 |---|---|---|
-| F1 | the first draft printed 2 on U1-1's third grep (line-based count); the body intro now says `a fifteen-voice set`, giving 3 | fixed |
-| F2 | law 6 also names the fixed mode in `references/feedback.md`, worded `under the fixed mode` | intended |
+| C1 | applied | law 6 opens `default, \`onColorMode: contrast\``, names `onColorMode: fixed`; proved by U1-3 command (`contrast fixed,contrast`) |
+| C2 | applied | feedback.md defers to `onColorMode`; `fixed light` grep `0` |
+| T1 | applied | `fifteen-voice`/`fifteen-role` in SKILL.md; U1-1 `0`,`3` and engine `15` |
+| T2 | applied | README says `fifteen-voice scale`; `eleven-role` `0` |
+| T3 | applied | Steps column, box ramp named for the two interactive voices only; U1-2 (`15`, `2`, `0`, `true false`) |
+| T4 | applied | `label` is static, operable chrome is `UI-control`/`UI-widget` in the note, checklist, prose.md and the "no separate voice" sentence (review R1); U1-4 greps and `grep -n 'and \`label\`$' SKILL.md` empty |
+| S1 | applied | SPEC/ADR ids removed from color-tokens; U1-5 `0` |
+| S2 | applied | TKT-0010 removed from geometry-tokens; U1-5 `0` |
+| S3 | applied | current-rule wording, no dates, in typography SKILL.md; U1-5 `0` |
+| S4 | applied | interface.md states the current rule, no ids or dates; U1-5 `0` |
 
 Quoted dashed lines (P3): none.
