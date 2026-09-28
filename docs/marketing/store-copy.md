@@ -27,7 +27,7 @@ precise/craft voice (matches the app).
 - **Pro**: **$39 / year**, per user. Includes every update and customer support. Cancel anytime.
 - **Studio**: **$149 / year for 5 seats**, then **$19 / seat / year** for extras, managed in one place.
 
-**Placeholders**, replace before publishing:
+**Placeholders** to replace before publishing:
 
 | Token | Meaning |
 |---|---|
@@ -49,13 +49,13 @@ precise/craft voice (matches the app).
 
 ## 1 · Store object: `stores[420293]`
 
-**`stores.attributes.name`**, store name
+**`stores.attributes.name`**: store name
 
 ```
 Ultimate Tokens
 ```
 
-**`stores.attributes.slug` · `.domain` · `.url`**, identity (set once; read-only on the object)
+**`stores.attributes.slug` · `.domain` · `.url`**: identity (set once; read-only on the object)
 
 ```
 slug:   ultimate-tokens
@@ -63,7 +63,7 @@ domain: ultimate-tokens.lemonsqueezy.com
 url:    https://ultimate-tokens.lemonsqueezy.com
 ```
 
-**`stores.attributes.avatar_url`**, the store avatar (uploaded in **Settings → Store**). The API
+**`stores.attributes.avatar_url`**: the store avatar (uploaded in **Settings → Store**). The API
 exposes the URL only; the alt text below is a storefront/dashboard value, not a JSON:API attribute.
 
 **Avatar / logo alt text**
@@ -72,31 +72,31 @@ exposes the URL only; the alt text below is a storefront/dashboard value, not a 
 Ultimate Tokens
 ```
 
-**Storefront tagline**, dashboard-only (**Settings → Store**); not on the `stores` API object (≤60 chars)
+**Storefront tagline**: dashboard-only (**Settings → Store**); not on the `stores` API object (≤60 chars)
 
 ```
 Perceptual color, type & geometry, as tokens you ship.
 ```
 
-**Storefront description (short)**, dashboard-only (**Settings → Store**)
+**Storefront description (short)**: dashboard-only (**Settings → Store**)
 
 > Ultimate Tokens is a perceptual design-token generator. Derive an OKLCH-true color system, a type scale,
 > and a geometry system from one source, then export them to CSS, Figma variables, and your AI agents,
 > perfectly in sync.
 
-**SEO meta title**, dashboard-only (**Settings → SEO**)
+**SEO meta title**: dashboard-only (**Settings → SEO**)
 
 ```
 Ultimate Tokens, perceptual design-token generator
 ```
 
-**SEO meta description**, dashboard-only (**Settings → SEO**, ≤155 chars)
+**SEO meta description**: dashboard-only (**Settings → SEO**, ≤155 chars)
 
 ```
 Derive OKLCH-true color, type & geometry systems from one source. Export to CSS, DTCG, Tailwind, shadcn, Figma variables & MCP. Free to start.
 ```
 
-**Open-graph / social card description**, dashboard-only (**Settings → SEO**)
+**Open-graph / social card description**: dashboard-only (**Settings → SEO**)
 
 > One brand kit. Three composing systems, color, type, geometry. Every export, derived and in sync. Free
 > to start; Pro is $39/year, Studio for teams.
@@ -120,13 +120,13 @@ Ultimate Tokens Pro
 **`products[1182548].attributes.status`** → `published`. **`.buy_now_url`** is an LS-generated hosted
 checkout link (read-only); the app links the variant deep-link `…/checkout/buy/1849393` instead (§4.1).
 
-**Listing excerpt**, the first ~160 chars of `description` that LS shows on the product card; write the
+**Listing excerpt**: the first ~160 chars of `description` that LS shows on the product card; write the
 rest of the body to begin after it so the card truncates on a complete thought
 
 > A perceptual color, type & geometry token system, exported to CSS, Figma, and your AI agents from one
 > source of truth. $39/year.
 
-**`products[1182548].attributes.description`**, full long-form body
+**`products[1182548].attributes.description`**: full long-form body
 
 > ### Tokens, derived, not guessed
 > Ultimate Tokens turns a few perceptual decisions into a complete design system. Pick a key color and it
@@ -174,12 +174,12 @@ Ultimate Tokens Studio
 **`products[1182535].attributes.status`** → `published`. **`.buy_now_url`** is LS-generated; the app
 links the variant deep-link `…/checkout/buy/1849376` instead (§4.2).
 
-**Listing excerpt**, first ~160 chars of `description` on the product card
+**Listing excerpt**: first ~160 chars of `description` on the product card
 
 > Pro for your whole team, 5 seats at a reduced per-seat rate, managed from one account. Add more anytime
 > at $19/seat/year.
 
-**`products[1182535].attributes.description`**, full body
+**`products[1182535].attributes.description`**: full body
 
 > ### Everything in Pro, for the team
 > Studio gives every member of your studio the full Pro toolkit, unlimited brand kits, the complete export
@@ -372,7 +372,7 @@ Pro:     Subscribe, $39/year
 Studio:  Get Studio seats
 ```
 
-**Checkout reassurance footer**, landing page, near the button (the LS checkout page itself is
+**Checkout reassurance footer**: landing page, near the button (the LS checkout page itself is
 LS-templated; this line lives on our surfaces)
 
 ```
@@ -414,25 +414,25 @@ order and webhooks. Never hardcode a buyer's details into a shared link.
 
 ### 5.1 · Launch discount (the object)
 
-**`discounts.attributes.name`**, customers see this at checkout, next to the price; write it as a
+**`discounts.attributes.name`**: customers see this at checkout, next to the price; write it as a
 fragment that reads beside a number
 
 ```
 Launch pricing
 ```
 
-**`discounts.attributes.code`**, checkout code; uppercase letters + digits, 3–256 chars (schema).
+**`discounts.attributes.code`**: checkout code; uppercase letters + digits, 3–256 chars (schema).
 Convention: one short, memorable, campaign-tied token, e.g. `LAUNCH`, `FOUNDING`. One code per campaign;
 let it stop working at `expires_at`.
 
-**`discounts.attributes.amount` + `.amount_type`**, `amount_type: percent` with `amount: <N>` for N% off
+**`discounts.attributes.amount` + `.amount_type`**: `amount_type: percent` with `amount: <N>` for N% off
 (or `fixed` in cents). Scope it to the tiers via `is_limited_to_products` when the campaign is Pro-only.
 
-**`discounts.attributes.duration`**, for the annual plan, `once` maps to the copy phrase "first year"
+**`discounts.attributes.duration`**: for the annual plan, `once` maps to the copy phrase "first year"
 (the initial invoice only). Use `repeating` + `duration_in_months` or `forever` only if the intent
 actually differs; keep the word in the copy honest to the field.
 
-**`discounts.attributes.expires_at`**, a **real** deadline. Set it, and let the code stop working then.
+**`discounts.attributes.expires_at`**: a **real** deadline. Set it, and let the code stop working then.
 
 **Announcement template** (owned in full by [`launch/launch-kit.md`](launch/launch-kit.md); this line is
 the checkout-adjacent version, and its `{{DATE}}` equals `expires_at`)
@@ -449,7 +449,7 @@ countdown that resurrects itself. The price is stated plainly and the exit is al
 
 ## 6 · Post-purchase: order-confirmation surfaces
 
-**Confirmation / thank-you page**, the app's post-redirect welcome at `{{APP_URL}}` (richer than the LS
+**Confirmation / thank-you page**: the app's post-redirect welcome at `{{APP_URL}}` (richer than the LS
 receipt note in §4.2, which carries the short version). This block holds the product's one protected
 celebration.
 
@@ -461,7 +461,7 @@ celebration.
 >
 > That's it, unlimited kits and the full export suite are live. Questions? **{{SUPPORT_EMAIL}}**.
 
-**Receipt / subscription-confirmation email**, pastes into **Settings → Emails → Order confirmation**
+**Receipt / subscription-confirmation email**: pastes into **Settings → Emails → Order confirmation**
 (LS injects the license key and receipt automatically; this is the custom message body)
 
 ```
@@ -485,7 +485,7 @@ Subject: Your Ultimate Tokens Pro subscription
 >
 > (Ultimate Tokens)
 
-**Studio welcome email**, **Settings → Emails → Order confirmation** for the Studio product (or your
+**Studio welcome email**: **Settings → Emails → Order confirmation** for the Studio product (or your
 webhook mailer, keyed on the Studio variant)
 
 ```
@@ -502,7 +502,7 @@ Subject: Your Ultimate Tokens Studio license
 >
 > Need to change your seat count or want an invoice? Just reply, {{SUPPORT_EMAIL}}.
 
-**License-key delivery (if sent separately)**, a standalone transactional email, if you split key
+**License-key delivery (if sent separately)**: a standalone transactional email, if you split key
 delivery from the order confirmation
 
 ```
@@ -515,7 +515,7 @@ Subject: Your Ultimate Tokens Pro key, activate in 30 seconds
 > Paste it into **Settings → Account** at {{APP_URL}} and click Validate. The Figma plugin stays free and
 > offline, no key needed there.
 
-**Onboarding nudge (a few days later, optional)**, your webhook mailer, not an LS-native email
+**Onboarding nudge (a few days later, optional)**: your webhook mailer, not an LS-native email
 
 ```
 Subject: Three things to try with Pro
@@ -537,7 +537,7 @@ Which system sends these, LS's built-in subscription emails vs. your own webhook
 mail, is a deployment decision (see open questions in the hand-off). The copy is written to paste into
 whichever; LS renewal reminders and dunning are configurable in **Settings → Emails**.
 
-**Renewal reminder (optional)**, **Settings → Emails → Subscription renewal reminder**
+**Renewal reminder (optional)**: **Settings → Emails → Subscription renewal reminder**
 
 ```
 Subject: Your Ultimate Tokens Pro renews soon
@@ -546,7 +546,7 @@ Subject: Your Ultimate Tokens Pro renews soon
 > A heads-up: your Ultimate Tokens Pro subscription renews on **{{RENEWAL_DATE}}** at $39/year. Nothing to
 > do, it'll carry on, updates and support included. Manage or cancel anytime at {{CUSTOMER_PORTAL}}.
 
-**Payment failed (dunning)**, **Settings → Emails → Payment failed** (LS sends this on `past_due`)
+**Payment failed (dunning)**: **Settings → Emails → Payment failed** (LS sends this on `past_due`)
 
 ```
 Subject: We couldn't renew your Pro subscription
@@ -555,7 +555,7 @@ Subject: We couldn't renew your Pro subscription
 > We tried to renew your Ultimate Tokens Pro subscription but the payment didn't go through. Update your
 > payment method at {{CUSTOMER_PORTAL}} to keep Pro, your kits and settings are untouched in the meantime.
 
-**Cancellation confirmation**, your webhook mailer on `subscription_cancelled` (the customer keeps access
+**Cancellation confirmation**: your webhook mailer on `subscription_cancelled` (the customer keeps access
 until `ends_at`)
 
 ```
@@ -565,7 +565,7 @@ Subject: Your Pro subscription is canceled
 > Your Ultimate Tokens Pro subscription is canceled. You keep Pro until **{{PERIOD_END}}**, then your
 > account returns to Free, your saved kits stay safe. Changed your mind? Resubscribe anytime at {{APP_URL}}.
 
-**Subscription ended / downgraded to Free**, your webhook mailer on `subscription_expired`
+**Subscription ended / downgraded to Free**: your webhook mailer on `subscription_expired`
 
 ```
 Subject: Your Pro period has ended
@@ -578,12 +578,12 @@ Subject: Your Pro period has ended
 
 ## 8 · Policies (lite): store policy fields
 
-**Refund policy**, **Settings → Store → Refund policy** (or the product-level refund policy field)
+**Refund policy**: **Settings → Store → Refund policy** (or the product-level refund policy field)
 
 > If Ultimate Tokens Pro isn't right for you, email {{SUPPORT_EMAIL}} within **14 days** of purchase for a
 > full refund, no questions asked.
 
-**License terms summary (EULA-lite)**, **Settings → Store → Terms of service** (or a linked terms page)
+**License terms summary (EULA-lite)**: **Settings → Store → Terms of service** (or a linked terms page)
 
 > Ultimate Tokens **Pro** is an annual, per-user subscription ($39/year). It entitles one individual to the
 > Pro features for the paid period, with updates and support included, and renews yearly until canceled.
@@ -592,7 +592,7 @@ Subject: Your Pro period has ended
 > commercial work, on as many projects and clients as you like. Tokens and design systems you create are
 > entirely yours.
 
-**Support line**, footer / contact field
+**Support line**: footer / contact field
 
 ```
 Questions, licensing, or team plans → {{SUPPORT_EMAIL}}
@@ -629,7 +629,7 @@ License help:      "Paste the key from your purchase email to unlock Pro."
 > unlimited kits and the full export suite again.
 > `[ Resubscribe → ]`
 
-**Launch announcement + social variants**, moved to
+**Launch announcement + social variants**: moved to
 [`launch/launch-kit.md`](launch/launch-kit.md), which owns all announcement/social copy.
 
 ---
