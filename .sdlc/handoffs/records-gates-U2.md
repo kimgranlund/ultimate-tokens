@@ -94,7 +94,7 @@ since U1 (the exit-on-count fix) has not merged into this worktree yet, per the 
 - P3 (branding/em-dash), measured at `8766a758` plus the requote: `branding: clean (789 files scanned)`;
   the stripped added-line glyph count (row's `s/\x60[^\x60]*\x60//g` strip) prints `0`; the raw non-handoff
   count prints `4`, and those four lines are review r1 lines 38 to 41, quoting this handoff's old lines
-  65, 89, 106 and 109 word for word, each inside a backtick span; `node test/repo/em-dash.mjs` prints
+  65, 89, 106 and 109 in substance (the review paraphrases some of them, so these are not verbatim quotes), each inside a backtick span; `node test/repo/em-dash.mjs` prints
   `em-dash: clean (797 files scanned)`, `exit 0`. Historical, at `e6ee37e0`: the count was `4` and review
   r1 recorded FAIL (`FAIL: 4 em dashes`); `4bfd2ba8` removed those glyphs from this handoff. At
   `8766a758` before the requote the stripped count printed `1`, because review r1 line 39 used a

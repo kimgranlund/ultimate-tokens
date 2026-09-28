@@ -91,10 +91,10 @@ Post-merge check, the Orchestrator's own step once G0 is green: merge `origin/ma
 ## Units
 
 - [x] U1 (S) `exit $((n > 0))` in both card scripts; adapter §1 and §2.1 state the last-line-and-exit rule · builder-l1 · reviewer-l1 · no verifier (R8) · starts at G0 green
-- [~] U2 (S) adapter §6: the colon heading shape, append after the last ADR, the stub rows reworded, a dated amendment; ADR-026 and ADR-027 headings normalised under Q2 · builder-l1 · reviewer-l1 · verifier-l1 only if Q2 is yes (a file outside `.sdlc/` changes) · starts at G0 green
-- [~] U3 (S) the G0 list backfilled, if any (M by a revision row if the G0 list is non-empty); `test/repo/verdict-frontmatter.mjs` registered; baseline N moved · builder-l2 · reviewer-l1 · verifier-l1 · after U1
-- [~] U4 (S) `em-dash.mjs --fix`: E1 and E2 take the colon inside string literals, E3 and E4 are refused, four fixtures · builder-l3 · reviewer-l2 · verifier-l2 · starts at G0 green
-- [ ] U5 (S) adapter §3: the ceiling pointer sentence restored in the retired paragraph with the figures read off the baseline (`a 20-reading series from 284 s to 1670.43 s`), so `ceiling-counts-check.mjs` exits 0 on the tree; the check itself untouched (#755, R56) · builder-l1 · reviewer-l1 · no verifier (R8) · after U1 and U2 have merged into the plan branch (rule-gates landed by then, per R56)
+- [x] U2 (S) adapter §6: the colon heading shape, append after the last ADR, the stub rows reworded, a dated amendment; ADR-026 and ADR-027 headings normalised under Q2 · builder-l1 · reviewer-l1 · verifier-l1 only if Q2 is yes (a file outside `.sdlc/` changes) · starts at G0 green
+- [x] U3 (S) the G0 list backfilled, if any (M by a revision row if the G0 list is non-empty); `test/repo/verdict-frontmatter.mjs` registered; baseline N moved · builder-l2 · reviewer-l1 · verifier-l1 · after U1
+- [x] U4 (S) `em-dash.mjs --fix`: E1 and E2 take the colon inside string literals, E3 and E4 are refused, four fixtures · builder-l3 · reviewer-l2 · verifier-l2 · starts at G0 green
+- [~] U5 (S) adapter §3: the ceiling pointer sentence restored in the retired paragraph with the figures read off the baseline (`a 20-reading series from 284 s to 1670.43 s`), so `ceiling-counts-check.mjs` exits 0 on the tree; the check itself untouched (#755, R56) · builder-l1 · reviewer-l1 · no verifier (R8) · after U1 and U2 have merged into the plan branch (rule-gates landed by then, per R56)
 
 | Unit | Size | Builder | Reviewer | Verifier | Touches |
 |---|---|---|---|---|---|
