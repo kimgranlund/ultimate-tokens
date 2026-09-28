@@ -6,33 +6,34 @@ ticket: "#701"
 branch: unit/cf-U2
 base: 282fca8d
 grade: verifier-l2 standing in for verifier-l3 while fable is capped (owner ruling b9044bb, "Accept opus substitutes, name them in the header"); U2 is an L6 (opus) build, so this checker is inside the builder's own model family
-pass: 1
+pass: 2
 written: 2026-09-28
 ---
 
-# Verdict chroma-floor U2 · 🔴 · the engine meets every criterion; the handoff still grades C13 (i) at revision 14
+# Verdict chroma-floor U2 · 🟡 · pass 2: the handoff's C13 now reads revision 15; the even-dips timing row is still owed
 
-verdict: 🔴
-sha: a4c78e3dc78a423e47f773e6f5bca27c39e9666e
+verdict: 🟡
+sha: abab9003bbb8da97224b8e9f8471510ae7a5bee8
 
-`unit/cf-U2` at `a4c78e3d`. The code head is `ed1658dc`, and `git diff --stat ed1658dc a4c78e3d` lists four
-`.sdlc/` files only (the handoff, the plan, and two review records), so every code row is graded on the engine at
-`ed1658dc`. The criteria are the plan at revision 15. The evidence run
-(`$CLAUDE_JOB_DIR/tmp/cfU2/report.md`) used clones at `a4c78e3d` and at `<base>` `282fca8d`, under load 60 to 330, so
-no timing here is quiet-host. `verdict.py check` passes on the handoff and both reviews. Review r1 ends
-`verdict: 🔴` and r2 ends `verdict: 🟢`. I reread the handoff and the plan text myself.
+Pass 2, records-only. `unit/cf-U2` at `abab9003`. `git log a4c78e3d..abab9003` is one commit, and it changes
+`.sdlc/handoffs/chroma-floor-U2.md` alone (24 insertions, 10 deletions); `git diff --name-only a4c78e3d abab9003 --
+src scripts figma mcp plugin` prints `0`. So every code row carries from pass 1 at `a4c78e3d` (code head `ed1658dc`),
+unchanged below, and this pass rereads H1. `verdict.py check` on the handoff `--against` its `a4c78e3d` copy exits 0.
 
-## The red
+## Pass 2
 
 | id | criterion | state | evidence | negative control |
 | --- | --- | --- | --- | --- |
-| H1 | the handoff records C13 as revision 15 states it: each straddling pair's own far-side \|dC\|, and each generated anchor's hex, rendered L* and CAM16 hue | 🔴 | mine: the handoff's C13 table still grades revision 14's loss-vs-reference reading, keeps the dropped `9.99 vs 10.05` rows (lines 49 and 52), and its "Left out" carries `🟡 C13 (i) pale 94.95 vs 95.13 reads 2.77` (line 134), a reading revision 15 retired. A grep for the anchors' hexes (`#051C2F`, `#EAF1FD`, `#181B1F`, `#EFF0F6`) in the handoff prints `0`. The engine passes the revised check (C13 (i) below); the record does not describe it | the evidence run's table carries all eight anchors with hex, L* and hue, e.g. sat `#051C2F` L* 9.546 h 250.1 against `#051D31` 10.052 h 250.7 |
+| H1 | the handoff records C13 as revision 15 states it: each straddling pair's own far-side \|dC\|, and each generated anchor's hex, rendered L* and CAM16 hue | 🟢 | mine: the C13 (i) table now has the four pairs at `0.49`, `0.61`, `0.50`, `0.55` with controls `13.19`, `13.14`, `10.72`, `17.71`. The new anchor table's eight hexes, rendered L* and hues agree digit for digit with pass 1's evidence run (`$CLAUDE_JOB_DIR/tmp/cfU2/report.md` line 21), e.g. pale `#EFF0F6` 94.876 h 254.9 in, `#EFF1F7` 95.151 h 250.0 out. The (iii) control reads `211 cells in 93 anchors`. A grep for `9\.99` or `2\.77` matches only line 75, which says why 9.99 was dropped, and lines 39 and 46, which name the probe's retired `(i)` line and say it is not graded; the "Left out" 2.77 amber is gone. The builder's log `F/c13-rev15.txt` does print a `(i)` block and then a `(i-b)` block and ends `FAIL`, as the handoff says | at `a4c78e3d` the same four-hex grep prints `0` and the handoff carried the `9.99` rows and the 2.77 amber; at `abab9003` it prints `4` |
 
-What unblocks it is records only: the handoff's C13 section is restated at revision 15 (the four \|dC\| figures,
-the eight anchors, 9.99 dropped, and the 2.77 amber retired). No code changes, so the next pass rereads H1 and the
-record rows, and the code rows carry.
+Plan text: revision 16 (`ba4538d5`) covers all three items from pass 1's plan-text section (pale far side down to
+9.0 C, the control at 211 in 93, C10 naming ten paths). `ba4538d5` is not an ancestor of `abab9003`; that is the plan
+branch's copy, and no unit row reads it.
 
-## Met
+The 🟡 is C4 and C11/C12 only: the `gate:even-dips` timing row has 0 of 3 quiet-host runs, owed at U3 or pre-land,
+as the handoff's "Left out" says.
+
+## Met (carried from pass 1 at `a4c78e3d`)
 
 | id | criterion | state | evidence | negative control |
 | --- | --- | --- | --- | --- |
@@ -48,20 +49,10 @@ record rows, and the code rows carry.
 | C13 (iii) | the drain is bounded | 🟢 | 17 cells in 8 anchors (bound 20); 0 anchors in L* 88 to 95.05; 5 anchors below L* 15, exactly at the bound of 5 (L* 12.335, 14.246, 13.178, and two at 9.704, Khumbu teahouse and Rub' al Khali, both `#1F1A16`) | pass 1's engine prints 211 cells in 93 anchors, 1 in 88 to 95.05, 17 below 15, FAIL |
 | #739 | the achromatic skip holds with no special case | 🟢 | `pass  achromatic-anchor: 27 of 27 ... 3 skipped under CAM16 C 5`; no line naming `clamped`, #739 or achromatic in the engine diff from `282fca8d`; the run's replica reads `skipped 3 of 30` | the replica with `floorRef = maxc500` reads `skipped 8 of 30`, `skippedOk false` |
 
-## Met with a concern
+## Met with a concern (carried)
 
 | id | criterion | state | evidence | negative control |
 | --- | --- | --- | --- | --- |
 | C4 | `gate:even-dips` green and its control bites; its timing row is quiet-host | 🟡 | exit 0, `0 dips (19 + 25 stops, 3764 palettes + default kit 16, no baseline)`, `PASS`; greps `1`, `1`, `1`, `0`, `3`. The `.sdlc/baseline.md` timing row has 0 of 3 quiet-host runs and says so; it is owed before pre-land | `--full --floor-scale 1.6` prints `120 dips`, `FAIL`, exit 1 |
 | C11/C12 (U2 parts) | the gate-list row, the adapter rows and the baseline row | 🟡 | `["npm run gate:even-dips", "even-dips", "gate:even-dips"]` at `baseline-agrees-check.sh:34`; 16 lines, `ok    time gate:even-dips`, only `STALE ui.html` (4130.1 against 4135.3 KB), `stale total: 1`, the allowed shape; the `adapter.md:36` sweeps row names seven, `355 to 475 s`, sums verified. The timing row carries the C4 gap | the script without its even-dips row prints 15 lines; the third run edited to 52.82 prints `STALE time gate:even-dips`, `stale total: 2` |
 
-## For the Orchestrator (plan text, not U2's)
-
-- Revision 15's C13 "Today" says the far side sits "at 13.0 to 14.4 C on both sides of each edge". That is true of
-  the sat pairs; the pale pairs go down to 9.0 (dark stop 400 9.0/9.0, light stop 600 9.0/9.5). The four \|dC\|
-  figures in the same sentence are right.
-- C13's control text says (iii) reads "215 cells in 96 anchors" on pass 1's engine; the run reads 211 in 93, and the
-  handoff's control column agrees with the run.
-- C10's criterion text still lists six `docs/` paths and calls a seventh a FAIL. The four admitted in revision 13 (b)
-  live only in the revision log.
-These need to be true before the pre-land record reads the plan.
