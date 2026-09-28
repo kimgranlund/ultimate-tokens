@@ -7,3 +7,10 @@
 | Question | Extend R57 to gate:even-dips, so its 3 runs under load count 3/3 like mode-isolation? |
 | Options | A Yes, same rule (recommended: same host, same kind of timing row, and a quiet window is not in sight) · B No, take 3 quiet readings in a later quiet window |
 | Default if unanswered | none: the even-dips row stays 🟡 and blocks a 🟢 pre-land record |
+
+## Answer (R65, 2026-09-28, owner via AskUserQuestion)
+
+| Field | Value |
+|---|---|
+| Chosen | A: "Yes, same rule (Recommended)" |
+| Effect | R57 now covers gate:even-dips; its 3 under-load runs count 3/3, marked under-load |
