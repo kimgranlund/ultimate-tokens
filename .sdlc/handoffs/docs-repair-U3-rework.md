@@ -25,3 +25,9 @@ app-shell.md:13 losing the backticks around `HctApp` is intentional, required by
 `mixinInto` backtick-hugged, it reported "matched HctApp" instead of mixinInto, failing U3-3's
 literal criterion (needs "matched `mixinInto`"). Unbackticking HctApp on that one line removes it
 as a candidate anchor so the audit correctly attributes the cite. Recommend keeping as-is.
+
+## Resume pass (2026-09-28)
+
+Kept the four reactivity review docs (persist.js cite line numbers shifted by the header rework) and the two regenerated mirrors (ui.html, describe-mcp-assets.js); nothing stray to restore.
+`npm test` green (all 50 test files passed) under heavy host load. Baseline ui.html figure re-pointed 4125.5 to 4124.3 KB with a correction paragraph; `baseline-agrees-check.sh` reads `stale total: 0`.
+Commits: 0f001caa (review docs and mirrors), then the baseline commit on unit/dr-U3 (see git log).
