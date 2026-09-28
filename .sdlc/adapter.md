@@ -53,9 +53,10 @@ Rules the gates imply:
   Retired, #713 U6b (2026-09-23). The interim ceiling this paragraph used to state (280 to 550 s,
   owner ruling 2026-09-20, #681 U5, labelled #681 U9, ruling Q6) held only until the corpus sweeps
   moved out of `npm test` into the gate scripts above. That evidence now lives as a labelled prior
-  set in `.sdlc/baseline.md` §Interim gate-time ceiling (the section stays for history; nothing there
-  is graded against `npm test` any more). The paragraph above stays as the record of WHY the budget
-  moved in the first place.
+  set in `.sdlc/baseline.md` §Interim gate-time ceiling, a 20-reading series from 284 s to 1670.43 s
+  (the section stays for history; nothing there is graded against `npm test` any more; the
+  ceiling-counts check reads this sentence's two figures against the section's rows, #755). The
+  paragraph above stays as the record of WHY the budget moved in the first place.
 - `npm test` ceiling: 120 s, the largest of three sequential quiet-host runs. Arithmetic at the
   time the ceiling was set (#713 design section, before U6c-8 re-measured it): main's then-current
   56 to 60 s, plus the four sampled legs at about a tenth of the moved cost, plus the thinned tonal
