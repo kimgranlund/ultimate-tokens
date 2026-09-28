@@ -270,7 +270,7 @@ quote itself has exactly one source. The three
 Correction (2026-09-20, plan preset-intent-fidelity U7, #681): `npm run build`'s ui.html figure
 moves again, from 4111.1 KB to 4117.5 KB. The cause is named rather than left as a drift: U7's S1 adds explanatory comments to `src/ui/model.mjs` and
 `src/ui/sections/color.js`, both of which `scripts/gen-figma-ui.mjs` inlines into
-`figma/plugin/ui.html`, so the bundle grew by 6.7 KB and `baseline-agrees-check.sh` began reading
+`figma/plugin/ui.html`, so the bundle grew by 6.4 KB and `baseline-agrees-check.sh` began reading
 `STALE ui.html: baseline 4111.1 KB, tree 4117.5 KB`. Team-lead ruled that the unit whose change made
 the figure stale repairs it in its own commit rather than leaving a red gate for a later one, on
 revision 25's standing precedent. The new figure is this unit's own program output, not a number
