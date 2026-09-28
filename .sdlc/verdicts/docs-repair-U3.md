@@ -6,7 +6,7 @@ ticket: "#751"
 branch: unit/dr-U3
 base: 282fca8d
 grade: verifier-l1, the evidence run dispatched by the Verifier seat
-pass: 1
+pass: 2
 written: 2026-09-28
 ---
 
@@ -56,3 +56,31 @@ a ruling the plan makes. Only 2 of the 7 are quotes; the other 5 are rewritten p
 | P6 | plan-wide stale counts | 🟡 | `12`, `10`; U3's three hits (`11 voices`, two `5 formats` cells) are gone; the 12 left belong to U1 and U2 | at `B`: `15`, `10` |
 | F3 | the `persist.js` header fold keeps the old block's content (review r2) | 🟡 | the new header drops the `serialize(state)`/`hydrate(snapshot)` contracts, the byte-for-byte round-trip sentence and the TKT-0016 pointer; its line 1 says "Hydrate a State from storage" while line 4 says no storage I/O lives here. So review r2's "no content was lost" is false. It is comment-only, with no runtime effect | the comment strip shows code equal to `B` |
 | F5 | merge debt | 🟡 | a trial merge of `origin/main` conflicts in 11 files, `persist.js` and `app.js` among them; the pre-land record must re-prove P3, P4's middle, U3-3 and U3-9 on the merged tree | the aborted merge left the clone clean |
+
+## Pass 2, at `da8d48d1`
+
+verdict: 🔴
+sha: da8d48d10be02aab9d528a5a98ae84bd94b51001
+
+The criteria are plan `aab895f0`. Against `c7eafe2d`, only U3-9's expected numstat (`22 31`) and one revision row changed. B is `282fca8d`. Every row was rerun at `da8d48d1` in throwaway clones; none was carried from pass 1.
+
+| Row | State | Evidence | Negative control |
+|---|---|---|---|
+| U3-1 to U3-8 | 🟢 | the plan commands reproduce every expected figure, for example U3-3 `L=2581` and U3-7 `0`, `1`, `1`, `0`, `0` | at B: U3-3 `L=2570` `NEAR`, U3-7 `1`, `0`, `0`, `1`, `2`; a marketing line appended gives U3-8 `1` |
+| U3-9 | 🟢 | numstat `2 2`, `1 1`, `22 31`. The header is 22 lines, since the first `import` sits at line 23. The removed block is B's 31 lines, and 846 + 22 - 31 = 837. `persist.js` with `//` and blank lines stripped is identical at B, `50a7f464` and `da8d48d1` (408 lines each) | `baseChroma: 100` to `101` gives `23 32` and a `9c9` strip hunk |
+| P1 | 🟢 | `✓ all 50 test files passed`, `exit 0`, tree `0`. The two generated files are exact regenerator output: 50a7f464's copies put back and regenerated return the tree to `0` | the scrim sed gives `✗ 1/50 test file(s) failed`, `exit 1` |
+| P3 and S7 | 🟢 | stripped `0`, raw `2`: review lines `docs-repair-U3-progress.md:24` and `docs-repair-U3-review.md:50`, both quotes inside code spans. The handoff states `0` and `2` and lists both lines. The five rewritten reactivity lines add `0` glyphs | a glyph prose line gives stripped `1` and raw `3`; the ADR copy gives branding `FAIL: 3` |
+| P4, P5 | 🟢 | `0`, `0`, `0`, `0`; citations `STALE 0`, `exit 0` | the fixture gives `2`; `app.js:1` gives `1 STALE`, `exit 1` |
+| Restored header | 🔴 | the fix restored `src/ui/persist.js:22` as `... (TKT-0016, see the RENAME_MAPS block below). No dependencies.`, directly above three `import` lines (`icon-systems.mjs`, `type.mjs`, `collections.js`). B's block carried the same false sentence, but this fix rewrote the line as the file's contract. It is comment-only, with no runtime effect | my read of lines 18 to 25 at `da8d48d1` |
+| Handoff figures | 🔴 | the `docs-repair-U3.md` P2 row reads `` `wrote figma/plugin/ui.html 4125.5 KB` reproduced twice ``, but npm test at this head writes `4125.2 KB`, as the baseline cell does. No `npm run build` evidence exists at this head, and the worktree has no `node_modules`. Its U3-9 row states baseline `1`, but the plan's third U3-9 command prints `3` | the cell set to `4124.3` gives `STALE ui.html`, `stale total: 1` |
+| P2 | 🟡 | baseline `stale total: 0` at 4125.2 KB. `npm run build` is owed at pre-land | as the Handoff figures row |
+| P6 | 🟡 | `12` remain and `10`; none is U3's; `11 voices` is gone | at B: `15` |
+| F5 | 🟡 | a trial merge of origin/main `7da7d7da` still conflicts in 11 files. Main's `em-dash.mjs` on the head tree reads `FAIL: 17360` against `17393` at B: merge debt, with no glyph added by U3. The pre-land record must reprove P3, P4, U3-3, U3-9 and main's gate on the merged tree | aborted; clone status `0` |
+
+## Pass 2 findings
+
+- 🔴 In the restored header, drop or correct `No dependencies.` at `persist.js:22`.
+- 🔴 In the handoff, the P2 row's `4125.5 KB` and its build claim, and the U3-9 row's baseline `1`. The P1 row's `tree stable at 10 files (pre-commit)` names no head.
+- 🟡 In the plan, U3-9 at `aab895f0` reads `which moved the review record lines the header cites`. The direction is reversed: the reactivity reviews cite `persist.js`, and they moved because the header grew.
+- 🟡 In `docs-repair-U3-rework.md:18`, `5 at 50a7f464` is unlabelled: at that head the stripped count was 5 and the raw count 7.
+- Note: `03-stores-and-persistence.md` LOW 5 cites `persist.js:657-661`, which is off by the same amount it was at B. The citations gate reads anchors and stays green.
