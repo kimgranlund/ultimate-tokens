@@ -6,7 +6,7 @@ ticket: "#758"
 branch: unit/pa-U3
 base: 8f5c6dc0
 grade: verifier-l2, the evidence run dispatched by the Verifier seat
-pass: 1
+pass: 2
 written: 2026-09-28
 ---
 
@@ -44,3 +44,16 @@ These rows are left to pre-land: G1 of P0, P5's other units, the P6 sum, and smo
 - 🟡 In the handoff, the second-rework paragraph (line 93) calls the last two M6 nits `both closed`. Its own rework table and review r4 leave the `plus a lint array` nit open.
 - 🟡 In the handoff, line 58 reads `## Negative controls (run in the worktree, file restored after each)`. The plan's Diff bases paragraph requires controls that edit a file to run in a clone. The evidence run reran every control in clones, and the figures agree.
 - 🟡 In the handoff, line 76 reads `` `npm run build` and the `smoke` leg: not run ``. That is stale now: the build is green (`exit 0`, 4124.7 KB, tree clean). Smoke is still owed.
+
+## Pass 2, records-only addendum at `bc5e0245`
+
+verdict: 🟡
+sha: bc5e0245e588280f756fddd85acd0b678f5e69a5
+
+`git diff --stat c5b2503e bc5e0245` shows only `.sdlc/handoffs/prompt-audit-U3.md`, with 3 insertions and 3 deletions. No code, test, plan or generated file moved, so every pass 1 row carries forward unchanged.
+
+| Row | State | Evidence | Negative control |
+|---|---|---|---|
+| H lines | 🟢 | the three stale lines now read `controls that edit a file were rerun in throwaway clones by the verdict's evidence run`, `the lint-clause nit is closed; the \`plus a lint array\` nit ... stays open by ruling`, and `` `npm run build` exits 0 and writes `figma/plugin/ui.html` at 4124.7 KB ``. All three agree with the pass 1 evidence; `verdict.py check` passes against the c5b2503e copy, and the added-line glyph count is `0` | the same lines at `c5b2503e` read `run in the worktree`, `both closed` and `not run` |
+
+The verdict stays 🟡. P2's `STALE time test` line predates the unit (the R53 carry), and the `plus a lint array` Low stays open by ruling.
