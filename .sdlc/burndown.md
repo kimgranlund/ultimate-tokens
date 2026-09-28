@@ -2,7 +2,7 @@
 kind: burndown
 written: 2026-09-27
 by: orchestrator
-status: proposed (for the Conductor to take to the owner)
+status: approved (owner rulings R61 to R64, 2026-09-28, relayed by the Conductor)
 source: `gh issue list --state open` at main e3a114d6, 16 open
 ---
 
@@ -58,3 +58,13 @@ Landing order follows the dependencies: chroma-floor unblocks anchor-gaps U2; do
 | Plan branches drift from main as others land | merge `origin/main` into each plan branch before its pre-land, never copy files across |
 | Records fail the record gates (em dashes, missing `verdict:` line) | every reviewer brief now names both rules |
 | Seats writing into the root checkout | every dispatch names absolute worktree paths |
+
+## Owner rulings (2026-09-28)
+
+| Ruling | Issue | Decision | Done |
+|---|---|---|---|
+| R61 | #726 | go now | 🟢 protection on `main`: `build-test`, `panda-smoke`, `corpus-contrast` and the five `sweeps` legs required; enforce_admins off so direct `.sdlc` commits still push; #726 closed |
+| R62 | #748, #725 | #748 after bold-labels U2; #725 gets a planner after chroma-floor lands | ⚪ queued |
+| R63 | #496 | close as not planned | 🟢 closed with a dated comment |
+| R64 | #377 | parked until the domains exist | 🟢 dated note posted, stays open |
+
