@@ -26,17 +26,19 @@ function modelFromArgv(argv) {
 }
 
 // interpretOne(apiKey, model, description, briefing) → the model's PaletteBrief (a plain object), via
-// FORCED tool-use against the exact schema generate_kit({description}) already returns, output is
-// guaranteed schema-shaped, never free text to re-parse (mirrors #377's own planned describe_palette
-// design, spec §8 item 2, so this eval genuinely tests what that hosted path will do).
+// FORCED tool-use against the exact schema generate_kit({description}) already returns (mirrors #377's
+// own planned describe_palette design, spec §8 item 2, so this eval genuinely tests what that hosted
+// path will do). briefing.rubric already embeds the research-tier note (§10, RESEARCH_TIER_NOTE), so
+// the system prompt sends it once, not twice, and adds one sentence saying this session has no web
+// search of its own, since the note tells the model to reach for a host tool this eval never provides.
 export async function interpretOne(apiKey, model, description, briefing) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": ANTHROPIC_VERSION },
     body: JSON.stringify({
       model,
-      max_tokens: 1024,
-      system: `${briefing.rubric}\n\n${briefing.research}`,
+      max_tokens: 4096,
+      system: `${briefing.rubric}\n\nNo web search is available in this session; work only from the description given.`,
       messages: [{ role: "user", content: `Description: ${description}\n\nConstruct a PaletteBrief for this theme.` }],
       tools: [{ name: "submit_brief", description: "Submit the constructed PaletteBrief.", input_schema: briefing.schema }],
       tool_choice: { type: "tool", name: "submit_brief" },
@@ -44,6 +46,7 @@ export async function interpretOne(apiKey, model, description, briefing) {
   });
   if (!res.ok) throw new Error(`provider error ${res.status}: ${await res.text()}`);
   const json = await res.json();
+  if (json.stop_reason === "max_tokens") throw new Error(`the response hit max_tokens before completing (stop_reason: max_tokens): ${JSON.stringify(json)}`);
   const toolUse = (json.content || []).find((b) => b.type === "tool_use" && b.name === "submit_brief");
   if (!toolUse) throw new Error(`no tool_use block in the provider response: ${JSON.stringify(json)}`);
   return toolUse.input;
