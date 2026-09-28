@@ -55,7 +55,7 @@ G0: `git show origin/main:test/run.mjs | grep -c '"repo/em-dash.mjs"'` prints `1
 | U3-7 | pass | `nearest_token("#fff")` equals `nearest_token("#ffffff")`; `#fff` asserted in `test/mcp/brand-kit.mjs` |
 | U3-8 | pass | three generated files committed; tree clean after `npm test` beyond the intended files; `ok ui.html: baseline 4124.7 KB, tree 4124.7 KB` |
 
-## Negative controls (run in the worktree, file restored after each)
+## Negative controls (controls that edit a file were rerun in throwaway clones by the verdict's evidence run; the figures agree)
 
 | Pin | control | red result |
 |---|---|---|
@@ -73,7 +73,7 @@ G0: `git show origin/main:test/run.mjs | grep -c '"repo/em-dash.mjs"'` prints `1
 ## Gates
 
 - `npm test`: `all 53 test files passed` (host load 70 to 160, so wall time is not a timing reading).
-- `npm run build` and the `smoke` leg: not run. The worktree has no `node_modules` and the host is saturated; `gen:figma-ui` ran inside `npm test` and produced the 4124.7 KB bundle the check now agrees with. Run `npm ci && npm run build` in the worktree before the pre-land record if P2 must be read there.
+- `npm run build` exits 0 and writes `figma/plugin/ui.html` at 4124.7 KB with the tree clean, per the pass 1 verdict. The `smoke` leg is still owed at pre-land.
 - `sh .sdlc/checks/baseline-agrees-check.sh`: `ui.html` ok. One remaining line, `STALE time test: baseline 167 to 268 s, adapter 80 to 89 s`, is in `baseline.md` versus `adapter.md` timing prose this unit does not touch and was already stale before this change.
 - Added lines carry no U+2014 and no ticket id in `mcp/` or `test/`.
 
@@ -90,4 +90,4 @@ Measured at the rework commit (parent 273d3ef0); `npm test` foreground, `all 53 
 
 Regenerated and committed: `src/ui/mcp-assets.js`, `src/ui/describe-mcp-assets.js`, `figma/plugin/ui.html`. `node test/repo/em-dash.mjs`: clean. Tree clean after `npm test` except those intended files.
 
-Second rework commit (same round): the standalone and merged `generate_kit` descriptions now say `brief.families is required by the schema, at least Primary, though a call without it is not rejected`, and the standalone lint clause lists clamped values, contrast and chroma budget (the last two M6 nits, both closed). `npm test` green again; the figure moved to 4124.7 KB (`ok    ui.html: baseline 4124.7 KB, tree 4124.7 KB`), baseline and this file re-figured. Controls ran in a throwaway clone under `/private/tmp/claude-501/paU3-clone` (removed): with the merge-base `mcp/brand-kit-merged-core.mjs` and `brand-kit-core.mjs` checked out, the `GENERATED` needle prints `1` and `prime role` prints `1`, so both criteria bite.
+Second rework commit (same round): the standalone and merged `generate_kit` descriptions now say `brief.families is required by the schema, at least Primary, though a call without it is not rejected`, and the standalone lint clause lists clamped values, contrast and chroma budget (the last two M6 nits: the lint-clause nit is closed; the `plus a lint array` nit in `mcp/describe-mcp-core.mjs` stays open by ruling, as the rework table and review r4 say). `npm test` green again; the figure moved to 4124.7 KB (`ok    ui.html: baseline 4124.7 KB, tree 4124.7 KB`), baseline and this file re-figured. Controls ran in a throwaway clone under `/private/tmp/claude-501/paU3-clone` (removed): with the merge-base `mcp/brand-kit-merged-core.mjs` and `brand-kit-core.mjs` checked out, the `GENERATED` needle prints `1` and `prime role` prints `1`, so both criteria bite.
