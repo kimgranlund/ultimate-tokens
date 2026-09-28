@@ -21,6 +21,11 @@ const callTool = (session, name, args) => JSON.parse(req(session, "tools/call", 
   ok(resUris.join() === "brand://kit,brand://guide", `kitless boot has only the two ALWAYS-served resources (brand://kit for the empty {} kit, brand://guide), no palette/type/geometry resources (got ${resUris.join()})`);
   const exp = callTool(session, "export_tokens", { format: "css" });
   ok(exp.error && /generated kit first/.test(exp.error), `export_tokens before any generate is a graceful error, not a crash (got ${JSON.stringify(exp)})`);
+
+  // M1's pin on the merged, kitless boot: the initialize instructions name generate_kit and no read tool.
+  const initInstr = req(session, "initialize", {}).result.instructions;
+  ok(/generate_kit/.test(initInstr), `kitless initialize instructions name generate_kit (got "${initInstr}")`);
+  ok(!/list_palettes|get_ramp|get_prime|resolve_token|get_semantic|nearest_token|get_type|get_geometry/.test(initInstr), `kitless initialize instructions name no read tool (got "${initInstr}")`);
 }
 {
   // createSession(null) and createSession() (no argument) must both boot kitless without throwing.
