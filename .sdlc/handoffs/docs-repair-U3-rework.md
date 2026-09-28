@@ -15,7 +15,7 @@ surrounding code) into the new line-1 header, and deleted the stale mid-file blo
 One canonical header now, no duplication.
 
 Verified: `head -1` starts `// persist.js`, `HCT Palette Generator` count 0, added-line em-dash
-count 0, P4 comment-only diff on app.js/persist.js/geometry.mjs reads 0, numstat 1 1 / 16 31 / 2 2,
+count 0 at a18c3531 (5 at 50a7f464 before the pass 1 fix, 2 raw at the fix commit; see docs-repair-U3.md), P4 comment-only diff on app.js/persist.js/geometry.mjs reads 0, numstat 1 1 / 16 31 / 2 2 at a18c3531 (persist.js is 22 31 after the pass 1 fix),
 branding clean (724 files scanned).
 
 ## Finding 2 (pushing back, not reverting)

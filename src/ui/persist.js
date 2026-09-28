@@ -1,19 +1,25 @@
-// persist.js: the persistence layer for the HctApp document. Hydrate a State from storage,
-// serialize it back, clamp its domains, and own the storage keys. A PURE serialize/hydrate
-// transform pair over the tool's `State` (spec-draft §7, knowledge-02 §2): no storage I/O
-// lives here, that's the running tool's own `window.storage -> localStorage -> in-memory`
-// chain under STORAGE_KEY (ADR-010, spec-draft §11).
+// persist.js: the persistence layer for the HctApp document. Clamp a State's domains, translate
+// renamed ids, and own the storage keys. A PURE serialize/hydrate transform pair over the tool's
+// `State` (spec-draft §7, knowledge-02 §2): no storage I/O lives here, that's the running tool's
+// own `window.storage -> localStorage -> in-memory` chain under STORAGE_KEY (ADR-010,
+// spec-draft §11). This module only owns the two pure, testable halves of that chain:
+//
+//   serialize(state)   -> a plain JSON-able snapshot (the bytes the chain stores)
+//   hydrate(snapshot)  -> a valid State, every field clamped to its DOMAIN
 //
 // The two invariants this file is built to (the harness checks them over a sealed,
 // withheld-seed fuzzed State set, so this must be a real identity-preserving clamp, not an
 // identity table and not a clamp-to-default): (1) ROUNDTRIP IDENTITY, for any State whose
 // every field is already in its domain, hydrate(serialize(S)) deep-equals S EXACTLY, with
-// in-domain fields never mutated, rounded, defaulted, or reset; (2) PER-FIELD CLAMP, when a
-// field is out of its domain, ONLY that field moves to its nearest valid bound, every other
-// (in-domain) field, including sibling fields inside the same palette object, is preserved
-// byte-for-byte. serialize() also stamps a schemaVersion (CURRENT_SCHEMA_VERSION); hydrate()
-// runs any still-relevant RENAME_MAPS entry before the domain clamp, so a doc saved before a
-// canon rename (a voice, a treatment id, ...) survives translated onto its current name.
+// in-domain fields never mutated, rounded, defaulted, or reset; fractional and on-the-bound
+// values survive byte-for-byte, and palette array contents and order are preserved; (2)
+// PER-FIELD CLAMP, when a field is out of its domain, ONLY that field moves to its nearest
+// valid bound, every other (in-domain) field, including sibling fields inside the same
+// palette object, is preserved byte-for-byte. serialize() also stamps a schemaVersion
+// (CURRENT_SCHEMA_VERSION); hydrate() runs any still-relevant RENAME_MAPS entry before the
+// domain clamp, so a doc saved before a canon rename (a voice, a treatment id, ...) survives
+// translated onto its current name instead of being silently dropped by an allowlist that only
+// ever recognizes the current names (TKT-0016, see the RENAME_MAPS block below). No dependencies.
 import { ICON_SYSTEMS, DEFAULT_ICON_SYSTEM } from "../engine/icon-systems.mjs";
 import { DEFAULT_TYPE } from "../engine/type.mjs";
 import { COLLECTIONS } from "../engine/collections.js";
