@@ -12,7 +12,7 @@ Positive commands ran in the worktree; expected values are the plan's.
 
 | Id | Result | Evidence |
 |---|---|---|
-| U1-1 | 🟢 | thirteen `0`, eleven-role `0`, `fifteen[- ](voices?\|role)` `2` on SKILL.md, README `fifteen-voice` `1`, engine `15`. The plan asks for 3 or more on the SKILL.md grep; it prints 2 (`fifteen-voice` in the description, `fifteen named voices`, and the heading `fifteen-role scale` is the third only when the line wraps; the wrapped `fifteen-voice` match is line-based). See finding F1. |
+| U1-1 | 🟢 | thirteen `0`, eleven-role `0`, `fifteen[- ](voices?\|role)` `3` on SKILL.md, README `fifteen-voice` `1`, engine `15`. |
 | U1-2 | 🟢 | header row `1`, engine-voice rows `15`, box rows `2`, universal-ramp claims `0` in all three files; engine emits `--type-ui-control-2xl-size` and not `--type-body-xl-size` (`true false`). |
 | U1-3 | 🟢 | `fixed light` `0` and `0`; `default, \`onColorMode: contrast\`` `1`; `\`onColorMode: fixed\`` `1`; engine `contrast fixed,contrast`. |
 | U1-4 | 🟢 | `chrome (→\|is) \`label\`` `0` and `0`; `UI-control` in prose.md `1`; body-for-prose-you-read `1`; engine `Label` static line present. |
@@ -31,7 +31,7 @@ Positive commands ran in the worktree; expected values are the plan's.
 
 | Id | Finding | State |
 |---|---|---|
-| F1 | U1-1's third grep expects 3 or more and prints 2 (the README and SKILL.md carry the count in the pinned shapes; the wording `most are sm/md/lg` replaced `thirteen of the fifteen`, which the first grep forbids) | plan threshold to check in U2's pin |
+| F1 | the first draft printed 2 on U1-1's third grep (line-based count); the body intro now says `a fifteen-voice set`, giving 3 | fixed |
 | F2 | law 6 also names the fixed mode in `references/feedback.md`, worded `under the fixed mode` | intended |
 
 Quoted dashed lines (P3): none.

@@ -17,7 +17,7 @@ user-invocable: false
 
 # Using Ultimate Tokens type roles
 
-An Ultimate Tokens export gives fifteen named **voices**, each a ramp of **steps**, as CSS custom
+An Ultimate Tokens export gives a fifteen-voice set of named **voices**, each a ramp of **steps**, as CSS custom
 properties. Your job is never to pick a px size or a font stack, it is to pick the right **voice**
 (the text's role) and **step** (its size within that role).
 
