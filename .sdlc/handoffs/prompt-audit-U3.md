@@ -10,7 +10,7 @@ G0: `git show origin/main:test/run.mjs | grep -c '"repo/em-dash.mjs"'` prints `1
 - `mcp/brand-kit-core.mjs`, `mcp/brand-kit-merged-core.mjs`, `mcp/describe-mcp-core.mjs`, `mcp/describe-rubric.mjs`
 - `test/mcp/brand-kit.mjs`, `test/mcp/brand-kit-merged-core.mjs`
 - regenerated: `src/ui/mcp-assets.js`, `src/ui/describe-mcp-assets.js`, `figma/plugin/ui.html`
-- `.sdlc/baseline.md` (ui.html KB cell 4118.0 to 4124.6, one correction paragraph naming this unit)
+- `.sdlc/baseline.md` (ui.html KB cell 4118.0 to 4124.7, one correction paragraph naming this unit)
 
 ## Findings
 
@@ -53,7 +53,7 @@ G0: `git show origin/main:test/run.mjs | grep -c '"repo/em-dash.mjs"'` prints `1
 | U3-5 | pass | `the scheme this replaced` 0; `§3.[12]` in exported RUBRIC 0; `story.refuses` 1; `test/mcp/describe-rubric.mjs` passes inside `npm test` |
 | U3-6 | pass | added-line grep for `(53\|424\|848) (roles\|keys\|entries)` in `git diff -- mcp` prints 0 |
 | U3-7 | pass | `nearest_token("#fff")` equals `nearest_token("#ffffff")`; `#fff` asserted in `test/mcp/brand-kit.mjs` |
-| U3-8 | pass | three generated files committed; tree clean after `npm test` beyond the intended files; `ok ui.html: baseline 4124.6 KB, tree 4124.6 KB` |
+| U3-8 | pass | three generated files committed; tree clean after `npm test` beyond the intended files; `ok ui.html: baseline 4124.7 KB, tree 4124.7 KB` |
 
 ## Negative controls (run in the worktree, file restored after each)
 
@@ -73,7 +73,7 @@ G0: `git show origin/main:test/run.mjs | grep -c '"repo/em-dash.mjs"'` prints `1
 ## Gates
 
 - `npm test`: `all 53 test files passed` (host load 70 to 160, so wall time is not a timing reading).
-- `npm run build` and the `smoke` leg: not run. The worktree has no `node_modules` and the host is saturated; `gen:figma-ui` ran inside `npm test` and produced the 4124.6 KB bundle the check now agrees with. Run `npm ci && npm run build` in the worktree before the pre-land record if P2 must be read there.
+- `npm run build` and the `smoke` leg: not run. The worktree has no `node_modules` and the host is saturated; `gen:figma-ui` ran inside `npm test` and produced the 4124.7 KB bundle the check now agrees with. Run `npm ci && npm run build` in the worktree before the pre-land record if P2 must be read there.
 - `sh .sdlc/checks/baseline-agrees-check.sh`: `ui.html` ok. One remaining line, `STALE time test: baseline 167 to 268 s, adapter 80 to 89 s`, is in `baseline.md` versus `adapter.md` timing prose this unit does not touch and was already stale before this change.
 - Added lines carry no U+2014 and no ticket id in `mcp/` or `test/`.
 
@@ -86,6 +86,8 @@ Measured at the rework commit (parent 273d3ef0); `npm test` foreground, `all 53 
 | U3-3 (High) | `export_tokens` precondition rewritten as the contract: works only after a successful `generate_kit` call with `{ brief }` in this session, otherwise `{ error }` as a normal result; the first clause no longer says the tool writes files (review Low) | `grep -c 'Only available once a kit has been GENERATED' mcp/brand-kit-merged-core.mjs` prints `0`; `natural next move` 0; `tools/list` check prints `true true` |
 | M10 (Medium) | Accents line reads "a palette's accent role (e.g. `primary/primary`; not the `get_prime` swatches)" | `grep -c 'prime identity colour' mcp/brand-kit-core.mjs` prints `0`; `prime role` 0; the new phrase count 1 |
 | M6 nits | fixed the double-counted lint ("plus a lint array" gone; `lint` now says what it holds) and gave the merged `export_tokens` `format` property a description (review Low). Left: the standalone `generate_kit` copy's "contrast/chroma-budget advisories" wording (outside the review's three but same nit family, predates U3, `describe-mcp-core.mjs`, cheap but not asked) | `plus a lint array` 0 in both files; U3-2 needle command unchanged |
-| baseline note | cell note now reads "4118.0 KB before prompt-audit U3 moved it to 4124.6 KB"; the figure itself moved 4124.4 to 4124.6 because the rework text regenerated the bundle | `sh .sdlc/checks/baseline-agrees-check.sh \| grep ui.html` prints `ok    ui.html: baseline 4124.6 KB, tree 4124.6 KB`; correction paragraph re-figured to 4124.6 and 6.6 KB |
+| baseline note | cell note now reads "4118.0 KB before prompt-audit U3 moved it to 4124.7 KB"; the figure itself moved 4124.4 to 4124.7 because the rework text regenerated the bundle | `sh .sdlc/checks/baseline-agrees-check.sh \| grep ui.html` prints `ok    ui.html: baseline 4124.7 KB, tree 4124.7 KB`; correction paragraph re-figured to 4124.7 and 6.6 KB |
 
 Regenerated and committed: `src/ui/mcp-assets.js`, `src/ui/describe-mcp-assets.js`, `figma/plugin/ui.html`. `node test/repo/em-dash.mjs`: clean. Tree clean after `npm test` except those intended files.
+
+Second rework commit (same round): the standalone and merged `generate_kit` descriptions now say `brief.families is required by the schema, at least Primary, though a call without it is not rejected`, and the standalone lint clause lists clamped values, contrast and chroma budget (the last two M6 nits, both closed). `npm test` green again; the figure moved to 4124.7 KB (`ok    ui.html: baseline 4124.7 KB, tree 4124.7 KB`), baseline and this file re-figured. Controls ran in a throwaway clone under `/private/tmp/claude-501/paU3-clone` (removed): with the merge-base `mcp/brand-kit-merged-core.mjs` and `brand-kit-core.mjs` checked out, the `GENERATED` needle prints `1` and `prime role` prints `1`, so both criteria bite.
