@@ -31,10 +31,10 @@ single-line controls (or the box grows on wrap).
 Control TEXT is the `UI-control` voice; the control's BOX (height, padding, radius) is
 geometry-tokens' `--size-*`. They compose: a `.control-md` box (geometry) pairs with
 `.type-ui-control-md` text, and the geometry engine derives each control size's font from the
-UI-control voice at the matching step, SM ↔ SM, MD ↔ MD, LG ↔ LG. Geometry's other steps (XS, and
-the expressive band XL/2XL) have no voice counterpart (every voice is sm/md/lg-only) and ride the
-engine's own ratified control-text rows instead, match the step across the two systems where both
-exist and the box fits the text.
+UI-control voice at every step, XS to 2XL: the voice's six sizes are the six control font sizes,
+and a per-cell override on the voice (`UI-control|XL`, say) moves geometry's XL font with it.
+Match the step across the two systems, `.control-md` with `.type-ui-control-md`, and let the
+box fit the text; the control ramp never needs a size the voice does not have.
 
 ## Monospace in the interface
 

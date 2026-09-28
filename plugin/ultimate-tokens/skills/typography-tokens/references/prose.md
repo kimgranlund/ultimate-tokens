@@ -1,10 +1,11 @@
 # Prose: body copy, lead, captions, legal, lists, links, code-in-text
 
 Running text you *read* (as opposed to interface chrome you *operate*) is the **body** voice on
-`--font-body`. Interface text is `label`, see interface.md; the split matters. Prose also has two
-dedicated voices, **lead** and **tiny** (plus **tiny-mono**, its monospace sibling), plus
-**sub-title**, a smaller alternate-typeface heading that's still prose flow. Reach for the specific
-voice over a body step when one fits.
+`--font-body`. Interface text is `UI-control`/`UI-widget` for what you operate and `label` for
+static labels, see interface.md; the split matters. Prose also has two dedicated voices, **lead**
+and **tiny** (plus **tiny-mono**, its monospace sibling), plus **sub-title**, a smaller
+alternate-typeface heading that's still prose flow. Reach for the specific voice over a body step
+when one fits.
 
 ## The prose voices
 
@@ -17,7 +18,7 @@ voice over a body step when one fits.
 | small monospace print, build hash, trace ID, technical footnote | `.type-tiny-mono-md` | **tiny-mono**, same size/flow as `tiny`, mono face; still prose (wraps), not a control label |
 | a smaller sub-heading in an alternate typeface | `.type-sub-title-md` | **sub-title**, mono-by-default face, but prose flow (it's a small heading, not a control label) |
 
-Every voice rides the same **SM · MD · LG** ramp (`.type-{voice}-sm|md|lg`); default to `-md`.
+Every prose voice here rides the same **SM · MD · LG** ramp (`.type-{voice}-sm|md|lg`); default to `-md`. The two interactive voices are not prose and have six steps, see interface.md.
 
 ## Paragraph rhythm
 

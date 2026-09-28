@@ -23,11 +23,11 @@ heading that shrinks on mobile while body text doesn't, that asymmetry IS the sy
 
 ## Single-line vs multi-line height
 
-The `mono`/`ui`-role BOX voices, **Label, Body-mono, Label-mono, and Kicker**, carry TWO leadings per step:
+The `mono`/`ui`-role BOX voices, **Kicker, UI-control, and UI-widget**, carry TWO leadings per step:
 
 - `--type-{voice}-{step}-line`: multi-line leading (text that wraps: helper text, tooltips, prose).
 - `--type-{voice}-{step}-line-single`: single-line leading = the size (leading 1.0), for text
-  locked in a box (buttons, inputs, cells, a kicker overline) so the box height is exact and
+  locked in a box (buttons, inputs, badges, a kicker overline) so the box height is exact and
   doesn't grow.
 
 The reading voices (display, headline, sub-heading, title, sub-title, lead, body, body-mono, label,
@@ -40,10 +40,9 @@ element whose text must not wrap.
 
 `--type-{voice}-{step}-para` is the derived paragraph rhythm, by FLOW (not just by role): **0.7×
 size for the display + heading-family roles (headline · sub-heading · title), 0.75× for prose
-voices on the body/ui/mono roles (body · lead · sub-title · tiny · tiny-mono), 1.0× for the box
-(control-text) voices, Label, Body-mono, Label-mono, and Kicker**. Use it as `margin-block-end`
-between blocks of
-that voice; it scales with the size across breakpoints, so vertical rhythm stays proportional. Don't
+voices on the body/ui/mono roles (body · body-mono · lead · sub-title · label · label-mono · tiny ·
+tiny-mono), 1.0× for the box (control-text) voices, Kicker, UI-control, and UI-widget**. Use it as
+`margin-block-end` between blocks of that voice; it scales with the size across breakpoints, so vertical rhythm stays proportional. Don't
 set paragraph margins by hand.
 
 ## Fonts & fallbacks
