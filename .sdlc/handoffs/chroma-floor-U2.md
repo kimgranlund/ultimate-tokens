@@ -36,28 +36,43 @@ The comments in `tonal.js` and `foundations.md` now say it the way the review as
 | C10 | regen; merge-base `docs/` diff | tree clean after commit; `docs/`: knowledge-02 plus the four revision-13(b) paths; `code.js`, `role-table.json`, `adia-oklch-export.css` absent | `citations.mjs ✗ 2` before the repair |
 | C11 | greps | 0, 0, 0, 1, 1, 0, 2 | no list exists; an off-anchor dip reds `dip-gate-even` |
 | C12 | `baseline-agrees-check.sh` | only `STALE ui.html: baseline 4130.1 KB, tree 4135.3 KB`; `ok time gate:even-dips`; `stale total: 1` | no `node_modules`, no build; KB cell left |
-| C13 | `node /private/tmp/claude-501/cf-U2/c13-probe.mjs` (`/private/tmp/claude-501/cf-U2/F/c13.txt`, control `F/c13-ctl.txt`) | see below; exit 1 on one sub-check | `node c13-probe.mjs tonal-pass1.js`: FAIL on the 9.55/10.05 pair (13.19 sat, 11.17 pale), 94.95/95.13 (14.42, 20.60), both reviewer pairs, 211 big cells in 93 anchors, 17 anchors under L* 15 |
+| C13 | `node /private/tmp/claude-501/cf-U2/c13-probe.mjs` (`/private/tmp/claude-501/cf-U2/F/c13.txt`, control `F/c13-ctl.txt`) | see below; the probe's retired loss-vs-reference `(i)` line exits 1 (pale 94.95/95.13, 2.77); revision 15's `(i-b)` lines all pass | `node c13-probe.mjs tonal-pass1.js`: far-side |dC| 13.19, 13.14, 10.72, 17.71 on the four straddling pairs, both reviewer pairs FAIL, 211 big cells in 93 anchors, 17 anchors under L* 15 |
 | #739 | `a.log` | `pass  achromatic-anchor: 27 of 27 ... 3 skipped under CAM16 C 5`, no special case | pass 1 without its branch read 8 skipped (re-diagnosis) |
 
 `SAT_FLOOR_EXCEPT` is back to its `<base>` 11 stops (100 to 300, 875 to 950).
 
 ## C13
 
+Restated at plan revision 15 (C13 (i)) and revision 16 (the (iii) control). Every figure below was measured at `a4c78e3d` (the head this section was rewritten on; only `.sdlc/` moved since the engine last changed) by rerunning `c13-probe.mjs` in a scratch clone (`/private/tmp/claude-501/cf-U2-c13`, logs `F/c13-rev15.txt` and `F/c13-ctl-rev15.txt`). The control is pass 1's engine, `git show fe65e640:src/engine/tonal.js`, the same probe. The probe's `(i)` block still prints revision 14's loss-vs-reference check and its exit is 1 on the pale 94.95/95.13 line (2.77); that reading is retired and is not graded here. Revision 15's reading is the probe's `(i-b)` block.
+
+C13 (i): each straddling pair's own far-side |dC|, the engine's largest |dC| over the five far-side stops (600 to 800 for L* above 50, 200 to 400 below), CAM16 C read from the rendered hex, at most 2 C.
+
 | Sub-check | Expected | Evidence | State | Negative control (pass-1 engine) |
 |---|---|---|---|---|
-| (i) sat 9.55 vs 10.05 (straddles the dark edge) | loss differs by at most 2 C | `0.00` | 🟢 | 13.19 FAIL |
-| (i) sat 9.99 vs 10.05 | at most 2 | 0.00 (both generate `#051D31`, L* 10.05, so this pair does not straddle; the 9.55 pair above does) | 🟢 | 0.00 |
-| (i) sat 94.95 vs 95.13 | at most 2 | `1.94` | 🟢 | 14.42 FAIL |
-| (i) pale 9.55 vs 10.05 | at most 2 | `0.45` | 🟢 | 11.17 FAIL |
-| (i) pale 9.99 vs 10.05 | at most 2 | `0.18` | 🟢 | 0.40 |
-| (i) pale 94.95 vs 95.13 | at most 2 | `2.77` | 🟡 | 20.60 FAIL |
+| (i) sat 9.55 vs 10.05 (straddles the dark edge) | far-side \|dC\| at most 2 | `0.49` | 🟢 | 13.19 FAIL |
+| (i) sat 94.95 vs 95.13 (straddles the light edge) | at most 2 | `0.61` | 🟢 | 13.14 FAIL |
+| (i) pale 9.55 vs 10.05 | at most 2 | `0.50` | 🟢 | 10.72 FAIL |
+| (i) pale 94.95 vs 95.13 | at most 2 | `0.55` | 🟢 | 17.71 FAIL |
 | (ii) `#E8EEFA` vs `#ECF1FC`, 700/750/800 | within 2 C | `14.1 / 13.9 / 13.8 vs 13.8 / 13.4 / 13.2` | 🟢 | FAIL |
 | (ii) `#1C2030` vs `#161A28`, 300 to 450 | within 3 C | `22.9 / 21.3 / 18.2 / 16.1 vs 20.8 / 20.2 / 16.5 / 14.5` | 🟢 | FAIL |
-| (iii) big cells | at most 20 | `17 in 8 anchors` | 🟢 | 211 FAIL |
+| (iii) big cells | at most 20 | `17 in 8 anchors` | 🟢 | 211 cells in 93 anchors FAIL |
 | (iii) anchors L* 88 to 95.05 | 0 | `0` | 🟢 | 1 FAIL |
 | (iii) anchors below L* 15 | at most 5 | `5` | 🟢 | 17 FAIL |
 
-The pale light pair misses by 0.77 C, and the miss is in the pre-#701 reference, not the rule. The new engine's own far-side chroma across that pair differs by 0.55 C at most (the probe's `(i-b)` lines; the pass-1 engine reads 17.71 there). A sweep of pale anchors from L* 94.45 to 95.85 reads the new engine's stop 800 at 13.6 to 14.5 on both sides of the edge, while the pre-#701 floor's stop 800 swings between 20.7 and 25.2 with the 8-bit hue of the quantized anchor. That puts the loss between 6.2 and 11.5 on both sides alike. My generator also differs from the re-diagnosis's for pale anchors (sat reproduces its 6.4 and 4.5 exactly, pale reads 11.5 and 8.7 against its 7.4 and 6.2). Far side: stops 600 to 800 for L* above 50, 200 to 400 below.
+The eight generated anchors (CAM16 hue 250 at the given L*; sat is 90% of the local ceiling, pale is C 6), each pair straddling its edge. L* and hue are read from the rendered hex, at `a4c78e3d`.
+
+| Pair | Anchor | Hex | Rendered L* | CAM16 hue | Side of the edge |
+|---|---|---|---|---|---|
+| sat dark | 9.55 | `#051C2F` | 9.546 | 250.1 | out (below 10) |
+| sat dark | 10.05 | `#051D31` | 10.052 | 250.7 | in |
+| sat light | 94.95 | `#EAF1FD` | 94.948 | 251.3 | in |
+| sat light | 95.13 | `#EAF2FD` | 95.198 | 246.6 | out (above 95.05) |
+| pale dark | 9.55 | `#181B1F` | 9.617 | 251.5 | out |
+| pale dark | 10.05 | `#191C20` | 10.118 | 251.4 | in |
+| pale light | 94.95 | `#EFF0F6` | 94.876 | 254.9 | in |
+| pale light | 95.13 | `#EFF1F7` | 95.151 | 250.0 | out |
+
+Cross-check against the Verifier's evidence table (`chroma-floor-U2.md`, C13 (i) row): all eight hexes, rendered L* values and hues, and all four |dC| figures (0.49, 0.61, 0.50, 0.55), and the pass-1 control figures 13.19, 10.72, 13.14, 17.71, agree to the printed digit. No difference. The (iii) figures (17 cells in 8 anchors, 0 in L* 88 to 95.05, 5 below 15) also match the verdict, and the control's 211 cells in 93 anchors, 1 and 17 match revision 16. The earlier `9.99 vs 10.05` rows are dropped: both anchors generate `#051D31` (sat), so that pair does not straddle, and the pale pair (`#181C20`, `#191C20`) is not one of revision 15's four.
 
 The 17 big cells (vs the pre-#701 floor): Nike tertiary-muted (`#FFFFFF`, clamped light; 650/700/750, 36.6 to 14.2 at 700), Night of the Hunter tertiary (150 to 250), Tongass secondary (150 to 250, 42.1 to 18.8 at 175), Hidaka coast tertiary-muted (150, 175), West-coast G-funk tertiary-muted (150), Acid house tertiary-muted (175), Khumbu teahouse tertiary-muted (250), Rub' al Khali primary-muted (250). The re-diagnosis read 16 in 6: the last two (L* 9.70) are extra here.
 
@@ -131,6 +146,5 @@ Legacy fixture, 33 cells against U1's pins, all even: Secondary 175 to 300, Info
 
 ## Left out
 
-- 🟡 C13 (i) pale 94.95 vs 95.13 reads 2.77 against a 2 C bound; the cause is argued above with the sweep. The rule's own reading across the pair is 0.55 C.
 - 🟡 `gate:even-dips` timing row is still 0/3 quiet-host; owed at U3 or pre-land.
 - No build (no `node_modules`); the baseline build KB cell is untouched and `ui.html` reads STALE as C12 allows.
