@@ -47,7 +47,7 @@ G0: `git show origin/main:test/run.mjs | grep -c '"repo/em-dash.mjs"'` prints `1
 | Id | result | evidence |
 |---|---|---|
 | U3-1 | pass | static string grep 0; instructions greps in both tests 1 or more; kitless boot prints `true false`; `node test/mcp/brand-kit.mjs` and `brand-kit-merged-core.mjs` end in PASS |
-| U3-2 | pass | undescribed properties: none (`missing 0` shape check ran inside the pin work; needles `camelCase`, `{ error }`, `ramp stop`, `RRGGBB`, `Defaults to light` each present in `brand-kit-core.mjs`) |
+| U3-2 | pass | undescribed properties: none (`missing 0` measured after the final edit; needles `camelCase`, `{ error }`, `ramp stop`, `RRGGBB`, `Defaults to light` each present in `brand-kit-core.mjs`) |
 | U3-3 | pass | `true true`; `Only available once a kit has been GENERATED` 1, `natural next move` 0, `{ kit, doc, lint, meta }` 1 and 1, `families is required` 1 and 1; kitless export returns an `error` result |
 | U3-4 | pass | guide names every `makeVoices()` key; `prime role` 0; `makeVoices` pinned in `test/mcp/brand-kit.mjs` |
 | U3-5 | pass | `the scheme this replaced` 0; `§3.[12]` in exported RUBRIC 0; `story.refuses` 1; `test/mcp/describe-rubric.mjs` passes inside `npm test` |
