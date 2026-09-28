@@ -147,6 +147,7 @@ chromaEnvelope(stop, anchorStop, lift, controls):      // src/engine/tonal.js, O
   damp   = isEven ? 100 - (100 - damp) * 0.25 : damp   // EVEN_DAMP_FACTOR = 0.25
   γ      = (isEven ? 0.25 : 1) * dampCurve
   uG     = |sd| ^ γ
+  if isEven: uG *= smoothstep(min(1, |sd| / EVEN_NEIGHBOURHOOD_R))   // R = 0.2; flat start at the anchor (#701)
   sideW  = max(0, 1 + (dampBias/100)*sign(sd))
   shoulder = (dampAmp/100) * 4 * uG * (1 - uG)         // 0 at sd=0 AND |sd|=1: shoulders only
   return max(0, 1 + shoulder - (damp/100)*sideW*uG)
@@ -168,6 +169,10 @@ chromaEnvelope(stop, anchorStop, lift, controls):      // src/engine/tonal.js, O
   retune: `even`'s `toneAt` sets CIELAB L\* directly, so chroma damping there cannot move measured L\*,
   which makes it the one mode where the exponent can be retuned without reopening the
   Helmholtz-Kohlrausch coupling that reds #668 in the OKHSL-domain modes.
+- **`even` also has a flat-start shoulder at the anchor (#701).** `|sd|^0.375` has infinite slope at the
+  anchor, so a muted anchor's 450 and 550 read far below its full-chroma 500 (the 64 lone spikes).
+  In `even` only, `uG` is multiplied by a smoothstep of `|sd| / 0.2` (`EVEN_NEIGHBOURHOOD_R`, a named
+  constant, not a control): 0 at the anchor, 1 from stops 400/600 out. `perceptual` and `peak` never take it.
 - **Differential damping curve.** The defaults
   `dampCurve 1.5, dampAmp 0, dampBias 0` reduce it to the legacy `1 - (damp/100)·u^1.5`
   edge damp **exactly** (backward-compatible — existing palettes/exports are unchanged).

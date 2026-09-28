@@ -726,6 +726,11 @@ Format: Context → Decision → Rationale → Consequences → Status.
 - **Status.** DECIDED 2026-09-18 (#662, closes #636). Amends ADR-003; the `hpg-role-contrast` gate in
   `test/engine/semantic.mjs` holds the floor for all 16 families, both schemes, all three tone modes,
   plus the Park `solid.fg`/`solid.bg` pairing on the default and Adia documents.
+- **Amendment (2026-09-28, #701).** The even ramp's chroma floor is now envelope-relative in the interior:
+  `chromaFloor% * min(maxc, floorRef)`, never above `intended`, and the even envelope has a flat-start
+  shoulder at the anchor (`EVEN_NEIGHBOURHOOD_R` 0.2). All three allow-lists it retires (the lone-spike list, the
+  default-kit spike finding and the 90-name dip baseline) are gone, and the gates count 0 with none.
+  The on-color decision above is untouched.
 
 ## ADR-026 - A palette's anchor is STORED, not fitted: the sampled source colour is the record
 - **Context.** A curated preset was sampled from a real colour (a film frame, a brand mark, a place),

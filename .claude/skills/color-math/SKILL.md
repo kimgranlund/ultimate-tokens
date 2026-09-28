@@ -81,7 +81,11 @@ A palette carrying a valid 6-hex `anchor` (a STORED source colour, never fitted)
 ## The invariants you must never break (depth in `references/foundations.md`)
 
 1. **In-gamut by construction.** Even path: `chroma = min(maxc, max(min(intended·m, maxc), floorC))` — the
-   `min(·, maxc)` is load-bearing. OKHSL path: in-gamut by OKHSL bijection (`s∈[0,1]`), asserted `inGamut:true`.
+   `min(·, maxc)` is load-bearing. `floorC = min((chromaFloor/100)·min(maxc, floorRef), intended)`, with
+   `floorRef` the largest ceiling among stops 450/500/550 (#701), so the floor never rises past the first
+   step; `m` is `chromaEnvelope`, which in `even` only has a flat-start shoulder at the anchor
+   (`EVEN_NEIGHBOURHOOD_R`). The same formula runs on the anchored and non-anchored even paths: a change to
+   one is a change to both. OKHSL path: in-gamut by OKHSL bijection (`s∈[0,1]`), asserted `inGamut:true`.
 2. **Hits the tone.** Even path: `hctToRgb` binary-searches CAM16 `J` (18 iters) so the pixel's L\* == `toneAt`
    within 1.0. The `curve-fidelity` gate measures L\* from the *emitted pixel*, not `r.tone` (anti-tautology).
 3. **Constant CAM16 hue** when `hueShift=0` (the default) — emitted hue == `effHue` within ±2° at chromatic

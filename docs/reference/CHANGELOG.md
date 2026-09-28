@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## 1.65 - 2026-09-28 - the even ramp's chroma floor and shoulder no longer leave spikes or valleys beside the anchor (#701)
+
+**Even-mode palettes lose their lone spikes and their off-anchor chroma dips.** The `even` ramp used to
+show two artifacts beside a palette's anchor. One stop out, its chroma envelope was already about 0.6 (the
+falloff exponent is under 1, so the slope is infinite at the anchor), so a muted anchor's 450 and 550
+rendered near-grey next to a full-chroma 500: 64 corpus palettes plus one in the default kit. And the
+chroma floor followed the gamut ceiling up on the side where it widens, while the damped value fell, so
+the two met in a valley: 90 named dips. Both are 0 now, gated with no allow-list.
+
+**Two changes, `even` only.** The envelope takes a smoothstep shoulder over the first 0.2 lifted-stop units
+around the anchor (`EVEN_NEIGHBOURHOOD_R`, a named constant, not a control), and the floor is
+`chromaFloor% * min(maxc, floorRef)` with `floorRef` the largest gamut ceiling among stops 450, 500 and 550,
+never above the palette's own chroma. `perceptual` and `peak` are byte for byte unchanged (a committed
+fixture pins both). Of 3,796 corpus palettes, 2,991 have an even ramp cell that moved: 11,311 of 94,900
+cells (11.92%), the largest chroma move 23.4 CAM16 C at one stop of one tertiary ramp, and no lightness
+move beyond 8-bit quantization. Every export format's even-mode colours moved with them. Rendered
+off-anchor dips at stops other than 500 are 0; the 32 dips at stop 500 itself are a different class
+(notches) and are not gated here.
+
+**Records.** The three allow-lists (`LONE_SPIKE_ALLOW`, `DEFAULT_KIT_SPIKE_FINDING`, `EVEN_DIP_BASELINE`)
+are deleted. `npm run gate:even-dips` (the gate path) and `npm run gate:mode-isolation` join the CI
+`sweeps` matrix. ADR-025 carries a dated amendment line.
+
 ## 1.64 - 2026-09-20 - a preset's sampled colour is STORED, and the engine emits it byte for byte (#681)
 
 **Every curated preset now ships the colour it was sampled from, not a reconstruction of it.** A
