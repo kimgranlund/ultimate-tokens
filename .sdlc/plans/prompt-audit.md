@@ -111,7 +111,7 @@ Criteria ids: `P` rows for the plan, `U<n>-<m>` rows for a unit. Finding ids in 
 
 - [~] U1 (M) consumer plugin prose: voices, steps, on-colour law, label vs operable chrome, box voices, history ids (C1 C2 T1 T2 T3 T4 T5 S1 S2 S3 S4) · builder-l5 (pass 2; pass 1 was builder-l3) · reviewer-l3 · verifier-l2 · first, after G0
 - [ ] U2 (M) consumer plugin pins: number words to ninety-nine, per-voice steps and the `Steps` column, the on-colour default, the README, in-suite fixture controls (F6) · builder-l3 · reviewer-l2 · verifier-l2 · after U1
-- [~] U3 (M) MCP tool, instruction and rubric text with two pins and the regenerated assets (M1 to M10, R1 to R3; Q3) · builder-l3 · reviewer-l2 · verifier-l2 · after G0, parallel with U1
+- [x] U3 (M) MCP tool, instruction and rubric text with two pins and the regenerated assets (M1 to M10, R1 to R3; Q3) · builder-l3 · reviewer-l2 · verifier-l2 · after G0, parallel with U1
 - [x] U4 (S) the eval runner's request: comment, system prompt, `max_tokens`, `stop_reason` (E2 E3 E4; E1 by Q2) · builder-l2 · reviewer-l1 · verifier-l1 · after G0, parallel with U1
 - [x] U5 (S) the two agents: the loop's register, the 53 to 59 anecdote, the dated type-mode rule (SA4 SA5 SA6) · builder-l2 · reviewer-l1 · verifier-l1 · after G0, parallel with U1
 - [ ] U6 (M) slice B skills: geometry laws and fields, symbol homes, the count-gate list, history narratives (SB1 to SB9, SB11 to SB23) · builder-l3 · reviewer-l2 · verifier-l2 · after U2
