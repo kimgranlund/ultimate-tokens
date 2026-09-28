@@ -15,7 +15,14 @@ export const PROTOCOL_VERSION = "2025-06-18";
 export const SERVER = { name: "ultimate-tokens-brand-kit", version: "0.3.0" };
 
 const slugOf = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-const hexToRgb = (h) => { const m = String(h).replace("#", ""); return [0, 2, 4].map((i) => parseInt(m.slice(i, i + 2) || "0", 16)); };
+// hexToRgb, expands a three-digit shorthand (#RGB) to six digits (#RRGGBB) before slicing, so
+// nearest_token("#fff") and nearest_token("#ffffff") agree; the un-expanded slice used to read
+// "fff" as [255, 15, 0] (a phantom mid-stop match for white).
+const hexToRgb = (h) => {
+  let m = String(h).replace("#", "");
+  if (m.length === 3) m = m.split("").map((c) => c + c).join("");
+  return [0, 2, 4].map((i) => parseInt(m.slice(i, i + 2) || "0", 16));
+};
 
 // PRIME_STEPS, mirrors src/engine/prime.mjs's own order (brightest..dimmest). Duplicated, not
 // imported: this module ships standalone (gen-mcp-assets.mjs inlines ONLY this file + the server +
@@ -64,7 +71,7 @@ export function buildSurface(kit) {
     if (hasColorG) g +=
       `## Color\n` +
       `- **Surfaces / backgrounds** → the \`*/surface*\` and \`*/background\` roles (resolve per light/dark).\n` +
-      `- **Accents** → a palette's prime role (e.g. \`primary/primary\`) and its \`*Dim/Bright/Low/High\` variants.\n` +
+      `- **Accents** → a palette's prime identity colour (e.g. \`primary/primary\`) and its \`*Dim/Bright/Low/High\` variants.\n` +
       `- **Text on accents** → the \`*/on*\` roles (already contrast-aware).\n` +
       `- **Borders/dividers** → \`*/outline*\`; **overlays** → \`*/scrim*\` (brand-tinted, per palette).\n` +
       `- **Dialog/modal backdrop** (neutral, never brand-tinted) → \`constants.dialogBackdrop\` in \`brand://kit\`, a fixed black-at-80%-alpha overlay.\n` +
@@ -73,7 +80,7 @@ export function buildSurface(kit) {
       `- Match an existing colour with \`nearest_token\` before introducing a new one.\n\n`;
     if (kit.type) g +=
       `## Typography\n` +
-      `- \`get_type\` / \`brand://type\` → the type scale. Pick a voice by the text's FUNCTION: **Display** (hero), **Headline/Sub-heading/Title** (sections), **Lead** (standfirst), **Body** (reading, incl. fine-print), **Body-mono** (code, technical values), **Label** (controls/labels), **Label-mono** (monospace controls, IDs, versions), **Kicker** (overline label), **Tiny/Tiny-mono** (captions, small print), **UI-control/UI-widget** (interactive single-line text, buttons, inputs, widget chrome).\n` +
+      `- \`get_type\` / \`brand://type\` → the type scale. Pick a voice by the text's FUNCTION: **Display** (hero), **Headline/Sub-heading/Title** (sections), **Sub-title** (a secondary line under a headline), **Lead** (standfirst), **Body** (reading, incl. fine-print), **Body-mono** (code, technical values), **Label** (static field/form labels), **Label-mono** (static monospace labels, IDs, versions), **Kicker** (overline label), **Tiny/Tiny-mono** (captions, small print), **UI-control/UI-widget** (the operable-chrome voices, interactive single-line text, buttons, inputs, widget chrome).\n` +
       `- Each voice's step carries \`size\`, \`lineHeight\`, \`letterSpacing\`, \`weight\`, apply them together; don't hand-pick sizes.\n\n`;
     if (kit.geometry) g +=
       `## Geometry\n` +
@@ -85,17 +92,21 @@ export function buildSurface(kit) {
   // ── tools ──
   const TOOLS = [];
   if (hasColor) TOOLS.push(
-    { name: "list_palettes", description: "List the brand's palettes with their identity colour and canvas group (material/brand/system/data).",
+    { name: "list_palettes", description: "List the brand's palettes with their identity colour and canvas group (material/brand/system/data). Returns { name, key, group, stops } per palette, where key is the identity hex and name is the value the other tools' palette argument matches (case-insensitively, by name or slug).",
       inputSchema: { type: "object", properties: {} },
       run: () => palettes.map((p) => ({ name: p.name, key: p.key, group: p.group, stops: (p.ramp || []).length })) },
-    { name: "get_ramp", description: "The full tonal ramp (stops → hex) for one palette.",
-      inputSchema: { type: "object", properties: { palette: { type: "string" } }, required: ["palette"] },
+    { name: "get_ramp", description: "The full tonal ramp (stops → hex) for one palette; every entry is a raw ramp stop (a tonal primitive, not a resolved semantic colour). Returns { name, ramp } or { error } if the palette is not found.",
+      inputSchema: { type: "object", properties: { palette: { type: "string", description: "The palette's name or slug (case-insensitive, matches list_palettes' own name field)." } }, required: ["palette"] },
       run: (a) => { const p = findPalette(a.palette); return p ? { name: p.name, ramp: p.ramp } : { error: `no palette "${a.palette}"` }; } },
-    { name: "get_prime", description: "A palette's seven prime identity swatches (brightest, brighter, bright, prime, dim, dimmer, dimmest), in step order, its own OKHSL ladder, mode-independent (same values in light and dark).",
-      inputSchema: { type: "object", properties: { palette: { type: "string" } }, required: ["palette"] },
+    { name: "get_prime", description: "A palette's seven prime identity swatches (brightest, brighter, bright, prime, dim, dimmer, dimmest), in step order, its own OKHSL ladder, mode-independent (same values in light and dark). Returns { palette, steps } or { error } if the palette is not found.",
+      inputSchema: { type: "object", properties: { palette: { type: "string", description: "The palette's name or slug (case-insensitive, matches list_palettes' own name field)." } }, required: ["palette"] },
       run: (a) => { const p = findPalette(a.palette); return p ? { palette: p.name, steps: primeStepsOf(p) } : { error: `no palette "${a.palette}"` }; } },
-    { name: "resolve_token", description: "Resolve a semantic role to its hex in a scheme. role = \"palette/roleKey\" (or palette + role).",
-      inputSchema: { type: "object", properties: { palette: { type: "string" }, role: { type: "string" }, scheme: { type: "string", enum: ["light", "dark"] } } },
+    { name: "resolve_token", description: "Resolve a semantic role to its hex in a scheme. role = \"palette/roleKey\" (or palette + role); role keys are camelCase and accent-prefixed for the accent family (e.g. primary/primaryHover, primary/onPrimary, neutral/surfaceHigh). The palette is slug-matched but the role key is exact-case. A miss returns { error } as a normal result, not a thrown error.",
+      inputSchema: { type: "object", properties: {
+        palette: { type: "string", description: "The palette's name or slug; omit when role already carries \"palette/roleKey\"." },
+        role: { type: "string", description: "The role key, camelCase (e.g. primaryHover, onPrimary, surfaceHigh), or \"palette/roleKey\" when palette is omitted." },
+        scheme: { type: "string", enum: ["light", "dark"], description: "Defaults to light when omitted." },
+      } },
       run: (a) => {
         const scheme = a.scheme === "dark" ? "dark" : "light";
         let slug = a.palette, key = a.role;
@@ -103,11 +114,11 @@ export function buildSurface(kit) {
         const r = (roles[slugOf(slug)] || {})[key];
         return r ? { palette: slug, role: key, scheme, hex: r[scheme] ?? r.light } : { error: `no role "${slug}/${key}"` };
       } },
-    { name: "get_semantic", description: "All resolved semantic roles for a scheme, as { \"palette/role\": hex }.",
-      inputSchema: { type: "object", properties: { scheme: { type: "string", enum: ["light", "dark"] } } },
+    { name: "get_semantic", description: "All resolved semantic roles for every palette in this kit, for one scheme, as { \"palette/role\": hex }. This is the full cross-product (every palette × every role), so prefer resolve_token for a single lookup.",
+      inputSchema: { type: "object", properties: { scheme: { type: "string", enum: ["light", "dark"], description: "Defaults to light when omitted." } } },
       run: (a) => semanticFor(a.scheme === "dark" ? "dark" : "light") },
-    { name: "nearest_token", description: "The brand token closest to a given hex (so the agent reuses the system instead of inventing a colour).",
-      inputSchema: { type: "object", properties: { hex: { type: "string" } }, required: ["hex"] },
+    { name: "nearest_token", description: "The closest ramp stop to a given hex, by Euclidean RGB distance (0-255 per channel); searches raw ramp stops only, not resolved semantic roles, so the agent reuses the system instead of inventing a colour. Returns { palette, stop, hex, distance } or { error } if no palettes are loaded.",
+      inputSchema: { type: "object", properties: { hex: { type: "string", description: "A hex colour, three-digit shorthand (#RGB) or six-digit (#RRGGBB); both expand to the same result." } }, required: ["hex"] },
       run: (a) => nearestToken(a.hex) || { error: "no palettes" } },
   );
   if (kit.type) TOOLS.push(
@@ -161,8 +172,14 @@ export function handle(msg, surface) {
   const textResult = (obj) => ({ content: [{ type: "text", text: typeof obj === "string" ? obj : JSON.stringify(obj, null, 2) }] });
 
   switch (method) {
-    case "initialize":
-      return reply({ protocolVersion: PROTOCOL_VERSION, capabilities: { tools: {}, resources: {}, prompts: {} }, serverInfo: SERVER, instructions: `Brand kit "${kit.name || ""}" from ${kit.generator || "Ultimate Tokens"}. Use resolve_token / get_ramp / nearest_token; read brand://guide first.` });
+    case "initialize": {
+      // The instructions name only tools THIS boot actually lists (M1): a kitless or type/geometry-only
+      // boot has no colour tools, and the merged server appends generate_kit/export_tokens to TOOLS
+      // before this runs, so reading TOOLS here (not a hand-typed list) can never dangle.
+      const toolNames = TOOLS.map((t) => t.name).join(", ");
+      const instructions = `Brand kit "${kit.name || ""}" from ${kit.generator || "Ultimate Tokens"}. Use ${toolNames || "the available tools"}; read brand://guide first.`;
+      return reply({ protocolVersion: PROTOCOL_VERSION, capabilities: { tools: {}, resources: {}, prompts: {} }, serverInfo: SERVER, instructions });
+    }
     case "notifications/initialized": return null; // notification, no reply
     case "ping": return isRequest ? reply({}) : null;
     case "tools/list": return reply({ tools: TOOLS.map(({ name, description, inputSchema }) => ({ name, description, inputSchema })) });

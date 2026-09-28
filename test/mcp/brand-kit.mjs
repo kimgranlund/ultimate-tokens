@@ -8,7 +8,8 @@ import { tmpdir } from "node:os";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { brandKit, defaultDocument, paletteGroup } from "../../src/ui/model.mjs";
-import { SERVER } from "../../mcp/brand-kit-core.mjs";
+import { buildSurface, handle, SERVER } from "../../mcp/brand-kit-core.mjs";
+import { makeVoices } from "../../src/engine/type.mjs";
 import { MCP_BRAND_KIT_VERSION } from "../../src/ui/mcp-assets.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -139,6 +140,33 @@ try {
   ok(["list_palettes", "get_ramp", "get_prime", "resolve_token", "get_semantic", "nearest_token"].every((n) => tools.includes(n)), `tools/list has all 6 colour tools (${tools})`);
   ok(tools.includes("get_type") && tools.includes("get_geometry"), `tools/list has get_type + get_geometry (the opted-in systems) (${tools})`);
 
+  // M1's pin: the initialize instructions must name only tools THIS boot actually lists, for a full
+  // kit (this server) and for a type-only kit (in-process, buildSurface/handle direct, no second
+  // process). A tool name hardcoded back into the instructions that this boot doesn't serve reds here.
+  {
+    const ALL_TOOL_NAMES = ["list_palettes", "get_ramp", "get_prime", "resolve_token", "get_semantic", "nearest_token", "get_type", "get_geometry", "generate_kit", "export_tokens"];
+    const namedPattern = new RegExp(`\\b(${ALL_TOOL_NAMES.join("|")})\\b`, "g");
+    const named = new Set(init.result.instructions.match(namedPattern) || []);
+    const dangling = [...named].filter((n) => !tools.includes(n));
+    ok(dangling.length === 0, `initialize instructions on a full kit name only tools this boot lists (dangling: ${dangling.join(",")})`);
+
+    const typeOnlyKit = brandKit(defaultDocument(), { type: true });
+    const typeSurface = buildSurface(typeOnlyKit);
+    const typeInit = handle({ jsonrpc: "2.0", id: 1, method: "initialize", params: {} }, typeSurface);
+    const typeToolNames = typeSurface.TOOLS.map((t) => t.name);
+    const typeNamed = new Set(typeInit.result.instructions.match(namedPattern) || []);
+    const typeDangling = [...typeNamed].filter((n) => !typeToolNames.includes(n));
+    ok(typeDangling.length === 0, `initialize instructions on a type-only kit name only tools that boot lists (dangling: ${typeDangling.join(",")}, instructions: ${typeInit.result.instructions})`);
+    ok(!typeToolNames.includes("resolve_token") && !/resolve_token|get_ramp|nearest_token/.test(typeInit.result.instructions), "a type-only kit serves no colour tool and its instructions name none");
+  }
+
+  // M2's pin: the usage guide names every engine voice (Sub-title used to be missing).
+  {
+    const guide = buildSurface(kit).RESOURCES.find((r) => r.uri === "brand://guide").read();
+    const missing = Object.keys(makeVoices()).filter((v) => !guide.includes(v));
+    ok(missing.length === 0, `brand://guide names every makeVoices() voice (missing: ${missing.join(",")})`);
+  }
+
   const ty = await callTool("get_type", {});
   ok(ty && ty.categories && ty.categories.Body, "get_type → the typography scale (Body voice present)");
   const geo = await callTool("get_geometry", {});
@@ -198,6 +226,12 @@ try {
   const exact = kit.palettes[1].ramp.find((s) => s.stop === 500).hex;
   const near = await callTool("nearest_token", { hex: exact });
   ok(near.hex === exact && near.distance === 0, `nearest_token of an exact stop hex → distance 0 (got ${near.distance})`);
+
+  // M3: a three-digit shorthand hex (#fff) must expand the same as its six-digit form, not misparse
+  // into a phantom mid-stop match (the un-expanded slice used to read "fff" as rgb(255, 15, 0)).
+  const shortWhite = await callTool("nearest_token", { hex: "#fff" });
+  const longWhite = await callTool("nearest_token", { hex: "#ffffff" });
+  ok(JSON.stringify(shortWhite) === JSON.stringify(longWhite), `nearest_token("#fff") matches nearest_token("#ffffff") (got ${JSON.stringify(shortWhite)} vs ${JSON.stringify(longWhite)})`);
 
   const sem = await callTool("get_semantic", { scheme: "dark" });
   ok(typeof sem["primary/surface"] === "string", "get_semantic flattens roles to palette/role hexes");

@@ -119,8 +119,11 @@ export function buildSurface() {
   const TOOLS = [
     {
       name: "generate_kit",
-      description: "Turn a plain-language palette description into a brand kit, or learn the method first. Call with { description } to receive the interpretation rubric + PaletteBrief schema + theme-adjacent exemplars (this NEVER generates a kit). Call with { brief }, an object matching that schema, to generate deterministically; the result carries a swatch-board PNG preview (for vision-capable callers to self-critique before the user looks) plus a lint array (contrast/chroma-budget advisories, for text-only callers). To refine, patch the brief and resend; never hand-edit the output's hex values.",
-      inputSchema: { type: "object", properties: { description: { type: "string" }, brief: { type: "object" } } },
+      description: "Turn a plain-language palette description into a brand kit, or learn the method first. Call with { description } to receive the interpretation rubric + PaletteBrief schema + theme-adjacent exemplars (this NEVER generates a kit). Call with { brief }, an object matching that schema (brief.families is required, at least Primary), to generate deterministically: returns { kit, doc, lint, meta }; the result also carries a swatch-board PNG preview (for vision-capable callers to self-critique before the user looks) plus a lint array (contrast/chroma-budget advisories, for text-only callers). To refine, patch the brief and resend; never hand-edit the output's hex values, a hand edit won't round-trip through this schema.",
+      inputSchema: { type: "object", properties: {
+        description: { type: "string", description: "The plain-language palette description; returns the method (rubric, PaletteBrief schema, exemplars) and never generates a kit." },
+        brief: { type: "object", description: "A PaletteBrief object matching the schema from the description call; when both arguments are sent, brief wins and generates the kit. A non-object brief is a tool error; out-of-range numbers are clamped." },
+      } },
       run: generateKitTool,
     },
   ];

@@ -71,13 +71,16 @@ export function createSession(initialKit) {
         ...read.TOOLS,
         {
           name: "generate_kit",
-          description: "Turn a plain-language palette description into a brand kit, or learn the method first. Call with { description } to receive the interpretation rubric + PaletteBrief schema + theme-adjacent exemplars (this NEVER generates a kit). Call with { brief }, an object matching that schema, to generate deterministically; the read tools (list_palettes, resolve_token, ...) and export_tokens immediately serve the generated kit. To refine, patch the brief and resend; never hand-edit the output's hex values.",
-          inputSchema: { type: "object", properties: { description: { type: "string" }, brief: { type: "object" } } },
+          description: "Turn a plain-language palette description into a brand kit, or learn the method first. Call with { description } to receive the interpretation rubric + PaletteBrief schema + theme-adjacent exemplars (this NEVER generates a kit). Call with { brief }, an object matching that schema (brief.families is required, at least Primary), to generate deterministically: returns { kit, doc, lint, meta }, plus a lint array (contrast/chroma-budget advisories) and a swatch-board PNG image block for vision-capable callers; the read tools (list_palettes, resolve_token, ...) and export_tokens immediately serve the generated kit. To refine, patch the brief and resend; never hand-edit the output's hex values, a hand edit won't round-trip through this schema.",
+          inputSchema: { type: "object", properties: {
+        description: { type: "string", description: "The plain-language palette description; returns the method (rubric, PaletteBrief schema, exemplars) and never generates a kit." },
+        brief: { type: "object", description: "A PaletteBrief object matching the schema from the description call; when both arguments are sent, brief wins and generates the kit. A non-object brief is a tool error; out-of-range numbers are clamped." },
+      } },
           run: generateKitWrapped,
         },
         {
           name: "export_tokens",
-          description: "Export the currently-bound kit's tokens in a documented format, so the natural next move, writing tokens.css or a framework config into the user's project, is one call. Only available once a kit has been GENERATED (not a loaded brand-kit.json alone). format: css | oklch | json | dtcg | ui3 | tailwind | shadcn | all (every format at once, multi-file).",
+          description: "Export the currently-bound kit's tokens in a documented format, writing tokens.css or a framework config for the user's project. Returns { files: [{ name, mimeType, text }] }, one entry per format (or one per named format in the multi-file \"all\" response); nothing is written to disk. Only available once a kit has been GENERATED (not a loaded brand-kit.json alone); returns { error } until then. format: css | oklch | json | dtcg | ui3 | tailwind | shadcn | all (every format at once, multi-file).",
           inputSchema: { type: "object", properties: { format: { type: "string", enum: [...FORMAT_ORDER, "all"] } }, required: ["format"] },
           run: exportTokensTool,
         },
