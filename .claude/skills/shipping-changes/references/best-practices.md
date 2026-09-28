@@ -80,7 +80,7 @@ After every fork's completion notification:
 The `chromaFloor` change (`feat(engine): default back to "even" (vibrant) + chromaFloor to kill the dead
 zone (#41)`) touched `model.mjs` + `persist.js` + a UI slider (Global → "Chroma floor") + a new tonal
 `chroma-floor` gate, engine + UI logic, **no build chain**. So: branch off `origin/main`, make the change,
-**`npm test`**, its commit body literally records `npm test 10/10`, with **no `npm run build`** needed. The
+run **`npm test`**; its commit body literally records `npm test 10/10`, with **no `npm run build`** needed. The
 commit body is a full changelog-grade explanation (what reverses, why, the cap reasoning, the new gate);
 the **title** is the squash subject `(#41)`. Pushed, CI ran build · test · smoke, squash-merged, local main
 fast-forwarded, branch `-D`'d. The body's closing line, `Verified visually: default vibrant again + muted
