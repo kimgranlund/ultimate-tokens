@@ -71,7 +71,7 @@ export function createSession(initialKit) {
         ...read.TOOLS,
         {
           name: "generate_kit",
-          description: "Turn a plain-language palette description into a brand kit, or learn the method first. Call with { description } to receive the interpretation rubric + PaletteBrief schema + theme-adjacent exemplars (this NEVER generates a kit). Call with { brief }, an object matching that schema (brief.families is required, at least Primary), to generate deterministically: returns { kit, doc, lint, meta }, plus a lint array (contrast/chroma-budget advisories) and a swatch-board PNG image block for vision-capable callers; the read tools (list_palettes, resolve_token, ...) and export_tokens immediately serve the generated kit. To refine, patch the brief and resend; never hand-edit the output's hex values, a hand edit won't round-trip through this schema.",
+          description: "Turn a plain-language palette description into a brand kit, or learn the method first. Call with { description } to receive the interpretation rubric + PaletteBrief schema + theme-adjacent exemplars (this NEVER generates a kit). Call with { brief }, an object matching that schema (brief.families is required, at least Primary), to generate deterministically: returns { kit, doc, lint, meta } (lint holds advisories such as clamped values, contrast and chroma budget) and a swatch-board PNG image block for vision-capable callers; the read tools (list_palettes, resolve_token, ...) and export_tokens immediately serve the generated kit. To refine, patch the brief and resend; never hand-edit the output's hex values, a hand edit won't round-trip through this schema.",
           inputSchema: { type: "object", properties: {
         description: { type: "string", description: "The plain-language palette description; returns the method (rubric, PaletteBrief schema, exemplars) and never generates a kit." },
         brief: { type: "object", description: "A PaletteBrief object matching the schema from the description call; when both arguments are sent, brief wins and generates the kit. A non-object brief is a tool error; out-of-range numbers are clamped." },
@@ -80,8 +80,8 @@ export function createSession(initialKit) {
         },
         {
           name: "export_tokens",
-          description: "Export the currently-bound kit's tokens in a documented format, writing tokens.css or a framework config for the user's project. Returns { files: [{ name, mimeType, text }] }, one entry per format (or one per named format in the multi-file \"all\" response); nothing is written to disk. Only available once a kit has been GENERATED (not a loaded brand-kit.json alone); returns { error } until then. format: css | oklch | json | dtcg | ui3 | tailwind | shadcn | all (every format at once, multi-file).",
-          inputSchema: { type: "object", properties: { format: { type: "string", enum: [...FORMAT_ORDER, "all"] } }, required: ["format"] },
+          description: "Return the bound kit's tokens as file contents in one documented format: { files: [{ name, mimeType, text }] }, one entry per format (one per named format in the multi-file \"all\" response). Nothing is written to disk; the caller writes the returned text into the project. Works only after a successful generate_kit call with { brief } in this session; before that, and with only a loaded brand-kit.json, it returns { error } as a normal result. format: css | oklch | json | dtcg | ui3 | tailwind | shadcn | all (every format at once, multi-file).",
+          inputSchema: { type: "object", properties: { format: { type: "string", enum: [...FORMAT_ORDER, "all"], description: "One of the listed formats, or all for every format at once (multi-file)." } }, required: ["format"] },
           run: exportTokensTool,
         },
       ],

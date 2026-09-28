@@ -71,7 +71,7 @@ export function buildSurface(kit) {
     if (hasColorG) g +=
       `## Color\n` +
       `- **Surfaces / backgrounds** → the \`*/surface*\` and \`*/background\` roles (resolve per light/dark).\n` +
-      `- **Accents** → a palette's prime identity colour (e.g. \`primary/primary\`) and its \`*Dim/Bright/Low/High\` variants.\n` +
+      `- **Accents** → a palette's accent role (e.g. \`primary/primary\`; not the \`get_prime\` swatches) and its \`*Dim/Bright/Low/High\` variants.\n` +
       `- **Text on accents** → the \`*/on*\` roles (already contrast-aware).\n` +
       `- **Borders/dividers** → \`*/outline*\`; **overlays** → \`*/scrim*\` (brand-tinted, per palette).\n` +
       `- **Dialog/modal backdrop** (neutral, never brand-tinted) → \`constants.dialogBackdrop\` in \`brand://kit\`, a fixed black-at-80%-alpha overlay.\n` +
