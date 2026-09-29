@@ -1,5 +1,5 @@
 ---
-status: draft
+status: approved
 ticket: "#725"
 priority: P2
 lane: color-engine (`src/engine/tonal.js`, `scripts/report-preset-fidelity.mjs`, `test/engine/`, `package.json` gate scripts, `.github/workflows/ci.yml`, `.sdlc/adapter.md` §1, `.sdlc/baseline.md`, `.sdlc/checks/baseline-agrees-check.sh`, `docs/reference/references/decision-records.md`, `CHANGELOG.md`, the regenerated exports `dist/`, `figma/plugin/ui.html`, `src/ui/categories/*.js`)
