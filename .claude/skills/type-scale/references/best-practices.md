@@ -45,8 +45,8 @@ The non-obvious do/don'ts (each a real trap in this engine), then a worked walkt
 - **Always emit family names QUOTED** (`--font-{role}: '{family}'`, and now also `--font-voice-{voice}` per
   voice via `resolvedFontFor`). A name with a digit, `Source Serif 4`, `Inter Tight`, is invalid
   *unquoted* in a strict CSS parser, and **Safari drops the entire declaration** → the specimen renders in
-  the fallback. Chrome is forgiving, so the smoke (Chrome-only) stays green while Safari is broken (see the
-  smoke-is-Chrome-only-Safari-blind-spot memory). The verifier pins `typeTokensCSS(luxury)` (which uses
+  the fallback. Chrome is forgiving, so the smoke (Chrome-only) stays green while Safari is broken (`shipping-changes`'s
+  `references/foundations.md` owns why green smoke is not Safari-proof). The verifier pins `typeTokensCSS(luxury)` (which uses
   `Source Serif 4`) contains `--font-display: 'Source Serif 4'`. If you refactor the emitter, keep the
   quotes on BOTH the role-level and voice-level font props.
 
@@ -107,16 +107,18 @@ The pattern behind moving from a modular scale to a hand-authored fixed table:
 1. **Decided the fixed table beats a shared ratio.** Five treatments deriving size from their own
    `base × ratio^n` meant subtle unintended drift between treatments at the same nominal step. Google's
    own Material 3 approach (one fixed scale, theme varies styling only) was the model: hand-author
-   `SIZES[voice] = [SM, MD, LG]` once, shared by all treatments.
+   a literal three-entry `SM · MD · LG` row per voice once, shared by all treatments (the 2026-07-16
+   extension then gave the two interactive voices a six-entry `XS..2XL` row).
 2. **Kept `bodyBase` as the ONE resize lever** (`factor = bodyBase/16`) so the whole fixed table still
    scales together, the design changed WHAT gets derived (a literal table instead of a modular formula),
    not the resize mechanism.
 3. **Added the "unscaled passes through exact" guard.** The nice-number ladder existed to make a
    MODULAR-scale output land on familiar numbers; applying it unconditionally to an already-hand-authored
    literal would silently re-round it (120→128). Gated the quantizer on `factor !== 1 || compress` instead.
-4. **Retired per-voice `ratio`/`steps` entirely**: every voice now rides the uniform SM/MD/LG ramp; the
-   old 3/5/8-step split (`STEPS_3`/`STEPS_5`/`STEPS_UI`) had no meaning once size stopped deriving from an
-   exponent.
+4. **Retired per-voice `ratio`/`steps` entirely**: the 2026-07-13 table put thirteen voices on a three-step
+   `SM · MD · LG` row (the 2026-07-16 extension moved UI-control and UI-widget to the six-step `XS..2XL`
+   row); the old 3/5/8-step split (`STEPS_3`/`STEPS_5`/`STEPS_UI`) had no meaning once size stopped
+   deriving from an exponent.
 5. **Validated**: `node test/engine/type.mjs` (green: 15 voices on their per-voice ramps, `roleOf`, the
    box/prose split, the fixed-size-table exact-passthrough assert, the nice-ladder-only-when-scaled assert,
    the quoting guard, DTCG composite, sibling weights, per-voice font overrides, prints `type PASS`), then

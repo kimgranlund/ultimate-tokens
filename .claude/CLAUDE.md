@@ -27,7 +27,7 @@ Canonical specs + rubrics: `docs/reference/` (e.g. `docs/reference/data/role-tab
 - `src/engine/`: the **pure** engines (ESM, **no DOM**): `semantic.js` (the 53-role table) · `type.mjs` ·
   `geometry.mjs` · `exports.js` (the 10 documented color formats: CSS/OKLCH/JSON/DTCG/UI3/Tailwind/shadcn/
   Panda/Radix) · `ds-export.js` (the Claude Design/Google Stitch/Figma Make design-system bundle export,
-  split out of `exports.js` at TKT-0015, undocumented elsewhere, not one of the 10) · `derive`/`tonal`/`hct`/`okhsl`.
+  undocumented elsewhere, not one of the 10) · `derive`/`tonal`/`hct`/`okhsl`.
 - `src/ui/`: `app.js` (the `HctApp` custom element: state, render dispatch, the frame) · `sections/`
   (`color`/`typography`/`geometry` pane bodies) + `overlays/` (`drawer`/`settings`/`apply-gate`), both
   mixed onto `HctApp` · `app-helpers.mjs` (`h` + shared primitives) · `styles.css` · `model.mjs`
@@ -46,11 +46,11 @@ Canonical specs + rubrics: `docs/reference/` (e.g. `docs/reference/data/role-tab
   `project-docs` skill. `docs/site/`, `docs/lld/`, `docs/img/`: hosting/licensing specs, its
   architecture doc `docs/lld/app-shell.md` (whose catalog is `docs/reference/references/component-inventory.md`),
   and the generated README preview SVG, respectively. `.claude/docs/other/`, **PRIVATE** (see below).
-- **Git-native ticket backend (ADR-017).** Bugs/features/issues now route to **GitHub Issues**
-  (`gh issue create`), not new `docs/tickets/*.md` files, labels `kind:bug`/`kind:feature` +
-  `size:small`/`size:big` carry the machine-read fields the file frontmatter used to. Scribe's
-  `/bug-report`/`/feature` read this ruling and mint issues. The file-ticket backlog was fully
-  migrated 2026-07-17 (`TKT-0031`, Issues #325–#342), `docs/tickets/` is archive only.
+- **Git-native ticket backend (ADR-017).** Bugs/features/issues go to **GitHub Issues**
+  (`gh issue create`, via `/file-bug`/`/file-feature`), never new `docs/tickets/*.md` files;
+  labels `kind:bug`/`kind:feature` + `size:small`/`size:big` carry the machine-read fields.
+  `docs/tickets/` is an archive of the earlier file tickets; read it for history and
+  add nothing to it, new work is an issue.
 
 ## Conventions (non-obvious only)
 

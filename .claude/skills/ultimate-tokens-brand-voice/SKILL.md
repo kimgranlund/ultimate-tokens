@@ -22,8 +22,8 @@ Two documents are canonical, read both before drafting (each is one page):
   (§5), and the **scoring rubric (§6)**. This skill applies the platform; it never restates it, if
   they ever disagree, the platform wins and this skill is stale (fix it in the same change).
 - **`docs/marketing/fact-sheet.md`**: every count, price, name, and claim a copy may use.
-  Copy CITES the sheet; it never remembers a number. The product once moved 53 → 59 semantic roles
-  while the store copy kept saying 53, that class of defect is what the sheet exists to kill.
+  Copy CITES the sheet; it never remembers a number. A count that moves in the product while the copy
+  keeps the old one is the defect the sheet exists to kill.
 
 ## Procedure
 
@@ -65,7 +65,7 @@ Two documents are canonical, read both before drafting (each is one page):
 When the product changes anything the corpus states, a count, a price, a format, a tier boundary,
 update `fact-sheet.md` **in the same change**, then sweep: `grep -rn "<old value>"
 docs/marketing/` and fix every hit. A drifted marketing fact is a defect of the same severity
-as a failing test (`CLAUDE.md` · "Context is memory").
+as a failing test.
 
 **The deployed store doesn't grep, audit it:** `node .claude/skills/ultimate-tokens-brand-voice/
 scripts/store-drift-check.mjs` (needs `LEMONSQUEEZY_API_KEY`, a live-mode key, in

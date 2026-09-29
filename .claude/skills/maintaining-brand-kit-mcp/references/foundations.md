@@ -6,22 +6,26 @@ probably fighting one of these. The user-facing contract is owned by `mcp/README
 
 ### 1. Three pieces: the kit (data), the core (surface), the server (transport)
 
-- **`brandKit(doc, systems)`** (`src/ui/model.mjs:237`) is the **pure projection** that produces
-  `brand-kit.json`. It is engine-aware (it reads `projectView(doc)`'s resolved palettes/roles, `typeScale`,
-  and `geometryScale`), it is where every value the server can serve comes from. Shape:
+- **`brandKit(doc, systems)`** in `src/ui/model.mjs` is the **pure projection** that produces
+  `brand-kit.json`. It is engine-aware (it reads `projectView(doc)`'s resolved palettes/roles, and the base-mode
+  `typeScaleFor`/`geomScaleFor` scales), it is where every value the server can serve comes from. Shape:
   ```
-  { $schema: "ultimate-tokens-brand-kit/3", name, generator: "Ultimate Tokens",
+  { $schema: "ultimate-tokens-brand-kit/3", name, generator: "Ultimate Tokens", icons, motion, constants, controls,
     stops:    [50, 100, …, 950],                       # the stop numbers (color only; on[0].ramp's stops)
-    palettes: [ { name, slug, key, ramp: [ {stop, hex} ] } ],
+    palettes: [ { name, slug, key, group, ramp: [ {stop, hex} ], prime } ],   # prime: { brightest, brighter,
+                                                       #   bright, prime, dim, dimmer, dimmest }, each { hex, oklch }
     roles:    { <slug>: { <roleKey>: { light: "#…", dark: "#…" } } },   # 53 keys per palette
-    type:     <typeScale(doc.type)>,        # { treatment, label, fonts, roleOf, categories: {7 voices} }
-    geometry: <geometryScale(doc)> }        # { treatment, label, density, radiusStyle, baseHeight,
-                                            #   typed:true, sizes:{XS…2XL}, radii:{none…full}, space }
+    type:     <typeScaleFor(doc, "base")>,  # { treatment, label, fonts, roleOf, categories: {15 voices}, weights }
+    geometry: <geomScaleFor(doc, "base")> } # { treatment, label, density, radiusStyle, radiusDefault, baseHeight,
+                                            #   rampContrast, ramp, sizes:{XS…2XL}, radii:{none…full}, space,
+                                            #   insets, gaps, borders, focus }
   ```
-  Note: `kit.type = typeScale(doc.type || DEFAULT_TYPE)` calls the engine export directly; `kit.geometry =
-  geometryScale(doc)` calls a thin **`model.mjs` wrapper** (`model.mjs:39`) that runs the engine's `geomScale`
-  with `{ typeScale }` so the geometry's per-step `font` is shared with the type UI scale. The engine exports
-  are `typeScale` (`src/engine/type.mjs`) and `geomScale` (`src/engine/geometry.mjs`), not `geometryScale`.
+  Note: `kit.type = typeScaleFor(doc, "base")` and `kit.geometry = geomScaleFor(doc, "base")` (both in
+  `src/ui/model.mjs`) are the override-aware resolvers the sections use, so base-mode per-cell overrides reach
+  the kit. `typeScaleFor` wraps the engine's `typeScale` (`src/engine/type.mjs`); `geomScaleFor` runs the
+  engine's `geomScale` (`src/engine/geometry.mjs`) with `{ typeScale: typeScaleFor(doc, modeKey) }` so the
+  geometry's per-step `font` is shared with the type UI scale. `geometryScale` in `model.mjs` is a back-compat
+  wrapper only; `brandKit` does not call it.
 - **`mcp/brand-kit-core.mjs`** is the **surface**, PURE, no I/O, engine-free. `buildSurface(kit)` builds the
   gated `TOOLS`/`RESOURCES`/`PROMPTS` (+ `usageGuide()`); `handle(msg, surface)` is the pure JSON-RPC 2.0
   dispatch, it RETURNS a response object (or null when nothing should be sent). It does NO color math; the
@@ -39,11 +43,11 @@ Two version numbers live here and are unrelated: `kit.$schema = "ultimate-tokens
 { name: "ultimate-tokens-brand-kit", version: "0.3.0" }`. Don't conflate the schema and the protocol version.
 
 Neither digit is free-standing. The `/N` in `$schema` IS `EXPORT_SCHEMA_VERSION`
-(`src/engine/exports.js`), interpolated by `brandKit` at `src/ui/model.mjs:675`. Read the constant,
+(`src/engine/exports.js`), interpolated by `brandKit` in `src/ui/model.mjs`. Read the constant,
 never this line, if you need today's number. `SERVER.version` is the hand-kept sibling that tracks it
 (`mcp/brand-kit-core.mjs`), and `gen-mcp-assets.mjs` generates `MCP_BRAND_KIT_VERSION` FROM that
 constant so the downloaded zip's `package.json` cannot declare a different version than the server it
-packages (#638). So an `EXPORT_SCHEMA_VERSION` bump moves three things here: the stamp, `SERVER.version`,
+packages. So an `EXPORT_SCHEMA_VERSION` bump moves three things here: the stamp, `SERVER.version`,
 and, by regeneration, `src/ui/mcp-assets.js`.
 
 ### 2. The JSON-RPC-over-stdio loop
@@ -124,22 +128,23 @@ asserts this on the projection directly via `brandKit({color:true})` / `{type:tr
 
 ### 5. Where the served type + geometry come from
 
-`get_type` / `brand://type` return `kit.type` **verbatim** (the `typeScale` output). Its `categories` map has
-**seven** voices from `make7`, `Display`, `Heading`, `Sub-heading`, `Kicker`, `Body`,
-`UI`, `Code`, each step `{ size, lineHeight, letterSpacing, weight, textTransform, paragraphSpacing,
-paragraphIndent }`. (The `usageGuide()` prose collapses these into a four-voice teaching model
-Display/Heading/Body/UI, that is documentation, not the data shape.)
+`get_type` / `brand://type` return `kit.type` **verbatim** (the `typeScaleFor(doc, "base")` output). Its
+`categories` map has the fifteen voices of `makeVoices` (`src/engine/type.mjs`), `Display` through `UI-widget`:
+the other thirteen voices carry `SM`, `MD`, `LG`, and `UI-control` and `UI-widget` carry `XS` to `2XL`. Each step
+is `{ size, lineHeight, letterSpacing, leadingRatio, trackingRatio, weight, textTransform, paragraphSpacing,
+paragraphIndent }`, and the box voices (`Kicker`, `UI-control`, `UI-widget`) add `singleLineHeight` (equal to
+`size`). The `usageGuide()` prose names the voices by function; it is documentation, not the data shape.
 
-`get_geometry` / `brand://geometry` return `kit.geometry` verbatim (the `geometryScale` output). Top level:
-`{ treatment, label, density, radiusStyle, baseHeight, typed, sizes, radii, space }`. `sizes` runs XS, SM, MD,
-LG, XL, 2XL; each `buildSize` row is `{ height, icon, caret, font, gap, padding, edgePadding, radiusPill,
-minWidth }`. `radii` is the ladder `{ none, sm, md, lg, full:9999 }`; `space` is the spacing scale.
+`get_geometry` / `brand://geometry` return `kit.geometry` verbatim (the `geomScaleFor(doc, "base")` output). Top level:
+`{ treatment, label, density, radiusStyle, radiusDefault, baseHeight, rampContrast, ramp, sizes, radii, space,
+insets, gaps, borders, focus }`. `sizes` runs XS, SM, MD, LG, XL, 2XL; each `buildSize` row is `{ height, icon,
+caret, font, gap, paddingNarrow, paddingWide, paddingNarrowCompact, paddingWideCompact, radiusPill, minWidth }`.
+`radii` is the ladder `{ none, xs, sm, md, lg, xl, full }`; `space` is the spacing scale.
 
 The key composition facts the test pins: a size step's **`font` equals the UI-control voice's size** at the
 same step (`geo.sizes.MD.font === ty.categories["UI-control"].MD.size`) and the **centering law** holds
-(`geo.sizes.MD.padding === (geo.sizes.MD.height − geo.sizes.MD.icon) / 2`). (The interim `typed` self-report
-flag was removed with the TKT-0008 UI-control reroute.) The server doesn't compute
-these, `geometryScale(doc)` (`model.mjs:39`) shares the `typeScale` into `geomScale`, but a tool/resource
+(`geo.sizes.MD.paddingNarrow === (geo.sizes.MD.height − geo.sizes.MD.icon) / 2`). The server doesn't compute
+these, `geomScaleFor(doc, "base")` in `src/ui/model.mjs` shares the type scale into `geomScale`, but a tool/resource
 change must not break the round-trip. The taxonomy of voices + sizes is owned by `src/engine/type.mjs` /
 `src/engine/geometry.mjs` and the `geometry-system` skill, cite, don't re-derive.
 
@@ -154,7 +159,7 @@ The MCP source lives in `mcp/` (`brand-kit-core.mjs` + `brand-kit-server.mjs`). 
 - **Inlined as an asset**: `src/ui/mcp-assets.js#MCP_BRAND_KIT.{server,core,readme}`, GENERATED by
   `scripts/gen-mcp-assets.mjs` (`npm run gen:mcp-assets`). It is a `JSON.stringify`'d copy of the two files +
   README. The app imports this to build the download.
-- **Shipped in the zip**: `downloadBrandKitMcp()` (`app.js:6565`) writes `MCP_BRAND_KIT.server` as
+- **Shipped in the zip**: `downloadBrandKitMcp()` in `src/ui/app.js` writes `MCP_BRAND_KIT.server` as
   `brand-kit-server.mjs`, `MCP_BRAND_KIT.core` as `brand-kit-core.mjs` (the server imports this sibling),
   `brandKit(this.doc, this.exportSystems)` as `brand-kit.json`, `MCP_BRAND_KIT.readme` as `README.md`, plus a
   `package.json`. So **the user downloads the asset, not the files on disk**, an un-regenerated asset ships a

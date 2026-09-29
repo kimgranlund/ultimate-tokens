@@ -15,8 +15,8 @@ user-invocable: true
 # Adding (or changing) an export format: ultimate-tokens
 
 An export format is one serializer that turns the resolved engine output into a portable artifact (a CSS
-string, a DTCG tree, a framework file). The **color** formats live in `src/engine/exports.js` (10 of them,
-and ONLY those 10, see below); **type** + **geometry** formats live in `src/engine/type.mjs` and
+string, a DTCG tree, a framework file). The **color** formats live in `src/engine/exports.js` (ten colour formats,
+and ONLY those ten, see below); **type** + **geometry** formats live in `src/engine/type.mjs` and
 `src/engine/geometry.mjs`. The non-obvious truth of this repo: almost every color emitter MAPS over each
 palette's resolved `roles`, so a new semantic role emits a leaf **automatically**, you add a format, not
 a per-role branch. The two things that bite are (1) ShadCN is the deliberate exception to that auto-flow,
@@ -27,12 +27,12 @@ auto-flow is owned by `adding-semantic-roles`, cite it, don't duplicate.
 
 **Not this skill's territory: `src/engine/ds-export.js`.** The Claude Design / Google Stitch / Figma Make
 "DS bundle" DESIGN.md-authoring subsystem (`dsColorRoles`, `exportDesignSystemTokens/Spine/Components/
-Receipt/Bundle/StitchBundle/MakeBundle`, the `dsMake*Md` prose generators) used to share a file with the 10
-color formats above, split out in TKT-0015 because it's a different KIND of code (content/prose authoring
-for a consumption bundle, not token serialization) and was undocumented drift risk for this skill's own
-"10 formats" claim. It imports a handful of this file's helpers (`derivedAll`, `roleOklch`, `hexOf`, `hex8`,
-`relLumExp`, plus the already-public `cssPrefixOf`/`dialogBackdropOklch`/`exportShadcn`) but is otherwise
-independent, has no rubric of record in `docs/reference/` yet, and is out of scope here, don't route a
+Receipt/Bundle/StitchBundle/MakeBundle`, the `dsMake*Md` prose generators) is a different KIND of code:
+content/prose authoring for a consumption bundle, not token serialization, so it stays outside the ten
+colour formats above. It imports a handful of `exports.js` helpers (`derivedAll`, `roleOklch`, `hexOf`, `hex8`,
+`relLumExp`, `cssPrefixOf`, `dialogBackdropOklch`, `whiteOklch`, `blackOklch`, `exportShadcn`, `isDataPalette`,
+`oklchStr`, `EXPORT_SCHEMA_VERSION`) but is otherwise
+independent and out of scope here, don't route a
 DS-bundle change through this skill's procedure, and don't add its formats to `exportAll` (it is bundled by
 the UI directly, same as the type/geometry emitters).
 
@@ -60,7 +60,7 @@ A new role appears in ShadCN or Radix only if you wire it into `MAP` (ShadCN) or
 (Radix), and that is a deliberate design choice (both have a FIXED token contract), not a gate. Don't "fix"
 either by spilling all roles in.
 
-**A variant of an existing format is a flag, not a new format (ticket #638).** `exportRadix(state, {
+**A variant of an existing format is a flag, not a new format.** `exportRadix(state, {
 refs: true })` is the worked example: it emits the SAME keys, group names, and internal aliases as the
 default (values) form, only swapping each numbered leaf's baked `oklch(...)` for a `var(--{pfx}-{n}-
 {frag})` link into this kit's own CSS custom-property layer: `radixRefLeaves` vs the default
@@ -68,7 +68,7 @@ default (values) form, only swapping each numbered leaf's baked `oklch(...)` for
 like this touches the same three sites as a new format, but narrower: an `opts` flag on the existing
 `exportX`, a second `view.exports` key (`radixRef` beside `radix`) instead of a new drawer format
 entry, and a second zip file beside the first, never a new `FORMAT_GROUPS` row, never a new format id.
-`radixRef` is `exportAll`'s key for it (see `nonempty` below); the color-format count stays at 10.
+`radixRef` is `exportAll`'s key for it (see `nonempty` below); the count stays at ten colour formats.
 
 **The shared naming rules** (don't reinvent): `pad3` (3-digit stop padding, ADR-006), `slug` (palette → token
 namespace), the `--c-*` custom props where raw names end in DIGITS and semantic names end in a WORD so they
@@ -90,16 +90,16 @@ fragment, emitters use it to build a NAME, never to re-resolve a ref to a color.
 3. **Surface it in the model** so the UI can read it: in `src/ui/model.mjs`, `projectView`'s `exports = {…}`
    block, add your key (JSON-shaped formats are `JSON.stringify(…, null, 2)`; CSS-shaped are raw
    strings). This is the object the drawer reads as `view.exports[id]`.
-4. **Wire the drawer tab** (`renderDrawer`'s `FORMAT_GROUPS` in `src/ui/app.js`): add `[id, "Label"]` to the
-   right group (groups are by DESTINATION, CSS · Frameworks · Design tools · Typography · Geometry ·
-   Project). A type/geom format also needs an entry in `SYSTEM_CODE` (the lazy generator) + `SYSTEM_LABEL`; a
+4. **Wire the drawer tab** (`renderDrawer`'s `FORMAT_GROUPS` in `src/ui/overlays/drawer.js`): add `[id, "Label"]` to the
+   right group (the groups are `Colors`, `Typography`, `Geometry`, `Design System`, `Project`; a colour
+   format goes in `Colors`). A type/geom format also needs an entry in `SYSTEM_CODE` (the lazy generator) + `SYSTEM_LABEL`; a
    color format is read straight from `view.exports[this.exportTab]` and needs neither.
-5. **Add it to the Download-All zip** (`downloadAllZip` in `src/ui/app.js`): push `{ name: "folder/file.ext", data }`
+5. **Add it to the Download-All zip** (`downloadAllZip` in `src/ui/overlays/drawer.js`): push `{ name: "folder/file.ext", data }`
    under the correct system toggle, `sys.color` / `sys.type` / `sys.geometry`. Colour formats ride
    `sys.color`; the `figma/` folder + the experimental `figma-aliased/` cascade (via `this.figmaBundle()`,
    OD-004) live there too. The re-importable config is pushed ALWAYS.
 6. **Document the shape** in `docs/reference/references/knowledge-04-export-formats.md`, it is the owner of per-
-   format output shapes; add a section (and keep the ten-formats header count consistent if you added a color
+   format output shapes; add a section (and keep the ten-colour-formats header count consistent if you added a color
    format). For ShadCN/Figma constraint changes, respect the fenced ADR notes (ADR-002 resolved-vs-aliased,
    ADR-007 UI3 is interchange-only), do not "fix" them.
 7. **Bump rule: `EXPORT_SCHEMA_VERSION` (SPEC 0.3.0 RP-8, ticket #577).** `exports.js` exports one
@@ -113,12 +113,11 @@ fragment, emitters use it to build a NAME, never to re-resolve a ref to a color.
    surface's SHAPE (a new key, a renamed field, a restructured tree), every surface above moves together, not
    just the one format you touched. **Never bump it for** a value-only change (a new default, a tuned chroma
    curve, a renamed palette), the shape is unchanged, so the version isn't either. Absence of a stamp on an
-   older export means version 1 (the pre-#503 shape, retroactive). Worked example: ticket #638's
-   `exportRadix` reference-form variant bumped 2 → 3, because a `var()`-link leaf is a new value SHAPE
-   for a leaf that was always a baked string. That bump moves `MCP_BRAND_KIT_VERSION`
-   (`scripts/gen-mcp-assets.mjs`) too, since it is generated from the same server's `SERVER.version`.
-   `test/mcp/brand-kit.mjs` pins the zip's `package.json` version against `SERVER.version` so the pair
-   cannot split apart again, the gate a #638 review round added after the first bump landed without it.
+   older export means version 1 (retroactive). A leaf whose value changes form (a baked `oklch(...)`
+   becoming a `var()` link, as in `exportRadix`'s `refs` variant) is a SHAPE change and bumps. Every bump
+   also moves `MCP_BRAND_KIT_VERSION` (`scripts/gen-mcp-assets.mjs`, generated from the server's
+   `SERVER.version`); `test/mcp/brand-kit.mjs` pins the zip's `package.json` version against
+   `SERVER.version`, so the pair cannot split.
    The `hpg-export-schema-stamp` gate in
    `test/engine/exports.mjs` asserts a HARDCODED literal against every surface (deliberately never
    `X.EXPORT_SCHEMA_VERSION` itself, reading the constant back to build the expectation would make the gate

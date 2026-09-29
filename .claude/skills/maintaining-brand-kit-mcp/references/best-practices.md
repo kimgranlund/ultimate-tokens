@@ -57,7 +57,7 @@ addition history.
   `ty.categories["UI-control"].MD.size`, `geo.sizes.MD.padding/height/icon/font`).
 - **The geometry `font` is composed from the type UI-control voice.** The test pins `geo.sizes.MD.font`
   tracks `ty.categories["UI-control"].MD.size`, one source of truth across the two systems. That
-  composition is `geometryScale(doc)`'s job (`model.mjs:39`, which passes `{ typeScale }` into `geomScale`); a
+  composition is `geometryScale(doc)`'s job (`geometryScale` in `src/ui/model.mjs`, which passes `{ typeScale }` into `geomScale`); a
   server change must not break the round-trip the test asserts.
 - **The centering law is `padding === (height − icon) / 2`.** The field is `icon` (the server's guide prose
   loosely says "glyph"); the radius ladder is the top-level `radii`, not a per-size `radius` (the per-size
@@ -75,7 +75,7 @@ addition history.
   (`src/engine/exports.js`), interpolated by `brandKit`; check the constant rather than trusting a number
   written in prose. A bump there also moves `SERVER.version` in `mcp/brand-kit-core.mjs` and, by
   regeneration, `MCP_BRAND_KIT_VERSION` in `src/ui/mcp-assets.js`, which is the version the downloaded
-  zip's `package.json` declares. `test/mcp/brand-kit.mjs` pins that last pair (#638).
+  zip's `package.json` declares. `test/mcp/brand-kit.mjs` pins that last pair.
 
 ### Validation loop
 
