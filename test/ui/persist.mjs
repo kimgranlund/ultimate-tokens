@@ -693,8 +693,13 @@ import { defaultDocument, projectView, DEFAULT_PALETTES } from "../../src/ui/mod
 // shape (hueSpace "cam16", every default row at skew 0 and lift 0) gains none through hydrateConfig,
 // against 9 through hydrateStoredDoc, the figure that proves the two seams differ. (j) is the control
 // on the stored-set side: Maison's Success still stamps #21701A through hydrateStoredDoc, the rule U1
-// ruled is unchanged, only its callers moved. Every red sub-gate joins one FAIL message, since FAIL
-// keeps one message per gate name.
+// ruled is unchanged, only its callers moved. (k) pins the wiring the helper legs cannot see: the
+// openConfigAsSet method body in src/ui/app.js calls hydrateConfig( and not hydrateStoredDoc( (an
+// HctApp method needs the DOM shim, so the source is read), and Maison through the method's real chain
+// (hydrateConfig, serialize, then openSet's hydrateStoredDoc) opens with Success unanchored: that
+// second pass is inert only because serialize() stamps schemaVersion 6 and the backfill returns at
+// >= 5. Every red sub-gate joins one FAIL message, since FAIL keeps one message per gate name.
+import { readFileSync } from "node:fs";
 import { hydrateConfig } from "../../src/ui/app-helpers.mjs";
 import { PRESETS as CAT_ARCHITECTURE } from "../../src/ui/categories/architecture.js";
 import { PRESETS as CAT_BRANDS } from "../../src/ui/categories/brands.js";
@@ -736,6 +741,14 @@ import { PRESETS as CAT_TRAVEL } from "../../src/ui/categories/travel.js";
   const maison = CAT_BRANDS.find((p) => p.name.startsWith("Maison"));
   const success = maison && hydrateStoredDoc(maison).palettes.find((p) => p.name === "Success");
   if (!success || success.anchor !== "#21701A") reach.push(`(j) Maison's Success through hydrateStoredDoc must stamp #21701A, got ${success ? JSON.stringify(success.anchor) : "no Maison preset"}`);
+
+  // (k) the wiring: the method body, from its signature to the first two-space closing brace.
+  const appSrc = readFileSync(new URL("../../src/ui/app.js", import.meta.url), "utf8");
+  const bodyAt = appSrc.indexOf("\n  openConfigAsSet(");
+  const body = bodyAt < 0 ? "" : appSrc.slice(bodyAt, appSrc.indexOf("\n  }\n", bodyAt));
+  if (!body.includes("hydrateConfig(") || body.includes("hydrateStoredDoc(")) reach.push(`(k) app.js openConfigAsSet must call hydrateConfig( and not hydrateStoredDoc(, read ${body ? `hydrateConfig ${body.includes("hydrateConfig(")} hydrateStoredDoc ${body.includes("hydrateStoredDoc(")}` : "no method"}`);
+  const chained = maison && hydrateStoredDoc(U.serialize(hydrateConfig(maison))).palettes.find((p) => p.name === "Success");
+  if (!chained || chained.anchor) reach.push(`(k) Maison through hydrateConfig, serialize and hydrateStoredDoc must open Success unanchored, got ${chained ? JSON.stringify(chained.anchor) : "no Maison preset"}`);
 
   if (reach.length) FAIL("gallery-reach", reach.join("; "));
 }

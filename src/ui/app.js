@@ -2359,9 +2359,9 @@ class HctApp extends HTMLElement {
   }
 
 
-  // openConfigAsSet, shape-clamp an (untrusted) config and open it as a new set. hydrateConfig() clamps
-  // every field and applies the legacy stamp (no hueSpace keeps cam16, as openSet does), but not #740's
-  // default-anchor backfill: its reach is the stored set list, and none of the four callers below opens one.
+  // openConfigAsSet, shape-clamp an (untrusted) config and open it as a new set via hydrateConfig() (clamp and
+  // legacy stamp, no #740 backfill: its reach is the stored set list, which none of the four callers opens).
+  // openSet's second pass through hydrateStoredDoc is inert only because serialize() stamps schemaVersion 6.
   // #644: `mintData` is opt-in per call site, NOT ambient. Only the preset-gallery tile (a genuine
   // document-CREATION path) passes `mintData: true`. The other three call sites, "Open saved palette"
   // (which promises "opens exactly as saved"), the Figma-variables approximate read, and the ⬇ Project
