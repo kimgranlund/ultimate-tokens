@@ -17,7 +17,7 @@
 // tracks the mechanism rather than being a static, uninspected number.
 //
 // `--gate-path` (#701 U1, C5): renders WITHOUT each palette's own `anchor` (the construction
-// `EVEN_DIP_BASELINE`'s `findDips` and this same file's pre-fa0264fa reading both used  -  what a
+// the since-retired `EVEN_DIP_BASELINE`'s `findDips` and this same file's pre-fa0264fa reading both used  -  what a
 // user's own non-anchored palette actually renders), at both call sites that otherwise pass
 // `anchor: pal.anchor` (READING (a)/(b) above, and the C6 (v) companion below). Omitted, the default
 // run is the RENDERED path (anchor passed), unchanged since fa0264fa.

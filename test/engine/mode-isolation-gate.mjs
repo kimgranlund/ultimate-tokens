@@ -7,6 +7,9 @@
 // renders, not a raw `paletteStops` call), and compares against the frozen fixture
 // (test/engine/fixtures/mode-isolation.json). A change that moves either fingerprint means the change
 // leaked outside even mode - U1's own C6 tripwire, not a re-derivation of chromaEnvelope's own code.
+// The fingerprint covers the curated corpus's own content as well as the engine (fingerprintMode renders the
+// corpus presets), so a red here also follows a palette-content change to any curated document or the
+// default kit: diagnose engine leak versus corpus edit before re-capturing.
 //
 // This is a full-corpus sweep (two `projectView` passes over 3,796 palettes), so per #713 it is its own
 // gate script (`npm run gate:mode-isolation`, a `gate:sweeps` member and a `sweeps` CI matrix leg), not
@@ -65,7 +68,7 @@ if (CAPTURE) {
   let sha = "unknown";
   try { sha = execFileSync("git", ["rev-parse", "HEAD"], { cwd: new URL("../..", import.meta.url) }).toString().trim(); } catch { /* detached/no-git scratch context: leave "unknown" */ }
   const fx = {
-    owner: "the plan that moves perceptual or peak re-captures this fixture in its own change and names the new sha here; #725 is that plan today (#701 revision 8)",
+    owner: "the plan that moves perceptual or peak, or edits any curated corpus document or the default kit (the fingerprint covers their rendered content), re-captures this fixture in its own change and names the new sha here; #725 is the perceptual/peak plan today (#701 revision 8)",
     capturedAt: sha,
     corpus: corpusLabel,
     perceptual,

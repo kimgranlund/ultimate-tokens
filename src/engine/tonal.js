@@ -406,8 +406,8 @@ export const EVEN_DAMP_FACTOR = 0.25;
 // slope at the anchor - one stop away (|sd| = 50/450 = 0.111) uG is already 0.406 at the shipped damp
 // 70, which is what produces both the 64 corpus + 1 default-kit lone spikes (anchor.mjs's
 // `loneSpikeStop`: 450/550 read near-achromatic while 500 sits far above them, C2) and 57 of the
-// EVEN_DIP_BASELINE's 90 named dips (a different predicate, tonal.mjs's own `findDips`, U2's to
-// retire). A neighbourhood (plateau) term multiplies uG by a smoothstep of |sd|/R that is 0 at the
+// retired EVEN_DIP_BASELINE's 90 named dips (a different predicate, tonal.mjs's own `findDips`, which
+// U2 retired). A neighbourhood (plateau) term multiplies uG by a smoothstep of |sd|/R that is 0 at the
 // anchor and 1 by R, replacing the exponent's infinite initial slope with a flat start: near the
 // anchor uG is smaller than the shipped formula gives, so the envelope (1 - damp/100*uG) is CLOSER to
 // 1 there, closing the spike without changing anything beyond R (chromaEnvelope's C5-gated cells sit
@@ -422,7 +422,7 @@ export const EVEN_DAMP_FACTOR = 0.25;
 // decimal at every r tried, since those stops sit far outside the plateau. 0.2 in `sd` units is
 // 90 stop units at lift 0, just under two of the ramp's own 50-unit steps either side of the anchor
 // (450/550 sit at 0.111, comfortably inside; 400/600 at 0.222, just outside), which is why the shoulder
-// stays clear of stops 400/600 at lift 0 only; under lift `liftStop` sets the reach, and above
+// stays clear of stops 400/600 at lift 0; under lift `liftStop` sets the reach, and above
 // `|lift|` about 14 the near-side 400 or 600 enters it ("even palettes whose 450 or 550 CAM16 C is under
 // 50% of stop 500" was already 0 at ship - the spike is a 60% shoulder, not a collapse, so R only needs
 // to reach the two innermost stops).
@@ -804,6 +804,11 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
   // evenChroma's floorRef (#701 U2, revision 14): the largest gamut ceiling among the pivot and its
   // first display step on either side (450, 550), at the tones this ramp renders them. See evenChroma's
   // own comment for why the first step, not the pivot alone, sets the level.
+  // floorRef reads all three ceilings at one hue, seedHue, one reference for the whole ramp, while each
+  // stop renders at resolvedHue plus its edge rotation (below): exact in hue at hueShift 0 on the cam16
+  // path, an approximation under edge rotation or the OKLCH per-stop hue solve. Not exact in tone for a
+  // clamped anchor: maxc500 is read at anchor.lstar while stop 500 renders at pivotTone. Reading the
+  // ceilings at each stop's rendered hue and tone is deferred to #766.
   const firstStepTone = (s) => anchorLerp(pivotTone, controls.lmax ?? 100, controls.lmin ?? 5, s, palette.skew ?? 0, palette.lift ?? 0, controls.curve, controls.tension);
   const floorRef = Math.max(maxc500, maxChromaInGamut(seedHue, firstStepTone(450)), maxChromaInGamut(seedHue, firstStepTone(550)));
   const lift = palette.lift ?? 0;
@@ -933,6 +938,10 @@ export function paletteStops(palette, controls, stops) {
   const anchorChroma = evenChroma(maxc500, intended500, envelopeAt.get(ANCHOR_STOP), controls.chromaFloor);
   // evenChroma's floorRef (#701 U2, revision 14): as in paletteStopsAnchored, the pivot's ceiling or its
   // first display step's (450, 550), whichever is larger.
+  // floorRef reads all three ceilings at one hue, baseHue (under hueSpace oklch, the hue solved once at
+  // stop 500 above), one reference for the whole ramp, while each stop renders at baseHue plus its edge
+  // rotation (below): exact for the rendered stops at hueShift 0, an approximation under edge rotation.
+  // The per-stop reading is deferred with paletteStopsAnchored's, to the issue its comment names.
   const floorRef = Math.max(maxc500, maxChromaInGamut(baseHue, toneAt(450, palette.skew, palette.lift, ctl)), maxChromaInGamut(baseHue, toneAt(550, palette.skew, palette.lift, ctl)));
   const dampAmp = controls.dampAmp ?? 0;
   return stops.map((stop) => {

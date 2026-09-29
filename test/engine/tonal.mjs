@@ -1520,9 +1520,11 @@ for (const mode of ["perceptual", "peak"]) {
   // 450, 32 at 500, 1 at 550, measured on the rendered, anchor-aware path) is retired. Its off-anchor
   // names were the old gamut-relative chroma floor (chromaFloor% * maxc at every stop) following maxc
   // DOWN toward a dark or light anchor while the damped value rose toward it, meeting in a valley one or
-  // two stops from the anchor; `evenChroma`'s floorRef (src/engine/tonal.js) caps the floor's gamut
-  // reference at the anchor stop's own ceiling, so the floor never rises moving outward and the valley
-  // cannot form. The even branch below reds on ANY dip at a stop other than 500 under its own gate name,
+  // two stops from the anchor; `evenChroma`'s floorRef (src/engine/tonal.js) takes the floor's gamut
+  // reference as the largest ceiling among stops 450, 500 and 550 (src/engine/tonal.js floorRef, one per
+  // ramp path), not the anchor stop's own ceiling (U2 pass 1's design, retired: it drained the far half
+  // toward grey), so the valley cannot form.
+  // The even branch below reds on ANY dip at a stop other than 500 under its own gate name,
   // `dip-gate-even`, with no membership test. Dips exactly AT stop 500 (the anchor under a higher group
   // basis, the notch class) are the owner's Q3 ruling: printed as a count and never asserted here.
   // findDips takes BOTH the stop set and the engine as parameters (#681 U3 review 4, R3/R4): R3 because
