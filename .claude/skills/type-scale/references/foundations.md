@@ -236,7 +236,7 @@ The engine names families as strings; the *rendering* of those families is a sep
 - **`scripts/gen-type-fonts.mjs`** fetches each family's Latin woff2 subset from Google's css2 endpoint and
   writes `type-fonts.js`. Its `FAMILIES` array (name + variable `wght` axis) is the source of truth for
   *which* faces are embedded. It is **manual** (`npm run gen:type-fonts`), not in `build`/`test`.
-- **`ensureTypeFonts()`** (in `src/ui/app.js`) injects the `<style>` once and eagerly registers all four via
+- `ensureTypeFonts()` (in `src/ui/app-helpers.mjs`) injects the `<style>` once and eagerly registers all four via
   `new FontFace(...)` + `document.fonts.add` + `load()` (the `<style>` `@font-face` path is lazy, a face
   outside the current treatment would flash the fallback on first use without the eager activation). Data
   URIs, so still offline-safe and store-compliant (`networkAccess:"none"`).
