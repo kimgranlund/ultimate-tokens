@@ -2,11 +2,11 @@
 
 | Field | Value |
 |---|---|
-| Branch | unit/dr-U1 @ 8f5153eb |
+| Branch | unit/dr-U1 @ 4201a242 |
 | Base | 5d8b1c30 (unit base), B 282fca8d |
-| Files | docs/reference/references/ui-plan.md (commit A, 8f5153eb: lines 42 to 45, the Color and Geometry rows of the section table); this handoff (commit B) |
+| Files | docs/reference/references/ui-plan.md (commit A, 8f5153eb: lines 42 to 45, the Color and Geometry rows of the section table); merge 4201a242 (plan/docs-repair @ 1e263b2f, revision 12, for P8; `.sdlc/plans` only); this handoff (commit B, then the P8 commit) |
 | Brief | `.sdlc/plans/docs-repair-U1-rediagnosis.md` §2 on plan/docs-repair at 7cba788a; criteria the U1 rows of `.sdlc/plans/docs-repair.md` at 7cba788a |
-| Ran | every row below at 8f5153eb: U1 and P rows in `.worktrees/dr-U1` and in a `--shared` clone checked out at 8f5153eb (`git rev-parse --short HEAD` printed `8f5153eb`); `npm test` once in `.worktrees/dr-U1` at 8f5153eb |
+| Ran | the `~~~sh ran` block below at 4201a242 (the Branch sha), its output pasted unedited as `~~~out ran`; the Ran table figures were measured at 8f5153eb and reproduce at 4201a242 (the merge touches `.sdlc/plans` only), except P3's file count, `741` at 4201a242. Before that, every row below at 8f5153eb: U1 and P rows in `.worktrees/dr-U1` and in a `--shared` clone checked out at 8f5153eb (`git rev-parse --short HEAD` printed `8f5153eb`); `npm test` once in `.worktrees/dr-U1` at 8f5153eb |
 | Left out | no build, no smoke (no `node_modules`; P2 owed at pre-land, U1 touches no bundled file). The negative controls of U1-5, U1-7 and U1-8 were run in the clone, never in the worktree; their output is in the Ran table. The `src/ui/app.js:1433` to `:1439` comments are untouched (outside the wall, the re-diagnosis §4 routes them to a `/file-task` chore) |
 
 Read first: U1-7 and U1-8.
@@ -38,7 +38,77 @@ Read first: U1-7 and U1-8.
 | P4 | `0`, `0`, `0`, `0` | not rerun |
 | P5 | `1`, `✓ citations: parser self-test + STALE 0 across 10 discovered docs (HEAD 8f5153eb)`, `exit 0` | not rerun |
 | P6 | `10` (U2's files), `10` | not rerun |
-| P7 | `H=8f5153eb`, `ancestor`, `0` (at commit B) | |
+| P7 | `H=4201a242`, `ancestor`, `0` (at the P8 commit) | |
+
+## Ran block (P8)
+
+Generated from the plan's U1-1 to U1-8 cells at 1e263b2f and run with `bash` at 4201a242 in `.worktrees/dr-U1`. Two choices the verifier should see. The `\|` in U1-3, U1-4 and U1-8 stays: there it is a regex escape (BRE alternation in U1-3 and U1-4, a literal pipe in U1-8's `^\| `), and removing it changes what the rows count. Line 2 sets `F`, the scratch dir U1-8 writes to, since `bash "$F/ran.sh"` does not inherit an unexported `F`.
+
+~~~sh ran
+git rev-parse --short=8 HEAD
+F=$(mktemp -d)  # scratch dir for U1-8, which writes $F/claims and $F/claims.out
+# U1-1
+grep -c '^## Revision B' docs/reference/references/ui-plan.md; grep -c 'this.section' docs/reference/references/ui-plan.md; for s in Color Typography Geometry; do grep -c "$s" docs/reference/references/ui-plan.md; done
+# U1-2
+for n in specimen typeSpecMode geomMode compare renderCompareArea renderTypeInspector renderGeomInspector radius; do printf '%s ' "$n"; grep -c "$n" docs/reference/references/ui-plan.md; done; grep -c 'id: "specimen"' src/ui/sections/typography.js; grep -c 'typeSpecMode' src/ui/sections/typography.js; grep -c 'geomMode' src/ui/sections/geometry.js; grep -c 'id: "compare"' src/ui/sections/geometry.js; grep -c 'renderCompareArea' src/ui/sections/color.js; grep -c 'renderTypeInspector' src/ui/sections/typography.js; grep -c 'renderGeomInspector' src/ui/sections/geometry.js; grep -c 'id: "radius"' src/ui/sections/geometry.js
+# U1-3
+grep -c -i 'gallery' docs/reference/references/ui-plan.md; grep -c 'CATEGORY_INDEX\|categor' docs/reference/references/ui-plan.md; grep -c 'CATEGORY_INDEX' src/ui/app.js
+# U1-4
+grep -c '5 formats\|5 format tabs' docs/reference/references/ui-plan.md; grep -c 'docs/lld/app-shell.md' docs/reference/references/ui-plan.md; grep -c 'building-editor-sections' docs/reference/references/ui-plan.md
+# U1-5
+node scripts/audit-citations.mjs | grep -A3 '=== docs/reference/references/ui-plan.md' | grep -c 'STALE 0'; grep -c -E '[a-z-]+\.(js|mjs):[0-9]+' docs/reference/references/ui-plan.md
+# U1-6
+grep -c 'Flip to' docs/reference/references/ui-plan.md; grep -c 'scrollport' docs/reference/references/ui-plan.md; wc -l < docs/reference/references/ui-plan.md
+# U1-7
+grep -c -i -E 'do(es)? not pan|don.t pan|no pan|cannot pan' docs/reference/references/ui-plan.md; for f in typography geometry; do grep -c 'this\.wirePanZoom(area)' src/ui/sections/$f.js; done; grep -c 'wirePanZoom' docs/reference/references/ui-plan.md
+# U1-8
+awk '/^## Claims/,0' .sdlc/handoffs/docs-repair-U1.md | grep -E '^\| ' | grep -v -E '^\| (Claim|---)' > "$F/claims"; [ -s "$F/claims" ] || echo NO-LEDGER; wc -l < "$F/claims" | tr -d ' '; while IFS='|' read -r _ claim needle anchor kind _; do n=$(printf '%s' "$needle" | sed 's/^ *\x60//; s/\x60 *$//'); a=$(printf '%s' "$anchor" | sed 's/\x60//g; s/ //g'); k=$(printf '%s' "$kind" | tr -d ' '); f=${a%%:*}; l=${a##*:}; case "$k" in present) c=$(sed -n "${l}p" "$f" | sed 's://.*$::' | grep -c -F -- "$n");; absent) c=$(grep -v -E '^[[:space:]]*//' "$f" | sed 's://.*$::' | grep -c -F -- "$n"); c=$([ "$c" = 0 ] && echo 1 || echo 0);; *) c=0;; esac; echo "$c $k $a $n"; done < "$F/claims" | tee "$F/claims.out" | grep -c '^0 '
+# P3
+tail -1 <(node test/repo/branding.mjs)
+~~~
+
+~~~out ran
+4201a242
+1
+1
+4
+8
+8
+specimen 3
+typeSpecMode 1
+geomMode 1
+compare 3
+renderCompareArea 1
+renderTypeInspector 1
+renderGeomInspector 1
+radius 2
+2
+3
+36
+1
+3
+2
+1
+1
+11
+3
+4
+0
+2
+1
+0
+0
+0
+0
+     271
+0
+2
+2
+1
+100
+0
+branding: clean (741 files scanned)
+~~~
 
 ## Claims
 
