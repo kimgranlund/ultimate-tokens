@@ -805,9 +805,10 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
   // first display step on either side (450, 550), at the tones this ramp renders them. See evenChroma's
   // own comment for why the first step, not the pivot alone, sets the level.
   // floorRef reads all three ceilings at one hue, seedHue, one reference for the whole ramp, while each
-  // stop renders at resolvedHue plus its edge rotation (below): exact for the rendered stops at hueShift
-  // 0 on the cam16 path, an approximation under edge rotation or the OKLCH per-stop hue solve. Reading
-  // them at each stop's rendered hue is deferred to #766.
+  // stop renders at resolvedHue plus its edge rotation (below): exact in hue at hueShift 0 on the cam16
+  // path, an approximation under edge rotation or the OKLCH per-stop hue solve. Not exact in tone for a
+  // clamped anchor: maxc500 is read at anchor.lstar while stop 500 renders at pivotTone. Reading the
+  // ceilings at each stop's rendered hue and tone is deferred to #766.
   const firstStepTone = (s) => anchorLerp(pivotTone, controls.lmax ?? 100, controls.lmin ?? 5, s, palette.skew ?? 0, palette.lift ?? 0, controls.curve, controls.tension);
   const floorRef = Math.max(maxc500, maxChromaInGamut(seedHue, firstStepTone(450)), maxChromaInGamut(seedHue, firstStepTone(550)));
   const lift = palette.lift ?? 0;
