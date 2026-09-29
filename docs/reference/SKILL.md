@@ -45,7 +45,7 @@ single-file tool.
 > plugin cascade, not an open-ended claim about every Figma version (ADR-002 is
 > time-sensitive; re-verify on an enhancing pass).
 
-**Acceptance criteria.** Twenty-seven checkable predicates, one contract criterion per
+**Acceptance criteria.** Twenty-nine checkable predicates, one contract criterion per
 load-bearing predicate in `rubrics/acceptance-criteria.md` (AC-E/T/S/X/P/U) and
 `rubrics/parity-checklist.md` (P1–P8), promoted into the contract so the gate's signal
 covers the *anti-hack* predicates (engine-math parity P6/P7, the chroma floor AC-T5, the
@@ -71,8 +71,7 @@ is **split across three cells** (engine-math parity → `color-engine`; role-tab
 `semantic-mapping`; plugin bindings/offline → `figma-plugin`) so no single child can launder a
 shared `role-table.json` into a green "three implementations agree" while the engine math
 diverges. `_entailment_check.py` proves the carving **covers** all criteria (the partial-order
-gate: **29/29 covered, 6 tickets**, the count grew from 27 when `hpg-tonal-damping-curve` and
-`hpg-tonal-edge-hue` were folded into the tonal ticket); the council's entailment lens additionally
+gate: **29/29 covered, 6 tickets**); the council's entailment lens additionally
 pressure-tested intent-entailment. Full carving + the honest-maturity note in `references/decomposition.md`.
 The six child rubric cells **and** the six capability cells are now **validated**. Two further
 **integration** cells consume them downstream and are validated against their own harnesses, NOT part
@@ -211,8 +210,8 @@ every role is aliased to its primitive, **idempotently** on re-apply).
 
 **If you are regenerating or extending the tool:**
 1. Read `references/decision-records.md` first, it tells you what *not* to change.
-2. Build from `data/role-table.json` (canonical) outward; keep the three implementations in
-   parity (`rubrics/parity-checklist.md`).
+2. Build from `data/role-table.json` (canonical) outward. If the role table is reproduced in more
+   than one implementation, check that they agree (`rubrics/parity-checklist.md`).
 3. Validate every change against `rubrics/acceptance-criteria.md`.
 
 ## Opinionated defaults
