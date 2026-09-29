@@ -24,7 +24,8 @@ Two plugins live here, per the `maintaining-figma-plugins` skill (load it before
   `gen:figma-assets`. Every other line is hand-kept: the binding loop mirrors `bind-plan.mjs`, and
   `SEMANTIC_RENAME_FROM`, `LIBRARY_TYPE_VOICE_MAP` and `GEOMETRY_FIELD_RENAME_MAP` mirror
   `migrations.mjs`, because the Figma sandbox cannot import a `.mjs` module at run time. Beside it live
-  six pure top-level `.mjs` modules, five planners and one splice helper:
+  six pure top-level `.mjs` modules: three planners (`bind-plan`, `mode-apply-plan`, `style-plan`), a
+  live diff, the migration maps and one splice helper:
   - `binder/bind-plan.mjs`: plans the COLOR alias cascade (semantic to raw, Light/Dark); the tested
     model of the binder's binding loop.
   - `binder/mode-apply-plan.mjs`: plans the Type/Geometry token write across breakpoint modes.
@@ -40,4 +41,4 @@ Two plugins live here, per the `maintaining-figma-plugins` skill (load it before
 `npm test` runs six verifiers under `test/figma/`: `binder.mjs` (`bind-plan.mjs`, plus the
 `parity`, `floatparity` and `colorparity` gates, which prove each generated section of the binder's
 `code.js` matches its canonical source), `mode-apply.mjs`, `style-plan.mjs`, `live-diff.mjs` and
-`migrations.mjs` (each over the planner it names), and `plugin.mjs` for the app-as-plugin path.
+`migrations.mjs` (each over the module it names), and `plugin.mjs` for the app-as-plugin path.

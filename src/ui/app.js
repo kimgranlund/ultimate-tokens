@@ -1431,12 +1431,12 @@ class HctApp extends HTMLElement {
   // setSection, switch the active editor section. Color is byte-identical to today; the shared viewport
   // is the one crossover, so we STASH the color pan/zoom on leave and RESTORE it on return (the old modal
   // overlaid color without touching the viewport, this preserves that round-trip). Type/geom scenes
-  // start centered (fit).
+  // start top-left inset (fit).
   setSection(id) {
     if (id === this.section) return;
     if (this.section === "color") this._colorViewport = this.viewport; // preserve the color pan/zoom
     this.section = id;
-    if (id !== "color") this.fit(); // type/geom scenes pan/zoom too (wirePanZoom) but keep no saved viewport, start centered
+    if (id !== "color") this.fit(); // type/geom scenes pan/zoom too (wirePanZoom), no saved viewport: fit() insets top-left
     else if (this._colorViewport) this.viewport = this._colorViewport; // restore color's transform on return
     if (id === "typography") ensureTypeFonts(); // lazily inject the Google Fonts, as the old modal did
     this.render();
