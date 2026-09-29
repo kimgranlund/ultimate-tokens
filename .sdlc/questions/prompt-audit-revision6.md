@@ -14,4 +14,4 @@ prompt-audit has 7 revisions. U1 to U5 are merged. Revision 7 adds U10 (S): two 
 
 Options: A continue to landing, revisions allowed for U6 to U10 and pre-land, no new scope (Recommended) · B continue, cap at 3 more · C re-plan the remainder
 
-Chosen:
+Chosen: A, "Continue to landing (Recommended)", owner via AskUserQuestion, 2026-09-29 (R67)
