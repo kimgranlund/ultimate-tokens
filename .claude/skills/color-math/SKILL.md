@@ -47,7 +47,7 @@ of `paletteStops`, which hands `perceptual`/`peak` to `okhslStops`):
 > (the `CTL` pin in `test/engine/tonal.mjs`) for the CIELAB gates and tests the OKHSL paths separately
 > (`okhsl-modes`, `vibrancy`, `cusp-pull`). knowledge-02 §2 owns the same warning, cite it.
 
-**Each path forks again on `palette.anchor` (#681, ADR-026), so there are four ramp branches, not two.**
+**Each path forks again on `palette.anchor` (ADR-026), so there are four ramp branches, not two.**
 A palette carrying a valid 6-hex `anchor` (a STORED source colour, never fitted) takes
 `paletteStopsAnchored` or `okhslStopsAnchored`. The anchor rule, which no gate will let you break:
 
@@ -68,9 +68,9 @@ A palette carrying a valid 6-hex `anchor` (a STORED source colour, never fitted)
 - Gates: `test/engine/anchor.mjs` (`anchor-identity`, `anchor-ramp`, the window and ladder
   allow-lists, `anchor-f4`). knowledge-02 §9 is the reference description; ADR-026 is the ruling.
 
-## The hue model is OKLCH-native (easy to miss: changed #117; depth in `references/foundations.md` §4)
+## The hue model is OKLCH-native (easy to miss; depth in `references/foundations.md` §4)
 
-- The per-palette `hue` param is an **OKLCH hue** by default, `DEFAULT_CONTROLS.hueSpace` (and the persist default) is `"oklch"`, flipped from `"cam16"`.
+- The per-palette `hue` param is an **OKLCH hue** by default, `DEFAULT_CONTROLS.hueSpace` (and the persist default) is `"oklch"`; `"cam16"` survives only on legacy docs that carry it explicitly.
 - The ramp still renders a **constant CAM16 hue**: `effHue(hue, hueSpace, chromaFrac)` resolves OKLCH→CAM16 **once per palette**.
 - `oklchToCam16Hue(h, chromaFrac)` is an accurate, **CHROMA-AWARE** Newton inverse of the render path, it must be chroma-aware because the OKLCH↔CAM16 hue map shifts with chroma (the **Abney effect**); a fixed or cusp-only anchor drifts (~15° vivid blues / ~11° muted hues).
 - Callers pass the palette's own chroma, `effHue(p.hue, hueSpace, p.chroma/100)`, so the identity color lands on the stored OKLCH hue to ~0.00°. Gate: **`hct-oklch-inverse`** (vivid + muted round-trip ≤3°).
@@ -88,8 +88,8 @@ A palette carrying a valid 6-hex `anchor` (a STORED source colour, never fitted)
    stops (`hue-stability`, where emitted chroma > 20). `effHue` is computed ONCE per palette and fed to every stop.
 4. **Tone monotone non-increasing** 050→950 (lift 0), all 5 curves × skew. Damping touches chroma ONLY.
 5. **Determinism.** No RNG, no clock, no locale. `VC` is computed once at load; the memo caches (`_mc`, `_pk`,
-   `_oh` in `hct.js`) key on the exact float (#686); `tonal.js`'s `okhslLAt` has no cache at all (#738: a
-   memo there was never load-bearing). Same input → identical bytes.
+   `_oh` in `hct.js`) key on the exact float; `tonal.js`'s `okhslLAt` is uncached. Same input → identical
+   bytes.
 
 ## Procedure: change → check → fix → re-check
 
@@ -100,7 +100,7 @@ A palette carrying a valid 6-hex `anchor` (a STORED source colour, never fitted)
    the matrices / the OKLab constants there. The CAM16 constants in `hct.js` and the Ottosson constants in
    `okhsl.js` are copied verbatim from their references, **do not "tidy" or re-derive them** (a wrong digit
    moves an anchor and the engine is broken). See `references/best-practices.md`.
-3. **Keep the ramp paths honest: there is now exactly ONE damping multiplier.** Since #681 U3 the
+3. **Keep the ramp paths honest: there is exactly ONE damping multiplier.** The
    per-stop multiplier is a single exported `chromaEnvelope(stop, anchorStop, lift, controls)` in
    `tonal.js`, called by all four branches (even, OKHSL, and both anchored). The C7 gate greps for
    exactly one definition and five total appearances, so a second copy under another name is a gate

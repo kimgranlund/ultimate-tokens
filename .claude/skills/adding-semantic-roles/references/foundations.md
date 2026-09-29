@@ -83,7 +83,7 @@ The role set is authored once in `semantic.js`, but its shape is independently e
 - `figma/binder/figma-semantic-binder/code.js#roleTable(n)`: a **hardcoded copy** (the Figma sandbox can't
   `import` the `.mjs`). `bind-plan.mjs` is the pure importable planner that the verifier imports; `code.js`
   replicates the same rows verbatim.
-- A scatter of **count literals** in tests + one UI label (`app.js:4046`) + spec prose.
+- A scatter of **count literals** in tests + one UI label (`src/ui/sections/color.js`, grep `semantic roles`) + spec prose.
 
 Most emitters/exports/Mapping/MCP **DERIVE** from each palette's resolved `roles`, so they need no edit, a
 new role flows through automatically. The lone exception is the **ShadCN** export (`exportShadcn`,

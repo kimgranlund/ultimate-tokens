@@ -48,24 +48,23 @@ colors→containers→surfaces→scrims); and on-color roles can be **re-pointed
    A disabled/inert on-color stays OUT of `M` on purpose (it opts out of the contrast guarantee, see how
    `-on-${n}-disabled` is absent today).
 4. **`figma/binder/figma-semantic-binder/code.js`**: `roleTable(n)` carries the same rows (the Figma
-   sandbox can't import the `.mjs`). Since TKT-0019 this is GENERATED, not hand-typed: `roleTable(n)` is
+   sandbox can't import the `.mjs`). It is GENERATED, not hand-typed: `roleTable(n)` is
    `semanticRoles()`'s own function body spliced verbatim by `scripts/gen-figma-binder-code.mjs` between
    `// === GENERATED:ROLE_TABLE ===` markers. Editing `semantic.js` in step 1 and regenerating
    (`npm test`/`npm run build` run the splice for you; run it by hand with `node
    scripts/gen-figma-binder-code.mjs`) is what puts the new row in `code.js`, there is no separate
    binder-file edit to make, and hand-editing inside the markers is actively wrong (a regenerate
    overwrites it). The binder parity gate (`test/figma/binder.mjs`) deep-equal-compares the FULL role
-   objects (`{key, suffix, light, dark}`, in order, TKT-0027) against `semantic.js` directly, so a
-   forgotten regenerate (a stale committed `code.js`) now flags as a row-count or per-field mismatch.
-5. **Count-gate literals** (grep the current count, `53` today): update every one,
-   `test/engine/semantic.mjs` (`ROLES.length !== 53`), `test/engine/exports.mjs` (`< 53 * enabledCount`),
-   `test/figma/binder.mjs` (`!== 53 * NAMES.length`), `test/figma/plugin.mjs` (the `53 roles ×…` failure
-   *message*, `semExpect` itself is derived, not a literal), `test/ui/shell.mjs` (`p.roles.length !== 53`,
-   **easy to miss**, it lives under `ui/`), `test/ui/headless-boot.mjs` (the `(s4)` `=== 53` Figma-Light
-   role count).
+   objects (`{key, suffix, light, dark}`, in order) against `semantic.js` directly, so a
+   forgotten regenerate (a stale committed `code.js`) flags as a row-count or per-field mismatch.
+5. **Count-gate literals** (the list drifts, so find them rather than trusting one):
+   `git grep -nE "\b<oldcount>\b" test` and update every role-count hit, in the engine, figma and `ui/` tests
+   alike (`test/ui/shell.mjs` is the one most often missed because it lives under `ui/`). Some tests derive
+   the count (`semExpect`, headless-boot's `ROLES`) and need no edit; assertion messages that name the
+   count do.
    If you changed the SCRIM count, also fix the scrim asserts: the `scrims.length !== 7` assert in
    `test/engine/semantic.mjs` and the `=== 7` group assert `(z)` in `headless-boot.mjs`.
-6. **`src/ui/app.js`**: the Roles inspector label (the `"… semantic roles · light / dark refs"` string;
+6. **`src/ui/sections/color.js`**: the Roles inspector label (the `"… semantic roles · light / dark refs"` string;
    grep `semantic roles`).
 7. **`docs/reference` prose**: bump CURRENT-state counts (`knowledge-03-semantic-system.md`,
    `rubrics/parity-checklist.md` P1, this repo's `CLAUDE.md`). **LEAVE historical counts**: the "36 vs 37"
@@ -97,7 +96,7 @@ npm test                         # all of the above + headless-boot (s4) + shell
 The gate that catches a stale answer key is `refs-canonical` in `semantic.mjs` (ordered key set +
 ref deep-equal). The gate that catches a half-applied count is whichever count literal you forgot,
 most often `test/ui/shell.mjs`. Don't call it done until `npm test` is green AND
-`git grep -nE "\b37\b|\b49\b" src test docs/reference | grep -i role` shows only the intentional historical
+`git grep -nE "\b<oldcount>\b" src test docs/reference | grep -i role` shows only the intentional historical
 references.
 
 ## References

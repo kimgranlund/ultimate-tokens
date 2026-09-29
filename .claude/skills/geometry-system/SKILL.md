@@ -30,18 +30,18 @@ conceptual *why* is owned by `docs/reference/geometry/README.md` (de-staled, acc
 height; block-size is the vertical lever, never block-padding (`padding-block: 0`). The full statement + its
 derivations: `references/foundations.md` §2.
 
-From that single rule fall out, mechanically: the slot pad `(height − icon)/2`, the slotless/bare-label edge
-`round(height/2)`, the icon-only **square** `minWidth = height`, and the **pill radius** `round(height/2)`. The
-`centering-law` block asserts `padding === (height − icon)/2` **exactly** (not a tolerance) for every size, it
-is a derivation, not a fit. The `.control-{size}` CSS utility **embodies** it (block-size lever, padding-block
-0, inline pad = the slotless `h/2`, pill radius).
+From that single rule fall out, mechanically: the slot pad `paddingNarrow = (height − icon)/2`, the caret/bare
+edge `paddingWide = (height − caret)/2`, the icon-only **square** `minWidth = height`, and the **pill radius**
+`round(height/2)`. The `centering-law` block asserts `paddingNarrow === (height − icon)/2` **exactly** (not a
+tolerance) for every size, it is a derivation, not a fit. The `.control-{size}` CSS utility **embodies** it
+(block-size lever, padding-block 0, inline pad = `paddingWide`, pill radius).
 
 ## THE TWO FAMILIES: density rides the rhythm, never the frame
 
 **Frame** (`icon`, `paddingNarrow`, `paddingWide`, `minWidth`, `radiusPill`) scales with the box **height**
 and is **density-invariant**; **Rhythm** (`gap` = the hand-CALIBRATED `GAP_UNIT` per size, 3·3·4·6·6·8 at
-the canonical baseHeight, × bh/28; TKT-0010 retired `font/2`) is all density may touch (`caret` rides its
-OWN height law, `3.5·h^0.39`, 2026-07-15, never `= font` and never composed). The compact pads
+the canonical baseHeight, × bh/28) is all density may touch (`caret` rides its
+OWN height law, `3.5·h^0.39`, and is never composed). The compact pads
 (`paddingNarrowCompact`/`paddingWideCompact` = the same edges with the gap absorbed) straddle the two
 families: frame formulas with the rhythm's gap inside. The full table: `references/foundations.md` §3.
 
@@ -54,8 +54,10 @@ glyph**, so density (and the type scale) must never touch it. Depth: `references
 
 `SIZES = [XS 20, SM 24, MD 28, LG 36, XL 48, 2XL 64]` (heights), **two bands** at the MD|LG seam (compact `+4`
 linear below: 20·24·28, expressive `×4/3` geometric above: 36·48·64). The glyphs scale **sublinearly** (the
-optical correction): two tuned power laws of height, `icon` (roundEven) and `font ≈ √h` (round), `caret =
-font`, that reproduce the hand-tuned reference table to **±1px**: one rule sampled six times. `CANON_MD =
+optical correction): two tuned power laws of height, `icon = 2.49·h^0.58` (roundEven) and
+`caret = 3.5·h^0.39` (round), that reproduce the hand-tuned reference table to **±1px**: one rule sampled six times.
+`font` is not a power law: it is the ratified `CONTROL_FONT` row × `baseHeight/28`, or the composed UI-control
+voice (below). `CANON_MD =
 28`; `baseHeight` scales the whole ramp by `baseHeight/28`. **`rampContrast` (0…1, default 1 = identity)
 is the responsive knob**: at 0 the expressive band loses its gear and continues the compact +4 linear step
 (bh 24 · c 0 = 18·20·24·28·32·36, a compressed mobile ramp). **Breakpoints are DESKTOP-ANCHORED and
@@ -70,8 +72,7 @@ a consumer adds in any subset, any order. The constants + the reference table: `
 **A SECOND, opt-in ramp shape exists for prototyping (issue #483, `config.ramp === RAMP_LADDER`
 ["linear4"]):** a self-contained closed-form ladder (`inset = h/4−3`, `container = h/2+6`, `icon =
 container−2`, `text = h/4+6` doubling as font AND caret) evaluating AdiaUI's scale-ladder. Its ten
-steps are named NUMERICALLY, `LADDER_SIZE_KEYS = ["0".."9"]` (owner ruling 2026-09-02, final: TWO
-earlier rulings, a 7-name t-shirt mapping, then a 10-name t-shirt mapping, were both superseded; the
+steps are named NUMERICALLY, `LADDER_SIZE_KEYS = ["0".."9"]` (a final owner ruling; the
 CSV's ten rows map onto ten CONSECUTIVE +4 steps 20·24·28·32·36·40·44·48·52·56, exported as
 `--{pfx}-size-{0..9}-{field}`, e.g. `--md-sys-size-3-height: 32px`, gen-ui-kit binds these directly).
 Step `"3"` (32px) is the MD-equivalent, `LADDER_MD_STEP`, since there is no `.MD` key on this ramp at
@@ -90,9 +91,7 @@ the two ramps' naming schemes are entirely disjoint, not overlapping strings.
    instead; every consumer that needs an ordered list (ds-export's Buttons Size-ladder row, the five
    `geomTokensX` emitters, every ordered loop in `sections/geometry.js`) routes through it.
 2. **Never assume `.sizes.MD`/`.SM`/`.LG`/etc. (any t-shirt-letter key) exists.** A bare
-   `scale.sizes.SM || Object.values(scale.sizes)[0]`-style fallback, a real, live pattern before
-   this fix, at FOUR call sites (`geomExampleCard`, `graphGeomCentering`, ds-export's `uiSize`/
-   `ctrlIcon`/`switchH` anchors, and `mcp/png-swatch-board.mjs`'s control-strip sizing), silently
+   `scale.sizes.SM || Object.values(scale.sizes)[0]`-style fallback silently
    lands on step `"0"` (the SMALLEST control) under the ladder, not any sensible letter-equivalent,
    because of the same integer-key reordering. Use `sizeAnchor(scale, "SM")` (`{ name, size }`,
    resolving the literal t-shirt name on the default ramp / its `LADDER_ANCHOR`-mapped numbered step
@@ -121,14 +120,14 @@ geometryScale(doc) = geomScale(doc.geometry, { typeScale: typeScale(doc.type) })
 
 When `opts.typeScale` is supplied, `geomScale` reads `opts.typeScale.categories["UI-control"]` and each
 step's `font` becomes the brand's **UI-control voice** at the matching step (XS→UI-control XS … 2XL→2XL,
-all six steps compose since the voice rides the full XS..2XL ramp; TKT-0008 rerouted the join off the old
-UI/Label voice); `caret` keeps its OWN power law (`3.5·h^0.39`, never composed); `gap` rides its own
-GAP_UNIT calibration (TKT-0010, no longer follows the font).
+all six steps compose since the voice rides the full XS..2XL ramp; the join reads UI-control, not Label);
+`caret` keeps its OWN power law (`3.5·h^0.39`, never composed); `gap` rides its own
+GAP_UNIT calibration, independent of the font.
 Precedence per step: `opts.fontOverrides` > the composed UI-control size > `round(CONTROL_FONT[name] ×
 factor)` (the ratified fallback row `{XS:12, SM:13, MD:15, LG:16, XL:18, 2XL:20}`). **The FRAME is
 untouched**, so the centering law still holds. The pure `geomScale(config)` (no opts) rides the
 CONTROL_FONT row standalone. Geometry's Figma emitters carry NO font rows, control text lives in the
-type/ UI-voice variables (TKT-0009). Depth + the worked walkthrough: `references/foundations.md` §5 +
+type/ UI-voice variables. Depth + the worked walkthrough: `references/foundations.md` §5 +
 `references/best-practices.md`.
 
 ## Map: what each export owns
@@ -136,7 +135,7 @@ type/ UI-voice variables (TKT-0009). Depth + the worked walkthrough: `references
 | Export (`geometry.mjs`) | Owns |
 |---|---|
 | `geomScale(config={treatment,baseHeight,rampContrast}, opts={typeScale,fontOverrides,overrides})` | the resolved scale `{treatment, label, density, radiusStyle, radiusDefault, baseHeight, rampContrast, sizes, radii, space, insets, gaps, borders, focus}` |
-| `buildSize(rawHeight, density, fontOverride)` | one ramp row, the LAW + the power law live here; `fontOverride` is the composition hook |
+| `buildSize(rawHeight, density, font, gap)` | one ramp row, the LAW + the icon/caret power laws live here; `font` and `gap` arrive pre-resolved from `geomScale` (override, then composition or calibration, then fallback) |
 | `GEOMETRY_TREATMENTS` / `DEFAULT_GEOMETRY` | the 5 presets (`comfortable/compact/spacious/touch/pill`) = density + radiusStyle + baseHeight + spaceBase; default `{comfortable, 28}` |
 | `geomTokensCSS` | `:root` custom props + the `.control-{size}` utility that embodies the law |
 | `geomTokensSizesCSS` | a SIZE-ONLY sibling of `geomTokensCSS` (issue #487), just the `--size-{step}-*` `:root` block, no radius/space/inset/gap/border/focus/density, no `.control-*` classes; bundled as `geometry-sizes.css` |
@@ -163,7 +162,7 @@ each a named `space[k]` so the tier follows the treatment's rhythm; plus stroke 
 2. **Keep the law a derivation.** Never hard-code a pad, change the inputs (`height`/`icon`) and let
    `(height − icon)/2` fall out. Never add `padding-block` to center text. `roundEven` for height/icon, `round`
    for font/caret. (`references/best-practices.md`.)
-3. **Keep density (and composition) out of the frame.** `density` multiplies `gap` only. `fontOverride`
+3. **Keep density (and composition) out of the frame.** `density` multiplies `gap` only. `fontOverrides`
    replaces `font` only; `gapOverrides` replaces `gap` only (and the compact pads re-derive from it). The
    frame (`height·icon·paddingNarrow·paddingWide·radiusPill·minWidth`) must be identical
    across densities AND between composed/standalone, the gates compare exactly that.
@@ -188,7 +187,7 @@ node test/engine/geometry.mjs   # comment-delineated groups: treatments · refer
 npm test                        # the above + ui/figma/exports + smoke gen (node test/run.mjs)
 ```
 
-The verifier asserts the law `padding === (height − icon)/2` **exactly**, the power-law ramp (±1px vs the
+The verifier asserts the law `paddingNarrow === (height − icon)/2` **exactly**, the power-law ramp (±1px vs the
 hand table), the two families (density tightens `gap`, NOT `padding`), `baseHeight` scaling, the radius/space
 ladders, all three emitters, and the **composition** (composed `font === typeScale.categories["UI-control"][name].size`,
 the frame untouched, the law still holding, `fontOverrides` winning over composition). **Don't call it done until

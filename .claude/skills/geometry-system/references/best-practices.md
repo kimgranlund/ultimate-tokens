@@ -5,8 +5,8 @@ composition history.
 
 ### The law is a derivation, not a fit: keep it that way
 
-- **`padding` is `(height − icon)/2`, never a literal, never "close enough".** The `centering-law` test
-  asserts EXACT equality (`sz.padding === (sz.height - sz.icon)/2`), and the composition test re-asserts it on
+- **`paddingNarrow` is `(height − icon)/2`, never a literal, never "close enough".** The `centering-law` test
+  asserts EXACT equality (`sz.paddingNarrow === (sz.height - sz.icon)/2`), and the composition test re-asserts it on
   the composed scale. If you ever feel like hand-tuning a pad to "look right", you have introduced a magic
   number, the right fix is to change `height` or `icon` (the inputs) and let the pad fall out. The pad is
   *forced*, not chosen.
@@ -20,7 +20,7 @@ composition history.
 ### Density rides the rhythm, ONLY the rhythm
 
 - **`density` multiplies `gap` and nothing else.** It is applied exactly once, inside `buildSize`:
-  `gap = max(1, round(GAP_UNIT[name]·(bh/28)·density))` (TKT-0010, the calibrated unit, not `font/2`).
+  `gap = max(1, round(GAP_UNIT[name]·(bh/28)·density))` (the calibrated unit, not `font/2`).
   Do **not** thread `density` into `icon`, `paddingNarrow`, `paddingWide`,
   or `radiusPill`, the frame is geometric and density-invariant. The `two-families` test compares compact vs
   comfortable **at the same height** and asserts `gap` shrinks but `padding` is **identical**. A change that
@@ -44,13 +44,13 @@ composition history.
 
 ### Composition: the frame stays untouched
 
-- **`fontOverride` may replace ONLY `font` (a rhythm member).** The composition's whole guarantee is that the
+- **`fontOverrides` may replace ONLY `font` (a rhythm member).** The composition's whole guarantee is that the
   box geometry (frame) is identical whether or not a type scale is supplied, the `composition` test asserts
-  `composed.height === standalone.height && composed.padding === standalone.padding` for every step, **and** the
+  `composed.height === standalone.height && composed.paddingNarrow === standalone.paddingNarrow` for every step, **and** the
   law still holds on the composed scale. If you let the type scale influence `height`/`icon`/`padding`, the box
   would jump when the brand's type treatment changed, and the law could break. Keep the override surgical.
 - **The join is `opts.typeScale.categories["UI-control"]`, matched by step name.** Geometry reads the
-  UI-control voice (`uiSteps[name].size`) for XS…2XL, since TKT-0008 the voice rides the full 6-step ramp,
+  UI-control voice (`uiSteps[name].size`) for XS…2XL, the voice rides the full 6-step ramp,
   so every geometry step composes; a step the voice lacks falls back to `round(CONTROL_FONT[name] × factor)`
   (`{XS:12, SM:13, MD:15, LG:16, XL:18, 2XL:20}`), and `opts.fontOverrides` wins over both. Don't assume
   index alignment; key on the name.
@@ -97,7 +97,7 @@ guards):
    so a brand's type-treatment or `bodyBase` change moves the control text everywhere it's used.
 5. **Pinned the invariant with TWO gates, not vibes.** The engine's `composition` test block asserts, per step:
    composed `font === ts.categories["UI-control"][name].size`; **height + padding (the frame) are
-   identical to the standalone scale**; the centering law `padding === (height − icon)/2` still holds on the
+   identical to the standalone scale**; the centering law `paddingNarrow === (height − icon)/2` still holds on the
    composed scale; a larger type `bodyBase` scales the geometry `font` (proving the shared source of truth);
    and `fontOverrides` wins over composition. The UI headless-boot suite then re-asserts it through the
    PRODUCTION caller (`geometryScale(doc)` + `brandKit(doc)`), so the join is gated end to end.
