@@ -1,4 +1,4 @@
-# Criteria review chroma-envelope · 🔴 not mobilizable (11 🟢, 18 🟡, 1 🔴 of 30)
+# Criteria review chroma-envelope · 🟡 mobilizable at revision 2 (25 🟢, 3 🟡, 0 🔴 of 28); revision 1 was 🔴
 
 | Field | Value |
 |---|---|
@@ -61,3 +61,47 @@ sha: 5eea7396d40664542b0b091f2cf724bf9792969e
 - 🟡 `test/engine/tonal.mjs:1190` requires exactly 5 `chromaEnvelope` occurrences (1 definition and 4 call sites). If U2's shared cap helper or U3's hold adds a call site, C2.4/C3.4 go red through C7, not through the envelope. The plan's lane and criteria should say whether C7 is re-counted.
 - 🟡 Several rows carry conditional Expecteds (C2.3, C2.7, C3.7) that let any value pass. Each needs a fixed pass value, with a miss routed to a plan revision.
 - Note: the plan names head `14a9b1cb`. `origin/main` is now `5eea7396`, which added this plan revision only.
+
+## Revision 2 at 3f298808 · 🟡 mobilizable (25 🟢, 3 🟡, 0 🔴 of 28)
+
+Re-read at `3f298808` (`origin/main`), same grade and method. Run here: the C1.4 extraction on `main` (`6e558839ee9e43217e1e2f7afc898b7b`, 17 lines, report exit 1, 3 min 30 s) and under `--damp-amp 55` (`3cf14766175041d45b2c119bc854f0da`). Checked in the tree: the new cites (`mode-isolation-gate.mjs:20-22`, `hct.js:237`, `anchor.mjs:750-754`, `tonal.mjs:314`, adapter corpus-tonal `86 to 116 s` and corpus-anchor `79 to 100 s`, `pif-u3.md:671`).
+
+verdict: 🟡
+sha: 3f298808c6e55d79210b9261d514a3a3556af506
+
+| Row | State | Evidence (the check I would run) | Negative control |
+|---|---|---|---|
+| C1.1 | 🟢 | unchanged: `npm run gate:chroma-envelope` | lowered fixture cell and `--damp-amp 55`, as before |
+| C1.2 | 🟢 | `capturedAt` names the measured engine commit, which matches the gate's own rule (`mode-isolation-gate.mjs:21`: capture writes the HEAD sha of the tree it measured) | a scratch clone at `282fca8d` with U1's gate copied in: `--capture` prints even above100 `670` |
+| C1.3 | 🟢 | `--capture` then `git diff --exit-code` | a committed `sed` edit, then capture, then `git diff --exit-code HEAD` is nonzero. This bites |
+| C1.4 | 🟢 | reproduced: the #701 C5 extraction prints `6e558839ee9e43217e1e2f7afc898b7b` on `main` | reproduced: under `--damp-amp 55` it prints `3cf14766175041d45b2c119bc854f0da` |
+| C1.5 | 🟢 | unchanged: `npm run gate:mode-isolation` and `--identity-control` | `--perturb` |
+| C1.6 | 🟢 | the `grep -c` counts, and the check script's list entry confirmed first | a `ci.yml` leg removed prints `0`; the baseline row removed makes the check exit `1` |
+| C1.7 | 🟢 | `grep -n '#725'` over the three files | `grep -c 'U2 and U3 move'` at the base prints `0` |
+| C1.8 | 🟢 | `npm test` and the repo checks | a planted U+2014 exits `1`; an uncommitted export makes `git status --porcelain` non-empty |
+| C1.9 | 🟢 | `git diff <base> -- scripts/report-preset-fidelity.mjs \| grep -c TARGET` prints `0` | an edited `TARGET` line prints `2` |
+| C2.1 | 🟢 | unchanged: the `anchorChromaBasis` probe | `main` prints `0.98` at stop 100 |
+| C2.2 | 🟢 | `--envelope` clause lines; a scratch-copy engine, not a data URL | the base engine prints `446` / `2592` |
+| C2.3 | 🟢 | fixed pass value `0` / `<= 1.000000`, any other value 🔴 | `main` prints `3119` / `15.132599` |
+| C2.4 | 🟡 | `tonal.mjs --full` and `anchor.mjs --full` exit 0 | two of the three controls are not shown to bite. (a) The 92/0.5 witness on record (`pif-u3.md:670-671`) is `(C6 i) perceptual: 2 rise(s)`, a `tonal.mjs` C6 (i) failure, not an (iii c) or `anchor.mjs` monotone failure. (b) okhsl-modes fails at `rows[k].tone > rows[k - 1].tone + 0.5` (`tonal.mjs:314`) over 19 `STOPS`, so stop 500 to 550 sits about 5 L* apart. Adding 0.02 to `l` at 550 (about 2 L*) does not cross stop 500. Rewrite: set 550's `l` above 500's `l`, and name the gate the 92/0.5 run actually reds (C6 i), or measure the (iii c) and monotone reds before the unit relies on them |
+| C2.5 | 🟢 | unchanged: `gate:mode-isolation -- --capture` and the six identity lines | old hashes red |
+| C2.6 | 🟢 | `--compare <base fixture>` prints `0 cells rose` | a raised cell prints and exits `1` |
+| C2.7 | 🟢 | `checkFloors` with a fixed pass value, a drop 🔴 | a hand-lowered floor reds |
+| C2.8 | 🟢 | `npm test` and a clean tree | an uncommitted export and a planted U+2014 |
+| C3.1 | 🟢 | unchanged (`0.7458` / `0.2375`) | `main` `0.793` / `0.413` |
+| C3.2 | 🟢 | unchanged: `--envelope` exit 0 | `--damp-amp 55`; the 70 / 1.5 scratch run |
+| C3.3 | 🟡 | now a defined point (continuous, after the hold, before the cap, rounding and `enforceMonotonePixelL`), reached through `holdTone`, `okhslToRgbFloat`, and `toneTarget`/`toneHeld` on each row. A probe can run it | the `l' = l` stub prints max above `0.01`, which bites. Concern: every figure the probe reads comes from the unit's own new code, so the probe as written checks the unit against itself. Add three independent cross-checks: `Math.round` of `okhslToRgbFloat` equals the existing `okhslToRgb` over a grid; `toneTarget` at the shipped `damp` equals `toneHeld` at `damp` 0 per stop (the basis and `l` do not read `damp`); and `lstarFromRgb` of the emitted 8-bit `rgb` sits within the rounding floor of `toneHeld` on perceptual rows |
+| C3.4 | 🟢 | `tonal.mjs --full` exit 0 | the 92/0.5 unheld engine reds this command, on record through C6 (i) (`pif-u3.md:671`), whatever the row calls the gate |
+| C3.5 | 🟡 | `anchor.mjs --full` exit 0, `monotoneOk` a true 0 | "92 / 0.5 reds `monotoneOk` on BZZR Primary" is not on record: the witness is a 0.209 L* rise in `tonal.mjs` C6 (i) on the non-anchored path, and `monotoneOk` reads pixel L* from the 8-bit hex, where a 0.2 rise can round away. Measure the stub against `anchor.mjs` before relying on it, or name a synthetic anchored control |
+| C3.6 | 🟢 | C2.5 and C2.6 with `--compare <U2 fixture>` | a raised cell |
+| C3.7 | 🟢 | fixed caps `<= 139 s` and `<= 120 s` from adapter `86 to 116 s` and `79 to 100 s`; a slower run 🔴 | an edited adapter figure makes `baseline-agrees-check.sh` exit `1` |
+| C4.1 | 🟢 | unchanged: `grep -c 'Amendment (2026-'` inside ADR-026 prints `2` | `main` prints `1` |
+| C4.2 | 🟢 | unchanged: `grep -n '#725'` reads as history | U1's present-tense strings |
+| C4.3 | 🟢 | `grep -c 725 CHANGELOG.md` `>= 1`; the issue close moved to §5 | the base prints `0` |
+| C4.4 | 🟢 | `citations.mjs` STALE `0` | a pin moved by one prints STALE `1` |
+
+### Findings (revision 2)
+
+- 🟡 C2.4 and C3.5: the stubbed and synthetic controls name gates the record does not show them reddening (the 92/0.5 witness is a `tonal.mjs` C6 (i) rise, and a +0.02 `l` bump does not cross the okhsl-modes 0.5 slack across a roughly 5 L* stop gap). The builder should measure each control before relying on it, and a control that does not bite is a finding in the handoff.
+- 🟡 C3.3: the measurement is now defined and bites, but its inputs are the unit's own exports. The three cross-checks above tie them to code the unit did not write. I will run them at U3's verdict whether or not the plan adds them.
+- No row is 🔴, so the plan can be mobilized. The three 🟡 rows are checkable as written. Their rewrites tighten the controls and do not block.
