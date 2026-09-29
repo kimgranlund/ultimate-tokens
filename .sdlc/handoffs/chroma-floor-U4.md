@@ -1,66 +1,85 @@
-# Handoff chroma-floor U4 · builder to orchestrator (pass 1, #701)
+# Handoff chroma-floor U4 · builder to orchestrator (pass 2, #701)
 
 | Field | Value |
 |---|---|
-| Branch | `unit/cf-U4` off `plan/chroma-floor`, code commit bbb72843 |
-| Files | `test/engine/tonal.mjs` (R1 comment), `docs/reference/reviews/2026-08-20-reactivity/{00-synthesis,04-context-and-messaging}.md` (R2 985), `docs/reference/SKILL.md`, `docs/reference/rubrics/acceptance-criteria.md` (R3 735-884), `src/engine/tonal.js` (F1, F4), `test/engine/mode-isolation-gate.mjs` + `fixtures/mode-isolation.json` (F3 header and owner, kept identical), `scripts/report-preset-fidelity.mjs`, `test/engine/anchor.mjs` (F4), regenerated `figma/plugin/ui.html` and `src/ui/describe-mcp-assets.js` (comment bytes only) |
-| Ran | `node test/repo/citations.mjs` 🟢 STALE 0, no NEAR; `npm test` 🟢 exit 0, `all 54 test files passed`; em-dash bytes 0 in the diff; comment and doc edits only |
-| Left out | build and smoke (no build-chain change); the F4 clause on `floorRef` taken at the base or seed hue (`tonal.js:936`, `:946`) is not a history comment and was not in the brief, so no comment was added; `.sdlc/board.md` untouched |
+| Branch | `unit/cf-U4`, `plan/chroma-floor` @ 30feb979 (revision 22) merged in at 2b33ad5c, code commit 3fdd0712 |
+| Files | `test/engine/anchor.mjs` (652-653: `KNOWN_BASELINE_DUP` live, only `EVEN_DIP_BASELINE` since-retired), `src/engine/tonal.js` (F5: both `floorRef` comments name the hue and the approximation, `#766` once at the anchored site), `docs/reference/reviews/2026-08-20-reactivity/{00-synthesis,04-context-and-messaging}.md` (R2 pin 985 to 993), `.sdlc/verdicts/chroma-floor-U4-review.md` moved by `git mv` to `.sdlc/reviews/` (R100, no rewrite), regenerated `figma/plugin/ui.html` and `src/ui/describe-mcp-assets.js` (comment bytes only) |
+| Ran | the block below at 3fdd0712 and the controls at a28b9b22 and d1db4b04; `node test/repo/citations.mjs` 🟢 STALE 0, the three pins `OK` in `scripts/audit-citations.mjs`, no new NEAR; `npm test` at the final HEAD, the commit after this handoff (result in the report to the Orchestrator, not here, since this file is in that commit) |
+| Left out | build and smoke (no build-chain change); the `floorRef` behaviour question (read at each stop's rendered hue) stays deferred to #766, no engine line changed; `.sdlc/board.md` untouched |
 
-Line pins: R2 `okhslLAt` is at 985 and both reviews cite 985. R3 `lift-monotonic` heading is 735, block-closing `}` is 884, both docs pin 735-884. Every edit sits after line 735 in `tonal.mjs` or is line-count neutral before 985 in `tonal.js`, so no pin moved.
+🟡 One criterion value moved. L4 expects `tonal.js:985` on both review lines. F5 adds four comment lines before `okhslLAt` at the anchored site and four at the `paletteStops` site, so `okhslLAt` moved from 985 to 993 and both reviews now pin 993 (`citations.mjs` reds at 985 on this tree). The leg's intent, the pin names the line `okhslLAt` is on, holds; the literal is 993. The R3 pins (`test/engine/tonal.mjs:735-884`) are in a file this pass does not touch.
+
+Reading each comment against its code: at `paletteStopsAnchored` the stop hue is `resolvedHue + shift * dir`, and `resolvedHue` is `seedHue` unless `hueSpace` is `oklch`, where `solveCam16Hue` runs per stop, so exact at hueShift 0 on cam16 only. At `paletteStops` the OKLCH solve runs once at stop 500 and sets `baseHue`, the same hue the ceilings are read at, so that site is exact at hueShift 0 in both hue spaces and its comment says edge rotation only.
+
+L1 history: `git log --follow --oneline -- .sdlc/reviews/chroma-floor-U4-review.md` prints `3fdd0712` then `a28b9b22`. At 3fdd0712 `.sdlc/reviews` holds 1 U4 record; the reviewer's `-review-p2.md` makes it 2.
 
 ~~~sh ran
-sh cmds.sh   # run at bbb72843; same at d1db4b04 in a detached checkout for the negative control
-grep -n 'function okhslLAt' src/engine/tonal.js
-/usr/bin/grep -n 'tonal.js:98[0-9]' docs/reference/reviews/2026-08-20-reactivity/00-synthesis.md docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md | cut -c1-140
-/usr/bin/grep -o 'tonal.mjs:7[0-9][0-9]-[0-9]* `lift-monotonic`\|tonal.mjs:7[0-9][0-9]-[0-9]*` lift-monotonic' docs/reference/SKILL.md docs/reference/rubrics/acceptance-criteria.md
-/usr/bin/grep -n 'lift-monotonic (#648)' test/engine/tonal.mjs | cut -c1-60
-/usr/bin/grep -n 'lift-skew\|skew-lift-okhsl (#647)' test/engine/tonal.mjs | head -1 | cut -c1-60
-/usr/bin/grep -n "evenChroma\`'s floorRef" test/engine/tonal.mjs | cut -c1-120
-/usr/bin/grep -n 'at lift 0' src/engine/tonal.js | cut -c1-100
-/usr/bin/grep -n 'EVEN_DIP_BASELINE.s 90 named' src/engine/tonal.js | cut -c1-100
-/usr/bin/grep -n 'since-retired' scripts/report-preset-fidelity.mjs | cut -c1-110
-/usr/bin/grep -n 'both since retired' test/engine/anchor.mjs | cut -c1-110
-/usr/bin/grep -n 'curated corpus' test/engine/mode-isolation-gate.mjs test/engine/fixtures/mode-isolation.json | cut -c1-130
+sh cmds.sh   # at 3fdd0712, then a28b9b22 and d1db4b04 in `git clone --shared` checkouts; no line truncated
+/usr/bin/grep -n 'export function okhslLAt' src/engine/tonal.js
+/usr/bin/grep -no 'src/engine/tonal.js:9[0-9][0-9]' docs/reference/reviews/2026-08-20-reactivity/00-synthesis.md docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md
+ls .sdlc/verdicts | /usr/bin/grep -c 'chroma-floor-U4-review'; ls .sdlc/reviews | /usr/bin/grep -c 'chroma-floor-U4-review'
+for c in EVEN_DIP_BASELINE LONE_SPIKE_ALLOW DEFAULT_KIT_SPIKE_FINDING; do git grep -c "const $c\b" -- src test scripts; done; echo "retired-const-end"
+for c in KNOWN_BASELINE_DUP DIP_BASELINE PERCEPTUAL_DIP_BASELINE; do git grep -c "const $c\b" -- src test scripts; done
+/usr/bin/grep -n 'since retired\|since-retired' test/engine/anchor.mjs test/engine/tonal.mjs src/engine/tonal.js scripts/report-preset-fidelity.mjs
+/usr/bin/grep -n 'KNOWN_BASELINE_DUP' test/engine/anchor.mjs
+/usr/bin/grep -n 'floorRef' src/engine/tonal.js | /usr/bin/grep -c 'hue'; /usr/bin/grep -c '#766' src/engine/tonal.js
+/usr/bin/grep -n 'floorRef reads all three ceilings' src/engine/tonal.js
+node test/repo/verdict-frontmatter.mjs 2>&1 | tail -1
 ~~~
 
 ~~~out ran
-# at bbb72843
-985:export function okhslLAt(lstar) {
-999:function okhslLAtChromatic(targetLstar, hue, s) {
-docs/reference/reviews/2026-08-20-reactivity/00-synthesis.md:89:- `okhslLAt` (`src/engine/tonal.js:985`) lost its module-level `_okL` memo M
-docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:71:- `_okL` (a module-level `Map`, `L*.toFixed(2) → OKHSL lightness
-docs/reference/SKILL.md:tonal.mjs:735-884 `lift-monotonic`
-docs/reference/rubrics/acceptance-criteria.md:tonal.mjs:735-884` lift-monotonic
-735:// ── hpg-tonal-lift-monotonic (#648): `lift` must not f
-886:// ── hpg-tonal-skew-lift-okhsl (#647): the per-palette 
-1523:  // two stops from the anchor; `evenChroma`'s floorRef (src/engine/tonal.js) takes the floor's gamut
-358:// dampBias/lift combination, unconditionally, not only at lift 0 (R2, revised from the first dr
-364:// R1 (reverted) measured sd against the RAW numeric anchorStop instead: exact only at lift 0, a
-423:// 90 stop units at lift 0, just under two of the ramp's own 50-unit steps either side of the an
-425:// stays clear of stops 400/600 at lift 0; under lift `liftStop` sets the reach, and above
-409:// retired EVEN_DIP_BASELINE's 90 named dips (a different predicate, tonal.mjs's own `findDips`,
-20:// the since-retired `EVEN_DIP_BASELINE`'s `findDips` and this same file's pre-fa0264fa reading both used  
-652:// KNOWN_BASELINE_DUP/EVEN_DIP_BASELINE comments (both since retired) cited as U3's shipped chromaEnvelope
-test/engine/mode-isolation-gate.mjs:10:// The fingerprint covers the curated corpus's own content as well as the engine (fingerpri
-test/engine/mode-isolation-gate.mjs:71:    owner: "the plan that moves perceptual or peak, or edits any curated corpus document or
-test/engine/fixtures/mode-isolation.json:2: "owner": "the plan that moves perceptual or peak, or edits any curated corpus document
+# at 3fdd0712
+993:export function okhslLAt(lstar) {
+docs/reference/reviews/2026-08-20-reactivity/00-synthesis.md:89:src/engine/tonal.js:993
+docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:71:src/engine/tonal.js:993
+0
+1
+retired-const-end
+test/engine/tonal.mjs:1
+test/engine/tonal.mjs:1
+test/engine/tonal.mjs:1
+test/engine/anchor.mjs:653:// as the comment of the since-retired EVEN_DIP_BASELINE also did. R2
+scripts/report-preset-fidelity.mjs:20:// the since-retired `EVEN_DIP_BASELINE`'s `findDips` and this same file's pre-fa0264fa reading both used  -  what a
+652:// (the gate the live KNOWN_BASELINE_DUP list belongs to) cite as U3's shipped chromaEnvelope shape,
+2
+1
+807:  // floorRef reads all three ceilings at one hue, seedHue, one reference for the whole ramp, while each
+940:  // floorRef reads all three ceilings at one hue, baseHue (under hueSpace oklch, the hue solved once at
+✓ verdict-frontmatter: verdicts 192 graded 192 bad 0, planted 2
 ~~~
 
 ~~~out ran
-# negative control at d1db4b04 (old lines)
+# negative control at a28b9b22 (pass 1 head)
 985:export function okhslLAt(lstar) {
-999:function okhslLAtChromatic(targetLstar, hue, s) {
-docs/reference/reviews/2026-08-20-reactivity/00-synthesis.md:89:- `okhslLAt` (`src/engine/tonal.js:983`) lost its module-level `_okL` memo M
-docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:71:- `_okL` (a module-level `Map`, `L*.toFixed(2) → OKHSL lightness
-docs/reference/SKILL.md:tonal.mjs:722-743 `lift-monotonic`
-docs/reference/rubrics/acceptance-criteria.md:tonal.mjs:722-743` lift-monotonic
-735:// ── hpg-tonal-lift-monotonic (#648): `lift` must not f
-886:// ── hpg-tonal-skew-lift-okhsl (#647): the per-palette 
-1523:  // two stops from the anchor; `evenChroma`'s floorRef (src/engine/tonal.js) caps the floor's gamut
-358:// dampBias/lift combination, unconditionally, not only at lift 0 (R2, revised from the first dr
-364:// R1 (reverted) measured sd against the RAW numeric anchorStop instead: exact only at lift 0, a
-423:// 90 stop units at lift 0, just under two of the ramp's own 50-unit steps either side of the an
-425:// stays clear of stops 400/600 at lift 0 only; under lift `liftStop` sets the reach, and above
-409:// EVEN_DIP_BASELINE's 90 named dips (a different predicate, tonal.mjs's own `findDips`, U2's to
+docs/reference/reviews/2026-08-20-reactivity/00-synthesis.md:89:src/engine/tonal.js:985
+docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:71:src/engine/tonal.js:985
+1
+0
+retired-const-end
+test/engine/tonal.mjs:1
+test/engine/tonal.mjs:1
+test/engine/tonal.mjs:1
+test/engine/anchor.mjs:652:// KNOWN_BASELINE_DUP/EVEN_DIP_BASELINE comments (both since retired) cited as U3's shipped chromaEnvelope shape. R2
+scripts/report-preset-fidelity.mjs:20:// the since-retired `EVEN_DIP_BASELINE`'s `findDips` and this same file's pre-fa0264fa reading both used  -  what a
+652:// KNOWN_BASELINE_DUP/EVEN_DIP_BASELINE comments (both since retired) cited as U3's shipped chromaEnvelope shape. R2
+0
+0
+✗ 1 verdict-frontmatter gate failure(s)
+~~~
+
+~~~out ran
+# negative control at d1db4b04 (pre-U4)
+985:export function okhslLAt(lstar) {
+docs/reference/reviews/2026-08-20-reactivity/00-synthesis.md:89:src/engine/tonal.js:983
+docs/reference/reviews/2026-08-20-reactivity/04-context-and-messaging.md:71:src/engine/tonal.js:983
+0
+0
+retired-const-end
+test/engine/tonal.mjs:1
+test/engine/tonal.mjs:1
+test/engine/tonal.mjs:1
+652:// KNOWN_BASELINE_DUP/EVEN_DIP_BASELINE comments already cite as U3's shipped chromaEnvelope shape. R2
+0
+0
+✓ verdict-frontmatter: verdicts 192 graded 192 bad 0, planted 2
 ~~~
