@@ -16,6 +16,10 @@
 // (overriding whatever the source document carries) before measuring, to prove the above-100% count
 // tracks the mechanism rather than being a static, uninspected number.
 //
+// The READING (a) corpus loop is scripts/lib/envelope-measure.mjs's `measureEnvelope` (#725 U1), the
+// same function test/engine/chroma-envelope-gate.mjs ratchets against its fixture; this report only
+// prints it against the ruled bars.
+//
 // `--gate-path` (#701 U1, C5): renders WITHOUT each palette's own `anchor` (the construction
 // the since-retired `EVEN_DIP_BASELINE`'s `findDips` and this same file's pre-fa0264fa reading both used  -  what a
 // user's own non-anchored palette actually renders), at both call sites that otherwise pass
@@ -36,14 +40,15 @@
 // is this mode's own negative control (the `--damp-amp` pattern above): it flips the last hex digit
 // of the first rendered cell on the HEAD side before the compare, so a green run can be told apart
 // from a compare that silently never ran.
-import { readFileSync, mkdtempSync, rmSync, existsSync } from "node:fs";
+import { mkdtempSync, rmSync, existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { tmpdir } from "node:os";
 import { join as pathJoin, resolve as pathResolve, dirname } from "node:path";
 import { hydrate } from "../src/ui/persist.js";
-import { defaultDocument, rampChromaOf, EXPORT_STOPS, lstarFromRgb } from "../src/ui/model.mjs";
+import { rampChromaOf, EXPORT_STOPS, lstarFromRgb } from "../src/ui/model.mjs";
 import * as T from "../src/engine/tonal.js";
+import { CATS, REPORT_STOPS, MODES, ADIA_CARVEOUT, CUSP_RUN_BOUND, percentile, measureEnvelope } from "./lib/envelope-measure.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = pathJoin(HERE, "..");
@@ -73,121 +78,10 @@ if (mode_identity) {
   // runIdentityControl always exits the process itself; nothing below this line runs for this mode.
 }
 
-const CATS = ["architecture", "brands", "cuisine", "film", "literature", "music", "nature", "travel"];
-const RT = JSON.parse(readFileSync(new URL("../docs/reference/data/role-table.json", import.meta.url), "utf8"));
-const DEFAULT_KIT_NAMES = new Set(RT.defaults.filter((d) => !/^Data \d+$/.test(d.name)).map((d) => d.name)); // the 8 semantic families, not Data 1-8
-
-// The C6 corpus: curated palettes at source chroma >= 10, plus the 8 default-kit semantic families.
-// ADIA_CARVEOUT  -  the one named, owner-ruled AUTHORED (dampAmp>0) exception (test/engine/tonal.mjs
-// carries the gating copy of this set; this script's is for REPORTING only, so a FAIL/OK line reads
-// true rather than perpetually flagging the allowed Adia population).
-const ADIA_CARVEOUT = new Set(["Adia · The product's own design system"]);
-const instances = []; // { label, presetName, pal, doc }
-let totalCurated = 0;
-for (const slug of CATS) {
-  const { PRESETS } = await import(`../src/ui/categories/${slug}.js`);
-  for (const preset of PRESETS) {
-    const doc = hydrate({ ...preset });
-    for (const pal of doc.palettes) {
-      totalCurated++;
-      if (pal.chroma >= 10) instances.push({ label: `${slug}/${preset.name}/${pal.name}`, presetName: preset.name, pal, doc });
-    }
-  }
-}
-const roleDoc = defaultDocument();
-for (const p of roleDoc.palettes) {
-  if (DEFAULT_KIT_NAMES.has(p.name)) instances.push({ label: `default/${p.name}`, presetName: null, pal: p, doc: roleDoc });
-}
-
-function percentile(sorted, p) {
-  if (sorted.length === 0) return NaN;
-  const idx = (p / 100) * (sorted.length - 1);
-  const lo = Math.floor(idx), hi = Math.ceil(idx);
-  if (lo === hi) return sorted[lo];
-  return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
-}
-
-const REPORT_STOPS = [100, 300, 700, 900];
-const MODES = ["perceptual", "peak", "even"];
-const results = {};
-const aboveWitnesses = { perceptual: [], peak: [], even: [] };
-let aboveTotal = { perceptual: 0, peak: 0, even: 0 };
-let adiaAboveTotal = { perceptual: 0, peak: 0, even: 0 };
-// CUSP_RUN_BOUND  -  perceptual's owner-ruled bound (#681 U3 pass 6, ruling (f), plan revision 20):
-// 189.3005% of stop 500's own chroma, EXACT  -  the corpus's fresh-measured worst cusp-stop excess
-// (89.3005pp, cuisine "Sushi & sashimi · the cypress counter"/primary-muted, cusp stop 650), frozen at
-// this precise value, not rounded. Even and peak keep the literal "0 above 100%" reading; perceptual is
-// reported under its own ruled clause instead (one contiguous above-anchor run, every stop in it at or
-// under this bound)  -  see test/engine/tonal.mjs's gating copy (C6 iii-b) for the enforced version; this
-// script's copy is for REPORTING only.
-const CUSP_RUN_BOUND = 1.893005;
-const perceptualRunFails = { runs: [], bound: [] }; // witnesses, non-Adia only
-
-for (const mode of MODES) {
-  const ratios = { 100: [], 300: [], 700: [], 900: [] };
-  for (const { label, presetName, pal, doc } of instances) {
-    const controls = {
-      curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax,
-      damp: doc.damp, dampCurve: doc.dampCurve,
-      dampAmp: dampAmpOverride !== null ? dampAmpOverride : doc.dampAmp,
-      dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma,
-      chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: mode,
-    };
-    const chroma = rampChromaOf(pal, doc);
-    // anchor: pal.anchor (U4 pass 2, addendum 2): this call omitted the anchor field, so every ramp it
-    // reported rendered on the NON-anchored construction regardless of whether the source preset is
-    // anchored - the same fault the dip gate had. Passing anchor through matches projectView's own call
-    // shape (src/ui/model.mjs, "the SAME resolved-chroma call" this file's own header already claimed).
-    const ramp = T.paletteStops(
-      { hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull, anchor: gatePath ? undefined : pal.anchor },
-      controls,
-      T.STOPS,
-    );
-    const at = (s) => ramp.find((r) => r.stop === s);
-    const c500 = at(500).chroma;
-    if (c500 <= 1e-9) continue; // undefined ratio at a near-zero anchor; excluded rather than divide-by-zero
-    for (const s of REPORT_STOPS) {
-      const pct = (at(s).chroma / c500) * 100;
-      ratios[s].push(pct);
-    }
-    const isAdia = ADIA_CARVEOUT.has(presetName);
-    if (mode === "perceptual") {
-      // Ruling (f): report by RUN, not by raw stop count  -  a palette's natural cusp shoulder can span
-      // several adjacent stops; only a SECOND separate run, or any stop past CUSP_RUN_BOUND, is a fail.
-      let runs = 0, inRun = false, worstRatio = 0;
-      for (const s of T.STOPS) {
-        const pct = at(s).chroma / c500;
-        if (pct > 1 + 1e-6) { if (!inRun) runs++; inRun = true; worstRatio = Math.max(worstRatio, pct); }
-        else inRun = false;
-      }
-      if (runs > 0 && isAdia) adiaAboveTotal[mode]++;
-      if (!isAdia) {
-        let bad = false;
-        if (runs > 1) { bad = true; if (perceptualRunFails.runs.length < 3) perceptualRunFails.runs.push(`${label} (${runs} runs)`); }
-        if (worstRatio > CUSP_RUN_BOUND + 1e-6) { bad = true; if (perceptualRunFails.bound.length < 3) perceptualRunFails.bound.push(`${label} (${(worstRatio * 100).toFixed(2)}%)`); }
-        if (bad) aboveTotal[mode]++;
-      }
-    } else {
-      let roseAboveHere = false;
-      for (const s of T.STOPS) {
-        const pct = (at(s).chroma / c500) * 100;
-        if (pct > 100 + 1e-6) roseAboveHere = true;
-      }
-      if (roseAboveHere) {
-        if (isAdia) adiaAboveTotal[mode]++;
-        else {
-          aboveTotal[mode]++;
-          if (aboveWitnesses[mode].length < 3) aboveWitnesses[mode].push(label);
-        }
-      }
-    }
-  }
-  results[mode] = {};
-  for (const s of REPORT_STOPS) {
-    const sorted = [...ratios[s]].sort((a, b) => a - b);
-    results[mode][s] = { median: percentile(sorted, 50), p90: percentile(sorted, 90), n: sorted.length };
-  }
-}
+// The C6 corpus and READING (a)'s loop live in scripts/lib/envelope-measure.mjs (#725 U1), which
+// test/engine/chroma-envelope-gate.mjs imports too: one measurement, two callers.
+const { instances, totalCurated, results, aboveTotal, adiaAboveTotal, aboveWitnesses, perceptualRunFails } =
+  await measureEnvelope({ dampAmpOverride, gatePath });
 
 // env(500) = 1 exactly, swept over damp/dampCurve/dampAmp/dampBias/lift/toneMode: the C6 anchor
 // property. toneMode is swept explicitly (#681 U3 review 3, N6): chromaEnvelope branches internally on
