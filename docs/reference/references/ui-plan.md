@@ -47,8 +47,8 @@ right inspector.
 | Section | Canvas | Inspector tabs | Notes |
 |---|---|---|---|
 | Color | `canvasView` of Palettes, Scrims, Mapping (the semantic-mapping table, the only table view) or Radix; `colorMode` of `system`, `light`, `dark` or `both`, where `both` renders the scene twice side by side through `renderCompareArea`, except in the Mapping view, whose table already shows both modes and renders once | palette, global and roles, plus a story tab when the document carries a curated story | the original surface of Revision A |
-| Typography | a `typeSpecMode` segment of `specimen` or `tokens`, and `typeMode` breakpoint modes (base plus each mode, `compare` labeled All when at least one mode exists) | `typeSegment` of scale, fonts and specimen, in `renderTypeInspector` | the Specimen view renders each step in the real face |
-| Geometry | a `geomSpecMode` segment of `controls` or `tokens`, and `geomMode` breakpoint modes (base plus each mode, `compare` labeled All when at least one mode exists) | `renderGeomInspector` with ramp, `radius` and space tabs | per-step text size composes from the Type scale |
+| Typography | a `typeSpecMode` segment of `specimen` or `tokens`, and `typeMode` breakpoint modes (base plus each mode, `compare` labeled All; Tablet and Mobile are live from `typeEffectiveModes` until a mode is materialized) | `typeSegment` of scale, fonts and specimen, in `renderTypeInspector` | the Specimen view renders each step in the real face |
+| Geometry | a `geomSpecMode` segment of `controls` or `tokens`, and `geomMode` breakpoint modes (base plus each mode, `compare` labeled All; Tablet and Mobile are live from `geomEffectiveModes` until a mode is materialized) | `renderGeomInspector` with ramp, `radius` and space tabs | per-step text size composes from the Type scale |
 
 Both breakpoint-mode sets sit beside Compare, which shows every breakpoint side by side and hides the
 section's whole canvas segment (`specimen` or `tokens` in Typography, `controls` or `tokens` in Geometry). Each section also has left analysis cards, routed by `renderLeftPane`. The engines
