@@ -5,8 +5,8 @@ description: >
   "open a PR", "merge and sync", "release this", or proactively when work is
   done and green. Covers the full release workflow: branch from origin/main,
   the two gates (npm test, npm run build), PR, CI watch (all four jobs:
-  build-test, panda-smoke, corpus-contrast, sweeps), squash-merge, local-main sync, plus commit guards and worktree
-  isolation for fan-outs.
+  build-test, panda-smoke, corpus-contrast, sweeps), squash-merge,
+  local-main sync, plus commit guards and worktree isolation for fan-outs.
 disable-model-invocation: false
 user-invocable: true
 ---

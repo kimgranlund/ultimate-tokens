@@ -38,7 +38,7 @@ The conceptual model, *why* aliasing is the only thing giving a live raw→seman
 2. **The sandbox can't import `.mjs`.** Figma plugin code runs in a non-module VM, so the standalone binder's
    `code.js` carries `roleTable(n)` baked in, GENERATED (spliced verbatim from
    `semanticRoles(n)`'s own function body by `scripts/gen-figma-binder-code.mjs`, between the
-   `// === GENERATED:ROLE_TABLE ===` markers); never hand-edit inside the markers.
+   `// === GENERATED:ROLE_TABLE ===` markers).
    `figma/binder/bind-plan.mjs` is the pure, importable planner the verifier tests; `code.js` mirrors it.
    Never hand-edit inside the GENERATED markers; regenerate instead (`npm test`/`npm run build` do this
    for you). They MUST stay in lockstep (`adding-semantic-roles` step 4 owns the edit; the parity gate is
@@ -69,11 +69,12 @@ versioned localStorage key, the destructive **Regroup** ALWAYS warns) → `apply
 `figma/plugin/code.js#applyBundle` creates Color Primitives + Color Roles, prunes orphans, embeds the config
 in `figma.root` pluginData. **`libraryMode` is ALWAYS an explicit boolean**, never undefined: `true`
 means "this file is a PUBLISHED library", so the apply aliases and deprecates names it no longer produces
-instead of removing them. Every prune on the apply path reads the resolved flag: `applyBundle`'s
+instead of removing them. Every prune on the apply path is guarded by the flag: `applyBundle`'s
 three-collection color VARIABLE reconcile and its Color Roles theme-MODE prune; `applyFloatPlans`' type/geometry
 variable prune and its breakpoint-MODE prune; `applyFontPrimitivesModes`' variable and Type Primitives MODE
 prunes (the mode prune reads the SAME resolved decision as the variable prune, not a raw
-`opts.libraryMode === true`); `applyStylePlans`' paint and text prunes. One
+`opts.libraryMode === true`); `applyStylePlans`' paint and text prunes. `applyBundle` and
+`applyStylePlans` read the raw `opts.libraryMode === true`, so `undefined` means the classic prune there. One
 caveat, detailed in `references/foundations.md` section 6: Regroup and `plan.retire` are
 destructive sites outside the flag by design. Regroup drops every Color Roles variable id regardless
 of `libraryMode`, so the always-warn Regroup gate says explicitly that Published library does not
