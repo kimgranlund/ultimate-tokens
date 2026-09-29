@@ -54,7 +54,7 @@ printf '%s\n' "$ISSUES" | awk -F'\t' '{p=9; n=split($3, l, ","); for (i=1; i<=n;
 | Order | Issue | Title | Kind | Pri | Size | Lane | Status | Other labels | Opened | Plans whose ticket: line is it, at any REFS tip | Open PRs closing it, or naming it in the title |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | 1 | #377 | hosted describe-palette MCP surface on the Phase B Worker (blocked: domains, accounts) | none | P3 | none | none | blocked | task | 2026-07-18T15:08:06Z | none | none |
-| 2 | #701 | fix(tonal): chromaFloor redesign so even ramps have no floor/envelope crossover dips (follow-up to #681) | bug | none | small | color-engine | claimed | none | 2026-09-19T13:28:07Z | .sdlc/plans/chroma-floor.md | none |
+| 2 | #701 | fix(tonal): chromaFloor redesign so even ramps have no floor/envelope crossover dips (follow-up to #681) | bug | none | small | color-engine | done | none | 2026-09-19T13:28:07Z | .sdlc/plans/archive/chroma-floor.md | none |
 | 3 | #725 | Chroma envelope misses its muted targets in perceptual and peak mode, and nothing gates the direction | bug | none | big | none | none | none | 2026-09-21T03:28:33Z | none | none |
 | 4 | #740 | Kits saved before #681 do not gain exact anchors on load | bug | none | small | color-engine | claimed | none | 2026-09-23T23:37:38Z | .sdlc/plans/anchor-gaps.md | #762 |
 | 5 | #744 | Hueless presets fall back to hue 0 and render mauve | bug | none | small | color-engine | none | none | 2026-09-24T12:40:42Z | none | #762 |
@@ -169,7 +169,7 @@ Every `.sdlc/plans/*.md` outside `archive/`, at the tip of every ref in the REFS
 | `.sdlc/plans/bold-labels.md` | aea59667 | plan/bold-labels@7841cf58 | #752 | approved |
 | `.sdlc/plans/chroma-floor-U2-rediagnosis.md` | afee35b3 | plan/chroma-floor@7829436e | none | none |
 | `.sdlc/plans/chroma-floor-U3-rediagnosis.md` | d756276f | plan/chroma-floor@7829436e | none | none |
-| `.sdlc/plans/chroma-floor.md` | 95dfabb8 | plan/chroma-floor@7829436e | "#701" | approved |
+| `.sdlc/plans/archive/chroma-floor.md` | 95dfabb8 | main@33bd8920 | "#701" | done |
 | `.sdlc/plans/docs-repair-U3-rediagnosis.md` | 87d27aec | plan/docs-repair@83faf7ad | "#751" | none |
 | `.sdlc/plans/docs-repair.md` | 512eb6b4 | plan/docs-repair@83faf7ad | "#751" (minted at activation, Q0: `adapter.py create --title docs-repair --label kind:chore --label lane:docs --size M`, body shortened to the units list because the plan exceeds GitHub's 65,536-character limit) | approved |
 | `.sdlc/plans/hex-oklch-dedupe.md` | 7e2a1926 | plan/docs-repair@83faf7ad | #731 | approved |
