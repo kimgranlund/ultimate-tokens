@@ -157,13 +157,14 @@ side by side, except in Mapping, whose table already shows both. The left pane h
 cards; the right pane is the inspector. Detail: `docs/reference/references/ui-plan.md` (Revision B).
 
 **Typography.** The canvas is a Specimen (each step in its real face) or a Tokens matrix (Base plus each
-breakpoint). Breakpoint modes sit beside it, and once one exists an **All** button shows every
-breakpoint side by side and hides the Specimen/Tokens switch. The inspector has Scale, Fonts and
+breakpoint). Breakpoint modes sit beside it, Tablet and Mobile by default, and an **All** button shows
+every breakpoint side by side and hides the Specimen/Tokens switch. The inspector has Scale, Fonts and
 Specimen tabs; the left pane holds the type analysis cards.
 
 **Geometry.** The canvas is Controls (a mock control at each size step) or a Tokens matrix, with the
 same breakpoint modes and All button. The inspector has Ramp, Radius and Space tabs, and each step's
-text size comes from the Type scale. The left pane holds the geometry analysis cards.
+text size composes from the Type scale (the ladder prototype ramp is the one exception). The left pane
+holds the geometry analysis cards.
 
 **Export drawer.** Five groups: Colors (ten formats), Typography (CSS, DTCG), Geometry (CSS, CSS sizes
 only, DTCG), Design System (`tokens.json`, `DESIGN.md`) and Project (Config).
