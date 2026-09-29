@@ -50,3 +50,21 @@ The five `git grep` recipes in `adding-semantic-roles` (SKILL.md 61, 81, 100; be
 ## Handoff figures re-derived at 301f281e
 
 Branding `812`, em-dash `820`, P6 unit share `23`: all match. `npm test` in a clone at 6cceeccf (no other `node test/run.mjs` running): `✓ all 53 test files passed`, exit 0, tree clean after; TESTS `53`, `ok    tests: baseline 53, test/run.mjs TESTS 53`.
+
+## Round 2
+
+PASS
+
+Reviewed unit/pa-U6 @ e1a10b08 (code ef2115bb, on the merge 3471bdbd of plan revision 9 at 2849e00f). Same tools as round 1: bash, `/usr/bin/grep`, Apple git 2.54, clones under the job tmp directory.
+
+| # | Round 1 finding | Now | Evidence |
+|---|---|---|---|
+| 1 | 🔴 `exports.js ~504` in `adding-semantic-roles/references/foundations.md` | 🟢 fixed | ef2115bb touches that one file: `` (`exportShadcn` in `src/engine/exports.js`) ``, no number. A broad sweep of the wall (`~ ?[0-9]{2,}`, `lines? ~?N`, `:NN`, `#L`) now hits only `rubric.md`'s `(~line 433)` (outside the wall, U9's) and `{XS:12, ...}` literals, which are not pins |
+| 2 | 🟡 U6-8 needle narrower than its criterion | 🟢 fixed | revision 9 adds the third leg `[a-z]\.[a-z]{2,4} ~[0-9]+`. At e1a10b08 U6-8 prints `0`, `1`. Controls run: at 60fd4668 `5`, `1` (the five pins listed in the cell); at 6cceeccf `1`, `1`, the hit being `foundations.md:90`'s `exports.js ~504` |
+| 3 | 🟢 0x08 byte in the handoff's SB9 row | 🟢 fixed | the SB9 row now reads `` (`\b` does not) ``; a control-byte scan of the handoff prints `0` |
+
+New, 🟢 Low, the planner's, not blocking: U6-8's last column (`At 60fd4668`) still reads `4`, `1` while its control cell, correctly, says `5` with the third leg.
+
+Rows re-run at e1a10b08: U6-1 `0 2 0 1 1 1`, U6-2 `1 1 0 1 0 1 2 1`, U6-3 `0 0 3 1`, U6-4 all `0`, U6-5 `1 1 1 2 1 1`, U6-6 `1 0 1 1`, U6-7 `27 238 63 238 6` then `0` (the `'*.md'` recipes grew with the merged plan and U7 records), U6-8 `0`, `1`, U6-9 `0 0 2 0 0`, groups `2 1 1 1 1`, imports `2 2 2 1 1 1 1 1 1 2 1 2 3`, `1`, U6-10 `1 1 1`. All match the plan.
+
+Handoff figures reproduced at ef2115bb: branding `818`, em-dash `826`, P3 added U+2014 lines `0`, P4 `0`, `0`, `0`, P6 added `0`, removed `39` against B with merged units and `23` over U6's thirteen files. P5 at e1a10b08: 22 ids each `1`, ERE total `40` = 22 + `18` `F<n>` rows. `npm test` in a clone at e1a10b08 (one other `node test/run.mjs` running, within the limit): `✓ all 53 test files passed`, exit 0, tree clean after.
