@@ -116,4 +116,4 @@ The U6-7 counts differ from the brief's `229` because the tree now carries revis
 
 None.
 
-npm test: `all 53 test files passed`, exit 0, tree clean after (N is 53, read from TESTS; no test file added).
+npm test at 42aa0d53 (the handoff commit on the head code commit): `✓ all 53 test files passed`, exit 0, tree clean after; N is 53 from TESTS, `test/run.mjs` unchanged against B, `ok    tests: baseline 53, test/run.mjs TESTS 53`.
