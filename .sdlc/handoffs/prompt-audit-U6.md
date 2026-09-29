@@ -1,6 +1,22 @@
 # prompt-audit U6 handoff: slice B skills
 
-Branch: unit/pa-U6 @ 5ca1ffe4 (the rewrite commit; this handoff is the next commit on the branch), off plan/prompt-audit @ f6cd69cb. Diff base B = 13346c1a9c2e7e84368f276e5f67169090f1ddaa.
+Round 2 (rework of review FAIL d205f927). Branch: unit/pa-U6, rework commit 91b6f571 on top of the pass-1 rewrite 5ca1ffe4 (this handoff is the next commit), off plan/prompt-audit @ f6cd69cb. Diff base B = 13346c1a9c2e7e84368f276e5f67169090f1ddaa.
+
+## Round 2 rework
+
+Re-derived from `src/engine/geometry.mjs` and `test/engine/geometry.mjs`, then swept all four geometry-system files.
+
+| Id | Fate | Note |
+|---|---|---|
+| F1 | applied | rubric G2 grades `caret < font` (standalone, comfortable), the two-families assert; the rhythm line says `gap` and composed `font` respond, `caret` follows its own height law |
+| F2 | applied | rubric G7 and best-practices name `2.49/0.58` (icon) and `3.5/0.39` (caret) with `CONTROL_FONT`, `GAP_UNIT`; `3.16/0.45` gone |
+| F3 | applied | best-practices: density is applied once in `geomScale`, which hands `buildSize` the resolved `gap` |
+| F4 | applied | color-math names `hydrateStoredDoc` stamping `"cam16"` on a stored doc without `hueSpace` |
+| F5 | applied | foundations ramp column is `paddingWide (caret edge)` = 4.5, 6, 7.5, 11, 16, 23; caret no longer labelled frame family |
+
+Sweep finds beyond F1 to F5: the `reference-ramp` test pins icon and font within 1 and height exactly, and pins caret only through the exact `caret's own ramp` assert, so SKILL.md, foundations and best-practices no longer say the caret constants reproduce `REF`; `since TKT-0010` dropped from best-practices.
+
+Round 2 greps: `caret === font` in rubric 0, `3.16` in rubric 0, `inside \`buildSize\`` in best-practices 0. Branding and em-dash clean, P6 added history ids 0. `npm test`: all 53 test files passed, tree clean after.
 
 ## Files
 
