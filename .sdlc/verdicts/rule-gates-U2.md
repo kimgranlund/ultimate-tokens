@@ -1,0 +1,29 @@
+# Verdict rg-U2 · 🟢
+
+Plan `rule-gates` revision 6 at `6cd0b9fd`, unit U2 (#724). Unit branch `unit/rg-U2` at `7308ffb5`, base `b3961aa9`. Verifier-l1, read-only. All runs in a detached scratch worktree at `7308ffb5` and a `git clone --shared` of it under this seat's scratchpad; `.worktrees/rg-U2` was not touched. The retired maker name is written below as "the retired name"; plants were built with an uppercased shell expansion of the lowercase repo-owner name so it never appears in this record.
+
+Load: `load averages: 49.51 24.84 21.84` at start, `37.47 29.14 24.38` at end.
+
+| # | Criterion | State | Evidence | Negative control |
+|---|---|---|---|---|
+| U2-1 (P4) | the gate opens every text file it walks past, by deny-list | 🟢 | clone of `7308ffb5`, three plants `.sdlc/records/x/run.{log,txt,foo}`: `FAIL: 3 branding violation(s) across 580 files`; after `rm -r`: `branding: clean (577 files scanned)` | base filter (`git show b3961aa9:test/repo/branding.mjs`) on the same three plants: `branding: clean (568 files scanned)` with and without them, the defect reproduced |
+| U2-1a | a `.txt` under `.sdlc/` reds on its own | 🟢 | plant `.sdlc/records/x/run.txt` only: `✗ .sdlc/records/x/run.txt: contains "<the retired name>"`, `FAIL: 1 branding violation(s) across 578 files` | base filter: the same plant stays `clean (568 files scanned)` |
+| U2-1b | a `.log` under `.sdlc/` reds on its own | 🟢 | plant `.sdlc/records/x/run.log` only: `FAIL: 1 branding violation(s) across 578 files`, the line names `run.log` | base filter: `clean (568 files scanned)` |
+| U2-1c | both banned shapes are caught in the new extensions, at `.sdlc/` root too | 🟢 | `.sdlc/run.log` (the retired name) plus `.sdlc/note.txt` (the retired domain): `FAIL: 2 branding violation(s) across 579 files`, one line per pattern | removing both returns `clean (577 files scanned)` |
+| U2-2 | the filter is a deny-list and names no text extension | 🟢 | `grep -c 'const TEXT'`, `'const BINARY'`, `-E 'BINARY = /.*\b(md\|mjs\|txt\|log)\b'`: `0`, `1`, `0` | `txt` added to `BINARY` in the clone: third grep `1`, replant gives `FAIL: 2 branding violation(s) across 578 files` naming only `run.foo` and `run.log` (the `.txt` goes uncounted) |
+| U2-4 | the deny-list is exactly the plan's list, no wider | 🟢 | literal grep for `const BINARY = /\.(woff2\|woff\|ttf\|otf\|png\|jpg\|jpeg\|gif\|ico\|webp\|zip\|pdf)$/;` prints `1`: the plan's 12 extensions in the plan's order, no `/i` flag, no `?` variants | pass-1 code `aa31dc77` carried about 30 extra extensions and `/i` (the reviewer's pass-1 finding); `e22d00ff` removed them, the literal grep would print `0` against that line |
+| U2-5 | nothing else in the file moved (design: "Nothing else in the file moves") | 🟢 | `git diff b3961aa9 -- test/repo/branding.mjs` changes only the `TEXT` line (now a 2-line comment plus `BINARY`) and the one guard line `if (BINARY.test(rel) \|\| ...` | the same diff filtered to `^[+-][^+-]` shows exactly 2 removed and 4 added lines; any edit to `SKIP_FILES`, `RECORDS` or a pattern would add a line here |
+| U2-6 | no file that must carry the name is newly flagged, and no binary is newly read | 🟢 | the 9 tracked files newly opened are `.gitattributes`, `.gitignore`, `LICENSE`, 5 `.sdlc/checks/*.sh`, `.sdlc/checks/verdict-frontmatter-grandfather.txt`, all `text/plain` by `file --mime`; the head gate prints `branding: clean (577 files scanned)`; `RECORDS` and `SKIP_FILES` unchanged | `BINARY` skips the only 6 tracked binaries (`5 png`, `1 ico`); a `file --mime-encoding` sweep of every tracked file outside `BINARY` finds `0` binaries |
+| U2-7 | the count rise matches the plan's arithmetic, re-measured at base | 🟢 | `568` (old filter) to `577` (new), a rise of `9`: the plan's 7 at `a4675242` plus `baseline-agrees-check.sh` and `verdict-frontmatter-grandfather.txt` that landed since | the plan allows the count to move with the checkout ("re-measured at the unit's base"); every one of the 9 is listed in U2-6 |
+| U2-3 | informational: checkout count against a clone's | 🟢 | scratch worktree at `7308ffb5`: `branding: clean (577 files scanned)`, `git status --short --ignored` `0`; clone: `577` | one untracked text file in the checkout moves it above the clone: U2-1a's single plant `.sdlc/records/x/run.txt` printed `across 578 files` against the clone's `577`, so a checkout carrying an untracked file would read `578` or more and the two figures would differ |
+| P1 | `npm test` green with no `node_modules`, tree byte-stable | 🟢 | clone at `7308ffb5`: `exit 0`, `✓ all 48 test files passed`, `▶ repo/branding.mjs pass`, `git status --short \| wc -l` `0` | U2-1's plants turn `branding.mjs` red with `exit 1`, the file `npm test` runs |
+| P9 | scope wall: U2 touches `test/repo/branding.mjs` and `.sdlc/` only | 🟢 | `git diff --name-only b3961aa9 \| grep -v -E -e '^test/repo/branding\.mjs$' -e '^\.sdlc/' \| wc -l` prints `0`; stat: `test/repo/branding.mjs` and `.sdlc/handoffs/rule-gates-U2.md` | plan-recorded control: `src/ui/styles.css` through U2's filter prints `1` |
+| G-rec | the unit's record carries no em dash and no retired name | 🟢 | `grep -c` of U+2014 in `.sdlc/handoffs/rule-gates-U2.md`: `0`; the branding gate, which now reads `.sdlc/`, is clean | U2-1 shows the gate reds on the name under `.sdlc/` |
+
+## Notes (not graded)
+
+- 🟡 The pass-2 handoff says `Head: e22d00ff (single commit, ...)`; the branch carries four commits over `b3961aa9` (`1867a050`, `aa31dc77`, `e22d00ff`, `7308ffb5`). Every figure it quotes reproduces exactly (`580`/`577`, `578`, `577`, `0 1 0`), so this is wording only and does not gate.
+- The reviewer's pass-1 findings (wider deny-list, counts one low) are both closed on this head by this seat's own reruns.
+
+Counts: 13 🟢, 0 🟡 graded, 0 🔴.
+verdict: 🟢

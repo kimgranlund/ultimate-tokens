@@ -1,4 +1,4 @@
-// gen-ui.mjs — build the plugin's ui.html from the offline single-file generator bundle
+// gen-ui.mjs, build the plugin's ui.html from the offline single-file generator bundle
 // + a tiny Figma bridge. The generator itself is unchanged (single source = ui-app); the
 // bridge only flips the app's `inFigma` flag when code.js announces {type:"figma-init"},
 // which reveals the app's own "⚑ Add Variables → Figma" action inside the Export drawer
@@ -34,7 +34,7 @@ const BRIDGE = `
     if(m.type==="config-loaded"){ var a=app(); if(a&&typeof a.applyLoadedConfig==="function") a.applyLoadedConfig(m.config); }
     // drift diff: code.js read the live raw-colors variables; hand them to the generator to compare.
     if(m.type==="variables-read"){ var b=app(); if(b&&typeof b.receiveLiveVariables==="function") b.receiveLiveVariables(m); }
-    // TKT-0020: the Geometry/Type counterpart — code.js read the live Geometry + Type Primitives
+    // TKT-0020: the Geometry/Type counterpart, code.js read the live Geometry + Type Primitives
     // variables; hand them to the generator so the apply gate can show a changed-value count.
     if(m.type==="float-variables-read"){ var v=app(); if(v&&typeof v.receiveLiveFloatVariables==="function") v.receiveLiveFloatVariables(m); }
     // gallery sets: code.js read the user's "Your Palettes" from figma.clientStorage (the localStorage
@@ -43,7 +43,7 @@ const BRIDGE = `
     // font availability: code.js listed Figma's usable font families; the Fonts panel marks any family
     // that isn't there (its text styles get a placeholder face, family stays variable-bound).
     if(m.type==="fonts-listed"){ var f=app(); if(f&&typeof f.receiveFigmaFonts==="function") f.receiveFigmaFonts(m.families); }
-    // apply completion: the async variable write actually FINISHED (or failed) in the sandbox — the UI's
+    // apply completion: the async variable write actually FINISHED (or failed) in the sandbox, the UI's
     // optimistic "Applying…" toast can't know when, so code.js signals back → a real "Applied N…" / error toast.
     if(m.type==="apply-done"){ var d=app(); if(d&&typeof d.onApplyDone==="function") d.onApplyDone(m); }
     if(m.type==="apply-error"){ var f=app(); if(f&&typeof f.onApplyError==="function") f.onApplyError(); }

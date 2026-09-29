@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// ds-gates.mjs — verifier for the §8 design-system export gates (src/engine/ds-gates.js).
+// ds-gates.mjs, verifier for the §8 design-system export gates (src/engine/ds-gates.js).
 // Pure, no DOM. Faithful port of design-system-author-claude-code/scripts/bundle_gates.py.
 //
 // Two fixtures:
 //   1. an EMBEDDED mini-bundle (built in-file from hex color maps → G2/G3 parity holds
-//      by construction) — always runs, CI-safe, no external files. Asserts 0 fails, then
+//      by construction), always runs, CI-safe, no external files. Asserts 0 fails, then
 //      three mutations each fire the expected gate.
-//   2. the golden Studio-54 bundle in ~/Downloads — validated when present, skipped
+//   2. the golden Studio-54 bundle in ~/Downloads, validated when present, skipped
 //      (never failed) when absent, so this test is portable to CI.
 import { dsBundleGates } from "../../src/engine/ds-gates.js";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
@@ -98,7 +98,7 @@ function buildEmbedded() {
   ].join("\n");
   const body = [
     "",
-    "# Embedded fixture — Design System",
+    "# Embedded fixture, Design System",
     "",
     "## Overview",
     "Reason over roles: {colors.primary-base}, {colors.accent}, {colors.danger}.",
@@ -229,7 +229,7 @@ if (fails.length) {
   process.exit(1);
 }
 console.log(
-  `ds-gates PASS — G0–G8/W/DIV port; embedded fixture green + 3 mutations red` +
-    (goldenRan ? "; golden Studio-54 bundle green + 3 mutations red" : "; golden bundle absent (skipped — CI-safe)")
+  `ds-gates PASS, G0–G8/W/DIV port; embedded fixture green + 3 mutations red` +
+    (goldenRan ? "; golden Studio-54 bundle green + 3 mutations red" : "; golden bundle absent (skipped, CI-safe)")
 );
 process.exit(0);

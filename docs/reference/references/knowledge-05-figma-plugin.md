@@ -1,4 +1,4 @@
-# Knowledge 05 — Figma Plugin (Cascade Binder)
+# Knowledge 05: Figma Plugin (Cascade Binder)
 
 > Topic: the companion Figma plugin that binds a `Color Roles` collection (#491; was `Color Semantic`, `Color Modes`) to existing raw
 > variables by reference, providing the live cascade that JSON import cannot.
@@ -18,7 +18,7 @@ Native Figma JSON import cannot make semantic variables **cascade** off raw edit
 semantic colors are either resolved (static) or aliased by fragile name/library-key matching.
 The plugin instead aliases each semantic role to the *actual raw Variable object* via
 `figma.variables.createVariableAlias`, which binds by reference. Editing a raw color then
-propagates to every semantic role that aliases it — a true cascade.
+propagates to every semantic role that aliases it, a true cascade.
 
 > 💡 This is the only mechanism that gives raw→semantic cascade inside Figma. The exported
 > Light/Dark JSON files are the static/portable artifact; the plugin is the live-binding
@@ -38,7 +38,7 @@ variable APIs.
 
 Constants: `RAW_COLLECTION = "Color Primitives"`, `SEMANTIC_COLLECTION = "Color Roles"` (#491),
 `PALETTES = [neutral, primary, secondary, tertiary, info, success, danger, warning, data-1 …
-data-8]` — 16 palettes at the default document (issue #503); every palette binds the same 53
+data-8]`, 16 palettes at the default document (issue #503); every palette binds the same 53
 roles regardless of brand/data.
 
 Steps:
@@ -51,14 +51,14 @@ Steps:
 4. Report bound count and any missing raw targets.
 
 On-colors and scrims follow the same fixed role table as the generator (on `050`/`200`,
-scrims on the 500 ramp, emitted `scrim/{step}`) — the plugin contains **no** contrast computation (that
+scrims on the 500 ramp, emitted `scrim/{step}`), the plugin contains **no** contrast computation (that
 logic was removed; see ADR-003).
 
 ## 4. Role-table parity
 
 The plugin's `roleTable(n)` must equal the artifact's and `semantic.js`'s `semanticRoles(n)` exactly. Validate
 every `{n}/{refPath}` target resolves against the real `Color Primitives` variable names (which use
-3-digit padding and nested `scrim/{step}` paths — ADR-016). See `rubrics/parity-checklist.md`.
+3-digit padding and nested `scrim/{step}` paths, ADR-016). See `rubrics/parity-checklist.md`.
 
 ## 5. Run instructions and failure modes
 
@@ -66,7 +66,7 @@ Run via Figma desktop → Plugins → Development → Import plugin from manifes
 `manifest.json` → run.
 
 Failure modes:
-- **Raw collection not found** — the `Color Primitives` collection must exist with that exact name.
-- **Missing raw target** — a role references a stop/scrim not present in the primitives; the
+- **Raw collection not found**: the `Color Primitives` collection must exist with that exact name.
+- **Missing raw target**: a role references a stop/scrim not present in the primitives; the
   plugin lists the first missing name. Check 3-digit padding and that scrim primitives
   (`{n}/scrim/{step}`) exist.

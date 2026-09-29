@@ -1,4 +1,4 @@
-// gen-font-test.mjs — emit a SELF-CONTAINED font-loading isolation page (font-test.html) that renders
+// gen-font-test.mjs, emit a SELF-CONTAINED font-loading isolation page (font-test.html) that renders
 // Source Serif 4 (a SERIF) seven ways, each with a sans-serif fallback, so a working method shows a SERIF
 // and a broken one shows SANS. Open it in the browser/context where fonts fail and report which rows work.
 //   node scripts/gen-font-test.mjs   →   open font-test.html
@@ -14,7 +14,7 @@ const DATAURI = `data:font/woff2;base64,${b64}`;
 
 const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
-<title>Font loading isolation — Source Serif 4</title>
+<title>Font loading isolation, Source Serif 4</title>
 <style>
   :root { color-scheme: dark; }
   body { font-family: system-ui, sans-serif; background:#0d1117; color:#e6edf3; margin:0; padding:24px; }
@@ -47,7 +47,7 @@ const html = `<!doctype html>
 </style>
 <link id="cdnlink" rel="stylesheet" href="${CDNCSS}">
 </head><body>
-<h1>Font loading isolation — Source Serif 4 <span style="font-weight:400;color:#8b949e;font-size:13px">(a serif)</span></h1>
+<h1>Font loading isolation, Source Serif 4 <span style="font-weight:400;color:#8b949e;font-size:13px">(a serif)</span></h1>
 <div class="meta">
   A working method renders <b>Yao Ming</b> as a <b>serif</b>; a broken one falls back to <b>sans-serif</b>.
   Each badge is auto-computed (rendered width vs the sans-serif fallback).<br>
@@ -57,21 +57,21 @@ const html = `<!doctype html>
 <div id="rows"></div>
 <script>
 const METHODS = [
-  { id:"serif",    cls:"f-serif",    label:"Control — system serif",        code:"font-family: serif",                                   ctrl:true },
-  { id:"sans",     cls:"f-sans",     label:"Control — system sans",         code:"font-family: sans-serif",                              ctrl:"sans" },
+  { id:"serif",    cls:"f-serif",    label:"Control, system serif",        code:"font-family: serif",                                   ctrl:true },
+  { id:"sans",     cls:"f-sans",     label:"Control, system sans",         code:"font-family: sans-serif",                              ctrl:"sans" },
   { id:"cdnlink",  cls:"f-cdnlink",  label:"A · CDN <link rel=stylesheet>", code:"Google Fonts css2 stylesheet" },
   { id:"cdnface",  cls:"f-cdnface",  label:"B · @font-face + CDN url()",    code:"src: url(fonts.gstatic.com/…woff2)" },
-  { id:"dataface", cls:"f-dataface", label:"C · @font-face + data: base64   [APP — lazy <style>]", code:"src: url(data:font/woff2;base64,…)" },
-  { id:"dataapi",  cls:"f-dataapi",  label:"D · FontFace API + data: + add+load   [APP FIX — eager]", code:"new FontFace(…data…); document.fonts.add; .load()" },
+  { id:"dataface", cls:"f-dataface", label:"C · @font-face + data: base64   [APP, lazy <style>]", code:"src: url(data:font/woff2;base64,…)" },
+  { id:"dataapi",  cls:"f-dataapi",  label:"D · FontFace API + data: + add+load   [APP FIX, eager]", code:"new FontFace(…data…); document.fonts.add; .load()" },
   { id:"cdnapi",   cls:"f-cdnapi",   label:"E · FontFace API + CDN url + add+load", code:"new FontFace(…gstatic url…); add; .load()" },
   { id:"quoted",   cls:"f-quoted",   label:"F · real name, QUOTED", code:"font-family: 'Source Serif 4', sans-serif" },
-  { id:"unquoted", cls:"f-unquoted", label:"G · real name, UNQUOTED  [THE APP BUG — Safari]", code:"font-family: Source Serif 4, sans-serif   (the digit '4' is invalid unquoted in Safari)" },
+  { id:"unquoted", cls:"f-unquoted", label:"G · real name, UNQUOTED  [THE APP BUG, Safari]", code:"font-family: Source Serif 4, sans-serif   (the digit '4' is invalid unquoted in Safari)" },
 ];
 document.getElementById("ua").textContent = "UA: " + navigator.userAgent;
 document.getElementById("online").textContent = "navigator.onLine: " + navigator.onLine;
 document.getElementById("origin").textContent = "origin: " + location.origin;
 const rowsEl = document.getElementById("rows");
-// build rows with the DOM API + textContent — the labels contain literal "<link>"/"<style>" text that
+// build rows with the DOM API + textContent, the labels contain literal "<link>"/"<style>" text that
 // innerHTML would parse as real elements and corrupt the layout.
 for (const m of METHODS) {
   const row = document.createElement("div"); row.className = "row";
@@ -97,7 +97,7 @@ function detect() {
     const applied = Math.abs(w - base) > 1;
     if (m.ctrl === true) { badge(m.id, applied ? "ok" : "fail", applied ? "serif ✓" : "no serif?!"); result[m.id] = applied; }
     else if (m.ctrl === "sans") { badge(m.id, "ref", "baseline (sans)"); result[m.id] = "baseline"; }
-    else { badge(m.id, applied ? "ok" : "fail", applied ? "SERIF — works ✓" : "sans — FAILED ✗"); result[m.id] = applied; }
+    else { badge(m.id, applied ? "ok" : "fail", applied ? "SERIF, works ✓" : "sans, FAILED ✗"); result[m.id] = applied; }
   }
   return result;
 }
@@ -132,11 +132,11 @@ document.getElementById("copy").onclick = () => {
   const out = { ua: navigator.userAgent, online: navigator.onLine, origin: location.origin,
     methods: lastResult, api: apiStatus, registered: [...document.fonts].map(f => f.family + ":" + f.status) };
   const txt = JSON.stringify(out, null, 2);
-  navigator.clipboard && navigator.clipboard.writeText(txt).then(() => alert("Copied results JSON — paste it back."), () => prompt("Copy this:", txt)) || prompt("Copy this:", txt);
+  navigator.clipboard && navigator.clipboard.writeText(txt).then(() => alert("Copied results JSON, paste it back."), () => prompt("Copy this:", txt)) || prompt("Copy this:", txt);
 };
 run();
 </script>
 </body></html>`;
 
 writeFileSync(new URL("../font-test.html", import.meta.url), html);
-console.log("wrote font-test.html  (" + (html.length / 1024).toFixed(0) + " KB) — open it in the browser/context where fonts fail");
+console.log("wrote font-test.html  (" + (html.length / 1024).toFixed(0) + " KB), open it in the browser/context where fonts fail");

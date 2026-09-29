@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// poster-strip.mjs — direct unit coverage for src/ui/app-helpers.mjs's posterStripBands(), the pure
+// poster-strip.mjs, direct unit coverage for src/ui/app-helpers.mjs's posterStripBands(), the pure
 // (no-DOM) function extracted from presetTile()'s inline width/order computation for #646: the
 // preset gallery's poster strip read neutral-heavy because a preset's DOMINANT hue is often itself
 // low-chroma (candle gold, not a vivid color), the old computation gave it an uncapped share, and a
 // fixed `enabled.slice(0, 6)` cap could silently drop the 2nd accent swatch. This file drives the
 // function directly with hand-built inputs (deterministic, no category-preset fixtures needed) to
 // pin each of the four fixes independently, then cross-checks two REAL curated presets (one
-// low-chroma dominant, one already-vivid) so the fixes are proven against real data too — the
+// low-chroma dominant, one already-vivid) so the fixes are proven against real data too, the
 // integration-level DOM assertions (presetTile() actually wiring through this function) live in
 // test/ui/headless-boot.mjs's (jj) group.
 import { POSTER_STRIP_ACCENT_FLOOR_PCT, POSTER_STRIP_MAX_BAND_PCT, POSTER_STRIP_MAX_BAND_PCT_HIGH, POSTER_STRIP_MAX_BAND_PCT_LOW, posterStripBands, posterStripDominantCap, POSTER_STRIP_CAP_CHROMA_LOW, POSTER_STRIP_CAP_CHROMA_HIGH } from "../../src/ui/app-helpers.mjs";
@@ -36,7 +36,7 @@ const chroma = (hex) => hexToOklch(hex)[1];
 const near = (a, b, tol = 0.01) => Math.abs(a - b) < tol;
 const sumOf = (bands) => bands.reduce((s, b) => s + b.width, 0);
 // the bands render as `flex:${width}` grow factors (src/ui/app.js presetTile), so a band's RENDERED
-// share is width / sum, not width — the review of #646 found the vector summed to 87.73 (66.88 for
+// share is width / sum, not width, the review of #646 found the vector summed to 87.73 (66.88 for
 // Corsa) so the "35" cap actually rendered at 40-52%. Every story-path result must now sum to 100
 // and its widest band's rendered share must respect the cap.
 const assertRendered = (label, bands) => {
@@ -51,7 +51,7 @@ const enabledOf = (preset) => paletteKeyColors(hydrate(preset)).filter((p) => p.
 
 // a hand-built 7-swatch cohort in the SAME shape paletteKeyColors() emits: 1 neutral (achromatic),
 // 1 dominant (moderate chroma, candle-gold-like), 3 supporting (low-to-moderate chroma), 2 accent
-// (the two most saturated swatches) — authored d:50/s:40/a:10, the same shape as most curated
+// (the two most saturated swatches), authored d:50/s:40/a:10, the same shape as most curated
 // presets (docs/reference/colors/categories/*.json). One MORE hierarchy swatch than the OLD 6-band
 // cap (1 neutral + 1 dominant + 3 supporting + 2 accent = 7), so selection must drop exactly one.
 const ENABLED = [
@@ -72,7 +72,7 @@ const GROUPS = [{ hier: "d", pct: 50 }, { hier: "s", pct: 40 }, { hier: "a", pct
   const names = bands.map((b) => b.name);
   ok(names.includes("accent-1") && names.includes("accent-2"), `BOTH accent swatches must survive the 6-band cap even though the cohort has 7 hierarchy+neutral entries (got ${names.join(",")})`);
   ok(names.includes("neutral") && names.includes("dominant-swatch"), `neutral + the dominant swatch must always survive too (got ${names.join(",")})`);
-  // exactly one SUPPORTING sliver is what gets dropped on overflow, never an accent — and it drops
+  // exactly one SUPPORTING sliver is what gets dropped on overflow, never an accent, and it drops
   // in AUTHORED order (the 3rd/last-listed supporting), the same truncation rule the old code used.
   const droppedSupporting = ["supporting-1", "supporting-2", "supporting-3"].filter((n) => !names.includes(n));
   ok(droppedSupporting.length === 1 && droppedSupporting[0] === "supporting-3", `exactly the LAST-authored supporting swatch is dropped on overflow (got dropped=${JSON.stringify(droppedSupporting)})`);
@@ -82,17 +82,17 @@ const GROUPS = [{ hier: "d", pct: 50 }, { hier: "s", pct: 40 }, { hier: "a", pct
 {
   const bands = posterStripBands(ENABLED, GROUPS);
   const byName = Object.fromEntries(bands.map((b) => [b.name, b]));
-  // dominant's authored share (50% * 92% = 46%) uncapped would swamp the strip — clamped to ITS
+  // dominant's authored share (50% * 92% = 46%) uncapped would swamp the strip, clamped to ITS
   // chroma-scaled cap (~0.092 chroma sits between the 0.02 and 0.15 endpoints, so strictly 35..45).
   const domCap = posterStripDominantCap(byName["dominant-swatch"].key);
   ok(domCap > POSTER_STRIP_MAX_BAND_PCT_LOW + 1 && domCap < POSTER_STRIP_MAX_BAND_PCT_HIGH - 1, `test setup: the cohort's moderate-chroma dominant gets a cap strictly between the endpoints (got ${domCap.toFixed(2)})`);
   ok(near(byName["dominant-swatch"].width, domCap), `the dominant band is clamped to its chroma-scaled cap (want ${domCap.toFixed(2)}, got ${byName["dominant-swatch"].width.toFixed(2)})`);
-  // accent's authored share (10% * 92% / 2 = 4.6% each) uncapped would be a sliver — floored up.
+  // accent's authored share (10% * 92% / 2 = 4.6% each) uncapped would be a sliver, floored up.
   ok(byName["accent-1"].width >= POSTER_STRIP_ACCENT_FLOOR_PCT - 0.01 && byName["accent-2"].width >= POSTER_STRIP_ACCENT_FLOOR_PCT - 0.01,
     `both accent bands are floored to at least the accent floor (want >= ${POSTER_STRIP_ACCENT_FLOOR_PCT}, got ${byName["accent-1"].width.toFixed(2)}/${byName["accent-2"].width.toFixed(2)})`);
   ok(near(byName.neutral.width, 8), `neutral keeps its fixed 8% backdrop share untouched by the clamp/floor pass (got ${byName.neutral.width.toFixed(2)})`);
   // the clamp's surplus + the floor's deficit must net out somewhere on the two surviving
-  // supporting bands (the only flexible, non-locked, non-floored bands left) — neither goes negative.
+  // supporting bands (the only flexible, non-locked, non-floored bands left), neither goes negative.
   ok(byName["supporting-1"].width > 0 && byName["supporting-2"].width > 0, `redistribution never pushes a flexible band negative (got ${byName["supporting-1"].width.toFixed(2)}/${byName["supporting-2"].width.toFixed(2)})`);
   assertRendered("hand-built cohort", bands);
 }
@@ -135,7 +135,7 @@ const GROUPS = [{ hier: "d", pct: 50 }, { hier: "s", pct: 40 }, { hier: "a", pct
 // ── fix 3: width additionally weighted by each swatch's OWN OKLCH chroma ───────────────────────
 {
   // two supporting swatches authored the SAME group (so an identical pre-chroma base width), but
-  // different chroma — the more saturated one must end up wider once chroma weighting applies.
+  // different chroma, the more saturated one must end up wider once chroma weighting applies.
   const vividSupportingKey = "#2B4B37";   // chroma ~0.051
   const mutedSupportingKey = "#8C9094";   // chroma ~0.008
   ok(chroma(vividSupportingKey) > chroma(mutedSupportingKey), "test setup: the two probe supporting swatches really do differ in chroma");
@@ -145,7 +145,7 @@ const GROUPS = [{ hier: "d", pct: 50 }, { hier: "s", pct: 40 }, { hier: "a", pct
   ok(vivid.width > muted.width, `a more saturated band renders WIDER than a less saturated one authored under the same hierarchy group (vivid=${vivid.width.toFixed(2)}, muted=${muted.width.toFixed(2)})`);
 
   // a UNIFORMLY muted cohort (every non-neutral swatch desaturated to the same low chroma) must
-  // render IDENTICALLY to a uniformly vivid cohort at the same authored pcts — fix 3 only shifts
+  // render IDENTICALLY to a uniformly vivid cohort at the same authored pcts, fix 3 only shifts
   // width by RELATIVE chroma differences within a preset, never by a preset's absolute saturation.
   const uniformLow = ENABLED.map((p) => (p.name === "neutral" ? p : { ...p, key: "#8C9094" }));   // all non-neutral chroma ~0.008
   const uniformHigh = ENABLED.map((p) => (p.name === "neutral" ? p : { ...p, key: "#913029" }));  // all non-neutral chroma ~0.132
@@ -412,5 +412,5 @@ const GROUPS = [{ hier: "d", pct: 50 }, { hier: "s", pct: 40 }, { hier: "a", pct
 }
 
 if (fails.length) { console.error(`poster-strip FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
-console.log("poster-strip PASS: posterStripBands() holds all four #646 fixes directly — never drops the 2nd accent (fix 2), clamps the dominant to a chroma-scaled 35..45 cap + floors accent bands via proportional redistribution (fix 1), weights width by relative chroma without shifting a uniformly-saturated cohort (fix 3), and pins neutral first and the highest-chroma band last (fix 4) — plus the review fold-ins: a capitalized Neutral + colorRole-less top-up still fill 6 bands (Maison), and every story-path vector sums to 100 with the widest band's rendered share under the cap (Corsa's worst case, War and Peace, Hero)");
+console.log("poster-strip PASS: posterStripBands() holds all four #646 fixes directly, never drops the 2nd accent (fix 2), clamps the dominant to a chroma-scaled 35..45 cap + floors accent bands via proportional redistribution (fix 1), weights width by relative chroma without shifting a uniformly-saturated cohort (fix 3), and pins neutral first and the highest-chroma band last (fix 4), plus the review fold-ins: a capitalized Neutral + colorRole-less top-up still fill 6 bands (Maison), and every story-path vector sums to 100 with the widest band's rendered share under the cap (Corsa's worst case, War and Peace, Hero)");
 process.exit(0);

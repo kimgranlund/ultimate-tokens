@@ -1,4 +1,4 @@
-// adia-derived-exports.mjs — the gate on the two PINNED derived export artifacts (#631):
+// adia-derived-exports.mjs, the gate on the two PINNED derived export artifacts (#631):
 //   docs/reference/data/adia-oklch-export.css   (adia-oklch-export@X.Y.Z)
 //   docs/reference/data/adia-radix-export.mjs   (adia-radix-export@X.Y.Z)
 //
@@ -9,19 +9,19 @@
 // it still speaks when run on its own (`node test/engine/adia-derived-exports.mjs`, the negative-
 // control path) rather than after the `npm test` regen chain:
 //
-//   (bytes)       the committed file is exactly what the generator produces today — a hand-edit of
+//   (bytes)       the committed file is exactly what the generator produces today, a hand-edit of
 //                 an artifact (the thing the DO NOT EDIT banner forbids) fails here, anywhere in the
 //                 file, not just in the header. No sha256 is hard-coded: a legitimate engine move
 //                 changes the bytes and bumps the artifact version (R-2), and the published hash
 //                 lives in the PR body / the tag, not in a test that would then be a second place
 //                 to update. The invariant is "generated, not hand-written", not "frozen forever".
 //   (schema)      line 1 is still the exporter's OWN schema comment, carrying the LIVE
-//                 EXPORT_SCHEMA_VERSION — a consumer sniffs the same first line as a drawer download,
+//                 EXPORT_SCHEMA_VERSION, a consumer sniffs the same first line as a drawer download,
 //                 so the provenance splice must never push it down or rewrite it.
 //   (provenance)  line 2 names the artifact and its version, and the block carries the four facts
 //                 R-2 makes normative (version, source tag + commit, generator + call, regenerate cmd).
 //   (radix-keys)  the Radix module's `semanticTokens.colors` keys are EXACTLY the document's palette
-//                 slugs plus exportRadix's 7 reserved alias keys — the #630 collision check in test
+//                 slugs plus exportRadix's 7 reserved alias keys, the #630 collision check in test
 //                 form: a palette named e.g. "Gray" would be silently overwritten by the `gray` alias
 //                 and vanish from the published artifact.
 //   (esm-import)  the .mjs actually imports under Node and default-exports the preset object (the
@@ -45,7 +45,7 @@ import { gateReport } from "../gate-report.mjs";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DATADIR = join(HERE, "..", "..", "docs", "reference", "data");
 // The committed Adia document is the fitted SIXTEEN-family one (8 core + 8 data, #618 commit
-// 770297b) — #631's own text says "eight", which undercounts what the tagged document contains
+// 770297b), #631's own text says "eight", which undercounts what the tagged document contains
 // (plan R-F). Pinned here so a family silently disappearing from brands.json is a red gate and a
 // deliberate re-count + version bump, not a quiet shrink of a published artifact.
 const EXPECTED_PALETTES = 16;
@@ -59,7 +59,7 @@ for (const row of ARTIFACTS) {
   try {
     committed.set(row.name, readFileSync(join(DATADIR, row.file), "utf8"));
   } catch {
-    FAIL("bytes", `docs/reference/data/${row.file} is missing — run \`npm run gen:adia-exports\``);
+    FAIL("bytes", `docs/reference/data/${row.file} is missing, run \`npm run gen:adia-exports\``);
   }
 }
 
@@ -75,7 +75,7 @@ for (const row of ARTIFACTS) {
     FAIL(
       "bytes",
       `${row.file} differs from the generator's output at line ${line} (committed ${text.length} chars, ` +
-        `generated ${want.text.length}) — the file was hand-edited, or gen:adia-exports was not re-run. ` +
+        `generated ${want.text.length}), the file was hand-edited, or gen:adia-exports was not re-run. ` +
         "Run `npm run gen:adia-exports` and commit the result.",
     );
   }
@@ -96,18 +96,18 @@ for (const row of ARTIFACTS) {
     if (!head.includes(fact)) FAIL("provenance", `${row.file} header does not carry ${JSON.stringify(fact)}`);
 }
 
-// ── (radix-keys) the 23-key assertion — nothing lost to an alias collision (#630) ─────────────
+// ── (radix-keys) the 23-key assertion, nothing lost to an alias collision (#630) ─────────────
 const doc = adiaDoc();
 const slugs = paletteSlugs(doc);
 if (slugs.length !== EXPECTED_PALETTES)
-  FAIL("radix-keys", `the Adia document has ${slugs.length} enabled palettes, want ${EXPECTED_PALETTES} (${SOURCE_FILE} changed — re-count, then bump the artifact versions)`);
+  FAIL("radix-keys", `the Adia document has ${slugs.length} enabled palettes, want ${EXPECTED_PALETTES} (${SOURCE_FILE} changed, re-count, then bump the artifact versions)`);
 
 const radixText = committed.get("adia-radix-export");
 let preset = null;
 if (radixText != null) {
   const json = radixText.slice(radixText.indexOf("export default ") + "export default ".length).replace(/;\s*$/, "");
   try { preset = JSON.parse(json); }
-  catch (e) { FAIL("radix-keys", `adia-radix-export.mjs does not parse as \`export default <JSON>;\` — ${e.message}`); }
+  catch (e) { FAIL("radix-keys", `adia-radix-export.mjs does not parse as \`export default <JSON>;\`, ${e.message}`); }
 }
 if (preset) {
   const keys = Object.keys(preset?.theme?.extend?.semanticTokens?.colors || {});
@@ -127,7 +127,7 @@ try {
   if (!d || typeof d !== "object") FAIL("esm-import", "adia-radix-export.mjs has no default-exported object");
   else if (!d.theme?.extend?.semanticTokens?.colors) FAIL("esm-import", "the imported default has no theme.extend.semanticTokens.colors");
 } catch (e) {
-  FAIL("esm-import", `adia-radix-export.mjs does not import under Node — ${e.message}`);
+  FAIL("esm-import", `adia-radix-export.mjs does not import under Node, ${e.message}`);
 }
 
 // ── REPORT ──

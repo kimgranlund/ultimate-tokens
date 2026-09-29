@@ -1,19 +1,19 @@
-# Product boilerplate — describe Ultimate Tokens anywhere
+# Product boilerplate: describe Ultimate Tokens anywhere
 
 The reusable description ladder, shortest first. Pick the longest rung the surface allows; edit
-nothing mid-use — if a rung reads wrong somewhere, fix it here for everywhere. Facts:
+nothing mid-use, if a rung reads wrong somewhere, fix it here for everywhere. Facts:
 [`../fact-sheet.md`](../fact-sheet.md). Posture: **landing/store** (§4).
 
 **One-liner (≤60 chars, taglines/titles)**
 
 ```
-Perceptual color, type & geometry — as tokens you ship.
+Perceptual color, type & geometry, as tokens you ship.
 ```
 
 **Alternate one-liner (thesis form)**
 
 ```
-Design tokens, derived — not guessed.
+Design tokens, derived, not guessed.
 ```
 
 **Short (≤155 chars, meta descriptions / directory listings)**
@@ -26,23 +26,23 @@ Derive OKLCH-true color, type & geometry systems from one source. Export to CSS,
 
 > Ultimate Tokens is a perceptual design-token generator. Pick a key color and it derives an even,
 > OKLCH-true tonal ramp, mapped to 53 semantic roles across light and dark. Compose a type scale and
-> a geometry system from the same source, then export everything — CSS, DTCG, Tailwind, shadcn,
-> Panda CSS, Radix, Figma variables, MCP, a design system for Claude, Stitch, or Figma Make —
+> a geometry system from the same source, then export everything, CSS, DTCG, Tailwind, shadcn,
+> Panda CSS, Radix, Figma variables, MCP, a design system for Claude, Stitch, or Figma Make,
 > perfectly in sync. Free to start.
 
 **Long (the full paragraph, about pages / press)**
 
 > Ultimate Tokens turns a few perceptual decisions into a complete design system. Color is
-> modeled where human vision is even — OKLCH-native, HEX derived only for output — so a single key
+> modeled where human vision is even, OKLCH-native, HEX derived only for output, so a single key
 > color becomes a measured tonal ramp and 53 semantic roles, resolved for light and dark in one pass.
 > Typography and geometry compose from the same source: eleven type voices on a modular scale, a size
-> ramp built on one centering law. Every export — CSS custom properties, W3C design tokens, Tailwind,
+> ramp built on one centering law. Every export, CSS custom properties, W3C design tokens, Tailwind,
 > shadcn, Panda CSS, Radix, Figma variables (with bound paint & text style swatches), and a
 > Brand-Kit MCP server your AI agents read directly, each under whichever naming convention your
-> team already uses — is the same
+> team already uses, is the same
 > decision, exported twice; it cannot drift. The
-> same kit also exports as a design system — `tokens.json`, a `DESIGN.md` generation prompt, and preview
-> cards — in a target each for Claude (`claude.ai/design` and Claude Code), Google Stitch, and Figma
+> same kit also exports as a design system, `tokens.json`, a `DESIGN.md` generation prompt, and preview
+> cards, in a target each for Claude (`claude.ai/design` and Claude Code), Google Stitch, and Figma
 > Make, so whichever AI design tool you reach for generates on-brand screens from your system. It
 > runs in the browser, works offline, needs no sign-up,
 > and your work never leaves your machine but the license check. Free to start; Pro is $39/year;
@@ -50,9 +50,9 @@ Derive OKLCH-true color, type & geometry systems from one source. Export to CSS,
 
 **Audience angles (append one sentence to Medium when the surface has a known reader)**
 
-- *Design engineers:* "The exports are the source of truth — drop the same tokens into CSS and Figma
+- *Design engineers:* "The exports are the source of truth, drop the same tokens into CSS and Figma
   without a hand-off."
-- *Studios:* "One brand kit per client, every export in sync — Studio covers 5 seats for $149/year."
+- *Studios:* "One brand kit per client, every export in sync, Studio covers 5 seats for $149/year."
 - *AI-tooling readers:* "Point Claude Code, Cursor, or any MCP agent at your kit and it builds with
-  your exact roles instead of guessing a hex — or install the free Ultimate Tokens Claude plugin so
+  your exact roles instead of guessing a hex, or install the free Ultimate Tokens Claude plugin so
   the agent knows which of the 53 roles belongs on each surface."
