@@ -23,27 +23,27 @@ No source, test, script, generated or skill file moved since 6c7598f7. `git diff
 
 ## Findings from the pass 1 verdict
 
-| Finding | State | Evidence |
-|---|---|---|
-| 1, U11-4 cell | 🟢 | handoff `:42` reads `0, 1, 1, 2`; measured here `0`, `1`, `1`, `2`. The "not in this tree" clause is gone |
-| 2, U11-7 control | 🟢 | handoff `:45` names what the builder did not run: pass 1 ran none of P1's, P3's, P6's controls; pass 2 ran P3's and P6's; P1's control was not run by the builder and is cited from the pass 1 verdict. `:30` states `npm test` itself was not run in pass 2 |
-| Header names its head | 🟢 | `:5` names af5e7400, which is the parent of 158fa7e0 (`git log -1 --format=%P 158fa7e0`); `:6` states the handoff commit is its child and changes only this file (true: `git show --name-only 158fa7e0`); `:7` says rows were measured at af5e7400, and 158fa7e0 differs from it only in the handoff, so every figure holds at the head |
+| Finding | State | Evidence | Negative control |
+|---|---|---|---|
+| 1, U11-4 cell | 🟢 | handoff `:42` reads `0, 1, 1, 2`; measured here `0`, `1`, `1`, `2`. The "not in this tree" clause is gone | pass 1 cell `0, 1` at 6c7598f7 would disagree with the measured `1`, `2` |
+| 2, U11-7 control | 🟢 | handoff `:45` names what the builder did not run: pass 1 ran none of P1's, P3's, P6's controls; pass 2 ran P3's and P6's; P1's control was not run by the builder and is cited from the pass 1 verdict. `:30` states `npm test` itself was not run in pass 2 | pass 1 cell `not separately run` at 6c7598f7 names no gate |
+| Header names its head | 🟢 | `:5` names af5e7400, which is the parent of 158fa7e0 (`git log -1 --format=%P 158fa7e0`); `:6` states the handoff commit is its child and changes only this file (true: `git show --name-only 158fa7e0`); `:7` says rows were measured at af5e7400, and 158fa7e0 differs from it only in the handoff, so every figure holds at the head | `git diff --name-only af5e7400 158fa7e0` lists one file; a second path there would void `:6` |
 
 ## Criteria, run by this seat
 
-| Row | Handoff | Measured at 158fa7e0 | State |
-|---|---|---|---|
-| U11-1 | `0, 1, 2, 15 13 2` | `0`, `1`, `2`, `15 13 2` | 🟢 |
-| U11-2 | `0, 1, 1, 1` | `0`, `1`, `1`, `1` | 🟢 |
-| U11-3 | `0, 0, 1, 1, 0, 15` | `0`, `0`, `1`, `1`, `0`, `15` | 🟢 |
-| U11-4 | `0, 1, 1, 2` | `0`, `1`, `1`, `2`; control file at `1818bf59~1` first grep `1` | 🟢 |
-| U11-5 | `0, 1, 1, 1` | `0`, `1`, `1`, `1` | 🟢 |
-| U11-6 | `4, 0, 1, sorted` | `4`, `0`, `1`, `sorted` (`2026-09-26`, `2026-09-28`, `2026-09-29`, `2026-09-29`); control at `1818bf59~1` undated count `1` | 🟢 |
-| U11-7 P1 legs 2 to 5 | `54`, `0`, `0`, `ok tests 54 = 54` | `54`, `0`, `0`, `ok    tests: baseline 54, test/run.mjs TESTS 54` | 🟢 |
-| U11-7 P3 | `950`, `958`, `exit 0`, `0` | `branding: clean (950 files scanned)`, `em-dash: clean (958 files scanned)`, `exit 0`, `0`; control (ADR copied to `.sdlc/verdicts/prompt-audit-x.md` in the clone) `FAIL: 3 branding violation(s) across 951 files` | 🟢 |
-| U11-7 P6 | added `0`, removed `41`, baseline `1` | `0`, `41`, `1` over `.sdlc/baseline.md` (the build row revision 23 expects); fixture `+the rule (TKT-0010)` prints `1` | 🟢 |
-| P4 | `0, 0, 0` | `0`, `0`, `0` | 🟢 |
-| Tree | clean | `git status --short` `0` before and after | 🟢 |
+| Row | Handoff | Evidence (measured at 158fa7e0) | State | Negative control |
+|---|---|---|---|---|
+| U11-1 | `0, 1, 2, 15 13 2` | `0`, `1`, `2`, `15 13 2` | 🟢 | not run by this seat (pass 1 controls cited) |
+| U11-2 | `0, 1, 1, 1` | `0`, `1`, `1`, `1` | 🟢 | not run by this seat (pass 1 controls cited) |
+| U11-3 | `0, 0, 1, 1, 0, 15` | `0`, `0`, `1`, `1`, `0`, `15` | 🟢 | not run by this seat (pass 1 controls cited) |
+| U11-4 | `0, 1, 1, 2` | `0`, `1`, `1`, `2` | 🟢 | file at `1818bf59~1`: first grep `1` |
+| U11-5 | `0, 1, 1, 1` | `0`, `1`, `1`, `1` | 🟢 | not run by this seat (pass 1 controls cited) |
+| U11-6 | `4, 0, 1, sorted` | `4`, `0`, `1`, `sorted` (`2026-09-26`, `2026-09-28`, `2026-09-29`, `2026-09-29`) | 🟢 | file at `1818bf59~1`: undated count `1` |
+| U11-7 P1 legs 2 to 5 | `54`, `0`, `0`, `ok tests 54 = 54` | `54`, `0`, `0`, `ok    tests: baseline 54, test/run.mjs TESTS 54` | 🟢 | `"scrimX` control needs `npm test`, not run (lead's brief); pass 1 verdict: `exit 1` |
+| U11-7 P3 | `950`, `958`, `exit 0`, `0` | `branding: clean (950 files scanned)`, `em-dash: clean (958 files scanned)`, `exit 0`, `0` | 🟢 | ADR copied to `.sdlc/verdicts/prompt-audit-x.md` in the clone: `FAIL: 3 branding violation(s) across 951 files` |
+| U11-7 P6 | added `0`, removed `41`, baseline `1` | `0`, `41`, `1` over `.sdlc/baseline.md` (the build row revision 23 expects) | 🟢 | fixture `+the rule (TKT-0010)`: `1` |
+| P4 | `0, 0, 0` | `0`, `0`, `0` | 🟢 | six-name fixture not rerun; pass 1 verdict: `3` |
+| Tree | clean | `git status --short` `0` before and after | 🟢 | the clone's edit never touched this tree: `0` after its removal |
 
 ## Notes, non-blocking
 
