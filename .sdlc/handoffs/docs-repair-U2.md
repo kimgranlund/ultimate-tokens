@@ -4,10 +4,10 @@
 |---|---|
 | Branch | unit/dr-U2 @ 441a8638 |
 | Base | plan/docs-repair @ 1e263b2f (merged into the unit at c1d09fb9) |
-| Files at 441a8638 | docs/reference/references/glossary.md (the Section, Inspector and Analysis card rows) |
+| Files at 441a8638 | every file the unit changed against its base 5d8b1c30: docs/reference/SKILL.md, docs/reference/references/spec-draft.md, docs/reference/references/glossary.md, docs/reference/rubrics/acceptance-criteria.md, docs/reference/rubrics/quality-rubric.md; pass 2 itself touched only glossary.md (the Section, Inspector and Analysis card rows) |
 | Files in this handoff commit | .sdlc/handoffs/docs-repair-U2.md |
 | Ran | every U2 row and P3 at 441a8638 in `.worktrees/dr-U2`, as the `~~~sh ran` block below, output pasted unedited into `~~~out ran`; `npm test` at 441a8638, `✓ all 50 test files passed`, exit 0, `git status --short` empty after |
-| Left out | `npm run build` and smoke (owed at pre-land, no `node_modules`); F2 (`all ten` in two contract checks) and F4 (`ui-plan.md`, on unit/dr-U1) per the re-diagnosis; per-row negative controls are the plan's stated ones and were not re-run here |
+| Left out | `npm run build` and smoke (owed at pre-land, no `node_modules`); F2 (`all ten` in two contract checks) and F4 (`ui-plan.md`, on unit/dr-U1) per the re-diagnosis; the per-row negative controls and P8 (a) and (b) were run, results in the Negative controls section |
 | Decisions | Section row: `this.section` is never persisted (`persist.js` carries no `section` key), the frame around it is invariant. Inspector row: `.seg-example` pins a live example, `exampleArtifacts` (`app.js`), `typeExampleCard`, `geomExampleCard`. Analysis card row: built by `analysisCards`, `typeAnalysisCards` or `geomAnalysisCards`, picked by `renderLeftPane` on `this.section` |
 
 ## Ran
