@@ -2,12 +2,12 @@
 
 | Field | Value |
 |---|---|
-| Branch | `unit/cf-U5` off `plan/chroma-floor` @ b25da145 (revision 25); fix commit e7c86afe |
-| Files | `test/engine/anchor.mjs:651-652` (H1), `src/engine/tonal.js:318,327-329` (cap condition; `:318` joins the old `:318-319` so the file keeps 1359 lines and `okhslLAt` stays at 994), `test/engine/tonal.mjs:1526` (one line for one line), `docs/reference/SKILL.md:95` and `docs/reference/rubrics/acceptance-criteria.md:25` (pin `301-327`), `test/engine/mode-isolation-gate.mjs:21-25`, regenerated `figma/plugin/ui.html` and `src/ui/describe-mcp-assets.js` (comment bytes only) |
+| Branch | `unit/cf-U5` off `plan/chroma-floor` @ b25da145 (revision 25); fix commit e7c86afe; round 2 baseline fix e05baf9e |
+| Files | `test/engine/anchor.mjs:651-652` (H1), `src/engine/tonal.js:318,327-329` (cap condition; `:318` joins the old `:318-319` so the file keeps 1359 lines and `okhslLAt` stays at 994), `test/engine/tonal.mjs:1526` (one line for one line), `docs/reference/SKILL.md:95` and `docs/reference/rubrics/acceptance-criteria.md:25` (pin `301-327`), `test/engine/mode-isolation-gate.mjs:21-25`, regenerated `figma/plugin/ui.html` and `src/ui/describe-mcp-assets.js` (comment bytes only); round 2: `.sdlc/baseline.md` build row KB cell 4130.1 to 4130.3 and a U5 correction note |
 | Ran | the block below at e7c86afe with the same block at 38bd0dea as control; `node scripts/audit-citations.mjs` exit 0, STALE 0, NEAR 11 at both b25da145 and e7c86afe with an identical NEAR set (`diff` empty); `node test/repo/citations.mjs` `STALE 0`; `npm test` on the e7c86afe tree `✓ all 54 test files passed`, exit 0; the final-head run goes in the report to the Orchestrator |
 | Left out | build and smoke (no build-chain change); `.sdlc/board.md` and the plan untouched |
 
-🟡 `sh .sdlc/checks/baseline-agrees-check.sh` now prints `STALE ui.html: baseline 4130.1 KB, tree 4130.3 KB` (stale total 2, was 1 with `time test` only). The tonal.js comment bytes ride into the bundle. C12 already allows the `ui.html` line alone to be STALE on an engine change; the baseline is not edited here.
+Round 2 (e05baf9e): at e7c86afe `baseline-agrees-check.sh` printed `STALE ui.html: baseline 4130.1 KB, tree 4130.3 KB` (stale total 2), because the tonal.js comment bytes are inlined into the bundle. C12 at pre-land expects the `time test` line as the only STALE (revision 20), so the build row's KB cell moves to 4130.3, the figure `npm test` printed twice (`wrote figma/plugin/ui.html 4130.3 KB`) and the check measures. No `node_modules` in the worktree, so no `npm run build`.
 
 ## Claims per changed sentence
 
@@ -103,6 +103,10 @@ sh claims.sh e7c86afe; sh claims.sh 38bd0dea
 for root in "$W" "$T/base"; do node norise.mjs $root; node norise.mjs $root --no-ref; node unimodal.mjs $root; done
 git diff 38bd0dea e7c86afe -- '*.js' '*.mjs' ':!figma/plugin/ui.html' ':!src/ui/describe-mcp-assets.js' | grep -E '^[-+]' | grep -vE '^(\+\+\+|---)' | grep -vE '^[-+]\s*//' | wc -l
 printf '+  const x = 1;\n+// comment\n' | grep -E '^[-+]' | grep -vE '^[-+]\s*//' | wc -l   # nc control
+# round 2: the check with e7c86afe's baseline.md swapped in (control), then at e05baf9e
+git show e7c86afe:.sdlc/baseline.md > .sdlc/baseline.md; sh .sdlc/checks/baseline-agrees-check.sh | grep -E 'STALE|stale total'; git checkout -- .sdlc/baseline.md
+sh .sdlc/checks/baseline-agrees-check.sh | tail -3; sh .sdlc/checks/baseline-agrees-check.sh | grep 'ui.html'
+node -e 'console.log((require("fs").readFileSync("figma/plugin/ui.html","utf8").length/1024).toFixed(1))'
 ~~~
 
 ~~~out ran
@@ -257,4 +261,16 @@ hues 360 non-unimodal 0
 == nc
 0
 1
+
+== round 2, baseline check at e7c86afe (before) and at e05baf9e (after)
+# at e7c86afe baseline.md
+STALE ui.html: baseline 4130.1 KB, tree 4130.3 KB
+STALE time test: baseline 167 to 268 s, adapter 80 to 89 s
+stale total: 2
+# at e05baf9e
+note  head: baseline ref 37b04676, the tree moved outside .sdlc/ and .gitignore since the baseline ran, so the numbers are unproven at this head
+ok    head: baseline ref 37b04676 is in origin/main's history
+stale total: 1
+ok    ui.html: baseline 4130.3 KB, tree 4130.3 KB
+4130.3
 ~~~
