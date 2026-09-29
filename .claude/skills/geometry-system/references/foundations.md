@@ -17,7 +17,7 @@ config {treatment, baseHeight}
       height = roundEven(rawHeight)        # the one free input per row; everything below is DERIVED
       icon   = roundEven(2.49·height^0.58) # frame family, a power law
       font   = fontOverrides[name] ?? the composed UI-control size ?? round(CONTROL_FONT[name]·factor)   # rhythm family
-      caret  = round(3.5·height^0.39)      # its OWN power law (never composed, never = font; < font at every standalone step)
+      caret  = round(3.5·height^0.39)      # its OWN power law (never composed, never derived from font; < font at every step of the default ramp)
       gap    = max(1, round(GAP_UNIT[name]·(bh/28)·density))  # rhythm, the calibrated unit (3·3·4·6·6·8
                                                           # at bh 28); density rides HERE, only here
       paddingNarrow = (height − icon)/2    # THE CENTERING LAW (slot edge)
@@ -64,8 +64,8 @@ columns (the ratified matrix) ride `opts.gapOverrides` as FINAL values. It is de
 out of the frame:
 the frame is geometric (proportional to height), and **scaling the frame would un-center the glyph**, the slot
 pad `(height − icon)/2` only centers the icon if neither side is rescaled. The `two-families` test block pins
-this: at the **same** height, compact's `gap < ` comfortable's `gap`, but `padding` is **identical** (`density
-does NOT change the frame padding`). If a change makes density move `padding`/`icon`/`radius`, the square
+this: at the **same** height, compact's `gap < ` comfortable's `gap`, but `paddingNarrow` is **identical** (`density
+does NOT change the frame padding`). If a change makes density move the pads/`icon`/`radius`, the square
 breaks and the law is violated.
 
 ### 4. THE POWER-LAW RAMP: one rule sampled six times
@@ -90,7 +90,7 @@ font  = the CONTROL_FONT row {XS:12, SM:13, MD:15, LG:16, XL:18, 2XL:20} × fact
 
 The icon rule reproduces the hand-tuned reference ramp to **±1px**, so the table is not six hand-picked
 points, it is **one rule sampled six times**, and it generalizes to any scaled `baseHeight`. The
-`reference-ramp` test block checks the engine output against the hand table `REF` (icon ±1, font ±1, height exact; the caret is pinned by its own exact-ramp assert)
+`reference-ramp` test block checks the engine output against the hand table `REF` (icon ±1, font ±1, height exact; the caret is pinned at SM..2XL by its own exact-ramp assert)
 and that heights strictly increase XS→2XL. The reference ramp (comfortable @ baseHeight 28, standalone):
 
 | size | height | icon | caret | font | paddingNarrow (slot) | paddingWide (caret edge) | radius (pill) |

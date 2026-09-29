@@ -23,10 +23,10 @@ composition history.
   `gap = max(1, round(GAP_UNIT[name]·(bh/28)·density))` (the calibrated unit, not `font/2`).
   Do **not** thread `density` into `icon`, `paddingNarrow`, `paddingWide`,
   or `radiusPill`, the frame is geometric and density-invariant. The `two-families` test compares compact vs
-  comfortable **at the same height** and asserts `gap` shrinks but `padding` is **identical**. A change that
+  comfortable **at the same height** and asserts `gap` shrinks but `paddingNarrow` is **identical**. A change that
   makes density move the frame breaks the centering law (the frame would rescale and un-center the glyph) and
   trips that gate.
-- The `max(1, …)` floor on `gap` is load-bearing, at tiny fonts × low density the gap must never round to 0.
+- The `max(1, …)` floor on `gap` is load-bearing, at small `baseHeight` × low density the gap must never round to 0.
 
 ### The constants are tuned, not arbitrary: don't "tidy" them
 
@@ -35,7 +35,7 @@ composition history.
   fitting the power laws to the canonical `SIZES` table (20·24·28·36·48·64) and its hand-picked glyphs. The
   `reference-ramp` test checks the engine output against the hand table within ±1. A change to any exponent or
   coefficient that pushes a glyph past ±1 from the reference **breaks the gate**, and the swatches will still
-  *look* plausible, so only the test catches it. If you must retune, update the `REF` table in the test in the
+  *look* plausible, so only the test catches it. If you must retune, update the `REF` table (icon) or the `caret's own ramp` assert (caret) in the test in the
   same change and justify the new reference.
 - **`roundEven` is for height and icon; plain `round` is for font/caret.** Even heights/icons keep glyphs crisp
   and slot pads integral (`(height − icon)/2` stays a whole number when both are even). Don't swap the
@@ -48,7 +48,7 @@ composition history.
 - **`fontOverrides` may replace ONLY `font` (a rhythm member).** The composition's whole guarantee is that the
   box geometry (frame) is identical whether or not a type scale is supplied, the `composition` test asserts
   `composed.height === standalone.height && composed.paddingNarrow === standalone.paddingNarrow` for every step, **and** the
-  law still holds on the composed scale. If you let the type scale influence `height`/`icon`/`padding`, the box
+  law still holds on the composed scale. If you let the type scale influence `height`/`icon`/`paddingNarrow`, the box
   would jump when the brand's type treatment changed, and the law could break. Keep the override surgical.
 - **The join is `opts.typeScale.categories["UI-control"]`, matched by step name.** Geometry reads the
   UI-control voice (`uiSteps[name].size`) for XS…2XL, the voice rides the full 6-step ramp,
