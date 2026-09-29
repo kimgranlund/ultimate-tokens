@@ -116,6 +116,7 @@ jobs:
           - gate:corpus-contrast
           - gate:mode-isolation
           - gate:even-dips
+          - gate:chroma-envelope
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
