@@ -21783,7 +21783,7 @@ class HctApp extends HTMLElement {
     if (id === this.section) return;
     if (this.section === "color") this._colorViewport = this.viewport; // preserve the color pan/zoom
     this.section = id;
-    if (id !== "color") this.fit(); // type/geom scenes don't pan/zoom, start centered
+    if (id !== "color") this.fit(); // type/geom scenes pan/zoom too (wirePanZoom) but keep no saved viewport, start centered
     else if (this._colorViewport) this.viewport = this._colorViewport; // restore color's transform on return
     if (id === "typography") ensureTypeFonts(); // lazily inject the Google Fonts, as the old modal did
     this.render();

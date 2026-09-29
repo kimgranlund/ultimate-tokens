@@ -205,9 +205,10 @@ State lives on the element instance. Two tiers, and the split is load-bearing:
 | `this.theme` / `this.canvasTheme` | `system`\|`light`\|`dark` | app chrome vs canvas preview (two `◐`) |
 | `this.inFigma` | bool | env gate (disables web-only paths) |
 
-Exception: five of these fields double as **app prefs**, `theme`, `canvasTheme`, `colorMode`, `motion`,
-`fontMode`, written to `localStorage` under `_appPrefsKey()` (`app.js:2280`) on every change and reloaded
-by `_loadAppPrefs()` at construction. That persistence is per app, on this device, and never with the
+Exception: three of these fields, `theme`, `canvasTheme` and `colorMode`, double as **app prefs**:
+`_saveAppPrefs()` writes them, with two fields this table does not list (`motion`, `fontMode`), to
+`localStorage` under `_appPrefsKey()` (`app.js:2280`) on every change, and `_loadAppPrefs()` reloads
+them at construction. That persistence is per app, on this device, and never with the
 document: it never enters `view`, never round-trips through export/import, and carries no undo entry.
 
 Rule of thumb: **anything that changes what you see but not what you'd export is ephemeral** and is set

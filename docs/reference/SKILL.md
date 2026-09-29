@@ -252,4 +252,4 @@ every role is aliased to its primitive, **idempotently** on re-apply).
 
 - For generic color-theory questions unrelated to this tool, use a color skill instead. <!-- fix-old-names: keep -->
 - To pick brand colors or build a non-HCT palette, out of scope (see non-goals).
-- For general spec writing unrelated to Ultimate Tokens; use spec-author directly.
+- For general spec writing unrelated to Ultimate Tokens, use spec-author directly.
