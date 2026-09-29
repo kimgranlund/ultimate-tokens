@@ -27,6 +27,39 @@ the arrangement moved). Supersedes the "3 lenses on one canvas" decision:
 Built into `capability.system.ui-app` + the single-file bundle. The wireframes/region-map below are the
 *original* plan; treat this Revision as the current truth where they differ.
 
+## Revision B: the three-section editor (2026-09-28, after the docs-repair U3 claims)
+
+Revision A described a color-only editor. The app has since grown into one brand-kit document with
+three composing systems, surfaced as sections of one editor. Where the wireframes and Revision A
+differ from this revision, this revision is the current truth. It is a summary; the frame, regions,
+render pipeline and state are specified in `docs/lld/app-shell.md`, and the per-section build
+procedure (canvas header, scene, inspector, the headless-shim limits) lives in the
+`building-editor-sections` skill, so this file does not repeat them.
+
+**Sections.** `this.section` (`color` | `typography` | `geometry`) is ui-session state and routes the
+whole editor: `renderCenter` picks the canvas header and canvas, and the left and right panes branch
+on the same field. `setSection` switches it, stashing the Color pan and zoom on leave and restoring
+them on return; the Typography and Geometry scenes start fit and do not pan or zoom. Each section is
+a canvas header, a scene holding the full dataset, left analysis cards and a right inspector.
+
+| Section | Canvas modes | Inspector | Notes |
+|---|---|---|---|
+| Color | a value mode of `system`, `light`, `dark` or `both` (the `both` mode renders the scene twice side by side through `renderCompareArea`), plus the ramps table view | palette, global and roles | the original surface of Revision A |
+| Typography | scale, fonts and `specimen` tabs, with the mode held in `typeSpecMode` | `renderTypeInspector` | the Specimen view renders each step in the real face |
+| Geometry | `geomMode` chooses base or a breakpoint mode; the `compare` id shows all breakpoints side by side | `renderGeomInspector` with ramp, `radius` and space tabs | per-step text size composes from the Type scale |
+
+**Export drawer.** The drawer offers ten color formats (CSS hex, OKLCH, Tailwind v4, shadcn/ui, Panda
+CSS, Radix, Figma, Figma UI3, DTCG, JSON), grouped with the Typography and Geometry token outputs,
+the design-system bundle (tokens and DESIGN.md) and the config round-trip. The group list is
+`FORMAT_GROUPS` in the drawer overlay.
+
+**Gallery.** The home view is a hub: your saved palette sets as tiles with a search box, and below
+them the curated color categories (`CATEGORY_INDEX`), each opening a category page whose palettes
+open as editable copies in your own sets. Import, project load and New sit in the gallery header.
+
+**Persistence.** The document persists per set; `colorMode` and the other app preferences persist per
+app and never with the document (see the state table in `docs/lld/app-shell.md`).
+
 ## 1. Why it exists (the reasoning the shell traces to)
 
 ```yaml
@@ -45,8 +78,8 @@ tasks:
   T5 inspect-quality:  the L*×C plot (applied chroma vs gamut ceiling, tone line)
   T6 check-contrast:   a stop / on-color vs white·black
   T7 preview-theme:    light ↔ dark
-  T8 export:           5 formats
-  T9 browse-sets:      the home gallery
+  T8 export:           10 color formats, plus type, geometry, design-system and config outputs
+  T9 browse-sets:      the home gallery (your sets, search, color categories)
 
 decisions:                                        # what makes it operational, not a metric wall
   D1 is-this-palette-good?:    [adjust controls, accept]
@@ -150,7 +183,7 @@ nav:  gallery ──open/new──▶ editor ──◀ Back──▶ gallery
 └────────────────────────────────────────────────────────────┘
 ```
 
-**Export = right drawer** (from `⇪Export`), 5 format tabs + live preview + copy/download:
+**Export = right drawer** (from `⇪Export`), a format select over ten color formats and the other groups, + live preview + copy/download (the wireframe shows the original tab strip):
 ```
                                   ┌ Export ─────────────────┐
                                   │ ● CSS  OKLCH JSON DTCG UI3│
