@@ -11,6 +11,11 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 ### 2026-09-26
 
 #### Fixed
+- **A hueless sample takes its entry's neutral hue** (#744). The generator stored hue `0` for a
+  sample with OKLCH chroma exactly `0` (Nike "Box white", `#FFFFFF`, the only one in the corpus), and
+  since the achromatic anchor renders at the palette's stored hue, that palette's ramp came out mauve.
+  It now stores the entry's derived neutral hue (`36` for Nike), so the ramp tints toward the brand's
+  own warm neutral; the sampled key color and the `#FFFFFF` anchor are unchanged.
 - **A saved default kit regains its anchors on load from the stored set list** (#740). A kit saved
   before schema v5 has no `anchor`/`sourceAnchor` on any palette, and `hydrate()` keeps that absence
   absent by design, so the kit used to render through the non-anchored path with no notice, even

@@ -1275,14 +1275,12 @@ for (const mode of ["perceptual", "peak"]) {
   // presets that happen to share the identical mode/hue/chroma/skew/lift/stop-pair signature, so the
   // Set naturally collapses them to one entry each  -  `seenBaselineDup` still marks the key seen either
   // way). The negative control right after this gate still proves an UNLISTED collision is caught.
-  // Ticket #739 adds 2 more unique keys (both Nike tertiary-muted, peak mode - see their own comment
-  // below), for 23 unique / 25 physical.
+  // Ticket #739 adds Nike tertiary-muted (four keys since #744, all at hue 36 - see their own comment
+  // below; before #744 it held three even keys at hue 0 among the 21 above and two peak keys below),
+  // for 22 unique in all.
   const KNOWN_BASELINE_DUP = new Set([
     "peak|240|100.00|0|0|25-stop|825&850",
     "even|240|100.00|0|0|25-stop|900&925",
-    "even|0|100.00|0|0|25-stop|50&75",
-    "even|0|100.00|0|0|25-stop|100&125",
-    "even|0|100.00|0|0|25-stop|175&200",
     "even|79|100.00|0|0|25-stop|75&100",
     "even|280|100.00|0|0|25-stop|850&875",
     "peak|280|100.00|0|0|25-stop|800&825",
@@ -1299,14 +1297,17 @@ for (const mode of ["perceptual", "peak"]) {
     "peak|80|100.00|0|0|25-stop|875&900",
     "perceptual|80|100.00|0|0|25-stop|800&825",
     "peak|80|100.00|0|0|25-stop|800&825",
-    // Ticket #739: Nike tertiary-muted (hue 0, the generator's hueless-sample fallback; anchor
-    // #FFFFFF, resolved chroma 100.00 on this group) now renders its ramp at the palette's OWN hue
-    // instead of the anchor's rounding-residue one - two adjacent near-white peak-mode stops round to
-    // the identical 8-bit hex at that hue where they did not before, the same rounding-collision class
-    // every other member of this list already names. A mechanical re-freeze, not a new construction
-    // defect (U1-4 proves every OTHER anchored ramp in the corpus byte-identical).
-    "peak|0|100.00|0|0|25-stop|75&100",
-    "peak|0|100.00|0|0|25-stop|150&175",
+    // Ticket #739: Nike tertiary-muted (anchor #FFFFFF, resolved chroma 100.00 on this group) renders
+    // its ramp at the palette's OWN hue instead of the anchor's rounding-residue one - two adjacent
+    // near-white peak-mode stops round to the identical 8-bit hex at that hue where they did not
+    // before, the same rounding-collision class every other member of this list already names. The
+    // hue is 36 since #744 (the generator gives a hueless sample its entry's derived neutral hue; it
+    // was 0, the sample's own), so its keys sit at hue 36 (three even-mode ones and one peak). A
+    // mechanical re-freeze, not a new construction defect (U1-4 proves every OTHER anchored ramp in the corpus byte-identical).
+    "peak|36|100.00|0|0|25-stop|75&100",
+    "even|36|100.00|0|0|25-stop|50&75",
+    "even|36|100.00|0|0|25-stop|100&125",
+    "even|36|100.00|0|0|25-stop|175&200",
   ]);
   const seenBaselineDup = new Set();
 
