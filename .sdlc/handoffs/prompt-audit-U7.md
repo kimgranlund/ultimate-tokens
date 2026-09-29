@@ -1,6 +1,8 @@
 # Handoff prompt-audit U7 · #758 slice C skills
 
-Builder, pass 1. Branch `unit/pa-U7` @ 7e33c4c4 (cut from `plan/prompt-audit` at f6cd69cb); this handoff is committed on top.
+Builder, round 2 (review pass 1 failed on two points, both fixed below). Branch `unit/pa-U7` @ cc924fac (cut from `plan/prompt-audit` at f6cd69cb); this handoff is committed on top.
+
+Round 2 changes: the `libraryMode` paragraph in `maintaining-figma-plugins/SKILL.md` now says every prune is guarded by the flag, and that `applyBundle` and `applyStylePlans` read the raw `opts.libraryMode === true` (`undefined` means the classic prune there) while `applyFloatPlans` and `applyFontPrimitivesModes` resolve it (checked against `figma/plugin/code.js`: `const libraryMode = opts.libraryMode === true` at the first two, `let useLibrary = opts.libraryMode` plus the ask and `priorLibraryUpliftVM` fallback at the other two). Low fixes: the doubled generated-markers sentence and the shipping frontmatter wrap. The SC table is relabelled in the evidence table's row order.
 
 ## Files
 
@@ -10,7 +12,7 @@ Eleven prompt files, all inside U7's wall: `maintaining-brand-kit-mcp/{SKILL.md,
 
 | Gate | Result |
 |---|---|
-| `npm test` at 7e33c4c4 | 🟢 `all 53 test files passed`, exit 0, `git status --short` shows only the eleven edited files before commit (no generated drift) |
+| `npm test` at cc924fac | 🟢 `all 53 test files passed`, exit 0, `git status --short` shows only the eleven edited files before commit (no generated drift) |
 | `node test/repo/branding.mjs` | 🟢 clean (807 files) |
 | `node test/repo/em-dash.mjs` | 🟢 clean (815 files) |
 
@@ -33,46 +35,48 @@ Pin names: the symbol homes are written in the shape U9's scanner reads (`` `sym
 
 ## Findings
 
+Ids follow the evidence table's row order (its header: SC1 to SC34). All 27 are High or Medium and applied.
+
 | Id | Fate | Note |
 |---|---|---|
-| SC1 | applied | `brandKit` and `downloadBrandKitMcp()` homes, no line number |
-| SC2 | applied | `list_palettes (16)`, read from `test/mcp/brand-kit.mjs` |
-| SC3 | applied | six `:NNN` anchors across `foundations.md` and `best-practices.md` now name the symbol and file |
-| SC4 | applied | ADR row points at `decision-records.md`; plans row at `.sdlc/plans/`; roadmap row at `.sdlc/roadmap.md`; `docs/task/` stays "not present yet" (true) |
-| SC5 | applied | routes now `/file-feature`, `/file-bug`, the sdlc Orchestrator, the `make-doc` skill |
-| SC6 | applied | the audit table has no row the plan's SC6 maps to unambiguously; taken as the second anchor of the MCP row (`downloadBrandKitMcp()`), fixed with SC1 |
-| SC7 | applied | `make11` to `makeVoices` in the foundations row of type-scale |
-| SC8 | applied | `ensureTypeFonts()` home is `src/ui/app-helpers.mjs` in SKILL.md and `foundations.md`, bold removed |
-| SC9 | applied | rubric H5 grades `build-test`, `panda-smoke`, `corpus-contrast`, `sweeps`; the SKILL.md description says the same |
-| SC10 | applied | citation removed, the sentence keeps the rule |
-| SC11 | applied | `libraryMode` paragraph states the rule without PR ids; `priorLibraryUpliftVM` and the persisted key kept |
-| SC12 | applied | STYLES dates and PR ids dropped, the fontWeight/fontStyle reason kept |
-| SC13 | applied | collection rename trail removed; the "Color Semantic" alias in the plugin table removed with it |
-| SC14 | applied | role table is "GENERATED ... never hand-edit inside the markers" |
-| SC15 | applied | `parity` gate parenthetical removed; the FULL-role-object rule stays |
-| SC16 | applied | run id and timings replaced by "about four to five minutes"; `#564` dropped; the concurrent-edit anecdote dropped |
-| SC17 | applied | `node_modules` rule stated as `.gitignore`'s bare `node_modules` line; the foundations.md pointer row lost "exit-194 anecdote" |
-| SC18 | applied | `TKT-0012` dropped from the rename-map rule |
-| SC19 | applied | "since 2026-07-13" dropped from the size-table rule |
-| SC20 | applied | `ranksFor` clause without date or retired `STEPS_*` names; "since 2026-07-16" dropped from the PROSE clause |
-| SC21 | applied | `#446, 2026-08-14` dropped, the `FONT_FALLBACKS` condition kept |
-| SC22 | applied | dangling memory pointer replaced by `shipping-changes`'s `references/foundations.md` in SKILL.md and `best-practices.md` |
-| SC23 | applied | rename rule stated once, no incident, no caps |
-| SC24 | applied | brand-voice anecdote states the drift class without numbers |
-| SC25 | applied | fact-sheet citation `Context is memory` folded into SC10 |
-| SC26 | applied | see SC23 |
-| SC27 | applied | `/docs-alignment` clause replaced by "offer to move it into `docs/spec/`" |
+| SC1 | applied | brand-kit `brandKit` and `downloadBrandKitMcp()` anchors, homes named without a line |
+| SC2 | applied | `list_palettes (8)` to `(16)`, read from `test/mcp/brand-kit.mjs` |
+| SC3 | applied | six `:NNN` anchors in `foundations.md` and `best-practices.md` now name symbol and file |
+| SC4 | applied | project-docs homes: ADRs in `decision-records.md`, plans in `.sdlc/plans/`, roadmap in `.sdlc/roadmap.md`; `docs/task/` stays "not present yet" (true) |
+| SC5 | applied | project-docs routes now `/file-feature`, `/file-bug`, the sdlc Orchestrator, the `make-doc` skill |
+| SC6 | applied | type-scale `make11` to `makeVoices` |
+| SC7 | applied | `ensureTypeFonts()` home is `src/ui/app-helpers.mjs` in SKILL.md and `foundations.md`, bold removed |
+| SC8 | applied | rubric H5 grades `build-test`, `panda-smoke`, `corpus-contrast`, `sweeps` |
+| SC9 | applied | brand-voice "Context is memory" citation removed |
+| SC10 | applied | figma `libraryMode` paragraph states the rule without PR ids; guard sites stated as the source has them (round 2) |
+| SC11 | applied | figma STYLES dates and PR ids dropped, the fontWeight/fontStyle reason kept |
+| SC12 | applied | figma Geometry collection rename trail removed |
+| SC13 | applied | figma "was Color Semantic" alias removed |
+| SC14 | applied | figma role table is GENERATED, never hand-edit inside the markers; history clause dropped |
+| SC15 | applied | figma `parity` gate parenthetical dropped, the FULL-role-object rule stays |
+| SC16 | applied | shipping run id and timings replaced by "about four to five minutes" |
+| SC17 | applied | shipping `#564` dropped, the stale-`dist/` reason kept |
+| SC18 | applied | shipping `-u` anecdote clause dropped |
+| SC19 | applied | shipping `node_modules` rule stated as `.gitignore`'s bare line; exit-194 wording gone from the text and the foundations pointer row |
+| SC20 | applied | shipping `TKT-0012` dropped from the rename-map rule |
+| SC21 | applied | type-scale "since 2026-07-13" dropped from the size-table rule |
+| SC22 | applied | type-scale `ranksFor` clause without date or retired `STEPS_*` names; PROSE date dropped |
+| SC23 | applied | type-scale `#446, 2026-08-14` dropped, the `FONT_FALLBACKS` condition kept |
+| SC24 | applied | type-scale smoke-is-Chrome-only pointer replaced by `shipping-changes`'s `references/foundations.md` (SKILL.md and `best-practices.md`) |
+| SC25 | applied | type-scale rename rule stated once, no incident, no caps |
+| SC26 | applied | brand-voice 53 to 59 anecdote states the drift class without numbers |
+| SC27 | applied | project-docs `/docs-alignment` clause replaced by offering to move the content into `docs/spec/` |
 
-SC28 (Low, Q4 default fold): the project-docs frontmatter names now match the body (`make-doc` skill, `/file-feature`, `/file-bug`, the sdlc Orchestrator).
+Low rows applied beyond scope, not counted in P5 (all inside the wall): SC28 (project-docs frontmatter names, Q4 fold), SC29 (shipping frontmatter names the four jobs), SC32 (the `vmsyntax` incident date), SC33 (project-docs "migrated ... on 2026-07-12" aside).
 
 ## Left out
 
 | Item | Why |
 |---|---|
-| dated asides still in `type-scale/references/best-practices.md` and `weight-ladders-and-labels.md`, and `foundations.md` line 50 onward | outside SC1 to SC27; only the pointer and home lines those files carry were edited |
-| `maintaining-figma-plugins/references/*` PR archaeology | audit Low flag, not in scope |
-| SC28's neighbours (`shipping-changes` frontmatter is fixed under SC9; the other Low flags) | Low, not in scope |
+| dated asides in `type-scale/references/best-practices.md`, `weight-ladders-and-labels.md` and `foundations.md` beyond the home and pointer lines | outside SC1 to SC27 |
+| `maintaining-figma-plugins/references/*` PR archaeology | Low, SC31 |
+| SC30, SC31, SC34 | Low, not in scope |
 
 ## Questions for the orchestrator
 
-The plan's SC numbering does not line up with the evidence table's row order (34 rows; the plan's SC6 and SC11 to SC27 boundaries shift by one). I assigned fates by finding, not by row position. SC6, SC25 and SC26 rows above are my best mapping; correct them if P5's id list means otherwise.
+The plan's Re-verification table labels make11, ensureTypeFonts, H5 and Context-is-memory as SC7 to SC10 and the history range as SC11 to SC26; in the evidence table's order they are SC6 to SC9 and SC10 to SC26. The plan text needs the correction; this handoff follows the evidence table.
