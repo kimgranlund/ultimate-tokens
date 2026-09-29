@@ -57,5 +57,41 @@ if (report && Object.keys(report.docs).length !== discovered.length)
   FAIL("scripts/audit-citations.mjs", `report carries ${Object.keys(report.docs).length} docs but discovery lists ${discovered.length}`);
 for (const e of DOCS_EXEMPT) if (!e.path || !e.reason) FAIL("scripts/audit-citations.mjs", `DOCS_EXEMPT entry without a path + reason: ${JSON.stringify(e)}`);
 
-console.log(failed ? `✗ ${failed} citation gate failure(s)` : `✓ citations: parser self-test + STALE 0 across ${Object.keys(report.docs).length} discovered docs (HEAD ${report.head})`);
+// (4) fact pins: the audit checks that a cited line still carries its anchor, not that a claim is
+// true, which is how `11 voices` and a three-state colorMode survived with STALE 0. Each pin is a
+// claim the docs make about the code. `needle` is the exact text the doc must carry (inside a line
+// matching `line`, when given); `source()` reads the code and returns what it holds (a count, a
+// boolean); a needle carrying a number must equal it, otherwise `source()` must be true. There is
+// no typed number beside the needle, so a pin cannot compare code with code. It reds on either side.
+import { readFileSync } from "node:fs";
+const txt = (p) => readFileSync(join(ROOT, p), "utf8");
+const lineOf = (p, re) => txt(p).split("\n").find((l) => re.test(l)) ?? "";
+const FACT_PINS = [
+  { id: "colorMode states", doc: "docs/lld/app-shell.md", line: /`this\.colorMode`/, needle: "system", src: "src/ui/app.js",
+    source: () => /this\.colorMode = "system"/.test(lineOf("src/ui/app.js", /Color section value-mode control/)) },
+  { id: "type voices", doc: "docs/lld/app-shell.md", needle: "15 voices", src: "src/engine/type.mjs",
+    source: async () => Object.keys((await import("../../src/engine/type.mjs")).makeVoices()).length },
+  { id: "colour formats", doc: "docs/reference/references/ui-plan.md", line: /T8 export:/, needle: "10 formats", src: "src/ui/overlays/drawer.js",
+    source: () => {
+      const t = txt("src/ui/overlays/drawer.js"), a = t.indexOf("const FORMAT_GROUPS");
+      const colors = t.slice(a, t.indexOf('"Typography"', a));
+      return (colors.match(/\["[^"]+", "[^"]+"\]/g) || []).length;
+    } },
+  { id: "roles per palette", doc: "docs/reference/references/ui-plan.md", needle: "a 53-role", src: "docs/reference/data/role-table.json",
+    source: () => JSON.parse(txt("docs/reference/data/role-table.json")).rolesPerPalette },
+  { id: "btn home", doc: "docs/reference/references/component-inventory.md", line: /^\| `btn\(\)` \|/, needle: "app-helpers.mjs", src: "src/ui/app-helpers.mjs",
+    source: () => /^export const btn\b/m.test(txt("src/ui/app-helpers.mjs")) },
+  { id: "delete mode methods", doc: ".claude/skills/building-editor-sections/SKILL.md", needle: "`deleteTypeMode`/`deleteGeomMode`", src: "src/ui/sections/{typography,geometry}.js",
+    source: () => /^  deleteTypeMode\(id\) \{/m.test(txt("src/ui/sections/typography.js")) && /^  deleteGeomMode\(id\) \{/m.test(txt("src/ui/sections/geometry.js")) },
+];
+for (const pin of FACT_PINS) {
+  let held;
+  try { held = await pin.source(); } catch (e) { FAIL(pin.src, `fact pin "${pin.id}": source threw: ${e.message}`); continue; }
+  const frag = pin.line ? lineOf(pin.doc, pin.line) : txt(pin.doc);
+  if (!frag.includes(pin.needle)) { FAIL(pin.doc, `fact pin "${pin.id}": doc no longer carries \`${pin.needle}\`${pin.line ? ` on a line matching ${pin.line}` : ""}`); continue; }
+  const num = pin.needle.match(/\d+/);
+  if (num ? Number(num[0]) !== held : held !== true) FAIL(pin.src, `fact pin "${pin.id}": ${pin.doc} says \`${pin.needle}\` but the code holds ${JSON.stringify(held)}`);
+}
+
+console.log(failed ? `✗ ${failed} citation gate failure(s)` : `✓ citations: parser self-test + STALE 0 across ${Object.keys(report.docs).length} discovered docs + ${FACT_PINS.length} fact pins (HEAD ${report.head})`);
 process.exit(failed ? 1 : 0);
