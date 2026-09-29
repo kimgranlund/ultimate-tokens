@@ -28,7 +28,7 @@ typography scale, and the geometry scale as MCP **resources + tools + a prompt**
 the brand's exact tokens instead of guessing a colour. **No `npm install`**, pure Node.
 
 Two hard rules govern every change here, and getting either wrong ships a broken server that still *looks* fine:
-**(1) stdout is the protocol channel**, every log/diagnostic goes to STDERR only (one stray `console.log`
+**(1) stdout is the protocol channel**: every log/diagnostic goes to STDERR only (one stray `console.log`
 corrupts the stream; the server uses zero `console.*` by design); **(2) the surface is opt-in**, the kit may
 carry Color, Typography, Geometry, or any subset, and a tool/resource appears **only when its system is
 present**. The user-facing *why* of the kit shape is owned by `mcp/README.md` (de-staled, cite it).

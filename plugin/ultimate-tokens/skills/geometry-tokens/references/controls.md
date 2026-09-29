@@ -40,7 +40,7 @@ you set a control's padding independently of its height, you break centering, al
 
 ## Recipes
 
-**Button (text + optional icon)**, box: `.control-md`, OR by hand: `block-size:
+**Button (text + optional icon)**: box: `.control-md`, OR by hand: `block-size:
 var(--size-md-height); padding-inline: var(--size-md-padding-wide); padding-block: 0; gap:
 var(--size-md-gap); border-radius: var(--size-md-radius); min-inline-size: var(--size-md-min);`. Text
 = the UI-control voice at the matching step (typography-tokens: `.type-ui-control-md`, `-line-single`).
@@ -50,11 +50,11 @@ var(--size-md-gap); border-radius: var(--size-md-radius); min-inline-size: var(-
 - **Icon-only:** `inline-size: var(--size-md-min)` (square), padding `--size-md-padding-narrow`.
 - **Dropdown/select:** append a caret at `--size-md-caret`.
 
-**Input / select field**, `block-size: var(--size-md-height)`, `padding-inline:
+**Input / select field**: `block-size: var(--size-md-height)`, `padding-inline:
 var(--size-md-padding-wide)`, border `--border-thin` (color from color-tokens), radius
 `--size-md-radius`. The value text is `.type-ui-md`.
 
-**Toggle / checkbox / radio**, the box tracks a small step (`--size-sm-*` or `-xs-*`); the control's
+**Toggle / checkbox / radio**: the box tracks a small step (`--size-sm-*` or `-xs-*`); the control's
 `min` keeps it square.
 
 ## Don't

@@ -221,7 +221,7 @@ needed, it de-risks everything downstream by locking the surface first.
 
 ## 8. Data model (D1 + KV)
 
-**KV**, `kit:<kitId>` → the resolved `brand-kit.json` (the served payload).
+**KV**: `kit:<kitId>` → the resolved `brand-kit.json` (the served payload).
 
 **D1**
 | table | columns (essentials) |

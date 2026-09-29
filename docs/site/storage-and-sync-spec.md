@@ -57,7 +57,7 @@ Each: **statement** (MUST/SHOULD) · **Trace** · **AC** (Given/When/Then or mea
   edit is present in the local store (no network involved).
 - **SPEC-R2, Server replication (lazy for anonymous).** Account-owned docs MUST replicate to server storage
   continuously. Anonymous docs MUST stay **local-only until a first sync trigger**, the first **export**,
-  **hosted-MCP use**, or **sign-in**, after which that device's docs replicate and stay replicated.
+  **hosted-MCP use**, or **sign-in**. After that trigger the device's docs replicate and stay replicated.
   Replicated docs MUST be retrievable by their owner reference. *Trace: PRD-G1, PRD-G6 (bounds free-user
   cost).* **AC:** Given an anonymous user who has never exported, used the MCP, or signed in, When they
   create/edit docs, Then **no** server storage is written for them (local only); And Given they then export

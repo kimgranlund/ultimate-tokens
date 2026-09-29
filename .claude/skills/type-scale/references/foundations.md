@@ -70,7 +70,7 @@ every other voice (the other twelve) is PROSE (wraps, no single-line height, rea
 Label is the STATIC label voice (may wrap); interactive single-line text belongs to the UI voices.
 `singleLineHeight` and the paragraph factor key on `box`, not on `role === "ui"||"mono"` (see §3).
 
-**The mono-alias groups**, Body-mono aliases Body's own SM/MD/LG triplet, Label-mono and Kicker both
+**The mono-alias groups**: Body-mono aliases Body's own SM/MD/LG triplet, Label-mono and Kicker both
 alias Label's, Tiny-mono aliases Tiny's: every `-mono` voice (and Kicker) is the SAME size register as its
 non-mono sibling, dressed in the mono font, not a distinct scale of its own (§3).
 
