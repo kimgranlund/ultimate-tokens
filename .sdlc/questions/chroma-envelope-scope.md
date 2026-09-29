@@ -33,7 +33,7 @@ The C6 median and p90 chroma bars for perceptual and peak (and, for one fixture,
 
 | Field | Value |
 |---|---|
-| Ruled | pending |
-| By | |
-| Date | |
-| Written back by | |
+| Ruled | B, "Fix the engine" (owner chose against the planner's A recommendation; Q-U2-5 muted-in-vivid-group intent is reversed by this ruling) |
+| By | owner via AskUserQuestion (R69) |
+| Date | 2026-09-29 |
+| Written back by | Conductor |
