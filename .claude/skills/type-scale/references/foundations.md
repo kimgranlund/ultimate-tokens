@@ -17,7 +17,7 @@ skips a layer.
   `ratio`/`steps` argument anymore (2026-07-13 rewrite; sizes are no longer derived from a modular scale).
   `transform` defaults `"none"`; `box` DEFAULTS from the role (`ui`/`mono` ⇒ `true`, every other role ⇒
   `false`), overridable per voice (§2).
-- **`makeVoices(o={})`** is the FACTORY: it returns the THIRTEEN voices as a `{name: catRecord}` object,
+- **`makeVoices(o={})`** is the FACTORY: it returns the FIFTEEN voices as a `{name: catRecord}` object,
   every voice sharing the same structure while reading its knobs from `o` (each with a default, e.g.
   `o.dWeight ?? 700`). The knobs are prefixed by voice: Display `d-` (`dLead/dWeight/dTrack/dTransform`),
   Headline `h-`, Sub-heading `sh-`, Title `t-`, Sub-title `st-`, Lead `lead-`

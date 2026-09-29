@@ -73,7 +73,7 @@ shared `role-table.json` into a green "three implementations agree" while the en
 diverges. `_entailment_check.py` proves the carving **covers** all criteria (the partial-order
 gate: **29/29 covered, 6 tickets**); the council's entailment lens additionally
 pressure-tested intent-entailment. Full carving + the honest-maturity note in `references/decomposition.md`.
-The six child rubric cells **and** the six capability cells are now **validated**. Two further
+The six child rubric cells **and** the six capability cells are **validated**. Two further
 **integration** cells consume them downstream and are validated against their own harnesses, NOT part
 of this engine/output carving (the same way the editor UI is a separate concern): `capability.system.ui-app`
 (the interactive generator UI) and `capability.system.figma-plugin-app` (that same UI packaged as a Figma
