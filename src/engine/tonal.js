@@ -419,11 +419,13 @@ export const EVEN_DAMP_FACTOR = 0.25;
 // found 0.2 the smallest that fully closes BOTH lone-spike populations (64 corpus + 1 kit -> 0 at every
 // r tried) while moving the fewest even 25-stop cells (4,498 of 94,500, all within two lifted-stop
 // steps of the anchor) and leaving the four `--envelope` READING (a) cells (C5) unchanged to one
-// decimal at every r tried, since those stops sit far outside the plateau. 0.2 lifted-stop-units is
-// just under two of the ramp's own 50-unit steps either side of the anchor (450/550 sit at 0.111,
-// comfortably inside; 400/600 at 0.222, just outside), which is why the shoulder never reaches stop
-// 400/600 ("even palettes whose 450 or 550 CAM16 C is under 50% of stop 500" was already 0 at ship -
-// the spike is a 60% shoulder, not a collapse, so R only needs to reach the two innermost stops).
+// decimal at every r tried, since those stops sit far outside the plateau. 0.2 in `sd` units is
+// 90 stop units at lift 0, just under two of the ramp's own 50-unit steps either side of the anchor
+// (450/550 sit at 0.111, comfortably inside; 400/600 at 0.222, just outside), which is why the shoulder
+// stays clear of stops 400/600 at lift 0 only; under lift `liftStop` sets the reach, and above
+// `|lift|` about 14 the near-side 400 or 600 enters it ("even palettes whose 450 or 550 CAM16 C is under
+// 50% of stop 500" was already 0 at ship - the spike is a 60% shoulder, not a collapse, so R only needs
+// to reach the two innermost stops).
 export const EVEN_NEIGHBOURHOOD_R = 0.2;
 export function chromaEnvelope(stop, anchorStop, lift, controls) {
   // Capped at +/-1 (#681 U10, F3): under lift the raw distance can pass 450, and |sd| > 1 clipped the
