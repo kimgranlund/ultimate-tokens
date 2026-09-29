@@ -216,7 +216,7 @@ OKLCH-native designers work in familiar numbers without changing the output colo
 ## 15. Current Status
 
 - **Complete:** engine (verified to anchors); tonal generation (5 curves, skew/lift,
-  damping); 53-role semantic layer; 5 export formats; companion plugin; persistence; parity
+  damping); 53-role semantic layer; ten color export formats; companion plugin; persistence; parity
   across artifact/`gen.js`/plugin at 53 roles.
 - **In progress:** spec hardening (this document) for spec-author enhancement.
 - **Not yet addressed:** automated accessibility surfacing in-app; configurable palette set;

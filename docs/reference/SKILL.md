@@ -29,7 +29,7 @@ description: >
 full semantic token layer that survives a light/dark mode flip and imports without error into
 CSS and Figma. Naive lightness scaling drifts hue and clips the gamut; a fixed per-hue chroma
 clips at the light/dark ends; mode handling bolted onto raw colors breaks the moment a role
-mapping stops being a simple mirror. The HCT Palette Generator removes all three at the root
+mapping stops being a simple mirror. Ultimate Tokens removes all three at the root
 by **treating color as a point in a perceptual space against a gamut boundary, not a scalar
 to push around**: tone is CIELAB L\*, hue/chroma is CAM16, every emitted color is clamped
 in-gamut at its tone, and the entire light/dark flip lives in one semantic `--c-*` layer over
@@ -83,7 +83,7 @@ every role is aliased to its primitive, **idempotently** on re-apply).
 
 ```json
 {
-  "title": "HCT Palette Generator",
+  "title": "Ultimate Tokens",
   "cell": "spec.system.hct-palette-generator-spec",
   "binds_rubric": "rubric.system.spec-quality",
   "acceptance_criteria": [
@@ -252,4 +252,4 @@ every role is aliased to its primitive, **idempotently** on re-apply).
 
 - For generic color-theory questions unrelated to this tool — use a color skill instead. <!-- fix-old-names: keep -->
 - To pick brand colors or build a non-HCT palette — out of scope (see non-goals).
-- For general spec writing unrelated to the HCT Palette Generator — use spec-author directly.
+- For general spec writing unrelated to Ultimate Tokens; use spec-author directly.

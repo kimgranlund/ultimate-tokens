@@ -46,4 +46,4 @@
 | **Inspector** | The right pane of the editor, `renderRightPane`, holding the selected item's controls in tabs and pinning a `.seg-example` live control beneath them. Typography and Geometry return their own inspector. |
 | **Analysis card** | A `.an-card` in the left pane: a labelled chart or table that analyses the current document, built by each section's `renderLeftPane` body. |
 | **Gallery** | The editor's other top-level view (`this.view === "gallery"`, `renderGallery`): a hub of category tiles (`this.category`, a slug or `null`) opening to volumes of curated presets, plus the saved-set tiles filtered by `this.search`, Project and Import. |
-| **Drawer** | The export drawer (`overlays/drawer.js`), a native `<dialog>` whose format tabs come from `FORMAT_GROUPS`: Colors (ten), Typography (two), Geometry (three), Design System (two), Project (one). |
+| **Drawer** | The export drawer (`overlays/drawer.js`), a native `<dialog>` whose format tabs come from `FORMAT_GROUPS`: Colors (ten tabs, not the same ten as the color export formats: the drawer swaps `exportAll` for a `figma` tab), Typography (two), Geometry (three), Design System (two), Project (one). |
