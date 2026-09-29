@@ -406,8 +406,8 @@ export const EVEN_DAMP_FACTOR = 0.25;
 // slope at the anchor - one stop away (|sd| = 50/450 = 0.111) uG is already 0.406 at the shipped damp
 // 70, which is what produces both the 64 corpus + 1 default-kit lone spikes (anchor.mjs's
 // `loneSpikeStop`: 450/550 read near-achromatic while 500 sits far above them, C2) and 57 of the
-// EVEN_DIP_BASELINE's 90 named dips (a different predicate, tonal.mjs's own `findDips`, U2's to
-// retire). A neighbourhood (plateau) term multiplies uG by a smoothstep of |sd|/R that is 0 at the
+// retired EVEN_DIP_BASELINE's 90 named dips (a different predicate, tonal.mjs's own `findDips`, which
+// U2 retired). A neighbourhood (plateau) term multiplies uG by a smoothstep of |sd|/R that is 0 at the
 // anchor and 1 by R, replacing the exponent's infinite initial slope with a flat start: near the
 // anchor uG is smaller than the shipped formula gives, so the envelope (1 - damp/100*uG) is CLOSER to
 // 1 there, closing the spike without changing anything beyond R (chromaEnvelope's C5-gated cells sit
@@ -422,7 +422,7 @@ export const EVEN_DAMP_FACTOR = 0.25;
 // decimal at every r tried, since those stops sit far outside the plateau. 0.2 in `sd` units is
 // 90 stop units at lift 0, just under two of the ramp's own 50-unit steps either side of the anchor
 // (450/550 sit at 0.111, comfortably inside; 400/600 at 0.222, just outside), which is why the shoulder
-// stays clear of stops 400/600 at lift 0 only; under lift `liftStop` sets the reach, and above
+// stays clear of stops 400/600 at lift 0; under lift `liftStop` sets the reach, and above
 // `|lift|` about 14 the near-side 400 or 600 enters it ("even palettes whose 450 or 550 CAM16 C is under
 // 50% of stop 500" was already 0 at ship - the spike is a 60% shoulder, not a collapse, so R only needs
 // to reach the two innermost stops).

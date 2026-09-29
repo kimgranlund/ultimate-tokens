@@ -649,7 +649,7 @@ const RAMP_DISTINCT_ALLOW = [
 // SUBSET of the old 78 (0 new/unexpected members, all 63 departures are removals, verified directly).
 // Cited mechanism: commit 2573208c "re-centre chromaEnvelope on the anchor's own lifted reading" (#681
 // U3 review pass 2, R2) - the same fix this file's `anchorChromaBasis` import and the tonal.mjs
-// KNOWN_BASELINE_DUP/EVEN_DIP_BASELINE comments already cite as U3's shipped chromaEnvelope shape. R2
+// KNOWN_BASELINE_DUP/EVEN_DIP_BASELINE comments (both since retired) cited as U3's shipped chromaEnvelope shape. R2
 // keyed the envelope's position on `liftStop(stop,lift) - liftStop(anchorStop,lift)`, the anchor's own
 // LIFTED reading, instead of the raw numeric anchor stop - env(anchorStop)=1 exactly under any lift,
 // where the pre-U3 construction this 78-count was measured against could sit off-pivot under a nonzero
