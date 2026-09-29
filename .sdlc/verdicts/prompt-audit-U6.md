@@ -6,7 +6,7 @@ ticket: "#758"
 branch: unit/pa-U6
 base: 13346c1a
 grade: verifier-l2, the evidence run dispatched by the Verifier seat
-pass: 1
+pass: 2
 written: 2026-09-29
 ---
 
@@ -48,3 +48,41 @@ Head `60fd4668`; code commits `5ca1ffe4`, `91b6f571`, `60fd4668`. Unit base plan
 8. 🟡 F8. `hydrateStoredDoc` is cited by bare filename (`app-helpers.mjs`), so U9's path-shaped scanner will not read it; `src/ui/app-helpers.mjs` would.
 9. 🟡 F9. The handoff is stale against the head: it does not name `60fd4668`, runs are "at HEAD 5ca1ffe4", P6 `22` (now `23`), branding and em-dash `807`/`815` (now `810`/`818`).
 10. 🟡 F10. Plan defects for the planner: U6 is "twelve files" in the grade table, the wall lists 13; SB8's `(s4)` derives; P5 expects `22` and misses review rows; P5's bare-pipe control errors rather than bites; U6-2 has no needle for leftover `:NNN` pins.
+
+## Pass 2 · 🟡 · every row and every pass 1 finding holds at 87789311; the handoff's measuring sentence reads as B, and two plan cells drift
+
+verdict: 🟡
+sha: 877893117b432889ef9985de5f1b5551de4c29e5
+
+Head `87789311`; pass 2 code commits `301f281e` and `ef2115bb`, handoff commits `42aa0d53`, `6cceeccf`, `e1a10b08`. The unit merged plan/prompt-audit (U7's skill files, outside U6's wall, not graded here). B `13346c1a`. Criteria U6-1 to U6-10 from `4fa7561c:.sdlc/plans/prompt-audit.md` (revision 9) and `prompt-audit-U6-rediagnosis.md`. Evidence run verifier-l2 (Opus 5.5) in shared clones under the seat's job tmp; the seat re-ran the `-w` count search (`27` for `53` in `test`) and the `\b` absence (`0`) itself. `verdict.py check` exits `0` on the handoff (against its `60fd4668` copy), review p2, the plan and the re-diagnosis.
+
+| Row | State | Evidence | Negative control |
+|---|---|---|---|
+| U6-1 | 🟢 | `0 2 0 1 1 1` | at B: `4 0 3 0 1 1` |
+| U6-2 | 🟢 | `1 1 0 1 0 1 2 1` | at B: `0 0 2 0 2 1 2 1` |
+| U6-3 | 🟢 | `0 0 3 1` | at B: `1 1 1 1` |
+| U6-4 | 🟢 | `0`, `0`, `0`, `0`, `0` | at B: `4` and `2`, `5`, `6`, `2` |
+| U6-5 | 🟢 | `1 1 1 2 1 1` | the `MCP_BRAND_KIT_VERSION` line deleted: `0` |
+| U6-6 | 🟢 | `1 0 1 1`; step 5 says `(s4)` reads `ROLES`, a hand literal in `test/ui/counts.mjs` (`export const ROLES = 53;`), and `semExpect` derives from the bundle | the pass 1 sentence restored: second leg `1` |
+| U6-7 | 🟢 | the five prescribed recipes, run verbatim on `git version 2.54.0 (Apple Git-157)`: `27 238 63 238 6`; `\b` count `0` | the first recipe typed back to `\b`: `0 238 63 238 6`, then `1` |
+| U6-8 | 🟢 | `0`, `1` | at `60fd4668`: `5` (`semantic.mjs:30`, three `(line ~N)`, `exports.js ~504`); at `6cceeccf`: `1` |
+| U6-9 | 🟢 | `0 0 2 0 0`, groups `2 1 1 1 1`, imports all present, `1` | the DESTINATION list restored: `1`, `Colors` `0`; a fake import added to ds-export.js: last leg `0` |
+| U6-10 | 🟢 | `1 1 1` (`branding: clean (818 files scanned)`, `em-dash: clean (826 files scanned)`, `ef2115bb`) | at `60fd4668`: `0 0 0` |
+| SB1 to SB9, SB11 to SB23 | 🟢 | every rewritten claim in the seven changed wall files read true against code: `validPrim`, the `roles` gate's `okScrim` and `scrims.length !== 7`, `export function exportShadcn` with `SHADCN_ORDER` and `MAP`, the 13 ds-export imports equal to its import line, `FORMAT_GROUPS` Colors/Typography/Geometry/Design System/Project, `export function hydrateStoredDoc` in `src/ui/app-helpers.mjs`, the reference `REF` holding `height`, `icon`, `font`, the composition block's `JSON.stringify(composed) === JSON.stringify(base)` | the row controls above |
+| P1 | 🟢 | fresh clone, no node_modules: `✓ all 53 test files passed`, `exit 0`, tree `0`; `ok    tests: baseline 53, test/run.mjs TESTS 53` | scrim sed: `✗ 1/53 test file(s) failed`, `exit 1` |
+| P3 | 🟢 | `branding: clean (818 files scanned)`, `em-dash: clean (826 files scanned)`, added U+2014 `0` | a copied ADR: `FAIL: 3 branding violation(s) across 819 files`, `exit 1`; a dashed line: `FAIL: 1 em dashes`, `exit 1` |
+| P4 | 🟢 | `0`, `0`, `0` | six-name fixture: `3`; a DD row fixture: `1` |
+| P5 | 🟢 | the 22 ids each `1`; ERE total `40` = 22 + 18 F rows | SB14 row deleted: `0`, `39` |
+| P6 | 🟢 | added `0`; removed `23` over U6's files | `+the rule (TKT-0010)` prints `1` |
+| P2 build | owed at pre-land | U6 touches no build input | not run |
+
+Pass 1 fates: F1, F2, F3 (the three 🔴) fixed; F4 to F8 fixed and true; F9 fixed except the wording in F1 below; F10 closed by plan revisions 8 and 9.
+
+### Findings
+
+1. 🟡 F1. The handoff header names the head code commit `ef2115bb`, then B, then says `Every figure below was measured at that commit`, which reads as B (at B the gates print `790` and `798` files, not `818` and `826`). The Ran and per-criterion sections say "at the head code commit", so the figures are recoverable and all reproduce. Say "the head code commit".
+2. 🟡 F2 (plan). U6-10's third leg reads the newest commit touching any skill, not U6's wall; a later plan merge carrying U8's skill edit would red a correct handoff. Scope it to the wall.
+3. 🟡 F3 (plan). U6-7's Expected cell annotates `27 229 63 229 6`; the head prints `27 238 63 238 6` (records grew). The criterion is `1` or more, so the row stands.
+4. Note. The re-diagnosis says `ROLES` is shared with the smoke test; `test/smoke/smoke.mjs` does not import it. The unit did not copy the error. `git grep -nw 53` also hits decimals like `5.53`; the step asks the reader to classify hits, so this is not false.
+
+Cleared to merge.
