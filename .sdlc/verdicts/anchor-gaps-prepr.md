@@ -2,7 +2,7 @@
 kind: verdict
 plan: anchor-gaps
 seat: verifier
-pass: 3
+pass: 4
 ticket: "#740, #744"
 written: 2026-09-29
 ---
@@ -149,3 +149,37 @@ version: n/a (a plan landing, no release)
 1. 🔴 CI: GitHub has no workflow run for `a02af6a5`. The nearest run, `87e633cd`, is all green and differs from the head only in `CHANGELOG.md`, but the gate reads the head. A CI run on this head, or on a later head that adds only `.sdlc/` records, with every required job green, is all pass 4 needs: the tree rows here carry to any head whose `git diff a02af6a5 <head> -- . ':!.sdlc'` is empty.
 2. 🟢 CL is closed: the shipped sentence matches Q1's rule, and the block reads the landing day.
 3. 🟡 TX and CK: text precision notes and #701's inherited check; none blocks.
+
+## Pass 4 · 🟢 at `183823e6`: the head adds only `.sdlc/` records over pass 3's tree, and CI is green on every required job
+
+verdict: 🟢
+sha: 183823e6f5cc2023263cee5b9843abfe2bd5669b
+version: n/a (a plan landing, no release)
+
+`plan/anchor-gaps` at `183823e6` (PR #762): merge of main's `.sdlc/`-only commits (through `40f349a6`) over `a02af6a5`, made to start CI on the head. Seat read, no worker: pass 3's finding 1 carries every tree row to a head whose non-`.sdlc/` diff from `a02af6a5` is empty.
+
+### Red
+
+| id | criterion | state | evidence | negative control |
+|---|---|---|---|---|
+| none | no red row this pass | 🟢 | `CI` below is the only row pass 3 held red, now green | pass 3 recorded `CI` 🔴, so a red is written when one holds |
+
+### Yellow
+
+| id | criterion | state | evidence | negative control |
+|---|---|---|---|---|
+| CK | inherited `card-source-range` | 🟡 | pass 3's `range mismatches: 3`, exit 1, carries (tree unchanged) | `0` at `33bd8920^`: #701's, not this plan's |
+| TX | text precision | 🟡 | pass 3's TX notes carry unchanged (`a user-built palette` example, `app-helpers.mjs:836` comment, plan `:114` `new block`) | no clause false (pass 3 CL, RV) |
+
+### Green
+
+| id | criterion | state | evidence | negative control |
+|---|---|---|---|---|
+| TR | the tree equals pass 3's graded tree outside `.sdlc/` | 🟢 | `git diff --stat a02af6a5 183823e6 -- . ':!.sdlc' \| wc -l`: `0`; `183823e6` tree `36c2cc13` equals `git merge-tree --write-tree a02af6a5 40f349a6`; `git diff --name-only <merge-base> origin/main -- . ':!.sdlc' \| wc -l`: `0` | `git diff --name-only 1d03eca5 a02af6a5 -- . ':!.sdlc'` names 20 paths, so the command sees tree changes |
+| CI | required jobs green on the head | 🟢 | `gh pr view 762` headRefOid `183823e6f5cc2023263cee5b9843abfe2bd5669b`: `build-test`, `panda-smoke`, `corpus-contrast` and all seven `sweeps (...)` `COMPLETED/SUCCESS`, `deploy` `SKIPPED`; run `36639830065` `success` | the same read at 22:29 UTC showed jobs with no conclusion yet, and `d017bbc9` read `sweeps (gate:mode-isolation) failure`, so the read separates |
+| P | every plan, unit and gate row | 🟢 | pass 3 Green at `a02af6a5` (P1 `✓ all 54 test files passed`, P2 `4141.3 KB` agrees, SM `SMOKE PASS`, P3, P4, RE, MI, U1 to U4, CL, DT, MG, RV) carries by TR | each row's own control is recorded in pass 3 |
+
+### Findings
+
+1. 🟢 Landable: CI green on the head was pass 3's only red; the tree it graded is unchanged here.
+2. 🟡 CK and TX carry from pass 3; neither blocks.
