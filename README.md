@@ -142,6 +142,32 @@ Two plugins live under `figma/`:
 - **`figma/binder/`** — the standalone **Semantic Binder** (`figma/binder/figma-semantic-binder/`),
   which aliases each semantic role to its raw variable so editing a raw color cascades live.
 
+## Views and sections
+
+The app starts in a gallery; opening a set enters one editor with three sections.
+
+**Gallery.** The home hub shows your saved palette sets as tiles under a search box, then the curated
+color categories as a grid. Opening a category lists its volumes of presets, searchable within that
+category, and clicking a preset opens an editable copy in your own sets. **Project** (load the saved
+config), **Import** (a config `.json`) and **+ New** sit in the header. Detail: `docs/lld/app-shell.md`.
+
+**Color.** The canvas shows Palettes (the ramps), Scrims, Mapping (the semantic-role table) or Radix
+(the 12-step ladder), in a system, light or dark scheme. **Compare** renders the scene in Light and Dark
+side by side, except in Mapping, whose table already shows both. The left pane holds palette analysis
+cards; the right pane is the inspector. Detail: `docs/reference/references/ui-plan.md` (Revision B).
+
+**Typography.** The canvas is a Specimen (each step in its real face) or a Tokens matrix (Base plus each
+breakpoint). Breakpoint modes sit beside it, and once one exists an **All** button shows every
+breakpoint side by side and hides the Specimen/Tokens switch. The inspector has Scale, Fonts and
+Specimen tabs; the left pane holds the type analysis cards.
+
+**Geometry.** The canvas is Controls (a mock control at each size step) or a Tokens matrix, with the
+same breakpoint modes and All button. The inspector has Ramp, Radius and Space tabs, and each step's
+text size comes from the Type scale. The left pane holds the geometry analysis cards.
+
+**Export drawer.** Five groups: Colors (ten formats), Typography (CSS, DTCG), Geometry (CSS, CSS sizes
+only, DTCG), Design System (`tokens.json`, `DESIGN.md`) and Project (Config).
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
