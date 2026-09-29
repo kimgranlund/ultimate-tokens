@@ -17,13 +17,14 @@ skips a layer.
   `ratio`/`steps` argument anymore (2026-07-13 rewrite; sizes are no longer derived from a modular scale).
   `transform` defaults `"none"`; `box` DEFAULTS from the role (`ui`/`mono` ⇒ `true`, every other role ⇒
   `false`), overridable per voice (§2).
-- **`makeVoices(o={})`** is the FACTORY: it returns the THIRTEEN voices as a `{name: catRecord}` object,
+- **`makeVoices(o={})`** is the FACTORY: it returns the FIFTEEN voices as a `{name: catRecord}` object,
   every voice sharing the same structure while reading its knobs from `o` (each with a default, e.g.
   `o.dWeight ?? 700`). The knobs are prefixed by voice: Display `d-` (`dLead/dWeight/dTrack/dTransform`),
   Headline `h-`, Sub-heading `sh-`, Title `t-`, Sub-title `st-`, Lead `lead-`
   (`leadLead/leadWeight/leadTrack`), Body `b-` (`bLead/bWeight`, no tracking knob, always 0), Body-mono
   `bodyMono-`, Label `label-`, Label-mono `labelMono-`, Kicker `kick-`, Tiny `tiny-` (`tinyLead/tinyWeight`),
-  Tiny-mono `tinyMono-`. A knob a treatment doesn't pass falls to the `makeVoices` default.
+  Tiny-mono `tinyMono-`, UI-control `uc-` (`ucLead/ucWeight/ucTrack`), UI-widget `uw-`
+  (`uwLead/uwWeight/uwTrack`). A knob a treatment doesn't pass falls to the `makeVoices` default.
 - **A treatment** is `{id, label, note, fonts, categories: makeVoices({...})}`. It supplies the **font
   palette** (`{display, heading, body, ui, mono}`, five roles) and CHARACTER knobs only, weight,
   tracking, leading, case. Treatments no longer differ in SIZE (§3); `note` is the human description the
@@ -96,9 +97,10 @@ paragraphIndent  = 0
 singleLineHeight = size                                # BOX voices ONLY
 ```
 
-- **FIXED SIZE TABLE, not a modular scale (2026-07-13 rewrite).** `SIZES` in type.mjs is a literal
-  `[SM, MD, LG]` px triplet per voice-scale (nine distinct triplets; the four mono-alias voices reuse
-  their sibling's), shared identically across ALL 5 treatments, matching Material 3's own approach (one
+- **FIXED SIZE TABLE, not a modular scale (2026-07-13 rewrite).** `SIZES` in type.mjs holds a
+  three-entry `SM · MD · LG` px row for thirteen voices (nine distinct rows; the four mono-alias voices
+  reuse their sibling's) and, since 2026-07-16, a six-entry `XS..2XL` row for the two interactive voices
+  (UI-control, UI-widget), shared identically across ALL 5 treatments, matching Material 3's own approach (one
   fixed scale; theme varies styling, not the numbers). Previously every voice derived `base · ratio^n`
   (a treatment's own base+ratio gave it a distinct scale feel); treatments now differ ONLY in
   font/weight/tracking/leading/case, never size.
@@ -236,7 +238,7 @@ The engine names families as strings; the *rendering* of those families is a sep
 - **`scripts/gen-type-fonts.mjs`** fetches each family's Latin woff2 subset from Google's css2 endpoint and
   writes `type-fonts.js`. Its `FAMILIES` array (name + variable `wght` axis) is the source of truth for
   *which* faces are embedded. It is **manual** (`npm run gen:type-fonts`), not in `build`/`test`.
-- **`ensureTypeFonts()`** (in `src/ui/app.js`) injects the `<style>` once and eagerly registers all four via
+- `ensureTypeFonts()` (in `src/ui/app-helpers.mjs`) injects the `<style>` once and eagerly registers all four via
   `new FontFace(...)` + `document.fonts.add` + `load()` (the `<style>` `@font-face` path is lazy, a face
   outside the current treatment would flash the fallback on first use without the eager activation). Data
   URIs, so still offline-safe and store-compliant (`networkAccess:"none"`).

@@ -16,7 +16,7 @@ user-invocable: true
 
 One file, `src/engine/type.mjs`, the type analog of the color engine: a few per-voice params → a systematic
 scale → DTCG / CSS tokens. Pure, no DOM. Every step's size, line-height, letter-spacing, weight, and case is
-**derived** from the treatment's knobs, EXCEPT size itself, which since 2026-07-13 is a hand-authored FIXED
+**derived** from the treatment's knobs, EXCEPT size itself, which is a hand-authored FIXED
 table shared across all treatments (see the layer table below). The conceptual *why* (the fifteen voices,
 the fixed-size-table rewrite, the target token shape) is owned by `docs/reference/typography/README.md`,
 **cite it, don't re-derive.** What each voice/rank/register is FOR, the reasoning a preset's face and
@@ -27,7 +27,7 @@ authoring or judging any preset typography. Color lives next door in `color-math
 
 | Layer | What it is | The contract |
 |---|---|---|
-| **`cat(role, sizeKey, leading, weight, trackingEm, transform, box)`** | builds ONE voice's param record | `{role, base, leading, weight, trackingEm, steps, transform, box}`, `sizeKey` indexes the FIXED `SIZES` table (no `ratio`/exponent anymore); `steps` is always the uniform SM/MD/LG ramp; `transform` defaults `"none"`, `box` defaults from the role (`ui`/`mono` ⇒ `true`, else `false`) |
+| **`cat(role, sizeKey, leading, weight, trackingEm, transform, box)`** | builds ONE voice's param record | `{role, base, leading, weight, trackingEm, steps, transform, box}`, `sizeKey` indexes the FIXED `SIZES` table (no `ratio`/exponent anymore); `steps` comes from `ranksFor`: SM/MD/LG when the voice's `SIZES` row has three entries, XS to 2XL when it has six; `transform` defaults `"none"`, `box` defaults from the role (`ui`/`mono` ⇒ `true`, else `false`) |
 | **`makeVoices(o={})`** | the FACTORY, returns the FIFTEEN named voices, sharing structure, reading per-voice knobs from `o` | `Display · Headline · Sub-heading · Title · Sub-title · Lead · Body · Body-mono · Label · Label-mono · Kicker · Tiny · Tiny-mono · UI-control · UI-widget` (the last two = the interactive-text voices, TKT-0008; UI-control composes into geometry's control ramp) |
 | **`TYPE_TREATMENTS`** (5) | each = `{id,label,note,fonts,categories:makeVoices({...})}` | ids `product · luxury · editorial · technical · statement` (`statement` = Brutalist); treatments differ in CHARACTER only, never size |
 | **`typeScale(config={treatment,bodyBase,modeFactor?,overrides?,voices?,fonts?})`** | resolves a treatment → `{treatment,label,fonts,roleOf,categories,styleNames?,weights?,voiceFonts?}` | `roleOf` maps each voice→font role; `categories[voice][step]` = the resolved step. The optional channels are **per-kit overrides** layered over the treatment, each **identity-gated** (absent/empty/non-finite/1 ⇒ byte-identical output): `overrides` = flat per-cell `"<voice>\|<step>"`→size map (moves SIZE only); `voices` = `{<voice>:{weight,leading,tracking,styleName,weights,font}}` reshaping a whole voice (leading/tracking accept a percent-string OR a ratio); `fonts` = `{<role>:family}` per-role font swap; **`modeFactor`** = the hierarchy-aware BREAKPOINT compression (ratified 2026-07-10): each step's size scales by a factor log-interpolated from ×1 at `bodyBase` to ×`modeFactor` at the ramp's top, body-class frozen, Display fully compressed (Tablet 5/6 · Mobile 2/3 canonical); line/tracking/para re-derive from the compressed size |
@@ -37,7 +37,7 @@ authoring or judging any preset typography. Color lives next door in `color-math
 
 One-line pointers; this body does not restate them:
 
-- **Voice taxonomy**: the fifteen voices; thirteen ride the uniform 3-step ramp (SM/MD/LG) and the two INTERACTIVE voices (UI-control/UI-widget) ride the full XS..2XL 6-step ramp (`ranksFor` picks by the voice's `SIZES` length, 2026-07-16, TKT-0008 follow-up; the old per-voice `STEPS_3`/`STEPS_5`/`STEPS_UI` split stays retired), the `roleOf` mapping (Body-mono/Label-mono/Kicker/Sub-title/Tiny-mono → `mono`; Lead/Body → `body`; Label/Tiny/UI-control/UI-widget → `ui`), the `box` flag that decouples the presentation FLOW from the font role (the BOX voices are exactly Kicker/UI-control/UI-widget, Label/Body-mono/Label-mono are `box:false` PROSE since 2026-07-16; Label is the STATIC label voice, interactive single-line text belongs to the UI voices), the caps voices, the per-treatment case rules → foundations §2 + §4.
+- **Voice taxonomy**: the fifteen voices; thirteen ride the uniform 3-step ramp (SM/MD/LG) and the two INTERACTIVE voices (UI-control/UI-widget) ride the full XS..2XL 6-step ramp (`ranksFor` picks by the voice's `SIZES` length), the `roleOf` mapping (Body-mono/Label-mono/Kicker/Sub-title/Tiny-mono → `mono`; Lead/Body → `body`; Label/Tiny/UI-control/UI-widget → `ui`), the `box` flag that decouples the presentation FLOW from the font role (the BOX voices are exactly Kicker/UI-control/UI-widget, Label/Body-mono/Label-mono are `box:false` PROSE; Label is the STATIC label voice, interactive single-line text belongs to the UI voices), the caps voices, the per-treatment case rules → foundations §2 + §4.
 - **The math**: `buildCategory(name, p, factor, overrides, vp, compress)` in type.mjs: FIXED literal size (`SIZES` table) × `factor` × optional breakpoint `compress` → 8px floor → the nice-number ladder (ONLY when actually scaled/compressed, an unscaled literal passes through EXACT) → per-cell/per-voice overrides; tracking stays OPTICAL on the derived size; `bodyBase` is the ONE global resize lever (`factor = bodyBase / 16` in `typeScale`); `leadingRatio`/`trackingRatio` are the exact unrounded per-step ratios every relative-unit emitter must read (never re-derive from the rounded absolute) → foundations §3.
 - **Emitter shapes**: the five emitters + the `dimUnit` px/rem/em option → foundations §6.
 - **Sibling weights + Figma labels**: the two-tier ladder (expressive vs. body-class), the fixed Regular/Medium/Semi-bold face mapping, the `•`/`-single` naming convention → `references/weight-ladders-and-labels.md` (a fully separate axis, don't duplicate here).
@@ -45,19 +45,19 @@ One-line pointers; this body does not restate them:
 
 ## The font-quoting guard: the Safari trap
 
-`typeTokensCSS` emits a full stack, `--font-{role}: '{family}', '{google-safe fallback}', {generic};` (#446, 2026-08-14; fallback named only when FONT_FALLBACKS differs), **the single quotes on every named entry are load-bearing.**
+`typeTokensCSS` emits a full stack, `--font-{role}: '{family}', '{google-safe fallback}', {generic};` (the fallback is named only when `FONT_FALLBACKS` differs), **the single quotes on every named entry are load-bearing.**
 A family name with a digit (`Source Serif 4`, `Inter Tight`) is invalid *unquoted* in a strict CSS parser:
 **Safari drops the whole declaration and falls back.** The `luxury` treatment uses `Source Serif 4`, so the
 verifier pins `typeTokensCSS(typeScale({treatment:"luxury"}))` contains `--font-display: 'Source Serif 4'`
 (the luxury quoting assert in `test/engine/type.mjs`). Never emit an unquoted family. (This is the type echo of color's anchors, a
-quiet break that *looks* fine in Chrome; see the smoke-is-Chrome-only memory.)
+quiet break that *looks* fine in Chrome; the smoke run is Chrome-only, so `shipping-changes`'s `references/foundations.md` owns why green smoke is not Safari-proof.)
 
 ## The self-hosted fonts (the offline / Figma-plugin path)
 
 The 4 families, **Inter, Inter Tight, Source Serif 4, JetBrains Mono**, are base64 woff2 `@font-face`
 inlined in `src/ui/type-fonts.js` (one export, `TYPE_FONTS_CSS`), so the specimen renders in the real faces
 offline AND inside the Figma plugin (`manifest networkAccess:"none"` hard-blocks the Google Fonts CDN).
-`ensureTypeFonts()` (in `src/ui/app.js`) injects the `<style>` once AND eagerly registers all four via the
+`ensureTypeFonts()` (in `src/ui/app-helpers.mjs`) injects the `<style>` once AND eagerly registers all four via the
 `FontFace` API + `load()` (the `<style>` path is lazy, Chromium activates a face only on first use, so a font
 outside the current treatment flashes the fallback without the eager load).
 
@@ -71,7 +71,7 @@ outside the current treatment flashes the fallback without the eager load).
    - A wrong leading/tracking/weight/case on a voice → a `makeVoices` knob (default in `makeVoices`, override in the treatment's `makeVoices({...})`).
    - A new treatment → push a `{id,label,note,fonts,categories:makeVoices({...})}` row onto `TYPE_TREATMENTS`, character knobs only, never a size/ratio knob.
    - A new voice group → add a `cat(...)` line in `makeVoices` (its role flows into `roleOf` from `cat`'s first arg) + a `SIZES` entry (unless it aliases an existing voice's triplet), THEN wire the blast radius the emitters DON'T auto-flow: the `persist.js` **VOICES allowlist** (miss it and the voice's per-voice overrides are SILENTLY DROPPED on hydrate, the one functional landmine), the `styles.css` `.ty-s0…N` series colours (one per voice, in order), and the count literals in `test/engine/type.mjs` (`GROUPS`) + `test/ui/headless-boot.mjs` (51 steps / 15 groups, 13 voices × 3 + the 2 interactive voices × 6). A voice-count change is a taxonomy change, not just code, see best-practices.
-   - A voice RENAME (not an add) → same `persist.js` VOICES allowlist update, PLUS a `RENAME_MAPS` entry there (`src/ui/persist.js`, TKT-0016, the schemaVersion + rename-map mechanism, same principle as `hueSpace`'s legacy stamp): bump `CURRENT_SCHEMA_VERSION` and add `{ version, renameVoices: { OldName: "NewName" } }` in the SAME change. Miss this and every doc saved under the old name loses that voice's overrides on its very next hydrate, the 2026-07-13 Heading→Headline/UI→Label rename was a live example before TKT-0016 fixed the mechanism. This is a standing practice, not a one-off: EVERY future voice rename adds its own entry, the same way a Figma variable rename ships its `FIGMA_MIGRATIONS` entry (TKT-0012).
+   - A voice RENAME (not an add) → same `persist.js` VOICES allowlist update, PLUS a `RENAME_MAPS` entry there (`src/ui/persist.js`, the schemaVersion + rename-map mechanism, same principle as `hueSpace`'s legacy stamp): bump `CURRENT_SCHEMA_VERSION` and add `{ version, renameVoices: { OldName: "NewName" } }` in the SAME change. Without it every doc saved under the old name loses that voice's overrides on its next hydrate. Every voice rename adds its own entry, the way a Figma variable rename ships its `FIGMA_MIGRATIONS` entry.
    - A bad emitted token → the emitter (`typeTokensCSS` / `typeTokensBreakpointCSS` / `typeTokensDTCG` / `typeTokensFigmaModes` / `typeTokensFigmaPrimitivesModes`).
    - A sibling-weight ladder or Figma Styles label wrong → `references/weight-ladders-and-labels.md`, not this file.
    - A wrong/missing rendered face → `src/ui/type-fonts.js` (regenerate) + the treatment's `fonts`.
@@ -97,7 +97,7 @@ The guard that catches the Safari font break is the `typeTokensCSS(luxury)` quot
 
 | Path | Use when |
 |---|---|
-| `references/foundations.md` | the SINGLE OWNER of the model: the five layers (`cat`→`make11`→treatment→`typeScale`→emitter), the voice taxonomy + step sets, the `buildCategory` math (nice ladder + override channels), `bodyBase` scaling, the emitter shapes, the font-rendering path |
+| `references/foundations.md` | the SINGLE OWNER of the model: the five layers (`cat`→`makeVoices`→treatment→`typeScale`→emitter), the voice taxonomy + step sets, the `buildCategory` math (nice ladder + override channels), `bodyBase` scaling, the emitter shapes, the font-rendering path |
 | `references/best-practices.md` | the non-obvious do/don't (derive-don't-hardcode, the quoting guard, case-is-per-treatment, the manual font regen, both-ends font wiring) + a worked walkthrough from the treatment/specimen history |
 | `references/rubric.md` | score the change before calling it done, the fifteen voices, the fixed-size-table math, the quoting guard, the body-class snap boundary, and the font wiring are the gates |
 | `references/weight-ladders-and-labels.md` | sibling-weight ladders, the expressive-vs-body-class label split, the Figma Styles `•`-marker + `-single` suffix, the never-re-derive-a-relative-unit law, preset weight authoring against a real font's cuts |

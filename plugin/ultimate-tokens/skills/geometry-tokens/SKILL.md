@@ -51,7 +51,7 @@ and around components). Your job is never to type a px value, it's to pick the s
    guarantees the glyph sits optically centered. Don't set a control's padding independently of its
    height (that breaks the centering); use the paired `--size-{step}-padding-narrow` / `-padding-wide`. See
    [`references/controls.md`](references/controls.md).
-3. **Four paddings, by anatomy (TKT-0010).** `--size-{step}-padding-narrow` is the SLOT edge (a control
+3. **Four paddings, by anatomy.** `--size-{step}-padding-narrow` is the SLOT edge (a control
    WITH a leading icon, the centering law); `--size-{step}-padding-wide` is the caret/bare edge (a bare
    text button/label, or the caret side of a select); the `-compact` twins absorb the control's own gap
    into the edge for dense layouts. Use the one that

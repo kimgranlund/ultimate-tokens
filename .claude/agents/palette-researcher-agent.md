@@ -44,11 +44,11 @@ Proportion is the structure: a quiet ground (d), a working middle (s), a small l
 loudness by contrast and stays rare. The 7 categories are the bar; the naming doc is a rubric, not a
 rulebook.
 
-## Type mode (first-class since ADR-022 - registers, reasoned from the story)
+## Type mode (registers, reasoned from the story, per ADR-022)
 
 A palette's typography is a REGISTER declaration: `type.registers.{anthemic, contextual, functional,
 actionable, data}` (docs/reference/typography/intended-use.md Layer 3 - each register shapes its
-primary voice Display/Headline/Body/Label/Kicker; `type.slots` is the RETIRED pre-2026-07-30 shape).
+primary voice Display/Headline/Body/Label/Kicker; `type.slots` is forbidden, not a valid shape).
 When asked to design or REVISE a palette's type (the preset revision program), emit the registers
 IN the draft JSON, reasoned from that palette's own story (kicker/source/refuses) against the canon
 and scored against docs/reference/rubrics/type-rubric.md - self-score Layer A, state it in your

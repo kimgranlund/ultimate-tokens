@@ -92,8 +92,8 @@ names end in a WORD, so both share the `--c-` prefix without collision, see the 
 Color isn't the only system. `type.mjs` and `geometry.mjs` are parallel engines with their own resolved
 scales and emitters:
 
-- **Type** (`type.mjs`): `typeScale(config)` → a resolved scale. Its structure is the **seven named groups**
-  `make7` builds, Display · Heading · Sub-heading · Kicker · Body · UI · Code, each a
+- **Type** (`type.mjs`): `typeScale(config)` → a resolved scale. Its structure is the **fifteen voices**
+  `makeVoices` builds (`scale.categories`), each a
   step ramp whose every step carries size/lineHeight/letterSpacing/weight/textTransform. `typeTokensCSS(scale)`
   → CSS custom props + utility classes; `typeTokensDTCG(scale)` → a `fontFamily` group + a `typography` group
   of W3C composite `$type:"typography"` tokens. Font names with digits MUST be quoted in CSS
@@ -113,8 +113,8 @@ discipline, just with the model step replaced by the drawer's `SYSTEM_CODE` + `S
 
 A serializer that no one calls is dead code. The chain a color format travels:
 
-`exports.js exportX` → `exportAll` (the bundle) → `model.mjs projectView` `exports[id]` (the UI-readable map,
-~line 433) → `app.js renderDrawer FORMAT_GROUPS` (the tab) → `view.exports[id]` (rendered code) →
+`exports.js exportX` → `exportAll` (the bundle) → `model.mjs projectView` `exports[id]` (the UI-readable
+map) → `renderDrawer`'s `FORMAT_GROUPS` in `src/ui/overlays/drawer.js` (the tab) → `view.exports[id]` (rendered code) →
 `downloadAllZip` (the zip). A type/geom format skips `exportAll`/`model` and instead rides
 `SYSTEM_CODE`/`SYSTEM_LABEL` in the drawer + the `sys.type`/`sys.geometry` branch of `downloadAllZip`. Miss
 any link and the format exists but is unreachable from the UI, the headless-boot drawer/download tests in

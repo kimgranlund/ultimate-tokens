@@ -39,8 +39,8 @@ present**. The user-facing *why* of the kit shape is owned by `mcp/README.md` (d
 |---|---|---|
 | The **core** | `mcp/brand-kit-core.mjs` | PURE, no I/O, `SERVER` (`ultimate-tokens-brand-kit`), `buildSurface(kit)` (the gated `TOOLS`/`RESOURCES`/`PROMPTS` pushes + `usageGuide()`), `handle(msg, surface)` (the JSON-RPC dispatch). The ONLY place tools/resources are defined, the stdio server AND the hosted Worker both serve it. |
 | The **server** | `mcp/brand-kit-server.mjs` | the thin stdio transport, loads `brand-kit.json`, calls `buildSurface`, frames newline-delimited JSON-RPC over stdin/stdout around `handle()`, prints the STDERR banner. No surface logic. |
-| The **kit** | `brandKit(doc, systems)` in `src/ui/model.mjs:237` | the pure projection that produces `brand-kit.json`, `stops`/`palettes`/`roles` (Color), `type`, `geometry`. `systems` is the per-system opt-in. |
-| The **package** | `downloadBrandKitMcp()` in `src/ui/app.js:6565` | the export drawer's **Download Brand-Kit MCP**, zips the server + core + `brand-kit.json` + README + `package.json`. Uses the `MCP_BRAND_KIT` asset. |
+| The **kit** | `brandKit(doc, systems)` in `src/ui/model.mjs` | the pure projection that produces `brand-kit.json`, `stops`/`palettes`/`roles` (Color), `type`, `geometry`. `systems` is the per-system opt-in. |
+| The **package** | `downloadBrandKitMcp()` in `src/ui/app.js` | the export drawer's **Download Brand-Kit MCP**, zips the server + core + `brand-kit.json` + README + `package.json`. Uses the `MCP_BRAND_KIT` asset. |
 | The **asset** | `src/ui/mcp-assets.js` (GENERATED) | the inlined server + core + README (`MCP_BRAND_KIT.{server,core,readme}`), built from `mcp/` by `npm run gen:mcp-assets` (`scripts/gen-mcp-assets.mjs`). **Never hand-edit.** |
 
 ## The surface: what's served, and the opt-in gating
@@ -111,7 +111,7 @@ node test/mcp/brand-kit.mjs   # generates a kit from defaultDocument(), spawns t
                               #   initialize → serverInfo.name "ultimate-tokens-brand-kit" + capabilities.tools
                               #   tools/list has the 6 colour tools + get_type + get_geometry
                               #   get_type (Body voice) · get_geometry (centering law on MD; font = type UI size)
-                              #   resources/list (brand://type + brand://geometry) · list_palettes (8)
+                              #   resources/list (brand://type + brand://geometry) · list_palettes (16)
                               #   resolve_token primary/primary (light+dark) · get_ramp (>=19 stops, incl. 500)
                               #   nearest_token (exact stop → distance 0) · get_semantic (flatten)
                               #   brand://guide · apply_brand prompt · unknown method → -32601
