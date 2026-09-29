@@ -76,3 +76,18 @@ docs/reference/rubrics/quality-rubric.md:0
 1
 branding: clean (741 files scanned)
 ~~~
+
+## Negative controls
+
+Run in a throwaway clone under the job tmp dir, each row's command from the `~~~sh ran` block, at the sha the plan names.
+
+| Id | Control run | Printed | Plan says |
+|---|---|---|---|
+| U2-1 | at 282fca8d | `0 0 0 5 1` | `0`, `0`, `0`, `5`, `1` |
+| U2-2 | at 282fca8d | `0 0 0 ok` | `0`, `0`, `0`, `ok` |
+| U2-3 | at 282fca8d | `spec-draft.md:2`, `acceptance-criteria.md:1`, `quality-rubric.md:1`, `1` | `2`, `1`, `1`, `1` |
+| U2-4 | at 282fca8d | nine `0`s, `0`, `33` | nine `0`s, `0`, `33` |
+| U2-5 | at 282fca8d | six `0`s | six `0`s |
+| U2-6 | at be13a210 | `1 1 0 1 0 3 2 2 1 0 1 1` | `1`, `1`, `0`, `1`, `0`, `3`, `2`, `2`, `1`, `0`, `1`, `1` |
+| P8 (a) | the handoff at be13a210, P8 run at e7058994 | `H=e7058994`, `NO-RAN`, `0 0 0 0 0`, `diff 0` | same |
+| P8 (b) | fixture handoff (U2-1 to U2-5 and P3 as the committed Ran table's cells: U2-1 `2 2 3 0 1`, U2-5 `1 1 1 1 1 2`, `736 files scanned`) at e7058994 | `1a2 > 5`, `3d3 < 2`, `30d29 < 1`, `32c31,32` (`< branding: clean (736 files scanned)` against `> 1` and `> branding: clean (738 files scanned)`), `diff 1` | four hunks, `diff 1` |
