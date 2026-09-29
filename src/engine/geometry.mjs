@@ -1,8 +1,8 @@
 // geometry.mjs — the GEOMETRY / dimensional engine: the spatial analog of the color & type engines.
 // A few parameters → a systematic size ramp → derived control geometry → DTCG / CSS tokens. Pure, no DOM.
 //
-// It encodes ONE law (the centering law) and TWO families, distilled from the agent-ui dimensional spec
-// (.claude/docs/references/{geometry.md, geometry-sizing-spec.md, dimensional-standard.md}):
+// It encodes ONE law (the centering law) and TWO families, distilled from the external agent-ui
+// dimensional spec (geometry, geometry-sizing-spec, dimensional-standard):
 //
 //   THE CENTERING LAW — edge padding for a glyph = (height − glyph) / 2. Every glyph centers in a square
 //   cell of side = the control height; block-size is the vertical lever, padding-block is 0.

@@ -1,4 +1,4 @@
-// app.js — the DOM app for the HCT Palette Generator.
+// app.js: the DOM app for Ultimate Tokens.
 //
 // One <ultimate-tokens> web component. The `document` (a palette SET) is the single
 // source of truth; the whole right side is projectView(document), recomputed on

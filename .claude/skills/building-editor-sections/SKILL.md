@@ -79,7 +79,7 @@ Type/Geom **Tokens** matrix both do this:
   - **Clamp in the live setters** to the persisted range — the range literals are owned by
     `setTypeTokenOverride`/`setGeomTokenOverride` (`src/ui/app.js`), mirroring persist's
     `clampTokenOverrides`; an unclamped value diverges live-vs-persist and can yield negative geom padding.
-  - **`deleteMode` hygiene.** Deleting a mode strips its stale `|<id>` override keys.
+  - **`deleteTypeMode`/`deleteGeomMode` hygiene.** Deleting a mode strips its stale `|<id>` override keys.
   - **Mode-local.** Base does not cascade into breakpoint columns — say so in a one-line UI hint.
 - **Sticky headers (the scrollport gotcha):** for the `thead`/first-column to pin, the **table** must be
   `overflow: visible` — `overflow != visible` makes the *table itself* the sticky scrollport (so headers
@@ -106,6 +106,8 @@ Type/Geom **Tokens** matrix both do this:
 | `references/foundations.md` | the workbench principle, the doc→view→render data flow, the `h()`/render/`_sync` model |
 | `references/best-practices.md` | the mechanics behind the body's rules (the fill:none selector, font-quoting, reuse-over-CSS, shim internals, retire-modal call sites) + worked walkthrough |
 | `references/rubric.md` | score a built/evolved section before calling it done |
+| `docs/lld/app-shell.md` | the frame, its regions, the render pipeline, and the state that routes them |
+| `docs/reference/references/component-inventory.md` | the shared primitives (`app-helpers.mjs`) a section builds from |
 
 **Peers:** [[color-math]] · [[type-scale]] · [[geometry-system]] (the engines the sections host) ·
 [[shipping-changes]].
