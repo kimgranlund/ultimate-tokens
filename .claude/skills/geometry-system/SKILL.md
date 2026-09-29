@@ -26,7 +26,7 @@ conceptual *why* is owned by `docs/reference/geometry/README.md` (de-staled, acc
 
 ## THE ONE LAW (read first)
 
-**Edge padding for a glyph = (height − glyph)/2**, every glyph centers in a square cell of side = the control
+**Edge padding for a glyph = (height − glyph)/2**: every glyph centers in a square cell of side = the control
 height; block-size is the vertical lever, never block-padding (`padding-block: 0`). The full statement + its
 derivations: `references/foundations.md` §2.
 

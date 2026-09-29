@@ -147,7 +147,7 @@ surface:
 
 **Ramps** (default), swatch grids; tune & see color (T3).
 
-**Analysis**, the L*×C plot for the selected palette → **D2**:
+**Analysis**: the L*×C plot for the selected palette → **D2**:
 ```
 [ Ramps │ ANALYSIS │ Semantic ]   Primary
  L*100┤●                          ░ gamut ceiling (maxChromaInGamut@tone)
@@ -160,7 +160,7 @@ surface:
       └──────────────── C →
 ```
 
-**Semantic**, a live UI preview painted by the 53 roles; ◐ flips every `--c-*` via `light-dark()`:
+**Semantic**: a live UI preview painted by the 53 roles; ◐ flips every `--c-*` via `light-dark()`:
 ```
 [ Ramps │ Analysis │ SEMANTIC ]   (light ◐)
  ┌ surface ────────────────────────┐
