@@ -15,7 +15,7 @@ user-invocable: true
 # Figma variable binder: ultimate-tokens
 
 There are **TWO** Figma plugins in `figma/`, and they are NOT the same artifact. Know which one a task
-touches before you change a line, they share the Color Primitives → Color Roles vocabulary (#491, was "Color Semantic") but differ in
+touches before you change a line, they share the Color Primitives → Color Roles vocabulary but differ in
 who creates what:
 
 | | **The standalone Binder** | **The app-as-plugin** |
@@ -36,9 +36,9 @@ The conceptual model, *why* aliasing is the only thing giving a live raw→seman
    AC-P3). No `fetch` / `XMLHttpRequest` / `WebSocket` / dynamic `import()`. This is *why* the app's fonts are
    base64-embedded in `ui.html`, there is no CDN. A network call is a hard gate failure, not a style choice.
 2. **The sandbox can't import `.mjs`.** Figma plugin code runs in a non-module VM, so the standalone binder's
-   `code.js` carries `roleTable(n)` baked in, since TKT-0019, GENERATED (spliced verbatim from
+   `code.js` carries `roleTable(n)` baked in, GENERATED (spliced verbatim from
    `semanticRoles(n)`'s own function body by `scripts/gen-figma-binder-code.mjs`, between the
-   `// === GENERATED:ROLE_TABLE ===` markers) rather than hand-typed, a verbatim copy either way.
+   `// === GENERATED:ROLE_TABLE ===` markers); never hand-edit inside the markers.
    `figma/binder/bind-plan.mjs` is the pure, importable planner the verifier tests; `code.js` mirrors it.
    Never hand-edit inside the GENERATED markers; regenerate instead (`npm test`/`npm run build` do this
    for you). They MUST stay in lockstep (`adding-semantic-roles` step 4 owns the edit; the parity gate is
@@ -46,7 +46,7 @@ The conceptual model, *why* aliasing is the only thing giving a live raw→seman
 3. **The VM is jsvm-cpp, not modern V8.** Optional catch binding (`catch {` with no param, ES2019) PARSE-fails
    in Figma yet loads fine in Node, so a `node --check` (and the verifier's own `new Function` load) won't
    catch it. **Always write `catch (e) {`.** Both plugins follow this as a PRACTICE; the static guard is a
-   GATE in `plugin.mjs` only (the `vmsyntax` check, real incident 2026-06-17). The binder's `code.js` also
+   GATE in `plugin.mjs` only (the `vmsyntax` check). The binder's `code.js` also
    uses `catch (e)` (its one catch is the `main().catch` wrapper) but is unguarded, so be disciplined there.
 4. **Never surface a raw error to the user.** Figma policy rejects plugins that show a stack/`e.message`.
    `main().catch(...)` (binder) / the message handler's `catch (e)` (app) logs the detail to `console.error`
@@ -67,34 +67,30 @@ canonical raw-colors name (solid → pad3 `"50"→"050"`; scrim → `"500-{step}
 versioned localStorage key, the destructive **Regroup** ALWAYS warns) → `applyToFigma` posts
 `{type:"apply", dtcg: this.figmaBundle(), config: serialize(this.doc), rebuildSemantic, libraryMode, collections}`.
 `figma/plugin/code.js#applyBundle` creates Color Primitives + Color Roles, prunes orphans, embeds the config
-in `figma.root` pluginData. **`libraryMode` (#629) is ALWAYS an explicit boolean**, never undefined: `true`
+in `figma.root` pluginData. **`libraryMode` is ALWAYS an explicit boolean**, never undefined: `true`
 means "this file is a PUBLISHED library", so the apply aliases and deprecates names it no longer produces
-instead of removing them. Every prune on the apply path is now guarded: `applyBundle`'s three-collection
-color VARIABLE reconcile and its Color Roles theme-MODE prune (#673); `applyFloatPlans`' type/geometry
-variable prune AND its own breakpoint-MODE prune (#629, #687); `applyFontPrimitivesModes`' variable +
-Type Primitives MODE prunes (#629; the mode prune reads the SAME resolved decision as the variable
-prune since #696, see below). `applyStylePlans`' paint and text prunes (#629). #629 shipped the
-flag with color exempt by ruling Q1; #673 retired that exemption; #687 closed the last gap. One
-caveat, detailed in `references/foundations.md` section 6: Regroup (#688) and `plan.retire` are
+instead of removing them. Every prune on the apply path reads the resolved flag: `applyBundle`'s
+three-collection color VARIABLE reconcile and its Color Roles theme-MODE prune; `applyFloatPlans`' type/geometry
+variable prune and its breakpoint-MODE prune; `applyFontPrimitivesModes`' variable and Type Primitives MODE
+prunes (the mode prune reads the SAME resolved decision as the variable prune, not a raw
+`opts.libraryMode === true`); `applyStylePlans`' paint and text prunes. One
+caveat, detailed in `references/foundations.md` section 6: Regroup and `plan.retire` are
 destructive sites outside the flag by design. Regroup drops every Color Roles variable id regardless
-of `libraryMode`, so the always-warn Regroup gate now says explicitly that Published library does not
-cover it (#688) rather than making the two controls mutually exclusive. Two surfaces, one persisted key
+of `libraryMode`, so the always-warn Regroup gate says explicitly that Published library does not
+cover it rather than making the two controls mutually exclusive. Two surfaces, one persisted key
 (`ultimate-tokens-library-mode-v1`, the `_applyConsentKey` precedent, storing both `"1"` and `"0"`
 because unchecked is a real answer): the gate's "Published library" checkbox, and Settings › Token
 mapping › "Figma apply", which exists because "don't show again" makes the gate unreachable and
-nothing in the app clears that consent. An `undefined` reaching `code.js` now means only an OLD
+nothing in the app clears that consent. An `undefined` reaching `code.js` means only an OLD
 `ui.html` bundle; on the flagship it never reaches `confirmLibraryMode` (only the standalone binder's
 own `main()` passes `askIfUndecided`); instead `applyFloatPlans`/`applyFontPrimitivesModes` fall back
-to #635's `priorLibraryUpliftVM`, which reads TRUE when the collection already carries prior-uplift
-evidence (an unwanted existing name with a live alias, or a `_deprecated/` name), false otherwise. #696:
-`applyFontPrimitivesModes`' Type Primitives MODE prune decides off that SAME resolved flag, not a raw
-`opts.libraryMode === true` taken at collection time: before #696 an old bundle applying to an
-already-uplifted file kept the variables but pruned the mode out from under it. **The two collection NAMES are per-doc overridable (#255)**, Settings ›
+to `priorLibraryUpliftVM`, which reads TRUE when the collection already carries prior-uplift
+evidence (an unwanted existing name with a live alias, or a `_deprecated/` name), false otherwise. **The two collection NAMES are per-doc overridable**, Settings ›
 Token mapping › "Figma collections" writes `doc.figmaCollections {raw, semantic}` (persisted, absent =
 defaults); `figmaCollectionNames(doc)` (model.mjs) resolves, rides the bundle's aliasData
 `targetVariableSetName` AND `msg.collections`; code.js `setCollectionNames()` adopts it with constant
 fallbacks, and `readRawColors` resolves a renamed file from the SAVED config at boot. The standalone
-Binder still looks up the DEFAULT names only. **STYLES (2026-07-09, PRs #231–#236):** when the drawer's Styles chip is on
+Binder still looks up the DEFAULT names only. **STYLES:** when the drawer's Styles chip is on
 (opt-OUT), `msg.stylePlans` + `msg.fontPrimitivesModes` ride the same apply, pure plans from
 `figma/binder/style-plan.mjs` (the THIRD planner sibling: paint styles per semantic role bound to Color
 Roles via `setBoundVariableForPaint`; text styles per voice×step×sibling-weight bound to
@@ -102,17 +98,16 @@ Geometry (type/)/Type Primitives; `primitivesModesApplyPlan` = the ordered Type 
 real Premium/Google-Fonts MODE axis, font-mode Phase B) →
 `code.js#applyStylePlans` + `applyFontPrimitivesModes` execute them verbatim, provenance-pruned via
 `STYLE_REGISTRY_KEY` (user styles untouchable). Binds fontSize/fontFamily/paragraphSpacing/
-lineHeight/letterSpacing (px FLOATs since #295) + EITHER fontStyle OR fontWeight, **never both**
-(2026-07-13, #292/#301, supersedes the v1 bind-all shape: real Figma resolves a bound fontWeight to
+lineHeight/letterSpacing (px FLOATs) + EITHER fontStyle OR fontWeight, **never both**
+(real Figma resolves a bound fontWeight to
 "the closest valid weight" independently, silently overriding a bound fontStyle's named cut; the
 executor also explicitly UNBINDS the stale half of the pair on re-apply). The full hard-constraint
 list found live against real files: `references/figma-styles-hard-constraints.md`. Verifier:
 `test/figma/style-plan.mjs` (both-directions parity vs exportUI3) + the styles e2e in `plugin.mjs`.
 Sibling weights: `doc.type.voices[v].weights`, edited in the per-voice panel (Suggest =
-`siblingWeightDefaults`, or `bodyClassSiblingDefaults` for Body*/Label*/Tiny*/Lead, #303/#307). Round-trip OUT: `configFromVariables` (`src/ui/model.mjs`) recovers each family's
+`siblingWeightDefaults`, or `bodyClassSiblingDefaults` for Body*/Label*/Tiny*/Lead). Round-trip OUT: `configFromVariables` (`src/ui/model.mjs`) recovers each family's
 500 hue/chroma from the live raw vars (the APPROXIMATE fallback when no config is embedded); `read-variables`
-→ `receiveLiveVariables` feeds the drift diff. Geometry rides the `Geometry` collection (was
-`Breakpoints`, #491; was `Geometry` pre-ADR-016, a revert) of Figma NUMBER (FLOAT) vars via `geomTokensFigma` (`src/engine/geometry.mjs`).
+→ `receiveLiveVariables` feeds the drift diff. Geometry rides the `Geometry` collection of Figma NUMBER (FLOAT) vars via `geomTokensFigma` (`src/engine/geometry.mjs`).
 
 ## Procedure
 
@@ -147,9 +142,7 @@ npm test                     # test/run.mjs runs both plus the engine/ui suite
 The two SILENT KILLERS a green Node run hides: **`parity`** in `binder.mjs` (it loads `roleTable` out of
 `code.js` via `new Function`, strips the top-level `main();`, and deep-equal-compares its FULL role objects,
 `{key, suffix, light, dark}`, in order, per default palette, against `src/engine/semantic.js`'s
-`semanticRoles(n)`, not just the derived ref-name set (TKT-0027 widened this from a set-diff, which could
-miss a `key`/`suffix` typo pointing at an unchanged ref, the real 2026-06-18 scrim drift was a ref change,
-which both shapes catch)), and **`vmsyntax`** in `plugin.mjs` (a `catch {` that parses in Node but not in
+`semanticRoles(n)`, not just the derived ref-name set), and **`vmsyntax`** in `plugin.mjs` (a `catch {` that parses in Node but not in
 Figma's VM). Don't call it done until both pure verifiers and `npm test` are green.
 
 ## References

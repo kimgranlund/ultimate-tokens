@@ -6,8 +6,8 @@ description: >-
   on the roadmap / the plan", "what did we decide about Y", "is there a spec for Z", "what's the
   status of TKT-####", "what's already been queued or shipped". Consult table → the docs/ files;
   Grep first, read the matching section. ANSWERS from the corpus only. NOT for authoring or
-  editing a document (/doc-forge, scribe); NOT for capturing a new feature idea (/feature) or bug
-  (/bug-report); NOT for building from a record (/build, orchestration).
+  editing a document (the make-doc skill); NOT for capturing a new feature idea (/file-feature) or
+  bug (/file-bug); NOT for building from a record (the sdlc Orchestrator).
 user-invocable: false
 disable-model-invocation: false
 ---
@@ -22,17 +22,17 @@ path; a question the corpus doesn't answer is reported as absent, never guessed.
 |---|---|
 | Problem, users, outcomes, the why | `docs/prd/` (PRD-*), one stub, `prd-0001-app-shell.md` |
 | Requirements, exact behavior, acceptance criteria (scribe-authored) | `docs/spec/` (SPEC-*), two: `spec-muted-base-key-spikes.md`, `spec-panda-park-ui-exports.md` |
-| A ratified decision and its alternatives | `docs/adr/` (ADR-*, accepted = append-only), not present yet |
+| A ratified decision and its alternatives | `docs/reference/references/decision-records.md` (ADR-001 onward, accepted = append-only); there is no `docs/adr/` directory |
 | What's queued, in flight, or done | **GitHub Issues first** (`gh issue list`, ADR-017, 2026-07-17: the live ticket backend), `docs/tickets/` is the pre-2026-07-17 ARCHIVE only (frontmatter `kind:`/`size:`/`status:` on those files reflects state as of the migration date, not current; a migrated file's `migrated-to:` frontmatter + top-of-file pointer names its Issue) |
-| Sequenced steps with done-whens | `docs/plan/` (PLAN-*), closed plans archive to `docs/plan/archive/`; none active right now |
-| Horizons of intent, Now / Next / Later | `docs/roadmap/` (ROADMAP-*), not present yet |
+| Sequenced steps with done-whens | `.sdlc/plans/` (active plans; the board is `.sdlc/board.md`), closed plans archive to `.sdlc/plans/archive/` and `docs/plan/archive/` |
+| Horizons of intent, Now / Next / Later | `.sdlc/roadmap.md` |
 | One actor, one sitting, one done-when | `docs/task/` (TASK-*), not present yet |
 | The color/type/geometry ENGINE's own canonical reference (role tables, export-format shapes, typography/geometry specs, rubrics) | `docs/reference/`, pre-existing, own conventions (not scribe TICKET/SPEC frontmatter); the role-answer-key is `docs/reference/data/role-table.json` |
 | Marketing corpus (voice platform, fact sheet, store copy, launch kit) | `docs/marketing/`, author via the `marketing-manager-agent` + `ultimate-tokens-brand-voice` skill, not this skill |
 | Hosting/licensing design docs, one architecture LLD | `docs/site/`, `docs/lld/`, pre-existing, informal headers (no `doc-type:` frontmatter), predate the scribe TICKET workflow |
 | Generated README preview asset | `docs/img/`, not a document, skip for doc-shaped asks |
 
-All of the above live under one `docs/` root (migrated from `.claude/docs/` on 2026-07-12).
+The `docs/` rows live under one `docs/` root; the `.sdlc/` rows are the sdlc plugin's records.
 `.claude/docs/other/` is the one exception: it is PRIVATE and local-only (gitignored via
 `.git/info/exclude`) and never moves here, if asked about its content, say it's local scratch
 material outside this corpus, don't read it speculatively.
@@ -41,7 +41,7 @@ material outside this corpus, don't read it speculatively.
 but before answering "absent", sweep for near-miss locations: misnamed dirs (`docs/specs/`,
 `rfcs/`, `design-docs/`, `adrs/`), loose files (`NOTES.md`, `DECISIONS.md`, `ARCHITECTURE.md`),
 doc-shaped README sections. A hit → answer with the real location, marked non-canonical:
-"spec-shaped content lives at rfcs/, not indexed; /docs-alignment (scribe) can migrate it." A false
+"spec-shaped content lives at rfcs/, not indexed", and offer to move it into `docs/spec/`. A false
 "this project has no specs" is this skill's own worst failure. Knowledge corpora authored at
 intake are linked from their ticket, not mapped here.)
 
@@ -56,6 +56,6 @@ intake are linked from their ticket, not mapped here.)
    built?" oppositely.
 3. Cross-references between records use ids (the ID spine: a TKT links its SPEC by id), follow
    them rather than assuming one file is complete.
-4. Route all making: a new idea → `/feature`; a bug → `/bug-report`; building a queued record →
-   `/build`; authoring or revising any document → `/doc-forge` (all where installed, otherwise
-   name the record that would be touched and hand back to the user).
+4. Route all making: a new idea → `/file-feature`; a bug → `/file-bug`; building a queued record →
+   the sdlc Orchestrator; authoring or revising any document → the make-doc skill (all where
+   installed, otherwise name the record that would be touched and hand back to the user).
