@@ -16,7 +16,7 @@ if (!existsSync(ENGINE)) { console.log("voice-parity: type engine not found (out
 const { typeScale } = await import(ENGINE);
 const scale = typeScale({ treatment: "product" });
 const kebab = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-const VOICES = new Set(Object.keys(scale.categories).map(kebab)); // display, heading, sub-heading, kicker, …
+const VOICES = new Set(Object.keys(scale.categories).map(kebab)); // display, headline, title, kicker, …
 const STEPS = new Set(Object.values(scale.categories).flatMap((c) => Object.keys(c).map(kebab))); // 3xs..2xl
 // each voice's OWN steps: a token's step is checked against its voice, not the union (the two
 // interactive voices carry xs..2xl, so `--type-body-xl-size` would pass a union check).
@@ -85,9 +85,10 @@ for (const f of files) {
     if (step && !STEPS.has(step)) err(f, m[0], `unknown step "${step}" in class`);
     else if (step && !VOICE_STEPS.get(v).includes(step)) err(f, m[0], `step "${step}" is not a step of voice "${v}" in class (its steps: ${VOICE_STEPS.get(v).join("/")})`);
   }
-  // the voice count claim: "<number word> voices", "<number word>-voice", "<number word>-role" (the
-  // "fifteen-role scale" heading), one..ninety-nine; a magnitude word ("hundred voices") fails loudly.
-  for (const m of text.matchAll(/\b([a-z]+(?:-[a-z]+)?)[-\s]+(?:voices?|role)\b/gi)) {
+  // the voice count claim: "<number word> voices", "<number word>-voice", "<number word>-role(s)" (the
+  // "fifteen-role scale" heading), with one optional qualifier between ("fourteen named voices"; a subset like "two interactive voices" is not a count claim),
+  // one..ninety-nine; a magnitude word ("hundred voices") fails loudly.
+  for (const m of text.matchAll(/\b([a-z]+(?:-[a-z]+)?)[-\s]+(?:(?:named|distinct|separate|different|total|typographic|type)[-\s]+)?\*{0,2}(?:voices?|roles?)\b/gi)) {
     const n = parseNumWord(m[1]);
     if (n === null) continue;
     if (n === OUT_OF_RANGE) { err(f, m[0], `count word "${m[1]}" is outside the range voice-parity's parser can resolve (one..ninety-nine), extend parseNumWord instead of letting this pass unchecked`); continue; }
@@ -129,23 +130,27 @@ for (const f of files) {
     .filter(([, steps]) => Object.values(steps).some((s) => s.singleLineHeight != null))
     .map(([v]) => kebab(v)));
   const blob = files.map((f) => readFileSync(join(SKILL_DIR, f), "utf8")).join("\n");
-  // Every engine single-line voice must be POSITIVELY ASSOCIATED with -line-single: its name must
-  // appear within ~240 chars of a "line-single" mention at least once. This catches the exact
-  // false-negative class the reviewer found (a single-line voice, Heading-Kicker, that the skill
-  // omits from every single-line statement), which a plain name-anywhere check would miss (the
-  // voice's name also shows up in class tables for unrelated reasons).
-  // The skill states the box set twice, in a fixed shape: SKILL.md "`line-single` on the box voices,
-  // A/B/C, only" and responsive.md "BOX voices, **A, B, and C**". Each must list exactly the engine set,
-  // and a missing statement is a FAIL (the needle went away, so the pin would go vacuous).
+  // The skill states the box set in fixed shapes: SKILL.md "`line-single` on the box voices, A/B/C, only"
+  // and "box-text voices, **A, B, and C**", responsive.md "BOX voices, **A, B, and C**". Every statement
+  // in each file must list exactly the engine set (all matches, not the first), and a file with no
+  // statement in a shape is a FAIL (the needle went away, so the pin would go vacuous).
   const flat = (f) => (existsSync(join(SKILL_DIR, f)) ? readFileSync(join(SKILL_DIR, f), "utf8") : "").replace(/\s+/g, " ");
   const listed = (str) => new Set(str.split(/\s*(?:,|\/|\band\b)\s*/).filter(Boolean).map(kebab));
-  for (const [f, re] of [["SKILL.md", /`line-single` on the box voices, ([A-Za-z/ -]+?),? only/], ["references/responsive.md", /BOX voices, \*\*([^*]+)\*\*/]]) {
-    const m = re.exec(flat(f));
-    if (!m) { err(f, "(box voices)", "no box-voice statement in the fixed shape, so the box set cannot be pinned to the engine"); continue; }
-    const doc = listed(m[1]);
-    const same = doc.size === engineSingleLine.size && [...doc].every((v) => engineSingleLine.has(v));
-    if (!same) err(f, m[0], `box-voice set drift, the skill names ${[...doc].sort().join("/")} but the engine emits -line-single for ${[...engineSingleLine].sort().join("/")}`);
+  const BOLD = /box(?:-text)? voices, \*\*([^*]+)\*\*/gi;
+  for (const [f, re] of [["SKILL.md", /`line-single` on the box voices, ([A-Za-z/ -]+?),? only/g], ["SKILL.md", BOLD], ["references/responsive.md", BOLD]]) {
+    const ms = [...flat(f).matchAll(re)];
+    if (!ms.length) { err(f, "(box voices)", "no box-voice statement in the fixed shape, so the box set cannot be pinned to the engine"); continue; }
+    for (const m of ms) {
+      const doc = listed(m[1]);
+      const same = doc.size === engineSingleLine.size && [...doc].every((v) => engineSingleLine.has(v));
+      if (!same) err(f, m[0], `box-voice set drift, the skill names ${[...doc].sort().join("/")} but the engine emits -line-single for ${[...engineSingleLine].sort().join("/")}`);
+    }
   }
+  // Every engine single-line voice must be POSITIVELY ASSOCIATED with -line-single: its name must
+  // appear within ~240 chars of a "line-single" mention at least once. This catches the exact
+  // false-negative class the reviewer found (a single-line voice, Kicker, that the skill
+  // omits from every single-line statement), which a plain name-anywhere check would miss (the
+  // voice's name also shows up in class tables for unrelated reasons).
   const near = (voice) => {
     const vre = voice.replace(/-/g, "[- ]");
     return new RegExp(`${vre}[\\s\\S]{0,240}line-single|line-single[\\s\\S]{0,240}${vre}`, "i").test(blob);

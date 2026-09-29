@@ -47,6 +47,9 @@ try {
     ["a step outside its own voice (--type-body-xl-size)", (d) => appendFileSync(join(d, "SKILL.md"), "\n`--type-body-xl-size`\n"), [/--type-body-xl-size/, /not a step of voice "body"/]],
     ["a wrong Steps cell (ui-control saying sm/md/lg)", edit("SKILL.md", "| **UI-control** | ui | xs/sm/md/lg/xl/2xl |", "| **UI-control** | ui | sm/md/lg |"), [/UI-control/, /steps drift/]],
     ["a voice table missing the kicker row", (d) => { const p = join(d, "SKILL.md"); writeFileSync(p, readFileSync(p, "utf8").split("\n").filter((l) => !l.startsWith("| **kicker** |")).join("\n")); }, [/kicker/, /no row with a Steps cell/]],
+    ["a count heading naming roles (## The fourteen roles)", (d) => appendFileSync(join(d, "SKILL.md"), "\n## The fourteen roles\n"), [/fourteen/, /voice count drift/]],
+    ["a qualified count word (fourteen named voices)", (d) => appendFileSync(join(d, "SKILL.md"), "\nIt gives fourteen named **voices**.\n"), [/fourteen/, /voice count drift/]],
+    ["a drifted second box-voice statement (Label added)", edit("SKILL.md", "**UI-control, UI-widget, and Kicker**", "**UI-control, UI-widget, Kicker, and Label**"), [/box-voice set drift/]],
   ];
   for (const [name, mutate, needles] of legs) {
     const neg = run(skillCopy(name.replace(/\W+/g, "-"), mutate));
