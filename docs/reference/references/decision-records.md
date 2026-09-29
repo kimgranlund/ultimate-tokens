@@ -727,7 +727,7 @@ Format: Context → Decision → Rationale → Consequences → Status.
   `test/engine/semantic.mjs` holds the floor for all 16 families, both schemes, all three tone modes,
   plus the Park `solid.fg`/`solid.bg` pairing on the default and Adia documents.
 
-## ADR-026 - A palette's anchor is STORED, not fitted: the sampled source colour is the record
+## ADR-026: A palette's anchor is STORED, not fitted: the sampled source colour is the record
 - **Context.** A curated preset was sampled from a real colour (a film frame, a brand mark, a place),
   but the document only kept `{hue, chroma, skew, lift}` fitted to it. The engine then re-derived a
   key colour from those four numbers, so what shipped as the palette's own colour was a reconstruction
@@ -767,7 +767,7 @@ Format: Context → Decision → Rationale → Consequences → Status.
   `anchor-ramp`, the window and ladder allow-lists) and by the schema fields in `src/ui/persist.js`
   (`DOMAINS.palette.anchor` / `.sourceAnchor`). Knowledge-02 §9 is the reference description.
 
-## ADR-027 - A seat cites only what it measured, at the ref it is writing about
+## ADR-027: A seat cites only what it measured, at the ref it is writing about
 - **Context.** Over one review round of #681 U5, four defects arose from three seats through one
   mechanism: a figure or a judgement carried forward from a summary of a measurement rather than from
   the measurement. A reviewer blessed an `adapter.md` edit for conforming to a convention it had not
