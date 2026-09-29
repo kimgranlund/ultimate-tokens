@@ -10,10 +10,10 @@ PASS: docs-repair U9 round 2 at `90d9a11c`: the planner count and both `fit()` c
 
 ## Prior findings
 
-| # | State | Evidence |
-|---|---|---|
-| 1 Medium, "five planners" | 🟢 fixed | `figma/README.md:27-28` now reads "three planners (`bind-plan`, `mode-apply-plan`, `style-plan`), a live diff, the migration maps and one splice helper". It matches `style-plan.mjs:1-3` ("The third planner sibling: bind-plan.mjs ..., mode-apply-plan.mjs ..."), `live-diff.mjs:1` ("PURE comparison") and `migrations.mjs:1` ("migration maps"). Six modules still: `ls figma/binder/*.mjs` = 6. `:44` now says "each over the module it names": `test/figma/{mode-apply,style-plan,live-diff,migrations}.mjs` import `mode-apply-plan`, `style-plan`, `live-diff`, `migrations` respectively |
-| 2 Low, "start centered" | 🟢 fixed | `app.js:1434` "start top-left inset (fit)" and `:1439` "fit() insets top-left" both match `fit()` `app.js:543-545` ("Reset to 100% with the content's TOP-LEFT corner inset (not dead-centered)"). `:1439` keeps "pan/zoom too (wirePanZoom), no saved viewport", which still holds (`typography.js:351`, `:370`; `geometry.js:423`, `:442`; only `_colorViewport` exists) |
+| # | State | Evidence | Control |
+|---|---|---|---|
+| 1 Medium, "five planners" | 🟢 fixed | `figma/README.md:27-28` now reads "three planners (`bind-plan`, `mode-apply-plan`, `style-plan`), a live diff, the migration maps and one splice helper". It matches `style-plan.mjs:1-3` ("The third planner sibling: bind-plan.mjs ..., mode-apply-plan.mjs ..."), `live-diff.mjs:1` ("PURE comparison") and `migrations.mjs:1` ("migration maps"). Six modules still: `ls figma/binder/*.mjs` = 6. `:44` now says "each over the module it names": `test/figma/{mode-apply,style-plan,live-diff,migrations}.mjs` import `mode-apply-plan`, `style-plan`, `live-diff`, `migrations` respectively | at `c0fb8f69` the same line read "five planners and one splice helper" and "each over the planner it names" |
+| 2 Low, "start centered" | 🟢 fixed | `app.js:1434` "start top-left inset (fit)" and `:1439` "fit() insets top-left" both match `fit()` `app.js:543-545` ("Reset to 100% with the content's TOP-LEFT corner inset (not dead-centered)"). `:1439` keeps "pan/zoom too (wirePanZoom), no saved viewport", which still holds (`typography.js:351`, `:370`; `geometry.js:423`, `:442`; only `_colorViewport` exists) | at `c0fb8f69` `:1434` read "start centered (fit)" and `:1439` "start centered" |
 
 ## Comment-only
 
