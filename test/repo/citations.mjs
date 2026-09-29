@@ -99,14 +99,14 @@ const FACT_PINS = [
   { id: "skill colour formats", doc: ".claude/skills/adding-export-formats/SKILL.md", needle: "ten colour formats", src: "src/ui/overlays/drawer.js",
     source: drawerColorFormats },
   { id: "skill hueSpace default", doc: ".claude/skills/color-math/SKILL.md", line: /`DEFAULT_CONTROLS\.hueSpace`/, needle: '"oklch"', src: "src/engine/tonal.js",
-    source: async (needle) => `"${(await import("../../src/engine/tonal.js")).DEFAULT_CONTROLS.hueSpace}"` === needle },
+    source: async (needle) => { const held = `"${(await import("../../src/engine/tonal.js")).DEFAULT_CONTROLS.hueSpace}"`; return held === needle || held; } },
   { id: "skill list_palettes", doc: ".claude/skills/maintaining-brand-kit-mcp/SKILL.md", needle: "list_palettes (16)", src: "docs/reference/data/role-table.json",
     source: () => JSON.parse(txt("docs/reference/data/role-table.json")).defaults.length },
-  { id: "skill H5 jobs", doc: ".claude/skills/shipping-changes/references/rubric.md", line: /^\| H5 \|/, needle: "`panda-smoke`", src: ".github/workflows/ci.yml",
+  { id: "skill H5 jobs", doc: ".claude/skills/shipping-changes/references/rubric.md", line: /^\| H5 \|/, needle: "panda-smoke", src: ".github/workflows/ci.yml",
     source: () => {
       const cell = lineOf(".claude/skills/shipping-changes/references/rubric.md", /^\| H5 \|/).split("|")[4] ?? "";
       const named = (cell.split(";")[0].match(/`([\w-]+)`/g) || []).map((n) => n.slice(1, -1)), jobs = ciJobs();
-      return named.length > 0 && named.every((n) => jobs.includes(n)) && jobs.every((j) => j === "deploy" || named.includes(j));
+      return named.length > 0 && named.every((n) => jobs.includes(n)) && jobs.every((j) => j === "deploy" || named.includes(j)) || { named, jobs };
     } },
 ];
 for (const pin of FACT_PINS) {
@@ -114,7 +114,7 @@ for (const pin of FACT_PINS) {
   try { held = await pin.source(pin.needle); } catch (e) { FAIL(pin.src, `fact pin "${pin.id}": source threw: ${e.message}`); continue; }
   const frag = pin.line ? lineOf(pin.doc, pin.line) : txt(pin.doc);
   if (!frag.includes(pin.needle)) { FAIL(pin.doc, `fact pin "${pin.id}": doc no longer carries \`${pin.needle}\`${pin.line ? ` on a line matching ${pin.line}` : ""}`); continue; }
-  const num = pin.needle.match(/\d+/)?.[0] ?? NUM_WORDS[pin.needle.split(" ")[0]];
+  const num = pin.needle.match(/\d+/)?.[0] ?? (Object.hasOwn(NUM_WORDS, pin.needle.split(" ")[0]) ? NUM_WORDS[pin.needle.split(" ")[0]] : undefined);
   if (num !== undefined ? Number(num) !== held : held !== true) FAIL(pin.src, `fact pin "${pin.id}": ${pin.doc} says \`${pin.needle}\` but the code holds ${JSON.stringify(held)}`);
 }
 
