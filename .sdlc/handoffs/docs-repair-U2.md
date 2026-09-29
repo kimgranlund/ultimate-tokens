@@ -1,27 +1,78 @@
-# Handoff U2 pass 1, round 2 · builder to verifier
+# Handoff U2 pass 2 · builder to verifier
 
 | Field | Value |
 |---|---|
-| Branch | unit/dr-U2 @ e7058994 |
-| Base | plan/docs-repair @ 5d8b1c30 |
-| Files at e7058994 | docs/reference/SKILL.md, docs/reference/references/spec-draft.md, docs/reference/references/glossary.md, docs/reference/rubrics/acceptance-criteria.md, docs/reference/rubrics/quality-rubric.md |
+| Branch | unit/dr-U2 @ 441a8638 |
+| Base | plan/docs-repair @ 1e263b2f (merged into the unit at c1d09fb9) |
+| Files at 441a8638 | docs/reference/references/glossary.md (the Section, Inspector and Analysis card rows) |
 | Files in this handoff commit | .sdlc/handoffs/docs-repair-U2.md |
-| Ran | every row below at e7058994 in `.worktrees/dr-U2`; `npm test` once, `✓ all 50 test files passed`, exit 0, `git status --short` empty after |
-| Left out | `npm run build` and smoke (owed at pre-land, no `node_modules`); no negative controls run at B (the plan's "Today" column states the B values); `ui-plan.md` left to U1, so P6's grep still prints its two lines (`ui-plan.md:48`, `:153`) until U1 merges |
-| Round 2 (review be4e4144) | fixed `spec-draft.md:219` (`ten color export formats`); swept the four spec files for other count phrasings (numeral and word forms near format, export, exporter, tab): none left, the remaining numbers are anchors, stops and dates; Drawer glossary row now says its ten tabs differ from the ten export formats (`figma` tab in place of `exportAll`); `npm test` rerun after the ps check, `✓ all 50 test files passed`, exit 0, tree clean |
-| Q2 lines | Q2 ruling: keep the id and `name:`, change only human-facing title and description. Changed: SKILL.md :32 body prose and :86 contract `"title"` and :255 non-goal prose, all to Ultimate Tokens. Kept: `name: hct-palette-generator-spec`, the `spec.system.hct-palette-generator-spec` cell id, and spec-draft.md :41 (the spec draft's own subject sentence, not in U2's step list and no count in it) |
-| Decisions | Q2 default kept: `name: hct-palette-generator-spec` and the cell id unchanged; title and description say Ultimate Tokens. The lists of ten formats name Panda, Radix and `exportAll` where the old prose listed six or eight |
-| P3 dashed added lines | 0 (three rewritten lines carried the glyph; each dropped it: the description line, the H1, `hpg-export-theme-invariant`) |
+| Ran | every U2 row and P3 at 441a8638 in `.worktrees/dr-U2`, as the `~~~sh ran` block below, output pasted unedited into `~~~out ran`; `npm test` at 441a8638, `✓ all 50 test files passed`, exit 0, `git status --short` empty after |
+| Left out | `npm run build` and smoke (owed at pre-land, no `node_modules`); F2 (`all ten` in two contract checks) and F4 (`ui-plan.md`, on unit/dr-U1) per the re-diagnosis; per-row negative controls are the plan's stated ones and were not re-run here |
+| Decisions | Section row: `this.section` is never persisted (`persist.js` carries no `section` key), the frame around it is invariant. Inspector row: `.seg-example` pins a live example, `exampleArtifacts` (`app.js`), `typeExampleCard`, `geomExampleCard`. Analysis card row: built by `analysisCards`, `typeAnalysisCards` or `geomAnalysisCards`, picked by `renderLeftPane` on `this.section` |
 
 ## Ran
 
-| Id | Output at e7058994 | Expected |
-|---|---|---|
-| U2-1 | `2`, `2`, `3`, `0`, `1` (name line count) | 1+, 1+, 1+, 0, 1 |
-| U2-2 | `1`, `1`, `1` (backticked needles), `ok` | 1+ each, ok |
-| U2-3 | `0` for spec-draft, acceptance-criteria, quality-rubric, then `0` for `5 formats` in spec-draft | 0, 0, 0, 0 |
-| U2-4 | nine `1`s, Mode row breakpoint count `1`, `grep -c '^| '` = `42` | nine 1s, 1, 42+ |
-| U2-5 | `this.section` 1, `canvas-scene` 1, `seg-example` 1, `an-card` 1, `this.view` 1, `colorMode` 2 | each 1+ |
-| P3 | `branding: clean (736 files scanned)`; added lines with U+2014: 0 | clean, 0 |
-| P6 (partial) | remaining hits are only `ui-plan.md:48` and `:153` (U1's file) | 0 after U1 |
-| npm test | `✓ all 50 test files passed`, exit 0 | green |
+~~~sh ran
+git rev-parse --short=8 HEAD
+# U2-1
+grep -c 'Ultimate Tokens' docs/reference/SKILL.md; grep -c -i 'typography' docs/reference/SKILL.md; grep -c -i 'geometry' docs/reference/SKILL.md; grep -c -E 'five export formats|all five exports|eight color formats|all five exporters' docs/reference/SKILL.md; grep -c '^name: ' docs/reference/SKILL.md
+# U2-2
+for p in 'references/ui-plan.md' 'references/component-inventory.md' '../lld/app-shell.md'; do grep -c "\x60$p\x60" docs/reference/SKILL.md; done; test -f docs/lld/app-shell.md && echo ok
+# U2-3
+grep -ci 'eight color formats' docs/reference/references/spec-draft.md docs/reference/rubrics/acceptance-criteria.md docs/reference/rubrics/quality-rubric.md; grep -c '5 formats' docs/reference/references/spec-draft.md
+# U2-4
+for t in 'Section' 'Canvas scene' 'Canvas view' 'Breakpoint mode' 'Compare' 'Inspector' 'Analysis card' 'Gallery' 'Drawer'; do grep -c "^| \*\*$t" docs/reference/references/glossary.md; done; grep '^| \*\*Mode\*\*' docs/reference/references/glossary.md | grep -c -i 'breakpoint'; grep -c '^| ' docs/reference/references/glossary.md
+# U2-5
+for n in 'this.section' 'canvas-scene' 'seg-example' 'an-card' 'this.view' 'colorMode'; do grep -c "$n" docs/reference/references/glossary.md; done
+# U2-6
+G=docs/reference/references/glossary.md; grep -c 'frame is invariant and never persisted' $G; awk '$2=="**Section**" && /never persisted/ {n++} END{print n+0}' $G; grep -c -w section src/ui/persist.js; grep -c 'live control' $G; grep -c 'ExampleCard' $G; grep -c 'exampleArtifacts(view)' src/ui/app.js; grep -c 'typeExampleCard(view)' src/ui/sections/typography.js; grep -c 'geomExampleCard(view)' src/ui/sections/geometry.js; grep -c "section's \x60renderLeftPane\x60 body" $G; grep -c 'AnalysisCards' $G; grep -c 'this.typeAnalysisCards(view)' src/ui/app.js; grep -c 'this.geomAnalysisCards(view)' src/ui/app.js
+# P3
+tail -1 <(node test/repo/branding.mjs)
+~~~
+
+~~~out ran
+441a8638
+5
+2
+3
+0
+1
+1
+1
+1
+ok
+docs/reference/references/spec-draft.md:0
+docs/reference/rubrics/acceptance-criteria.md:0
+docs/reference/rubrics/quality-rubric.md:0
+0
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+42
+2
+1
+1
+1
+2
+1
+0
+1
+0
+0
+1
+3
+2
+2
+0
+1
+1
+1
+branding: clean (741 files scanned)
+~~~
