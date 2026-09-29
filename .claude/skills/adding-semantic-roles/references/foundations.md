@@ -86,8 +86,8 @@ The role set is authored once in `semantic.js`, but its shape is independently e
 - A scatter of **count literals** in tests + one UI label (`src/ui/sections/color.js`, grep `semantic roles`) + spec prose.
 
 Most emitters/exports/Mapping/MCP **DERIVE** from each palette's resolved `roles`, so they need no edit, a
-new role flows through automatically. The lone exception is the **ShadCN** export (`exportShadcn`,
-exports.js ~504): it maps a FIXED `SHADCN_ORDER` over a curated suffix-lookup `MAP`, so a new role neither
+new role flows through automatically. The lone exception is the **ShadCN** export (`exportShadcn` in
+`src/engine/exports.js`): it maps a FIXED `SHADCN_ORDER` over a curated suffix-lookup `MAP`, so a new role neither
 breaks it nor appears in it. The job is keeping the two hand-written encodings (answer key + Figma copy) +
 the literals in lockstep. The historical "36 vs 37" incident (the artifact silently lost `surfaceHighest`)
 is exactly the failure this discipline prevents.
