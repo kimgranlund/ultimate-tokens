@@ -102,7 +102,11 @@ function tidyVolumeTitle(s) {
 // stop 500 clamps to the window edge for those.
 let anchoredCount = 0, outsideWindow = 0;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-const palette = (name, hex, oklch, sw) => {
+// A hueless sample (authored OKLCH chroma exactly 0, one in the corpus today: Nike "Box white") has
+// no hue of its own to store, and a stored 0 would render its achromatic anchor's ramp at hue 0, a
+// mauve. `fallbackHue` (mapColors, the entry's derived neutral hue) stands in for it (#744). The
+// sampled record (`keyColors`, `anchor`) is untouched; only the palette's stored hue changes.
+const palette = (name, hex, oklch, sw, fallbackHue) => {
   const rgb = hexToRgb(hex);
   // chroma is a %-of-peak (hue-space-agnostic) recovered from CAM16; the HUE is now the SOURCE OKLCH
   // hue (oklch[2]) so the baked-in hueSpace:"oklch" renders the curated family at its true OKLCH hue.
@@ -112,7 +116,9 @@ const palette = (name, hex, oklch, sw) => {
   if (srcL < RAMP_L_MIN || srcL > RAMP_L_MAX) outsideWindow++;
   return {
     name,
-    hue: ((Math.round(Number(oklch[2])) % 360) + 360) % 360, // round THEN wrap so 359.7 → 0, not 360
+    hue: Number(oklch[1]) === 0 && fallbackHue != null
+      ? fallbackHue
+      : ((Math.round(Number(oklch[2])) % 360) + 360) % 360, // round THEN wrap so 359.7 → 0, not 360
     chroma: Math.round(Math.min(100, Math.max(0, chroma))),
     skew: 0,
     lift: 0,
@@ -148,7 +154,8 @@ function mapColors(swatches) {
   const byNearGround = [...sup].sort((a, b) => dE(a, dom) - dE(b, dom));
   const domMuted = byNearGround[0];
   const domSupport = byNearGround.slice(1).sort((a, b) => C(b) - C(a));
-  const p = (name, s) => palette(name, s.hex, s.ok, s);
+  const fallbackHue = ((Math.round(deriveNeutral(sw.map((s) => s.ok))[2]) % 360) + 360) % 360;
+  const p = (name, s) => palette(name, s.hex, s.ok, s, fallbackHue);
   return [
     p("primary", acc[0]),
     p("primary-muted", acc[1]),

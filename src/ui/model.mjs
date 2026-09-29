@@ -281,7 +281,7 @@ export { SCRIM_BASES, SCRIM_STEPS, exportDesignSystemTokens, exportDesignSystemS
 // so no default family's prime ladder collapses under U6's equal-compress wall rule (mechanism (3));
 // re-verified against this branch's own base before being typed in here (a stale value would fail
 // C2/test/engine/anchor.mjs loudly, not silently).
-const DEFAULT_PALETTES = [
+export const DEFAULT_PALETTES = [
   { name: "Neutral", hue: 267, chroma: 29, skew: -20, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#576485", on: true },
   { name: "Primary", hue: 267, chroma: 95, skew: -20, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#0C5DCC", on: true },
   { name: "Secondary", hue: 165, chroma: 100, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, anchor: "#108960", on: true },

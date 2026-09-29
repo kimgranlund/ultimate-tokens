@@ -595,6 +595,164 @@ if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs ac
   }
 }
 
+// stored-anchors (#740): imported here, not with the top-of-file imports, for the same reason
+// gate-report.mjs below is, this file is cited by line number from docs/reference/reviews/
+// 2026-08-20-reactivity/03-stores-and-persistence.md (lines 11-12, 448-484), and adding a new
+// top-of-file import would shift every line after it, including that cited range, by one.
+import { hydrateStoredDoc, backfillDefaultAnchors } from "../../src/ui/app-helpers.mjs";
+import { defaultDocument, projectView, DEFAULT_PALETTES } from "../../src/ui/model.mjs";
+
+// stored-anchors (#740): a set saved BEFORE schemaVersion 5 has no anchor on any palette, and
+// hydrateStoredDoc (through backfillDefaultAnchors) restores one only for a palette that still
+// equals a row of the ONE default table its own stored hueSpace selects. (a)-(c) probe the
+// OKLCH-hue form every doc since hueSpace exists stores; (d) the raw CAM16-hue form a legacy
+// cam16-stamped doc still carries; (e) reruns the clamp block's own absent-stays-absent fixture
+// through the real seam, unweakened by this gate; (f) and (g) (revision 5, U1 pass 1 verdict M1)
+// pin the cross-form case: a palette dragged onto the OTHER hue form's own default value is a real
+// edit, not an unedited row, and must not be stamped either way.
+{
+  const fresh = defaultDocument();
+  const rampsOf = (d) => projectView(d).palettes.map((p) => p.fullRamp.map((s) => s.hex).join(","));
+  const freshRamps = rampsOf(fresh);
+
+  // (a) a stripped default doc (no schemaVersion, no anchor/sourceAnchor on any palette) renders
+  // byte-identical to the fresh default through hydrateStoredDoc, with 16 anchors restored.
+  const strippedA = U.serialize(fresh); delete strippedA.schemaVersion;
+  for (const p of strippedA.palettes) { delete p.anchor; delete p.sourceAnchor; }
+  const hydStrippedA = hydrateStoredDoc(strippedA);
+  const ramps16 = rampsOf(hydStrippedA);
+  const diffCount = freshRamps.filter((r, i) => r !== ramps16[i]).length;
+  if (diffCount !== 0) FAIL("stored-anchors", `(a) a stripped default doc must render byte-identical to the fresh default through hydrateStoredDoc, got ${diffCount} of ${freshRamps.length} ramps differing`);
+  const stampedA = hydStrippedA.palettes.filter((p) => p.anchor && p.sourceAnchor).length;
+  if (stampedA !== 16) FAIL("stored-anchors", `(a) a stripped default doc must regain all 16 anchors, got ${stampedA}`);
+
+  // (b) the same with one row (Primary) edited by one hue degree: that row is left alone, the other
+  // 15 are stamped.
+  const strippedB = U.serialize(fresh); delete strippedB.schemaVersion;
+  for (const p of strippedB.palettes) { delete p.anchor; delete p.sourceAnchor; }
+  const primaryIdx = strippedB.palettes.findIndex((p) => p.name === "Primary");
+  strippedB.palettes[primaryIdx].hue += 1;
+  const hydStrippedB = hydrateStoredDoc(strippedB);
+  const stampedB = hydStrippedB.palettes.filter((p) => p.anchor && p.sourceAnchor).length;
+  if (stampedB !== 15) FAIL("stored-anchors", `(b) an edited Primary row must leave 15 of 16 stamped, got ${stampedB}`);
+  if (hydStrippedB.palettes[primaryIdx].anchor) FAIL("stored-anchors", "(b) the edited Primary row itself must not be stamped");
+
+  // (c) the same snapshot stamped schemaVersion: 6 (current) is left untouched: 0 stamped.
+  const strippedC = U.serialize(fresh); delete strippedC.schemaVersion;
+  for (const p of strippedC.palettes) { delete p.anchor; delete p.sourceAnchor; }
+  strippedC.schemaVersion = 6;
+  const hydStrippedC = hydrateStoredDoc(strippedC);
+  const stampedC = hydStrippedC.palettes.filter((p) => p.anchor && p.sourceAnchor).length;
+  if (stampedC !== 0) FAIL("stored-anchors", `(c) a doc already stamped schemaVersion 6 must not be backfilled, got ${stampedC} anchors`);
+
+  // (d) the raw, pre-hueSpace legacy form (DEFAULT_PALETTES' own CAM16 hues, no `anchor`, no
+  // `hueSpace`) also carries 16 anchors after hydrateStoredDoc, and stamps hueSpace "cam16".
+  const rawDoc = { palettes: DEFAULT_PALETTES.map(({ anchor, ...r }) => r) };
+  const hydRaw = hydrateStoredDoc(rawDoc);
+  if (hydRaw.hueSpace !== "cam16") FAIL("stored-anchors", `(d) a raw legacy-form doc must stamp hueSpace "cam16", got ${JSON.stringify(hydRaw.hueSpace)}`);
+  const stampedD = hydRaw.palettes.filter((p) => p.anchor).length;
+  if (stampedD !== 16) FAIL("stored-anchors", `(d) the raw legacy-form default kit must carry 16 anchors, got ${stampedD}`);
+
+  // (e) the clamp block's own identity fixture, run again through the real seam (hydrateStoredDoc,
+  // not U.hydrate alone): a random P0..P3 fixture with no default-kit match and no schemaVersion
+  // still hydrates with no anchor, kept by its OWN message text, not a bare "identity gate" needle
+  // that could not notice this fixture going.
+  const noAnchorE = JSON.parse(JSON.stringify(base)); delete noAnchorE.palettes[0].anchor; delete noAnchorE.palettes[0].sourceAnchor;
+  const hydNoE = hydrateStoredDoc(noAnchorE);
+  if ("anchor" in hydNoE.palettes[0] || "sourceAnchor" in hydNoE.palettes[0]) FAIL("stored-anchors", "(e) absent palette.anchor/sourceAnchor must still stay absent through backfillDefaultAnchors (identity gate)");
+
+  // (f) the OKLCH-form stripped doc of (a) with Primary's hue dragged to 267 (the RAW/CAM16 form's
+  // own default value, a real 8-degree edit from the OKLCH default 259): 15 stamped, Primary not
+  // among them - the doc's own hueSpace ("oklch") picks the OKLCH table only, the raw table is
+  // never consulted even though Primary's edited hue happens to equal its row there.
+  const strippedF = U.serialize(fresh); delete strippedF.schemaVersion;
+  for (const p of strippedF.palettes) { delete p.anchor; delete p.sourceAnchor; }
+  const primaryIdxF = strippedF.palettes.findIndex((p) => p.name === "Primary");
+  strippedF.palettes[primaryIdxF].hue = 267;
+  const hydStrippedF = hydrateStoredDoc(strippedF);
+  const stampedF = hydStrippedF.palettes.filter((p) => p.anchor && p.sourceAnchor).length;
+  if (stampedF !== 15) FAIL("stored-anchors", `(f) cross-form: Primary dragged to the raw table's own default (267) in an OKLCH-form doc must leave 15 of 16 stamped, got ${stampedF}`);
+  if (hydStrippedF.palettes[primaryIdxF].anchor) FAIL("stored-anchors", "(f) cross-form: Primary at the raw table's default value must not be stamped from an OKLCH-form doc");
+
+  // (g) the raw-form doc of (d) with Primary's hue dragged to 259 (the OKLCH table's own default
+  // value): 15 stamped, Primary not among them - hueSpace absent picks the raw table only.
+  const rawG = { palettes: DEFAULT_PALETTES.map(({ anchor, ...r }) => r) };
+  const primaryIdxG = rawG.palettes.findIndex((p) => p.name === "Primary");
+  rawG.palettes[primaryIdxG].hue = 259;
+  const hydRawG = hydrateStoredDoc(rawG);
+  const stampedG = hydRawG.palettes.filter((p) => p.anchor).length;
+  if (stampedG !== 15) FAIL("stored-anchors", `(g) cross-form: Primary dragged to the OKLCH table's own default (259) in a raw-form doc must leave 15 of 16 stamped, got ${stampedG}`);
+  if (hydRawG.palettes[primaryIdxG].anchor) FAIL("stored-anchors", "(g) cross-form: Primary at the OKLCH table's default value must not be stamped from a raw-form doc");
+}
+
+// gallery-reach (#740, anchor-gaps U3): the backfill's reach is the stored set list (openSet and the
+// set tile, on hydrateStoredDoc); app.js's openConfigAsSet opens a gallery preset, a Figma-variables
+// seed or an embedded config through hydrateConfig, the same stamp and hydrate with no backfill. (h)
+// feeds every corpus preset through that seam (the eight category modules mode-isolation-gate.mjs
+// reads): each renders as hydrate() renders its tile and gains no anchor. (i) the configFromVariables
+// shape (hueSpace "cam16", every default row at skew 0 and lift 0) gains none through hydrateConfig,
+// against 9 through hydrateStoredDoc, the figure that proves the two seams differ. (j) is the control
+// on the stored-set side: Maison's Success still stamps #21701A through hydrateStoredDoc, the rule U1
+// ruled is unchanged, only its callers moved. (k) pins the wiring the helper legs cannot see: the
+// openConfigAsSet method body in src/ui/app.js calls hydrateConfig( and not hydrateStoredDoc( (an
+// HctApp method needs the DOM shim, so the source is read), and Maison through the method's real chain
+// (hydrateConfig, serialize, then openSet's hydrateStoredDoc) opens with Success unanchored: that
+// second pass is inert only because serialize() stamps schemaVersion 6 and the backfill returns at
+// >= 5. Every red sub-gate joins one FAIL message, since FAIL keeps one message per gate name.
+import { readFileSync } from "node:fs";
+import { hydrateConfig } from "../../src/ui/app-helpers.mjs";
+import { PRESETS as CAT_ARCHITECTURE } from "../../src/ui/categories/architecture.js";
+import { PRESETS as CAT_BRANDS } from "../../src/ui/categories/brands.js";
+import { PRESETS as CAT_CUISINE } from "../../src/ui/categories/cuisine.js";
+import { PRESETS as CAT_FILM } from "../../src/ui/categories/film.js";
+import { PRESETS as CAT_LITERATURE } from "../../src/ui/categories/literature.js";
+import { PRESETS as CAT_MUSIC } from "../../src/ui/categories/music.js";
+import { PRESETS as CAT_NATURE } from "../../src/ui/categories/nature.js";
+import { PRESETS as CAT_TRAVEL } from "../../src/ui/categories/travel.js";
+{
+  const reach = [];
+  const rampsOf = (d) => projectView(d).palettes.map((p) => p.fullRamp.map((s) => s.hex).join(","));
+  const anchors = (d) => d.palettes.filter((p) => p.anchor).length;
+
+  // (h) every corpus preset through hydrateConfig: no palette gains an anchor it did not carry, and
+  // every ramp is byte-identical to hydrate(preset). projectView is a pure function of the hydrated
+  // document, so an identical document renders identically: the ramps are rendered only for a preset
+  // whose document differs (a full render of the corpus is mode-isolation-gate.mjs's cost, #713).
+  const corpus = [CAT_ARCHITECTURE, CAT_BRANDS, CAT_CUISINE, CAT_FILM, CAT_LITERATURE, CAT_MUSIC, CAT_NATURE, CAT_TRAVEL].flat();
+  const stampedH = [], differH = [];
+  for (const preset of corpus) {
+    const opened = hydrateConfig(preset), tileDoc = U.hydrate(preset);
+    if (opened.palettes.some((p, i) => p.anchor && !(preset.palettes[i] && preset.palettes[i].anchor))) stampedH.push(preset.name);
+    if (JSON.stringify(opened) === JSON.stringify(tileDoc)) continue;
+    const tile = rampsOf(tileDoc), got = rampsOf(opened);
+    if (tile.length !== got.length || tile.some((r, i) => r !== got[i])) differH.push(preset.name);
+  }
+  if (corpus.length < 300) reach.push(`(h) the corpus must hold every curated preset, read ${corpus.length}`);
+  if (stampedH.length || differH.length) reach.push(`(h) of ${corpus.length} corpus presets through hydrateConfig, ${stampedH.length} gained an anchor and ${differH.length} render off their tile (first: ${stampedH[0] || differH[0]})`);
+
+  // (i) the configFromVariables shape of the 16 raw default rows: 0 anchors through hydrateConfig,
+  // 9 through hydrateStoredDoc (Secondary and Data 1 to 8, the rows whose own skew and lift are 0).
+  const seed = { name: "From Figma", hueSpace: "cam16", palettes: DEFAULT_PALETTES.map((r) => ({ name: r.name, hue: r.hue, chroma: r.chroma, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true })) };
+  const viaConfig = anchors(hydrateConfig(seed)), viaStored = anchors(hydrateStoredDoc(seed));
+  if (viaConfig !== 0 || viaStored !== 9) reach.push(`(i) the Figma-variables seed must gain 0 anchors through hydrateConfig and 9 through hydrateStoredDoc, got ${viaConfig} and ${viaStored}`);
+
+  // (j) the stored-set seam's rule is untouched: a pre-v5 stored copy of Maison would still stamp
+  // Success with the default kit's #21701A.
+  const maison = CAT_BRANDS.find((p) => p.name.startsWith("Maison"));
+  const success = maison && hydrateStoredDoc(maison).palettes.find((p) => p.name === "Success");
+  if (!success || success.anchor !== "#21701A") reach.push(`(j) Maison's Success through hydrateStoredDoc must stamp #21701A, got ${success ? JSON.stringify(success.anchor) : "no Maison preset"}`);
+
+  // (k) the wiring: the method body, from its signature to the first two-space closing brace.
+  const appSrc = readFileSync(new URL("../../src/ui/app.js", import.meta.url), "utf8");
+  const bodyAt = appSrc.indexOf("\n  openConfigAsSet(");
+  const body = bodyAt < 0 ? "" : appSrc.slice(bodyAt, appSrc.indexOf("\n  }\n", bodyAt));
+  if (!body.includes("hydrateConfig(") || body.includes("hydrateStoredDoc(")) reach.push(`(k) app.js openConfigAsSet must call hydrateConfig( and not hydrateStoredDoc(, read ${body ? `hydrateConfig ${body.includes("hydrateConfig(")} hydrateStoredDoc ${body.includes("hydrateStoredDoc(")}` : "no method"}`);
+  const chained = maison && hydrateStoredDoc(U.serialize(hydrateConfig(maison))).palettes.find((p) => p.name === "Success");
+  if (!chained || chained.anchor) reach.push(`(k) Maison through hydrateConfig, serialize and hydrateStoredDoc must open Success unanchored, got ${chained ? JSON.stringify(chained.anchor) : "no Maison preset"}`);
+
+  if (reach.length) FAIL("gallery-reach", reach.join("; "));
+}
+
 // gate-report.mjs is imported here, immediately before its one use, rather than with the top-of-
 // file imports: this file is cited by line number from docs/reference/reviews/2026-08-20-reactivity/
 // 03-stores-and-persistence.md (lines 11-12, 448-484), and ES module imports hoist regardless of
@@ -608,7 +766,7 @@ import { gateReport } from "../gate-report.mjs";
 // "export", "type-fonts", "type-voices", "icons", "voice-style" and "ramp-contrast" were live
 // holes (#699): all 6 had real call sites above but were never declared, so a FAIL under any of
 // them used to exit 1 with no named row.
-const DECLARED = ["roundtrip", "clamp", "field-default", "token-overrides", "huespace-default", "schema-rename", "theme-invariant", "allowlist-parity", "ramp", "dropped-keys", "export", "type-fonts", "type-voices", "icons", "voice-style", "ramp-contrast", "report-static"];
+const DECLARED = ["roundtrip", "clamp", "field-default", "token-overrides", "huespace-default", "schema-rename", "theme-invariant", "allowlist-parity", "ramp", "dropped-keys", "export", "type-fonts", "type-voices", "icons", "voice-style", "ramp-contrast", "report-static", "stored-anchors", "gallery-reach"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: ui-persistence clears all [gate] predicates");
