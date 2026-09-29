@@ -7,4 +7,4 @@
 | Question | May revision 6 drop K17 from the Kept table and `.sdlc/plans/bold-labels-kept.tsv`, so P1 and U3-1 read `17`, `kept-exact` and the arithmetic reads 85 = 28 + 32 + 6 + 17 + 2 (the two lines #761 changed)? |
 | Options | A revision 6 drops K17 and restates the counts (recommended: the record matches the tree) · B no revision, the Verifier grades U3-1 against 17 as a named 🟡 |
 | Default if unanswered | A |
-| Chosen | |
+| Chosen | A, revision 6 drops K17 and restates the counts (owner via AskUserQuestion, 2026-09-29, R73) |
