@@ -1265,24 +1265,21 @@ for (const mode of ["perceptual", "peak"]) {
   // Addendum-2 correction (2026-09-19): the previous "0 across all three tone modes" claim recorded
   // here was measured with `check()` omitting `anchor: pal.anchor` from the constructed palette  -  the
   // same missing-anchor bug addendum 2 found in `findDips`  -  so it never actually rendered an anchored
-  // palette's real ramp. With the anchor field restored, the rendered path carries exactly 23 such pairs
-  // (3 perceptual, 7 peak, 13 even), all on the 25-stop export set only (0 on the 19-stop display set),
+  // palette's real ramp. With the anchor field restored, the rendered path carries such pairs (at #744:
+  // 24 hits of 22 unique keys, 3 perceptual, 8 peak, 11 even), all on the 25-stop export set only (0 on the 19-stop display set),
   // all at the near-white (stops 50-200) or near-black (stops 800-925) extreme: an adjacent half-step
   // pair (e.g. 900&925, 50&75) rounds to the identical 8-bit hex once the anchored ramp is already at
   // the sRGB gamut boundary there, the same class of rounding collision `enforceMonotonePixelL`'s own
   // header comment describes for pixel-L* rises, just landing on an exact hex match instead of a sign
-  // flip. 21 unique keys named below (23 physical instances: two keys are each hit by two different
-  // presets that happen to share the identical mode/hue/chroma/skew/lift/stop-pair signature, so the
-  // Set naturally collapses them to one entry each  -  `seenBaselineDup` still marks the key seen either
-  // way). The negative control right after this gate still proves an UNLISTED collision is caught.
-  // Ticket #739 adds 2 more unique keys (both Nike tertiary-muted, peak mode - see their own comment
-  // below), for 23 unique / 25 physical.
+  // flip. 22 unique keys named below (24 physical instances in the FULL corpus: two keys, even|280
+  // 850&875 and even|60 900&925, are each hit by two different presets that happen to share the
+  // identical mode/hue/chroma/skew/lift/stop-pair signature, so the Set naturally collapses them to one
+  // entry each  -  `seenBaselineDup` still marks the key seen either way). The negative control right
+  // after this gate still proves an UNLISTED collision is caught. 18 keys come first, then Nike
+  // tertiary-muted's four at hue 36 (#744; see their own comment below).
   const KNOWN_BASELINE_DUP = new Set([
     "peak|240|100.00|0|0|25-stop|825&850",
     "even|240|100.00|0|0|25-stop|900&925",
-    "even|0|100.00|0|0|25-stop|50&75",
-    "even|0|100.00|0|0|25-stop|100&125",
-    "even|0|100.00|0|0|25-stop|175&200",
     "even|79|100.00|0|0|25-stop|75&100",
     "even|280|100.00|0|0|25-stop|850&875",
     "peak|280|100.00|0|0|25-stop|800&825",
@@ -1299,14 +1296,18 @@ for (const mode of ["perceptual", "peak"]) {
     "peak|80|100.00|0|0|25-stop|875&900",
     "perceptual|80|100.00|0|0|25-stop|800&825",
     "peak|80|100.00|0|0|25-stop|800&825",
-    // Ticket #739: Nike tertiary-muted (hue 0, the generator's hueless-sample fallback; anchor
-    // #FFFFFF, resolved chroma 100.00 on this group) now renders its ramp at the palette's OWN hue
-    // instead of the anchor's rounding-residue one - two adjacent near-white peak-mode stops round to
-    // the identical 8-bit hex at that hue where they did not before, the same rounding-collision class
-    // every other member of this list already names. A mechanical re-freeze, not a new construction
-    // defect (U1-4 proves every OTHER anchored ramp in the corpus byte-identical).
-    "peak|0|100.00|0|0|25-stop|75&100",
-    "peak|0|100.00|0|0|25-stop|150&175",
+    // Nike tertiary-muted (anchor #FFFFFF, resolved chroma 100.00 on this group): adjacent near-white
+    // stops round to the identical 8-bit hex, the same rounding-collision class every other member of
+    // this list already names. At hue 0 it held five keys: even 50&75, 100&125 and 175&200 entered with
+    // #681, peak 75&100 and 150&175 with #739 (the ramp renders at the palette's OWN hue instead of the
+    // anchor's rounding-residue one). Since #744 the generator gives a hueless sample its entry's
+    // derived neutral hue (36, not the sample's own 0), so #744 swaps those five for the four below:
+    // peak 75&100 and the three even pairs at hue 36; peak 150&175 no longer collides. A mechanical
+    // re-freeze, not a new construction defect (U1-4 proves every OTHER anchored ramp in the corpus byte-identical).
+    "peak|36|100.00|0|0|25-stop|75&100",
+    "even|36|100.00|0|0|25-stop|50&75",
+    "even|36|100.00|0|0|25-stop|100&125",
+    "even|36|100.00|0|0|25-stop|175&200",
   ]);
   const seenBaselineDup = new Set();
 
