@@ -2,7 +2,7 @@
 kind: verdict
 plan: records-gates
 seat: verifier
-pass: 1
+pass: 2
 ticket: "#741, #742, #745, #747, #755"
 written: 2026-09-28
 ---
@@ -40,3 +40,18 @@ sha: ca8d56d5a360e7a6aef615c47e8423917c9467a4
   - `E4_RE` (`:377`) misses a code-span label in a blockquoted bullet.
   These want a ticket, or an addendum to #764.
 - Adapter §2.1 (`.sdlc/adapter.md:110`, a line U1 rewrote) still has the pre-land verifier run `every sh .sdlc/checks/*.sh`, which never reaches `ceiling-counts-check.mjs`. This record ran it anyway.
+
+## Addendum, pass 2 at `502888c4`: the main integration, records only
+
+verdict: 🟢
+sha: 502888c40a6703b8fb5271bd4b2a4ccd7cbeb514
+
+PR #759 conflicted on `.sdlc/board.md`, so `plan/records-gates` merged origin/main (`222d5d49`) at `502888c4`, taking main's board. Nothing outside `.sdlc/` moved, so every pass 1 row carries forward.
+
+| Check | State | Evidence | Negative control |
+|---|---|---|---|
+| Only records moved | 🟢 | `git diff ca8d56d5 502888c4 -- . ':(exclude).sdlc' \| wc -l` prints `0`. The six changed paths are the board, `prompt-audit.md`, three unit verdicts from main, and this record. `git diff --name-only f3af8229 origin/main -- . ':(exclude).sdlc'` prints `0`, so the product, test and gate bytes are the ones pass 1 graded | a line appended to `src/ui/app.js` in a clone makes the first count `1` |
+| P4 on the new base | 🟢 | B is now `222d5d49`: the wall filter prints `0`; `DR` prints `0`; numstat is `2 2` | as pass 1 (the four-name fixture gives `2`) |
+| Records gates | 🟢 | in a clone at `502888c4`: `verdicts 184 graded 184 bad 0` (184 tracked); `✓ verdict-frontmatter: verdicts 184 graded 184 bad 0, planted 2`; `em-dash: clean (830 files scanned)`, `exit 0`; `branding: clean (822 files scanned)`, `exit 0`; tree `0` | the `verdict:` line cut from the merged `chroma-floor-U3.md` gives `bad 1` |
+
+The carries and follow-ups above stand unchanged.
