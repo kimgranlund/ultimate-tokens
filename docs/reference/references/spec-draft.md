@@ -45,7 +45,7 @@ picker and not a build-time pipeline — it is an interactive generator whose ou
 of portable token artifacts.
 
 Core operations: (1) compute in-gamut tonal ramps per palette; (2) map ramps to a 53-role
-semantic layer with light/dark modes; (3) export to eight color formats; (4) optionally bind a live
+semantic layer with light/dark modes; (3) export to ten color formats; (4) optionally bind a live
 raw→semantic cascade in Figma via a companion plugin.
 
 ## 2. Why It Exists
@@ -155,9 +155,9 @@ per fill by the default `onColorMode: contrast` (ADR-003 amendment / ADR-025, OD
 Low/High (mirror).
 
 ## 9. Export Formats 📐
-See `references/knowledge-04-export-formats.md`. Eight color formats: CSS hex, CSS OKLCH, JSON,
+See `references/knowledge-04-export-formats.md`. Ten color formats: CSS hex, CSS OKLCH, JSON,
 Figma DTCG 3-file zip (resolved colors, ADR-002), UI3 Collections (interchange-only,
-ADR-007/OD-003), Tailwind v4, and ShadCN (a curated subset, not all roles). Padding via `pad3`/`refKey` (ADR-006).
+ADR-007/OD-003), Tailwind v4, ShadCN (a curated subset, not all roles), Panda CSS, Radix, and `exportAll`. Padding via `pad3`/`refKey` (ADR-006).
 
 ## 10. Figma Plugin 📐
 See `references/knowledge-05-figma-plugin.md`. Binds the `Color Roles` collection (#491; was
@@ -216,7 +216,7 @@ OKLCH-native designers work in familiar numbers without changing the output colo
 ## 15. Current Status
 
 - **Complete:** engine (verified to anchors); tonal generation (5 curves, skew/lift,
-  damping); 53-role semantic layer; 5 export formats; companion plugin; persistence; parity
+  damping); 53-role semantic layer; ten color export formats; companion plugin; persistence; parity
   across artifact/`gen.js`/plugin at 53 roles.
 - **In progress:** spec hardening (this document) for spec-author enhancement.
 - **Not yet addressed:** automated accessibility surfacing in-app; configurable palette set;
@@ -229,7 +229,7 @@ OKLCH-native designers work in familiar numbers without changing the output colo
 | `references/knowledge-01-color-engine.md` | matrices, CAM16 fwd/inv, VC, gamut, anchors |
 | `references/knowledge-02-tonal-scale.md` | stops, curves, `toneAt`, chroma+damping |
 | `references/knowledge-03-semantic-system.md` | two layers, 53 roles, on-colors, scrims, surfaces |
-| `references/knowledge-04-export-formats.md` | 5 formats, shapes, Figma import constraints |
+| `references/knowledge-04-export-formats.md` | 10 color formats, shapes, Figma import constraints |
 | `references/knowledge-05-figma-plugin.md` | cascade binder, parity, run/failure modes |
 | `references/knowledge-06-palette-derivation.md` | the "New Palette" engine (`derive.mjs`): Relative / Environmental / Custom |
 | `color-neutral-derivation.md` | the neutral/environment rule (hue + max chroma) |
