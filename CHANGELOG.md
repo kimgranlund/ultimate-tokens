@@ -8,7 +8,7 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 
 ## [Unreleased]
 
-### 2026-09-26
+### 2026-09-29
 
 #### Fixed
 - **A hueless sample takes its entry's neutral hue** (#744). The generator stored hue `0` for a
@@ -24,11 +24,11 @@ they landed on `main` and reference the squash-merged PR that introduced them.
   though its own numbers still matched today's default rows exactly. `hydrateStoredDoc` now backfills
   a pre-v5 palette's `anchor`/`sourceAnchor` when it still equals a row of the default kit's own hue
   form (CAM16 or OKLCH, read from the stored doc's `hueSpace`) on name, hue, chroma, skew and lift; a
-  user-built or pre-#681 preset palette, or any palette a slider moved off that one row, including
-  onto the OTHER hue form's own default value, has no matching row there and stays parametric,
-  unchanged. Only the stored set list takes the #740 backfill: a preset opened from the gallery, a
-  Figma-variables read and an embedded-config restore ("Open saved palette" or the project restore)
-  open without it, so a curated preset renders as its tile does.
+  palette equal to no row of that table stays parametric, unchanged: a user-built palette, or any
+  palette a slider moved off its row, including onto the OTHER hue form's own default value. A stored
+  pre-v5 palette equal to a row, a stored pre-#681 preset among them, takes that row's anchor. Only
+  the stored set list takes the #740 backfill: a preset opened from the gallery, a Figma-variables
+  read and an embedded-config restore ("Open saved palette" or the project restore) open without it, so a curated preset renders as its tile does.
 
 ### 2026-09-18
 
