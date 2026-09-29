@@ -1,6 +1,6 @@
 # prompt-audit U6 handoff: slice B skills, pass 2
 
-Pass 2 (rework of verdict pass 1, 🔴 at 60fd4668). Branch: unit/pa-U6. Head code commit 301f281e (the pass 2 skill edits; this handoff is the next commit), on the merge 5ad4510d of plan/prompt-audit @ 5e298d22 (revision 8). Earlier code commits 5ca1ffe4, 91b6f571, 60fd4668. Diff base B = 13346c1a9c2e7e84368f276e5f67169090f1ddaa (`git merge-base origin/main HEAD`). Every figure below was measured at that commit.
+Pass 2 (rework of verdict pass 1, 🔴 at 60fd4668). Branch: unit/pa-U6. Head code commit ef2115bb (review p2 round 2 fix; this handoff is the next commit), on the merge of plan/prompt-audit @ 2849e00f (revision 9, U6-8's third leg). Earlier code commits 5ca1ffe4, 91b6f571, 60fd4668 (pass 1) and 301f281e (pass 2). Diff base B = 13346c1a9c2e7e84368f276e5f67169090f1ddaa (`git merge-base origin/main HEAD`). Every figure below was measured at that commit.
 
 ## Pass 2 rework
 
@@ -18,6 +18,16 @@ Each fact was read from code, not from the plan or a review: `test/ui/counts.mjs
 | F8 | applied | color-math cites `hydrateStoredDoc` (`src/ui/app-helpers.mjs`). Proof: U6-9 leg 8 |
 | F9 | applied | this handoff: pass 2, names the head code commit, every Ran figure re-measured at it. Proof: U6-10 |
 | F10 | dropped | plan defects, the planner's; revision 8 fixed them. Proof: `git show 5e298d22:.sdlc/plans/prompt-audit.md \| grep -c 'SB8, SB9.*counts\.mjs'` prints `1` |
+
+## Pass 2 review round 2 rework
+
+From `.sdlc/verdicts/prompt-audit-U6-review-p2.md` (FAIL at 6cceeccf).
+
+| Id | Fate | Note |
+|---|---|---|
+| F1 | applied | `adding-semantic-roles/references/foundations.md` cites `exportShadcn` in `src/engine/exports.js`, the `exports.js ~504` approximation gone (the function is at line 837). Proof: U6-8 third leg |
+| F2 | dropped | plan defect, the planner's; revision 9 widened U6-8 with the `file ~N` leg. Proof: `git show 2849e00f:.sdlc/plans/prompt-audit.md \| grep -c 'a-z\]{2,4} ~\[0-9\]'` prints `2` (the U6-8 row and the revision 9 log line) |
+| F3 | applied | the SB9 row's 0x08 byte is a literal backslash-b. Proof: a control-byte scan of this file prints `0` |
 
 ## Pass 1 review round 2 rework
 
@@ -45,12 +55,12 @@ At the head code commit, in the unit worktree.
 
 | Command | Result |
 |---|---|
-| `node test/repo/branding.mjs` | `branding: clean (812 files scanned)`, exit 0 |
-| `node test/repo/em-dash.mjs` | `em-dash: clean (820 files scanned)`, exit 0 |
+| `node test/repo/branding.mjs` | `branding: clean (818 files scanned)`, exit 0 |
+| `node test/repo/em-dash.mjs` | `em-dash: clean (826 files scanned)`, exit 0 |
 | P3, added prose lines with U+2014 against B | `0` |
 | P4, out-of-wall files; guarded paths; `architecture.md` lines | `0`, `0`, `0` |
 | P6, added lines carrying a history id (against B) | `0` |
-| P6, removed lines carrying a history id, this unit's share (`git diff 5e298d22 HEAD`) | `23` |
+| P6, removed lines carrying a history id, this unit's share (U6's thirteen files against B) | `23` |
 | U6-8, line pins and `(line ~N)` in the wall | `0` |
 | `npm test` | see the tally line at the foot of this file |
 
@@ -68,7 +78,7 @@ Every claim below was re-derived from source before the rewrite: `src/engine/geo
 | SB6 | applied | `FORMAT_GROUPS` and `downloadAllZip` cited in the scanner's shape with `src/ui/overlays/drawer.js`. Proof: U6-2 |
 | SB7 | applied | roles label cited at `src/ui/sections/color.js`. Proof: U6-2 |
 | SB8 | amended | the enumerated count-gate list is replaced by a search (`git grep -nw "<oldcount>" test`); `ROLES` is named as the hand literal in `test/ui/counts.mjs` that `(s4)` reads, and `semExpect` as the one that derives. The second `(s4)` on the `npm test` comment line names a live check and stays. Proof: U6-3, U6-6 |
-| SB9 | applied | the stale-count sweep and the verify line use `git grep -nw "<oldcount>"`, which finds hits on this git (`` does not). Proof: U6-3, U6-7 |
+| SB9 | applied | the stale-count sweep and the verify line use `git grep -nw "<oldcount>"`, which finds hits on this git (`\b` does not). Proof: U6-3, U6-7 |
 | SB11 | applied | the `app.js:4046` pin in three reference files is gone; the label is cited by file and grep string. Pass 2 drops the remaining `semantic.mjs:30` pin and the `(line ~N)` approximations. Proof: U6-2, U6-8 |
 | SB12 | applied | `~line 433` and the `app.js` drawer are gone from `foundations.md` and `best-practices.md`; the chain names `renderDrawer`'s `FORMAT_GROUPS` in `src/ui/overlays/drawer.js`. Proof: U6-2 |
 | SB13 | applied | the ds-export paragraph keeps the rule (out of scope, not in `exportAll`), drops the split story and the "yet" claim, states `ten colour formats`. Proof: U6-4 |
@@ -85,7 +95,7 @@ Every claim below was re-derived from source before the rewrite: `src/engine/geo
 
 ## Per-criterion evidence and negative controls
 
-Runs at the head code commit. Controls ran in throwaway `git clone -q --shared` copies in this job's tmp directory: one at B (U6-1 to U6-5), one at 60fd4668 (U6-6 to U6-9 as they stood), one at the head code commit with the named fixture committed on top. `F` is that tmp directory.
+Runs at the head code commit. Controls ran in throwaway `git clone -q --shared` copies in this job's tmp directory: one at B (U6-1 to U6-5), one at 60fd4668 and one at 6cceeccf (U6-6 to U6-9 as they stood), one at the head code commit with the named fixture committed on top. `F` is that tmp directory.
 
 | Row | At head | Control |
 |---|---|---|
@@ -95,16 +105,16 @@ Runs at the head code commit. Controls ran in throwaway `git clone -q --shared` 
 | U6-4 | `0` and `0`, `0`, `0`, `0` | at B: `4` and `2`, `5`, `6`, `2` |
 | U6-5 | `1 1 1 2 1 1` | the export SKILL with its `MCP_BRAND_KIT_VERSION` lines dropped prints `0` |
 | U6-6 | `1 0 1 1` | at 60fd4668: `1 1 0 0`; fixture with step 5's sentence restored: second grep `1` |
-| U6-7 | `27 236 63 236 6`, then `0` | at 60fd4668: `0 0 0 0 0`, then `5`; fixture with the first recipe typed back to `-nE "\b<oldcount>\b"`: `0 236 63 236 6`, then `1` |
-| U6-8 | `0`, `1` | at 60fd4668: `4`, `1` |
+| U6-7 | `27 238 63 238 6`, then `0` | at 60fd4668: `0 0 0 0 0`, then `5`; fixture with the first recipe typed back to `-nE "\b<oldcount>\b"`: `0 238 63 238 6`, then `1` |
+| U6-8 (revision 9, three legs) | `0`, `1` | at 60fd4668: `5`, `1`; at 6cceeccf: `1`, `1` (the `exports.js ~504` line) |
 | U6-9 | `0 0 2 0 0`, groups `2 1 1 1 1`, imports `2 2 2 1 1 1 1 1 1 2 1 2 3`, `1` | at 60fd4668: `1 1 0 1 1`, groups `0 1 1 0 1`, imports `2 2 2 1 1 1 1 0 0 2 0 1 2`, `0`; fixture with step 4's group list restored: `by DESTINATION` `1`, `Colors` `0` |
 | U6-10 | `1 1 1` | the pass 1 handoff carried `807`, `815`, `91b6f571` against `810`, `818`, `60fd4668`: `0 0 0` |
 | P3 | both gates clean (the Ran lines), `exit 0`, `0` | decision-records copied to `.sdlc/verdicts/prompt-audit-x.md`: `FAIL: 3 branding violation(s) across 813 files`, exit 1; one added U+2014 line: `FAIL: 1 em dashes outside inline code spans in 1 files`, exit 1, fourth leg `1` |
 | P4 | `0`, `0`, `0` | the six-name fixture through the first filter: `3` |
-| P5 | every SB1 to SB9, SB11 to SB23 id `1`; ERE total `37` = 22 ids + 15 review rows (`grep -c -E '^. F[0-9]+ '` prints `15`) | copy with the SB14 row deleted: SB14 `0`, total `36` |
-| P6 | added `0`; removed `23` (unit share) | `+the rule (TKT-0010)` through the first filter: `1` |
+| P5 | every SB1 to SB9, SB11 to SB23 id `1`; ERE total `40` = 22 ids + 18 review rows (`grep -c -E '^. F[0-9]+ '` prints `18`) | copy with the SB14 row deleted: SB14 `0`, total `39` |
+| P6 | added `0`; removed `23` (unit share; `39` against B with the merged units) | `+the rule (TKT-0010)` through the first filter: `1` |
 
-The U6-7 counts differ from the brief's `229` because the tree now carries revision 8's plan files, whose lines match the `'*.md'` pathspec; each count is `1` or more, which is what the row asks.
+The U6-7 counts differ from the brief's `229` because the tree now carries revision 8 and 9's plan and review files, whose lines match the `'*.md'` pathspec; each count is `1` or more, which is what the row asks.
 
 ## Left out
 
@@ -116,4 +126,4 @@ The U6-7 counts differ from the brief's `229` because the tree now carries revis
 
 None.
 
-npm test at 42aa0d53 (the handoff commit on the head code commit): `✓ all 53 test files passed`, exit 0, tree clean after; N is 53 from TESTS, `test/run.mjs` unchanged against B, `ok    tests: baseline 53, test/run.mjs TESTS 53`.
+npm test at the handoff commit on the head code commit: `✓ all 53 test files passed`, exit 0, tree clean after; N is 53 from TESTS, `test/run.mjs` unchanged against B, `ok    tests: baseline 53, test/run.mjs TESTS 53`.
