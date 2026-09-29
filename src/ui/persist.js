@@ -18,8 +18,8 @@
 // palette object, is preserved byte-for-byte. serialize() also stamps a schemaVersion
 // (CURRENT_SCHEMA_VERSION); hydrate() runs any still-relevant RENAME_MAPS entry before the
 // domain clamp, so a doc saved before a canon rename (a voice, a treatment id, ...) survives
-// translated onto its current name instead of being silently dropped by an allowlist that only
-// ever recognizes the current names (TKT-0016, see the RENAME_MAPS block below). No dependencies.
+// as its current name, never dropped by a current-names allowlist (TKT-0016, RENAME_MAPS below).
+// Its three imports are engine constants (icon systems, the default type, the collections); nothing from the DOM.
 import { ICON_SYSTEMS, DEFAULT_ICON_SYSTEM } from "../engine/icon-systems.mjs";
 import { DEFAULT_TYPE } from "../engine/type.mjs";
 import { COLLECTIONS } from "../engine/collections.js";
