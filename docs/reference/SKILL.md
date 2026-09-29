@@ -1,10 +1,11 @@
 ---
 name: hct-palette-generator-spec
 description: >
-  Spec cell for the HCT Palette Generator, a single-file browser tool that builds
-  perceptually even color palettes (hue and chroma from CAM16, tone from CIELAB L-star,
-  clamped to the sRGB gamut ceiling by construction) plus a 53-role semantic token layer,
-  exporting to CSS, OKLCH, JSON, Figma DTCG, and a Figma cascade plugin. Scope: the tool and
+  Spec cell for Ultimate Tokens, a single-file browser tool that builds a brand kit of three
+  composing systems (Color, Typography, Geometry). Color builds perceptually even palettes
+  (hue and chroma from CAM16, tone from CIELAB L-star, clamped to the sRGB gamut ceiling by
+  construction) plus a 53-role semantic token layer, exporting to ten color formats (CSS, OKLCH,
+  JSON, DTCG, UI3, Tailwind, shadcn, Panda, Radix, exportAll) and a Figma cascade plugin. Scope: the tool and
   its parts, the color engine (CAM16, gamut search, fixed viewing conditions),
   tonal-scale generation (curves, skew, lift, chroma damping), the semantic token system
   (roles, on-colors, scrims, surface ramps, light/dark modes), the export formats and Figma
@@ -15,7 +16,7 @@ description: >
   generator, scrims, on-colors, or the binder plugin.
 ---
 
-# HCT Palette Generator: a perceptual, in-gamut palette + semantic-token generator
+# Ultimate Tokens: a perceptual, in-gamut palette + semantic-token generator (Color, Typography, Geometry)
 
 > **SKILL-format spec cell `spec.system.hct-palette-generator-spec`.** This file is both the
 > readable brief and, in the fenced `json` contract block below, the machine-readable
@@ -28,11 +29,11 @@ description: >
 full semantic token layer that survives a light/dark mode flip and imports without error into
 CSS and Figma. Naive lightness scaling drifts hue and clips the gamut; a fixed per-hue chroma
 clips at the light/dark ends; mode handling bolted onto raw colors breaks the moment a role
-mapping stops being a simple mirror. The HCT Palette Generator removes all three at the root
+mapping stops being a simple mirror. Ultimate Tokens removes all three at the root
 by **treating color as a point in a perceptual space against a gamut boundary, not a scalar
 to push around**: tone is CIELAB L\*, hue/chroma is CAM16, every emitted color is clamped
 in-gamut at its tone, and the entire light/dark flip lives in one semantic `--c-*` layer over
-flat raw tokens. Output is a set of portable token artifacts (five export formats) plus an
+flat raw tokens. Output is a set of portable token artifacts (ten color export formats, plus type and geometry) plus an
 optional live raw→semantic cascade in Figma, delivered as one offline, dependency-free,
 single-file tool.
 
@@ -82,7 +83,7 @@ every role is aliased to its primitive, **idempotently** on re-apply).
 
 ```json
 {
-  "title": "HCT Palette Generator",
+  "title": "Ultimate Tokens",
   "cell": "spec.system.hct-palette-generator-spec",
   "binds_rubric": "rubric.system.spec-quality",
   "acceptance_criteria": [
@@ -92,7 +93,7 @@ every role is aliased to its primitive, **idempotently** on re-apply).
     { "id": "hpg-engine-oklch-deterministic", "check": "oklchToCam16Hue(h, chromaFrac) is deterministic and memoized (by h + chromaFrac), repeated calls return an identical CAM16 angle, and maxChromaInGamut/peakC are stable across repeated calls (AC-E5, ADR-011). Bridge FIDELITY is no longer a non-goal: the chroma-aware Newton inverse lands the rendered identity color on the stored OKLCH hue to ~0.00°, gated separately by the engine's hct-oklch-inverse (test/engine/hct.mjs)" },
     { "id": "hpg-engine-parity", "check": "CONDITIONAL on packaging (parity is a property of multi-impl distribution, NOT of the domain): a SINGLE-SOURCE build, one engine module imported everywhere, satisfies this structurally (no second implementation can diverge), so it is auto-satisfied. IF >=2 independent engine implementations are shipped, they must agree differentially: >=1000 random (hue,chroma,tone) with chroma >= 5 and tone in (2,98) agree within max(|dr|,|dg|,|db|) <= 2 (sRGB 0-255), both pass every data/verification-anchors.json anchor (P7), and SCRIM_BASES/SCRIM_STEPS/PEAK/stops match (P6), a shared role-table.json cannot fake engine-math agreement" },
     { "id": "hpg-tonal-ingamut", "check": "for every default palette and every EXPORT_STOPS stop, hctToRgb(...).inGamut === true AND applied chroma <= maxChromaInGamut at that stop (AC-T1, AC-T4)" },
-    { "id": "hpg-tonal-monotonic", "check": "on the `even` toneMode path (`toneAt`) ONLY: tone is STRICTLY decreasing (no duplicate consecutive stops) across EXPORT_STOPS from 050 to 950 for each of the five curves, over the full curve x skew x lift x tension grid (skew in {-100,-50,0,50,100}, lift in {-40,-20,-5,0,5,15,20,40}, tension in {0,50,100}) and each of six lmin/lmax bands, with both endpoints exact to lmax/lmin and every interior stop strictly inside (lmin,lmax) so the clamp never binds (AC-T3, #648). NOT a claim about `perceptual`/`peak` (`okhslStops`): those tone modes can duplicate or reverse on some skew/lift/band combinations; they are gated at the default palettes only (test/engine/tonal.mjs:283-301 `okhsl-modes`, test/engine/tonal.mjs:687-708 `lift-monotonic`), no grid-wide guarantee" },
+    { "id": "hpg-tonal-monotonic", "check": "on the `even` toneMode path (`toneAt`) ONLY: tone is STRICTLY decreasing (no duplicate consecutive stops) across EXPORT_STOPS from 050 to 950 for each of the five curves, over the full curve x skew x lift x tension grid (skew in {-100,-50,0,50,100}, lift in {-40,-20,-5,0,5,15,20,40}, tension in {0,50,100}) and each of six lmin/lmax bands, with both endpoints exact to lmax/lmin and every interior stop strictly inside (lmin,lmax) so the clamp never binds (AC-T3, #648). NOT a claim about `perceptual`/`peak` (`okhslStops`): those tone modes can duplicate or reverse on some skew/lift/band combinations; they are gated at the default palettes only (test/engine/tonal.mjs:301-327 `okhsl-modes`, test/engine/tonal.mjs:735-884 `lift-monotonic`), no grid-wide guarantee" },
     { "id": "hpg-tonal-chroma-target", "check": "edge damping reduces chroma toward the ends, chroma at stop 500 >= chroma at 050 and >= chroma at 950 for a saturated palette (AC-T5), AND for each saturated default palette (chroma control >= 50) applied chroma at the prime tone (stop 500) equals min(target*m, maxChromaInGamut), where m is the differential damping multiplier, m = 1 at stop 500 when dampAmp = 0, within |dC| <= 1.0 AND >= 0.5*min(target, maxChromaInGamut) (a hard floor no tolerance-widening can readmit), so a flat gray ramp (chroma ~ 0) does NOT satisfy the tonal criteria" },
     { "id": "hpg-tonal-white-endpoint", "check": "with lmax = 100, every default palette's 050 stop resolves to #FFFFFF (AC-T2)" },
     { "id": "hpg-tonal-curve-fidelity", "check": "the L* RECOMPUTED FROM THE EMITTED sRGB (engine lFromY, == hctToRgb(...).lstar which knowledge-01 derives from the searched XYZ, NOT a stored tone field) equals toneAt(stop, skew, lift) within |dL*| <= 1.0 at every EXPORT_STOPS stop, for each of the five curves at default skew/lift AND at skew in {-100,-50,0,50,100} incl. the Warning default (skew 40, lift −36), except the tone<=0/>=100 clamp ends, so the EMITTED ramp follows the SPECIFIED CIELAB-L* profile (the tool's 'perceptually even' = curve-shaped, NOT uniform-step); not satisfiable by comparing toneAt to itself" },
@@ -109,12 +110,12 @@ every role is aliased to its primitive, **idempotently** on re-apply).
     { "id": "hpg-export-resolved", "check": "with rawColl blank, NO semantic leaf carries aliasData; with rawColl set, every semantic leaf carries aliasData.targetVariableName matching {n}/{refKey} AND aliasData.targetVariableSetName === rawColl (the Color Primitives collection), the FULL documented name+collection alias SHAPE Figma's aliasData fallback hierarchy resolves on native import when the Color Primitives collection pre-exists (AC-X6, ADR-002 re-verify 2026-06-15; the OD-004 spike). This gates the emitted SHAPE only; the native-import cascade itself is validated in Figma, not by this check" },
     { "id": "hpg-export-css-resolves", "check": "CSS var naming: RAW vars are --c-{family}-{stop|500-step} (suffix ends in digits), SEMANTIC vars are --c-{family}-{role} (suffix ends in a word), both share the --c- prefix with no collision; every --c-* semantic var is emitted as light-dark(var(--c-rawA), var(--c-rawB)) over two raw vars that both exist in the emitted :root (AC-X2, the two-layer model ADR-005)" },
     { "id": "hpg-export-padding", "check": "every token name (CSS vars, JSON keys, DTCG names, UI3 keys) uses 3-digit stop padding; scrims use padded base + '-{step}' (e.g. the raw CSS var --c-{family}-500-200 = the 500 color at 20%) (AC-X7, ADR-006)" },
-    { "id": "hpg-export-disabled-palette", "check": "a palette with on:false is absent from all five exports; with all palettes disabled the exporters emit a valid empty-but-well-formed artifact, not an error (AC-U2)" },
-    { "id": "hpg-export-nonempty", "check": "each of the eight color formats produces non-empty output for the default state, and the JSON format gives each palette stops/scrims/semantic with 3-digit-padded stop keys (AC-X1, AC-X3)" },
+    { "id": "hpg-export-disabled-palette", "check": "a palette with on:false is absent from all ten color exports; with all palettes disabled the exporters emit a valid empty-but-well-formed artifact, not an error (AC-U2)" },
+    { "id": "hpg-export-nonempty", "check": "each of the ten color formats produces non-empty output for the default state, and the JSON format gives each palette stops/scrims/semantic with 3-digit-padded stop keys (AC-X1, AC-X3)" },
     { "id": "hpg-plugin-bindings", "check": "every {n}/{refKey} binding target the plugin emits exists among real Color Primitives variable names, including the {n}/500-{step} scrims (AC-P2)" },
     { "id": "hpg-plugin-offline", "check": "the plugin's code.js and manifest.json both parse, and manifest networkAccess is 'none' (AC-P3, the offline/dependency-free decision ADR-010)" },
     { "id": "hpg-persistence-roundtrip", "check": "for any in-domain State S, hydrate(serialize(S)) deep-equals S exactly; an out-of-domain field is clamped to its nearest valid bound (domains per knowledge-02 §2) while every in-domain field is preserved (AC-U1); AND an ABSENT field hydrates to that field's DEFAULT, NOT its domain floor: a doc predating the differential-damping fields (lacking dampCurve/dampAmp/dampBias) gets 1.5/0/0 (the legacy-equivalent), and a partial config lacking lmin/lmax/damp gets 5/100/80 (not the dark 0/60/0 floors); the result is byte-identical to hydrating the same doc with the field explicit at its default (the backward-compatible-reload guarantee)" },
-    { "id": "hpg-export-theme-invariant", "check": "for one State, the byte output of all five exporters is identical with theme 'light', 'dark', and 'auto', the theme switch changes UI appearance only, never an exported value (AC-U3)" }
+    { "id": "hpg-export-theme-invariant", "check": "for one State, the byte output of all ten color exporters is identical with theme 'light', 'dark', and 'auto'; the theme switch changes UI appearance only, never an exported value (AC-U3)" }
   ],
   "non_goals": [
     "brand-color selection or non-HCT palette generation (opinionated about HCT, ADR-001). Palette COUNT is NOT bounded, the 16 defaults (8 brand + 8 data) are a seed set, every acceptance criterion is quantified 'for every palette' so it generalizes to any count, and the validated UI ships a configurable set (OD-005 DECIDED 2026-06-15)",
@@ -233,7 +234,10 @@ every role is aliased to its primitive, **idempotently** on re-apply).
 | `references/knowledge-01-color-engine.md` | engine math: CAM16, gamut, VC, anchors |
 | `references/knowledge-02-tonal-scale.md` | curves, `toneAt`, chroma, damping, clamp domains |
 | `references/knowledge-03-semantic-system.md` | role table, on-colors, scrims, surfaces, modes |
-| `references/knowledge-04-export-formats.md` | the eight color formats (+ type/geom) and Figma import constraints |
+| `references/knowledge-04-export-formats.md` | the ten color formats (+ type/geom) and Figma import constraints |
+| `references/ui-plan.md` | the front-end plan: tasks T1 to T9 and the arrangement of the editor |
+| `references/component-inventory.md` | the editor's components and shared primitives |
+| `../lld/app-shell.md` | the app shell LLD: frame, regions, render pipeline, state (`../` because it sits outside `docs/reference/`) |
 | `references/knowledge-05-figma-plugin.md` | the cascade binder |
 | `references/knowledge-06-palette-derivation.md` | the "New Palette" engine (`derive.mjs`): Relative / Environmental / Custom |
 | `references/decision-records.md` | the fenced choices (ADRs), read before changing anything |
@@ -248,4 +252,4 @@ every role is aliased to its primitive, **idempotently** on re-apply).
 
 - For generic color-theory questions unrelated to this tool, use a color skill instead. <!-- fix-old-names: keep -->
 - To pick brand colors or build a non-HCT palette, out of scope (see non-goals).
-- For general spec writing unrelated to the HCT Palette Generator, use spec-author directly.
+- For general spec writing unrelated to Ultimate Tokens, use spec-author directly.

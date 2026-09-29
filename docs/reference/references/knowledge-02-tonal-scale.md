@@ -131,12 +131,14 @@ hue    = hueSpace=="oklch" ? solveCam16Hue(palette.hue, chroma@500, tone@500)  /
                         : palette.hue                        // cam16 hue passes straight through
 pk     = peakC(hue).c                     // hue's own max chroma in sRGB
 target = (palette.chroma / 100) * pk      // chroma control is % of the hue's peak
+ref    = max(cm at stops 450, 500, 550)   // the floor's gamut reference: the anchor stop or its first step, whichever is wider
 
 for each stop:
   tone  = toneAt(stop, skew, lift)
   cm    = maxChromaInGamut(hue, tone)     // gamut ceiling at this tone
   env   = chromaEnvelope(stop, 500, lift, controls)    // the shared multiplier, below
-  C     = evenChroma(cm, target, env, chromaFloor)     // min(cm, max(min(target*env, cm), floorC))
+  C     = evenChroma(cm, target, env, chromaFloor, ref)   // min(cm, max(min(target*env, cm), floorC))
+                                          // floorC = min((chromaFloor/100) * min(cm, ref), target)  (#701)
   rgb   = hctToRgb(hue, C, tone).rgb
 
 chromaEnvelope(stop, anchorStop, lift, controls):      // src/engine/tonal.js, ONE definition
@@ -145,6 +147,7 @@ chromaEnvelope(stop, anchorStop, lift, controls):      // src/engine/tonal.js, O
   damp   = isEven ? 100 - (100 - damp) * 0.25 : damp   // EVEN_DAMP_FACTOR = 0.25
   γ      = (isEven ? 0.25 : 1) * dampCurve
   uG     = |sd| ^ γ
+  if isEven: uG *= smoothstep(min(1, |sd| / EVEN_NEIGHBOURHOOD_R))   // R = 0.2; flat start at the anchor (#701)
   sideW  = max(0, 1 + (dampBias/100)*sign(sd))
   shoulder = (dampAmp/100) * 4 * uG * (1 - uG)         // 0 at sd=0 AND |sd|=1: shoulders only
   return max(0, 1 + shoulder - (damp/100)*sideW*uG)
@@ -166,6 +169,13 @@ chromaEnvelope(stop, anchorStop, lift, controls):      // src/engine/tonal.js, O
   retune: `even`'s `toneAt` sets CIELAB L\* directly, so chroma damping there cannot move measured L\*,
   which makes it the one mode where the exponent can be retuned without reopening the
   Helmholtz-Kohlrausch coupling that reds #668 in the OKHSL-domain modes.
+- **`even` also has a flat-start shoulder at the anchor (#701).** `|sd|^0.375` has infinite slope at the
+  anchor, so a muted anchor's 450 and 550 read far below its full-chroma 500 (the 64 lone spikes).
+  In `even` only, `uG` is multiplied by a smoothstep of `|sd| / 0.2` (`EVEN_NEIGHBOURHOOD_R`, a named
+  constant, not a control; R = 0.2 in `sd` units, 0.2 of the 450-stop half-ramp, 90 stop units at lift 0):
+  0 at the anchor, 1 from R out. At lift 0 the smoothstep is 1 by stops 400/600 (`|sd|` 0.222), so nothing
+  beyond them moves; under lift `liftStop` sets the reach, and above `|lift|` about 14 the near-side 400 or
+  600 enters it. `perceptual` and `peak` never take it.
 - **Differential damping curve.** The defaults
   `dampCurve 1.5, dampAmp 0, dampBias 0` reduce it to the legacy `1 - (damp/100)·u^1.5`
   edge damp **exactly** (backward-compatible, existing palettes/exports are unchanged).

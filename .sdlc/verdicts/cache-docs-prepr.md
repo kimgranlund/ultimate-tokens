@@ -2,7 +2,7 @@
 kind: verdict
 plan: cache-docs
 seat: verifier
-pass: 1
+pass: 2
 pr: 760
 ticket: "#750"
 written: 2026-09-26
@@ -54,4 +54,20 @@ Carried, 🟡: `baseline-agrees` with R53's one `STALE time test` line, `doc-dri
 (#755), identical on main and on the squash tree. The card checks are read by their last line while #745 is open.
 
 verdict: 🔴
+sha: 99219abb654b78ef46f9eebaf761725a27ed4e0b
+
+## Pass 2 · 2026-09-26 · same sha `99219abb`: 🟢
+
+Closes #750
+
+The PR text changed and the branch did not: `origin/plan/cache-docs` and #760's `headRefOid` both read `99219abb`,
+so every pass 1 row carries. I reread the PR and the merge myself.
+
+| id | criterion | state | evidence | negative control |
+| --- | --- | --- | --- | --- |
+| PR1 | the PR title matches the Landing | 🟢 | `docs(engine): the cache-key lines say exact float, #686 (#750)` | pass 1 read `plan/cache-docs` |
+| PR2 | the PR body meets the Landing and adapter §2 | 🟢 | body `2724` characters: the summary, this record's table, the `_okL` line naming #701, a `Closes #750` line, and `🤖 Generated with [Claude Code](https://claude.com/claude-code)` as its last line; em and en dashes `0` | pass 1 read length `0` |
+| M | clean merge into today's main | 🟢 | `git merge-tree --write-tree origin/main 99219abb` exit `0` at main `fb84cc29`; `mergeStateStatus` `CLEAN` | pass 1's two-branch board conflict: exit `1` |
+
+verdict: 🟢
 sha: 99219abb654b78ef46f9eebaf761725a27ed4e0b

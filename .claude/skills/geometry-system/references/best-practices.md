@@ -76,7 +76,7 @@ composition history.
 ### Determinism
 
 - No RNG, no `Date`, no locale, pure math. `geomScale` must give identical output for identical input. If you
-  add memoization, key it deterministically (the color/type engines key on `toFixed(2)`).
+  add memoization, key it deterministically (the color engine keys its caches on the exact float; the type engine keeps no cache).
 
 ## Worked walkthrough: the typography composition (the JOIN), condensed
 

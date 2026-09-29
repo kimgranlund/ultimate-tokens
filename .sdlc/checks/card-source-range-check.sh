@@ -4,6 +4,7 @@
 # follow), so an appended amendment is inside the range and no trailing blank
 # line is claimed. ADR-023 and ADR-024, written in this plan, are one line long
 # under the other reading and are normalised to this one. Usage: sh .sdlc/checks/card-source-range-check.sh
+# The exit agrees with the count (#745): a non-zero range mismatches is a non-zero exit.
 n=0
 for c in .sdlc/records/cards/*.md; do
   id=$(basename "$c" .md)
@@ -23,3 +24,4 @@ for c in .sdlc/records/cards/*.md; do
   [ "$true_end" = "$end" ] || { echo "end $id says $end, section ends at $true_end"; n=$((n+1)); }
 done
 echo "range mismatches: $n"
+exit $((n > 0))
