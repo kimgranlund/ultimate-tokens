@@ -5,8 +5,8 @@ unit: U2
 ticket: "#751"
 branch: unit/dr-U2
 base: 282fca8d
-grade: verifier-l1, the evidence run dispatched by the Verifier seat
-pass: 1
+grade: verifier-l1 (pass 1), verifier-l2 (pass 2), the evidence runs dispatched by the Verifier seat
+pass: 2
 written: 2026-09-29
 ---
 
@@ -41,3 +41,37 @@ Head `be13a210`; code commits `4095ddbf` and `e7058994`. Unit base `5d8b1c30`; B
 3. 🟡 F3. Glossary wording: the Section row attaches "never persisted" to the frame (`app.js` says the section is never persisted); the Inspector row calls `.seg-example` a live control (the code: a live component preview); the Analysis card row's "each section's renderLeftPane body" reads as if sections own a `renderLeftPane`.
 4. 🟡 F4. P6 plan-wide prints `2` until U1 lands (its `ui-plan.md`).
 5. Note. The handoff's `branding: clean (736 files scanned)` does not reproduce (`738` at `e7058994`, `739` at head); the result, clean, agrees. `test/engine/exports.mjs` still has a `5 formats non-empty` comment, and `spec-draft.md` keeps the old product name in three lines; both outside U2's steps.
+
+## Pass 2 · 🟡 · both pass 1 🔴 cells repaired and reproduced by the ran block; the handoff drops its own P3 figure
+
+verdict: 🟡
+sha: 7491d8dd1bb9e9a5fa38c4072bea2369f7469f85
+
+Head `7491d8dd`; the handoff names `441a8638` (glossary rewrite), and `git diff --name-only 441a8638 7491d8dd` lists only `.sdlc/handoffs/docs-repair-U2.md` and `.sdlc/verdicts/docs-repair-U2-review-p2.md`. Plan `1e263b2f` (the pass 2 re-diagnosis). The evidence run was verifier-l2 (Opus 5.5) in shared clones under the seat's job tmp. The seat reread the persist.js and `renderLeftPane` claims itself. `verdict.py check` exits `0` on the handoff and on review p2.
+
+| Row | State | Evidence | Negative control |
+|---|---|---|---|
+| U2-1 | 🟢 | at `441a8638` and `7491d8dd`: `5`, `2`, `3`, `0`, `1` | at B: `0 0 0 5 1` |
+| U2-2 | 🟢 | `1`, `1`, `1`, `ok` | at B: `0 0 0 ok` |
+| U2-3 | 🟢 | `spec-draft.md:0`, `acceptance-criteria.md:0`, `quality-rubric.md:0`, `0` | at B: `:2`, `:1`, `:1`, `1` |
+| U2-4 | 🟢 | nine `1`s, `1`, `42` | at B: nine `0`s, `0`, `33` |
+| U2-5 | 🟢 | `1 1 1 1 2 1` (this.view `2`, colorMode `1`) | at B: six `0`s |
+| U2-6 | 🟢 | `0 1 0 0 1 3 2 2 0 1 1 1`, every leg as the plan expects | at `be13a210`: `1 1 0 1 0 3 2 2 1 0 1 1` |
+| Glossary claims | 🟢 | persist.js `grep -cw section` prints `0`; `renderLeftPane(view) {` is at `app.js:1531` only and picks `analysisCards` / `typeAnalysisCards` / `geomAnalysisCards` by `this.section` at `:1538-1541`; `.seg-example` at `app.js:1952`, `typography.js:615`, `geometry.js:718` | pass 1's reading ("each section's `renderLeftPane`") has no second definition to point at |
+| P1 | 🟢 | fresh clone, no node_modules: `✓ all 50 test files passed`, `exit 0`, TESTS `50`, tree `0` | scrim sed: `✗ 1/50 test file(s) failed`, `exit 1` |
+| P3 | 🟢 | `branding: clean (742 files scanned)`; U2's added lines carry `0` U+2014; the raw plan-wide `2` sit in U3's records | a copied ADR: `FAIL: 3 branding violation(s) across 743 files`, `exit 1` |
+| P4 | 🟢 | `0`, `0`, `0`, `0` at both shas | four-name fixture: `2` |
+| P5 | 🟢 | `✓ citations: parser self-test + STALE 0 across 10 discovered docs (HEAD 7491d8dd)`, `exit 0` | a bumped `mixinInto` cite: `✗ 1 citation gate failure(s)`, `exit 1` |
+| P6 | 🟡 | `2` (`ui-plan.md:48`, `:153`, U1's file), plan-wide, not U2's | at B: `15`; on `unit/dr-U1` at `7cdcf423`: `0` |
+| P7 | 🟢 | `H=441a8638`, `ancestor`, `0` | with `be13a210`: `ancestor`, `4` |
+| P8 | 🟢 | at `7491d8dd`: `H=441a8638`, `HAS-RAN`, `diff 0` (outside `.sdlc/` the two shas are the same tree) | the pass 1 handoff: `NO-RAN`; U2-1's `5` flipped to `1`: `2c2`, `diff 1` |
+
+Pass 1 findings: F1 🟢 fixed (the Ran table is now the `~~~sh ran` pair, and P8 reproduces it). F3 🟢 fixed (the three rows rewritten, every claim read true against the code). F2 🟡 carried by the planner's ruling (`docs/reference/SKILL.md:113`, `:118`, named in the handoff's Left out). F4 🟡 carried, fixed on `unit/dr-U1`.
+
+### Findings
+
+1. 🟡 F5. Plan step (5) says the handoff states the P3 count. The pass 2 handoff has none: the pass 1 `P3 dashed added lines | 0` row was dropped and the ran block's `# P3` carries only the branding line. The true figure is `0`, so nothing is hidden, but P3's third leg has no U2 number to match.
+2. 🟡 F6 (plan). The U2-4 command cell carries three unescaped `|`, so the markdown table splits it; the raw line with `\|` unescaped equals the ran block.
+3. 🟡 F7. The Files cell says "every file the unit changed against its base 5d8b1c30" and omits the unit's own handoff; exact outside `.sdlc/` only. Imprecise, not false.
+
+Cleared to merge.
