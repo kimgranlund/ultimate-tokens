@@ -5,8 +5,8 @@ unit: U11
 ticket: "#758"
 branch: unit/pa-U11
 base: 1b9ec1ed
-grade: verifier-l1 (opus) for a builder-l2 (sonnet) build, the evidence run dispatched by the Verifier seat
-pass: 1
+grade: pass 1 verifier-l1 (opus) for a builder-l2 (sonnet) build, dispatched; pass 2 verifier-l2 run by the seat for a builder-l7 (opus) build
+pass: 2
 written: 2026-09-29
 ---
 
@@ -38,3 +38,28 @@ sha: 6c7598f73fae19245673e6c85ae05096893e02d1
 4. 🟡 Against the plan: U11-7's "no history id enters" wording is looser than U11-5, which requires `(#758)` in the build row. P6 does not scan `.sdlc/`, so the row holds as written.
 5. The review's BSD-grep note on U11-2 is half right. A literal `[|]` fixes leg 3's anchor, but leg 2 needs bare alternation (`-E 'ranksFor[|]2XL'` prints `0`). The plan's Diff-bases rule already covers this, so it is not a defect. Separately, the review's `957` em-dash count at `aeb53f7d` measures as `956`.
 6. Pass 2 needs finding 1 only; finding 2 is cheap in the same edit.
+
+## Pass 2 · 🟡 · both handoff findings repaired and every row re-derived at the head; the plan's U11-7 says the builder ran P1, which it did not
+
+verdict: 🟡
+sha: 1731c72cbcf5612d9777ff5b8f293cc7cb9baecd
+
+`unit/pa-U11` at `1731c72c`, graded by the seat itself at verifier-l2 (opus, same family as the builder-l7 build, fable capped, per `b9044bb`). Since pass 1: plan revision 23 and the re-diagnosis brief merged in at `af5e7400` (`git merge-tree --write-tree 6c7598f7 ba4c25db` = `de2a8571`, the merge's own tree), the handoff repair `158fa7e0` (one file), and the pass 2 review. `git diff --name-only 1818bf59 1731c72c -- . ':!.sdlc'` prints nothing. `verdict.py check` passes on the handoff and the plan (each `--against` its `6c7598f7` copy) and on the created review and brief. Every row ran in a fresh `--no-hardlinks` clone at `1731c72c` with BSD grep and no node_modules.
+
+| Row | State | Evidence | Negative control |
+|---|---|---|---|
+| U11-1 | 🟢 | `0`, `1`, `2`, `15 13 2` | `FIFTEEN` typed back to `THIRTEEN` in the clone: first grep `1` |
+| U11-2 | 🟢 | `0`, `1`, `1`, `1` | pass 1's control at `7ff8177c` (`1`, `0`, `1`) reads a file unchanged since `1818bf59` |
+| U11-3 | 🟢 | `0`, `0`, `1`, `1`, `0`, `15` | pass 1's control (`make7` typed back: `1`) reads a file unchanged since `1818bf59` |
+| U11-4 | 🟢 | `0`, `1`, `1`, `2` | `now` restored in the clone: first grep `1` |
+| U11-5 | 🟢 | `0`, `1`, `1`, `ok    ui.html: baseline 4137.0 KB, tree 4137.0 KB`, `stale total: 0` | KB typed `4130.3`: `STALE ui.html: baseline 4130.3 KB, tree 4137.0 KB`, `stale total: 1` |
+| U11-6 | 🟢 | `4`, `0`, `1`, `sorted` | pass 1's control (`sort: -:2: disorder: 2026-09-26` at `7ff8177c`) reads a file unchanged since `1818bf59` |
+| U11-7 | 🟢 | P1: `✓ all 54 test files passed`, `exit 0`, status `0` after, TESTS `54`, `ok    tests: baseline 54, test/run.mjs TESTS 54`; P3: `branding: clean (951 files scanned)`, `em-dash: clean (959 files scanned)`, added glyph lines `0`; P6: added `0`, removed `41`, `.sdlc/baseline.md` `1` | `"scrimX` in role-table.json: `node test/engine/semantic.mjs` `exit 1`, `FAIL  refs-canonical`; ADR copy under `.sdlc/verdicts/`: `FAIL: 3 branding violation(s) across 952 files`; one glyph line: `FAIL: 1 em dashes`; `+the rule (TKT-0010)`: `1`; clone status `0` after |
+| Handoff | 🟢 | `:42` U11-4 reads `0, 1, 1, 2`; `:5` names `af5e7400`, the parent of `158fa7e0`, which changes one file; `:30` and `:45` say the builder did not run `npm test` or P1's control; P3 at `af5e7400` measures `branding: clean (950 files scanned)`, `em-dash: clean (958 files scanned)`, as stated | the pass 1 cell `0, 1` disagrees with the measured `1`, `2`; a second path in `158fa7e0` would void `:6` (`git show --stat` lists one) |
+| Plan rev 23 | 🟡 | U11-4's `$B` cell is now true: `git ls-tree cc5be9be` lists the evidence file and no U8 handoff, and the evidence grep prints `2` there. U11-7 now reads `each run by the builder`, but the handoff at `:30` says `npm test` was not run in pass 2 | the handoff's own `:30` row contradicts the plan cell; the P1 green in this record is the seat's run, not the builder's |
+
+### Pass 2 findings
+
+1. 🟡 Against the plan: U11-7's `each run by the builder` is false for P1 leg 1 and its control in both passes. The row is met on this seat's run. Reword it the next time the plan is edited.
+2. 🟡 Record hygiene: `ba4c25db` (revision 23) carries no `Seat:` trailer. It is a plan-writer's commit, not the unit's.
+3. Cleared to merge: nothing in the unit's own text or tree is false or stale at `1731c72c`.
