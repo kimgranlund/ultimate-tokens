@@ -1,5 +1,5 @@
 ---
-status: approved
+status: done
 ticket: "#740 (anchor; the plan also closes #744)"
 priority: P2
 lane: color-engine (`src/ui/app-helpers.mjs`, `src/ui/model.mjs`, `src/ui/app.js` (U3, `openConfigAsSet` only), `test/ui/persist.mjs`, `scripts/gen-categories.mjs`, `src/ui/categories/brands.js`, `test/engine/tonal.mjs`, `test/engine/fixtures/mode-isolation.json` (U3, re-captured), `CHANGELOG.md`, the bundle files `npm test` regenerates)
@@ -272,3 +272,4 @@ One PR from `plan/anchor-gaps` to `main`, title `fix(color): pre-v5 kits regain 
 | 2026-09-29 | revision 8, from the U3 review pass 2 (`.sdlc/reviews/anchor-gaps-U3-review-p2.md`, PASS at ab1a8710, finding 3) under R72: U3-1's control names `gallery-reach` (k) as the check the wiring revert reds, not U3-2; P4's fifth figure reads `3` under `-U0` (was `2`) and its control `4`. Text only, no new scope | handoff Deviations 1 and 2 |
 | 2026-09-29 | revision 9, from the U3 verdict (`.sdlc/verdicts/anchor-gaps-U3.md`, 🟡 cleared at e45e4db7, finding 4): U3-4's expected names what its `3` counts and its control reads (i) and (k) from the joined message and adds the `>= 7` control; U3-6's fourth grep reads from the #740 reach sentence (Deviation 3). U3 merged; every unit is merged, pre-land pass 2 is next | the unit transition |
 | 2026-09-29 | revision 10, from the pre-land pass 2 record (🔴 at 1d03eca5, `.sdlc/verdicts/anchor-gaps-prepr.md`), under R72: CL, the #740 sentence and this plan's landing-text rule promised every pre-#681 preset palette stays parametric, when Q1's rule anchors a stored pre-v5 one that equals a default row; U4 (trivial lane) rewrites the sentence and re-dates the block. CI: main merged at 221c1e57 so the PR's checks run on the new head | pre-land pass 2 findings 1 to 3 |
+| 2026-09-29 | landed in PR #762, squash 3a3f2031; #740 and #744 closed; plan archived | close-out |
