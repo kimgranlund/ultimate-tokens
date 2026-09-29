@@ -2,7 +2,7 @@
 kind: verdict
 plan: chroma-floor
 seat: verifier
-pass: 1
+pass: 2
 ticket: "#701"
 written: 2026-09-29
 ---
@@ -63,3 +63,43 @@ What unblocks: correct the `tonal.mjs:1523-1525` comment to the first-step cap; 
 4. 🟡 F3. The mode-isolation fixture fingerprints the curated corpus as well as the engine (`mode-isolation-gate.mjs:40-58`), but its header and `owner` name only an engine leak: the next palette-content PR will red `sweeps` with a false diagnosis.
 5. 🟡 F4. History comments still name the retired constants in the present tense (`tonal.js:409-410`, `report-preset-fidelity.mjs:20`, `anchor.mjs:652`); `floorRef` is taken at the base or seed hue while stops render at a shifted or solved hue (`tonal.js:936`, `:946`), exact only at hueShift 0 on cam16.
 6. Note. Five plan commits carry no `Co-Authored-By` trailer; the squash replaces them.
+
+## Pass 2 · 🔴 at `38bd0dea`: every gate and CI job green, one false import credit on a line U4 rewrote
+
+verdict: 🔴
+sha: 38bd0dead3486402874af89b090e7b91b200ec6a
+
+`plan/chroma-floor` at `38bd0dea`, the Orchestrator's merge of origin/main fc1de3fd into `7ea6e451`. The merge touches `.sdlc/` only: `git diff --stat 7ea6e451 38bd0dea -- . ':!.sdlc'` is empty, and `git merge-tree --write-tree 7ea6e451 fc1de3fd` equals `38bd0dea^{tree}`, so the code rows graded at `7ea6e451` hold at `38bd0dea`; C12 and RECORDS were rerun on a superset merge with main 79aadcda. U4 is merged on its own verdict, 🟡 at `dd356ad0`. PR #765 reads `MERGEABLE`, `CLEAN`, draft; `git merge-tree --write-tree 38bd0dea origin/main` exits `0`.
+
+Checkers: the same `b9044bb` stand-ins as pass 1 (reviewer-l3 for reviewer-l4, verifier-l2 for verifier-l3), fable capped. U4 (l7) was an opus build, so its checkers sit inside its family too.
+
+### Red
+
+| id | criterion | state | evidence | negative control |
+|---|---|---|---|---|
+| H1 | comments U4 rewrote are true | 🔴 | `test/engine/anchor.mjs:651` at `38bd0dea` reads `the same fix this file's \`anchorChromaBasis\` import and tonal.mjs's C6 gate`. The file imports no `anchorChromaBasis`: `grep -n "^import"` lists `:36-44`, and `:39` takes `effHue, paletteStops, DEFAULT_CONTROLS, RAMP_L_MIN, RAMP_L_MAX, STOPS, ACHROMATIC_ANCHOR_C`; the import-line count of `anchorChromaBasis` is `0`, and its four hits (`:505`, `:651`, `:654`, `:709`) are all comments. The phrase dates from 8ba4bee4, but U4 rewrote this sentence to make its attributions true, so it is the unit's text. My U4 pass 2 verdict graded this span 🟢 in its F4 row and missed it; this record corrects that | the same stream with `anchorChromaBasis` planted into the `:39` import prints `1` |
+
+### Green
+
+| id | criterion | state | evidence | negative control |
+|---|---|---|---|---|
+| P1 | `npm test`, fresh clone, no node_modules | 🟢 | `✓ all 54 test files passed`, `exit 0`, TESTS `54`, tree `0` | scrim sed on role-table: `FAIL  refs-canonical`, `✗ 1/54 test file(s) failed`, `exit 1` |
+| BUILD | `npm ci`, `npm run build` | 🟢 | both `exit 0`, `wrote figma/plugin/ui.html 4130.1 KB`, tree `0` | `const = ;` in `tonal.js`: `SyntaxError: Unexpected token '='`, `exit 1` |
+| SWEEPS | `npm run gate:sweeps` | 🟢 | seven legs green, among them `pass  mode-isolation: perceptual 34e544942d500b9e peak f560f784d8a4883a match fixture` and even-dips `PASS`, `exit 0` | per C row, as pass 1 |
+| C1, C3 to C11, C13, C15 | plan criteria | 🟢 | as pass 1, rerun at `7ea6e451`: C3 `0 dips at stops other than 500`; C4 `gate-path (no anchor): 0 dips`; C6 fixture match; C8 `FLOORS changed 4, down 4`, the R44 set; C13 `17 big cells of 84900`; C15 `tonal.js:424-426` with first entry at lift `14.25` | C4 `--floor-scale 1.6`: `120 dips`, `FAIL`; C6 `s` x1.01: `do not match fixture`, `exit 1`; C8 Warning at 9.9: `below its pinned floor 9.9:1`; C13 on `fe65e640`: `211 big cells`, `FAIL` |
+| C12 | baseline agrees, revision 20 | 🟢 | head and scratch merge alike: `ok    tests: baseline 54, test/run.mjs TESTS 54`, the only STALE `time test`, `stale total: 1` | TESTS +1: `stale total: 2` |
+| R1 | floorRef comment | 🟢 | `tonal.mjs:1523-1526` names the largest ceiling among stops 450, 500 and 550, matching `tonal.js:813` and `:945` | at `d1db4b04`: `caps the floor's gamut reference at the anchor stop's own ceiling` |
+| R2 | okhslLAt cites | 🟢 | `994:export function okhslLAt(lstar) {`; both docs cite `tonal.js:994`, audit `OK` | at `d1db4b04`: function at `985`, cites `983` |
+| R3 | lift-monotonic pins | 🟢 | `SKILL.md:95` and `acceptance-criteria.md:25` pin `tonal.mjs:735-884`, audit `OK`, no `NEAR` on a tonal cite | at `d1db4b04`: pins `722-743` |
+| RECORDS | branding, em-dash, verdict frontmatter | 🟢 | `branding: clean (863 files scanned)`, `em-dash: clean (871 files scanned)`, `verdicts 201 graded 201 bad 0` | one plant each, all `exit 1` |
+| UNITS | every unit merged on its verdict | 🟢 | U1 `🟢` `ec618987`, U2 `🟡` `abab9003`, U3 `🟡` `bbf9c04b`, U4 `🟡` `dd356ad0`, each an ancestor of `38bd0dea` | U4 pass 1 read `🔴 a28b9b22` |
+| CI | required jobs on the exact head | 🟢 | run `36544987275` on `38bd0dea`: `build-test success`, `panda-smoke success`, `corpus-contrast success`, `sweeps (gate:corpus-anchor) success`, `sweeps (gate:corpus-tonal) success`, `sweeps (gate:mode-isolation) success`, `sweeps (gate:sweep-prime) success`, `sweeps (gate:even-dips) success`, `sweeps (gate:corpus-reset) success`, `sweeps (gate:corpus-contrast) success`, `deploy skipped` | runs `e10aa5d1` and `d1db4b04` read `cancelled`, and `7ea6e451` has no run: a head without a completed run is not graded green |
+
+### Findings
+
+1. 🔴 H1 above. The fix is comment-only; no generated asset carries anchor.mjs.
+2. 🟡 C2 (plan text): Expected says `grep -cE 'lone-spike'` reads `1`; the leg prints `2`, the second line being U1's in-gate control (`plateau-neutralised engine produced 65 spike(s)`). The gate itself is right.
+3. 🟡 C14 (plan text): (e) still says `33p` where the row sits at `:35`; (j) reads `3`, U4's reviews in the ruled `.sdlc/reviews/` home; (l) reads `167` because the diff from `27c513c1` spans main merges. None is product text.
+4. 🟡 Review Lows: `tonal.js:327-328` states the 450/550 cap equals the stop's own ceiling with no hue condition, where both call sites qualify it; the `okhsl-modes` pin `tonal.mjs:301-319` stops short of `:322-327`; `mode-isolation-gate.mjs:21-23` scopes `--capture` narrower than its header and `owner`; `tonal.mjs:1526` "so the valley cannot form" reads as a guarantee.
+5. 🟡 Pass 1 L4 carries: five pre-U4 commits lack `Co-Authored-By`, so the squash body must carry the trailer.
+6. Pass 1's F1 to F4 and R1 to R3 are cleared at this head.
