@@ -7,22 +7,25 @@ probably fighting one of these. The user-facing contract is owned by `mcp/README
 ### 1. Three pieces: the kit (data), the core (surface), the server (transport)
 
 - **`brandKit(doc, systems)`** in `src/ui/model.mjs` is the **pure projection** that produces
-  `brand-kit.json`. It is engine-aware (it reads `projectView(doc)`'s resolved palettes/roles, `typeScale`,
-  and `geometryScale`), it is where every value the server can serve comes from. Shape:
+  `brand-kit.json`. It is engine-aware (it reads `projectView(doc)`'s resolved palettes/roles, and the base-mode
+  `typeScaleFor`/`geomScaleFor` scales), it is where every value the server can serve comes from. Shape:
   ```
   { $schema: "ultimate-tokens-brand-kit/3", name, generator: "Ultimate Tokens", icons, motion, constants, controls,
     stops:    [50, 100, …, 950],                       # the stop numbers (color only; on[0].ramp's stops)
-    palettes: [ { name, slug, key, ramp: [ {stop, hex} ] } ],
+    palettes: [ { name, slug, key, group, ramp: [ {stop, hex} ], prime } ],   # prime: { brightest, brighter,
+                                                       #   bright, prime, dim, dimmer, dimmest }, each { hex, oklch }
     roles:    { <slug>: { <roleKey>: { light: "#…", dark: "#…" } } },   # 53 keys per palette
-    type:     <typeScale(doc.type)>,        # { treatment, label, fonts, roleOf, categories: {15 voices}, weights }
-    geometry: <geometryScale(doc)> }        # { treatment, label, density, radiusStyle, radiusDefault, baseHeight,
+    type:     <typeScaleFor(doc, "base")>,  # { treatment, label, fonts, roleOf, categories: {15 voices}, weights }
+    geometry: <geomScaleFor(doc, "base")> } # { treatment, label, density, radiusStyle, radiusDefault, baseHeight,
                                             #   rampContrast, ramp, sizes:{XS…2XL}, radii:{none…full}, space,
                                             #   insets, gaps, borders, focus }
   ```
-  Note: `kit.type = typeScale(doc.type || DEFAULT_TYPE)` calls the engine export directly; `kit.geometry =
-  geometryScale(doc)` calls a thin `geometryScale` wrapper in `src/ui/model.mjs` that runs the engine's `geomScale`
-  with `{ typeScale }` so the geometry's per-step `font` is shared with the type UI scale. The engine exports
-  are `typeScale` (`src/engine/type.mjs`) and `geomScale` (`src/engine/geometry.mjs`), not `geometryScale`.
+  Note: `kit.type = typeScaleFor(doc, "base")` and `kit.geometry = geomScaleFor(doc, "base")` (both in
+  `src/ui/model.mjs`) are the override-aware resolvers the sections use, so base-mode per-cell overrides reach
+  the kit. `typeScaleFor` wraps the engine's `typeScale` (`src/engine/type.mjs`); `geomScaleFor` runs the
+  engine's `geomScale` (`src/engine/geometry.mjs`) with `{ typeScale: typeScaleFor(doc, modeKey) }` so the
+  geometry's per-step `font` is shared with the type UI scale. `geometryScale` in `model.mjs` is a back-compat
+  wrapper only; `brandKit` does not call it.
 - **`mcp/brand-kit-core.mjs`** is the **surface**, PURE, no I/O, engine-free. `buildSurface(kit)` builds the
   gated `TOOLS`/`RESOURCES`/`PROMPTS` (+ `usageGuide()`); `handle(msg, surface)` is the pure JSON-RPC 2.0
   dispatch, it RETURNS a response object (or null when nothing should be sent). It does NO color math; the
@@ -125,13 +128,14 @@ asserts this on the projection directly via `brandKit({color:true})` / `{type:tr
 
 ### 5. Where the served type + geometry come from
 
-`get_type` / `brand://type` return `kit.type` **verbatim** (the `typeScale` output). Its `categories` map has
-the fifteen voices of `makeVoices` (`src/engine/type.mjs`), `Display` through `UI-widget`: the other thirteen
-voices carry `SM`, `MD`, `LG`, and `UI-control` and `UI-widget` carry `XS` to `2XL`. Each step is `{ size,
-lineHeight, letterSpacing, leadingRatio, trackingRatio, weight, textTransform, paragraphSpacing,
-paragraphIndent }`. The `usageGuide()` prose names the voices by function; it is documentation, not the data shape.
+`get_type` / `brand://type` return `kit.type` **verbatim** (the `typeScaleFor(doc, "base")` output). Its
+`categories` map has the fifteen voices of `makeVoices` (`src/engine/type.mjs`), `Display` through `UI-widget`:
+the other thirteen voices carry `SM`, `MD`, `LG`, and `UI-control` and `UI-widget` carry `XS` to `2XL`. Each step
+is `{ size, lineHeight, letterSpacing, leadingRatio, trackingRatio, weight, textTransform, paragraphSpacing,
+paragraphIndent }`, and the box voices (`Kicker`, `UI-control`, `UI-widget`) add `singleLineHeight` (equal to
+`size`). The `usageGuide()` prose names the voices by function; it is documentation, not the data shape.
 
-`get_geometry` / `brand://geometry` return `kit.geometry` verbatim (the `geometryScale` output). Top level:
+`get_geometry` / `brand://geometry` return `kit.geometry` verbatim (the `geomScaleFor(doc, "base")` output). Top level:
 `{ treatment, label, density, radiusStyle, radiusDefault, baseHeight, rampContrast, ramp, sizes, radii, space,
 insets, gaps, borders, focus }`. `sizes` runs XS, SM, MD, LG, XL, 2XL; each `buildSize` row is `{ height, icon,
 caret, font, gap, paddingNarrow, paddingWide, paddingNarrowCompact, paddingWideCompact, radiusPill, minWidth }`.
@@ -140,7 +144,7 @@ caret, font, gap, paddingNarrow, paddingWide, paddingNarrowCompact, paddingWideC
 The key composition facts the test pins: a size step's **`font` equals the UI-control voice's size** at the
 same step (`geo.sizes.MD.font === ty.categories["UI-control"].MD.size`) and the **centering law** holds
 (`geo.sizes.MD.paddingNarrow === (geo.sizes.MD.height − geo.sizes.MD.icon) / 2`). The server doesn't compute
-these, `geometryScale(doc)` in `src/ui/model.mjs` shares the `typeScale` into `geomScale`, but a tool/resource
+these, `geomScaleFor(doc, "base")` in `src/ui/model.mjs` shares the type scale into `geomScale`, but a tool/resource
 change must not break the round-trip. The taxonomy of voices + sizes is owned by `src/engine/type.mjs` /
 `src/engine/geometry.mjs` and the `geometry-system` skill, cite, don't re-derive.
 
