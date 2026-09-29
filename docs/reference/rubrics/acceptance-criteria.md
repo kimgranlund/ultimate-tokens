@@ -47,7 +47,7 @@
 - **AC-S5** Surface Low/High refs mirror (light+dark sum toward 1000); Dim/Bright do not.
 
 ## AC-X · Exports
-- **AC-X1** Each of the eight color formats (CSS, OKLCH, JSON, DTCG, UI3, Tailwind, ShadCN, exportAll) produces output (non-empty) for the default state.
+- **AC-X1** Each of the ten color formats (CSS, OKLCH, JSON, DTCG, UI3, Tailwind, ShadCN, Panda, Radix, exportAll) produces output (non-empty) for the default state.
 - **AC-X2** CSS: every `--c-*` semantic var references two existing raw vars via `var()`.
 - **AC-X3** JSON: parses; each palette has `stops`, `scrims`, `semantic`; stop keys are
   3-digit padded.

@@ -1,5 +1,5 @@
 ---
-status: approved
+status: done
 ticket: "#751" (minted at activation, Q0: `adapter.py create --title docs-repair --label kind:chore --label lane:docs --size M`, body shortened to the units list because the plan exceeds GitHub's 65,536-character limit)
 priority: P2
 lane: docs (`docs/lld/`, `docs/reference/`, `README.md`, `figma/README.md`, the `building-editor-sections` skill, three source file headers, `test/repo/citations.mjs`)
