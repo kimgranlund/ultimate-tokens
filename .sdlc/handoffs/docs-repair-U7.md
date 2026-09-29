@@ -8,7 +8,7 @@
 | Files in this handoff commit | .sdlc/handoffs/docs-repair-U7.md |
 | Ran | every U7 row and P3 at 89b01d95 in `.worktrees/dr-U7`, as the `~~~sh ran` block below, output pasted unedited into `~~~out ran`; `npm test` at 89b01d95, `✓ all 50 test files passed`, `git status --short` empty after |
 | Left out | `npm run build` and smoke (no `node_modules`, owed at pre-land); P1 to P8 beyond P3 (plan-wide, the verifier's); the U7-1 `Today` counts and negative controls are in the sections below |
-| Decisions | Sentences were read from `src/ui/app.js` and `src/ui/sections/*` code, none from comments or other docs. U7-4's command reads the ledger from `"$F/hf"` (P8 copies the handoff there before it checks out the head, where this file does not yet exist; if `F` is not exported into `ran.sh`, the added line reads it from the `unit/dr-U7` tip), and U7-3 sets `B` and `F` if the shell has not; the U7-3 setup line and that U7-4 line are the only additions to the plan's commands. The plan's U7-3 cell expects the QUOTE count `1` and `bad 1` (DD9 red as at `$B`); revision 2026-09-26 has U7 re-quote DD9, so the tree prints `0` and `bad 0`. The fourth U7-3 command prints `2` for the same reason (DD9's removed and added lines; the cell's `0` counted DD41 only). Both need the plan's cells updated by the Orchestrator |
+| Decisions | Sentences were read from `src/ui/app.js` and `src/ui/sections/*` code, none from comments or other docs. U7-4's command reads the ledger from `"$F/hf"` (P8 copies the handoff there before it checks out the head, where this file does not yet exist; if `F` is not exported into `ran.sh`, the added line reads it from the `unit/dr-U7` tip), and U7-3 sets `B` and `F` if the shell has not; the U7-3 setup line and that U7-4 line are the only additions to the plan's commands. (Superseded by plan revision 13: U7-3's Expected now reads `bad 0`, QUOTE `0`, fourth `2`, and the cell `\|` is always removed, so U7-2 runs `(js|mjs)`.) The plan's U7-3 cell expected the QUOTE count `1` and `bad 1` (DD9 red as at `$B`); revision 2026-09-26 has U7 re-quote DD9, so the tree prints `0` and `bad 0`. The fourth U7-3 command prints `2` for the same reason (DD9's removed and added lines; the cell's `0` counted DD41 only). Both cells are fixed by revision 13. One escape stays: U7-4's `'^\| '` and `'^\| (Claim|---)'` are literal-pipe anchors, and removing the backslash makes both patterns match every line (measured: the ledger filter prints `0` lines), so the ledger would read empty; the plan's U7-4 cell needs `'^[|] '` or the kept escape |
 
 ## Ran
 
@@ -17,7 +17,7 @@ git rev-parse --short=8 HEAD
 # U7-1
 grep -n '^## ' README.md | tail -2; for n in gallery categor Typography Geometry Compare drawer 'ui-plan.md' 'app-shell.md'; do printf '%s ' "$n"; grep -c -i "$n" README.md; done
 # U7-2
-awk '/^## Views and sections/,/^## License/' README.md | wc -l; grep -c -E '[a-z-]+\.(js\|mjs):[0-9]+' README.md
+awk '/^## Views and sections/,/^## License/' README.md | wc -l; grep -c -E '[a-z-]+\.(js|mjs):[0-9]+' README.md
 # U7-3
 B=${B:-$(git merge-base origin/main HEAD)}; F=${F:-$(mktemp -d)}
 L=$(grep -n 'see \[LICENSE\](LICENSE)' README.md | cut -d: -f1); grep -c "DD41 | \x60README.md:$L\x60" .sdlc/architecture.md; sh .sdlc/checks/doc-drift-rows-check.sh | tail -1; sh .sdlc/checks/doc-drift-rows-check.sh | grep -c QUOTE; git diff "$B" -- .sdlc/architecture.md | grep -E '^[+-]. DD[0-9]+ ' | grep -v -c '^[+-]. DD41 '
@@ -58,7 +58,7 @@ Run in a clone (`git clone -q --shared .`) or on a scratch copy, never on the br
 | Row | Control | Printed |
 |---|---|---|
 | U7-1 | README at `$B` | `133:## Figma plugin`, `145:## License`; `gallery` 2, `categor` 11, `Typography` 3, `Geometry` 4, `Compare` 0, `drawer` 0, `ui-plan.md` 0, `app-shell.md` 0. After (above): `gallery` 4, `categor` 13, `Typography` 5, `Geometry` 7, `Compare` 1, `drawer` 1, `ui-plan.md` 1, `app-shell.md` 1 |
-| U7-2 | `app-shell.md` section 1 pasted before `## License` | length `83`; cites `3` with the alternation as `(js|mjs)`, and `0` with the plan's `\|` kept (BSD ERE reads `\|` as a literal pipe, so the second leg is blind to `.js` cites; `[a-z-]+\.js:[0-9]+` alone prints `3`). Section absent: `0`, `0` |
+| U7-2 | `app-shell.md` section 1 pasted before `## License` | length `83`, cites `3` (both legs red, with the escape removed per revision 13). Section absent: `0`, `0` |
 | U7-3 | DD41 left at `README.md:147` | first command `0`, `rows 56 drifted 11 holds 45 undetermined 0 bad 1`, `QUOTE DD41: not found at README.md:147` |
 | U7-3 | DD40 also re-pointed (`:131` to `:157`) | fourth command `4` (DD9's two lines and DD40's two) |
 | U7-4 | (a) handoff with no `## Claims` | `NO-LEDGER`, `0`, `0` |
