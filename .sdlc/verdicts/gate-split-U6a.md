@@ -36,3 +36,4 @@
 - The builder's handoff correction stands up under an independent run: exactly one leg exits non-zero today, `gate:corpus-anchor`, not two. The other three legs silently ignore `--full` until U2, U4 and U5 teach their files to read it, which is reduced coverage rather than a failure, and is P3's business at pre-land, not this unit's.
 - Host load never dropped below `11.13` on 10 cores, so every wall figure above is contention-inflated and none of it is a figure of record. Only exit codes are graded here.
 - Scratch trees `/tmp/gs-u6a-verify/work` and `/tmp/gs-u6a-verify/neg` are still on disk: the removal command was declined by the permission prompt three times. They are throwaway clones with no unique content; remove with `rm -rf /tmp/gs-u6a-verify`.
+verdict: 🟢

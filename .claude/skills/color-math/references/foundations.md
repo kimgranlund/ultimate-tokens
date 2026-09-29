@@ -1,22 +1,22 @@
-## Foundations — the model an engine change leans on
+## Foundations: the model an engine change leans on
 
 The load-bearing ideas. If a change feels like it needs a new mechanism, you are probably fighting one of
 these. The full math is owned by `docs/reference/references/knowledge-0{1,2,6}-*.md` +
-`docs/reference/color-neutral-derivation.md` — this file is only the mental model the *procedure* assumes.
+`docs/reference/color-neutral-derivation.md`, this file is only the mental model the *procedure* assumes.
 
 ### 1. Three color spaces, three jobs
 
-- **CAM16 / HCT** (`hct.js`) — a color *appearance* model. The ramp holds a **constant CAM16 hue** and a
-  **CIELAB L\*** tone (NOT CAM16 lightness J — J is the internal variable the gamut search binary-searches).
+- **CAM16 / HCT** (`hct.js`), a color *appearance* model. The ramp holds a **constant CAM16 hue** and a
+  **CIELAB L\*** tone (NOT CAM16 lightness J, J is the internal variable the gamut search binary-searches).
   Hue+Chroma come from CAM16; Tone is L\*. This split is *why* lightness steps are perceptually even while
   hue does not drift (knowledge-01 §1).
-- **OKLCH / OKHSL** (`okhsl.js`) — Ottosson's perceptual spaces. OKHSL is **gamut-bijective**: at a given
+- **OKLCH / OKHSL** (`okhsl.js`), Ottosson's perceptual spaces. OKHSL is **gamut-bijective**: at a given
   (hue, lightness), `s=1` lands exactly on the sRGB boundary, and a fixed `(s,l)` reads as the same perceived
   colorfulness across hue (the `boundary` gate proves s=1 sits on a gamut face for every hue × lightness).
   That is the property that lets the **perceptual** (default) ramp harmonize saturation across hue with no
-  near-white dead zone. OKLCH is the *seeding/derivation* space (key colors, New-Palette targets) — less
+  near-white dead zone. OKLCH is the *seeding/derivation* space (key colors, New-Palette targets), less
   lossy than an 8-bit hex source.
-- **sRGB** — the output. 0–255 integer triples. Every public function returns sRGB bytes.
+- **sRGB**: the output. 0–255 integer triples. Every public function returns sRGB bytes.
 
 ### 2. The HCT transform chain (`hct.js`)
 
@@ -27,11 +27,11 @@ sRGB8 --lin--> linearSrgb(0..100) --SRGB_TO_XYZ--> XYZ --cam16FromXyz--> {hue, c
 ```
 
 Constants are **literal, from material-color-utilities** (`SRGB_TO_XYZ`, `XYZ_TO_SRGB`, `WHITE`,
-`CAT16`/`CAT16_INV`). `VC` (viewing conditions) is derived once by `makeVC()` and cached — a mid-gray field,
+`CAT16`/`CAT16_INV`). `VC` (viewing conditions) is derived once by `makeVC()` and cached, a mid-gray field,
 "average" surround (c=0.69, F=1, Nc=1). It is **fixed and not user-controllable** (exposing it would make
-exports non-portable — knowledge-01 §3).
+exports non-portable, knowledge-01 §3).
 
-### 3. `hctToRgb` — branches in order (the order matters)
+### 3. `hctToRgb`: branches in order (the order matters)
 
 `hctToRgb(hue, chroma, tone) → { rgb, inGamut, lstar }`:
 1. `tone <= 0` → black `[0,0,0]`, inGamut, lstar 0.
@@ -43,23 +43,23 @@ exports non-portable — knowledge-01 §3).
    == `tone`; convert XYZ→linear sRGB; `inGamut` = all channels in `[-0.0001, 100.0001]`; `delin` to bytes.
    `lstar` is recomputed from the searched XYZ so a caller can verify the tone was hit.
 
-### 4. The gamut search — `maxChromaInGamut` and `peakC`
+### 4. The gamut search: `maxChromaInGamut` and `peakC`
 
-- `maxChromaInGamut(hue, tone)` — binary-search chroma in `[0,180]` (18 iters): keep the largest chroma whose
+- `maxChromaInGamut(hue, tone)`: binary-search chroma in `[0,180]` (18 iters): keep the largest chroma whose
   `hctToRgb(...).inGamut` is true. Returns that ceiling; `0` at `tone<=0 || tone>=100`. **Memoized**, key
   EXACT (#686): `hue + "|" + tone`. The `gamut-ceiling` gate proves it is *tight*: in-gamut at `maxC`,
   NOT at `maxC+0.5`.
-- `peakC(hue)` — scan `t = 4..96 step 2`, return `{c,tone}` = the hue's max chroma and where it peaks.
+- `peakC(hue)`: scan `t = 4..96 step 2`, return `{c,tone}` = the hue's max chroma and where it peaks.
   Memoized, key EXACT (#686): `String(hue)`. This is *why* the per-palette `chroma` control is "% of the hue's own peak"
   (100% = as saturated as this hue can get in sRGB), not a raw number.
-- `hctToOklch(h, c, t)` — the HCT color's OKLCH `[L, C, H°]` in **float**: reuses the CAM16 solve (`_hctToLinRGB`,
-  shared with `hctToRgb`) and converts the converged linear sRGB straight through OKLab — **no 8-bit round-trip**.
+- `hctToOklch(h, c, t)`: the HCT color's OKLCH `[L, C, H°]` in **float**: reuses the CAM16 solve (`_hctToLinRGB`,
+  shared with `hctToRgb`) and converts the converged linear sRGB straight through OKLab, **no 8-bit round-trip**.
   The high-res HCT→OKLCH for analysis/readouts (HEX is only derived for *consumption*; never measure perceptual
   coords back off an 8-bit hex). Gate: `hct-oklch` (`oklchToRgb(hctToOklch(...)) ≈ hctToRgb(...).rgb`, Δ≤2).
-- `oklchToCam16Hue(h, chromaFrac=1)` — the **accurate, chroma-AWARE Newton inverse** of the render path: find the
+- `oklchToCam16Hue(h, chromaFrac=1)`: the **accurate, chroma-AWARE Newton inverse** of the render path: find the
   CAM16 hue `X` such that a color at `chromaFrac·peakC(X).c` (peak tone) renders at OKLCH hue `h`. The step
   `X ← X − (hctToOklch(X,…)[2] − h)` is Newton with slope ≈1; ~few iters, cap 12, chroma floored at 8 so a near-grey
-  stays defined. **Chroma-aware because the OKLCH↔CAM16 hue map shifts with chroma (Abney)** — the OLD version
+  stays defined. **Chroma-aware because the OKLCH↔CAM16 hue map shifts with chroma (Abney)**, the OLD version
   sampled a fixed mid OKLCH point (L 0.72/C 0.10) and drifted ~15° on vivid blues; a cusp-only anchor regresses
   muted hues ~11°. Anchoring at the palette's OWN chroma lands the identity color on the stored hue to ~0°.
   Memoized, key EXACT (#686): `target + ":" + cf`. Gate: `hct-oklch-inverse`.
@@ -118,14 +118,14 @@ chromaEnvelope(stop, anchorStop, lift, controls):        # src/engine/tonal.js, 
   group's resolved ramp target at each end). Stop 500 returns the stored `anchor` verbatim unless the
   source sits outside `[9.95, 95.05]` L\*. See SKILL.md's anchored-branch rule and knowledge-02 §9.
 - **Defaults `dampCurve 1.5, dampAmp 0, dampBias 0` reproduce the legacy `1 − (damp/100)·u^1.5` edge damp
-  EXACTLY** — the `damping-curve (a)` gate compares against the independent legacy formula
+  EXACTLY**, the `damping-curve (a)` gate compares against the independent legacy formula
   `min(target·(1−(damp/100)·u^1.5), ceiling)`, `|Δ| ≤ 1e-6`, over EVERY saturated hue × stop.
-- **`relChroma`** (default false): the chroma control is % of the BASE-hue peak — absolute chroma varies with
+- **`relChroma`** (default false): the chroma control is % of the BASE-hue peak, absolute chroma varies with
   each hue's gamut. `true`: % of EACH stop's own ceiling → every hue fills the same fraction → palettes
   harmonize across hue. A cheap stand-in for OKHSL's perceptual normalization (the `rel-chroma` gate checks
   blue 264° vs yellow 90° use the same gamut fraction within 0.02).
 - **`chromaFloor`** (default 40): lifts the damping-starved light/dark ends of a LOW-chroma ramp back toward
-  `intended` (kills the near-white "dead zone") but is capped at `intended` — so it never over-saturates a
+  `intended` (kills the near-white "dead zone") but is capped at `intended`, so it never over-saturates a
   muted palette and never tints a true neutral (`intended≈0` → floorC 0). Saturated ramps already clamp at
   `maxc`, so the floor never binds. (The `chroma-floor` gate proves all four.)
 
@@ -133,26 +133,26 @@ chromaEnvelope(stop, anchorStop, lift, controls):        # src/engine/tonal.js, 
 
 `l` per stop blends the **even-perceptual** distribution toward the **cusp-anchored** ("peak") one by
 `vibrancy`/`cuspPull` (`t=0` even, `t=1` the hue's cusp at stop 500; `peak` mode pins `t=1`). This pulls
-off-center hues' richest stop toward the center (yellow's cusp is at high L\* — crank vibrancy and the mid
+off-center hues' richest stop toward the center (yellow's cusp is at high L\*, crank vibrancy and the mid
 reads vivid for any hue). Saturation = `(chroma/100)·m` clamped to `[0,1]`, using the **same** damping `m` as
 the even path. `okhslLAt(L*)` maps an L\* to OKHSL lightness via a neutral gray (`rgbToOkhsl(hctToRgb(0,0,L*))`),
 pure, no cache (#738: measured 0.40-0.90 us per call on a quiet host, median 1.54 us (1.46-1.88) at
 load 67, two or three calls per render). The reported `chroma`/`maxc` are *measured* (`cam16FromRgb(rgb).chroma`) for the analysis
 graphs; the color is in-gamut by OKHSL construction (`inGamut: true` is asserted, not computed). `l` is keyed
-on the **stop number** (`(stop−50)/900`, `(stop−500)/450`), not the array index — so stop 500 is the same hex
+on the **stop number** (`(stop−50)/900`, `(stop−500)/450`), not the array index, so stop 500 is the same hex
 in the 19-stop display ramp and the 25-stop export ramp.
 
-### 7. Derivation (`derive.mjs`) — pure, OKLCH, circular
+### 7. Derivation (`derive.mjs`): pure, OKLCH, circular
 
-- `weightedMeanHue(samples)` — chroma-weighted circular mean: `Σ C·(cosH,sinH) → atan2`. Returns
+- `weightedMeanHue(samples)`: chroma-weighted circular mean: `Σ C·(cosH,sinH) → atan2`. Returns
   `{hue, coherence}` (`coherence = |resultant|/ΣC ∈ [0,1]`; ≈0 = samples cancel / near-neutral → hue noisy;
   falls back to `samples[0]`'s hue when ΣC=0 or the vector is zero). Weighting by chroma means a near-grey
   contributes almost nothing.
-- `deriveNeutral(samples)` — seeds the neutral as a first PALETTE (NOT a separate strip); the standard ramp
+- `deriveNeutral(samples)`: seeds the neutral as a first PALETTE (NOT a separate strip); the standard ramp
   supplies the lightness steps + chroma taper. The formula and the two-number rule (hue + the C_max clamp)
-  are owned by `docs/reference/color-neutral-derivation.md` — cite, don't copy.
+  are owned by `docs/reference/color-neutral-derivation.md`, cite, don't copy.
 - `deriveRelative(id, samples)` over `RELATIONSHIPS` (`extend +30°`, `complete` largest-gap, `contrast +180°`,
   `bridge` shorter-arc midpoint, `anchor` same hue, `recontextualize` complement·0.6 chroma); empty context
   → `[0.6, 0.12, 0]`. Single-reference relationships (extend/contrast/anchor/recontextualize) pivot on the
-  **PRIMARY = `samples[0]`** (priority order set by the caller), NOT chroma weighting — a low-chroma primary
+  **PRIMARY = `samples[0]`** (priority order set by the caller), NOT chroma weighting, a low-chroma primary
   still anchors. `complete`/`bridge` are set-geometry: they use the whole set.

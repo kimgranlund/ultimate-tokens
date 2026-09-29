@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// migrate-type-registers.mjs — ONE-OFF migration (2026-07-30, #405): rename every spec palette's
+// migrate-type-registers.mjs, ONE-OFF migration (2026-07-30, #405): rename every spec palette's
 // 5-slot `type.slots` design to the register shape (`type.registers`, intended-use.md Layer 3) and
-// fold `type.faces` into the owning register's `voices` sub-map. Pure rename-preserving-values —
+// fold `type.faces` into the owning register's `voices` sub-map. Pure rename-preserving-values,
 // the regenerated presets must be BYTE-IDENTICAL (`npm run gen:categories && git diff --exit-code
 // src/ui/categories/`). Kept committed as the executable record of the rename (squash-merge would
 // erase an add-then-delete from history). Idempotent; `--check` greps for surviving retired shapes
-// and exits 1. NOT wired into npm scripts — run by hand: `node scripts/migrate-type-registers.mjs`.
+// and exits 1. NOT wired into npm scripts, run by hand: `node scripts/migrate-type-registers.mjs`.
 import { readFileSync, writeFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, basename } from "node:path";
@@ -31,9 +31,9 @@ for (const f of files) {
   const doc = JSON.parse(raw);
   const hadNewline = raw.endsWith("\n");
   // the stringify round-trip must be byte-faithful BEFORE we transform, or the diff would carry
-  // unrelated reformatting noise — abort rather than guess.
+  // unrelated reformatting noise, abort rather than guess.
   const roundTrip = JSON.stringify(doc, null, 2) + (hadNewline ? "\n" : "");
-  if (roundTrip !== raw) { console.error(`ABORT ${f}: not stringify-round-trip-stable — migrate by hand`); process.exit(2); }
+  if (roundTrip !== raw) { console.error(`ABORT ${f}: not stringify-round-trip-stable, migrate by hand`); process.exit(2); }
 
   let touched = 0;
   for (const vol of doc.volumes || []) {
@@ -73,5 +73,5 @@ if (check) {
   if (dirty) { console.error(`\nFAIL: ${dirty} palette(s) still on the retired shape`); process.exit(1); }
   console.log("clean: no retired type.slots/type.faces shapes remain");
 } else {
-  console.log(migrated ? `\n${migrated} palette(s) migrated — now run: npm run gen:categories && git diff --exit-code src/ui/categories/` : "nothing to migrate (already register-shaped)");
+  console.log(migrated ? `\n${migrated} palette(s) migrated, now run: npm run gen:categories && git diff --exit-code src/ui/categories/` : "nothing to migrate (already register-shaped)");
 }

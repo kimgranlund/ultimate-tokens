@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// mode-apply.mjs — verifier for the PURE breakpoint-mode apply planner (figma/binder/mode-apply-plan.mjs):
+// mode-apply.mjs, verifier for the PURE breakpoint-mode apply planner (figma/binder/mode-apply-plan.mjs):
 // modeApplyPlan + validateModeInterchange over REAL Type/Geometry interchanges. The plan is what the Figma
 // apply-path (code.js, paired-session work) will MIRROR; this gates its invariants with zero figma calls.
 import * as A from "../../figma/binder/mode-apply-plan.mjs";
@@ -33,7 +33,7 @@ ok(gp[0].variables.every((v) => v.values.length === 2 && v.values.every((x) => N
 const idn = A.modeApplyPlan(T.typeTokensFigmaModes(T.typeScale({ treatment: "product" }), []));
 ok(J(idn[0].modes) === J(["Base"]) && idn[0].addModes.length === 0, "plan: no breakpoints ⇒ [Base], no addModes");
 
-// ── the DESKTOP-FIRST standard-set shape: a NAMED base ("Mobile"), placed LAST — Desktop becomes the
+// ── the DESKTOP-FIRST standard-set shape: a NAMED base ("Mobile"), placed LAST, Desktop becomes the
 // default mode (Figma's default = the first mode; the plugin renames the existing default to it) ──
 const dtm = T.typeTokensFigmaModes(
   T.typeScale({ treatment: "product", bodyBase: 16 }),
@@ -45,15 +45,15 @@ const dp = A.modeApplyPlan(dtm);
 ok(J(dp[0].modes) === J(["Desktop", "Tablet", "Mobile"]) && dp[0].defaultMode === "Desktop" && J(dp[0].addModes) === J(["Tablet", "Mobile"]), `plan: desktop-first modes [Desktop,Tablet,Mobile], default Desktop (got ${J(dp[0].modes)}, default ${dp[0].defaultMode})`);
 ok(dp[0].variables.every((v) => J(v.values.map((x) => x.mode)) === J(["Desktop", "Tablet", "Mobile"]) && v.values.every((x) => Number.isFinite(x.value))), "plan: desktop-first variables are value-complete in modes order");
 const dSize = dp[0].variables.find((v) => v.name === "type/body/md/size");
-ok(dSize && dSize.values[2].value < dSize.values[0].value, "plan: the Mobile (base) value is the smallest — base scale rides under the breakpoint bumps");
+ok(dSize && dSize.values[2].value < dSize.values[0].value, "plan: the Mobile (base) value is the smallest, base scale rides under the breakpoint bumps");
 // a breakpoint colliding with the named base is disambiguated, not dropped/shadowed
 const collide = T.typeTokensFigmaModes(T.typeScale({ treatment: "product" }), [{ name: "Mobile", scale: T.typeScale({ treatment: "product", bodyBase: 13 }) }], { baseName: "Mobile", baseLast: true });
-ok(J(collide.collections.Geometry.modes) === J(["Mobile 2", "Mobile"]), `emit: a breakpoint named like the base disambiguates ("Mobile 2") — got ${J(collide.collections.Geometry.modes)}`);
+ok(J(collide.collections.Geometry.modes) === J(["Mobile 2", "Mobile"]), `emit: a breakpoint named like the base disambiguates ("Mobile 2"), got ${J(collide.collections.Geometry.modes)}`);
 // geometry mirrors the same opts
 const gdtm = G.geomTokensFigmaModes(G.geomScale({ treatment: "comfortable", baseHeight: 24 }), [{ name: "Desktop", scale: G.geomScale({ treatment: "comfortable", baseHeight: 28 }) }], { baseName: "Mobile", baseLast: true });
 ok(J(gdtm.collections.Geometry.modes) === J(["Desktop", "Mobile"]) && A.validateModeInterchange(gdtm).length === 0, "emit: Geometry honors baseName/baseLast and stays plan-sound");
 
-// ── mergeModeInterchanges: the two halves land as ONE "Geometry" collection (TKT-0009 — the executor
+// ── mergeModeInterchanges: the two halves land as ONE "Geometry" collection (TKT-0009, the executor
 // prunes variables per collection, so two plans on one collection would delete each other's halves) ──
 const geomIx2 = G.geomTokensFigmaModes(G.geomScale({ treatment: "comfortable", baseHeight: 28 }), [{ name: "Mobile", scale: G.geomScale({ treatment: "comfortable", baseHeight: 24 }) }]);
 const merged = A.mergeModeInterchanges(typeIx, geomIx2);
@@ -65,7 +65,7 @@ const mp = A.modeApplyPlan(merged);
 ok(mp.length === 1 && mp[0].variables.length === mVars.length, "merge: plans as ONE entry carrying every variable of both halves");
 ok(A.mergeModeInterchanges(null, undefined) === null, "merge: zero mergeable inputs ⇒ null");
 ok(Object.keys(A.mergeModeInterchanges(typeIx).collections.Geometry.variables).every((k) => k.startsWith("type/")), "merge: a single half passes through (type-only export still lands in Geometry)");
-// MISMATCHED mode lists (type [Base,Mobile] beside geometry [Base,Tablet]) union — and each half
+// MISMATCHED mode lists (type [Base,Mobile] beside geometry [Base,Tablet]) union, and each half
 // BACK-FILLS the modes it doesn't define with its OWN default-mode value (a system that doesn't vary
 // at a breakpoint = its base values there), so the merged interchange stays plan-sound.
 const gTab = G.geomTokensFigmaModes(G.geomScale({ treatment: "comfortable", baseHeight: 28 }), [{ name: "Tablet", scale: G.geomScale({ treatment: "comfortable", baseHeight: 26 }) }]);
@@ -76,7 +76,7 @@ const mmType = mismatch.collections.Geometry.variables["type/body/md/size"];
 const mmGeom = mismatch.collections.Geometry.variables["size/md/height"];
 ok(mmType.values.Tablet === mmType.values.Base && mmType.values.Mobile !== mmType.values.Base, "merge: the type half back-fills Tablet (its undefined mode) from Base, keeps its own Mobile value");
 ok(mmGeom.values.Mobile === mmGeom.values.Base && mmGeom.values.Tablet !== mmGeom.values.Base, "merge: the geometry half back-fills Mobile from Base, keeps its own Tablet value");
-ok(gTab.collections.Geometry.variables["size/md/height"].values.Mobile === undefined, "merge: back-fill CLONES values — the emitter's own interchange is never mutated");
+ok(gTab.collections.Geometry.variables["size/md/height"].values.Mobile === undefined, "merge: back-fill CLONES values, the emitter's own interchange is never mutated");
 
 // ── applyRenameMigrations (TKT-0012): pure stamping of the id-preserving rename fields ──
 {
@@ -116,5 +116,5 @@ ok(A.validateModeInterchange({ collections: { C: { modes: ["Base"], variables: {
 ok(A.validateModeInterchange({ collections: { C: { modes: ["Base"], variables: { "a/x": { type: "NUMBER", values: { Base: 1 } } } } } }).some((s) => /unknown variable type/.test(s)), "validate: unknown variable type → reported");
 
 if (fails.length) { console.error(`mode-apply FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
-console.log("mode-apply PASS — modeApplyPlan (ordered · value-complete · name-sorted) · validateModeInterchange (modes/values/types) over real Type+Geometry interchanges");
+console.log("mode-apply PASS, modeApplyPlan (ordered · value-complete · name-sorted) · validateModeInterchange (modes/values/types) over real Type+Geometry interchanges");
 process.exit(0);

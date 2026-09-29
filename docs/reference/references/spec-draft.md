@@ -1,9 +1,9 @@
-# HCT Palette Generator — Brief + Technical Specification
+# HCT Palette Generator: Brief + Technical Specification
 
 **Document:** TDD-01-hct-palette-generator
 **Version:** 0.1 (draft for spec-author enhancement)
 **Date:** June 2026
-**Status:** Draft — extracted from the working tool; ready for research-grounding and scoring
+**Status:** Draft, extracted from the working tool; ready for research-grounding and scoring
 **Audience:** design-system engineers, the tool's maintainer, an LLM regenerating or extending it
 
 ## How to Read This Document
@@ -41,7 +41,7 @@ Sections marked 📐 are specification detail, 💡 are design reasoning, ⚠️
 The **HCT Palette Generator** is a single-file browser tool that generates perceptually
 even color palettes and a full semantic design-token layer, and exports them to CSS and
 Figma. Hue and chroma come from **CAM16**; tone is **CIELAB L\***. It is not a brand-color
-picker and not a build-time pipeline — it is an interactive generator whose output is a set
+picker and not a build-time pipeline, it is an interactive generator whose output is a set
 of portable token artifacts.
 
 Core operations: (1) compute in-gamut tonal ramps per palette; (2) map ramps to a 53-role
@@ -87,7 +87,7 @@ keep mode-switching in a dedicated semantic layer.
 | Export | format serializers | semantic + raw | CSS / JSON / DTCG zip / UI3 | a ref doesn't resolve to a primitive |
 
 Full detail per layer: `references/knowledge-01..05`. An auxiliary engine module, `derive.mjs`
-(`knowledge-06`), derives a NEW palette from the existing set (the "New Palette" modal) — pure, no DOM.
+(`knowledge-06`), derives a NEW palette from the existing set (the "New Palette" modal), pure, no DOM.
 
 ## 5. Color Engine 📐
 See `references/knowledge-01-color-engine.md` and `data/verification-anchors.json`.
@@ -111,7 +111,7 @@ lmin 5, lmax 100, damp 80, dampCurve 1.5, dampAmp 0, dampBias 0.
 
 ## 7. Data Model 📐
 Canonical machine-readable form: `data/role-table.json` (`constants`, `roleTable` 53 rows,
-`defaults` 16 palettes — 8 brand families + 8 data families).
+`defaults` 16 palettes, 8 brand families + 8 data families).
 
 ```ts
 interface State {
@@ -166,12 +166,12 @@ provide (ADR-002). Same role table as the generator (parity). (Collections renam
 `semantic-colors` / `raw-colors`, then `Color Modes` → `Color Semantic` → `Color Roles`.)
 
 ## 11. UI / Interaction 📐
-A **gallery** hub (Your Palettes + **Color Categories** — 7 curated categories × 48 = 336 presets,
+A **gallery** hub (Your Palettes + **Color Categories**, 7 curated categories × 48 = 336 presets,
 lazy-loaded) opens a set into the **editor**: a live canvas of palette rows + a right-pane inspector
 (per-palette hue/chroma/cusp-pull/edge-hue/skew/lift, global tonal controls, the 53-role mapping) and a
 left analysis rail (L\*×C plot, tone + chroma curves, contrast readout, hue wheel). **Compose a new
 palette** via the New-Palette modal (`knowledge-06`: Relative / Environmental / Custom + live preview).
-**Reorder** palette rows by dragging the ⋮⋮ handle — a lifted clone + a dashed drop placeholder (10px
+**Reorder** palette rows by dragging the ⋮⋮ handle, a lifted clone + a dashed drop placeholder (10px
 deadzone). Native-`<dialog>` export drawer (top layer; grouped format `<select>`); app-chrome **and**
 canvas-preview color-scheme each follow `system / light / dark`. Persistence chain
 `window.storage → localStorage → in-memory` (`hct-palette-state-v1`), or `figma.clientStorage` in the
@@ -207,11 +207,11 @@ OKLCH-native designers work in familiar numbers without changing the output colo
 
 | OD | Title | Status | Affects |
 |----|-------|--------|---------|
-| OD-001 | On-color contrast vs fixed `050` | CLOSED (contrast is the default) | was: accessibility of `on*` on light fills. Resolved by ADR-025 (the ADR-003 amendment) — every family now clears WCAG AA 4.5:1 in both schemes |
+| OD-001 | On-color contrast vs fixed `050` | CLOSED (contrast is the default) | was: accessibility of `on*` on light fills. Resolved by ADR-025 (the ADR-003 amendment), every family now clears WCAG AA 4.5:1 in both schemes |
 | OD-002 | Surface bases 250/500 as semantic scrims | DEFERRED | scrim role coverage |
 | OD-003 | UI3 Collections schema authenticity | DECIDED (interchange-only) | the `ui3` export's usability |
-| OD-004 | Aliased semantic export without plugin | DEFERRED (spike implemented 2026-06-17, re-statused 2026-07-25 — stale 5.5 weeks with no test run) | The `rawColl` opt-in emits the FULL documented alias shape (`targetVariableName` + `targetVariableSetName`), **gated by `hpg-export-resolved`** so it can't regress. Still unvalidated end-to-end in real Figma (no Figma in CI) and there is no user-facing plugin-free download yet; the plugin stays the reliable path in the meantime. Re-open by running `docs/reference/references/od-004-plugin-free-import-test.md` in real Figma (import with the `Color Primitives` collection pre-existing) before exposing the plugin-free path or removing the plugin. |
-| OD-005 | Palette count beyond the default 16 | DECIDED (2026-06-15) — configurable | Every acceptance criterion is "for every palette", so it generalizes to any count; the validated `capability.system.ui-app` ships a configurable palette set. The 16 defaults (8 brand + 8 data, issue #503) are a seed set, NOT a ceiling. |
+| OD-004 | Aliased semantic export without plugin | DEFERRED (spike implemented 2026-06-17, re-statused 2026-07-25, stale 5.5 weeks with no test run) | The `rawColl` opt-in emits the FULL documented alias shape (`targetVariableName` + `targetVariableSetName`), **gated by `hpg-export-resolved`** so it can't regress. Still unvalidated end-to-end in real Figma (no Figma in CI) and there is no user-facing plugin-free download yet; the plugin stays the reliable path in the meantime. Re-open by running `docs/reference/references/od-004-plugin-free-import-test.md` in real Figma (import with the `Color Primitives` collection pre-existing) before exposing the plugin-free path or removing the plugin. |
+| OD-005 | Palette count beyond the default 16 | DECIDED (2026-06-15), configurable | Every acceptance criterion is "for every palette", so it generalizes to any count; the validated `capability.system.ui-app` ships a configurable palette set. The 16 defaults (8 brand + 8 data, issue #503) are a seed set, NOT a ceiling. |
 
 ## 15. Current Status
 

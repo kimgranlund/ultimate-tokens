@@ -23,3 +23,4 @@ Pass 1's blocker is closed. Pass 1's rows not re-listed here (fold-in comment-on
 2. 🟢 Noted. The baseline correction paragraph says the build was reproduced "in a scratch clone (`node_modules` symlinked from the repo root)". This pass did not rebuild; the committed `ui.html` measured the way the check measures it is 4125.3, which is what the check and the landing gate read.
 
 Smoke is not owed (plan Landing section: no hand-written `src/ui/` change; the bundle is a build product, unchanged since pass 1).
+verdict: 🟢 PASS

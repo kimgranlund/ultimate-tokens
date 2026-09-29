@@ -6,7 +6,7 @@ target: unit/gs-U6b @ 474824ff
 base: 8ff163bd (merge of origin/main 04f95ff0 into e035f841)
 reviewer: gs-U6b-reviewer-l2-p1
 date: 2026-09-23
-verdict: FIX-FIRST
+verdict: 🟡 FIX-FIRST
 ---
 
 # Review U6b gate-split (non-timing work)

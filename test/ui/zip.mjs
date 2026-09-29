@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// zip.mjs — verifier for the dependency-free ZIP writer (src/ui/zip.mjs). Pure, no DOM.
-// Covers a structurally valid STORE archive AND that entries carry a REAL modification date — the fix for
+// zip.mjs, verifier for the dependency-free ZIP writer (src/ui/zip.mjs). Pure, no DOM.
+// Covers a structurally valid STORE archive AND that entries carry a REAL modification date, the fix for
 // the export bug where a fixed-0 DOS datetime made every extracted file land in ~1979/1980.
 import { zipStore, crc32 } from "../../src/ui/zip.mjs";
 
@@ -30,7 +30,7 @@ ok(u32(z, cdStart) === 0x02014b50, "central directory header signature (PK\\x01\
 ok(u16(z, cdStart + 12) === modTime && u16(z, cdStart + 14) === modDate, "central directory timestamp matches the local header");
 
 // ── default date = now → a real, post-1980 year (the exact bug: 0 → 1980/1979) ──
-ok(1980 + (u16(zipStore([{ name: "b.txt", data: "x" }]), 12) >> 9) > 1980, "default (no date) stamps a real post-1980 year — not the zero/1979 bug");
+ok(1980 + (u16(zipStore([{ name: "b.txt", data: "x" }]), 12) >> 9) > 1980, "default (no date) stamps a real post-1980 year, not the zero/1979 bug");
 
 // ── a pre-1980 date clamps to the DOS epoch floor (1980-01-01), never a zero/1979 date ──
 const zOld = zipStore([{ name: "c.txt", data: "x" }], { date: new Date(1970, 0, 1) });
@@ -40,5 +40,5 @@ ok(u16(zOld, 12) === 0x21 && u16(zOld, 10) === 0, "a pre-1980 date clamps to 198
 ok(crc32(new TextEncoder().encode("hello")) === 0x3610a686, "crc32('hello') matches the known vector");
 
 if (fails.length) { console.error(`zip FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
-console.log("zip PASS — valid STORE archive · real mod timestamps (no 1979) · central↔local match · pre-1980 clamp · crc32");
+console.log("zip PASS, valid STORE archive · real mod timestamps (no 1979) · central↔local match · pre-1980 clamp · crc32");
 process.exit(0);

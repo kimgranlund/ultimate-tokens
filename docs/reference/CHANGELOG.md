@@ -64,7 +64,7 @@ redesign, which also takes the even-envelope neighbourhood fix and retires the 6
 plus the default kit's own Data 7 spike), #713 (split the corpus sweeps into gate scripts), #715 (the
 default kit in every sweep, and a gate for C4's ramp identity control).
 
-## 1.63 — 2026-09-18 — WCAG-safe on-colors are the default, with an achromatic fall-through (#662, closes #636)
+## 1.63: 2026-09-18, WCAG-safe on-colors are the default, with an achromatic fall-through (#662, closes #636)
 
 **`onColorMode` now defaults to `"contrast"`, and no ramp stop moved.** ADR-003 pinned every accent's
 on-color to the light tint (`050`/`200`) in both schemes as an explicit brand override, and the
@@ -73,13 +73,13 @@ labels on accents that miss WCAG AA: on the production path, perceptual dark mea
 Info 4.07, Neutral 4.21, Primary 4.31 and Success 4.31, every data family between 3.03 and 3.79, and
 `peak` was far worse (Secondary 1.24, Success 1.58, Warning 2.52). Park UI's `solid.fg` on `solid.bg`
 resolves the same role pair, so the shipped Adia brand document missed in 18 of its 32 cells, worst
-Warning dark at 2.19 — the defect #636 reported.
+Warning dark at 2.19, the defect #636 reported.
 
 **The flip alone does not close it, and that is the whole reason this entry exists.**
 `applyOnColorContrast` chose the better of exactly two ramp ends, `050` and `950`. Where the accent
 sits mid-lightness neither end clears 4.5:1, and the ramp cannot be moved to fix it. Measured: the
 flip alone still left Secondary light at 4.40, Neutral dark 4.48, Primary dark 4.39, Success dark
-4.36, Data 6 light 4.36 and Data 7 light 4.46. So the policy gained an **achromatic fall-through** —
+4.36, Data 6 light 4.36 and Data 7 light 4.46. So the policy gained an **achromatic fall-through**,
 a ramp end is kept while it clears AA, because it carries the palette's own hue, and otherwise the
 on-color takes the document's `white`/`black` constant with the better contrast. In all six cells
 that is black. `on{N}Variant` now follows the side the prime chose rather than running its own pick,
@@ -106,7 +106,7 @@ accent/on-color cells, 5,220 of them under 4.5 before, none now.
 document-level `white`/`black` constant, which every format already emits once per document, so it
 aliases `--{pfx}-white` / `raw/constants/white` rather than a per-palette var and ADR-005's invariant
 holds without a new primitive. The role TABLE is untouched: `role-table.json` still maps `on{N}` to
-`050` and `on{N}Variant` to `200`, and the Figma binder mirror is unchanged — this lives entirely in
+`050` and `on{N}Variant` to `200`, and the Figma binder mirror is unchanged, this lives entirely in
 the resolution layer. `"fixed"` remains as the opt-out, and a saved kit keeps whatever policy it
 stored, since `serialize` writes the key explicitly.
 
@@ -115,7 +115,7 @@ all three tone modes, the Park `solid.fg`/`solid.bg` pairing on the default and 
 the variant-side invariant. On the pre-change engine those red 44, 34 and 7 rows respectively.
 Ratified as ADR-025, amending ADR-003 and closing OD-001.
 
-## 1.62 — 2026-09-18 — travel's curated hexes are rendered from their OKLCH again (#656)
+## 1.62: 2026-09-18, travel's curated hexes are rendered from their OKLCH again (#656)
 
 **`oklch` is the authored root of a curated swatch; `hex` is its render.** Six of the seven sibling
 category specs already obey that: `hex` equals `oklchToRgb(oklch)` byte-for-byte on all 288 swatches
@@ -124,7 +124,7 @@ outright in the contract that authors these specs ("In-gamut sRGB, hex equals ok
 was the one spec that disobeyed, and congenitally: it was minted from a hand-authored markdown table
 whose OKLCH and HEX were two independently typed columns, so **287 of its 288 swatches described two
 different colours**, by up to 7.42 L*. The three per-palette system colours in that same table, which
-the table says were *computed* in OKLCH rather than typed, agree to 0.000 — the drift is exactly the
+the table says were *computed* in OKLCH rather than typed, agree to 0.000, the drift is exactly the
 hand-typed half.
 
 Downstream that split the preset in two: `scripts/gen-categories.mjs` fits each prime anchor's `lift`
@@ -132,7 +132,7 @@ Downstream that split the preset in two: `scripts/gen-categories.mjs` fits each 
 key colour. Every travel preset therefore carried a key colour and a lift aimed at different targets.
 
 **All 288 travel hexes are now the exact render of their own oklch**, as are the 144 `hierarchy.*.c`
-copies of them. No `oklch` value moved, so no curated colour was re-chosen — only the second,
+copies of them. No `oklch` value moved, so no curated colour was re-chosen, only the second,
 derived spelling of it was corrected. The two documents the palette-researcher reads as its exemplars,
 `docs/reference/colors/travel-palettes.md` (288 of 432 pairs) and the worked example in
 `color-model-function.md`, were re-rendered from their own OKLCH columns in the same change, so the
@@ -141,7 +141,7 @@ corpus no longer teaches the defect.
 **Token impact.** All 48 travel presets move. 216 of the 288 sampled palettes change their fitted
 `lift` (max 11) and 257 change `chroma` (max 20); hue, name and the stored key colours are untouched.
 Rendered across all nineteen stops, 275 of 528 palettes move, median 0.000 L*, p90 1.581, max
-**7.159** — visible only because 1.61 (#647) wired `lift` into the default `perceptual` ramp, where it
+**7.159**, visible only because 1.61 (#647) wired `lift` into the default `perceptual` ramp, where it
 had been inert. The movement is the correction: the rendered prime's distance from the colour the
 preset actually stores falls from median 3.816 / max 13.679 L* to 3.307 / 7.647, and travel's
 prime-anchor fit error now sits inside the sibling band (in-band median 2.082 → 0.169 L*, against
@@ -151,11 +151,11 @@ The `lift-anchor` gate's named per-spec drift carve-out for travel (`test/engine
 drops from `{count: 287, max: 7.5}` to `{count: 0, max: 0}`, the same bound the six clean sourced
 specs hold. It fails in both directions, so a future spec that reintroduces the drift reds by name.
 
-## 1.61 — 2026-09-17 — skew and lift reach every tone mode; Warning retuned for AA (#647)
+## 1.61: 2026-09-17, skew and lift reach every tone mode; Warning retuned for AA (#647)
 
 **A palette's `skew` and `lift` now shape the ramp in every tone mode.** Both controls were persisted,
 threaded through both ramp call sites, shipped with non-zero defaults on seven of the eight semantic
-palettes and exposed as sliders — but only the `even` distribution ever read them. In the shipped
+palettes and exposed as sliders, but only the `even` distribution ever read them. In the shipped
 default mode (`perceptual`) they were inert, so dragging Skew moved the seven-swatch prime ladder,
 which does read it, while the nineteen-stop gradient underneath sat still. `okhslStops` now reads its
 lightness at an **effective stop** carrying both controls, applied with `toneAt`'s own two transfer
@@ -180,10 +180,10 @@ all eight semantic families in both ruled modes and both schemes, reading the sa
 `docs/reference/data/role-table.json`) have not split on chroma, skew or lift. Its floors are a
 ratchet at each family's own shipped ratio, so several non-Warning families are pinned just under AA
 at their current values: in `perceptual`, Secondary is lowest at 3.05:1 dark, with Info 4.07,
-Neutral 4.21, Primary 4.31 and Success 4.31. Those were not retuned — the ruling was Warning-only —
+Neutral 4.21, Primary 4.31 and Success 4.31. Those were not retuned, the ruling was Warning-only,
 and remain open.
 
-## 1.60 — 2026-09-17 — the prime ladder spans its full range at every hue (#641, #655, SPEC/LLD 0.3.2)
+## 1.60: 2026-09-17, the prime ladder spans its full range at every hue (#641, #655, SPEC/LLD 0.3.2)
 
 **Every palette's seven prime swatches now span the full `6 * PRIME_STEP = 0.54` in OKHSL `l`**, at
 every hue and every chroma. They did not before: the ladder is built around a FIXED anchor at the key
@@ -202,7 +202,7 @@ touched a bound is byte-identical.
 tokens move only once). 0.94 was below the reach of the cusp anchor itself: sweeping hue 0..359 ×
 chroma 0..100 in both hue spaces, `l_prime` peaks at 0.961183, so for yellow-green hues (cam16
 108..122, oklch 96..114) `prime` was OUT OF BOUNDS before any ladder was built, the light side's room
-went negative, and `brightest`/`brighter`/`bright` INVERTED — they read darker than `prime`. 0.97 is
+went negative, and `brightest`/`brighter`/`bright` INVERTED, they read darker than `prime`. 0.97 is
 the smallest round ceiling that clears that peak and also keeps the three light swatches distinct in
 8-bit hex at every swept cell; each side's room is additionally floored at zero so negative travel can
 never be credited to the other side.
@@ -213,20 +213,20 @@ move (Secondary, Info, Success, Warning, Data 1, Data 4, Data 5, Data 6, Data 7,
 byte-identical (Neutral, Primary, Tertiary, Danger, Data 2, Data 3). Across the curated categories
 2346 of 3780 palettes move, 22 of them from a genuinely inverted ladder. The committed Adia export
 artifact (`docs/reference/data/adia-oklch-export.css`) is regenerated. Ramps, roles, typography and
-geometry are untouched — this is the prime system only.
+geometry are untouched, this is the prime system only.
 
-## 1.59 — 2026-09-17 — `lift` becomes a stop displacement; the even ramp is strictly monotone (#648)
+## 1.59: 2026-09-17, `lift` becomes a stop displacement; the even ramp is strictly monotone (#648)
 
 **`lift` no longer ADDS L\*, it DISPLACES the stop.** The per-palette `lift` control used to add a
 cosine-weighted bump to the tone (`t += lift · w`), which ignores the base curve's local slope. Where
-the curve is flat — the light end under `logistic` at tension 0, flattened further by a positive skew
-— the bump's own slope won: the default **Warning** palette (skew 40, lift 15) REVERSED the ramp at
+the curve is flat, the light end under `logistic` at tension 0, flattened further by a positive skew,
+the bump's own slope won: the default **Warning** palette (skew 40, lift 15) REVERSED the ramp at
 stops 100–150 and pushed the tone past `lmax` at 200–300, and the trailing clamp then saturated
 050–300 into **six identical `#FFFFFF` swatches** (14 distinct stops out of 19). `toneAt` now reads
 the unchanged, already-monotone curve at a displaced stop, `t = base(stop − A · w(stop))` with
 `A = clamp(lift × 6, ±243.51)` stops, factored into an exported `liftStop(stop, lift)`. Monotonicity
 follows from one closed-form bound, `|A| · π/900 < 1`, which holds for **every** curve, skew, tension,
-`lmin` and `lmax` — no per-curve tuning, and the final clamp is now a no-op safety net rather than the
+`lmin` and `lmax`, no per-curve tuning, and the final clamp is now a no-op safety net rather than the
 thing producing a value. Warning renders 19 distinct swatches again.
 
 **Even-mode ramps re-render wherever `lift` is non-zero; `lift 0` is byte-unchanged.** `toneAt` is
@@ -235,17 +235,17 @@ bit-identical at `lift 0` over 2,537,625 curve × skew × tension × stop points
 still ignores skew/lift until #647). So the re-render is confined to the `even` path: the three
 role-table defaults carrying a lift (Warning +15, Success/Danger −5) and any document that set one.
 Because the shift rides the curve, a given lift moves the tone furthest where the ramp is steepest, and
-its effect is **attenuated** versus the old bump — Warning's +15 moves the stop-500 tone by +10.49 L\*
+its effect is **attenuated** versus the old bump, Warning's +15 moves the stop-500 tone by +10.49 L\*
 (was +15.00), Success/Danger's −5 by −3.68 (was −5.00). The authored role-table lifts are NOT re-fitted
 here; #647's Warning retune absorbs that.
 
 **2,480 of 3,780 stored preset lifts re-fitted.** `scripts/gen-categories.mjs` anchored each curated
-preset's prime (stop 550) on its sampled source color via `lift = round(sourceL* − toneAt(550,0,0))` —
+preset's prime (stop 550) on its sampled source color via `lift = round(sourceL* − toneAt(550,0,0))`,
 the algebra of the retired additive bump, and simply the wrong inverse now (off ~9 L\* at lift +40,
 ~12 at −40). It now SOLVES the inverse by a deterministic bisection over the `lift` domain, picking the
 closer of the two neighbouring integers; the committed category assets are regenerated accordingly.
 Anchor fit error across the corpus drops from a median **3.93 L\*** to **1.08**, and 0.35 restricted to
-the in-band sampled palettes it actually fits — the residual is entirely the 368 source colors lighter
+the in-band sampled palettes it actually fits, the residual is entirely the 368 source colors lighter
 or darker than the reachable band at stop 550 (17.77–76.52 L\*), which clamp to the domain edge.
 
 Threaded through `tonal.js` (engine), `scripts/gen-categories.mjs`, and the agent-facing rubric in
@@ -260,32 +260,32 @@ regenerated for exactly the three even-mode ramps that carry a lift; its other 2
 what commit 83756bb emitted.
 
 
-## 1.58 — 2026-09-11 — palette groups + absolute per-group base chroma (#559, SPEC/LLD 0.3.0)
+## 1.58: 2026-09-11, palette groups + absolute per-group base chroma (#559, SPEC/LLD 0.3.0)
 
-Every palette now carries a **group** — `material` · `brand` · `system` · `data` (#556) — assigned by
+Every palette now carries a **group**, `material` · `brand` · `system` · `data` (#556), assigned by
 name by default (neutral → material; primary/secondary/tertiary → brand; the four intents → system;
 every other palette, including all data palettes, → data) and fully user-reassignable via a Group
 dropdown in the palette inspector. The color canvas renders rows under four group headers in that
 order, empty groups hidden, each header showing its palette count; drag-reorder stays within a group.
-Groups are an editor concept only — they never enter token names, CSS, or Figma folders.
+Groups are an editor concept only, they never enter token names, CSS, or Figma folders.
 
 **"Base chroma" becomes a per-group absolute ramp-chroma target, not a multiplier** (#559, superseding
-the branch's own earlier multiplier-based build): `palette.chroma` no longer feeds the ramp at all — it
+the branch's own earlier multiplier-based build): `palette.chroma` no longer feeds the ramp at all, it
 feeds only `deriveKeyColor` and the prime system. The per-palette ramp override (`palette.intensity`)
 is **removed for every group**, not just Data; stored values are dropped by the schema-v4 migration
 and reported via `DROPPED_KEYS`. Each group carries its own `{ baseChroma, primeChroma, locked? }`
-default — `material { 30, 60 }`, `brand/system/data { 100, 100 }`, Data additionally `locked: true` (no
+default, `material { 30, 60 }`, `brand/system/data { 100, 100 }`, Data additionally `locked: true` (no
 per-palette override; the inspector hides its Intensity/Prime-chroma sliders). The Global tab's Base
 chroma / Prime chroma sliders become the **fallback**, read only when a palette's own group carries no
 value: `rampChromaOf(p, doc) = paletteGroups[paletteGroup(p)].baseChroma ?? controls.baseIntensity`.
 `intensityAt` is deleted from `src/engine/tonal.js` entirely, and the literal string `baseIntensity` is
-barred from `src/engine` (AC-004, gated by a real `git grep` in `test/engine/tonal.mjs`) — the field
+barred from `src/engine` (AC-004, gated by a real `git grep` in `test/engine/tonal.mjs`), the field
 survives only as the document/UI-side legacy name (`src/ui/persist.js` `DOMAINS`), renamed to
 **`baseChroma`** at every export/brand-kit boundary (`model.mjs`'s `stateOf()`), which is the public
 name external docs and the brand-kit `controls` block use.
 
 **Byte-identity at chroma 100 is intentionally gone** for any palette whose own `chroma` differs from
-its group's resolved `baseChroma` — only **Secondary** and **Warning** stay byte-identical among the
+its group's resolved `baseChroma`, only **Secondary** and **Warning** stay byte-identical among the
 default palettes (both chroma 100, inside a group whose `baseChroma` is 100); Neutral, Primary,
 Tertiary, Info, Success, Danger, and all eight data palettes (minted at chroma 95) now render
 differently, muting Material by default exactly as intended. `src/engine/exports.js` carries a small
@@ -297,7 +297,7 @@ Gate: `npm test` green (the AC-004 `git grep` gates plus the new AC-002/003(b)/0
 #559, PR #567); design: `docs/lld/lld-muted-base-key-spikes.md` 0.3.0. Knowledge: knowledge-02 §8
 (docs sweep #568).
 
-## 1.57 — 2026-09-11 — the prime system replaces the key-stop spike (#533, SPEC/LLD 0.2.0)
+## 1.57: 2026-09-11, the prime system replaces the key-stop spike (#533, SPEC/LLD 0.2.0)
 
 The 1.56 chroma spike on the ramp's identity stops is **retired** (#536, P1): `identityStops`,
 `DEFAULT_IDENTITY_STOPS`, and the `k` term are gone, `intensityAt` returns the base fraction for
@@ -326,7 +326,7 @@ Gate: `npm test` green at each unit (`intensity-legacy` fixture retained, `inten
 `test/engine/prime.mjs` AC-050 a–j). Spec: `docs/spec/spec-muted-base-key-spikes.md` 0.2.0 (#535,
 #544, #547); design: `docs/lld/lld-muted-base-key-spikes.md` 0.2.0. Knowledge: knowledge-02 §8.
 
-## 1.56 — 2026-09-11 — muted base ramps + key-stop spikes: intensity controls land in the engine (#503 U1)
+## 1.56: 2026-09-11, muted base ramps + key-stop spikes: intensity controls land in the engine (#503 U1)
 
 A new pair of ramp-shaping controls, `baseIntensity` and `keyIntensity` (0–100, plus an optional
 per-palette `intensity` override), land in `tonal.js`/`semantic.js`: `baseIntensity` mutes every stop's
@@ -351,27 +351,27 @@ Gate: `npm test` green (extended tonal pin + 3 new intensity groups, identity-st
 `docs/spec/spec-muted-base-key-spikes.md`; design: `docs/lld/lld-muted-base-key-spikes.md`. Landed as
 #509.
 
-## 1.55 — 2026-07-30 — preset typography declares REGISTERS (ADR-022)
+## 1.55: 2026-07-30, preset typography declares REGISTERS (ADR-022)
 
 The 5-slot `type.slots` spec shape is retired: a spec palette now declares
-`type.registers.{anthemic,contextual,functional,actionable,data}` (intended-use.md Layer 3 —
+`type.registers.{anthemic,contextual,functional,actionable,data}` (intended-use.md Layer 3,
 slot↔register 1:1), each register optionally carrying `styleName` (expressive-tier only), explicit
 `weights` (`[]` = opt-out), and a `voices` sub-map for its OWN secondary voices; `faces` folded into
 `registers.functional.voices["Sub-title"].font`. The 339-palette migration
-(`scripts/migrate-type-registers.mjs`) was **byte-identical** on the generated presets — no rendered
+(`scripts/migrate-type-registers.mjs`) was **byte-identical** on the generated presets, no rendered
 change; per-category enrichment comes as its own reviewed PRs. Mapper: `registersToTypeConfig`;
 gate: a new `schema` group (retired shapes throw at generation too). The pass-through
 `type.fonts`/`type.voices` shape is unchanged. Precedes it (same day, #404): the typography
-intended-use canon + the `cuts`/`purpose` gate groups — whose first run caught 175 presets whose
+intended-use canon + the `cuts`/`purpose` gate groups, whose first run caught 175 presets whose
 "regular •" style rendered the Medium face (body-class cores now clamp ≤450 at generation).
 
-## 1.54 — 2026-07-11 — Settings completes: collection names · persisted app prefs · reduce-motion
+## 1.54: 2026-07-11, Settings completes: collection names · persisted app prefs · reduce-motion
 
-Backlog items 1 + 2 close. Item 2 (the backup-consent gate) was verified **already fully shipped** —
+Backlog items 1 + 2 close. Item 2 (the backup-consent gate) was verified **already fully shipped**,
 the Apply/Regroup road-block, versioned don't-show-again, always-warning Regroup, post-debrand docs
 link; no change. Item 1's actual delta:
 
-- **Figma collection names are per-doc overridable** — Settings › Token mapping › "Figma collections"
+- **Figma collection names are per-doc overridable**: Settings › Token mapping › "Figma collections"
   writes `doc.figmaCollections {raw, semantic}` (persisted, optional, absent = the defaults). The
   override rides the bundle's aliasData `targetVariableSetName` and the apply message's
   `collections`; `code.js#setCollectionNames` adopts it with constant fallbacks, and `readRawColors`
@@ -379,14 +379,14 @@ link; no change. Item 1's actual delta:
   names. Gate: the `collnames` leg in `test/figma/plugin.mjs`.
 - **App prefs persist** (`ultimate-tokens-app-prefs-v1`): theme · canvas preview · the NEW Motion
   pref. **The editor now respects `prefers-reduced-motion`** (previously ignored entirely); Reduced
-  forces minimal animations via the `[data-motion]` CSS gate (0.01ms durations — `transitionend`
+  forces minimal animations via the `[data-motion]` CSS gate (0.01ms durations, `transitionend`
   still fires). Appearance gains Reset-to-defaults. Gate: the headless `(pref)` group.
-- **Deliberately deferred:** stop density (19/25) + scrim steps — `EXPORT_STOPS` is a lockstep engine
+- **Deliberately deferred:** stop density (19/25) + scrim steps, `EXPORT_STOPS` is a lockstep engine
   contract (role refs 550/450 + count gates ride it); its own intake, never a settings row.
 
 Landed as #255.
 
-## 1.53 — 2026-07-10 — the text-rendering baseline: always in every design-system export
+## 1.53: 2026-07-10, the text-rendering baseline: always in every design-system export
 
 Every DS export now carries, gated: the macOS smoothing pair (consistent weight in both schemes) ·
 `text-rendering: optimizeLegibility` · `font-optical-sizing: auto` · `font-synthesis: none` (weights
@@ -399,37 +399,37 @@ design-systems 0.5.6 + typography 0.2.3 in lockstep.
 
 Landed as #254.
 
-## 1.52 — 2026-07-10 — breakpoints: intrinsic, desktop-anchored, hierarchy-aware (#251–#253)
+## 1.52: 2026-07-10, breakpoints: intrinsic, desktop-anchored, hierarchy-aware (#251–#253)
 
 Size modes moved from opt-in to INTRINSIC in three steps, ending at the ratified canon:
 
-- **#251** — the Standard set became **Desktop (1280) · Tablet (992) · Mobile (≤476)** with the base
+- **#251**: the Standard set became **Desktop (1280) · Tablet (992) · Mobile (≤476)** with the base
   renamed Mobile, desktop-first order, Desktop = Figma's default mode; the emitters gained
   `{baseName, baseLast}`; responsive CSS sorts `@media` ascending internally. (Also fixed the root
-  CHANGELOG's header — the one "by NONOUN" line the #250 debrand missed.)
-- **#252** — size modes became **intrinsic, the Light/Dark technique**: a doc with no configured
+  CHANGELOG's header, the one "by NONOUN" line the #250 debrand missed.)
+- **#252**: size modes became **intrinsic, the Light/Dark technique**: a doc with no configured
   modes synthesizes the standard set at export/apply (`_typeModeScales`/`_geomModeScales`); every
   export and Figma apply carries the three modes with zero setup. Engine emitter identity
-  (`modes=[]` ⇒ `["Base"]`) is untouched — synthesis is app-level.
-- **#253** — the anchor flipped and the stepping became **hierarchy-aware**: the DESIGNED scale IS
-  Desktop; Tablet/Mobile derive DOWN via `typeScale({modeFactor})` — log-interpolated from ×1 at
+  (`modes=[]` ⇒ `["Base"]`) is untouched, synthesis is app-level.
+- **#253**: the anchor flipped and the stepping became **hierarchy-aware**: the DESIGNED scale IS
+  Desktop; Tablet/Mobile derive DOWN via `typeScale({modeFactor})`, log-interpolated from ×1 at
   `bodyBase` to ×5/6 (Tablet) / ×2/3 (Mobile) at the ramp's top, so body-class text is FROZEN while
   Display compresses fully (≈90→75→60); geometry mirrors (heights −2/−4, composing type at the same
   rung); responsive CSS re-anchors mobile-first via `_typeCssArgs`/`_geomCssArgs` (`:root` = Mobile).
   The category presets' type slots moved to **strict %-strings** (`"leading": "96%"`,
-  `"tracking": "-2%"` — % of font size; 7 files, 3,360 fields); `gen-categories` parses strings only
+  `"tracking": "-2%"`, % of font size; 7 files, 3,360 fields); `gen-categories` parses strings only
   and the categories gate rejects the retired numeric shape.
 
 Landed as #251, #252, #253.
 
-## 1.51 — 2026-07-09 — the debrand: the product is unattributed (ADR-015)
+## 1.51: 2026-07-09, the debrand: the product is unattributed (ADR-015)
 
 "Ultimate Tokens by NONOUN" becomes **Ultimate Tokens**. No maker brand, no "by" line, no monogram.
 
 - **The nonoun.io surface** → support is **GitHub Issues**, docs are the **repo README**, billing is
   **Lemon Squeezy's customer portal**. Every replacement resolves today. The unbuilt hosted-MCP / magic-link
-  URLs became `<APP_DOMAIN>` / `<MCP_DOMAIN>` placeholders — Phase B must acquire a domain, not inherit one.
-- **The element tag**: the deprecated `<nonoun-color-tokens>` alias is retired — one tag, `<ultimate-tokens>`.
+  URLs became `<APP_DOMAIN>` / `<MCP_DOMAIN>` placeholders, Phase B must acquire a domain, not inherit one.
+- **The element tag**: the deprecated `<nonoun-color-tokens>` alias is retired, one tag, `<ultimate-tokens>`.
   Its CSS selectors collapse to a single tag too. `migrateStorageKeys()` stays (data compat ≠ cosmetic
   compat); ADR-014's "the alias stays, compatibility is free" consequence is amended accordingly.
 - **The mark** could not be renamed away; it WAS the "N" letterform. `brandMark()` + the eight
@@ -439,26 +439,26 @@ Landed as #251, #252, #253.
 - **Internal ids** followed: `ultimate-tokens-figma-styles.plan.v1`, `ultimate-tokens-type-fonts`,
   `ultimate-tokens-wf-*`, and the shared build anchor `__ULTIMATE_TOKENS_FLOAT_PLANS__` (lockstep: app,
   binder, two tests).
-- **`test/repo/branding.mjs`** makes the absence a GATE (26th test file). Records — both CHANGELOGs and
-  `decision-records.md` — are exempt: a record must be able to name what it retired.
+- **`test/repo/branding.mjs`** makes the absence a GATE (26th test file). Records, both CHANGELOGs and
+  `decision-records.md`, are exempt: a record must be able to name what it retired.
 
 Supersedes 1.50's closing claim that "the company brand is unchanged". It is not; it is gone.
 
 Landed as #250.
 
-## 1.50 — 2026-07-09 — the deeper identity rename → `ultimate-tokens`
+## 1.50: 2026-07-09, the deeper identity rename → `ultimate-tokens`
 
 The product identity moves in four namespaces, each with its own compatibility story.
 
 - **Custom element** `<nonoun-color-tokens>` → **`<ultimate-tokens>`**. The old tag stays registered as a
-  DEPRECATED ALIAS (a subclass), and every tag-keyed selector in `styles.css` now matches **both** tags —
+  DEPRECATED ALIAS (a subclass), and every tag-keyed selector in `styles.css` now matches **both** tags,
   an alias that renders unstyled is a fake alias.
 - **`STORAGE_KEY`** → `"ultimate-tokens"`. `migrateStorageKeys()` becomes a **chain**
   (`hct-palette-state-v1` ← `nonoun-color-tokens` ← `ultimate-tokens`): newest legacy wins, and a present
   new-namespace key is never overwritten. Four properties gated in headless `(mig)`.
 - **Figma plugin `id`** → `ultimate-tokens`; `CONFIG_KEY` / `FLOAT_REGISTRY_KEY` / `STYLE_REGISTRY_KEY` /
   `SETS_KEY` follow (the binder mirrors `FLOAT_REGISTRY_KEY`, parity-gated). Because `setPluginData` is
-  namespaced **per plugin id**, all pre-rename keys are **orphaned and unreadable** — no forward-migration
+  namespaced **per plugin id**, all pre-rename keys are **orphaned and unreadable**, no forward-migration
   exists, so `LEGACY_CONFIG_KEY` was removed and replaced by a gate proving `load-config` starts clean.
   This is the accepted cost of the id change (**ADR-014**).
 - **Brand-kit schema** `nonoun-brand-kit/1` → **`ultimate-tokens-brand-kit/1`** (engine · MCP core · skills).
@@ -473,13 +473,13 @@ The product identity moves in four namespaces, each with its own compatibility s
 Landed as #247 (code + gates), #248 (docs, marketing, skills, and the user-facing name drift), and
 #249 (the agent + skill rename).
 
-## 1.49 — 2026-07-04 — Editorial type voices: the taxonomy grows 7 → 11 (ADR-013)
+## 1.49: 2026-07-04, Editorial type voices: the taxonomy grows 7 → 11 (ADR-013)
 
 Four **editorial** voices join the type taxonomy, so `make7()` becomes **`make11()`**: **Lead** (a
-standfirst/lede — body role), **Quote** (block/pull quote — the **heading** role, so it inherits each
+standfirst/lede, body role), **Quote** (block/pull quote, the **heading** role, so it inherits each
 treatment's display face), **Caption** and **Legal** (fine-print). Each rides an **existing** font role
-(body/heading/ui — no new font) on a lean **`STEPS_3`** ramp (SM·MD·LG, MD = base); total steps 41 → **53**.
-A new per-voice **`box`** flag decouples the paragraph FLOW from the font role — it defaults from the role
+(body/heading/ui, no new font) on a lean **`STEPS_3`** ramp (SM·MD·LG, MD = base); total steps 41 → **53**.
+A new per-voice **`box`** flag decouples the paragraph FLOW from the font role, it defaults from the role
 (`ui`/`mono` ⇒ box), so the seven originals are byte-identical, and **Caption + Legal** set `box:false` to
 ride the ui FONT as **prose** (reading leading ~1.5, paragraph factor 0.75×, no single-line height).
 `singleLineHeight` + the paragraph factor now key on `box`, not `role === "ui"||"mono"`. Emitters
@@ -489,7 +489,7 @@ ride the ui FONT as **prose** (reading leading ~1.5, paragraph factor 0.75×, no
 answer-key** (unlike colour's `role-table.json`); `voice-parity` auto-derives the voice list from the live
 engine, so parity holds without a hand-kept table. `typography.tokens.json` stays a frozen snapshot.
 
-## 1.48 — 2026-07-03 — Type roles decoupled from size: the seven voices renamed (#195, #197)
+## 1.48: 2026-07-03, Type roles decoupled from size: the seven voices renamed (#195, #197)
 
 The canonical type taxonomy drops the size-implying names. The seven voices are now **Display · Heading ·
 Sub-heading · Kicker · Body · UI · Code** (was Display · Heading-Editorial · Heading-Context ·
@@ -497,17 +497,17 @@ Heading-Eyebrow · Body · UI · Code). The rename lands in two steps: #195 coll
 Heading`, `Heading-Context → Kicker`, `Heading-Eyebrow → Eyebrow` and fixed the reasoning law; #197 then
 renamed `Kicker → Sub-heading` and `Eyebrow → Kicker`, so the wide-tracked uppercase caps voice reads as
 **Sub-heading** and the smallest mono overline reads as **Kicker**. Character is preserved across the
-rename — Sub-heading is the heading-role uppercase caps voice; Kicker rides the `mono` role — and the
+rename, Sub-heading is the heading-role uppercase caps voice; Kicker rides the `mono` role, and the
 internal knob prefixes are unchanged (`he-` / `hc-` / `eye-` still feed Heading / Sub-heading / Kicker).
 The **law** is now explicit: *a voice is the text's function; the step is its hierarchy level, from which
-the size is derived* — so `display` is never chosen merely to get big text, nor a larger step merely to hit
+the size is derived*, so `display` is never chosen merely to get big text, nor a larger step merely to hit
 a target line-height. `make7()` (`src/engine/type.mjs`), `docs/spec/typography/README.md`, the `type-scale`
 skill + the `typography-tokens` consumption skill, and the engine/headless/parity tests all move in
 lockstep; `voice-parity` gates the voice names, steps, props, and count. The frozen Figma-export snapshot
 at `typography.tokens.json` keeps its original keys (it mirrors real Figma variable IDs, not the live
 taxonomy).
 
-## 1.47 — 2026-06-28 — OKLCH-native hue model + chroma-aware OKLCH↔CAM16 inverse (#116, #117)
+## 1.47: 2026-06-28, OKLCH-native hue model + chroma-aware OKLCH↔CAM16 inverse (#116, #117)
 
 The per-palette `hue` is now an **OKLCH hue** by default: the doc-level `hueSpace` default flips
 **cam16 → oklch** (`tonal.js` `DEFAULT_CONTROLS.hueSpace`; `persist.js` `DOMAINS.hueSpace.default`).
@@ -516,72 +516,72 @@ rendering in cam16 (preserved). `oklchToCam16Hue(h, chromaFrac=1)` is rebuilt fr
 mapping (L 0.72 / C 0.10, a few degrees of drift, worst ~15° at the blue/violet pole) into an **accurate,
 chroma-aware Newton inverse** of the render path: it finds the CAM16 hue whose color, *at `chromaFrac` of
 that hue's peak chroma*, renders at the target OKLCH hue. It is chroma-aware because the OKLCH↔CAM16 hue
-map shifts with chroma (the **Abney effect**) — a fixed or cusp-only anchor is wrong at the other end.
+map shifts with chroma (the **Abney effect**), a fixed or cusp-only anchor is wrong at the other end.
 Anchoring at the palette's own chroma (`effHue(hue, hueSpace, chromaFrac=1)`, passed `palette.chroma/100`)
 lands the rendered identity color on the stored OKLCH hue to ~0.00°. New `hctToOklch(hue, chroma, tone) →
 [L, C, H°]` reuses the CAM16 solve and converts the converged linear sRGB straight through OKLab (no 8-bit
-round-trip) — the high-res HCT→OKLCH for analysis/readouts; `projectView` now emits `keyOklch` (each
+round-trip), the high-res HCT→OKLCH for analysis/readouts; `projectView` now emits `keyOklch` (each
 palette's key color in high-res OKLCH, the key HEX derived from it). Producers emit OKLCH hues:
 `gen-categories` stores each preset's source OKLCH hue and bakes `hueSpace:"oklch"`; `seedFromKeyColor(oklch,
 hueSpace="oklch")` returns the input's OKLCH hue (or CAM16 for a legacy cam16 doc); `defaultDocument`
 converts the 8 starter CAM16 hues to OKLCH on the fly via `camHueToOklch`. **`role-table.json` is
-UNCHANGED** — still the cam16 answer key; the parity gate is intact. `hctToRgb` is byte-identical
+UNCHANGED**, still the cam16 answer key; the parity gate is intact. `hctToRgb` is byte-identical
 (refactored to share `_hctToLinRGB`). Engine gate: `hct-oklch-inverse` (`test/engine/hct.mjs`). See ADR-011
 (supersedes ADR-008).
 
-## 1.46 — 2026-06-27 — Typography: the seven named groups (the full taxonomy)
+## 1.46: 2026-06-27, Typography: the seven named groups (the full taxonomy)
 
 `type.mjs` expands from four voices to the canonical **seven groups** (`docs/spec/typography`): Display ·
 Heading-Editorial · Heading-Context · Heading-Eyebrow · Body · UI · Code (41 steps total). A shared
 `make7(opts)` factory builds the seven groups per treatment (each passing fonts + a few character knobs),
 so all five treatments keep their character without 35 hand-authored category literals. New per-group
-properties: **role** (Heading-Eyebrow + Code ride the `mono` role) and **case** — Display, Heading-Context,
+properties: **role** (Heading-Eyebrow + Code ride the `mono` role) and **case**, Display, Heading-Context,
 and Heading-Eyebrow are `uppercase` voices (Display tightens; Context/Eyebrow open up with wide positive
 tracking). The engine carries a per-step `textTransform`, emitted to CSS (`text-transform` on the utility
 class) and DTCG (`textCase` in the composite). The Typography section's canvas specimen, left-rail
 analysis (now seven-series curves with a short-label legend), and right-pane per-voice inspector all render
 the full 41-step scale. `geomScale` composition (`font` ← the UI voice) is unaffected (UI still present).
-No persist/fuzz change — `doc.type = {treatment, bodyBase}` only. Engine test rewritten for the role
+No persist/fuzz change, `doc.type = {treatment, bodyBase}` only. Engine test rewritten for the role
 mapping + the uppercase voices + the Code ramp; `(ty)` headless + smoke assert 41 steps / 7 groups.
 
-## 1.45 — 2026-06-27 — Typography editor section (workbench IA phase 2)
+## 1.45: 2026-06-27, Typography editor section (workbench IA phase 2)
 
 Typography is promoted from a modal to a **first-class editor section**. A persistent App-Header switcher
 `« Color · Typography · Geometry »` (`this.section`) routes the whole editor between sections of one set,
 reusing the three-pane shell. The Typography section: **center** = the full **23-step** specimen
 (Display 5 · Heading 5 · Body 5 · UI 8) live in the treatment's fonts, in the pannable `.canvas-scene`,
 with a Specimen·Tokens canvas toggle (`this.typeSpecMode`); **left** = `typeAnalysisCards` (modular-scale,
-optical-tracking, leading, font-role pairings — SVG diagnostics mirroring `analysisCards`); **right** =
-`renderTypeInspector` (Scale/Fonts/Specimen tabs — treatment + body-base writable, per-voice + fonts
+optical-tracking, leading, font-role pairings, SVG diagnostics mirroring `analysisCards`); **right** =
+`renderTypeInspector` (Scale/Fonts/Specimen tabs, treatment + body-base writable, per-voice + fonts
 read-only with "coming" notes, a live brand-coloured example, the token download). The Typography modal
 (`renderTypography`/`openTypography`/`_syncTypography`/`typeOpen`/`dialog.typo`) is retired;
 `downloadTypeTokens` + `_typeSample` + the bare `.typo-*` specimen CSS are kept. Color stays
 byte-identical (guarded `this.section` branches; `_liveRefreshNow` early-returns off-color; the color
 viewport is stashed/restored across a section round-trip; `renderCanvasArea` unchanged). No engine or
-persist change — `doc.type = {treatment, bodyBase}` only (per-voice tuning + custom fonts are flagged
+persist change, `doc.type = {treatment, bodyBase}` only (per-voice tuning + custom fonts are flagged
 out-of-scope). Built via a multi-agent team (4 parallel designers → synthesis) + adversarial review
 (color-regression / a11y / dead-code critics) before merge. `(ty)` headless rewritten to drive the
 section (asserts the full 23-step specimen + inspector + analysis + color-restore); smoke leg updated.
 
-## 1.43 — 2026-06-26 — Type ↔ Geometry composition + Geometry → Figma number variables
+## 1.43: 2026-06-26, Type ↔ Geometry composition + Geometry → Figma number variables
 
 The two new systems now **cohere**. A control's box and its text share **one number**: `geomScale(config,
 { typeScale })` takes the per-size text `font` from the type scale's **UI voice** at the matching step
-(geometry XS → UI XS … 2XL → UI 2XL) instead of the standalone power law — so the brand's body base /
+(geometry XS → UI XS … 2XL → UI 2XL) instead of the standalone power law, so the brand's body base /
 treatment drives the control text everywhere. Only the rhythm follows (`caret = font`, `gap = font/2`);
 the **frame** (height/icon/padding/radius) is untouched, so the centering law still holds exactly. The
 single join point is `geometryScale(doc)` in model.mjs (used by `brandKit`, the Geometry modal, and every
 geometry export); the engine stays decoupled (no-opts `geomScale` is still the pure power law). The modal
 shows a "font comes from the Typography UI scale" note + the composed sizes; `geomScale` reports a `typed`
 flag. Separately, `geomTokensFigma(scale)` emits a **"Geometry" collection of DTCG `number` tokens**
-(unitless FLOAT values) — the shape a Figma variable importer turns into native **number variables**
-(height · icon · font · gap · padding · radius · space) — shipped as `figma/dimension.variables.json` in
+(unitless FLOAT values), the shape a Figma variable importer turns into native **number variables**
+(height · icon · font · gap · padding · radius · space), shipped as `figma/dimension.variables.json` in
 Download-All + the geometry `.zip`. Covered by `test/engine/geometry.mjs` (the composed font = the type UI
 size, the frame untouched, the number-variable emit), `(geo)`/`(ee)` headless (the app + brandKit share the
 font; the renamed Figma variables file is number-typed), and `test/mcp/brand-kit.mjs` (the served geometry
 font is composed end-to-end).
 
-## 1.42 — 2026-06-26 — Per-system export opt-in (Color · Typography · Geometry)
+## 1.42: 2026-06-26, Per-system export opt-in (Color · Typography · Geometry)
 
 The three token systems are now **independently selectable at export**. The export drawer grows an
 **Include** toggle row (Color · Typography · Geometry) that governs the **Download-All `.zip`** and the
@@ -592,24 +592,24 @@ takes an opt-in map and emits only the chosen sections (no arg → all three, th
 toggles, and drops the type + dimension DTCG files into `figma/` as importable variables/styles. The
 **MCP server's surface is now presence-driven**: colour tools/resources appear only with palettes,
 `get_type` / `brand://type` only when typography is included, `get_geometry` / `brand://geometry` only
-when geometry is — and the usage guide + startup banner report which systems the kit carries. Covered by
+when geometry is, and the usage guide + startup banner report which systems the kit carries. Covered by
 `test/mcp/brand-kit.mjs` (the opt-in gating on `brandKit`, the new tools/resources end-to-end) and `(mc4–mc10)`
 headless (the toggles, the bundle-size deltas per system, the last-one guard, the Type/Geometry preview tabs).
 
-## 1.41 — 2026-06-26 — Geometry / dimensional generator (the spatial analog of the color & type engines)
+## 1.41: 2026-06-26, Geometry / dimensional generator (the spatial analog of the color & type engines)
 
 The third token system: `src/engine/geometry.mjs` derives a **systematic size ramp** (XS–2XL) and the
 **derived control geometry** from a few params, encoding ONE law and TWO families distilled from the
-agent-ui dimensional spec. The **centering law** — `edge padding = (height − glyph) / 2`, every glyph
-centered in a square cell of side = the control height — generates the slot padding, the slotless `h/2`
+agent-ui dimensional spec. The **centering law**, `edge padding = (height − glyph) / 2`, every glyph
+centered in a square cell of side = the control height, generates the slot padding, the slotless `h/2`
 edge, the icon-only square (`min-width = height`), and the pill radius (`height/2`). The **two families**:
 *frame* ∝ height (icon, slot, pad, radius) and *rhythm* ∝ font (`gap = font/2`, `caret = font`); density
 multiplies the rhythm **only** (scaling the frame would un-center the glyph). The six-size ramp is one
-sublinear **power law** sampled six times — `icon = 2.49·h^0.58`, `font ≈ √h` — reproducing the hand-tuned
+sublinear **power law** sampled six times, `icon = 2.49·h^0.58`, `font ≈ √h`, reproducing the hand-tuned
 reference table (`20·24·28·36·48·64`) to ±1px, so it generalizes to any scaled `baseHeight`. Five
 **treatments** (Comfortable/Compact/Spacious/Touch/Pill) seed density + a radius ladder + the `--space-*`
 layout scale. `geomScale(config)` resolves it; `geomTokensCSS` (custom props + `.control-*` utility
-classes that embody the law — block-size lever, `padding-block: 0`) / `geomTokensDTCG` (W3C `dimension`
+classes that embody the law, block-size lever, `padding-block: 0`) / `geomTokensDTCG` (W3C `dimension`
 tokens) emit. A 📐 **Geometry modal** picks treatment + base height, shows a **live size ramp** of mock
 controls, and downloads `geometry.css` + `geometry.tokens.json`. The config (`doc.geometry = { treatment,
 baseHeight }`) is persisted (enum + clamped int, roundtrip-safe) and folded into **`brandKit(doc)`** so the
@@ -620,12 +620,12 @@ the same law the `design-skills:component-decomposer` skill mechanizes (`bin/geo
 Next composition step: share the type scale's per-size `font` with the geometry `font` (one number, two
 engines).
 
-## 1.40 — 2026-06-26 — Typography generator (the type analog of the color engine)
+## 1.40: 2026-06-26, Typography generator (the type analog of the color engine)
 
 A second token system: `src/engine/type.mjs` derives a **systematic type scale** from a few params,
-mirroring the target schema's four voices — **Display · Heading · Body · UI** — each a size ramp whose
+mirroring the target schema's four voices, **Display · Heading · Body · UI**, each a size ramp whose
 every step's `size` (modular scale `base·ratio^n`), `lineHeight` (per-role leading), `letterSpacing`
-(optical — negative tightens big display, positive loosens small UI), and `weight` are **derived**, not
+(optical, negative tightens big display, positive loosens small UI), and `weight` are **derived**, not
 hand-authored. Five **treatments** (Product/Lifestyle, Luxury, Editorial, Technical, Brutalist) seed the
 params (the type analog of the colour Color-Categories presets); `typeScale(config)` resolves it,
 `typeTokensCSS` / `typeTokensDTCG` emit. A ⓣ **Typography modal** picks treatment + body base, shows a
@@ -636,7 +636,7 @@ treatments, CSS + DTCG emit) and `(ty)` headless (modal + specimen + persist + b
 Next (after this): the **geometry / dimensional system** (size/padding/icon/caret), which composes with
 this type scale.
 
-## 1.39 — 2026-06-26 — Brand-Kit MCP (downloadable, zero-dep server) — spike
+## 1.39: 2026-06-26, Brand-Kit MCP (downloadable, zero-dep server), spike
 
 A new distribution surface: serve the generated tokens to AI agents via **MCP** (Model Context Protocol).
 `mcp/brand-kit-server.mjs` is a **zero-dependency** Node stdio server (JSON-RPC 2.0, newline-delimited)
@@ -645,16 +645,16 @@ dark) as MCP **resources** (`brand://kit|palettes|semantic/*|guide`), **tools** 
 `get_ramp`, `resolve_token`, `get_semantic`, `nearest_token`), and a **prompt** (`apply_brand`). The
 resolved data comes from a new pure `brandKit(doc)` projection (model.mjs). The app hands users a
 ready-to-run `.zip` (server + their `brand-kit.json` + README + package.json) via "Brand-Kit MCP" in the
-export drawer's Config tab — the server inlined through `gen-mcp-assets.mjs` → `src/ui/mcp-assets.js`
+export drawer's Config tab, the server inlined through `gen-mcp-assets.mjs` → `src/ui/mcp-assets.js`
 (bundled like `figma-plugin-assets.js`). Covered by a **12th verifier** (`test/mcp/brand-kit.mjs`) that
 generates a kit, spawns the server, and drives the full MCP handshake (initialize → tools/resources/
 prompts → unknown-method error), plus `(mc)` headless assertions for the inlined server + the `.zip`
-download. Status: spike — the **hosted** brand-kit MCP (the recurring tier) is the next step.
+download. Status: spike, the **hosted** brand-kit MCP (the recurring tier) is the next step.
 
-## 1.38 — 2026-06-26 — Settings modal + `accentRef` prime-accent mapping
+## 1.38: 2026-06-26, Settings modal + `accentRef` prime-accent mapping
 
 A new control `accentRef` (`"mode"` default / `"single"`) lets the **prime accent role** export as either
-`550`(light)/`450`(dark) — mode-specific, better contrast per scheme — or a single mode-agnostic `500`.
+`550`(light)/`450`(dark), mode-specific, better contrast per scheme, or a single mode-agnostic `500`.
 It's a **resolution-layer** adjustment (`applyAccentRef` in `semantic.js`, applied in `projectView` +
 `derivePalette` alongside `applyOnColorContrast`): only the prime accent (empty-suffix role) moves; its
 variants, on-colors, surfaces, and the canonical `semanticRoles` table are untouched, so the
@@ -665,7 +665,7 @@ prefs. Covered by an engine unit test (`single` → 500/500 on the prime only; `
 + non-accent roles untouched), a `(set)` headless integration (the prime resolves 500/500, persist
 round-trip), the persist fuzz-roundtrip, and a real-browser smoke check.
 
-## 1.37 — 2026-06-26 — spec/reference docs brought current (naming + new features)
+## 1.37: 2026-06-26, spec/reference docs brought current (naming + new features)
 
 A pass over the internal `docs/spec/**` corpus. **Naming:** the Figma collections `raw-colors` /
 `semantic-colors` → **`Color Primitives`** / **`Color Modes`** across SKILL.md, spec-draft, knowledge-05,
@@ -678,44 +678,44 @@ New-Palette modal) and `spec-draft.md` (§4 derive.mjs, §7 data model gains `to
 `chromaFloor`/`relChroma`/`onColorMode`/`keyColors`/`cuspPull`, §10 Color Modes, §11 the gallery +
 New-Palette + ghost reorder). Docs only; no engine/contract change; all 11 verifiers still pass.
 
-## 1.36 — 2026-06-25 — reorder drop hit area = the placeholder, with a 10px deadzone
+## 1.36: 2026-06-25, reorder drop hit area = the placeholder, with a 10px deadzone
 
 The drop slot is now decided relative to the **placeholder** (the proposed placement), not a fresh
 row-midpoint hit-test each move. `_onReorderMove` steps the placeholder one row toward the cursor only
 while the cursor is past the placeholder's edge by **>10px** (`SENS`), re-reading rects each step (a
 bounded loop, to keep up with a fast flick); within the ±10px band it stays put. This kills the jitter
-the midpoint test had — the placeholder reflows the list, which moved the midpoints under the cursor.
+the midpoint test had, the placeholder reflows the list, which moved the midpoints under the cursor.
 `_syncDropFromPlaceholder` reads `dropPi`/`before` from the placeholder's live DOM neighbors (skipping
 the collapsed source). The headless shim (no placeholder) keeps the midpoint fall-back, so the reorder
 verifier is unchanged; a smoke check asserts a sub-10px move holds the slot and a larger one reslots.
 
-## 1.35 — 2026-06-25 — ghost-based palette drag-to-reorder (lifted clone + drop placeholder)
+## 1.35: 2026-06-25, ghost-based palette drag-to-reorder (lifted clone + drop placeholder)
 
 Palette reorder now has the canonical "lift + part" feedback. `_beginReorder` builds a **floating
-clone** of the dragged row (`_buildDragGhost`) — a `.drag-ghost` appended to the HOST (so
+clone** of the dragged row (`_buildDragGhost`), a `.drag-ghost` appended to the HOST (so
 `position:fixed` is viewport-relative, not clipped by the transformed canvas scene), tracking the
 cursor via `transform: translate()`; the source row collapses (`display:none`) and a same-height
 **`.drop-ghost` placeholder** is inserted at the landing slot (`_positionPlaceholder`), so the list
 parts to show where the drop lands (replacing the old `.drop-before/.drop-after` edge line). The
 hit-test excludes the collapsed source (zero-height filter). All the visual layer is guarded so the
-headless DOM shim (no `cloneNode`/layout) runs the reorder LOGIC unchanged — the existing reorder
+headless DOM shim (no `cloneNode`/layout) runs the reorder LOGIC unchanged, the existing reorder
 verifier still passes. `_teardownDragGhost` cleans up on release/cancel. A real-browser smoke check
 drives a handle-drag and asserts the clone + placeholder appear, then clear on release.
 
-## 1.34 — 2026-06-25 — New-Palette modal polish: Custom color picker + Relative priority chain
+## 1.34: 2026-06-25, New-Palette modal polish: Custom color picker + Relative priority chain
 
-The **Custom** tab gains a native **`<input type="color">`** picker — picking a color recovers the
+The **Custom** tab gains a native **`<input type="color">`** picker, picking a color recovers the
 palette's hue + chroma from it (`seedFromKeyColor(hexToOklch(hex))`); `oninput` refreshes the preview
 in place (so the OS color panel isn't detached mid-pick) and `onchange` does a full render so the
 Hue/Chroma sliders re-sync. The **Relative** preview adds a **priority chain** (`_orderedContext`):
 the ordered context colors as a small strip with the **primary** ring-marked, then secondary /
-tertiary — so the priority order driving the relationship is visible, not just the single anchor.
+tertiary, so the priority order driving the relationship is visible, not just the single anchor.
 `(np3g)` + `(np6a0)` headless assertions and two smoke checks (chain present + primary-marked; native
 color picker seeded from the proposed color). No engine/contract change.
 
-## 1.33 — 2026-06-25 — "Surveys" renamed to "Color Categories" (label + internal code)
+## 1.33: 2026-06-25, "Surveys" renamed to "Color Categories" (label + internal code)
 
-The gallery's **"Surveys"** feature is now **"Color Categories"** — the user-facing label/nav AND the
+The gallery's **"Surveys"** feature is now **"Color Categories"**, the user-facing label/nav AND the
 internal code. Directories: `src/ui/surveys/` → `src/ui/categories/`, `docs/spec/colors/surveys/` →
 `docs/spec/colors/categories/`. Generator: `scripts/gen-surveys.mjs` → `gen-categories.mjs` (npm
 script `gen:surveys` → `gen:categories`). Exports/identifiers: `SURVEY_INDEX`/`loadSurvey` →
@@ -725,66 +725,66 @@ script `gen:surveys` → `gen:categories`). Exports/identifiers: `SURVEY_INDEX`/
 Survey · Vol I") are **left as authored copy** (content, not code). Separate `preset`/`volume` concepts
 untouched. Verifiers (`(hh)` headless, smoke) updated to the new names; pure rename, no behavior change.
 
-## 1.32 — 2026-06-25 — Figma "Regroup" moves into the Figma export tab
+## 1.32: 2026-06-25, Figma "Regroup" moves into the Figma export tab
 
 The opt-in **"Regroup"** action (re-creates `Color Modes` in canonical grouped order) moved from the
 export drawer's **footer** (`.foot-actions`, beside Apply Variables / Download All) into the **Figma
-tab's sub-bar** (`.figma-bar-row`), right beside the **Binder plugin** button — it's a Figma-tab,
+tab's sub-bar** (`.figma-bar-row`), right beside the **Binder plugin** button, it's a Figma-tab,
 in-Figma action, so it belongs with the other Figma controls rather than the always-on footer. Still
 gated on `inFigma`; behavior unchanged (`applyToFigma(true)` → `rebuildSemantic`). `(x)` headless
 assertions check it now renders inside `.figma-bar` and no longer in `.foot-actions`. Tagged the
 **v1.1.0** release (package.json + root CHANGELOG).
 
-## 1.31 — 2026-06-25 — every survey preset leads with a derived `neutral` palette
+## 1.31: 2026-06-25, every survey preset leads with a derived `neutral` palette
 
 Each of the 336 survey presets now **prepends a `neutral` / environment palette** derived from its
-own character colors — the same rule as the New-Palette modal's Environmental tab (1.30):
-`deriveNeutral` over the 6 character palettes' key colors (status palettes — danger/warning/success —
+own character colors, the same rule as the New-Palette modal's Environmental tab (1.30):
+`deriveNeutral` over the 6 character palettes' key colors (status palettes, danger/warning/success,
 excluded), then `seedFromKeyColor`. Baked into **`scripts/gen-surveys.mjs`** (`deriveNeutralPalette`,
 importing `deriveNeutral` from the engine + `seedFromKeyColor` from the model) so the neutral travels
 with the data, shows in the gallery tiles, and serializes. Preset order is now `neutral,
 primary-base, primary-muted, secondary-base, secondary-muted, accent-base, accent-muted, danger,
 warning, success` (**10/preset**, was 9). The Lake Baikal preset reproduces `color-neutral-derivation.md`'s
 worked example exactly (OKLCH ≈ `[0.66, 0.009, 48°]`). The leading neutral carries no curated
-`colorName`/story (so it doesn't appear in the Story tab — intentional). The seeded `Default` set is
+`colorName`/story (so it doesn't appear in the Story tab, intentional). The seeded `Default` set is
 not a survey and is intentionally left unchanged. `(hh)` headless assertions bumped to 10/neutral-first
 + a low-chroma-neutral check; `(st8)` + the lift probe re-pointed past the leading neutral. No
 engine/contract change (it composes 1.30's `deriveNeutral`).
 
-## 1.30 — 2026-06-25 — "New palette" derivation modal (relative / environmental / custom)
+## 1.30: 2026-06-25, "New palette" derivation modal (relative / environmental / custom)
 
 "+ Palette" now opens a large, **header-draggable** centered top-layer **`<dialog class="newpal">`**
 (`min(860px, 94vw)` × `min(82vh, 760px)`; dragging offsets it from centre via a live
 `transform: translate()`, reset to centre on each open) that **derives** a palette instead of dropping
-a default. A **"Derive from"** strip of **swatch-only chips** (the palette name is the hover title —
-no inline text) toggles which existing palettes feed the derivation (status palettes —
-success/warning/error/danger/critical/info — start **excluded**, since they carry meaning, not
+a default. A **"Derive from"** strip of **swatch-only chips** (the palette name is the hover title,
+no inline text) toggles which existing palettes feed the derivation (status palettes,
+success/warning/error/danger/critical/info, start **excluded**, since they carry meaning, not
 character; included reads full-opacity with an accent ring, excluded reads dimmed); each included
 palette contributes its vivid identity color as an OKLCH sample. Three modes (segmented tabs):
 
-- **Relative** — a color-theory relationship that pivots on the **primary** (the first non-neutral
-  included palette, by priority ORDER — not chroma weighting; a low-chroma primary still anchors):
+- **Relative**: a color-theory relationship that pivots on the **primary** (the first non-neutral
+  included palette, by priority ORDER, not chroma weighting; a low-chroma primary still anchors):
   `extend` (analogous, primary +30°), `contrast` (primary's complement), `anchor` (the primary),
-  `recontextualize` (the primary's muted complement — Albers). `complete` (largest open gap) and
+  `recontextualize` (the primary's muted complement, Albers). `complete` (largest open gap) and
   `bridge` (mediate the two most-separated hues) stay set-based (the whole context's geometry). The
   preview's reference swatch is labeled **Primary** and is stable across relationships (the anchor),
   while the **Dominant** changes. (`deriveRelative` reads `samples[0]`; the UI orders samples
   primary-first via `_orderedContext`, deprioritizing neutral-named / near-grey palettes.)
-- **Environmental** — a neutral/environment tone per `color-neutral-derivation.md`: chroma-weighted
+- **Environmental**: a neutral/environment tone per `color-neutral-derivation.md`: chroma-weighted
   circular-mean hue + `clamp(0.30·meanC, 0.004, 0.018)` chroma.
-- **Custom** — pick Hue + Chroma directly (the classic parametric seed); needs no context.
+- **Custom**: pick Hue + Chroma directly (the classic parametric seed); needs no context.
 
 Relative/Environmental compute a **target OKLCH** (`engine/derive.mjs`, validated by
 `test/engine/derive.mjs`), seed the palette's hue+chroma from it (`seedFromKeyColor`), and retain the
 target as the palette's **dominant key color**; Custom sets hue+chroma straight. The new palette is
 appended + selected.
 
-The body is **two columns**: LEFT = diagrams (a **hue × chroma circle** — every context color and the
+The body is **two columns**: LEFT = diagrams (a **hue × chroma circle**, every context color and the
 proposed one plotted at angle = hue, radius ∝ chroma normalized to the busiest sample, proposed wears
-an accent ring; 0° top, clockwise — plus the reused **chroma-curve** graph); RIGHT = the segment's
-selection/picker, then a **proposed-palette preview** (a Dominant swatch — plus the Supporting context
-color on Relative — and the full generated ramp). The previews are driven by a single
-**`_newPalProposed`** that PROJECTS the would-be palette (a throwaway `projectView`) — the same object
+an accent ring; 0° top, clockwise, plus the reused **chroma-curve** graph); RIGHT = the segment's
+selection/picker, then a **proposed-palette preview** (a Dominant swatch, plus the Supporting context
+color on Relative, and the full generated ramp). The previews are driven by a single
+**`_newPalProposed`** that PROJECTS the would-be palette (a throwaway `projectView`), the same object
 `createNewPalette` commits, so the preview is the source of truth. Custom slider drags refresh the
 diagrams + preview **in place** (no full render → the dragged input survives).
 
@@ -795,21 +795,21 @@ Custom-drag refresh) and real-browser smoke checks (centered top-layer dialog, t
 relationships, swatch-only chips, hue circle + chroma curve + ramp on Relative, the Custom picker +
 live preview, header-draggable).
 
-## 1.29 — 2026-06-25 — Download-All ships `figma-aliased/` (OD-004 cascade test artifact)
+## 1.29: 2026-06-25, Download-All ships `figma-aliased/` (OD-004 cascade test artifact)
 
 The Download-All `.zip` now includes a **`figma-aliased/`** folder alongside the default `figma/`:
 the same Light/Dark/raw tokens but with `com.figma.aliasData` targeting the `Color Primitives`
 collection (the `figmaBundle` shape the plugin posts), plus a `README.txt`. It exists so the
-**plugin-free native-import cascade can be tested by hand** — the open OD-004 question. The default
+**plugin-free native-import cascade can be tested by hand**, the open OD-004 question. The default
 `figma/` stays resolved (ADR-002); the plugin stays the reliable cascade. Step-by-step validation
 procedure: `references/od-004-plugin-free-import-test.md`. `(ee)` zip test updated (15 entries; the
 aliased leaves carry `aliasData`). No engine/contract change.
 
-## 1.28 — 2026-06-25 — opt-in WCAG-safe on-colors (`onColorMode: "contrast"`) — OD-001
+## 1.28: 2026-06-25, opt-in WCAG-safe on-colors (`onColorMode: "contrast"`), OD-001
 
 A new `onColorMode` control adds an opt-in **`"contrast"`** mode (default stays **`"fixed"`**, ADR-003):
 it re-points the accent on-colors to the end with the better WCAG contrast vs the accent fill
-(`550` light / `450` dark), per mode — `on{N}` flips 050↔950, `on{N}Variant` 200↔800. It's a
+(`550` light / `450` dark), per mode, `on{N}` flips 050↔950, `on{N}Variant` 200↔800. It's a
 **resolution-layer** adjustment (`applyOnColorContrast`, applied in `projectView` + `derivePalette`):
 `semanticRoles` and the canonical `roleTable` are unchanged, so the default contract holds and the
 `refs-canonical` gate still passes. Threaded through DEFAULT_CONTROLS / controlsOf / stateOf / persist;
@@ -817,29 +817,29 @@ a Global-inspector toggle. Covered by a semantic unit test (light fill → dark 
 light, fixed unchanged, non-on roles untouched) + an export integration test (the mode flips ≥1
 on-color) + the persist roundtrip. Addresses OD-001 without overriding ADR-003's default.
 
-## 1.27 — 2026-06-24 — plugin: opt-in "Regroup Color Modes" (rebuild in canonical order)
+## 1.27: 2026-06-24, plugin: opt-in "Regroup Color Modes" (rebuild in canonical order)
 
 Figma keeps an existing variable's position on a normal apply (find-or-create), so a file whose
 `Color Modes` collection predates the role-order regroup (1.24) keeps its old order. A new **opt-in
 "Regroup" action** in the Export drawer (Figma only) sends `apply` with `rebuildSemantic:true`;
 `applyBundle` then **deletes the `Color Modes` collection and re-creates it fresh**, so it adopts
 the bundle's canonical order (regular · containers · surfaces · scrims). `Color Primitives` are
-untouched. It's destructive by design — re-created variables get new IDs, so layers bound to them
-detach — hence opt-in + a confirm. The default apply stays idempotent and position-preserving.
+untouched. It's destructive by design, re-created variables get new IDs, so layers bound to them
+detach, hence opt-in + a confirm. The default apply stays idempotent and position-preserving.
 Covered by the plugin verifier (delete + re-create, single collection, canonical order, scrims last)
 and a headless assertion (the UI posts the flag).
 
-## 1.26 — 2026-06-24 — `outlineVariant` → `500-300` (was `500-400`)
+## 1.26: 2026-06-24, `outlineVariant` → `500-300` (was `500-400`)
 
 `outlineVariant` now references the `500-300` scrim (30% alpha) instead of `500-400` (40%) in both
-modes — a subtler variant outline. Role-table ref change only (key/suffix/order unchanged); updated
+modes, a subtler variant outline. Role-table ref change only (key/suffix/order unchanged); updated
 `semantic.js`, the `roleTable` answer key, and the Semantic Binder mirror. (It now shares the `500-300`
-raw stop with `containerHigh` — distinct roles, same primitive, which is fine.)
+raw stop with `containerHigh`, distinct roles, same primitive, which is fine.)
 
-## 1.25 — 2026-06-24 — CSS raw vars drop the `_`: `--c_*` → `--c-*` (all-hyphen namespace)
+## 1.25: 2026-06-24, CSS raw vars drop the `_`: `--c_*` → `--c-*` (all-hyphen namespace)
 
-The raw color primitives in the CSS exports (Hex + OKLCH, both via `cssFrom`) used an underscore —
-`--c_{family}-{stop}` — to flag raw-vs-semantic; semantic roles used `--c-{family}-{role}`. Both now
+The raw color primitives in the CSS exports (Hex + OKLCH, both via `cssFrom`) used an underscore,
+`--c_{family}-{stop}`, to flag raw-vs-semantic; semantic roles used `--c-{family}-{role}`. Both now
 use the **`--c-`** prefix. There is no collision: a raw name's suffix always ends in DIGITS
 (`--c-neutral-550`, `--c-neutral-500-200`) and a semantic name's in a WORD (`--c-neutral-dim`,
 `--c-neutral-surface`) or is the bare prime (`--c-neutral`). Semantic vars now reference raw via
@@ -848,113 +848,113 @@ the chrome aliases reference the semantic `--c-*` layer, unchanged). Updated `ex
 the `hpg-export-css-resolves` / `hpg-export-padding` gates, `knowledge-04`, and ADR (CSS var prefix
 convention, revised).
 
-## 1.24 — 2026-06-24 — role-table order regrouped (scrims last) for a cleaner token list
+## 1.24: 2026-06-24, role-table order regrouped (scrims last) for a cleaner token list
 
-The 37 semantic roles are reordered so the emitted token list — Figma variables in the `Color Modes`
-collection, the `--c-*` CSS custom properties, and every export — groups logically:
+The 37 semantic roles are reordered so the emitted token list, Figma variables in the `Color Modes`
+collection, the `--c-*` CSS custom properties, and every export, groups logically:
 
-1. **regular** — accents (`primary`, `primaryDim/Bright/Low/High`), on-accents, on-surface, outline
-2. **containers** — `container`, `containerLow`, `containerHigh`
-3. **surfaces** — `inverse*`, `background`, `surface`, the dim/bright + low/high surfaces
-4. **scrims** — the 7 strengths, moved from the middle to the **end**
+1. **regular**: accents (`primary`, `primaryDim/Bright/Low/High`), on-accents, on-surface, outline
+2. **containers**: `container`, `containerLow`, `containerHigh`
+3. **surfaces**: `inverse*`, `background`, `surface`, the dim/bright + low/high surfaces
+4. **scrims**: the 7 strengths, moved from the middle to the **end**
 
-Pure reordering: no key/suffix/ref/value changed, so every token resolves to the same color — only the
+Pure reordering: no key/suffix/ref/value changed, so every token resolves to the same color, only the
 sequence (and thus the Figma variable + CSS declaration order) changed. Updated `semantic.js`
 (`semanticRoles`), the `roleTable` answer key in `data/role-table.json` (kept in lock-step; the
 `refs-canonical` gate checks the ordered key set), and the standalone Semantic Binder's hardcoded
 mirror (`figma-semantic-binder/code.js`; `bind-plan.mjs` imports `semanticRoles`, so it followed
 automatically). Regenerated `figma-plugin-assets.js` + `figma/plugin/ui.html`.
 
-## 1.23 — 2026-06-23 — Figma collections renamed `Color Primitives` / `Color Modes`
+## 1.23: 2026-06-23, Figma collections renamed `Color Primitives` / `Color Modes`
 
 The two generated Figma variable collections are renamed for clarity:
 
-- **`Color Primitives`** (was `raw-colors`) — the raw color primitives (single `Value` mode).
-- **`Color Modes`** (was `semantic-colors`) — the semantic Light/Dark tokens, aliased to the primitives.
+- **`Color Primitives`** (was `raw-colors`), the raw color primitives (single `Value` mode).
+- **`Color Modes`** (was `semantic-colors`), the semantic Light/Dark tokens, aliased to the primitives.
 
 Updated: `figma/plugin/code.js` + `figma/binder/figma-semantic-binder/code.js` (the `RAW_COLLECTION` /
 `SEMANTIC_COLLECTION` constants), `src/ui/model.mjs` (`figmaBundle`'s `rawColl`, which sets each
 semantic leaf's `aliasData.targetVariableSetName`, so it still matches the primitives collection),
 `test/figma/plugin.mjs` + `test/engine/exports.mjs` (the collection-name / `targetVariableSetName`
 assertions), `knowledge-05` / `SKILL`, and the README; regenerated `figma-plugin-assets.js` +
-`figma/plugin/ui.html`. No role / ref / token / variable-name change — only the collection labels.
+`figma/plugin/ui.html`. No role / ref / token / variable-name change, only the collection labels.
 
 > Migration note: re-applying on a file that already has the old `raw-colors` / `semantic-colors`
 > collections from a prior run creates the new `Color Primitives` / `Color Modes` collections and
-> leaves the old ones orphaned (the prune only manages the collections the plugin creates) — delete
+> leaves the old ones orphaned (the prune only manages the collections the plugin creates), delete
 > the old collections by hand.
 
-## 1.22 — 2026-06-18 — default back to "even" (vibrant) + a chroma floor that kills the dead zone
+## 1.22: 2026-06-18, default back to "even" (vibrant) + a chroma floor that kills the dead zone
 
 Reverses 1.18's default flip: **`toneMode` default is `even` again**, restoring the original per-hue
 vibrancy (perceptual *harmonizes* saturation across hue, which read as muted). Perceptual/peak stay as
-opt-in modes. To keep even mode's one weakness — the near-white "dead zone" at the light end of LOW-chroma
-ramps (the #22 case that started this) — fixed without re-muting, this adds a new **`chromaFloor`** control
+opt-in modes. To keep even mode's one weakness, the near-white "dead zone" at the light end of LOW-chroma
+ramps (the #22 case that started this), fixed without re-muting, this adds a new **`chromaFloor`** control
 (% of each stop's gamut, default **40**):
 
 - It lifts the damping-starved light/dark ends back toward the palette's INTENDED chroma, so a muted ramp
   shows tints instead of collapsing to white.
 - Capped at `intended`, so it NEVER over-saturates a muted palette or tints a neutral, and it never binds on
-  saturated palettes (they already clamp to the gamut) — their vibrancy is untouched.
+  saturated palettes (they already clamp to the gamut), their vibrancy is untouched.
 
-So the default is now vibrant AND dead-zone-free — the best-of-both you asked for. Engine
+So the default is now vibrant AND dead-zone-free, the best-of-both you asked for. Engine
 (`tonal.js` even-path), threaded through `model.mjs`/`persist.js`, UI slider in Global → "Chroma floor"
 (even-mode only). Default palettes / presets / theme re-render back to even (presets' lift-anchoring +
 Vivid-mids damping are active again). New tonal `chroma-floor` gate (lifts muted ends, no over-saturation,
 neutral + saturated untouched); CIELAB gates pinned to `chromaFloor:0`. `npm test` 10/10.
 
 Note: an extreme light palette (very high `lift` + near-zero chroma, e.g. a fog-cream preset) can still
-have a couple of pure-white stops at L*100 — no chroma fits there. That's a lift/lightness limit, not the floor.
+have a couple of pure-white stops at L*100, no chroma fits there. That's a lift/lightness limit, not the floor.
 
-## 1.21 — 2026-06-18 — gallery tiles show each palette's VIVID identity color (fix muted tiles)
+## 1.21: 2026-06-18, gallery tiles show each palette's VIVID identity color (fix muted tiles)
 
 The gallery preview swatches read muted under the perceptual default: a ramp stop (550 or the cusp-scanning
 `keyStop`) is gamut-proportional + mid-damped, so it lost the palettes' original vibrancy. `projectView` now
-exposes a per-palette **`key`** — the cusp (peak-chroma) hue rendered at the palette's INTENDED chroma,
+exposes a per-palette **`key`**, the cusp (peak-chroma) hue rendered at the palette's INTENDED chroma,
 computed straight from hue+chroma (not scanned from the ramp) so it stays vivid in any `toneMode`.
 `buildTiles`/`buildPresetTiles` use `p.key`; the `keyStop` helper is removed. Saturated palettes regain
 their punch (Warning `#A06504`→`#FDA200`, Secondary →`#00FBB0`, Success →`#9CF193`); genuinely muted ones
-(Info/Neutral) stay soft — each tile shows the palette's true character. `src/ui/model.mjs` + `app.js`.
+(Info/Neutral) stay soft, each tile shows the palette's true character. `src/ui/model.mjs` + `app.js`.
 
-## 1.20 — 2026-06-18 — hide the per-palette Skew + Lift outside "even" mode
+## 1.20: 2026-06-18, hide the per-palette Skew + Lift outside "even" mode
 
 Completes 1.19's "hide N/A controls": `skew` and `lift` shape the CIELAB tone curve (`toneAt`) and have
 NO effect in the OKHSL distribution modes (`perceptual`/`peak` step lightness directly), so the Palette
-inspector now hides both sliders when `toneMode !== "even"` — matching the Global Curve/Tension/Chroma-basis
-hiding — instead of showing them as inert. The inspector subtitle drops "skew · lift" accordingly.
-`hueShift` (edge rotation) and `hueSameDir` stay visible — `okhslStops` does use them. `src/ui/app.js`;
+inspector now hides both sliders when `toneMode !== "even"`, matching the Global Curve/Tension/Chroma-basis
+hiding, instead of showing them as inert. The inspector subtitle drops "skew · lift" accordingly.
+`hueShift` (edge rotation) and `hueSameDir` stay visible, `okhslStops` does use them. `src/ui/app.js`;
 headless-boot `(gc)` extended to cover the Skew/Lift visibility.
 
-## 1.19 — 2026-06-18 — distribution-mode UX: hide N/A controls · Vivid-mids presets · key-color tiles
+## 1.19: 2026-06-18, distribution-mode UX: hide N/A controls · Vivid-mids presets · key-color tiles
 
 Follow-ups to the distribution modes (1.18):
 
 - **Hide irrelevant controls.** The CIELAB-only Global controls (**Curve**, **Tension**, **Chroma basis**)
-  are now HIDDEN entirely in the perceptual/peak modes instead of shown disabled — they only apply to
+  are now HIDDEN entirely in the perceptual/peak modes instead of shown disabled, they only apply to
   `even`. (lmin/lmax, Damp + differential curve, and Hue space stay; they affect all modes.)
 - **Presets default to "Vivid mids" damping.** `gen-travel-presets` now applies the `Vivid mids` damping
   (`damp 70 · dampAmp 55`) to the 48 presets, boosting mid-tone chroma toward the gamut for more vibrant
   out-of-box presets (mirrors the DAMP_PRESETS entry).
 - **Gallery tiles show each palette's KEY color.** A `keyStop(ramp)` helper picks a ramp's most-chromatic
-  stop (the cusp) — falling back to the mid stop only for near-neutral ramps — and `buildTiles`/`buildPresetTiles`
+  stop (the cusp), falling back to the mid stop only for near-neutral ramps, and `buildTiles`/`buildPresetTiles`
   use it for the preview swatches. Under the perceptual default `550` is mid-lightness for every palette, so
   a strip of 550s read as near-identical mid-tones; the cusp surfaces each palette's distinct, vivid color.
 
 UI/preset-generation only. headless-boot `(g)` runs in `even` (the Tension control it drags is even-only),
 new `(gc)` asserts the controls are hidden (not disabled) in OKHSL modes; `(hh)` checks the Vivid-mids damping.
 
-## 1.18 — 2026-06-18 — ramp distribution modes (even / perceptual / peak); default → perceptual
+## 1.18: 2026-06-18, ramp distribution modes (even / perceptual / peak); default → perceptual
 
 A new global control **`toneMode`** picks how stops map to lightness, fixing the near-white "dead zone"
 that low-chroma/light-cusp ramps showed at the light end:
 
-- **even** — the classic CIELAB-L\* curve (`toneAt`). Per-stop tone is the same L\* for every hue; the
+- **even**: the classic CIELAB-L\* curve (`toneAt`). Per-stop tone is the same L\* for every hue; the
   Curve/Tension/skew/lift/relChroma controls and the L\*-fidelity guarantees apply here. (Old default.)
-- **perceptual** *(new default)* — even steps in OKHSL's perceptually-uniform lightness + gamut-proportional
-  chroma, via the OKHSL module (now wired in). Every stop is distinct (no dead zone) AND — because the
-  lightness step is the same for all hues — stop-N stays tone-aligned across palettes, so the semantic
+- **perceptual** *(new default)*, even steps in OKHSL's perceptually-uniform lightness + gamut-proportional
+  chroma, via the OKHSL module (now wired in). Every stop is distinct (no dead zone) AND, because the
+  lightness step is the same for all hues, stop-N stays tone-aligned across palettes, so the semantic
   layer is unaffected.
-- **peak** — like perceptual but the hue's CUSP (peak chroma) is anchored at stop 500, each half spread
+- **peak**: like perceptual but the hue's CUSP (peak chroma) is anchored at stop 500, each half spread
   from there (Tailwind-style "the color is 500"). Vivid/centered; this is the only mode that trades away
   cross-palette tone alignment, by design.
 
@@ -970,21 +970,21 @@ Tests: `tonal.mjs` CIELAB gates pinned to `even`, new `okhsl-modes` gate (in-gam
 white/black ends, display/export stop-consistency, peak-centered); persist roundtrip + headless-boot `(hh)`
 updated.
 
-## 1.17 — 2026-06-18 — remove the duplicate Contrast panel from the right-pane Inspector
+## 1.17: 2026-06-18, remove the duplicate Contrast panel from the right-pane Inspector
 
 The Inspector's "Contrast (prime fill 550)" panel duplicated the left-pane analysis card
-("Contrast — on-colors vs fills"), which already shows the same on-color/white/black ratios (as bars).
+("Contrast, on-colors vs fills"), which already shows the same on-color/white/black ratios (as bars).
 Removed it from `renderPaletteInspector`: dropped the panel, its now-unused `renderContrast` method +
 `cr` lookup, and the dead `.contrast-box` CSS. The left-pane card is the single home for contrast.
 `src/ui/app.js` + `styles.css`; headless-boot `(rp)` guards against the panel returning.
 
-## 1.16 — 2026-06-18 — OKHSL ⇄ sRGB engine module (Option B foundation; not yet wired)
+## 1.16: 2026-06-18, OKHSL ⇄ sRGB engine module (Option B foundation; not yet wired)
 
-Adds **`src/engine/okhsl.js`** — Björn Ottosson's OKHSL ⇄ sRGB (perceptual HSL over OKLab), ported
+Adds **`src/engine/okhsl.js`**, Björn Ottosson's OKHSL ⇄ sRGB (perceptual HSL over OKLab), ported
 VERBATIM from the canonical reference (`bottosson.github.io/.../colorconversion.js`). `okhslToRgb(hueDeg,
 s, l)` and `rgbToOkhsl([r,g,b])`, pure/deterministic. OKHSL is gamut-bijective: at a given (hue, lightness)
 `s=1` lands exactly on the sRGB boundary and a fixed (s,l) reads as the same perceived colorfulness across
-hue — the principled version of the relChroma "gamut" basis.
+hue, the principled version of the relChroma "gamut" basis.
 
 Verified during the port against the reference: forward output matched **0/255 channel error over 1008
 samples**, round-trip rgb→okhsl→rgb is exact, sRGB red sits at the canonical `h≈29.23° s≈1 l≈0.568`. New
@@ -993,10 +993,10 @@ monotone saturation, neutrals/extremes, and the red anchor.
 
 **Finding (informs whether to wire it):** re-saturating the default palettes through OKHSL produces output
 **very close to the cheap relChroma "gamut" mode** (e.g. Primary 500: OKHSL `#1364CE` vs relChroma
-`#1962CD`). The module is NOT yet integrated into the generation pipeline — that's the next decision, now
+`#1962CD`). The module is NOT yet integrated into the generation pipeline, that's the next decision, now
 that we can see the two approaches land in nearly the same place.
 
-## 1.15 — 2026-06-18 — Download-All export named nonoun-color-tokens-{project}
+## 1.15: 2026-06-18, Download-All export named nonoun-color-tokens-{project}
 
 The "Download All" archive and its inner re-importable config still carried the old `hct-` slug.
 `downloadAllZip` now names the archive **`nonoun-color-tokens-{slug}.zip`** (was `hct-{slug}-export.zip`)
@@ -1005,27 +1005,27 @@ package / repo / build-artifact identity. `{slug}` is the existing `slug(doc.nam
 Import reads file content, not the name, so re-import is unaffected. `src/ui/app.js`; headless-boot `(ee)`
 assertions updated.
 
-## 1.14 — 2026-06-18 — a new palette ("+ Palette") starts from clean shaping defaults
+## 1.14: 2026-06-18, a new palette ("+ Palette") starts from clean shaping defaults
 
-`addPalette` seeded each new palette with `skew: -20` — a non-default shaping tweak that quietly carried
+`addPalette` seeded each new palette with `skew: -20`, a non-default shaping tweak that quietly carried
 into every palette you added. A new palette now resets ALL shaping config to neutral (`skew: 0`, `lift: 0`,
 `hueShift: 0`, `hueSameDir: false`); only the `hue: 200 / chroma: 60` seed defines it. New *sets* already
 reset everything (`createSet` → `defaultDocument` → `DEFAULT_CONTROLS`); global controls stay doc-level and
 shared across a set's palettes (resetting them would alter the existing palettes), so they're untouched.
 `src/ui/app.js`; headless-boot `(add)` now asserts the new palette's neutral defaults.
 
-## 1.13 — 2026-06-18 — relative-chroma mode: harmonize palette saturation across hue (Option A)
+## 1.13: 2026-06-18, relative-chroma mode: harmonize palette saturation across hue (Option A)
 
 A new global control **`relChroma`** (UI: Global → "Chroma basis" · peak ⇄ gamut; default **off**, so
-the existing output is byte-identical — guarded by the tonal `rel-chroma` gate (c)). It changes what
+the existing output is byte-identical, guarded by the tonal `rel-chroma` gate (c)). It changes what
 the per-palette chroma slider means:
 
-- **peak** (default): chroma is `% of each hue's PEAK` chroma — per-hue, but a hue's ABSOLUTE chroma
+- **peak** (default): chroma is `% of each hue's PEAK` chroma, per-hue, but a hue's ABSOLUTE chroma
   still depends on its gamut, so different hues come out unequally saturated.
 - **gamut** (`relChroma`): chroma is `% of EACH STOP's own gamut ceiling`, so every hue fills the same
   fraction of its gamut envelope → palettes read as equally saturated **regardless of hue** (a high-gamut
   blue is reined in to match a lower-gamut hue). A cheap stand-in for OKHSL-style perceptual-saturation
-  normalization — one branch in `paletteStops`, no new color-space math.
+  normalization, one branch in `paletteStops`, no new color-space math.
 
 Pipeline: `DEFAULT_CONTROLS.relChroma` (tonal.js) → `controlsOf`/`stateOf`/`defaultDocument` (model.mjs)
 → `paletteStops` chroma branch → persisted (`persist.js` hydrate, boolean) → UI toggle. Engine-only
@@ -1033,14 +1033,14 @@ behavior; exports/roles/stops unchanged. New tonal `rel-chroma` gate proves in-g
 harmonization invariant (`chroma/maxc` equal across hues at each stop), off==default, and not-a-no-op;
 persist roundtrip covers the new field.
 
-## 1.12 — 2026-06-18 — rename the held-back STORAGE_KEY + `<hct-app>` element (follow-up to 1.11)
+## 1.12: 2026-06-18, rename the held-back STORAGE_KEY + `<hct-app>` element (follow-up to 1.11)
 
 Per follow-up, two of 1.11's held-back identifiers are now renamed:
 
 - **`STORAGE_KEY`** `"hct-palette-state-v1"` → `"nonoun-color-tokens"` (so the live keys become
   `nonoun-color-tokens-sets` / `nonoun-color-tokens-project`). A one-time `migrateStorageKeys()` runs at
-  boot, copying any sets/config saved under the OLD keys into the new ones — idempotent, and tolerant of
-  a throwing localStorage — so a returning user keeps their saved palettes.
+  boot, copying any sets/config saved under the OLD keys into the new ones, idempotent, and tolerant of
+  a throwing localStorage, so a returning user keeps their saved palettes.
 - **Custom element** `<hct-app>` → `<nonoun-color-tokens>` across the `customElements.define`, the
   markup (`main.ts`, `index.html`, the single-file build), the CSS selectors, the Figma UI bridge's
   `querySelector`, both tests, and the README. The internal theme-`<style>` id `hct-app-theme` →
@@ -1050,7 +1050,7 @@ Left as-is (still HCT, by design): the spec-cell id `spec.system.hct-palette-gen
 `hct-semantic-binder` sub-plugin, the engine symbols (`hctToRgb`…), and the internal `HctApp` class name
 ("HCT" = the color model). No engine/token/role/export behavior change.
 
-## 1.11 — 2026-06-18 — rename product identifiers + git repo → nonoun-color-tokens
+## 1.11: 2026-06-18, rename product identifiers + git repo → nonoun-color-tokens
 
 Aligns the build/package/repo identifiers with the product name and the renamed folder:
 
@@ -1064,46 +1064,46 @@ Aligns the build/package/repo identifiers with the product name and the renamed 
 - **GitHub repo** renamed `hct-palette-generator` → `nonoun-color-tokens` (GitHub keeps a redirect from
   the old URL; the local remote was updated).
 
-**Deliberately NOT renamed** (each has a real reason — flagged for a follow-up call):
-- `STORAGE_KEY = "hct-palette-state-v1"` (+ its `-sets` / `-project` derivatives) — renaming orphans
+**Deliberately NOT renamed** (each has a real reason, flagged for a follow-up call):
+- `STORAGE_KEY = "hct-palette-state-v1"` (+ its `-sets` / `-project` derivatives), renaming orphans
   every saved palette in users' localStorage. Keep, or rename WITH a one-time migration. *(Subsequently
   renamed with a migration in 1.12.)*
-- The spec-cell id `spec.system.hct-palette-generator-spec` (SKILL `name:`, decomposition, the TDD doc)
-  — the engine/methodology identity; "HCT" is the color model the engine is built on.
-- The Figma binder sub-plugin (`hct-semantic-binder` / "HCT Semantic Binder") — a separate tool.
-- The HCT engine symbols (`hctToRgb`, …) and the `<hct-app>` custom element — "HCT" names the color
+- The spec-cell id `spec.system.hct-palette-generator-spec` (SKILL `name:`, decomposition, the TDD doc),
+  the engine/methodology identity; "HCT" is the color model the engine is built on.
+- The Figma binder sub-plugin (`hct-semantic-binder` / "HCT Semantic Binder"), a separate tool.
+- The HCT engine symbols (`hctToRgb`, …) and the `<hct-app>` custom element, "HCT" names the color
   space. *(The `<hct-app>` element was subsequently renamed in 1.12; the engine symbols stay.)*
 
 No engine/token/role/export behavior change.
 
-## 1.10 — 2026-06-18 — gallery: "Your Palettes" updated-time becomes a preview tag
+## 1.10: 2026-06-18, gallery: "Your Palettes" updated-time becomes a preview tag
 
 The relative updated-time (`ago(rec.updated)`) on your own gallery tiles moves out of the meta row
-into the preview overlay — the same bottom-right slot a preset tile uses for its `preset` badge
+into the preview overlay, the same bottom-right slot a preset tile uses for its `preset` badge
 (reusing `.tile-tag.tile-preset`). Count stays bottom-left, delete stays top-right (no collision),
 and the meta row keeps just the name, matching the preset tiles' layout. Renders uppercase
-(`2H AGO`) like the other tile tags. UI-only — `src/ui/app.js` (`buildTiles`).
+(`2H AGO`) like the other tile tags. UI-only, `src/ui/app.js` (`buildTiles`).
 
-## 1.9 — 2026-06-18 — branding: "Color Tokens by NONOUN" + NONOUN favicon / logo mark
+## 1.9: 2026-06-18, branding: "Color Tokens by NONOUN" + NONOUN favicon / logo mark
 
 The running app is now branded **Color Tokens by NONOUN** (the codebase / spec keep the internal
-"HCT Palette Generator" name — this is product-surface branding only):
+"HCT Palette Generator" name, this is product-surface branding only):
 
 - **Title** set on `index.html`, `src/ui/index.html`, and the single-file `bundle.mjs` build.
 - **Favicon** from `public/favicon/` wired: `index.html` gets the full `<link>` set (svg / png / ico /
   apple-touch / manifest); the offline bundle inlines `favicon.svg` as a base64 data URI (self-
   contained, no request); `site.webmanifest` fixed (placeholder name → the product name, and the
   broken `/favicon.ico/…` icon paths → `/favicon/…`).
-- **Brand mark** — the old accent `◆` is replaced by the NONOUN "N" logo via a new `brandMark()` in
+- **Brand mark**: the old accent `◆` is replaced by the NONOUN "N" logo via a new `brandMark()` in
   `icons.js` (a 512-viewBox currentColor glyph; the favicon's `:root` invert `<style>` is intentionally
   dropped for the inline mark so it can't invert the page). Gallery header reads "◇ Color Tokens by
   NONOUN"; the compact editor header reads "◇ Color Tokens".
 - **Figma plugin** `manifest.json` name → "Color Tokens by NONOUN" (the plugin test asserts shape, not
   name, so this is safe).
 
-UI/branding only — no token/role/export/persistence change. `(ff)` still passes (keys off `.brand-link`).
+UI/branding only, no token/role/export/persistence change. `(ff)` still passes (keys off `.brand-link`).
 
-## 1.8 — 2026-06-18 — editor: retune the backdrop / container stops (125 bg · 75 container)
+## 1.8: 2026-06-18, editor: retune the backdrop / container stops (125 bg · 75 container)
 
 Adjusts the two canvas tints introduced in 1.7 (`app.js`, UI-only):
 
@@ -1113,18 +1113,18 @@ Adjusts the two canvas tints introduced in 1.7 (`app.js`, UI-only):
   (was 150/850).
 
 Both are now read from **`fullRamp`** (the 25-stop EXPORT set), since 75/125/875/925 are EXPORT-only
-half-steps absent from the 19-stop display `ramp` — so the tints resolve regardless of the Core/All
+half-steps absent from the 19-stop display `ramp`, so the tints resolve regardless of the Core/All
 stops mode. The dark mirrors (875, 925) keep the row's `var(--ink)` name text readable on the tint.
 Note the figure-ground vs 1.7: the container (75) is now LIGHTER than the backdrop (125) in light
 preview (cards lift as lighter panels), mirrored in dark. headless-boot `(j)` updated to the new
 stops + `fullRamp` lookups.
 
-## 1.7 — 2026-06-18 — editor: palette-container tint (150/850) + click-empty-canvas to deselect
+## 1.7: 2026-06-18, editor: palette-container tint (150/850) + click-empty-canvas to deselect
 
-Two canvas-navigator tweaks (`app.js`, UI-only — no token/export/persistence change):
+Two canvas-navigator tweaks (`app.js`, UI-only, no token/export/persistence change):
 
 - **Container tint.** Each palette ROW (`.ramp-row`, both the Palettes and Scrims scenes) is now
-  washed with that palette's OWN near-edge tone via `containerBg(vp)` — its **150** stop in light
+  washed with that palette's OWN near-edge tone via `containerBg(vp)`, its **150** stop in light
   canvas preview, **850** in dark (symmetric, mirroring `canvasBg`'s 100/900). Tracking `canvasTheme`
   matters: the row name is `var(--ink)`, which resolves per the canvas-area's `color-scheme`, so a
   fixed light 150 in dark preview would put light text on a light card. Returns `""` if the stop is
@@ -1137,12 +1137,12 @@ Two canvas-navigator tweaks (`app.js`, UI-only — no token/export/persistence c
 headless-boot `(j)` extended: `(j6/j6b)` empty-canvas click → `kind:none` + neutral backdrop, `(j7)`
 re-select restores the near-edge, `(j8/j8b)` the row tint = the palette's 150 (light) / 850 (dark) stop.
 
-## 1.6 — 2026-06-18 — UI icons → a central SVG registry (Phosphor, inlined offline)
+## 1.6: 2026-06-18, UI icons → a central SVG registry (Phosphor, inlined offline)
 
 Replaced the ad-hoc emoji/Unicode glyph "icons" (↶ ↷ ⇪ ⊹ ▌ ▐ ◐ 🗑 ↺ ↻ ⇄ ⧉ ⚙ ◳ ⬇ ⬆ ⚑ ✕
 + the ●/○ enable dots, the ✓/⚠ contrast marks, the ✓/✗ in-gamut + save-status marks) with a
 single registry: **`src/ui/icons.js`** holds Phosphor Icons (MIT, regular weight) path data
-**inlined** — NOT a runtime CDN, because the Figma plugin ships `ui.html` as a self-contained
+**inlined**, NOT a runtime CDN, because the Figma plugin ships `ui.html` as a self-contained
 offline bundle (a CDN would silently fail there). `icon(name, { size, cls })` returns a
 `<span class="ic">` wrapping an inline `<svg fill="currentColor">`, so every icon inherits the
 surrounding text color and aligns on the baseline; the right-pane sidebar toggle reuses the same
@@ -1151,30 +1151,30 @@ glyph mirrored via `.ic.flip-x`.
 Wiring: `icons.js` registered in `scripts/bundle.mjs` (MODS+KEY) so the offline/Figma builds
 include it; app.js imports `{ icon }`. The ◆ brand wordmark and purely typographic glyphs
 (`·` separators, `…`, the `×` in "L\*×C", the `−`/`°` in numeric labels, the `→` in labels) stay
-as text. UI-only — no token/role/export/persistence change. `src/ui/app.js` + `styles.css`
+as text. UI-only, no token/role/export/persistence change. `src/ui/app.js` + `styles.css`
 (`.ic`); headless-boot `(ic)` asserts the toggles/header/canvas controls render registry SVGs.
 
-## 1.5 — 2026-06-18 — gallery: palette-count + "preset" become overlay tags on the preview
+## 1.5: 2026-06-18, gallery: palette-count + "preset" become overlay tags on the preview
 
 The gallery tile's palette count (`N palettes`) and the presets shelf's `preset` badge now ride
 the preview strip as **tags** (overlaid pills) instead of sitting in the meta row below. The count
-gets the same pill treatment as the preset badge — a shared `.tile-tag` (translucent dark scrim +
+gets the same pill treatment as the preset badge, a shared `.tile-tag` (translucent dark scrim +
 white text, `pointer-events:none` so the tile button still takes the click), both **bottom-justified**:
 count bottom-left, `preset` bottom-right. The delete button (your own sets) moves out of the meta row
-to **overlay the preview top-right** as a scrim circle (interactive — keeps its click + stopPropagation;
-turns `--danger` on hover). The meta row keeps the name (+ timestamp). UI-only — no data/export change;
+to **overlay the preview top-right** as a scrim circle (interactive, keeps its click + stopPropagation;
+turns `--danger` on hover). The meta row keeps the name (+ timestamp). UI-only, no data/export change;
 the `.set-tile.preset` class is unchanged so the `(hh)` preset tests still key off it.
 `src/ui/app.js` (`buildTiles`/`buildPresetTiles`) + `styles.css` (`.tile-tag`, `.set-thumb .del`).
 
-## 1.4 — 2026-06-18 — canvas backdrop uses the 100 / 900 near-edge stop (was 050 / 950)
+## 1.4: 2026-06-18, canvas backdrop uses the 100 / 900 near-edge stop (was 050 / 950)
 
 The editor canvas preview backdrop (`app.js#canvasBg`) now samples the selected palette's **100**
 stop in light preview and **900** in dark, one step in from the 050/950 extremes. At `lmax=100`
 the 050 stop is pure white (and 950 near-black at `lmin=0`), washing the backdrop neutral; the 100/
-900 stop always carries a touch of the palette's hue/tint. UI-only preview — no token/export change.
+900 stop always carries a touch of the palette's hue/tint. UI-only preview, no token/export change.
 `src/ui/app.js`; headless-boot `(j)` updated (now also asserts the lmax=100 backdrop is not pure white).
 
-## 1.3 — 2026-06-18 — editor: collapsible side panes (left analysis / right inspector)
+## 1.3: 2026-06-18, editor: collapsible side panes (left analysis / right inspector)
 
 The editor's two side panes can now be collapsed to reclaim canvas width. A `pane-toggle` per
 side (`▌` left, `▐` right) and the `[` / `]` keyboard shortcuts flip ephemeral `panesLeft` /
@@ -1192,26 +1192,26 @@ A collapsed pane now clips to a TRUE 0 width: the panes are grid items, whose de
 width, so they overflowed the 0 track and bled into the canvas. Fixed with `min-width: 0` on the
 panes + a collapse-state `padding/border` reset (border-box can't compress those into a 0 width).
 
-UI-only — no State field, no persistence, no token/role/collection change. `src/ui/app.js` +
+UI-only, no State field, no persistence, no token/role/collection change. `src/ui/app.js` +
 `styles.css` (`.pane-toggle`, `.pane-head`, the collapse clip); headless-boot `(ii)` covers the
 toggles, their header↔canvas-header placement per state, the keys, and the type-target guard.
 
-## 1.2 — 2026-06-18 — scrim STRENGTH ladder → sequential 5–60% (was full-range 5–95%)
+## 1.2: 2026-06-18, scrim STRENGTH ladder → sequential 5–60% (was full-range 5–95%)
 
 The 7 scrim-strength roles now map weakest→strongest to `50/100/200/300/400/500/600`
 (**5/10/20/30/40/50/60%**), a sequential ladder, replacing the 1.0 full-range `50/100/200/400/600/800/950`
 (5–95%). 4 refs changed: `scrim 400→300`, `scrimStrong 600→400`, `scrimStronger 800→500`,
 `scrimStrongest 950→600`; `scrimWeakest/Weaker/Weak` stay `50/100/200`.
 
-The **emitted** `SCRIM_STEPS` (11 steps) is UNCHANGED — `500-700/800/900/950` are still exported as raw
+The **emitted** `SCRIM_STEPS` (11 steps) is UNCHANGED, `500-700/800/900/950` are still exported as raw
 primitives but now bind to no strength role. `outline` (`500-600`) now coincides with `scrimStrongest`
-(`500-600`) — allowed (as it did pre-1.0 at `500-550`); nudge if undesired.
+(`500-600`), allowed (as it did pre-1.0 at `500-550`); nudge if undesired.
 
 Lockstep: `src/engine/semantic.js` (`SCRIM_STRENGTH_STEPS`), `data/role-table.json` (the 4 refs),
-`figma/binder/figma-semantic-binder/code.js` (hardcoded copy — caught by the binder `parity` guard),
+`figma/binder/figma-semantic-binder/code.js` (hardcoded copy, caught by the binder `parity` guard),
 `knowledge-03`; regenerated `figma-plugin-assets.js` + `ui.html`. No emitted-token or collection change.
 
-## 1.1 — 2026-06-18 — semantic variable collection renamed `Semantic` → `semantic-colors`
+## 1.1: 2026-06-18, semantic variable collection renamed `Semantic` → `semantic-colors`
 
 Both Figma plugin runtimes now create the semantic variables in a collection named
 **`semantic-colors`** (was `Semantic`), matching the `raw-colors` collection naming. Updated:
@@ -1221,34 +1221,34 @@ Both Figma plugin runtimes now create the semantic variables in a collection nam
 
 > Migration note: re-applying on a file that already has a `Semantic` collection from a prior run
 > creates a NEW `semantic-colors` collection and leaves the old one orphaned (the prune only manages
-> the collection the plugin creates) — delete the old `Semantic` collection by hand.
+> the collection the plugin creates), delete the old `Semantic` collection by hand.
 
-## 1.0 — 2026-06-18 — scrim ramp → 11 even steps (5–95%); strengths span the full range (CONTRACT change)
+## 1.0: 2026-06-18, scrim ramp → 11 even steps (5–95%); strengths span the full range (CONTRACT change)
 
 The scrim translucency ramp changed from 7 clustered steps (`100/175/250/300/400/450/550` = 10/17.5/25/30/40/45/55%)
 to a clean **11-step even ramp**: `SCRIM_STEPS = [50,100,200,300,400,500,600,700,800,900,950]` = the 500 color at
 **5/10/20/30/40/50/60/70/80/90/95%**. This DECOUPLES two things the code conflated:
 
-- **Emitted raw scrim primitives** (`exports.js` `SCRIM_STEPS`, `role-table.json` constants) — now all **11** steps.
-- **The 7 semantic scrim STRENGTH roles** (`semantic.js` `SCRIM_STRENGTH_STEPS`) — bind to a 7-step **subset**
+- **Emitted raw scrim primitives** (`exports.js` `SCRIM_STEPS`, `role-table.json` constants), now all **11** steps.
+- **The 7 semantic scrim STRENGTH roles** (`semantic.js` `SCRIM_STRENGTH_STEPS`), bind to a 7-step **subset**
   spanning the full range: weakest→strongest = `50/100/200/400/600/800/950` (5→95%). Steps `500/700/900` are
   emitted as raw primitives but carry no strength role.
 
-Role remaps (visible tokens): the 4 disappearing steps (175/250/450/550) forced remapping the 12 scrim-using roles —
+Role remaps (visible tokens): the 4 disappearing steps (175/250/450/550) forced remapping the 12 scrim-using roles,
 `outline 550→600`, `container 175→200`, `containerHigh 250→300`, and the strengths as above; `outlineVariant 400`,
 `containerLow 100`, `scrim 400`… resolved to valid emitted steps. (`outlineVariant`/`containerLow` unchanged.)
 
 Folded in lockstep: `data/role-table.json` (constants `SCRIM_STEPS` + the 10 changed role refs), `src/engine/exports.js`
 (emitted set + the constants are now exported), `src/engine/semantic.js` (the strength loop now uses
 `SCRIM_STRENGTH_STEPS`; outline/container literals), `src/ui/model.mjs` (`tokenCount` now derives the scrim count from
-the engine constants — the stale `3 * 7` is gone), and the prose (`knowledge-03/04`, `glossary`, the `hpg-export-padding`
+the engine constants, the stale `3 * 7` is gone), and the prose (`knowledge-03/04`, `glossary`, the `hpg-export-padding`
 contract example). The verifiers read `SCRIM_STEPS` from `role-table.json`, so the contract change propagates.
 
-Gate: `npm test` green (9 verifiers + headless boot). No criterion text changed — `hpg-semantic-roles` (still exactly 7
+Gate: `npm test` green (9 verifiers + headless boot). No criterion text changed, `hpg-semantic-roles` (still exactly 7
 strengths), `hpg-semantic-refs-canonical` (every ref still resolves; all role steps ∈ EXPORT_STOPS), and
 `hpg-export-padding` still hold.
 
-## 0.9 — 2026-06-17 — OD-004 spike: the aliased-export SHAPE is gated (no behavior change)
+## 0.9: 2026-06-17, OD-004 spike: the aliased-export SHAPE is gated (no behavior change)
 
 The `rawColl` opt-in already emitted the full documented name+collection alias shape
 (`com.figma.aliasData` = `{ targetVariableName: "{n}/{refKey}", targetVariableSetName: rawColl }`),
@@ -1258,7 +1258,7 @@ documented `aliasData` fallback hierarchy resolves on native import (when the ra
 pre-exists) can no longer silently regress.
 
 Folded in lockstep: `hpg-export-resolved` (SKILL contract) + `AC-X6` (rubric) +
-`test/engine/exports.mjs` (verifier). **No engine/output change** — the tool already emitted this
+`test/engine/exports.mjs` (verifier). **No engine/output change**, the tool already emitted this
 shape; this revision is verification + honest status only.
 
 **OD-004** advanced OPEN→**spike implemented** (the shape is gated). Still OPEN, NOT decided: the
@@ -1269,15 +1269,15 @@ plugin-free download.
 
 Gate: `npm test` green (9 verifiers + headless boot).
 
-## 0.8 — 2026-06-17 — scrims become a single 500-based translucency ramp (CONTRACT change)
+## 0.8: 2026-06-17, scrims become a single 500-based translucency ramp (CONTRACT change)
 
 The scrim model changed from "base-{index}" over three bases (250/500/750) at 7 fixed alphas to a
 **single 500-based ramp**: a scrim primitive is `500-{step}` = the palette's 500 color at **alpha% =
-step/10** (e.g. `500-175` = 500 @ 17.5%). A scrim is now a translucency **sub-variant of the palette** —
+step/10** (e.g. `500-175` = 500 @ 17.5%). A scrim is now a translucency **sub-variant of the palette**,
 it tracks the 500 stop as hue/chroma/skew/lift change. All 12 scrim-using roles remap onto this ramp by
 closest step (the 7 `scrim*` strengths → 100/175/250/300/400/450/550; outline → 550; outlineVariant →
 400; container/Low/High → 175/100/250) and become **mode-flat** (light === dark), including outline +
-containers (which lose their former 250-light/750-dark split — a deliberate choice). Token naming:
+containers (which lose their former 250-light/750-dark split, a deliberate choice). Token naming:
 `{family}-500-{step}` (e.g. `--c-neutral-500-175`).
 
 Folded through every layer: `data/role-table.json` (constants `SCRIM_BASES:[500]` + `SCRIM_STEPS`; the
@@ -1287,9 +1287,9 @@ semantic-mapping/export-formats/figma-plugin rubrics + all five capability cells
 export-formats, figma-plugin, ui-app, figma-plugin-app); the figma cascade still aliases every role to a
 created raw var. (Implementation cells re-stamped against this spec.)
 
-## 0.7 — 2026-06-17 — reconcile prose with shipped reality (no contract change)
+## 0.7: 2026-06-17, reconcile prose with shipped reality (no contract change)
 
-A prose-only reconciliation pass — **zero acceptance criteria changed**, so dependents stay
+A prose-only reconciliation pass, **zero acceptance criteria changed**, so dependents stay
 `validated` (the staleness cascade is for contract changes, and the lattice did not flag the
 hash drift). Three things had drifted from reality:
 
@@ -1307,10 +1307,10 @@ hash drift). Three things had drifted from reality:
   now names BOTH plugin realizations (`figma-plugin` Binder + `figma-plugin-app`). Re-minted the
   spec-quality signal (29/29, exit 0).
 
-## 0.6 — 2026-06-15 — differential damping curve (additive, backward-compatible)
+## 0.6: 2026-06-15, differential damping curve (additive, backward-compatible)
 
 Generalized the single `damp` scalar (× a hardcoded `^1.5`, symmetric edge falloff) into a
-**differential chroma-multiplier curve** `m(stop)` with three new controls — `dampCurve`
+**differential chroma-multiplier curve** `m(stop)` with three new controls, `dampCurve`
 (falloff exponent γ, where damping bites), `dampAmp` (mid-tone amplify toward the gamut
 ceiling, `m > 1`), and `dampBias` (light↔dark asymmetry). Defaults (γ 1.5 / amp 0 / bias 0)
 reduce `m` to the legacy `1 − (damp/100)·u^1.5` **exactly**, so every existing palette and
@@ -1326,15 +1326,15 @@ ambiguity · scope · hackability) over this change. Scope: APPROVED; the rest C
 findings, all folded back: the `max(0,·)` floor and the absent-field hydrate path are now gated
 (`hpg-tonal-damping-curve` (b); `hpg-persistence-roundtrip` absent-field clause); the (d) bias and
 (e) falloff gates were hardened from gameable per-half sums into a **mirror-symmetry + mid-invariance**
-check (defeats a directional sign-branch) and a **redistribution** check (defeats a global γ-scalar) —
+check (defeats a directional sign-branch) and a **redistribution** check (defeats a global γ-scalar),
 both falsified against the exact hacks the hackability lens constructed; the damping battery now runs
 over **every saturated hue**, not one; `dampCurve`/`dampAmp`/`dampBias` added to the glossary; the stale
 `dampF` symbol and the `ui-plan` T4 control list fixed.
 
-## 0.5 — 2026-06-15 — spec UPDATE from the build (the outer loop)
+## 0.5: 2026-06-15, spec UPDATE from the build (the outer loop)
 
 Having **built the whole tool from this spec** (6 capability modules + the UI, all validated by independent
-harnesses), folded the build's evidence back into the contract — the dev-factory **outer loop** (operating
+harnesses), folded the build's evidence back into the contract, the dev-factory **outer loop** (operating
 evidence → regenerate the upstream spec), via the ledgered `validated → regenerating → validated` path.
 
 - **Hue-stability aligned to its validated verifier.** `hpg-tonal-hue-stability` now states **emitted-chroma > 20
@@ -1343,42 +1343,42 @@ evidence → regenerate the upstream spec), via the ledgered `validated → rege
 - **Parity de-legacied.** `hpg-engine-parity` + `hpg-parity-roletable` are now **CONDITIONAL on packaging**: a
   single-source build (one engine / role-table module imported everywhere) satisfies them **structurally**; the
   differential check applies only IF ≥2 independent implementations ship. Parity is a property of multi-impl
-  *distribution*, not of the domain — the 3-impl (artifact / gen.js / plugin) premise was legacy baggage. The
+  *distribution*, not of the domain, the 3-impl (artifact / gen.js / plugin) premise was legacy baggage. The
   criteria now verify OUTPUT properties, not a specific `<script>` / gen.js file layout.
 - **Distribution vs authoring (ADR-010).** "Single-file / offline" is the *distribution* format (the reference
   build authors modular ES modules and bundles to one offline HTML), not an authoring constraint.
-- **OD-005 DECIDED — palette count is configurable** (the criteria are "for every palette"; the validated UI
+- **OD-005 DECIDED, palette count is configurable** (the criteria are "for every palette"; the validated UI
   ships it). The "8-palette ceiling" non-goal is retired.
 - **UI scoped out.** A new non-goal makes the interactive editor UI a *separate* spec (`references/ui-plan.md` /
   `capability.system.ui-app`); this spec covers the generator + its output only.
 
 Gate re-passes (27/27); spec re-validated; `rubric.system.tonal-generation` re-minted to match.
 
-## 0.4 — 2026-06-15 — build-surfaced calibration (hue-stability), from the factory loop
+## 0.4: 2026-06-15, build-surfaced calibration (hue-stability), from the factory loop
 
 Building `capability.system.tonal-generation` through the loop, its executable verifier surfaced that
 `hpg-tonal-hue-stability`'s idealized threshold (**applied** chroma > 1, **±1.0°**) is unachievable against
 real **8-bit sRGB output** plus the engine's own Δ≤2 roundtrip budget: near-neutral and tonal-extreme stops
 carry no stable hue, and a Δ≤2 channel error is ~2° of CAM16 hue at low-chroma colors. The validated adapter
 (`capability/tonal-generation/verify.mjs`) calibrates the check to **emitted** chroma > 20 and **±2°** (= the
-engine's roundtrip budget expressed as hue) — verified robust across all 8 default palettes (max hue drift
+engine's roundtrip budget expressed as hue), verified robust across all 8 default palettes (max hue drift
 ≤1.48°, 3–20 hue-checked stops each; a real per-stop hue-recompute bug still drifts far more). This is the
 **outer loop**: operating evidence calibrating the spec. **Follow-up (deferred):** align the spec criterion +
-`rubric.system.tonal-generation` text to the 8-bit-calibrated thresholds (emitted-chroma>20 / ±2°) — deferred
+`rubric.system.tonal-generation` text to the 8-bit-calibrated thresholds (emitted-chroma>20 / ±2°), deferred
 to avoid re-staling the freshly-validated tonal slice mid-build.
 
-## 0.3 — 2026-06-15 — Re-review (close the loop) + maintenance
+## 0.3: 2026-06-15, Re-review (close the loop) + maintenance
 
 Re-ran the spec-council on the REFINEd spec (the prior council saw only the 12-criterion draft),
 confirmed every prior finding **closed**, folded the new findings the expansion surfaced (now **27
 criteria**), then a maintenance pass.
 
 **Re-review + second REFINE.**
-- **Perceptual-evenness entailment (residual):** added `hpg-tonal-curve-fidelity` — the L\*
+- **Perceptual-evenness entailment (residual):** added `hpg-tonal-curve-fidelity`, the L\*
   *recomputed from the emitted sRGB* (NOT a stored tone field) must equal `toneAt(...)` within
   |ΔL\*| ≤ 1.0 across all five curves and the skew grid. Closes the entailment gap AND the
   tautology the hackability lens caught (comparing `toneAt` to itself).
-- **Hue-stability:** added `hpg-tonal-hue-stability` — the Intent now promises "stable hue", so a
+- **Hue-stability:** added `hpg-tonal-hue-stability`, the Intent now promises "stable hue", so a
   criterion owns it (CAM16 hue of every chromatic stop == `effHue` within ±1°). (entailment F2)
 - **Undefined tolerances pinned:** chroma-target (|ΔC| ≤ 1.0 + hard floor ≥ 0.5·min(target,cm)),
   engine-parity (≥1000 random triples, chroma≥5, tone∈(2,98), max-channel ≤ 2), engine-branches
@@ -1386,7 +1386,7 @@ criteria**), then a maintenance pass.
 - **Terminology (residual):** glossary splits **scrim primitive** (a ref target) from **scrim role**
   (not a target); on-color shorthand now carries both 050 and 200. (ambiguity)
 - **Doc sync:** `references/decomposition.md` → 27/27 + the real maturity (rubrics validated, cells
-  `defined`, tickets active — the prior "not yet validated" note was stale). ADR-003 "perceptually
+  `defined`, tickets active, the prior "not yet validated" note was stale). ADR-003 "perceptually
   correct" → "contrast-optimized" (retires the rhyme with "perceptually even").
 
 **Maintenance (UPDATE).**
@@ -1398,14 +1398,14 @@ criteria**), then a maintenance pass.
 - **OD-005** recommendation: the 27 criteria are all "for every palette", so a configurable count is
   low-risk; keep 8 default, allow a cap. An owner/product call.
 
-Gate re-passes (27/27); spec cell re-validated. `rubric.system.tonal-generation` flagged **stale** —
+Gate re-passes (27/27); spec cell re-validated. `rubric.system.tonal-generation` flagged **stale**,
 it must gain the two new tonal dimensions (curve-fidelity, hue-stability) before it can gate the
 tonal build.
 
-## 0.2 — June 2026 — spec-author bring-up to dev-factory SKILL-format
+## 0.2: June 2026, spec-author bring-up to dev-factory SKILL-format
 
 Brought the package up to the dev-factory **SKILL-format spec** standard so it is a valid,
-gate-passing `spec.system.hct-palette-generator-spec` cell — and hardened it through a
+gate-passing `spec.system.hct-palette-generator-spec` cell, and hardened it through a
 spec-council REVIEW.
 
 **Authored the machine-readable contract.** `SKILL.md` now embeds the fenced `json` contract
@@ -1420,15 +1420,15 @@ gate dimension (no structured block). Verified: `spec-quality-check.py` passes;
 draft and returned CONDITIONAL. Folded its surviving findings back:
 - **Anti-hack predicates promoted from `rubrics/` into the contract** (they existed but were
   dropped in the 28→25 compression): engine-math parity P6/P7 (`hpg-engine-parity`,
-  differential — a shared `role-table.json` can no longer fake engine agreement), the chroma
-  floor AC-T5 (`hpg-tonal-chroma-target` — a flat gray ramp no longer passes the gamut
+  differential, a shared `role-table.json` can no longer fake engine agreement), the chroma
+  floor AC-T5 (`hpg-tonal-chroma-target`, a flat gray ramp no longer passes the gamut
   criterion), the surface mirror invariant AC-S5, DTCG leaf validity + non-vacuity AC-X5, the
   CSS two-layer resolution AC-X2, the disabled-palette filter AC-U2, engine branches AC-E2/E3,
   plugin bindings/offline AC-P2/P3.
 - **Parity split across three cells** (engine-math → color-engine, role-table →
   semantic-mapping, plugin → figma-plugin) to fix the misplaced cross-child seam.
 - **Ambiguity fixes:** `hpg-semantic-oncolors` now states the on-color as "the 50 stop (stored
-  '50', padded '050')" — the prior `=== 050` literal was false against `role-table.json` which
+  '50', padded '050')", the prior `=== 050` literal was false against `role-table.json` which
   stores `'50'`; `hpg-semantic-refs-canonical` now requires refs to EQUAL the canonical ref,
   not merely resolve.
 - **Testability fixes:** the gamut-ceiling tolerance is a fixed 0.5 (not "within search
@@ -1438,11 +1438,11 @@ draft and returned CONDITIONAL. Folded its surviving findings back:
   OD-005 palette count) instead of claiming closure; OKLCH-input fidelity and UI3-native
   import are explicit non-goals; the accessibility non-goal is a real boundary, not a TODO.
 
-**Added** `references/decomposition.md` — the full carving (cells + tickets + the parity
+**Added** `references/decomposition.md`, the full carving (cells + tickets + the parity
 split + the honest-maturity note: the six child rubric cells are not yet validated, so the
 carving is proven-covering but not yet dispatchable).
 
-## 0.1 — June 2026 — Initial extraction
+## 0.1: June 2026, Initial extraction
 
 Created as a spec source package for the HCT Palette Generator, intended for import and
 enhancement by spec-author.
@@ -1450,7 +1450,7 @@ enhancement by spec-author.
 **Provenance.** Content was extracted directly from the working tool rather than written
 from memory:
 - The 37-role table, defaults, and constants in `data/role-table.json` were generated by
-  evaluating the artifact's own `semanticRoles`, `DEFAULTS`, and stop/scrim constants —
+  evaluating the artifact's own `semanticRoles`, `DEFAULTS`, and stop/scrim constants,
   ground truth, not transcription.
 - The engine verification anchors in `data/verification-anchors.json` were computed by
   running the reference engine (`hct.js`): forward CAM16 + L-star, then `hctToRgb` inverse
@@ -1458,21 +1458,21 @@ from memory:
   delta on the current engine.
 
 **Structure.**
-- `SKILL.md` — entry point, first principles, spec-author handoff instructions.
-- `references/spec-draft.md` — the spec in spec-author's hybrid Brief+TDD format
+- `SKILL.md`: entry point, first principles, spec-author handoff instructions.
+- `references/spec-draft.md`: the spec in spec-author's hybrid Brief+TDD format
   (header block, "How to Read", common spine, 📐💡⚠️ markers, OD table, anti-patterns).
-- `references/knowledge-01..05.md` — decomposed knowledge foundation: engine, tonal scale,
+- `references/knowledge-01..05.md`: decomposed knowledge foundation: engine, tonal scale,
   semantic system, export formats, plugin.
-- `references/decision-records.md` — ADR-001…010, the fenced choices, with a map of the
+- `references/decision-records.md`: ADR-001…010, the fenced choices, with a map of the
   decisions an enhancing agent is most likely to wrongly "fix".
-- `references/glossary.md` — project vocabulary.
-- `rubrics/` — quality rubric (spec-author 10 dimensions + project completeness gate),
+- `references/glossary.md`: project vocabulary.
+- `rubrics/`: quality rubric (spec-author 10 dimensions + project completeness gate),
   acceptance criteria (runnable predicates), parity checklist (three-implementation gate).
 
 **Research grounding.** The Figma-import behavior captured in `knowledge-04` and ADR-002 was
 established by prior research against Figma's "Modes for variables" documentation: native
 import accepts DTCG; cross-collection `aliasData` needs library-key UUIDs minted on export;
-name-only aliasData errors rather than falling back. This is time-sensitive — an enhancing
+name-only aliasData errors rather than falling back. This is time-sensitive, an enhancing
 pass should re-verify it.
 
 **Known fenced decisions (do not silently revert).** On-colors fixed to `050` overriding

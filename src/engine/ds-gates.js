@@ -1,4 +1,4 @@
-// ds-gates.js — the platform-agnostic §8 verification gates for a Claude Design /
+// ds-gates.js, the platform-agnostic §8 verification gates for a Claude Design /
 // Claude Code design-system export bundle (DESIGN.md + tokens.json + component
 // previews). Vanilla ESM, zero deps, NO DOM. A faithful port of the reference
 // Python gate script (design-system-author-claude-code/scripts/bundle_gates.py);
@@ -9,9 +9,9 @@
 // in memory so it can run inside the engine or a browser:
 //
 //   dsBundleGates({ designMd, tokensJson, previews })
-//     designMd  : string   — the DESIGN.md text (frontmatter + body)
-//     tokensJson: string | object — the tokens.json (raw text or already parsed)
-//     previews  : Array<{ name: string, html: string }> — the components/*.html cards
+//     designMd  : string, the DESIGN.md text (frontmatter + body)
+//     tokensJson: string | object, the tokens.json (raw text or already parsed)
+//     previews  : Array<{ name: string, html: string }>, the components/*.html cards
 //   → { fails, warns, findings: [{ level, gate, msg }] }
 //
 // Levels: PASS · ERROR · WARN · SKIP · INFO · DIVERGENCE. Only ERROR counts toward
@@ -20,7 +20,7 @@
 // Gates ported (bundle_gates.py G0–G8, W, DIV):
 //   G0 preconditions     DESIGN.md present, tokens.json present, all colors parseable
 //   G1 contrast          every derivable on/fill pair >= 4.5:1 in BOTH schemes
-//                        (skip -disabled fills; skip alpha<1 pairs — not text pairs)
+//                        (skip -disabled fills; skip alpha<1 pairs, not text pairs)
 //   G2 scheme parity     frontmatter light-keys == -dark-keys; colors == colorsDark
 //   G3 carrier equality  frontmatter OKLCH == tokens.json hex, per scheme, <= 1/255
 //                        per channel (alpha compared as round(a*255))
@@ -163,7 +163,7 @@ function fmBlocks(fm) {
 
 // --------------------------------------------------- grammar-driven pairing
 
-// longest-first for family stripping (Ultimate Tokens slot registry) — verbatim.
+// longest-first for family stripping (Ultimate Tokens slot registry), verbatim.
 const SLOTS = [
   "surface-brightest", "surface-highest", "surface-dimmest", "surface-lowest",
   "scrim-strongest", "scrim-weakest", "inverse-surface", "outline-variant",
@@ -255,7 +255,7 @@ function normHeading(h) {
 export function dsBundleGates({ designMd, tokensJson, previews } = {}) {
   const rep = new Report();
 
-  // G0 — DESIGN.md must be present (fatal: nothing else is parseable without it).
+  // G0, DESIGN.md must be present (fatal: nothing else is parseable without it).
   if (typeof designMd !== "string") {
     rep.emit("ERROR", "G0", "missing DESIGN.md");
     return { fails: rep.fails, warns: rep.warns, findings: rep.findings };
@@ -357,7 +357,7 @@ export function dsBundleGates({ designMd, tokensJson, previews } = {}) {
     );
   }
 
-  // G1 contrast — all derivable pairs, both schemes -------------------------
+  // G1 contrast, all derivable pairs, both schemes -------------------------
   for (const [scheme, S] of [["light", L8], ["dark", D8]]) {
     const { pairs, unfillable } = derivePairs(Object.keys(S));
     for (const k of unfillable)
@@ -366,7 +366,7 @@ export function dsBundleGates({ designMd, tokensJson, previews } = {}) {
       rep.emit(
         "ERROR",
         "G1",
-        `${scheme}: no on-pairs derivable — grammar violated or the reduction dropped every on-color`
+        `${scheme}: no on-pairs derivable, grammar violated or the reduction dropped every on-color`
       );
       continue;
     }
@@ -379,7 +379,7 @@ export function dsBundleGates({ designMd, tokensJson, previews } = {}) {
         continue;
       }
       if (a1 < 1.0 || a2 < 1.0) {
-        rep.emit("SKIP", "G1", `${scheme}: ${onK} / ${fillK} — alpha < 1, not a text pair`);
+        rep.emit("SKIP", "G1", `${scheme}: ${onK} / ${fillK}, alpha < 1, not a text pair`);
         skips++;
         continue;
       }
@@ -409,7 +409,7 @@ export function dsBundleGates({ designMd, tokensJson, previews } = {}) {
         (o) => o !== fam && rgbEq(L8[o][0], L8[fam][0]) && l8keys.some((k) => k.startsWith(o + "-on-"))
       );
       if (aliasOf.length)
-        rep.emit("INFO", "G7", `'${fam}' is a value-equal alias of '${aliasOf[0]}' (compat alias — document in receipt)`);
+        rep.emit("INFO", "G7", `'${fam}' is a value-equal alias of '${aliasOf[0]}' (compat alias, document in receipt)`);
       else missingOn.push(fam);
     }
   }
@@ -420,7 +420,7 @@ export function dsBundleGates({ designMd, tokensJson, previews } = {}) {
     "fills without an on-partner: " + missingOn.join(", ")
   );
   if (!["primary", "primary-base"].some((k) => k in L8))
-    rep.emit("WARN", "G7", "no 'primary'/'primary-base' role — Stitch lints missing-primary; ship a compat alias");
+    rep.emit("WARN", "G7", "no 'primary'/'primary-base' role, Stitch lints missing-primary; ship a compat alias");
 
   // G5 reference resolution -----------------------------------------------
   const refRe = /\{(colors|typography|spacing|rounded)\.([A-Za-z0-9-]+)\}/g;
@@ -455,7 +455,7 @@ export function dsBundleGates({ designMd, tokensJson, previews } = {}) {
   for (const miss of CANON.filter((c) => !heads.includes(c)))
     rep.emit("WARN", "G6", `canonical section missing: '${miss}' (Stitch-omissible; the authored dialect ships all 8)`);
   for (const ex of EXTRAS)
-    rep.ok(heads.includes(ex), "G6", `'${ex}' present`, `'${ex}' missing — required by the Claude profile`);
+    rep.ok(heads.includes(ex), "G6", `'${ex}' present`, `'${ex}' missing, required by the Claude profile`);
 
   // G4 previews --------------------------------------------------------------
   rep.ok(cards.length > 0, "G4", `${cards.length} preview card(s) found`, "no preview cards");
@@ -467,17 +467,17 @@ export function dsBundleGates({ designMd, tokensJson, previews } = {}) {
     rep.ok(okm, "G4", `${card.name}: @dsCard marker on line 1`, `${card.name}: first line is not an @dsCard marker with group/title`);
     const ext =
       /(?:src|href)\s*=\s*["']\s*(?:https?:)?\/\//.test(t) || t.includes("url(http") || t.includes("@import");
-    rep.ok(!ext, "G4", `${card.name}: self-contained (no external fetches)`, `${card.name}: external fetch found — previews must be self-contained`);
+    rep.ok(!ext, "G4", `${card.name}: self-contained (no external fetches)`, `${card.name}: external fetch found, previews must be self-contained`);
     if (t.includes("light-dark("))
       rep.ok(
         t.includes("color-scheme"),
         "G4",
         `${card.name}: color-scheme present with light-dark()`,
-        `${card.name}: uses light-dark() without color-scheme — the dark end never fires`
+        `${card.name}: uses light-dark() without color-scheme, the dark end never fires`
       );
   }
 
-  // G8 relative leading/tracking — never absolute px, in any carrier ----------
+  // G8 relative leading/tracking, never absolute px, in any carrier ----------
   const pxLt = [];
   for (const m of fm.matchAll(/(lineHeight|letterSpacing)\s*:\s*["']?\s*(-?[\d.]+\s*px)/g))
     pxLt.push(`frontmatter ${m[1]} = ${m[2]}`);
@@ -490,7 +490,7 @@ export function dsBundleGates({ designMd, tokensJson, previews } = {}) {
         if (typeof v === "string" && v.trim().endsWith("px"))
           pxLt.push(`tokens.json type.scale.${level}.${field} = ${JSON.stringify(v)}`);
         else if (field === "lineHeight" && typeof v === "number" && v > 4)
-          pxLt.push(`tokens.json type.scale.${level}.${field} = ${v} (> 4 — a px length, not a factor)`);
+          pxLt.push(`tokens.json type.scale.${level}.${field} = ${v} (> 4, a px length, not a factor)`);
       }
     }
   }
@@ -503,22 +503,22 @@ export function dsBundleGates({ designMd, tokensJson, previews } = {}) {
     pxLt.length === 0,
     "G8",
     "leading/tracking relative (unitless/em/%, never px)",
-    "leading/tracking are always relative — unitless factor, em, or % (standing rule); px found: " + pxLt.join("; ")
+    "leading/tracking are always relative, unitless factor, em, or % (standing rule); px found: " + pxLt.join("; ")
   );
 
   // W orphans (never gates) ---------------------------------------------------
   const cardText = cards.map((c) => String(c.html == null ? "" : c.html)).join("");
   for (const k of Object.keys(lights).sort())
     if (!text.includes(`{colors.${k}}`) && !cardText.includes(k))
-      rep.emit("WARN", "W", `orphan role '${k}' — never referenced in prose, components, or previews`);
+      rep.emit("WARN", "W", `orphan role '${k}', never referenced in prose, components, or previews`);
 
   // DIV divergence (never gates) -----------------------------------------------
   for (const k of tjlK.filter((k) => tjdS.has(k)).sort())
     if (k.includes("-on-") && tjl[k] === tjd[k])
-      rep.emit("DIVERGENCE", "DIV", `on-color constant across schemes: ${k} = ${tjl[k]} — upstream authorial decision; record in the receipt, do not silently override`);
+      rep.emit("DIVERGENCE", "DIV", `on-color constant across schemes: ${k} = ${tjl[k]}, upstream authorial decision; record in the receipt, do not silently override`);
 
   return { fails: rep.fails, warns: rep.warns, findings: rep.findings };
 }
 // NB: named exports ONLY. The single-file bundler (scripts/bundle.mjs) inlines this module with a naive
-// transform that does not support a default export — it would leak into the module IIFE as a syntax
+// transform that does not support a default export, it would leak into the module IIFE as a syntax
 // error, break the whole script, and surface only in the Chrome smoke leg. Every consumer imports by name.

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// citations.mjs — the doc citations are a GATE, not a one-time repair (#640, PR #658 review).
+// citations.mjs, the doc citations are a GATE, not a one-time repair (#640, PR #658 review).
 //
 // Docs under docs/ cite `file:line` into src/ (and test/, scripts/, mcp/). Every edit that moves
 // a cited line silently falsifies the record; #646 moved src/ui/app.js and 26 repaired citations
@@ -78,7 +78,7 @@ const FACT_PINS = [
       return (colors.match(/\["[^"]+", "[^"]+"\]/g) || []).length;
     } },
   { id: "roles per palette", doc: "docs/reference/references/ui-plan.md", needle: "a 53-role", src: "docs/reference/data/role-table.json",
-    source: () => JSON.parse(txt("docs/reference/data/role-table.json")).rolesPerPalette },
+    source: () => Object.keys(JSON.parse(txt("docs/reference/data/role-table.json")).roleTable).length },
   { id: "btn home", doc: "docs/reference/references/component-inventory.md", line: /^\| `btn\(\)` \|/, needle: "app-helpers.mjs", src: "src/ui/app-helpers.mjs",
     source: () => /^export const btn\b/m.test(txt("src/ui/app-helpers.mjs")) },
   { id: "delete mode methods", doc: ".claude/skills/building-editor-sections/SKILL.md", needle: "`deleteTypeMode`/`deleteGeomMode`", src: "src/ui/sections/{typography,geometry}.js",

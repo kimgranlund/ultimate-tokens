@@ -1,4 +1,4 @@
-// plugin/color-tokens.mjs — the ultimate-tokens PLUGIN skill gate: the color-tokens consumption
+// plugin/color-tokens.mjs, the ultimate-tokens PLUGIN skill gate: the color-tokens consumption
 // skill must stay in parity with the product's canonical role table (every --c- token it names is a
 // real role; the role count it claims matches). The check itself lives WITH the skill
 // (plugin/.../scripts/role-parity.mjs) so the shipped plugin carries its own gate; this wrapper
@@ -43,5 +43,5 @@ try {
   rmSync(fixture, { recursive: true, force: true });
 }
 
-console.log("plugin PASS — color-tokens skill in parity with the canonical role table (incl. loud-failure negative control)");
+console.log("plugin PASS, color-tokens skill in parity with the canonical role table (incl. loud-failure negative control)");
 process.exit(0);

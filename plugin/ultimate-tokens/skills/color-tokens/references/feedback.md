@@ -1,8 +1,8 @@
-# Feedback — intents, toasts, banners, overlays, loading
+# Feedback: intents, toasts, banners, overlays, loading
 
 ## The intent palettes
 
-`info · success · warning · danger` are FULL palettes — every role exists on each. The rule: an
+`info · success · warning · danger` are FULL palettes, every role exists on each. The rule: an
 intent palette appears **only when the UI means it** (state, result, risk), never as decoration.
 Recipes are the same shapes as everywhere else, with `{p}` = the intent:
 
@@ -16,7 +16,7 @@ Recipes are the same shapes as everywhere else, with `{p}` = the intent:
 | destructive button | interactive.md's filled/outlined recipes with `{p} = danger` |
 
 Because containers/outlines are translucent 500-ramp roles, intent callouts tint correctly on any
-surface tier. **Do not "fix" white-on-warning text** — on-colors are fixed light by design
+surface tier. **Do not "fix" white-on-warning text**, on-colors are fixed light by design
 (SKILL.md law 6); if a filled warning chip bothers you, use the soft-chip recipe instead.
 
 ## Toasts & snackbars
@@ -26,9 +26,9 @@ bg `--c-neutral-inverse-surface` · text `--c-neutral-inverse-on-surface` · the
 toast: use bare `--c-{p}` only if it clears the inverse background; otherwise
 `--c-neutral-inverse-on-surface` underlined. An intent stripe/icon on the toast: bare `--c-{intent}`.
 
-## Overlays & scrims — the seven-strength ladder
+## Overlays & scrims: the seven-strength ladder
 
-`--c-neutral-scrim-weakest … -weak … (scrim) … -strongest` — a translucent ladder of the palette's
+`--c-neutral-scrim-weakest … -weak … (scrim) … -strongest`, a translucent ladder of the palette's
 500 stop (5%→60% alpha), mode-flat. Pick by job, not by taste:
 
 | Job | Role |
@@ -50,10 +50,10 @@ Scrims stack with the elevation ladder: backdrop = scrim, the floating panel = `
 | spinner/bar fill | `--c-{p}` (accent) |
 | progress with meaning (upload ok/failed) | swap `{p}` to the intent |
 
-Skeletons are containers (translucent) so they read on any tier — not gray raws, not opacity hacks.
+Skeletons are containers (translucent) so they read on any tier, not gray raws, not opacity hacks.
 
 ## Empty / error states (full-pane)
 
 Pane bg `--c-neutral-surface-low` (a recessed well) · illustration strokes `--c-neutral-outline` ·
 title `-on-surface` · body `-on-surface-variant` · the CTA = a normal filled button. A full-pane
-ERROR state colors only its icon/title accents with `--c-danger` — not the whole pane.
+ERROR state colors only its icon/title accents with `--c-danger`, not the whole pane.
