@@ -92,8 +92,8 @@ names end in a WORD, so both share the `--c-` prefix without collision, see the 
 Color isn't the only system. `type.mjs` and `geometry.mjs` are parallel engines with their own resolved
 scales and emitters:
 
-- **Type** (`type.mjs`): `typeScale(config)` → a resolved scale. Its structure is the **seven named groups**
-  `make7` builds, Display · Heading · Sub-heading · Kicker · Body · UI · Code, each a
+- **Type** (`type.mjs`): `typeScale(config)` → a resolved scale. Its structure is the **fifteen voices**
+  `makeVoices` builds (`scale.categories`), each a
   step ramp whose every step carries size/lineHeight/letterSpacing/weight/textTransform. `typeTokensCSS(scale)`
   → CSS custom props + utility classes; `typeTokensDTCG(scale)` → a `fontFamily` group + a `typography` group
   of W3C composite `$type:"typography"` tokens. Font names with digits MUST be quoted in CSS
