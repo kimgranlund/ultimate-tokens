@@ -19,7 +19,7 @@ composition history.
 
 ### Density rides the rhythm, ONLY the rhythm
 
-- **`density` multiplies `gap` and nothing else.** It is applied exactly once, inside `buildSize`:
+- **`density` multiplies `gap` and nothing else.** It is applied exactly once, in `geomScale` (which hands `buildSize` the resolved `gap`):
   `gap = max(1, round(GAP_UNIT[name]·(bh/28)·density))` (the calibrated unit, not `font/2`).
   Do **not** thread `density` into `icon`, `paddingNarrow`, `paddingWide`,
   or `radiusPill`, the frame is geometric and density-invariant. The `two-families` test compares compact vs
@@ -30,8 +30,9 @@ composition history.
 
 ### The constants are tuned, not arbitrary: don't "tidy" them
 
-- **`2.49`, `0.58`, `3.16`, `0.45` reproduce the hand-tuned reference ramp to ±1px.** They are the result of
-  fitting the power law to the canonical `SIZES` table (20·24·28·36·48·64) and its hand-picked glyphs. The
+- **`2.49`, `0.58` (icon) reproduce the hand-tuned reference ramp to ±1px; `3.5`, `0.39` (caret) are pinned by the exact
+  `caret's own ramp` assert (SM..2XL).** They are the result of
+  fitting the power laws to the canonical `SIZES` table (20·24·28·36·48·64) and its hand-picked glyphs. The
   `reference-ramp` test checks the engine output against the hand table within ±1. A change to any exponent or
   coefficient that pushes a glyph past ±1 from the reference **breaks the gate**, and the swatches will still
   *look* plausible, so only the test catches it. If you must retune, update the `REF` table in the test in the
@@ -86,7 +87,7 @@ guards):
    power law. Good for a geometry-only export, but the control text then ignored the brand's actual typography.
 2. **Added a surgical override, not a rewrite.** `buildSize` grew an optional font param; when present
    it replaces *only* `font` (`caret` keeps its OWN power law, `3.5·h^0.39`, never composed; `gap` rides
-   its own GAP_UNIT calibration since TKT-0010). Nothing else in `buildSize` touched, the frame
+   its own GAP_UNIT calibration). Nothing else in `buildSize` touched, the frame
    derivations (`icon`, `paddingNarrow`, `paddingWide`, `radiusPill`, `minWidth`) are computed the same
    way regardless, so the centering law is preserved by construction.
 3. **Wired the source in `geomScale`.** `opts.typeScale.categories["UI-control"]` → `uiSteps[name].size` fed

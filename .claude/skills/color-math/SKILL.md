@@ -70,7 +70,7 @@ A palette carrying a valid 6-hex `anchor` (a STORED source colour, never fitted)
 
 ## The hue model is OKLCH-native (easy to miss; depth in `references/foundations.md` §4)
 
-- The per-palette `hue` param is an **OKLCH hue** by default, `DEFAULT_CONTROLS.hueSpace` (and the persist default) is `"oklch"`; `"cam16"` survives only on legacy docs that carry it explicitly.
+- The per-palette `hue` param is an **OKLCH hue** by default, `DEFAULT_CONTROLS.hueSpace` (and the persist default) is `"oklch"`; `"cam16"` survives only on legacy docs: `hydrateStoredDoc` (`app-helpers.mjs`) stamps `"cam16"` on a stored doc that has no `hueSpace`, and a doc that carries one keeps it.
 - The ramp still renders a **constant CAM16 hue**: `effHue(hue, hueSpace, chromaFrac)` resolves OKLCH→CAM16 **once per palette**.
 - `oklchToCam16Hue(h, chromaFrac)` is an accurate, **CHROMA-AWARE** Newton inverse of the render path, it must be chroma-aware because the OKLCH↔CAM16 hue map shifts with chroma (the **Abney effect**); a fixed or cusp-only anchor drifts (~15° vivid blues / ~11° muted hues).
 - Callers pass the palette's own chroma, `effHue(p.hue, hueSpace, p.chroma/100)`, so the identity color lands on the stored OKLCH hue to ~0.00°. Gate: **`hct-oklch-inverse`** (vivid + muted round-trip ≤3°).

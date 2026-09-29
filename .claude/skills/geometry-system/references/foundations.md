@@ -15,9 +15,9 @@ config {treatment, baseHeight}
   → factor = baseHeight / 28              # CANON_MD; scales the whole ramp uniformly
   → for each SIZES row [name, h]: buildSize(h·factor, density, font, gap)   # font, gap pre-resolved by geomScale
       height = roundEven(rawHeight)        # the one free input per row; everything below is DERIVED
-      icon   = roundEven(2.49·height^0.58) # frame family, the power law
+      icon   = roundEven(2.49·height^0.58) # frame family, a power law
       font   = fontOverrides[name] ?? the composed UI-control size ?? round(CONTROL_FONT[name]·factor)   # rhythm family
-      caret  = round(3.5·height^0.39)      # frame family, its OWN power law (never composed, never = font)
+      caret  = round(3.5·height^0.39)      # its OWN power law (never composed, never = font; < font at every standalone step)
       gap    = max(1, round(GAP_UNIT[name]·(bh/28)·density))  # rhythm, the calibrated unit (3·3·4·6·6·8
                                                           # at bh 28); density rides HERE, only here
       paddingNarrow = (height − icon)/2    # THE CENTERING LAW (slot edge)
@@ -88,19 +88,19 @@ font  = the CONTROL_FONT row {XS:12, SM:13, MD:15, LG:16, XL:18, 2XL:20} × fact
         voice's size at the matching step wins, and opts.fontOverrides wins over both
 ```
 
-The glyph rules reproduce the hand-tuned reference ramp to **±1px**, so the table is not six hand-picked
+The icon rule reproduces the hand-tuned reference ramp to **±1px**, so the table is not six hand-picked
 points, it is **one rule sampled six times**, and it generalizes to any scaled `baseHeight`. The
-`reference-ramp` test block checks the engine output against the hand table `REF` (icon ±1, height exact)
+`reference-ramp` test block checks the engine output against the hand table `REF` (icon ±1, font ±1, height exact; the caret is pinned by its own exact-ramp assert)
 and that heights strictly increase XS→2XL. The reference ramp (comfortable @ baseHeight 28, standalone):
 
-| size | height | icon | caret | font | paddingNarrow (slot) | edge (`h/2`, retired) | radius (pill) |
+| size | height | icon | caret | font | paddingNarrow (slot) | paddingWide (caret edge) | radius (pill) |
 |---|---|---|---|---|---|---|---|
-| **XS** | 20 | 14 | 11 | 12 | 3 | 10 | 10 |
-| **SM** | 24 | 16 | 12 | 13 | 4 | 12 | 12 |
-| **MD** | 28 | 18 | 13 | 15 | 5 | 14 | 14 |
-| **LG** | 36 | 20 | 14 | 16 | 8 | 18 | 18 |
-| **XL** | 48 | 24 | 16 | 18 | 12 | 24 | 24 |
-| **2XL** | 64 | 28 | 18 | 20 | 18 | 32 | 32 |
+| **XS** | 20 | 14 | 11 | 12 | 3 | 4.5 | 10 |
+| **SM** | 24 | 16 | 12 | 13 | 4 | 6 | 12 |
+| **MD** | 28 | 18 | 13 | 15 | 5 | 7.5 | 14 |
+| **LG** | 36 | 20 | 14 | 16 | 8 | 11 | 18 |
+| **XL** | 48 | 24 | 16 | 18 | 12 | 16 | 24 |
+| **2XL** | 64 | 28 | 18 | 20 | 18 | 23 | 32 |
 
 `roundEven` (`2·round(v/2)`) is used for **height and icon**, even pixel sizes keep glyphs crisp and slot pads
 integral. `font`/`caret` use plain `round`.

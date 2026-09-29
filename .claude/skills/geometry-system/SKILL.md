@@ -55,7 +55,7 @@ glyph**, so density (and the type scale) must never touch it. Depth: `references
 `SIZES = [XS 20, SM 24, MD 28, LG 36, XL 48, 2XL 64]` (heights), **two bands** at the MD|LG seam (compact `+4`
 linear below: 20·24·28, expressive `×4/3` geometric above: 36·48·64). The glyphs scale **sublinearly** (the
 optical correction): two tuned power laws of height, `icon = 2.49·h^0.58` (roundEven) and
-`caret = 3.5·h^0.39` (round), that reproduce the hand-tuned reference table to **±1px**: one rule sampled six times.
+`caret = 3.5·h^0.39` (round), that reproduce the hand-tuned reference table (icon ±1px; the caret pinned by its own exact-ramp assert): one rule sampled six times.
 `font` is not a power law: it is the ratified `CONTROL_FONT` row × `baseHeight/28`, or the composed UI-control
 voice (below). `CANON_MD =
 28`; `baseHeight` scales the whole ramp by `baseHeight/28`. **`rampContrast` (0…1, default 1 = identity)
