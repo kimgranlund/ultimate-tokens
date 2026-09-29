@@ -1,19 +1,19 @@
-# anchor-gaps U3: pre-land pass 1 fixes (#740, #744), pass 1
+# anchor-gaps U3: pre-land pass 1 fixes (#740, #744), pass 2
 
-Status: 🟡 built, every criterion green at the head; three plan figures read differently from what revision 7 predicted (the Deviations table). No finding is a code gap; each needs a reading or a row edit from the Orchestrator, not a rebuild.
+Status: 🟢 pass 2 built at `327eb6aa`: both review pass 1 findings (`.sdlc/reviews/anchor-gaps-U3-review.md` at `7a881a42`) are fixed, and the `app.js:2371` wiring revert now makes `npm test` exit 1. Deviation 2 is resolved; the reviewer accepted Deviations 1 and 3, and the plan rows they name (U3-1's control text, P4's fifth figure `3`) are the Orchestrator's to revise.
 
 ## Next for the Orchestrator
 
-Send U3 to reviewer-l3 and verifier-l2 at the head carrying this handoff, with the three Deviations rows below for the verifier to rule on.
+Send U3 to review pass 2 and then the verifier at the head carrying this handoff. The Pass 2 section below is new; the pass 1 sections stand as run at `07fe3c0a`.
 
 ## Unit
 
 | Field | Value |
 |---|---|
-| Branch | `unit/ag-U3` @ `07fe3c0a` (code), plus this handoff's commit on top |
+| Branch | `unit/ag-U3` @ `327eb6aa` (code, pass 2), plus this handoff's commit on top; pass 1 code at `07fe3c0a` |
 | Base | `plan/anchor-gaps` @ `d017bbc9`; `$B` = `git merge-base origin/main HEAD` = `5cdf9ed1` |
-| Commits | `81ac5521` source, tests, CHANGELOG, bundle, baseline; `07fe3c0a` the fixture the gate's `--capture` wrote at `81ac5521` |
-| Seat | builder-l5, pass 1 |
+| Commits | `81ac5521` source, tests, CHANGELOG, bundle, baseline; `07fe3c0a` the fixture the gate's `--capture` wrote at `81ac5521`; pass 2: `7e0b5f80` leg (k) and the two comment clauses, `327eb6aa` the regenerated bundle and baseline KB |
+| Seat | builder-l5, passes 1 and 2 |
 
 ## Files
 
@@ -49,14 +49,24 @@ Probes under `FORCE_COLOR=0`. Controls ran in one throwaway shared clone of `07f
 | # | Row | Plan says | Reads | Cause, verified |
 |---|---|---|---|---|
 | 1 | P4 fifth | `2` hunks in `app.js` | `3` | `git diff -U0 "$B" -- src/ui/app.js \| grep '^@@'` lists `@@ -53 +53 @@`, `@@ -2362,3 +2362,3 @@`, `@@ -2371 +2371 @@`: under `-U0` the method's comment and its body line are split by the unchanged comment and signature lines between them. At default context the same diff has `2` hunks (`git diff "$B" -- src/ui/app.js \| grep -c '^@@'`). The comment edit is required: its old text named `hydrateStoredDoc()` as this method's seam, which is false after the move. Only the import line and the method changed, which is what the row means to prove |
-| 2 | U3-1 control | the wiring revert makes "U3-2 red" | U3-2 and the `gallery-reach` gate stay green; only U3-1's greps swap | Both call `hydrateConfig` directly, never `openConfigAsSet` (an `HctApp` method). The clone run with `openConfigAsSet` on `hydrateStoredDoc` printed `presets 343 stamped 0 differ 0 maison #21701A`, `0 9`, `persist exit 0`. The wiring is proven by U3-1's greps alone; a behavioural gate through `openConfigAsSet` would need `test/ui/headless-boot.mjs`, outside the wall |
+| 2 (resolved in pass 2) | U3-1 control | the wiring revert makes "U3-2 red" | U3-2 and the `gallery-reach` gate stay green; only U3-1's greps swap | Both call `hydrateConfig` directly, never `openConfigAsSet` (an `HctApp` method). The clone run with `openConfigAsSet` on `hydrateStoredDoc` printed `presets 343 stamped 0 differ 0 maison #21701A`, `0 9`, `persist exit 0`. The wiring is proven by U3-1's greps alone; a behavioural gate through `openConfigAsSet` would need `test/ui/headless-boot.mjs`, outside the wall. Pass 2 closes the gap inside the wall with `gallery-reach` (k), below: the same revert now makes `npm test` exit 1 |
 | 3 | U3-4 needle, U3-6 fourth | "each of (h), (i), (j) names `gallery-reach` in its FAIL text"; the #740 awk reads the whole entry | the `3` is the block comment, the one `FAIL("gallery-reach", ...)` call and `DECLARED`; the awk reads from the reach sentence on | The gate collects every red sub-gate and emits one joined `FAIL`, because `FAIL` keeps one message per gate name (pre-land note 5): with three separate calls the backfill control would have printed (i) and hidden (j); joined, it prints both, as the control above shows. For U3-6, `awk '/#740/,/^- \*\*\|^### /'` closes its range on the line that opens it (the entry's own `- **` heading): on `81ac5521~1` it reads `1` line. The reach sentence carries `#740`, which re-opens the range there (`6` lines at the head), so the needle reads that sentence |
+
+## Pass 2, at `327eb6aa`
+
+| Finding | Fix | Ran | Negative control, run in a `--shared` clone of `7e0b5f80`, then `327eb6aa` |
+|---|---|---|---|
+| 1 🔴 wiring unpinned | `test/ui/persist.mjs` `gallery-reach` (k), first half: reads `src/ui/app.js`, slices the `openConfigAsSet` method from its signature to the first two-space `}`, and requires `hydrateConfig(` in it and no `hydrateStoredDoc(`. The block comment names (k); `node:fs` is imported beside the block | `pass  gallery-reach`; `npm test` at `7e0b5f80`: `✓ all 54 test files passed`, exit 0, 87 s | 🟢 `app.js:2371` to `const doc = hydrateStoredDoc(config);`: `node test/ui/persist.mjs` exit 1, `FAIL  gallery-reach, (k) app.js openConfigAsSet must call hydrateConfig( and not hydrateStoredDoc(, read hydrateConfig false hydrateStoredDoc true`; full `npm test` at `327eb6aa` with the revert: `▶ ui/persist.mjs FAIL`, `✗ 1/54 test file(s) failed`, exit 1 |
+| 2 🟡 v6 guard unnamed | `app.js:2362-2364` rewritten in place (three lines out, three in, so `:2581` and `:2587` hold): names `openSet`'s second `hydrateStoredDoc` pass as inert only because `serialize()` stamps `schemaVersion 6`. The `hydrateConfig` comment in `app-helpers.mjs` (file end) gains the second-guard sentence. (k), second half, pins it: Maison through `hydrateStoredDoc(U.serialize(hydrateConfig(maison)))`, the method's real chain, must open `Success` unanchored | `CURRENT_SCHEMA_VERSION = 6` at `src/ui/persist.js:377`; `pass  gallery-reach` | 🟢 `backfillDefaultAnchors`'s gate `>= 5` to `>= 7`: exit 1, `FAIL  stored-anchors, (c) a doc already stamped schemaVersion 6 must not be backfilled, got 16 anchors` and `FAIL  gallery-reach, (k) Maison through hydrateConfig, serialize and hydrateStoredDoc must open Success unanchored, got "#21701A"` |
+| bundle, baseline | `figma/plugin/ui.html` regenerated by `npm test` (the comments are inlined); `.sdlc/baseline.md` KB cell `4141.0` to `4141.3` with one correction paragraph | `npm test` printed `wrote figma/plugin/ui.html 4141.3 KB`; `baseline-agrees-check.sh` read `STALE ui.html: baseline 4141.0 KB, tree 4141.3 KB` before, `ok` after | n/a |
+
+Each control reverted with `git checkout -q HEAD -- .`, `git status --short | wc -l` read `0` after. `git diff -U0 d017bbc9 -- src/ui/app.js | grep -c '^@@'` still reads `3`: the pass 2 comment edit sits inside the pass 1 comment hunk. The worktree tree read `0` dirty after committing the regenerated bundle.
 
 ## Notes
 
 - The first draft of (h) rendered every preset twice through `projectView` and took `node test/ui/persist.mjs` from `0.17 s` to `14.6 s`. (h) now compares the two hydrated documents with `JSON.stringify` and renders ramps only for a preset whose document differs (`projectView` is pure in the document), so the file runs in `0.28 s`. The alias control proves the render leg still runs: it printed `1 render off their tile`.
 - `mode-isolation.json`'s `owner` sentence says the re-capturing plan "names the new sha here"; the plan's P4 sixth command and U3-5 keep `owner` byte-identical, and the sha is named in `capturedAt`. Followed the plan.
-- The seat's controls clone stays under the job scratchpad (`$CLAUDE_JOB_DIR/tmp/agU3/ag-u3-neg-b5`): removing it by exact name was denied by the permission layer; it is outside the repo and goes when the job is deleted.
+- The seat's controls clones stay under the job scratchpad (`$CLAUDE_JOB_DIR/tmp/agU3/ag-u3-neg-b5`, pass 2 `neg2`): removing it by exact name was denied by the permission layer; it is outside the repo and goes when the job is deleted.
 
 ## Left out
 
