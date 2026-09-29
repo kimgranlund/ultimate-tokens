@@ -77,7 +77,7 @@ Type/Geom **Tokens** matrix both do this:
     AND every export (CSS `@media` · per-mode DTCG · Figma · MCP `brandKit`) read the SAME resolved
     scale, a missed export site is the classic bug.
   - **Clamp in the live setters** to the persisted range, the range literals are owned by
-    `setTypeTokenOverride`/`setGeomTokenOverride` (`src/ui/app.js`), mirroring persist's
+    `setTypeTokenOverride` (`src/ui/sections/typography.js`) and `setGeomTokenOverride` (`src/ui/sections/geometry.js`), mirroring persist's
     `clampTokenOverrides`; an unclamped value diverges live-vs-persist and can yield negative geom padding.
   - **`deleteTypeMode`/`deleteGeomMode` hygiene.** Deleting a mode strips its stale `|<id>` override keys.
   - **Mode-local.** Base does not cascade into breakpoint columns, say so in a one-line UI hint.
