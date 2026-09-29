@@ -39,14 +39,16 @@ procedure (canvas header, scene, inspector, the headless-shim limits) lives in t
 **Sections.** `this.section` (`color` | `typography` | `geometry`) is ui-session state and routes the
 whole editor: `renderCenter` picks the canvas header and canvas, and the left and right panes branch
 on the same field. `setSection` switches it, stashing the Color pan and zoom on leave and restoring
-them on return; the Typography and Geometry scenes start fit and do not pan or zoom. Each section is
-a canvas header, a scene holding the full dataset, left analysis cards and a right inspector.
+them on return; the Typography and Geometry scenes are reset to `fit` on entry and pan and zoom like
+Color's (the same `wirePanZoom` shell); only the Tokens tables, like Color's Mapping table, scroll
+instead. Each section is a canvas header, a scene holding the full dataset, left analysis cards and a
+right inspector.
 
 | Section | Canvas | Inspector tabs | Notes |
 |---|---|---|---|
-| Color | `canvasView` of Palettes, Scrims, Mapping (the semantic-mapping table, the only table view) or Radix; `colorMode` of `system`, `light`, `dark` or `both`, where `both` renders the scene twice side by side through `renderCompareArea` (and skips the Mapping table) | palette, global and roles, plus a story tab when the document carries a curated story | the original surface of Revision A |
+| Color | `canvasView` of Palettes, Scrims, Mapping (the semantic-mapping table, the only table view) or Radix; `colorMode` of `system`, `light`, `dark` or `both`, where `both` renders the scene twice side by side through `renderCompareArea`, except in the Mapping view, whose table already shows both modes and renders once | palette, global and roles, plus a story tab when the document carries a curated story | the original surface of Revision A |
 | Typography | a `typeSpecMode` segment of `specimen` or `tokens`, and `typeMode` breakpoint modes (base plus each mode, `compare` labeled All when at least one mode exists) | `typeSegment` of scale, fonts and specimen, in `renderTypeInspector` | the Specimen view renders each step in the real face |
-| Geometry | a `geomSpecMode` segment of `controls` or `tokens`, and `geomMode` breakpoint modes (base plus each mode, `compare` labeled All) | `renderGeomInspector` with ramp, `radius` and space tabs | per-step text size composes from the Type scale |
+| Geometry | a `geomSpecMode` segment of `controls` or `tokens`, and `geomMode` breakpoint modes (base plus each mode, `compare` labeled All when at least one mode exists) | `renderGeomInspector` with ramp, `radius` and space tabs | per-step text size composes from the Type scale |
 
 Both breakpoint-mode sets sit beside Compare, which shows every breakpoint side by side and hides the
 section's whole canvas segment (`specimen` or `tokens` in Typography, `controls` or `tokens` in Geometry). Each section also has left analysis cards, routed by `renderLeftPane`. The engines
