@@ -92,7 +92,7 @@ U7 adds one README section, `## Views and sections`, inserted before `## License
 
 - [x] U3 (M) the four wrong claims and the six small ones, `app-shell.md`, `component-inventory.md`, `app-shell-patterns.md`, the section skill, three source headers · builder-l5 · reviewer-l3 · verifier-l2 (pass 2; pass 1 ran builder-l2 · reviewer-l1 · verifier-l1) · first
 - [~] U1 (M) `ui-plan.md` Revision B: three sections, modes, Compare, inspectors, gallery, ten formats · builder-l3 · reviewer-l2 · verifier-l2 · after U3
-- [~] U2 (M) `docs/reference/SKILL.md` index and the format counts across four spec files; glossary UI rows · builder-l4 · reviewer-l2 · verifier-l2 (pass 2; pass 1 ran builder-l2 · reviewer-l1 · verifier-l1) · after U3
+- [x] U2 (M) `docs/reference/SKILL.md` index and the format counts across four spec files; glossary UI rows · builder-l4 · reviewer-l2 · verifier-l2 (pass 2; pass 1 ran builder-l2 · reviewer-l1 · verifier-l1) · after U3
 - [x] U4 (S) `figma/README.md` · builder-l2 · reviewer-l1 · verifier-l1
 - [ ] U6 (S) six fact pins in `test/repo/citations.mjs` · builder-l2 · reviewer-l1 · verifier-l1 · after U3 and U1
 - [ ] U7 (S) `README.md` tour of the views and sections, DD41 re-pointed, DD9 re-quoted · builder-l2 · reviewer-l1 · verifier-l1 · after U1
