@@ -68,3 +68,5 @@ New, 🟢 Low, the planner's, not blocking: U6-8's last column (`At 60fd4668`) s
 Rows re-run at e1a10b08: U6-1 `0 2 0 1 1 1`, U6-2 `1 1 0 1 0 1 2 1`, U6-3 `0 0 3 1`, U6-4 all `0`, U6-5 `1 1 1 2 1 1`, U6-6 `1 0 1 1`, U6-7 `27 238 63 238 6` then `0` (the `'*.md'` recipes grew with the merged plan and U7 records), U6-8 `0`, `1`, U6-9 `0 0 2 0 0`, groups `2 1 1 1 1`, imports `2 2 2 1 1 1 1 1 1 2 1 2 3`, `1`, U6-10 `1 1 1`. All match the plan.
 
 Handoff figures reproduced at ef2115bb: branding `818`, em-dash `826`, P3 added U+2014 lines `0`, P4 `0`, `0`, `0`, P6 added `0`, removed `39` against B with merged units and `23` over U6's thirteen files. P5 at e1a10b08: 22 ids each `1`, ERE total `40` = 22 + `18` `F<n>` rows. `npm test` in a clone at e1a10b08 (one other `node test/run.mjs` running, within the limit): `✓ all 53 test files passed`, exit 0, tree clean after.
+
+verdict: 🟢

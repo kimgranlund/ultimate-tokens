@@ -94,3 +94,5 @@ Positive commands ran in the worktree at `acce34c2`. The negative controls ran t
 | H5's four jobs | ci.yml `build-test`, `panda-smoke`, `corpus-contrast`, `sweeps` | 🟢 |
 | figma: mode prune in `applyFontPrimitivesModes` reads the same resolved decision, not a raw `opts.libraryMode === true` | code.js 974 to 976, 1099 to 1107 | 🟢 |
 | figma: "Every prune on the apply path reads the resolved flag" | code.js 1249 (`applyStylePlans`), 1464 (`applyBundle`): `opts.libraryMode === true` | 🔴 finding 1 |
+
+verdict: 🔴
