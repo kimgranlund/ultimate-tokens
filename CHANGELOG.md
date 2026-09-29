@@ -15,7 +15,9 @@ they landed on `main` and reference the squash-merged PR that introduced them.
   sample with OKLCH chroma exactly `0` (Nike "Box white", `#FFFFFF`, the only one in the corpus), and
   since the achromatic anchor renders at the palette's stored hue, that palette's ramp came out mauve.
   It now stores the entry's derived neutral hue (`36` for Nike), so the ramp tints toward the brand's
-  own warm neutral; the sampled key color and the `#FFFFFF` anchor are unchanged.
+  own warm neutral; the sampled key color and the `#FFFFFF` anchor are unchanged. The corpus render
+  moved with it, so the mode-isolation fixture (`test/engine/fixtures/mode-isolation.json`) was
+  re-captured for the corpus change.
 - **A saved default kit regains its anchors on load from the stored set list** (#740). A kit saved
   before schema v5 has no `anchor`/`sourceAnchor` on any palette, and `hydrate()` keeps that absence
   absent by design, so the kit used to render through the non-anchored path with no notice, even
@@ -24,7 +26,9 @@ they landed on `main` and reference the squash-merged PR that introduced them.
   form (CAM16 or OKLCH, read from the stored doc's `hueSpace`) on name, hue, chroma, skew and lift; a
   user-built or pre-#681 preset palette, or any palette a slider moved off that one row, including
   onto the OTHER hue form's own default value, has no matching row there and stays parametric,
-  unchanged.
+  unchanged. Only the stored set list takes the #740 backfill: a preset opened from the gallery, a
+  Figma-variables read and an embedded-config restore ("Open saved palette" or the project restore)
+  open without it, so a curated preset renders as its tile does.
 
 ### 2026-09-18
 

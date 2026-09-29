@@ -14580,7 +14580,22 @@ function backfillDefaultAnchors(stored) {
   return changed ? { ...stored, palettes } : stored;
 }
 
-return { SETS_KEY, PROJECT_KEY, PROFILE_KEY, CHECKOUT_STORE, PRO_CHECKOUT_URL, STUDIO_CHECKOUT_URL, REPO_URL, SUPPORT_URL, DOCS_URL, ACCOUNT_URL, PRO_EXPORT_FORMATS, ALIASED_README, LEGACY_STORAGE_PREFIXES, migrateStorageKeys, sanitizeSetRecords, loadSets, saveSets, loadProfile, saveProfile, PRO_KEY_RE, defaultLicenseService, licenseInstanceName, DEV_FLAG_TOGGLES, newSet, hydrateStoredDoc, APP_THEME_STYLE_ID, ensureAppTheme, TYPE_FONTS_LINK_ID, ensureTypeFonts, SELF_HOSTED_FONTS, GENERIC_FONTS, ensureWebFont, ensureWebFontPreconnect, ensureWebFonts, setColorScheme, h, fmt, ago, CURVES, DAMP_PRESETS, switchControl, swatch, BTN_VARIANT, btn, SCHEME_ICON, SCHEME_NEXT, CANVAS_INSET, TYPE_SPECIMENS, TYPE_SAMPLE, TYPE_PARA, chip, MODE_WIDTH_PRESETS, HUE_SPACE_ANCHOR_REASON, field, POSTER_STRIP_MAX_BAND_PCT, POSTER_STRIP_MAX_BAND_PCT_LOW, POSTER_STRIP_MAX_BAND_PCT_HIGH, POSTER_STRIP_ACCENT_FLOOR_PCT, POSTER_STRIP_CAP_CHROMA_LOW, POSTER_STRIP_CAP_CHROMA_HIGH, posterStripDominantCap, posterStripBands, backfillDefaultAnchors };
+// hydrateConfig (#740, anchor-gaps U3): the seam for a config that is NOT a stored set record, the
+// legacy hueSpace stamp then hydrate, with no backfillDefaultAnchors (hydrateStoredDoc's body as it
+// stood before #740). The backfill's ruled reach is a pre-v5 kit opened from the stored set list
+// (openSet and the set tile, both still on hydrateStoredDoc); app.js's openConfigAsSet takes this seam
+// for its four callers instead: the preset-gallery tile (a curated preset has no schemaVersion, and a
+// derived semantic palette can equal a default-kit row exactly, which stamped Maison's Success), the
+// Figma-variables read (configFromVariables seeds every row at skew 0 and lift 0), and the two
+// embedded-config restores ("Open saved palette" and the project restore). The split is by caller: no
+// field of a preset or a variables seed tells it apart from a stored kit. Placed at file end for the
+// same citation reason as backfillDefaultAnchors above.
+function hydrateConfig(config) {
+  const d = config && typeof config === "object" && config.hueSpace == null ? { ...config, hueSpace: "cam16" } : config;
+  return hydrate(d);
+}
+
+return { SETS_KEY, PROJECT_KEY, PROFILE_KEY, CHECKOUT_STORE, PRO_CHECKOUT_URL, STUDIO_CHECKOUT_URL, REPO_URL, SUPPORT_URL, DOCS_URL, ACCOUNT_URL, PRO_EXPORT_FORMATS, ALIASED_README, LEGACY_STORAGE_PREFIXES, migrateStorageKeys, sanitizeSetRecords, loadSets, saveSets, loadProfile, saveProfile, PRO_KEY_RE, defaultLicenseService, licenseInstanceName, DEV_FLAG_TOGGLES, newSet, hydrateStoredDoc, APP_THEME_STYLE_ID, ensureAppTheme, TYPE_FONTS_LINK_ID, ensureTypeFonts, SELF_HOSTED_FONTS, GENERIC_FONTS, ensureWebFont, ensureWebFontPreconnect, ensureWebFonts, setColorScheme, h, fmt, ago, CURVES, DAMP_PRESETS, switchControl, swatch, BTN_VARIANT, btn, SCHEME_ICON, SCHEME_NEXT, CANVAS_INSET, TYPE_SPECIMENS, TYPE_SAMPLE, TYPE_PARA, chip, MODE_WIDTH_PRESETS, HUE_SPACE_ANCHOR_REASON, field, POSTER_STRIP_MAX_BAND_PCT, POSTER_STRIP_MAX_BAND_PCT_LOW, POSTER_STRIP_MAX_BAND_PCT_HIGH, POSTER_STRIP_ACCENT_FLOOR_PCT, POSTER_STRIP_CAP_CHROMA_LOW, POSTER_STRIP_CAP_CHROMA_HIGH, posterStripDominantCap, posterStripBands, backfillDefaultAnchors, hydrateConfig };
 })();
 __M.colorSection = (function(){
 const { PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hasDataPalettes, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixCollisionBadge, radixExportKey, radixKeyCollision, rederiveDataHues, resolvePaletteGroups, seedFromKeyColor, slug } = __M.model;
@@ -20499,7 +20514,7 @@ const { COLLECTIONS } = __M.collections;
 const { stylePlans } = __M.stylePlan;
 const { ICON_SYSTEMS, iconSystem, iconSystemById, iconSystemLabel } = __M.iconSystems;
 const { icon } = __M.icons;
-const { CANVAS_INSET, MODE_WIDTH_PRESETS, PROJECT_KEY, PRO_EXPORT_FORMATS, SCHEME_ICON, SCHEME_NEXT, ago, btn, chip, defaultLicenseService, ensureAppTheme, ensureTypeFonts, field, fmt, h, hydrateStoredDoc, licenseInstanceName, loadProfile, loadSets, migrateStorageKeys, newSet, posterStripBands, sanitizeSetRecords, saveProfile, saveSets, setColorScheme, swatch } = __M.appHelpers;
+const { CANVAS_INSET, MODE_WIDTH_PRESETS, PROJECT_KEY, PRO_EXPORT_FORMATS, SCHEME_ICON, SCHEME_NEXT, ago, btn, chip, defaultLicenseService, ensureAppTheme, ensureTypeFonts, field, fmt, h, hydrateConfig, hydrateStoredDoc, licenseInstanceName, loadProfile, loadSets, migrateStorageKeys, newSet, posterStripBands, sanitizeSetRecords, saveProfile, saveSets, setColorScheme, swatch } = __M.appHelpers;
 const { ColorSection } = __M.colorSection;
 const { TypeSection } = __M.typeSection;
 const { GeomSection } = __M.geomSection;
@@ -22808,16 +22823,16 @@ class HctApp extends HTMLElement {
   }
 
 
-  // openConfigAsSet, shape-clamp an (untrusted) config and open it as a new set. hydrateStoredDoc()
-  // domain-clamps every field AND applies the legacy stamp (a config lacking hueSpace was authored under
-  // cam16, keep it cam16, consistent with openSet), so a junk/partial config is sanitized + preserved.
+  // openConfigAsSet, shape-clamp an (untrusted) config and open it as a new set. hydrateConfig() clamps
+  // every field and applies the legacy stamp (no hueSpace keeps cam16, as openSet does), but not #740's
+  // default-anchor backfill: its reach is the stored set list, and none of the four callers below opens one.
   // #644: `mintData` is opt-in per call site, NOT ambient. Only the preset-gallery tile (a genuine
   // document-CREATION path) passes `mintData: true`. The other three call sites, "Open saved palette"
   // (which promises "opens exactly as saved"), the Figma-variables approximate read, and the ⬇ Project
   // restore, are all "restore my own saved work" paths (REQ-012, H2: auto-mint is opt-in for an
   // upgraded/restored document, not a fresh one) and must stay byte-identical to before #644.
   openConfigAsSet(config, toastMsg, { mintData = false } = {}) {
-    const doc = hydrateStoredDoc(config);
+    const doc = hydrateConfig(config);
     const name = (typeof config.name === "string" && config.name.trim()) || "Project";
     doc.name = name;
     if (mintData && !hasDataPalettes(doc)) doc.palettes.push(...mintDataPalettes(doc));
