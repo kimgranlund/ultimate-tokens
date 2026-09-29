@@ -44,12 +44,12 @@ a canvas header, a scene holding the full dataset, left analysis cards and a rig
 
 | Section | Canvas | Inspector tabs | Notes |
 |---|---|---|---|
-| Color | `canvasView` of Palettes, Scrims, Mapping (the semantic-mapping table, the only table view) or Radix; `colorMode` of `system`, `light`, `dark` or `both`, where `both` renders the scene twice side by side through `renderCompareArea` (and skips the Mapping table) | palette, global and roles, plus a story tab when the open category has one | the original surface of Revision A |
+| Color | `canvasView` of Palettes, Scrims, Mapping (the semantic-mapping table, the only table view) or Radix; `colorMode` of `system`, `light`, `dark` or `both`, where `both` renders the scene twice side by side through `renderCompareArea` (and skips the Mapping table) | palette, global and roles, plus a story tab when the document carries a curated story | the original surface of Revision A |
 | Typography | a `typeSpecMode` segment of `specimen` or `tokens`, and `typeMode` breakpoint modes (base plus each mode, `compare` labeled All when at least one mode exists) | `typeSegment` of scale, fonts and specimen, in `renderTypeInspector` | the Specimen view renders each step in the real face |
 | Geometry | a `geomSpecMode` segment of `controls` or `tokens`, and `geomMode` breakpoint modes (base plus each mode, `compare` labeled All) | `renderGeomInspector` with ramp, `radius` and space tabs | per-step text size composes from the Type scale |
 
 Both breakpoint-mode sets sit beside Compare, which shows every breakpoint side by side and hides the
-specimen segment. Each section also has left analysis cards, routed by `renderLeftPane`. The engines
+section's whole canvas segment (`specimen` or `tokens` in Typography, `controls` or `tokens` in Geometry). Each section also has left analysis cards, routed by `renderLeftPane`. The engines
 behind Typography and Geometry are owned by the `type-scale` and `geometry-system` skills.
 
 **Export drawer.** The drawer offers ten color formats (CSS hex, OKLCH, Tailwind v4, shadcn/ui, Panda
