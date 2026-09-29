@@ -14588,8 +14588,10 @@ function backfillDefaultAnchors(stored) {
 // derived semantic palette can equal a default-kit row exactly, which stamped Maison's Success), the
 // Figma-variables read (configFromVariables seeds every row at skew 0 and lift 0), and the two
 // embedded-config restores ("Open saved palette" and the project restore). The split is by caller: no
-// field of a preset or a variables seed tells it apart from a stored kit. Placed at file end for the
-// same citation reason as backfillDefaultAnchors above.
+// field of a preset or a variables seed tells it apart from a stored kit. The seam is the first guard;
+// the second is serialize()'s schemaVersion 6 stamp: openConfigAsSet serializes the doc and openSet runs
+// it through hydrateStoredDoc again, where backfillDefaultAnchors returns early at >= 5 (persist.mjs's
+// gallery-reach (k) pins both). Placed at file end for the same citation reason as backfillDefaultAnchors above.
 function hydrateConfig(config) {
   const d = config && typeof config === "object" && config.hueSpace == null ? { ...config, hueSpace: "cam16" } : config;
   return hydrate(d);
@@ -22823,9 +22825,9 @@ class HctApp extends HTMLElement {
   }
 
 
-  // openConfigAsSet, shape-clamp an (untrusted) config and open it as a new set. hydrateConfig() clamps
-  // every field and applies the legacy stamp (no hueSpace keeps cam16, as openSet does), but not #740's
-  // default-anchor backfill: its reach is the stored set list, and none of the four callers below opens one.
+  // openConfigAsSet, shape-clamp an (untrusted) config and open it as a new set via hydrateConfig() (clamp and
+  // legacy stamp, no #740 backfill: its reach is the stored set list, which none of the four callers opens).
+  // openSet's second pass through hydrateStoredDoc is inert only because serialize() stamps schemaVersion 6.
   // #644: `mintData` is opt-in per call site, NOT ambient. Only the preset-gallery tile (a genuine
   // document-CREATION path) passes `mintData: true`. The other three call sites, "Open saved palette"
   // (which promises "opens exactly as saved"), the Figma-variables approximate read, and the ⬇ Project
