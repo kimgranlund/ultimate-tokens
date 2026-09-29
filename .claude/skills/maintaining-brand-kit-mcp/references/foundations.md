@@ -10,13 +10,14 @@ probably fighting one of these. The user-facing contract is owned by `mcp/README
   `brand-kit.json`. It is engine-aware (it reads `projectView(doc)`'s resolved palettes/roles, `typeScale`,
   and `geometryScale`), it is where every value the server can serve comes from. Shape:
   ```
-  { $schema: "ultimate-tokens-brand-kit/3", name, generator: "Ultimate Tokens",
+  { $schema: "ultimate-tokens-brand-kit/3", name, generator: "Ultimate Tokens", icons, motion, constants, controls,
     stops:    [50, 100, …, 950],                       # the stop numbers (color only; on[0].ramp's stops)
     palettes: [ { name, slug, key, ramp: [ {stop, hex} ] } ],
     roles:    { <slug>: { <roleKey>: { light: "#…", dark: "#…" } } },   # 53 keys per palette
-    type:     <typeScale(doc.type)>,        # { treatment, label, fonts, roleOf, categories: {7 voices} }
-    geometry: <geometryScale(doc)> }        # { treatment, label, density, radiusStyle, baseHeight,
-                                            #   typed:true, sizes:{XS…2XL}, radii:{none…full}, space }
+    type:     <typeScale(doc.type)>,        # { treatment, label, fonts, roleOf, categories: {15 voices}, weights }
+    geometry: <geometryScale(doc)> }        # { treatment, label, density, radiusStyle, radiusDefault, baseHeight,
+                                            #   rampContrast, ramp, sizes:{XS…2XL}, radii:{none…full}, space,
+                                            #   insets, gaps, borders, focus }
   ```
   Note: `kit.type = typeScale(doc.type || DEFAULT_TYPE)` calls the engine export directly; `kit.geometry =
   geometryScale(doc)` calls a thin `geometryScale` wrapper in `src/ui/model.mjs` that runs the engine's `geomScale`
@@ -125,19 +126,20 @@ asserts this on the projection directly via `brandKit({color:true})` / `{type:tr
 ### 5. Where the served type + geometry come from
 
 `get_type` / `brand://type` return `kit.type` **verbatim** (the `typeScale` output). Its `categories` map has
-**seven** voices from `make7`, `Display`, `Heading`, `Sub-heading`, `Kicker`, `Body`,
-`UI`, `Code`, each step `{ size, lineHeight, letterSpacing, weight, textTransform, paragraphSpacing,
-paragraphIndent }`. (The `usageGuide()` prose collapses these into a four-voice teaching model
-Display/Heading/Body/UI, that is documentation, not the data shape.)
+the fifteen voices of `makeVoices` (`src/engine/type.mjs`), `Display` through `UI-widget`: the other thirteen
+voices carry `SM`, `MD`, `LG`, and `UI-control` and `UI-widget` carry `XS` to `2XL`. Each step is `{ size,
+lineHeight, letterSpacing, leadingRatio, trackingRatio, weight, textTransform, paragraphSpacing,
+paragraphIndent }`. The `usageGuide()` prose names the voices by function; it is documentation, not the data shape.
 
 `get_geometry` / `brand://geometry` return `kit.geometry` verbatim (the `geometryScale` output). Top level:
-`{ treatment, label, density, radiusStyle, baseHeight, typed, sizes, radii, space }`. `sizes` runs XS, SM, MD,
-LG, XL, 2XL; each `buildSize` row is `{ height, icon, caret, font, gap, padding, edgePadding, radiusPill,
-minWidth }`. `radii` is the ladder `{ none, sm, md, lg, full:9999 }`; `space` is the spacing scale.
+`{ treatment, label, density, radiusStyle, radiusDefault, baseHeight, rampContrast, ramp, sizes, radii, space,
+insets, gaps, borders, focus }`. `sizes` runs XS, SM, MD, LG, XL, 2XL; each `buildSize` row is `{ height, icon,
+caret, font, gap, paddingNarrow, paddingWide, paddingNarrowCompact, paddingWideCompact, radiusPill, minWidth }`.
+`radii` is the ladder `{ none, xs, sm, md, lg, xl, full }`; `space` is the spacing scale.
 
 The key composition facts the test pins: a size step's **`font` equals the UI-control voice's size** at the
 same step (`geo.sizes.MD.font === ty.categories["UI-control"].MD.size`) and the **centering law** holds
-(`geo.sizes.MD.padding === (geo.sizes.MD.height − geo.sizes.MD.icon) / 2`). The server doesn't compute
+(`geo.sizes.MD.paddingNarrow === (geo.sizes.MD.height − geo.sizes.MD.icon) / 2`). The server doesn't compute
 these, `geometryScale(doc)` in `src/ui/model.mjs` shares the `typeScale` into `geomScale`, but a tool/resource
 change must not break the round-trip. The taxonomy of voices + sizes is owned by `src/engine/type.mjs` /
 `src/engine/geometry.mjs` and the `geometry-system` skill, cite, don't re-derive.

@@ -84,8 +84,9 @@ because unchecked is a real answer): the gate's "Published library" checkbox, an
 mapping › "Figma apply", which exists because "don't show again" makes the gate unreachable and
 nothing in the app clears that consent. An `undefined` reaching `code.js` means only an OLD
 `ui.html` bundle; on the flagship it never reaches `confirmLibraryMode` (only the standalone binder's
-own `main()` passes `askIfUndecided`); instead `applyFloatPlans`/`applyFontPrimitivesModes` fall back
-to `priorLibraryUpliftVM`, which reads TRUE when the collection already carries prior-uplift
+own `main()` passes `askIfUndecided`). In `applyFloatPlans`/`applyFontPrimitivesModes` a non-empty
+reconcile report (any alias or deprecate) asks under `askIfUndecided` and otherwise reads `false`; only
+when the report is empty do they fall back to `priorLibraryUpliftVM`, which reads TRUE when the collection already carries prior-uplift
 evidence (an unwanted existing name with a live alias, or a `_deprecated/` name), false otherwise. **The two collection NAMES are per-doc overridable**, Settings ›
 Token mapping › "Figma collections" writes `doc.figmaCollections {raw, semantic}` (persisted, absent =
 defaults); `figmaCollectionNames(doc)` (model.mjs) resolves, rides the bundle's aliasData
@@ -106,7 +107,7 @@ executor also explicitly UNBINDS the stale half of the pair on re-apply). The fu
 list found live against real files: `references/figma-styles-hard-constraints.md`. Verifier:
 `test/figma/style-plan.mjs` (both-directions parity vs exportUI3) + the styles e2e in `plugin.mjs`.
 Sibling weights: `doc.type.voices[v].weights`, edited in the per-voice panel (Suggest =
-`siblingWeightDefaults`, or `bodyClassSiblingDefaults` for Body*/Label*/Tiny*/Lead). Round-trip OUT: `configFromVariables` (`src/ui/model.mjs`) recovers each family's
+`siblingWeightDefaults`, or `bodyClassSiblingDefaults` for the voices in `BODY_CLASS_VOICES` (`src/engine/type.mjs`)). Round-trip OUT: `configFromVariables` (`src/ui/model.mjs`) recovers each family's
 500 hue/chroma from the live raw vars (the APPROXIMATE fallback when no config is embedded); `read-variables`
 → `receiveLiveVariables` feeds the drift diff. Geometry rides the `Geometry` collection of Figma NUMBER (FLOAT) vars via `geomTokensFigma` (`src/engine/geometry.mjs`).
 

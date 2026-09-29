@@ -25,7 +25,7 @@ path; a question the corpus doesn't answer is reported as absent, never guessed.
 | A ratified decision and its alternatives | `docs/reference/references/decision-records.md` (ADR-001 onward, accepted = append-only); there is no `docs/adr/` directory |
 | What's queued, in flight, or done | **GitHub Issues first** (`gh issue list`, ADR-017, 2026-07-17: the live ticket backend), `docs/tickets/` is the pre-2026-07-17 ARCHIVE only (frontmatter `kind:`/`size:`/`status:` on those files reflects state as of the migration date, not current; a migrated file's `migrated-to:` frontmatter + top-of-file pointer names its Issue) |
 | Sequenced steps with done-whens | `.sdlc/plans/` (active plans; the board is `.sdlc/board.md`), closed plans archive to `.sdlc/plans/archive/` and `docs/plan/archive/` |
-| Horizons of intent, Now / Next / Later | `.sdlc/roadmap.md` |
+| Horizons of intent, Now / Next / Later | no horizons document exists, so report horizons as absent; `.sdlc/roadmap.md` is a generated open-issue snapshot (`status: generated`, written by `.sdlc/scripts/roadmap-gen.mjs`), cite it for what is open, never as a plan of intent |
 | One actor, one sitting, one done-when | `docs/task/` (TASK-*), not present yet |
 | The color/type/geometry ENGINE's own canonical reference (role tables, export-format shapes, typography/geometry specs, rubrics) | `docs/reference/`, pre-existing, own conventions (not scribe TICKET/SPEC frontmatter); the role-answer-key is `docs/reference/data/role-table.json` |
 | Marketing corpus (voice platform, fact sheet, store copy, launch kit) | `docs/marketing/`, author via the `marketing-manager-agent` + `ultimate-tokens-brand-voice` skill, not this skill |
