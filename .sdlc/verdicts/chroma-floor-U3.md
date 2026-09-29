@@ -6,7 +6,7 @@ ticket: "#701"
 branch: unit/cf-U3
 base: 022e1443
 grade: verifier-l1, the evidence run dispatched by the Verifier seat
-pass: 1
+pass: 2
 written: 2026-09-28
 ---
 
@@ -38,3 +38,38 @@ The head is `7cea7c41`; the code and records head is `ba8eece2`, and `7cea7c41` 
 - 🟡 F9, a plan item: the plan does name ADR-025 (U3 bullet and C10), but ADR-025 is the on-color decision (`decision-records.md:696`). ADR-026 (`:767`) records #701's `chromaFloor` side. The plan's `both allow-lists` should read three, as C11 and the ADR line already say.
 - 🟡 F10, a records item: the unit review sits in `.sdlc/reviews/`, while this plan's U1 and U2 reviews sit in `.sdlc/verdicts/`. The plan has no path-level wall, so no criterion moves.
 - 🟡 In the handoff, `Host: 1-minute load 21 to 103 through the timing runs` does not match its own timing table, which spans 21.43 to 42.34. The C1 control it marks `not re-run` was run here: `exit 1`.
+
+## Pass 2 · 🟡 · every U3 row 🟢 and all ten pass 1 findings fixed; build, smoke and the merged em-dash gate owed at pre-land
+
+verdict: 🟡
+sha: bbf9c04bc48ecc5d95f0d93f0c65a354f3a5bde4
+
+Head `bbf9c04b`; B `022e1443`. Criteria: revision 17 plus revision 18 at `c9a1b86c:.sdlc/plans/chroma-floor.md` (C14 (a) reads added lines). `git diff --stat 27c513c1 bbf9c04b -- src test scripts package.json .github` is empty, so U1 and U2's engine and gate readings carry and this pass grades the records. The evidence run was verifier-l2 (Opus 5.5), standing in for verifier-l3 while fable is capped. `verdict.py check` passes on the handoff, review r2 and the plan, `exit 0` each.
+
+| Row | State | Evidence | Negative control |
+|---|---|---|---|
+| C1 | 🟢 | fresh clone at the head: `✓ all 50 test files passed`, `exit 0`, tree `0` after | scrim sed on `role-table.json`: `✗ 1/50 test file(s) failed`, `exit 1` |
+| C10 | 🟢 | `npm test` ran C10's generators and left the tree `0`; the docs diff lists `8` paths, all inside the ten; `adia-oklch-export.css` diff `0` lines | a line appended to `knowledge-01-color-engine.md` makes the list `9` |
+| C11 | 🟢 | seven greps: `0`, `0`, `0`, `1`, `1`, `0`, `2` | `const LONE_SPIKE_ALLOW = ["x"];` appended to anchor.mjs gives `1` |
+| C12 | 🟢 | `baseline-agrees-check.sh`: `ok    time gate:even-dips: baseline 19 to 23 s, adapter 19 to 23 s`, one allowed `STALE ui.html`, `stale total: 1`; regraded at pre-land on the rebased head | the adapter even-dips cell set to `~19 to 22 s`: `stale total: 2` |
+| C14 (a) | 🟢 | `R65` baseline `3`, adapter `1`; added-line `sdlc/runtime` `0`; the R65 question file `resolves` on origin/main | at `7cea7c41`: `0`, `0`, `1` |
+| C14 (b) | 🟢 | an independent parser over the adapter table: `computed 376 to 496 ...; row says 376 to 496; AGREE`; the seat reads `376 to 496` at the head (`1`) | the `7cea7c41` copy: `row says 355 to 475; STALE` |
+| C14 (c) | 🟢 | CHANGELOG `Both are 0` `0`, `58 off-anchor dips` `1`; the seat counts `EVEN_DIP_BASELINE` at `282fca8d` as `57` at 450, `32` at 500, `1` at 550 | at `7cea7c41`: `1`, `0` |
+| C14 (d) | 🟢 | `Tongass secondary stop 175` `1`, `tertiary ramp` `0`; U1's movement script rerun: `overall: 23.3753 (... secondary stop 175)` | at `7cea7c41`: `0`, `1` |
+| C14 (e) | 🟢 | `sed -n '6p;33p' .sdlc/baseline.md \| grep -c R65` `2`; "load 21 to 42" matches the table's `21.43` to `42.34` | at `7cea7c41`: `0` |
+| C14 (f) | 🟢 | `envelope-relative`: decision-records `:0`, glossary `:0`, plan Units `0` | at `7cea7c41`: `:1`, `:0`, `2` |
+| C14 (g) | 🟢 | `made the retired dip baseline` `0`, `chromaFloor.*32 at stop 500` `1` | at `7cea7c41`: `1`, `0` |
+| C14 (h) | 🟢 | `lifted-stop units` `:0` in three records; `lift 0` foundations `:1`, knowledge-02 `:2`; a `liftStop` probe gives stop 400 `\|sd\|` `0.2222` at lift 0 and crosses `0.2` at `14.25` | at `7cea7c41`: `1`, `0`, `1`, `1`, `0`, `0` |
+| C14 (i) | 🟢 | amendment under ADR-026 `1`, under ADR-025 `0`; `ADR-026 carries` `1` | at `7cea7c41`: `0`, `1`, `0`, `1` |
+| C14 (j) | 🟢 | `.sdlc/verdicts` review count `2`, `.sdlc/reviews` `0` | at `7cea7c41`: `0`, `1` |
+| C14 (k) | 🟢 | handoff `21 to 103` `0`, `sdlc/runtime` `0`, `C1.*exit 1` `1` | the `7cea7c41` handoff: `1`, `1`, `0` |
+| C14 (l) | 🟢 | U+2014 on added lines outside `src`: `0` | one U+2014 line appended to CHANGELOG: `1` |
+| Repo scripts | 🟢 | `branding: clean (751 files scanned)`; `STALE 0 across 10 discovered docs (HEAD bbf9c04b)` | citations' self-test `staleLines() fails a NOFILE line (exit 1)` |
+| Pre-land | 🟡 | owed: `npm run build`, `npm run smoke`, and `node test/repo/em-dash.mjs` after the origin/main merge | owed |
+
+### Findings
+
+- 🟢 Pass 1's F1 to F10 are fixed; each was read against its source (engine lines, the `282fca8d` baseline split, the R65 ruling file, ADR-026 Consequences).
+- 🟡 N1, plan-owned: C14 (f)'s printed control reads `1`, `2`, `0`; the command prints `:1`, `:0`, `2` at `7cea7c41`. The re-diagnosis F6 row also records the Units count as `1` where it is `2`. The handoff is right.
+- 🟡 N2, orchestrator mirror: the branch copy of `.sdlc/board.md` says `timing rows 3/3 under R57`; even-dips is under R65.
+- 🟡 N3, carried from F8: the `tonal.js:422-425` comment keeps the lift-0-only wording (`0.2 lifted-stop-units`). The re-diagnosis routed it out of U3; it has no ticket or pre-land slot yet, so it must get one before landing.
