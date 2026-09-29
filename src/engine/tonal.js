@@ -315,8 +315,7 @@ function solveCam16Hue(targetOklchHue, chroma, tone, gamutClamp = false, { chrom
 // palette's `intended` is itself large relative to any stop's shrinking gamut ceiling, so
 // chromaFloor%·maxc stays well under `damped` there and the floor never binds  -  it only rescues the
 // LOW-chroma ramps chromaFloor exists for. Factored so the per-stop map AND the stop-500 hue anchor share
-// ONE formula and can't drift (the oklch-hue-anchor gate reads the exported hue, so any drift here trips
-// it).
+// ONE formula and can't drift (the oklch-hue-anchor gate reads the exported hue, so any drift here trips it).
 // floorRef (#701 U2, revision 14): the floor's gamut reference is min(maxc, floorRef), where floorRef
 // is the largest gamut ceiling among the anchor stop and its first display step on either side (450,
 // 550), at the tones the ramp renders them. Near white and black maxc falls under floorRef, so the floor
@@ -325,8 +324,9 @@ function solveCam16Hue(targetOklchHue, chroma, tone, gamutClamp = false, { chrom
 // floorRef instead of following maxc up. The old floor, chromaFloor%*maxc at every stop, followed maxc
 // up that side while the damped value fell, and the two met in a valley one or two stops out: the
 // 400/450/550 dips #701 retires. Why the first step and not the anchor stop alone: at 450/550 the cap
-// equals that stop's own ceiling, so from there outward the floor never rises, and one stop in no dip
-// can bottom; capping at the anchor stop's own ceiling instead (U2 pass 1) set the floor's LEVEL over
+// equals that stop's own ceiling (exact at hueShift 0 on the cam16 path; both floorRef call sites name
+// the approximate cases), so from there outward the floor never rises, and one stop in no dip can
+// bottom; capping at the anchor stop's own ceiling instead (U2 pass 1) set the floor's LEVEL over
 // the whole ramp from the pivot's gamut, which near white or black is a few C, and drained the far half
 // of those ramps toward grey. When the damped value is itself non-increasing outward (constant
 // `intended`) no off-anchor dip can form; with relChroma or the anchored basis blend `intended` varies,
