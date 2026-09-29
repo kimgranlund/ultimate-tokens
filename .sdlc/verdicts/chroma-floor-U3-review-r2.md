@@ -43,3 +43,5 @@ Every sentence 03a6dd63 changed in `CHANGELOG.md`, `decision-records.md`, `gloss
 - Low, plan-owned: the re-diagnosis F6 row (`.sdlc/plans/chroma-floor-U3-rediagnosis.md:48`) records the plan Units `envelope-relative` count at 7cea7c41 as `1`; `git show 7cea7c41:.sdlc/plans/chroma-floor.md | sed -n '/^## Units/,/^## Parity/p' | grep -c envelope-relative` prints `2`, which the handoff's C14 (f) control states correctly. The plan's C14 control list gives (f) as `1`, `2`, `0`, not in the command's output order (`:1`, `:0`, `2`). Neither is a U3 record; a planner repair at the next revision.
 - Low, stale by one commit: the handoff's C14 (a) row (`.sdlc/handoffs/chroma-floor-U3.md:21`, with its Left out line `:56`) is 🟡 and asks for the narrowing revision 18 then made (c9a1b86c, two minutes after 3affbaa5). Under revision 18 the leg reads `0`, so the row is 🟢 in fact; the handoff need not be rewritten for it.
 - Info: the `EVEN_NEIGHBOURHOOD_R` comment in `tonal.js` keeps the lift-0 wording; routed out of U3 by the re-diagnosis, not graded here.
+
+verdict: 🟢
