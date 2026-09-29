@@ -13,15 +13,15 @@ Geometry derives everything from **`{ treatment, baseHeight }`**:
 ```
 config {treatment, baseHeight}
   → factor = baseHeight / 28              # CANON_MD; scales the whole ramp uniformly
-  → for each SIZES row [name, h]: buildSize(h·factor, density, fontOverride)
+  → for each SIZES row [name, h]: buildSize(h·factor, density, font, gap)   # font, gap pre-resolved by geomScale
       height = roundEven(rawHeight)        # the one free input per row; everything below is DERIVED
-      icon   = roundEven(2.49·height^0.58) # frame family, the power law
-      font   = fontOverride ?? round(3.16·height^0.45)   # rhythm family (≈ √h) OR the type UI voice
-      caret  = font                        # rhythm, the affordance mark = text height
+      icon   = roundEven(2.49·height^0.58) # frame family, a power law
+      font   = fontOverrides[name] ?? the composed UI-control size ?? round(CONTROL_FONT[name]·factor)   # rhythm family
+      caret  = round(3.5·height^0.39)      # its OWN power law (never composed, never derived from font; < font at every step of the default ramp)
       gap    = max(1, round(GAP_UNIT[name]·(bh/28)·density))  # rhythm, the calibrated unit (3·3·4·6·6·8
-                                                          # at bh 28, TKT-0010); density rides HERE, only here
-      padding     = (height − icon)/2      # THE CENTERING LAW (slot edge)
-      paddingWide = (height − caret)/2     # the caret/bare edge (TKT-0010, was edgePadding = h/2)
+                                                          # at bh 28); density rides HERE, only here
+      paddingNarrow = (height − icon)/2    # THE CENTERING LAW (slot edge)
+      paddingWide = (height − caret)/2     # the caret/bare edge
       paddingNarrowCompact = (height − gap − icon)/2   # the slot edge with the gap absorbed
       paddingWideCompact   = (height − gap − caret)/2  # the caret edge with the gap absorbed
                                            # EXACT halves ratified, 7.5px is a real value, never rounded
@@ -41,17 +41,14 @@ loops the six `SIZES`. Pure, no DOM, no RNG, same input → identical output.
 
 From that single rule fall out, mechanically:
 
-- `padding` = `(height − icon)/2`, the **slot** edge (icon centered in a height² cell).
-- `paddingWide` = `(height − caret)/2`, the caret/bare edge (TKT-0010; replaced `edgePadding = h/2`,
-  landing much tighter, md 14 → 7.5). Historically the h/2 edge was the text pad
-  `½(h − font)` + the absent slot's gap `½·font` = `h/2`, that is why the two-term pad collapses to a single
-  clean number.
+- `paddingNarrow` = `(height − icon)/2`, the **slot** edge (icon centered in a height² cell).
+- `paddingWide` = `(height − caret)/2`, the caret/bare edge (md 7.5, an exact half, never rounded).
 - `minWidth` = `height`, an icon-only control is **exactly square** (the 1:1 floor); the glyph centers in it.
 - `radiusPill` = `round(height/2)`, a fully-round control is a pill; the corner radius is half the height.
 
 The `.control-{size}` utility class **embodies** the law: `block-size: var(--size-{s}-height)` (the lever),
 `padding-block: 0`, `padding-inline: var(--size-{s}-padding-wide)` (the caret/bare edge), `border-radius:
-var(--size-{s}-radius)` (the pill). The test's `centering-law` block asserts `padding === (height − icon)/2`
+var(--size-{s}-radius)` (the pill). The test's `centering-law` block asserts `paddingNarrow === (height − icon)/2`
 **exactly** (not within a tolerance) for every size, it is a derivation, not a fit.
 
 ### 3. THE TWO FAMILIES: why density must not touch the frame
@@ -63,12 +60,12 @@ var(--size-{s}-radius)` (the pill). The test's `centering-law` block asserts `pa
 
 `density` (a treatment property: comfortable 1 · compact 0.75 · spacious 1.25 · touch 1.1 · pill 1) multiplies
 **`gap` and only `gap`**, `gap = max(1, round(GAP_UNIT[name]·(bh/28)·density))`; per-breakpoint hand
-columns (the ratified TKT-0010 matrix) ride `opts.gapOverrides` as FINAL values. It is deliberately kept
+columns (the ratified matrix) ride `opts.gapOverrides` as FINAL values. It is deliberately kept
 out of the frame:
 the frame is geometric (proportional to height), and **scaling the frame would un-center the glyph**, the slot
 pad `(height − icon)/2` only centers the icon if neither side is rescaled. The `two-families` test block pins
-this: at the **same** height, compact's `gap < ` comfortable's `gap`, but `padding` is **identical** (`density
-does NOT change the frame padding`). If a change makes density move `padding`/`icon`/`radius`, the square
+this: at the **same** height, compact's `gap < ` comfortable's `gap`, but `paddingNarrow` is **identical** (`density
+does NOT change the frame padding`). If a change makes density move the pads/`icon`/`radius`, the square
 breaks and the law is violated.
 
 ### 4. THE POWER-LAW RAMP: one rule sampled six times
@@ -91,19 +88,19 @@ font  = the CONTROL_FONT row {XS:12, SM:13, MD:15, LG:16, XL:18, 2XL:20} × fact
         voice's size at the matching step wins, and opts.fontOverrides wins over both
 ```
 
-The glyph rules reproduce the hand-tuned reference ramp to **±1px**, so the table is not six hand-picked
+The icon rule reproduces the hand-tuned reference ramp to **±1px**, so the table is not six hand-picked
 points, it is **one rule sampled six times**, and it generalizes to any scaled `baseHeight`. The
-`reference-ramp` test block checks the engine output against the hand table `REF` (icon ±1, height exact)
+`reference-ramp` test block checks the engine output against the hand table `REF` (icon ±1, font ±1, height exact; the caret is pinned at SM..2XL by its own exact-ramp assert)
 and that heights strictly increase XS→2XL. The reference ramp (comfortable @ baseHeight 28, standalone):
 
-| size | height | icon | caret | font | pad (slot) | edge (slotless) | radius (pill) |
+| size | height | icon | caret | font | paddingNarrow (slot) | paddingWide (caret edge) | radius (pill) |
 |---|---|---|---|---|---|---|---|
-| **XS** | 20 | 14 | 11 | 12 | 3 | 10 | 10 |
-| **SM** | 24 | 16 | 12 | 13 | 4 | 12 | 12 |
-| **MD** | 28 | 18 | 13 | 15 | 5 | 14 | 14 |
-| **LG** | 36 | 20 | 14 | 16 | 8 | 18 | 18 |
-| **XL** | 48 | 24 | 16 | 18 | 12 | 24 | 24 |
-| **2XL** | 64 | 28 | 18 | 20 | 18 | 32 | 32 |
+| **XS** | 20 | 14 | 11 | 12 | 3 | 4.5 | 10 |
+| **SM** | 24 | 16 | 12 | 13 | 4 | 6 | 12 |
+| **MD** | 28 | 18 | 13 | 15 | 5 | 7.5 | 14 |
+| **LG** | 36 | 20 | 14 | 16 | 8 | 11 | 18 |
+| **XL** | 48 | 24 | 16 | 18 | 12 | 16 | 24 |
+| **2XL** | 64 | 28 | 18 | 20 | 18 | 23 | 32 |
 
 `roundEven` (`2·round(v/2)`) is used for **height and icon**, even pixel sizes keep glyphs crisp and slot pads
 integral. `font`/`caret` use plain `round`.
@@ -121,19 +118,19 @@ export function geometryScale(doc) {
 
 Inside `geomScale`, when `opts.typeScale` is supplied, it reads `opts.typeScale.categories["UI-control"]` and
 passes `uiSteps[name].size` as the composed font to `buildSize` for each step, geometry `XS → UI-control XS …
-2XL → 2XL` (the voice rides the full 6-step ramp since TKT-0008, so every step composes; a missing step falls
+2XL → 2XL` (the voice rides the full 6-step ramp, so every step composes; a missing step falls
 back to `round(CONTROL_FONT[name] × factor)`, and `opts.fontOverrides` wins over both). So each size's `font`
 becomes the brand's **UI-control voice** at the matching step. `gap` rides its own GAP_UNIT calibration
-(TKT-0010, decoupled from the font); `caret`
+(decoupled from the font); `caret`
 keeps its own height law (never composed).
 
-Critically: **the FRAME is untouched** by composition. `fontOverride` only replaces `font` (a rhythm member);
+Critically: **the FRAME is untouched** by composition. `fontOverrides` only replaces `font` (a rhythm member);
 `height`/`icon`/`paddingNarrow`/`paddingWide`/`radiusPill`/`minWidth` are all computed before/around it, so the
-centering law `padding === (height − icon)/2` **still holds on the composed scale**. The `composition` test
+centering law `paddingNarrow === (height − icon)/2` **still holds on the composed scale**. The `composition` test
 block proves all of this: composed `font === ts.categories["UI-control"][name].size`, height + padding
 are **identical** to the standalone scale, the law still holds, a bigger type `bodyBase` scales the control
 `font` (shared source of truth), and `fontOverrides` wins over composition. (The interim `typed` self-report
-flag was removed with the TKT-0008 reroute.)
+flag no longer exists.)
 
 > The UI-control voice rides `RANKS6` (XS·SM·MD·LG·XL·2XL), exactly geometry's six steps. The join matches
 > by name (`uiSteps && uiSteps[name]`), never by index. The pure `geomScale(config)` with no `opts` rides the
@@ -166,7 +163,7 @@ gaps, section rhythm). This is the space **BETWEEN** components, a **distinct co
 - **`geomTokensCSS(scale)`**: `:root` custom props (per-size `height/icon/caret/font/gap/padding-narrow/
   padding-wide/padding-narrow-compact/padding-wide-compact/
   radius/min`, the radius ladder, the space scale, `--density`) **plus** a `.control-{size}` utility class per
-  size that **embodies the law** (block-size lever, `padding-block: 0`, inline pad = the slotless `h/2`, pill
+  size that **embodies the law** (block-size lever, `padding-block: 0`, inline pad = `paddingWide` = `(h − caret)/2`, pill
   radius). The CSS test checks the custom props exist and that `.control-md` carries `block-size:
   var(--size-md-height)` with `padding-block: 0`.
 - **`geomTokensDTCG(scale)`**: W3C-DTCG **`dimension`** tokens (`$type: "dimension"`, `$value: "{px}px"`): a

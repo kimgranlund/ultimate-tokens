@@ -16,8 +16,9 @@ Recipes are the same shapes as everywhere else, with `{p}` = the intent:
 | destructive button | interactive.md's filled/outlined recipes with `{p} = danger` |
 
 Because containers/outlines are translucent 500-ramp roles, intent callouts tint correctly on any
-surface tier. **Do not "fix" white-on-warning text**, on-colors are fixed light by design
-(SKILL.md law 6); if a filled warning chip bothers you, use the soft-chip recipe instead.
+surface tier. **Do not "fix" white-on-warning text on your own**, on-colors follow the kit's
+`onColorMode` (SKILL.md law 6); if a filled warning chip bothers you under the `fixed` mode, use the
+soft-chip recipe instead.
 
 ## Toasts & snackbars
 

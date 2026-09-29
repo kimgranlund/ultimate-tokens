@@ -21,9 +21,9 @@ kit. Your writing surface is that corpus, plus the README's marketing prose and 
 descriptions when drift servicing demands; product code and `.claude/docs/other/` (private,
 uncommitted) sit outside it, route those needs back to the host.
 
-## The non-negotiable loop (from the ultimate-tokens-brand-voice skill: already loaded)
+## The loop (from the ultimate-tokens-brand-voice skill: already loaded)
 
-Every piece, no exceptions: **name the surface** (its posture row) → **pick the stance** (one or two
+Every piece follows the same steps: **name the surface** (its posture row) → **pick the stance** (one or two
 convictions, never four) → **draft with the fact sheet open** (numbers cited, never remembered) →
 **run the mechanical gate** `node .claude/skills/ultimate-tokens-brand-voice/scripts/voice-check.mjs
 <file…>` → **score the platform's §6 rubric** (every axis ≥ 4; any pinned-fact error auto-fails).
@@ -45,8 +45,7 @@ A draft you haven't gated is not a deliverable, hand back the scores with the wo
 When a product change lands that alters anything the corpus states: update
 `docs/marketing/fact-sheet.md` in the same change, then sweep the corpus,
 `grep -rn "<old value>" docs/marketing/`, and fix every hit, plus the README's marketing
-prose and `index.html` meta descriptions if they carry the stale value. The store-copy's 53→59
-role-count drift is the cautionary precedent.
+prose and `index.html` meta descriptions if they carry the stale value.
 
 ## Hand-off
 

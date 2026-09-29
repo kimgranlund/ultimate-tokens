@@ -84,7 +84,8 @@ per stop:
   m        = chromaEnvelope(stop, 500, lift, controls)   # the ONE shared multiplier (#681 U3, below)
   intended = relChroma ? (chroma/100)·maxc : target   # per-stop ceiling basis vs base-peak basis
   damped   = min(intended·m, maxc)
-  floorC   = min((chromaFloor/100)·maxc, intended)    # NEVER above intended → muted stays muted, neutral stays neutral
+  floorC   = min((chromaFloor/100)·min(maxc, floorRef), intended)  # NEVER above intended → muted stays muted, neutral stays neutral
+                                                  # floorRef = max ceiling of stops 450/500/550 (#701): the floor never rises past the first step
   chroma   = min(maxc, max(damped, floorC))
   rgb      = hctToRgb(hue, chroma, tone)
 ```
@@ -98,6 +99,7 @@ chromaEnvelope(stop, anchorStop, lift, controls):        # src/engine/tonal.js, 
   damp     = isEven ? 100 − (100 − damp)·0.25 : damp     # EVEN_DAMP_FACTOR = 0.25
   γ        = (isEven ? 0.25 : 1)·dampCurve
   uG       = |sd|^γ
+  if isEven: uG *= smoothstep(min(1, |sd| / EVEN_NEIGHBOURHOOD_R))   # 0.2; flat start at the anchor (#701)
   sideW    = max(0, 1 + (dampBias/100)·sign(sd))
   shoulder = (dampAmp/100)·4·uG·(1−uG)                   # 0 at sd=0 AND |sd|=1 → shoulders only
   return max(0, 1 + shoulder − (damp/100)·sideW·uG)
@@ -111,6 +113,16 @@ chromaEnvelope(stop, anchorStop, lift, controls):        # src/engine/tonal.js, 
   ships `dampAmp 0` rather than 55. The `even`-only `EVEN_DAMP_FACTOR` is U3's even-only retune: `even`
   sets CIELAB L\* directly, so chroma damping there cannot move measured L\*, which makes it the one mode
   whose falloff can be retuned without reopening the Helmholtz-Kohlrausch coupling.
+- **The even shoulder at the anchor** (#701 U1). `uG = |sd|^0.375` has infinite slope at the anchor, so one
+  stop out the envelope was already about 0.6 and muted anchors read near-achromatic at 450/550 beside a
+  full-chroma 500 (the 64 lone spikes). In `even` only, `uG` is multiplied by a smoothstep of
+  `|sd| / EVEN_NEIGHBOURHOOD_R` (R = 0.2 in `sd` units, 0.2 of the 450-stop half-ramp, 90 stop units at
+  lift 0; a named constant, not a control): 0 at the anchor, 1 from R out. At lift 0 the smoothstep is 1
+  by stops 400/600 (`|sd|` 0.222), so nothing beyond them moves; under lift `liftStop` sets the reach, and
+  above `|lift|` about 14 the near-side 400 or 600 enters it. `perceptual` and `peak` never take the branch
+  (the `mode-isolation` fixture pins them). The lone-spike lists and the dip baseline are retired: the
+  lone-spike and off-anchor dip gates count zero with no list; the 32 dips at stop 500 are notches,
+  printed and not gated.
 - **Anchored palettes take a different branch of this same pipeline.** `paletteStopsAnchored` and
   `okhslStopsAnchored` call the SAME `chromaEnvelope`; what differs is the tone construction
   (`anchorLerp`, `toneAt` re-mapped per side through the pivot) and the chroma BASIS
@@ -127,7 +139,18 @@ chromaEnvelope(stop, anchorStop, lift, controls):        # src/engine/tonal.js, 
 - **`chromaFloor`** (default 40): lifts the damping-starved light/dark ends of a LOW-chroma ramp back toward
   `intended` (kills the near-white "dead zone") but is capped at `intended`, so it never over-saturates a
   muted palette and never tints a true neutral (`intended≈0` → floorC 0). Saturated ramps already clamp at
-  `maxc`, so the floor never binds. (The `chroma-floor` gate proves all four.)
+  `maxc`, so the floor never binds. (The `chroma-floor` gate proves all four.) Its gamut reference is
+  `min(maxc, floorRef)` (#701 U2, revision 14), `floorRef` the largest ceiling among the anchor stop and its
+  first display step either side (450, 550): near white and black `maxc` is the smaller, so the floor stays
+  gamut-relative there; on the side where the gamut widens away from the anchor it holds flat. The old
+  `chromaFloor%·maxc` followed `maxc` up that side while the damped value fell, and the two met in a valley
+  one or two stops out, which with the envelope's infinite slope at the anchor made the 58 off-anchor dips
+  (57 at 450, 1 at 550) of the retired 90-name even dip baseline; the 32 at stop 500 are notches, still
+  present and not gated. With a damped value that is non-increasing
+  outward (constant `intended`) no off-anchor dip can form; with `relChroma` or the anchored basis blend that
+  is a measurement, not a guarantee, gated at 0 by `test/engine/tonal.mjs` (`dip-gate-even`, rendered path)
+  and `npm run gate:even-dips` (gate path) with no list. Capping at the anchor stop alone drains the far half
+  of a near-white or near-black ramp; the first-step reference is continuous across the tone window.
 
 ### 6. The OKHSL-path pipeline (`okhslStops`, perceptual/peak)
 

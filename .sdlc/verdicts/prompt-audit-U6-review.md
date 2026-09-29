@@ -1,0 +1,43 @@
+FAIL
+
+# prompt-audit U6 review, pass 1 · #758
+
+Reviewer, fresh context. Reviewed `unit/pa-U6` at 88b65a39 (rewrite commit 5ca1ffe4) against `plan/prompt-audit` f6cd69cb: the U6 section, the Scope wall, P5, P6 and The design, stated once. Diff base `B` = 13346c1a (`git merge-base origin/main HEAD` after `git fetch`). Negative controls ran in a `git clone -q --shared .` under the reviewer's job tmp, checked out to f6cd69cb (`rev-parse --short HEAD` prints `f6cd69cb`), removed after. No npm test (recorded 53/53), no source edit.
+
+Every needle passes and bites. The FAIL is the U6-1 criterion's own sentence, "the geometry laws and fields match the code across the skill's four files". `references/rubric.md` G2 still grades `caret === font` as a gate. `test/engine/geometry.mjs` asserts the opposite, and the rewritten `SKILL.md` now says "never = font". This is the contradiction SB1 was filed for, now between two files the unit edited. Two more stale laws sit next to lines the builder rewrote. The rework is small and stays inside the wall.
+
+## Criteria
+
+| Id | Result | At HEAD | Negative control (f6cd69cb clone) |
+|---|---|---|---|
+| U6-1 needles | 🟢 | `0`, `2`, `0`, `1`, `1`, `1` | `4`, `0`, `3`, `0`, `1`, `1` |
+| U6-1 sentence | 🔴 | rubric G2 `caret === font` `1`; `3.16` in rubric G7 and best-practices `1` and `2` | the same `1`, `1`, `2`: the unit left them as they were |
+| U6-2 | 🟢 | `1`, `1`, `0`, `1`, `0`, `1`, `2`, `1` | `0`, `0`, `2`, `0`, `2`, `1`, `2`, `1` |
+| U6-3 | 🟢 | `0`, `0` (the needle typed `'\\b37\\b'` as in the plan, the literal text of the old command), `3`, `1` | `1`, `1`, `1`, `1` |
+| U6-4 | 🟢 | `0` and `0`, `0`, `0`, `0` | `4` and `2`, `5`, `6`, `2` |
+| U6-5 | 🟢 | `1`, `1`, `1`, `2`, `1`, `1` | the story-removal control is the builder's. I confirmed the rule survives in the new text and is true (see F6) |
+| P5 | 🟢 | all 22 ids print `1`; bracketed ERE `22` | n/a (count equals the id list) |
+| P6 | 🟢 | added `0`; removed `22` on the unit diff (f6cd69cb..HEAD), `24` against `B` (the extra two come from units already on the plan branch) | `printf '+the rule (TKT-0010)\n'` through the filter prints `1` |
+| Wall | 🟢 | 13 skill files + the handoff, all named in U6's wall; no `src/`, `test/`, `scripts/` | n/a |
+| Prose | 🟢 | `em-dash: clean (816 files scanned)`, `branding: clean (808 files scanned)`; added lines with U+2014 `0`; added lines with `TKT-`, `#NNN`, a date or a `:NNN` pin `0` | n/a |
+| Kept handles | 🟢 | `(#252/#253)` and `(#264)` unchanged on their own lines (64, 68; 62, 66 at base, moved only by SB1's two added lines); the `(s4)` on the `npm test` comment names `headless-boot.mjs`'s live `(s4)` check (line 727, compares against derived `ROLES`) | n/a |
+
+## Findings
+
+| # | Sev | Where | Finding | Source | Negative control |
+|---|---|---|---|---|---|
+| F1 | High | `.claude/skills/geometry-system/references/rubric.md` G2 row | The gate reads "`caret === font` at every size" and scores 1 for "`caret ≠ font`". The engine test asserts `caret < font` at every step (`test/engine/geometry.mjs`, "caret < the standalone font power law at every step (retired the old caret=font v4 rule)"), so the rubric would fail a correct change. The rewritten `SKILL.md` says caret is "never composed" and the foundations pipeline says "never = font", so the skill contradicts its own rubric, the SB1 defect again. Also line 26 of the same file, "only the rhythm (`gap`, `caret/font`) responds". Rewrite G2 to the `two-families` block as it is: caret's own ramp, `caret < font`, compact `gap` < comfortable `gap` at the same height, `paddingNarrow` identical across densities | `grep -n 'caret' test/engine/geometry.mjs` lines 43 to 53 | `grep -c 'caret === font' rubric.md` prints `1` at HEAD and `1` at f6cd69cb: untouched |
+| F2 | Medium | `rubric.md` G7; `references/best-practices.md` "The constants are tuned" bullet | Both name the tuned constants as `2.49/0.58/3.16/0.45`. `src/engine/geometry.mjs` has no `3.16` or `0.45`. The constants are `2.49·h^0.58` (icon) and `3.5·h^0.39` (caret), and font is the `CONTROL_FONT` row, as the rewritten `SKILL.md` now says. The worked walkthrough's past-tense `round(3.16·height^0.45)` (best-practices step 1) is SB25-style history and may stay | `grep -c '3\.16\|0\.45' src/engine/geometry.mjs` prints `0` | `grep -c 3.16` prints rubric `1`, best-practices `2` at HEAD and at f6cd69cb |
+| F3 | Medium | `references/best-practices.md` "Density rides the rhythm" bullet | "It is applied exactly once, inside `buildSize`" sits on the line above the formula the builder edited. `gap` is resolved in `geomScale` (`const gap = ... round(GAP_UNIT[name] * factor * t.density)`) and passed to `buildSize(rawHeight, density, font, gap)`. The builder's own new map row in `SKILL.md` says "`font` and `gap` arrive pre-resolved from `geomScale`". The skill now contradicts itself. Say "inside `geomScale`, once per step" | `grep -n 'const gap' src/engine/geometry.mjs` | at f6cd69cb it was stale but consistent with the old map row `buildSize(rawHeight, density, fontOverride)`; the unit's SB3 fix made it contradict |
+| F4 | Low | `.claude/skills/color-math/SKILL.md` hue-model bullet (SB16) | "`"cam16"` survives only on legacy docs that carry it explicitly" is narrower than the code. `hydrateStoredDoc` (`src/ui/app-helpers.mjs`) stamps `"cam16"` on a stored doc that lacks the field, so a stored doc from before `hueSpace` existed also renders in cam16 without carrying it. Suggested: "`"cam16"` survives on legacy docs: one persisted with it, or a stored doc from before the field, which `hydrateStoredDoc` stamps `"cam16"`" | `grep -n 'hueSpace == null' src/ui/app-helpers.mjs` | n/a (new wording) |
+| F5 | Low | `geometry-system/references/foundations.md` reference-ramp table | The column relabel to "edge (`h/2`, retired)" keeps a column of a retired value and a history word in the ramp that describes the code. The table has no `paddingWide`. Consider replacing the column with `paddingWide` = `(h − caret)/2`: 4.5, 6, 7.5, 11, 16, 23 (from the table's own height and caret columns). The pipeline block also calls caret "frame family"; the engine's family header and `SKILL.md` list the frame without caret. Drop the family word or match `SKILL.md` | `sed -n 1,35p src/engine/geometry.mjs` | n/a |
+| F6 | Info | `adding-export-formats/SKILL.md` step 7 (SB14) | Checked true: `SERVER.version` is one of the surfaces that move on a bump, `MCP_BRAND_KIT_VERSION` is generated from it (`scripts/gen-mcp-assets.mjs`), and `test/mcp/brand-kit.mjs` pins `MCP_BRAND_KIT_VERSION === SERVER.version` | as cited | n/a |
+| F7 | Info | beyond-hunk changes the lead asked about | The foundations pipeline block (caret law, font precedence, `paddingNarrow`/`paddingWide`, md 7.5) matches `buildSize` and `geomScale`. `fontOverrides` (plural) is the real `geomScale` option. The SB8 amendment keeps a live `(s4)`, and its claim that `semExpect` and headless-boot's `ROLES` are derived is true. The export walkthrough line (`overlays/drawer.js` drawer) was forced by U6-2's fifth needle and is disclosed in the handoff | `grep` of `buildSize`, `fontOverrides`, `(s4)`, `semExpect` | U6-2 fifth prints `2` at f6cd69cb |
+| F8 | Nit | `adding-export-formats/SKILL.md` ds-export paragraph (SB13) | The helper list is incomplete: `ds-export.js` also imports `whiteOklch`, `blackOklch`, `isDataPalette`, `oklchStr`, `EXPORT_SCHEMA_VERSION`. "A handful" does not claim a full list, and the old text was just as short | `grep -n "from \"./exports.js\"" src/engine/ds-export.js` | n/a |
+| F9 | Nit | `.claude/skills/adding-export-formats/references/rubric.md` R3 | `~line 433` remains. It is outside U6's wall, and the handoff already reports it for U9 or the orchestrator | as in handoff | n/a |
+
+## Rework for pass 2
+
+Fix F1 to F3 inside `geometry-system/references/{rubric.md,best-practices.md}`, plus F4. F5 is optional. Re-run the U6-1 needles, `em-dash.mjs`, `branding.mjs` and P6. A pass-2 check: `grep -c 'caret === font' .claude/skills/geometry-system/references/rubric.md` prints `0`; `grep -rc '3\.16' .claude/skills/geometry-system/references/rubric.md` prints `0`; `grep -c 'inside \`buildSize\`' .claude/skills/geometry-system/references/best-practices.md` prints `0`.
+
+verdict: 🔴

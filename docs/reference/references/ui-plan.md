@@ -1,4 +1,4 @@
-# HCT Palette Generator: UI Plan
+# Ultimate Tokens: UI Plan
 
 > The front-end plan for the tool whose engine/semantic/export logic the spec defines. Reasoned
 > top-down from intent (per the generative-UI discipline), not from components. Confirmed
@@ -27,6 +27,46 @@ the arrangement moved). Supersedes the "3 lenses on one canvas" decision:
 Built into `capability.system.ui-app` + the single-file bundle. The wireframes/region-map below are the
 *original* plan; treat this Revision as the current truth where they differ.
 
+## Revision B: the three-section editor (2026-09-28, after the docs-repair U3 claims)
+
+Revision A described a color-only editor. The app has since grown into one brand-kit document with
+three composing systems, surfaced as sections of one editor. Where the wireframes and Revision A
+differ from this revision, this revision is the current truth. It is a summary; the frame, regions,
+render pipeline and state are specified in `docs/lld/app-shell.md`, and the per-section build
+procedure (canvas header, scene, inspector, the headless-shim limits) lives in the
+`building-editor-sections` skill, so this file does not repeat them.
+
+**Sections.** `this.section` (`color` | `typography` | `geometry`) is ui-session state and routes the
+whole editor: `renderCenter` picks the canvas header and canvas, and the left and right panes branch
+on the same field. `setSection` switches it, stashing the Color pan and zoom on leave and restoring
+them on return; the Typography and Geometry scenes are reset to `fit` on entry and pan and zoom like
+Color's (the same `wirePanZoom` shell); only the Tokens tables, like Color's Mapping table, scroll
+instead. Each section is a canvas header, a scene holding the full dataset, left analysis cards and a
+right inspector.
+
+| Section | Canvas | Inspector tabs | Notes |
+|---|---|---|---|
+| Color | `canvasView` of Palettes, Scrims, Mapping (the semantic-mapping table, the only table view) or Radix; `colorMode` of `system`, `light`, `dark` or `both`, where `both` renders the scene twice side by side through `renderCompareArea`, except in the Mapping view, whose table already shows both modes and renders once | palette, global and roles, plus a story tab when the document carries a curated story | the original surface of Revision A |
+| Typography | a `typeSpecMode` segment of `specimen` or `tokens`, and `typeMode` breakpoint modes (base plus each mode, `compare` labeled All; Tablet and Mobile are live from `typeEffectiveModes` until a mode is materialized) | `typeSegment` of scale, fonts and specimen, in `renderTypeInspector` | the Specimen view renders each step in the real face |
+| Geometry | a `geomSpecMode` segment of `controls` or `tokens`, and `geomMode` breakpoint modes (base plus each mode, `compare` labeled All; Tablet and Mobile are live from `geomEffectiveModes` until a mode is materialized) | `renderGeomInspector` with ramp, `radius` and space tabs | per-step text size composes from the Type scale, except in the ladder prototype ramp, which derives its own text size from each step height |
+
+Both breakpoint-mode sets sit beside Compare, which shows every breakpoint side by side and hides the
+section's whole canvas segment (`specimen` or `tokens` in Typography, `controls` or `tokens` in Geometry). Each section also has left analysis cards, routed by `renderLeftPane`. The engines
+behind Typography and Geometry are owned by the `type-scale` and `geometry-system` skills.
+
+**Export drawer.** The drawer offers ten color formats (CSS hex, OKLCH, Tailwind v4, shadcn/ui, Panda
+CSS, Radix, Figma, Figma UI3, DTCG, JSON), grouped with the Typography and Geometry token outputs,
+the design-system bundle (tokens and DESIGN.md) and the config round-trip. The group list is
+`FORMAT_GROUPS` in the drawer overlay.
+
+**Gallery.** The home view is a hub: your saved palette sets as tiles with a search box, and below
+them the curated color categories (`CATEGORY_INDEX`). Opening one enters the categories view, its own
+state: `this.category` is a category slug or `null` (the hub), and that category's volumes of curated
+presets load lazily on entry. A preset opens as an editable copy in your own sets. Import, project load and New sit in the gallery header.
+
+**Persistence.** The document persists per set; `colorMode` and the other app preferences persist per
+app and never with the document (see the state table in `docs/lld/app-shell.md`).
+
 ## 1. Why it exists (the reasoning the shell traces to)
 
 ```yaml
@@ -45,8 +85,12 @@ tasks:
   T5 inspect-quality:  the L*×C plot (applied chroma vs gamut ceiling, tone line)
   T6 check-contrast:   a stop / on-color vs white·black
   T7 preview-theme:    light ↔ dark
-  T8 export:           5 formats
-  T9 browse-sets:      the home gallery
+  T8 export:           10 formats (color), plus type, geometry, design-system and config outputs
+  T9 browse-sets:      the home gallery (your sets, search, color categories)
+  T10 tune-type:       the Typography section: scale, fonts, specimen
+  T11 tune-geometry:   the Geometry section: ramp, radius, space
+  T12 manage-modes:    add or edit breakpoint modes for Typography and Geometry
+  T13 compare:         all breakpoints (Typography, Geometry) or Light and Dark (Color) side by side
 
 decisions:                                        # what makes it operational, not a metric wall
   D1 is-this-palette-good?:    [adjust controls, accept]
@@ -150,7 +194,7 @@ nav:  gallery ──open/new──▶ editor ──◀ Back──▶ gallery
 └────────────────────────────────────────────────────────────┘
 ```
 
-**Export = right drawer** (from `⇪Export`), 5 format tabs + live preview + copy/download:
+**Export = right drawer** (from `⇪Export`), a format select over ten color formats and the other groups, + live preview + copy/download (the wireframe shows the original tab strip):
 ```
                                   ┌ Export ─────────────────┐
                                   │ ● CSS  OKLCH JSON DTCG UI3│

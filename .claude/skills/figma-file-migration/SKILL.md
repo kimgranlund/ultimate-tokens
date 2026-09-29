@@ -46,7 +46,7 @@ weight-ramp session). Full steps + traps in
 
 | # | Scenario | One-line rule | Trap if skipped |
 |---|---|---|---|
-| 1 | Id-preserving rename-in-place | `variable.name = newName` mutates in place and keeps the id, never delete-and-recreate a renamed variable/collection/style | Silent partial coverage: an incomplete rename map leaves stragglers with NO error (TKT-0013's `SCRIM_STEPS_FROZEN` bug, 32 stale scrim color variables, 4 missed steps × 8 palettes) |
+| 1 | Id-preserving rename-in-place | `variable.name = newName` mutates in place and keeps the id, never delete-and-recreate a renamed variable/collection/style | Silent partial coverage: an incomplete rename map leaves stragglers with NO error (a frozen scrim-step list left 32 stale scrim color variables, 4 missed steps × 8 palettes) |
 | 2 | Full-payload mode/breakpoint add | `addMode()` only mints the column; EVERY variable needs an explicit `setValueForMode` or it silently reads as a copy of the default | A column that looks populated but is actually the default mode's values, undetected until someone switches to it (hard-constraints §7) |
 | 3 | Segment-level binding recovery | Mixed-styled text nodes bind per-segment; `node.setBoundVariable` no-ops silently on them | The migration reports success while the specimen text keeps its old binding (hard-constraints §6) |
 | 4 | Zero-consumer sweep before deletion | Re-enumerate every node/style for a live reference to the target, in the SAME session, immediately before delete | A sweep run before an intervening rename/rebind step is stale, it can green-light a delete that orphans a binding created since |
@@ -97,7 +97,7 @@ weight-ramp session). Full steps + traps in
   didn't take): stop advancing to the next scenario in the loop, a later step (a sweep, a merge)
   reasoning over a still-wrong graph produces a false-clean result. Fix the failing step in place,
   re-run its own readback until it tallies zero, THEN continue.
-- **The MCP session drops or disconnects mid-wave** (it happened during TKT-0013's BZZR leg): treat
+- **The MCP session drops or disconnects mid-wave**: treat
   whatever the last GREEN readback tally proved as the true state, not whatever the script intended
   to have finished, re-open the session and re-run scenario 5's readback for every step before
   resuming, since a partial write with no readback is indistinguishable from no write at all.

@@ -46,7 +46,7 @@ const hueOf = (hex) => seedOf(hex).hue;
 export const RESEARCH_TIER_NOTE =
   "Research tier: if the theme names a specific real subject (a place, a brand, a film, a species, an " +
   "era with a documented look), look up its actual colors BEFORE inventing seeds, most MCP hosts carry " +
-  "their own web-search tool. A found, documented color becomes a `keyColor` hex in the brief (§3.2), not " +
+  "their own web-search tool. A found, documented color becomes a `keyColor` hex in the brief, not " +
   "a hand-picked hue/chroma guess. Skip this step only for themes with no specific real referent to look " +
   "up (a mood, an abstract vibe, a made-up scene), those are exactly what the hue-wheel + chroma-ladder " +
   "sections below are for.";
@@ -126,8 +126,10 @@ the stock idea of it. Real examples:
   and black-rocked; the pristine white is a distant view."*
 
 Rule: before finishing a brief, write one sentence naming the generic/stock palette someone would reach for
-on this theme with no research, and state why the real subject refuses it. If you cannot think of a
-cliché to refuse, you have not looked closely enough yet.
+on this theme with no research, and state why the real subject refuses it. This sentence is the brief's
+\`story.refuses\` field; under forced tool use there is nowhere else to put it, so it must land there, not
+in free text alongside the call. If you cannot think of a cliché to refuse, you have not looked closely
+enough yet.
 
 ## 4. Sourcing discipline
 
@@ -214,8 +216,8 @@ always tier as **a**, the ladder and the hierarchy tiers reinforce each other.
   stop is the tone the unchanged curve already has at a nearby stop, shifted by \`A · w(stop)\` where
   \`A = clamp(lift × 6, ±243.51)\` stops and \`w\` is a cosine weight that is 1 at the anchor stop (500)
   and 0 at the ramp's light/dark extremes. That keeps the ramp strictly monotone, because the shift's
-  own slope stays under 1 (\`|A| · π/900 < 1\`); the scheme this replaced simply added L* at each stop,
-  which did not, and could push the light stops into a flat plateau of identical swatches. **lift > 0** still punches the anchor
+  own slope stays under 1 (\`|A| · π/900 < 1\`); a direct L* bump at each stop does not have that
+  guarantee and can push the light stops into a flat plateau of identical swatches. **lift > 0** still punches the anchor
   brighter/hotter; **lift < 0** still dips it darker/deeper (Success and Danger both default to **−5**,
   and Warning to **−36**, a grounded, non-neon core even at high chroma). Because
   the shift rides the curve, a given lift moves the tone furthest where the ramp is steepest, so its
@@ -229,7 +231,7 @@ taken, so an omitted skew/lift is never a mistake, only a "use the family's own 
 
 ## 8. Mapping referents onto the 8 families + the harmony recipe
 
-Families are a FIXED enum: ${FAMILY_NAMES.join(" · ")}, no other name may be used (§3.1); a theme rarely
+Families are a FIXED enum: ${FAMILY_NAMES.join(" · ")}, no other name may be used; a theme rarely
 determines all eight. Map what the theme actually gives you:
 
 - The **d** referent → **Primary** (or **Neutral**, if it's a ground/background material rather than a

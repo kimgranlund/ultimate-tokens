@@ -22,7 +22,7 @@
   |skew| ≤ 100, and lift (a cosine displacement of the stop, `src/engine/tonal.js`'s
   `liftStop`) does not break monotonicity for |lift| ≤ 40 either, at any tension. Not claimed
   for `perceptual`/`peak` (`okhslStops`): gated at the default palettes only
-  (`test/engine/tonal.mjs:283-301` okhsl-modes, `test/engine/tonal.mjs:687-708` lift-monotonic), no grid-wide guarantee.
+  (`test/engine/tonal.mjs:301-327` okhsl-modes, `test/engine/tonal.mjs:735-884` lift-monotonic), no grid-wide guarantee.
 - **AC-T4** Applied chroma never exceeds the gamut ceiling at any stop
   (`chroma <= maxc` for every stop).
 - **AC-T5** Edge damping reduces chroma toward 050/950 (chroma at 500 ≥ chroma at 050 and
@@ -47,7 +47,7 @@
 - **AC-S5** Surface Low/High refs mirror (light+dark sum toward 1000); Dim/Bright do not.
 
 ## AC-X · Exports
-- **AC-X1** Each of the eight color formats (CSS, OKLCH, JSON, DTCG, UI3, Tailwind, ShadCN, exportAll) produces output (non-empty) for the default state.
+- **AC-X1** Each of the ten color formats (CSS, OKLCH, JSON, DTCG, UI3, Tailwind, ShadCN, Panda, Radix, exportAll) produces output (non-empty) for the default state.
 - **AC-X2** CSS: every `--c-*` semantic var references two existing raw vars via `var()`.
 - **AC-X3** JSON: parses; each palette has `stops`, `scrims`, `semantic`; stop keys are
   3-digit padded.
