@@ -1,4 +1,4 @@
-# HCT Palette Generator — UI Plan
+# Ultimate Tokens: UI Plan
 
 > The front-end plan for the tool whose engine/semantic/export logic the spec defines. Reasoned
 > top-down from intent (per the generative-UI discipline), not from components. Confirmed
@@ -42,11 +42,15 @@ on the same field. `setSection` switches it, stashing the Color pan and zoom on 
 them on return; the Typography and Geometry scenes start fit and do not pan or zoom. Each section is
 a canvas header, a scene holding the full dataset, left analysis cards and a right inspector.
 
-| Section | Canvas modes | Inspector | Notes |
+| Section | Canvas | Inspector tabs | Notes |
 |---|---|---|---|
-| Color | a value mode of `system`, `light`, `dark` or `both` (the `both` mode renders the scene twice side by side through `renderCompareArea`), plus the ramps table view | palette, global and roles | the original surface of Revision A |
-| Typography | scale, fonts and `specimen` tabs, with the mode held in `typeSpecMode` | `renderTypeInspector` | the Specimen view renders each step in the real face |
-| Geometry | `geomMode` chooses base or a breakpoint mode; the `compare` id shows all breakpoints side by side | `renderGeomInspector` with ramp, `radius` and space tabs | per-step text size composes from the Type scale |
+| Color | `canvasView` of Palettes, Scrims, Mapping (the semantic-mapping table, the only table view) or Radix; `colorMode` of `system`, `light`, `dark` or `both`, where `both` renders the scene twice side by side through `renderCompareArea` (and skips the Mapping table) | palette, global and roles, plus a story tab when the open category has one | the original surface of Revision A |
+| Typography | a `typeSpecMode` segment of `specimen` or `tokens`, and `typeMode` breakpoint modes (base plus each mode, `compare` labeled All when at least one mode exists) | `typeSegment` of scale, fonts and specimen, in `renderTypeInspector` | the Specimen view renders each step in the real face |
+| Geometry | a `geomSpecMode` segment of `controls` or `tokens`, and `geomMode` breakpoint modes (base plus each mode, `compare` labeled All) | `renderGeomInspector` with ramp, `radius` and space tabs | per-step text size composes from the Type scale |
+
+Both breakpoint-mode sets sit beside Compare, which shows every breakpoint side by side and hides the
+specimen segment. Each section also has left analysis cards, routed by `renderLeftPane`. The engines
+behind Typography and Geometry are owned by the `type-scale` and `geometry-system` skills.
 
 **Export drawer.** The drawer offers ten color formats (CSS hex, OKLCH, Tailwind v4, shadcn/ui, Panda
 CSS, Radix, Figma, Figma UI3, DTCG, JSON), grouped with the Typography and Geometry token outputs,
@@ -54,8 +58,9 @@ the design-system bundle (tokens and DESIGN.md) and the config round-trip. The g
 `FORMAT_GROUPS` in the drawer overlay.
 
 **Gallery.** The home view is a hub: your saved palette sets as tiles with a search box, and below
-them the curated color categories (`CATEGORY_INDEX`), each opening a category page whose palettes
-open as editable copies in your own sets. Import, project load and New sit in the gallery header.
+them the curated color categories (`CATEGORY_INDEX`). Opening one enters the categories view, its own
+state: `this.category` is a category slug or `null` (the hub), and that category's volumes of curated
+presets load lazily on entry. A preset opens as an editable copy in your own sets. Import, project load and New sit in the gallery header.
 
 **Persistence.** The document persists per set; `colorMode` and the other app preferences persist per
 app and never with the document (see the state table in `docs/lld/app-shell.md`).
@@ -78,8 +83,12 @@ tasks:
   T5 inspect-quality:  the L*×C plot (applied chroma vs gamut ceiling, tone line)
   T6 check-contrast:   a stop / on-color vs white·black
   T7 preview-theme:    light ↔ dark
-  T8 export:           10 color formats, plus type, geometry, design-system and config outputs
+  T8 export:           10 formats (color), plus type, geometry, design-system and config outputs
   T9 browse-sets:      the home gallery (your sets, search, color categories)
+  T10 tune-type:       the Typography section: scale, fonts, specimen
+  T11 tune-geometry:   the Geometry section: ramp, radius, space
+  T12 manage-modes:    add or edit breakpoint modes for Typography and Geometry
+  T13 compare:         all breakpoints (Typography, Geometry) or Light and Dark (Color) side by side
 
 decisions:                                        # what makes it operational, not a metric wall
   D1 is-this-palette-good?:    [adjust controls, accept]
