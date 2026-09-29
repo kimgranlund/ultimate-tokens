@@ -66,32 +66,96 @@ for (const e of DOCS_EXEMPT) if (!e.path || !e.reason) FAIL("scripts/audit-citat
 import { readFileSync } from "node:fs";
 const txt = (p) => readFileSync(join(ROOT, p), "utf8");
 const lineOf = (p, re) => txt(p).split("\n").find((l) => re.test(l)) ?? "";
+// a doc may spell a count as a word (`fifteen voices`); the word reads as its number, the code side
+// still supplies the value, so no number is typed beside a source.
+const NUM_WORDS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20 };
+const drawerColorFormats = () => {
+  const t = txt("src/ui/overlays/drawer.js"), a = t.indexOf("const FORMAT_GROUPS");
+  const colors = t.slice(a, t.indexOf('"Typography"', a));
+  return (colors.match(/\["[^"]+", "[^"]+"\]/g) || []).length;
+};
+// the job keys of .github/workflows/ci.yml, read as the lines two spaces in under `jobs:`
+const ciJobs = () => {
+  const lines = txt(".github/workflows/ci.yml").split("\n"), a = lines.findIndex((l) => /^jobs:/.test(l));
+  const out = [];
+  for (const l of lines.slice(a + 1)) { if (/^\S/.test(l)) break; const m = l.match(/^  ([\w-]+):\s*$/); if (m) out.push(m[1]); }
+  return out;
+};
 const FACT_PINS = [
   { id: "colorMode states", doc: "docs/lld/app-shell.md", line: /`this\.colorMode`/, needle: "system", src: "src/ui/app.js",
     source: () => /this\.colorMode = "system"/.test(lineOf("src/ui/app.js", /Color section value-mode control/)) },
   { id: "type voices", doc: "docs/lld/app-shell.md", needle: "15 voices", src: "src/engine/type.mjs",
     source: async () => Object.keys((await import("../../src/engine/type.mjs")).makeVoices()).length },
   { id: "colour formats", doc: "docs/reference/references/ui-plan.md", line: /T8 export:/, needle: "10 formats", src: "src/ui/overlays/drawer.js",
-    source: () => {
-      const t = txt("src/ui/overlays/drawer.js"), a = t.indexOf("const FORMAT_GROUPS");
-      const colors = t.slice(a, t.indexOf('"Typography"', a));
-      return (colors.match(/\["[^"]+", "[^"]+"\]/g) || []).length;
-    } },
+    source: drawerColorFormats },
   { id: "roles per palette", doc: "docs/reference/references/ui-plan.md", needle: "a 53-role", src: "docs/reference/data/role-table.json",
     source: () => Object.keys(JSON.parse(txt("docs/reference/data/role-table.json")).roleTable).length },
   { id: "btn home", doc: "docs/reference/references/component-inventory.md", line: /^\| `btn\(\)` \|/, needle: "app-helpers.mjs", src: "src/ui/app-helpers.mjs",
     source: () => /^export const btn\b/m.test(txt("src/ui/app-helpers.mjs")) },
   { id: "delete mode methods", doc: ".claude/skills/building-editor-sections/SKILL.md", needle: "`deleteTypeMode`/`deleteGeomMode`", src: "src/ui/sections/{typography,geometry}.js",
     source: () => /^  deleteTypeMode\(id\) \{/m.test(txt("src/ui/sections/typography.js")) && /^  deleteGeomMode\(id\) \{/m.test(txt("src/ui/sections/geometry.js")) },
+  { id: "skill type voices", doc: ".claude/skills/type-scale/SKILL.md", needle: "fifteen voices", src: "src/engine/type.mjs",
+    source: async () => Object.keys((await import("../../src/engine/type.mjs")).makeVoices()).length },
+  { id: "skill colour formats", doc: ".claude/skills/adding-export-formats/SKILL.md", needle: "ten colour formats", src: "src/ui/overlays/drawer.js",
+    source: drawerColorFormats },
+  { id: "skill hueSpace default", doc: ".claude/skills/color-math/SKILL.md", line: /`DEFAULT_CONTROLS\.hueSpace`/, needle: '"oklch"', src: "src/engine/tonal.js",
+    source: async (needle) => `"${(await import("../../src/engine/tonal.js")).DEFAULT_CONTROLS.hueSpace}"` === needle },
+  { id: "skill list_palettes", doc: ".claude/skills/maintaining-brand-kit-mcp/SKILL.md", needle: "list_palettes (16)", src: "docs/reference/data/role-table.json",
+    source: () => JSON.parse(txt("docs/reference/data/role-table.json")).defaults.length },
+  { id: "skill H5 jobs", doc: ".claude/skills/shipping-changes/references/rubric.md", line: /^\| H5 \|/, needle: "`panda-smoke`", src: ".github/workflows/ci.yml",
+    source: () => {
+      const cell = lineOf(".claude/skills/shipping-changes/references/rubric.md", /^\| H5 \|/).split("|")[4] ?? "";
+      const named = (cell.split(";")[0].match(/`([\w-]+)`/g) || []).map((n) => n.slice(1, -1)), jobs = ciJobs();
+      return named.length > 0 && named.every((n) => jobs.includes(n)) && jobs.every((j) => j === "deploy" || named.includes(j));
+    } },
 ];
 for (const pin of FACT_PINS) {
   let held;
-  try { held = await pin.source(); } catch (e) { FAIL(pin.src, `fact pin "${pin.id}": source threw: ${e.message}`); continue; }
+  try { held = await pin.source(pin.needle); } catch (e) { FAIL(pin.src, `fact pin "${pin.id}": source threw: ${e.message}`); continue; }
   const frag = pin.line ? lineOf(pin.doc, pin.line) : txt(pin.doc);
   if (!frag.includes(pin.needle)) { FAIL(pin.doc, `fact pin "${pin.id}": doc no longer carries \`${pin.needle}\`${pin.line ? ` on a line matching ${pin.line}` : ""}`); continue; }
-  const num = pin.needle.match(/\d+/);
-  if (num ? Number(num[0]) !== held : held !== true) FAIL(pin.src, `fact pin "${pin.id}": ${pin.doc} says \`${pin.needle}\` but the code holds ${JSON.stringify(held)}`);
+  const num = pin.needle.match(/\d+/)?.[0] ?? NUM_WORDS[pin.needle.split(" ")[0]];
+  if (num !== undefined ? Number(num) !== held : held !== true) FAIL(pin.src, `fact pin "${pin.id}": ${pin.doc} says \`${pin.needle}\` but the code holds ${JSON.stringify(held)}`);
 }
+
+// (5) symbol homes: a repo skill that says `sym` lives in `path` must be right about it. The three
+// shapes are `sym` in `path`, `sym` (`path`) and `sym` (in `path`); `sym` may carry a call suffix,
+// `path` an optional :NNN. The path is a full repo path resolved against git ls-files (a bare file
+// name, `type.mjs`, is ambiguous and prose often uses it for a family such as `typeTokensX`, so it
+// is not read) and the file must DEFINE the symbol: a declaration, a method line or a
+// property line. An import or a call is not a home (app.js imports and calls ensureTypeFonts, so a
+// text match would pass a stale citation). With :NNN the definition must sit on line NNN. A backticked
+// path with a source extension that resolves to nothing is stale too; other parentheticals
+// (`dimension` (`px`)) are prose, not citations, and are skipped.
+import { execFileSync } from "node:child_process";
+const SYMBOL_HOME_FLOOR = 12;
+const tracked = execFileSync("git", ["ls-files"], { cwd: ROOT, encoding: "utf8", maxBuffer: 1 << 26 }).split("\n").filter(Boolean);
+const trackedSet = new Set(tracked);
+const defines = (line, sym) => {
+  const s = sym.replace(/[$]/g, "\\$&"), end = "(?![\\w$])";
+  return new RegExp(`^\\s*(export\\s+)?(async\\s+)?(function\\*?|const|let|var|class)\\s+${s}${end}`).test(line)
+    || new RegExp(`^\\s*(async\\s+)?${s}\\s*\\([^)]*\\)\\s*\\{`).test(line)
+    || new RegExp(`^\\s*${s}\\s*[:=]`).test(line);
+};
+const SHAPE = /`([A-Za-z_$][\w$]*)(?:\([^`]*\))?` (?:in `|\(`|\(in `)([^`\s:]+)(?::(\d+))?`/g;
+let homesChecked = 0;
+const homesStale = [];
+for (const doc of tracked.filter((f) => /^\.claude\/skills\/.*\.md$/.test(f))) {
+  txt(doc).split("\n").forEach((line, i) => {
+    for (const m of line.matchAll(SHAPE)) {
+      const [, sym, path, nnn] = m;
+      if (!path.includes("/")) continue;
+      const homes = trackedSet.has(path) ? [path] : [];
+      if (!homes.length) { if (/\.(m?js|json|html|css)$/.test(path)) { homesChecked++; homesStale.push([doc, `${doc}:${i + 1} \`${sym}\` cites \`${path}\`, which no tracked file matches`]); } continue; }
+      homesChecked++;
+      const ok = homes.some((f) => { const ls = txt(f).split("\n"); return nnn ? defines(ls[Number(nnn) - 1] ?? "", sym) : ls.some((l) => defines(l, sym)); });
+      if (!ok) homesStale.push([doc, `${doc}:${i + 1} \`${sym}\` is not defined${nnn ? ` on line ${nnn} of` : " in"} ${homes.join(" or ")}`]);
+    }
+  });
+}
+for (const [doc, msg] of homesStale) FAIL(doc, `symbol home: ${msg}`);
+if (homesChecked < SYMBOL_HOME_FLOOR) FAIL("test/repo/citations.mjs", `symbol homes: only ${homesChecked} citations read, below SYMBOL_HOME_FLOOR ${SYMBOL_HOME_FLOOR} (the scanner went vacuous)`);
+console.log(`symbol homes: ${homesChecked} checked, ${homesStale.length} stale`);
 
 console.log(failed ? `✗ ${failed} citation gate failure(s)` : `✓ citations: parser self-test + STALE 0 across ${Object.keys(report.docs).length} discovered docs + ${FACT_PINS.length} fact pins (HEAD ${report.head})`);
 process.exit(failed ? 1 : 0);
