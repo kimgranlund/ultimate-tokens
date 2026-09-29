@@ -6,7 +6,7 @@ Written 2026-09-29. The head named above is the pass 2 skill head, measured with
 
 ## Branch
 
-`unit/pa-U7`, worktree `.worktrees/pa-U7`. Pass 1 commits `7e33c4c4`, `cc924fac` on B = `13346c1a`. Pass 2: `origin/plan/prompt-audit` (revision 8, `e0ec78ad`) merged at `405f5d89` (no `.sdlc/board.md` in the merge), then the skill commit `8a230803`; round 2 merged `91a45557` (the review verdict, already up to date) and committed the MCP foundations fix `794f7342`. `npm test` green at `794f7342`, tree clean after (Gates).
+`unit/pa-U7`, worktree `.worktrees/pa-U7`. Pass 1 commits `7e33c4c4`, `cc924fac` on B = `13346c1a`. Pass 2: `origin/plan/prompt-audit` (revision 8, `e0ec78ad`) merged at `405f5d89` (no `.sdlc/board.md` in the merge), then the skill commit `8a230803`; round 2 merged the review record at `cbbd0b8a` (already up to date) and committed the MCP foundations fix `794f7342`. `npm test` green at `794f7342`, tree clean after (Gates).
 
 ## What pass 2 changed
 
@@ -42,8 +42,8 @@ Commands ran in the worktree at 8a230803 (U7-9 and the gates re-run at 794f7342)
 | U7-5 | 🟢 | `0`, `0`, `1`, `1`, `6` | pass 1 record: at B `2`, `19` |
 | U7-6 | 🟢 | `0`, `1`, `15` | pass 1 record: at B `4` |
 | U7-7 | 🟢 | `1`, `1`, then nothing | the handoff with the SC31 and SC32 ids swapped prints `NOMATCH SC31` and `NOMATCH SC32`; the handoff at 8e8aa3ad prints the ten `NOMATCH` and seven `MISSING` lines the plan lists. A first draft of the SC31 note carried bare `0` and `1` spans, which let the swapped SC32 row match line 567 and the control printed only `NOMATCH SC31`; the note now spells the numbers, and the control prints both |
-| U7-8 | 🟢 | `0 0 1 0 6 0 1`, then `1` seven times, then `0` | SC31 moved to `left out, Low` in a copy: its applied grep prints `0` while the tree still prints `0` for `real incident 2026-06-17` |
-| U7-9 | 🟢 | `0`, `0`, `1`, `15 false` at `794f7342`; the criterion text (shape blocks match `brandKit`) holds by the F2 key diff, `diffs 0` | `typed:true` restored on line 19 of a copy (the geometry line again after round 2; it was line 18 at `8a230803`): first grep `1`; at 8e8aa3ad: `2`, `1` |
+| U7-8 | 🟢 | `0 0 1 0 6 0 1`, then `1` seven times, then `0`, measured at `794f7342` against the plan at `e50b99b3`, whose SC29 needle is `build · test` | SC31 moved to `left out, Low` in a copy: its applied grep prints `0` while the tree still prints `0` for `real incident 2026-06-17`; the SC29 needle prints `1` at `f6cd69cb` and `0` at 8e8aa3ad |
+| U7-9 | 🟢 | `0`, `0`, `1`, `15 false` at `794f7342`, against the plan at `e50b99b3`; the criterion text (shape blocks match `brandKit`) holds by the F2 key diff, `diffs 0` | the plan's control, `sed '18s/$/ typed:true/'` on the file at c547d584, prints `1` on the first grep; the same append on line 19 (the geometry line) at `794f7342` prints `1`; at 8e8aa3ad: `2`, `1` |
 | U7-10 | 🟢 | `1`, `2`, `0`, `1`, `1` | the plan's `sed` on a copy: third grep `1`, fourth `0`; at 8e8aa3ad: first `0`, third `1` |
 | U7-11 | 🟢 | `1`, `1`, `1`, `1` | the row rewritten as `not present yet` in a copy: second grep `2`, first `0`; at 8e8aa3ad: first `0` |
 | U7-12 | 🟢 | `0`, `1`, measured against the plan at `c0e7c07b` (`origin/plan/prompt-audit`), whose second leg is anchored to the Re-verification row. The cell's `\|` is the table escape for a literal pipe, so the command run is `grep -c '^| T1, T2, SC6 (make11) |'`. Typed with the backslashes left in, it prints `347` (the plan's line count) on this host, where `grep` is ugrep 7.8.4 and a BRE `\|` is alternation | at 8e8aa3ad the first leg prints `1`; the plan before `bee7574d` (`bee7574d~1`) prints `0` on the second leg |
@@ -103,4 +103,4 @@ Ids are positional: SCn is line `535+n` of `.sdlc/plans/prompt-audit-evidence.md
 
 ## Questions for the orchestrator
 
-None blocking. Review p2 notes, for the plan: U7-8's SC29 leg is vacuous at B because the phrase wraps across lines there, so it cannot red on the base; U7-9's control line was 18 at `8a230803` (19 again at `794f7342`); the §5 test-pin sentence flagged earlier is a U9 item. Pass 1 asked for the Re-verification table's SC labels to be corrected; revision 7 (`bee7574d`) relabelled it (make11 is SC6 there now), so that question is closed.
+None blocking. Review p2 (record head `cbbd0b8a`) raised two plan items, both fixed at `e50b99b3`: U7-8's SC29 needle is now `build · test`, which the base's line wrap could not hide, and U7-9's control no longer pins a line number. The §5 test-pin sentence flagged earlier is a U9 item. Pass 1 asked for the Re-verification table's SC labels to be corrected; revision 7 (`bee7574d`) relabelled it (make11 is SC6 there now), so that question is closed.
