@@ -1,5 +1,5 @@
 ---
-status: approved
+status: done
 ticket: #752
 priority: P2
 lane: docs (Markdown prose only; no `src/`, no `test/`, no `scripts/`, no generated file)
@@ -236,3 +236,4 @@ One PR from `plan/bold-labels`, title `docs(prose): paragraph-start bold labels 
 | 2026-09-28 | revision 4: U1-5's grep reads the runner's real per-file line, `▶ plugin/<name>-tokens.mjs  pass`; the old `^✓` form read `0` on a green run | bl-U1 review at fa0b11dd |
 | 2026-09-28 | revision 5: P4's second count on a unit that edits `mcp/README.md` reads `2`, not `1`, because the `src` pathspec also catches the admitted `src/ui/mcp-assets.js`; U1-5's control is the targeted SKILL.md plant, since P6's scrim cannot fail that row | bold-labels U1 verdict at 2201a8eb, its 'For the Orchestrator' section |
 | 2026-09-29 | revision 6 (owner chose A, R73, `.sdlc/questions/bold-labels-revision6.md`): K17 dropped from the Kept table and `bold-labels-kept.tsv` (#761 reflowed `**sub-title**` mid-line), so P1, U3-1 and U1-2 read `17` (`17`, `10`) and the arithmetic reads `28 + 32 + 6 + 17 + 2 = 85`; U3 row 5 recorded as gone by #761; U3-3's control reads `2`; U1 rows 7 to 18 note B4's colon from #753, so P3 at the head reads added `67`, removed `68`; P6 reads `54` (#759) | question `bold-labels-revision6.md` default A; bold-labels U3 verdict pass 1 at 41ef16fc, findings 2 and 3; `.sdlc/plans/bold-labels-U3-rediagnosis.md`. P4 also admits `.sdlc/plans/bold-labels-U<n>-rediagnosis.md` (the U3 pass 2 re-diagnosis, 416a5312) |
+| 2026-09-29 | landed in PR #763, squash 1ba47350; #752 closed; plan archived | close-out |
