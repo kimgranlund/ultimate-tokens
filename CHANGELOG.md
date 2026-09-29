@@ -28,7 +28,8 @@ they landed on `main` and reference the squash-merged PR that introduced them.
   palette a slider moved off its row, including onto the OTHER hue form's own default value. A stored
   pre-v5 palette equal to a row, a stored pre-#681 preset among them, takes that row's anchor. Only
   the stored set list takes the #740 backfill: a preset opened from the gallery, a Figma-variables
-  read and an embedded-config restore ("Open saved palette" or the project restore) open without it, so a curated preset renders as its tile does.
+  read and an embedded-config restore ("Open saved palette" or the project restore) open
+  without it, so a curated preset renders as its tile does.
 
 ### 2026-09-18
 
