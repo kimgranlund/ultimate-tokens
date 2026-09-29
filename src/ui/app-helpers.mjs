@@ -866,3 +866,20 @@ export function backfillDefaultAnchors(stored) {
   });
   return changed ? { ...stored, palettes } : stored;
 }
+
+// hydrateConfig (#740, anchor-gaps U3): the seam for a config that is NOT a stored set record, the
+// legacy hueSpace stamp then hydrate, with no backfillDefaultAnchors (hydrateStoredDoc's body as it
+// stood before #740). The backfill's ruled reach is a pre-v5 kit opened from the stored set list
+// (openSet and the set tile, both still on hydrateStoredDoc); app.js's openConfigAsSet takes this seam
+// for its four callers instead: the preset-gallery tile (a curated preset has no schemaVersion, and a
+// derived semantic palette can equal a default-kit row exactly, which stamped Maison's Success), the
+// Figma-variables read (configFromVariables seeds every row at skew 0 and lift 0), and the two
+// embedded-config restores ("Open saved palette" and the project restore). The split is by caller: no
+// field of a preset or a variables seed tells it apart from a stored kit. The seam is the first guard;
+// the second is serialize()'s schemaVersion 6 stamp: openConfigAsSet serializes the doc and openSet runs
+// it through hydrateStoredDoc again, where backfillDefaultAnchors returns early at >= 5 (persist.mjs's
+// gallery-reach (k) pins both). Placed at file end for the same citation reason as backfillDefaultAnchors above.
+export function hydrateConfig(config) {
+  const d = config && typeof config === "object" && config.hueSpace == null ? { ...config, hueSpace: "cam16" } : config;
+  return hydrate(d);
+}

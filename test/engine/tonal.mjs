@@ -1303,7 +1303,7 @@ for (const mode of ["perceptual", "peak"]) {
     // anchor's rounding-residue one). Since #744 the generator gives a hueless sample its entry's
     // derived neutral hue (36, not the sample's own 0), so #744 swaps those five for the four below:
     // peak 75&100 and the three even pairs at hue 36; peak 150&175 no longer collides. A mechanical
-    // re-freeze, not a new construction defect (U1-4 proves every OTHER anchored ramp in the corpus byte-identical).
+    // re-freeze, not a new construction defect (achromatic-anchor U1-4, #739's plan row, proves every OTHER anchored ramp in the corpus byte-identical).
     "peak|36|100.00|0|0|25-stop|75&100",
     "even|36|100.00|0|0|25-stop|50&75",
     "even|36|100.00|0|0|25-stop|100&125",
@@ -1356,7 +1356,7 @@ for (const mode of ["perceptual", "peak"]) {
   if (upticks.perceptual) FAIL("chroma-envelope", `(C6 i) perceptual: ${upticks.perceptual} rise(s), e.g. ${upWitness.perceptual}`);
   if (upticks.peak) FAIL("chroma-envelope", `(C6 i) peak: ${upticks.peak} rise(s), e.g. ${upWitness.peak}`);
   if (upticks.even) FAIL("chroma-envelope", `(C6 i) even: ${upticks.even} rise(s), e.g. ${upWitness.even}`);
-  // (ii) no duplicate hex beyond KNOWN_BASELINE_DUP (currently empty  -  see that Set's own comment).
+  // (ii) no duplicate hex beyond KNOWN_BASELINE_DUP (its own comment names each key and the ticket it entered under).
   if (dupCount.perceptual) FAIL("chroma-envelope", `(C6 ii) perceptual: ${dupCount.perceptual} duplicate-hex pair(s) beyond the cited list, e.g. ${dupWitness.perceptual[0]}`);
   if (dupCount.peak) FAIL("chroma-envelope", `(C6 ii) peak: ${dupCount.peak} duplicate-hex pair(s) beyond the cited list, e.g. ${dupWitness.peak[0]}`);
   if (dupCount.even) FAIL("chroma-envelope", `(C6 ii) even: ${dupCount.even} duplicate-hex pair(s) beyond the cited list, e.g. ${dupWitness.even[0]}`);

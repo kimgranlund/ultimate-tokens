@@ -50,7 +50,7 @@ import { COLLECTIONS } from "../engine/collections.js";
 import { stylePlans } from "../../figma/binder/style-plan.mjs";
 import { ICON_SYSTEMS, iconSystem, iconSystemById, iconSystemLabel } from "../engine/icon-systems.mjs";
 import { icon } from "./icons.js";
-import { CANVAS_INSET, MODE_WIDTH_PRESETS, PROJECT_KEY, PRO_EXPORT_FORMATS, SCHEME_ICON, SCHEME_NEXT, ago, btn, chip, defaultLicenseService, ensureAppTheme, ensureTypeFonts, field, fmt, h, hydrateStoredDoc, licenseInstanceName, loadProfile, loadSets, migrateStorageKeys, newSet, posterStripBands, sanitizeSetRecords, saveProfile, saveSets, setColorScheme, swatch } from "./app-helpers.mjs";
+import { CANVAS_INSET, MODE_WIDTH_PRESETS, PROJECT_KEY, PRO_EXPORT_FORMATS, SCHEME_ICON, SCHEME_NEXT, ago, btn, chip, defaultLicenseService, ensureAppTheme, ensureTypeFonts, field, fmt, h, hydrateConfig, hydrateStoredDoc, licenseInstanceName, loadProfile, loadSets, migrateStorageKeys, newSet, posterStripBands, sanitizeSetRecords, saveProfile, saveSets, setColorScheme, swatch } from "./app-helpers.mjs";
 import { ColorSection } from "./sections/color.js";
 import { TypeSection } from "./sections/typography.js";
 import { GeomSection } from "./sections/geometry.js";
@@ -2359,16 +2359,16 @@ class HctApp extends HTMLElement {
   }
 
 
-  // openConfigAsSet, shape-clamp an (untrusted) config and open it as a new set. hydrateStoredDoc()
-  // domain-clamps every field AND applies the legacy stamp (a config lacking hueSpace was authored under
-  // cam16, keep it cam16, consistent with openSet), so a junk/partial config is sanitized + preserved.
+  // openConfigAsSet, shape-clamp an (untrusted) config and open it as a new set via hydrateConfig() (clamp and
+  // legacy stamp, no #740 backfill: its reach is the stored set list, which none of the four callers opens).
+  // openSet's second pass through hydrateStoredDoc is inert only because serialize() stamps schemaVersion 6.
   // #644: `mintData` is opt-in per call site, NOT ambient. Only the preset-gallery tile (a genuine
   // document-CREATION path) passes `mintData: true`. The other three call sites, "Open saved palette"
   // (which promises "opens exactly as saved"), the Figma-variables approximate read, and the ⬇ Project
   // restore, are all "restore my own saved work" paths (REQ-012, H2: auto-mint is opt-in for an
   // upgraded/restored document, not a fresh one) and must stay byte-identical to before #644.
   openConfigAsSet(config, toastMsg, { mintData = false } = {}) {
-    const doc = hydrateStoredDoc(config);
+    const doc = hydrateConfig(config);
     const name = (typeof config.name === "string" && config.name.trim()) || "Project";
     doc.name = name;
     if (mintData && !hasDataPalettes(doc)) doc.palettes.push(...mintDataPalettes(doc));

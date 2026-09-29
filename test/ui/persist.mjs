@@ -685,6 +685,74 @@ import { defaultDocument, projectView, DEFAULT_PALETTES } from "../../src/ui/mod
   if (hydRawG.palettes[primaryIdxG].anchor) FAIL("stored-anchors", "(g) cross-form: Primary at the OKLCH table's default value must not be stamped from a raw-form doc");
 }
 
+// gallery-reach (#740, anchor-gaps U3): the backfill's reach is the stored set list (openSet and the
+// set tile, on hydrateStoredDoc); app.js's openConfigAsSet opens a gallery preset, a Figma-variables
+// seed or an embedded config through hydrateConfig, the same stamp and hydrate with no backfill. (h)
+// feeds every corpus preset through that seam (the eight category modules mode-isolation-gate.mjs
+// reads): each renders as hydrate() renders its tile and gains no anchor. (i) the configFromVariables
+// shape (hueSpace "cam16", every default row at skew 0 and lift 0) gains none through hydrateConfig,
+// against 9 through hydrateStoredDoc, the figure that proves the two seams differ. (j) is the control
+// on the stored-set side: Maison's Success still stamps #21701A through hydrateStoredDoc, the rule U1
+// ruled is unchanged, only its callers moved. (k) pins the wiring the helper legs cannot see: the
+// openConfigAsSet method body in src/ui/app.js calls hydrateConfig( and not hydrateStoredDoc( (an
+// HctApp method needs the DOM shim, so the source is read), and Maison through the method's real chain
+// (hydrateConfig, serialize, then openSet's hydrateStoredDoc) opens with Success unanchored: that
+// second pass is inert only because serialize() stamps schemaVersion 6 and the backfill returns at
+// >= 5. Every red sub-gate joins one FAIL message, since FAIL keeps one message per gate name.
+import { readFileSync } from "node:fs";
+import { hydrateConfig } from "../../src/ui/app-helpers.mjs";
+import { PRESETS as CAT_ARCHITECTURE } from "../../src/ui/categories/architecture.js";
+import { PRESETS as CAT_BRANDS } from "../../src/ui/categories/brands.js";
+import { PRESETS as CAT_CUISINE } from "../../src/ui/categories/cuisine.js";
+import { PRESETS as CAT_FILM } from "../../src/ui/categories/film.js";
+import { PRESETS as CAT_LITERATURE } from "../../src/ui/categories/literature.js";
+import { PRESETS as CAT_MUSIC } from "../../src/ui/categories/music.js";
+import { PRESETS as CAT_NATURE } from "../../src/ui/categories/nature.js";
+import { PRESETS as CAT_TRAVEL } from "../../src/ui/categories/travel.js";
+{
+  const reach = [];
+  const rampsOf = (d) => projectView(d).palettes.map((p) => p.fullRamp.map((s) => s.hex).join(","));
+  const anchors = (d) => d.palettes.filter((p) => p.anchor).length;
+
+  // (h) every corpus preset through hydrateConfig: no palette gains an anchor it did not carry, and
+  // every ramp is byte-identical to hydrate(preset). projectView is a pure function of the hydrated
+  // document, so an identical document renders identically: the ramps are rendered only for a preset
+  // whose document differs (a full render of the corpus is mode-isolation-gate.mjs's cost, #713).
+  const corpus = [CAT_ARCHITECTURE, CAT_BRANDS, CAT_CUISINE, CAT_FILM, CAT_LITERATURE, CAT_MUSIC, CAT_NATURE, CAT_TRAVEL].flat();
+  const stampedH = [], differH = [];
+  for (const preset of corpus) {
+    const opened = hydrateConfig(preset), tileDoc = U.hydrate(preset);
+    if (opened.palettes.some((p, i) => p.anchor && !(preset.palettes[i] && preset.palettes[i].anchor))) stampedH.push(preset.name);
+    if (JSON.stringify(opened) === JSON.stringify(tileDoc)) continue;
+    const tile = rampsOf(tileDoc), got = rampsOf(opened);
+    if (tile.length !== got.length || tile.some((r, i) => r !== got[i])) differH.push(preset.name);
+  }
+  if (corpus.length < 300) reach.push(`(h) the corpus must hold every curated preset, read ${corpus.length}`);
+  if (stampedH.length || differH.length) reach.push(`(h) of ${corpus.length} corpus presets through hydrateConfig, ${stampedH.length} gained an anchor and ${differH.length} render off their tile (first: ${stampedH[0] || differH[0]})`);
+
+  // (i) the configFromVariables shape of the 16 raw default rows: 0 anchors through hydrateConfig,
+  // 9 through hydrateStoredDoc (Secondary and Data 1 to 8, the rows whose own skew and lift are 0).
+  const seed = { name: "From Figma", hueSpace: "cam16", palettes: DEFAULT_PALETTES.map((r) => ({ name: r.name, hue: r.hue, chroma: r.chroma, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true })) };
+  const viaConfig = anchors(hydrateConfig(seed)), viaStored = anchors(hydrateStoredDoc(seed));
+  if (viaConfig !== 0 || viaStored !== 9) reach.push(`(i) the Figma-variables seed must gain 0 anchors through hydrateConfig and 9 through hydrateStoredDoc, got ${viaConfig} and ${viaStored}`);
+
+  // (j) the stored-set seam's rule is untouched: a pre-v5 stored copy of Maison would still stamp
+  // Success with the default kit's #21701A.
+  const maison = CAT_BRANDS.find((p) => p.name.startsWith("Maison"));
+  const success = maison && hydrateStoredDoc(maison).palettes.find((p) => p.name === "Success");
+  if (!success || success.anchor !== "#21701A") reach.push(`(j) Maison's Success through hydrateStoredDoc must stamp #21701A, got ${success ? JSON.stringify(success.anchor) : "no Maison preset"}`);
+
+  // (k) the wiring: the method body, from its signature to the first two-space closing brace.
+  const appSrc = readFileSync(new URL("../../src/ui/app.js", import.meta.url), "utf8");
+  const bodyAt = appSrc.indexOf("\n  openConfigAsSet(");
+  const body = bodyAt < 0 ? "" : appSrc.slice(bodyAt, appSrc.indexOf("\n  }\n", bodyAt));
+  if (!body.includes("hydrateConfig(") || body.includes("hydrateStoredDoc(")) reach.push(`(k) app.js openConfigAsSet must call hydrateConfig( and not hydrateStoredDoc(, read ${body ? `hydrateConfig ${body.includes("hydrateConfig(")} hydrateStoredDoc ${body.includes("hydrateStoredDoc(")}` : "no method"}`);
+  const chained = maison && hydrateStoredDoc(U.serialize(hydrateConfig(maison))).palettes.find((p) => p.name === "Success");
+  if (!chained || chained.anchor) reach.push(`(k) Maison through hydrateConfig, serialize and hydrateStoredDoc must open Success unanchored, got ${chained ? JSON.stringify(chained.anchor) : "no Maison preset"}`);
+
+  if (reach.length) FAIL("gallery-reach", reach.join("; "));
+}
+
 // gate-report.mjs is imported here, immediately before its one use, rather than with the top-of-
 // file imports: this file is cited by line number from docs/reference/reviews/2026-08-20-reactivity/
 // 03-stores-and-persistence.md (lines 11-12, 448-484), and ES module imports hoist regardless of
@@ -698,7 +766,7 @@ import { gateReport } from "../gate-report.mjs";
 // "export", "type-fonts", "type-voices", "icons", "voice-style" and "ramp-contrast" were live
 // holes (#699): all 6 had real call sites above but were never declared, so a FAIL under any of
 // them used to exit 1 with no named row.
-const DECLARED = ["roundtrip", "clamp", "field-default", "token-overrides", "huespace-default", "schema-rename", "theme-invariant", "allowlist-parity", "ramp", "dropped-keys", "export", "type-fonts", "type-voices", "icons", "voice-style", "ramp-contrast", "report-static", "stored-anchors"];
+const DECLARED = ["roundtrip", "clamp", "field-default", "token-overrides", "huespace-default", "schema-rename", "theme-invariant", "allowlist-parity", "ramp", "dropped-keys", "export", "type-fonts", "type-voices", "icons", "voice-style", "ramp-contrast", "report-static", "stored-anchors", "gallery-reach"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: ui-persistence clears all [gate] predicates");
