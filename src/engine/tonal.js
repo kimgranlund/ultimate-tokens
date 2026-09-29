@@ -804,6 +804,10 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
   // evenChroma's floorRef (#701 U2, revision 14): the largest gamut ceiling among the pivot and its
   // first display step on either side (450, 550), at the tones this ramp renders them. See evenChroma's
   // own comment for why the first step, not the pivot alone, sets the level.
+  // floorRef reads all three ceilings at one hue, seedHue, one reference for the whole ramp, while each
+  // stop renders at resolvedHue plus its edge rotation (below): exact for the rendered stops at hueShift
+  // 0 on the cam16 path, an approximation under edge rotation or the OKLCH per-stop hue solve. Reading
+  // them at each stop's rendered hue is deferred to #766.
   const firstStepTone = (s) => anchorLerp(pivotTone, controls.lmax ?? 100, controls.lmin ?? 5, s, palette.skew ?? 0, palette.lift ?? 0, controls.curve, controls.tension);
   const floorRef = Math.max(maxc500, maxChromaInGamut(seedHue, firstStepTone(450)), maxChromaInGamut(seedHue, firstStepTone(550)));
   const lift = palette.lift ?? 0;
@@ -933,6 +937,10 @@ export function paletteStops(palette, controls, stops) {
   const anchorChroma = evenChroma(maxc500, intended500, envelopeAt.get(ANCHOR_STOP), controls.chromaFloor);
   // evenChroma's floorRef (#701 U2, revision 14): as in paletteStopsAnchored, the pivot's ceiling or its
   // first display step's (450, 550), whichever is larger.
+  // floorRef reads all three ceilings at one hue, baseHue (under hueSpace oklch, the hue solved once at
+  // stop 500 above), one reference for the whole ramp, while each stop renders at baseHue plus its edge
+  // rotation (below): exact for the rendered stops at hueShift 0, an approximation under edge rotation.
+  // The per-stop reading is deferred with paletteStopsAnchored's, to the issue its comment names.
   const floorRef = Math.max(maxc500, maxChromaInGamut(baseHue, toneAt(450, palette.skew, palette.lift, ctl)), maxChromaInGamut(baseHue, toneAt(550, palette.skew, palette.lift, ctl)));
   const dampAmp = controls.dampAmp ?? 0;
   return stops.map((stop) => {
