@@ -2,7 +2,7 @@
 kind: verdict
 plan: chroma-floor
 seat: verifier
-pass: 2
+pass: 3
 ticket: "#701"
 written: 2026-09-29
 ---
@@ -103,3 +103,48 @@ Checkers: the same `b9044bb` stand-ins as pass 1 (reviewer-l3 for reviewer-l4, v
 4. 🟡 Review Lows: `tonal.js:327-328` states the 450/550 cap equals the stop's own ceiling with no hue condition, where both call sites qualify it; the `okhsl-modes` pin `tonal.mjs:301-319` stops short of `:322-327`; `mode-isolation-gate.mjs:21-23` scopes `--capture` narrower than its header and `owner`; `tonal.mjs:1526` "so the valley cannot form" reads as a guarantee.
 5. 🟡 Pass 1 L4 carries: five pre-U4 commits lack `Co-Authored-By`, so the squash body must carry the trailer.
 6. Pass 1's F1 to F4 and R1 to R3 are cleared at this head.
+
+## Pass 3 · 🟢 at `1ea506bb`: every row and all ten CI jobs green, H1 closed, two criteria bodies lag revision 25
+
+verdict: 🟢
+sha: 1ea506bb9bd95549e5e3d6e4facdfb59b0081da5
+
+`plan/chroma-floor` at `1ea506bb`, plan revision 25: U5 merged on its own 🟢 verdict at `0ad2e294`, then origin/main merged. `git diff --stat 0ad2e294 1ea506bb -- . ':!.sdlc'` is empty, so the code tree is the one I graded for U5. The review leg found that `577c7d29` and `1ea506bb` each equal `git merge-tree --write-tree` of their parents. `git merge-tree --write-tree 1ea506bb origin/main` exits `0` against `a9ef4472`, and PR #765 reads `MERGEABLE`, `CLEAN`, with head `1ea506bb`.
+
+Checkers: the same `b9044bb` stand-ins as passes 1 and 2 (reviewer-l3 for reviewer-l4, verifier-l2 for verifier-l3), fable capped. U2 to U5 were opus builds, so their checkers sit inside their family. Review: 🟡 PASS, no High, one Medium (M1, plan text).
+
+### Red
+
+None.
+
+### Green
+
+| id | criterion | state | evidence | negative control |
+|---|---|---|---|---|
+| P1 / C1 | `npm test` green, no node_modules, tree clean | 🟢 | fresh clone: `✓ all 54 test files passed`, `exit 0`, `real 1m25.272s`, `git status --short \| wc -l` `0` | `s/"scrim/"scrimX/` on role-table: `FAIL  refs-canonical`, `✗ 1/54 test file(s) failed`, `exit 1` |
+| BUILD | `npm ci` + `npm run build` | 🟢 | `ci exit 0`, `build exit 0`, `wrote figma/plugin/ui.html 4130.3 KB`, tree `0` | `const = ;` appended to `tonal.js`: `SyntaxError: Unexpected token '='`, `exit 1` |
+| SWEEPS | `npm run gate:sweeps`, all seven legs | 🟢 | `sweeps exit 0`, `real 6m31.042s`; corpus-tonal, corpus-anchor `PASS (FULL)`, sweep-prime, corpus-reset `HEADLESS BOOT PASS`, corpus-contrast, `pass  mode-isolation: perceptual 34e544942d500b9e peak f560f784d8a4883a match fixture`, even-dips `PASS` | per C row |
+| C2 | lone spikes | 🟢 | graded as revision 25 reads it: `grep -cE 'lone-spike'` `2`, `lone-spike ... 0 (expected 0, corpus 3380 anchored + default kit 16, no allow-list)` | in-gate plateau-neutralised control `65` spikes; a planted `const LONE_SPIKE_ALLOW` greps `1` |
+| C3 / C4 | even dip gates, rendered and gate path | 🟢 | `grep -c EVEN_DIP_BASELINE` `0`; `dip-gate even rendered (anchor passed): 0 dips`, `dip-gate even gate-path (no anchor): 0 dips` | `even-dips-gate.mjs --full --floor-scale 1.6`: `120 dips`, `FAIL`, `exit 1` |
+| C5 | envelope cells | 🟢 | gate-path even cells all `OK`; perceptual+peak md5 `6e558839ee9e43217e1e2f7afc898b7b` at head and at base `282fca8d` | `--gate-path --damp-amp 55`: `above 100% of stop 500: 1916 FAIL` |
+| C6 | mode isolation fixture | 🟢 | `match fixture (captured at 282fca8d...)`; my own `--capture` at `282fca8d` gives the same two hashes | OKHSL `intendedS * env * 1.01`: `do not match fixture`, `exit 1` |
+| C7 | shape gates | 🟢 | `anchor-ramp monotone: 0`, `distinct (25-stop) allow-list: 16 (expected 16)`, `skew-lift-okhsl`, `chroma-envelope` pass | a second `export function chromaEnvelope` greps `2` |
+| C8 | chroma floor, contrast, FLOORS | 🟢 | `pass  chroma-floor`, `pass  role-contrast`; comparator vs `282fca8d` `FLOORS changed 4, down 4`, exactly the R44 set | even Warning light floor set to 9.9: `below its pinned floor 9.9:1`, `exit 1` |
+| C9 | Q-D bound | 🟢 | `hueSpace-perceptual-bound ... max OKLab dE 0.0048`, `peak-bound ... 0.0048`, even `0.0256 (want > 0.01)` | OKHSL solve +8 degrees at the `tonal.js:1131` call site: `max OKLab dE 0.0617`, `exit 1` |
+| C10 | regenerated assets, docs list | 🟢 | gen chain `exit 0`, status `0`; 8 doc paths, all in the plan's ten; no `code.js`, no `role-table.json` | a line appended to `knowledge-01-color-engine.md` is listed |
+| C11 | retired lists | 🟢 | `0`, `0`, `0`, `1`, `1`, `0`, `2`; `notch allow-list ... 17 (expected 17)` | planted `const LONE_SPIKE_ALLOW` greps `1` |
+| C12 | baseline agrees | 🟢 | `ok    tests: baseline 54`, `ok    ui.html: baseline 4130.3 KB, tree 4130.3 KB`, `stale total: 1` (the standing R53 time line) | TESTS +1: `STALE tests`, `stale total: 2` |
+| C13 | floor edge, drain | 🟢 | revision-15 legs pass; `17 big cells of 84900` | on `fe65e640`'s engine: `211 big cells`, `FAIL` |
+| C14 | records true of sources | 🟢 | (a) to (l) as revision 25 reads them; (b) `computed 376 to 496 ... AGREE`; (j) `ls .sdlc/reviews \| grep -c chroma-floor-U3-review` `0`; (l) merge base `a44223ae`, `0` | at `7cea7c41`: (c) `1`, (d) `0`, (e) `0`, (g) `1`, (k) `1`; (l) an appended em dash reads `1` |
+| C15 | shoulder comment | 🟢 | `0`, `0`, `8` | at `bbf9c04b`: `1`, `1`, `6` |
+| R1 to R3 | pass 1 findings | 🟢 | `tonal.mjs:1523-1526` names `the largest ceiling among stops 450, 500 and 550`; `994:export function okhslLAt`; pins `tonal.mjs:301-327`, `:735-884` land on their headers | at `d1db4b04` / `38bd0dea`: the old comment, cite `983`, pin `301-319` |
+| H1 | `anchor.mjs:651` import credit | 🟢 | now `cited as R2 in tonal.js's comment above \`chromaEnvelope\``; `grep -c "this file's \`anchorChromaBasis\` import"` `0` | the same grep at `38bd0dea` reads `1` |
+| RECORDS | branding, em dash, verdict frontmatter | 🟢 | head: `branding: clean (867 files scanned)`, `em-dash: clean (875 files scanned)`, `verdicts 203 graded 203 bad 0`; clean on a scratch merge with origin/main too | a brand token, an em dash, a blanked `verdict:` each `exit 1` |
+| UNITS | every unit merged on its verdict | 🟢 | U1 `🟢 ec618987`, U2 `🟡 abab9003`, U3 `🟡 bbf9c04b`, U4 `🟡 dd356ad0`, U5 `🟢 0ad2e294`, each `ancestor` of `1ea506bb` | U4's pass 1 line `🔴 a28b9b22` is not a merge verdict |
+| CI | green on the exact head | 🟢 | run `36550433155`, `headSha 1ea506bb9bd95549e5e3d6e4facdfb59b0081da5`, `conclusion success`: `build-test`, `panda-smoke`, `corpus-contrast`, and `sweeps` `gate:corpus-tonal`, `gate:corpus-anchor`, `gate:sweep-prime`, `gate:corpus-reset`, `gate:corpus-contrast`, `gate:mode-isolation`, `gate:even-dips`, all `success`; `deploy skipped` | the first read was `in_progress` and was not graded until the run completed |
+
+### Findings
+
+1. 🟡 Plan text (review M1): revision 25's log row says C2 and C14 (j) were repaired, but `git diff b25da145~1 b25da145` shows that only the C14 line changed and C2's body (`:178`) was never edited. Read literally, C2 still expects `1` `lone-spike` line where the gate prints `2` (`anchor.mjs:1003`, `:1082`), and (j) still expects `2`, `0` where the head reads `2`, `4`. The log row's claim that (j)'s first leg reads `0` is false, since U3's two reviews still sit in `.sdlc/verdicts/`. Both rows were graded as revision 25 intends; the gates are right, and only the criteria wording lags.
+2. 🟡 Reported, not barred (Q2): the rendered even block fell against base. 300 p90 is `100.3%` (base 113.7), `above 100% of stop 500` is `502` (base 670), and C6 (v) even is `1037/3764` (base 1,205). They are falls, so the Q2 rise clause does not trigger.
+3. 🟡 The squash body must carry `Co-Authored-By`: five pre-U4 commits lack it (pass 1 L4, pass 2 L5).
