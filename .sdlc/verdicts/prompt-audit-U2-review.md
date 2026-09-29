@@ -29,3 +29,5 @@ All the pins read the engine (`typeScale`, `DEFAULT_CONTROLS`, `DOMAINS`), not t
 | Nit | `test/plugin/typography-tokens.mjs` kicker leg | The row filter has no needle-missing guard like `edit()`. If the row's casing changed, the base-equal copy would exit 0 and the leg would fail as "did not exit 1". That failure is still loud, so the cost is a less helpful message |
 
 None of these blocks the unit. The first Low is a small fix that could go into the same unit if another pass happens for any other reason.
+
+verdict: 🟢

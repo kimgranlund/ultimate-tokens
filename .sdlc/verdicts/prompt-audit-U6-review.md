@@ -39,3 +39,5 @@ Every needle passes and bites. The FAIL is the U6-1 criterion's own sentence, "t
 ## Rework for pass 2
 
 Fix F1 to F3 inside `geometry-system/references/{rubric.md,best-practices.md}`, plus F4. F5 is optional. Re-run the U6-1 needles, `em-dash.mjs`, `branding.mjs` and P6. A pass-2 check: `grep -c 'caret === font' .claude/skills/geometry-system/references/rubric.md` prints `0`; `grep -rc '3\.16' .claude/skills/geometry-system/references/rubric.md` prints `0`; `grep -c 'inside \`buildSize\`' .claude/skills/geometry-system/references/best-practices.md` prints `0`.
+
+verdict: 🔴

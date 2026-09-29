@@ -58,3 +58,5 @@ I read `prompt-audit-evidence.md` lines 536 to 569 directly (SCn = line 535+n) a
 | Centering law on `paddingNarrow`; the test asserts `!("typed" in geo)` | 🟢 | `test/mcp/brand-kit.mjs` 173, 176; node `5 5` |
 | `usageGuide()` names the voices by function | 🟢 | `mcp/brand-kit-core.mjs` 83 |
 | F6: the Questions paragraph is current | 🟢 | U7-12 |
+
+verdict: 🔴
