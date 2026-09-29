@@ -12,7 +12,7 @@ const CATEGORY_DIR = "src/ui/categories";
 const CATEGORY_FILES = readdirSync(`${ROOT}/${CATEGORY_DIR}`).filter((f) => f.endsWith(".js"));
 const categoryKey = (file) => (file === "index.js" ? "categoryIndex" : "category_" + file.replace(/\.js$/, ""));
 
-// dependency order; entry last. Category modules are pure data (no imports) — placed before the app,
+// dependency order; entry last. Category modules are pure data (no imports), placed before the app,
 // which imports the index; the index's lazy thunks reference the category modules only at call time.
 const MODS = [
   ["collections", "src/engine/collections.js"],
@@ -44,7 +44,7 @@ const MODS = [
   ["model", "src/ui/model.mjs"],
   // TKT-0023: app.js decomposed into a bootstrap/core + per-section prototype mixins. appHelpers is the
   // pure (no `this`) shared carrier (h()/btn/chip/… + storage/license/font-loading) both app.js and every
-  // mixin below import from — dependency order: after model/icons (which it also imports), before every
+  // mixin below import from, dependency order: after model/icons (which it also imports), before every
   // mixin AND before app (which imports the mixins to compose them onto HctApp.prototype).
   ["appHelpers", "src/ui/app-helpers.mjs"],
   ["colorSection", "src/ui/sections/color.js"],
@@ -62,18 +62,18 @@ const KEY = { "hct.js": "hct", "okhsl.js": "okhsl", "semantic.js": "semantic", "
   ...Object.fromEntries(CATEGORY_FILES.map((f) => [f, categoryKey(f)])) };
 
 // Shared by preflight() (a read-only whole-graph scan that runs BEFORE any transform/assembly) and
-// transform() (the actual rewrite) — one copy of each regex, so a syntax the scanner learns to
+// transform() (the actual rewrite), one copy of each regex, so a syntax the scanner learns to
 // recognize can't drift from what the transform recognizes (TKT-0028: see the preflight() comment).
 const STATIC_IMPORT_RE = /import\s+(\{[\s\S]*?\}|\*\s+as\s+[A-Za-z0-9_$]+)\s+from\s+["']([^"']+)["'];?/g;
 const DYNAMIC_IMPORT_RE = /\bimport\(\s*["']([^"']+)["']\s*\)/g;
 
-// preflight() — TKT-0028 (the vite-vs-bundle.mjs spike; verdict: keep bundle.mjs, harden it here).
+// preflight(), TKT-0028 (the vite-vs-bundle.mjs spike; verdict: keep bundle.mjs, harden it here).
 // Before this, an unregistered import surfaced as a single `throw` wherever the transform loop
-// happened to reach it first — no file context, one problem at a time, and two other gaps had NO
+// happened to reach it first, no file context, one problem at a time, and two other gaps had NO
 // check at all: (a) a KEY entry pointing at a MODS key that doesn't exist (typo'd during a rename)
 // destructures `__M.<key>` as undefined, which only throws in the BROWSER, on whatever click path
 // first touches it; (b) KEY is keyed by basename only, so two MODS entries sharing a basename in
-// different directories silently collide — no error at all, just the wrong module resolved at
+// different directories silently collide, no error at all, just the wrong module resolved at
 // runtime. This scan reads every MODS file once, up front, and reports every problem it finds in
 // ONE itemized error before a single line of output is assembled.
 function preflight() {
@@ -94,20 +94,20 @@ function preflight() {
     byBasename.get(base).push(key);
   }
   for (const [base, keys] of byBasename) {
-    if (keys.length > 1) problems.push(`basename collision: "${base}" is registered under ${keys.length} different MODS keys (${keys.join(", ")}) — KEY["${base}"] can only point at one, so imports of the others resolve to the wrong module`);
+    if (keys.length > 1) problems.push(`basename collision: "${base}" is registered under ${keys.length} different MODS keys (${keys.join(", ")}), KEY["${base}"] can only point at one, so imports of the others resolve to the wrong module`);
   }
 
   // (c) every static/dynamic import in every MODS-listed file resolves via KEY; no `export default`
-  // (unsupported by this inliner — it would leak into the module IIFE as a syntax error and only
+  // (unsupported by this inliner, it would leak into the module IIFE as a syntax error and only
   // surface in the Chrome smoke leg otherwise). A MODS entry with a typo'd/stale path is ALSO a
-  // registry problem, not a raw ENOENT stack trace — report it the same way and move on so one bad
+  // registry problem, not a raw ENOENT stack trace, report it the same way and move on so one bad
   // path doesn't hide every other problem this scan would otherwise have found.
   for (const [key, rel] of MODS) {
     let src;
     try {
       src = readFileSync(`${ROOT}/${rel}`, "utf8");
     } catch (e) {
-      problems.push(`MODS["${key}"] -> "${rel}" could not be read (${e.code || e.message}) — fix the path in MODS`);
+      problems.push(`MODS["${key}"] -> "${rel}" could not be read (${e.code || e.message}), fix the path in MODS`);
       continue;
     }
     for (const m of src.matchAll(STATIC_IMPORT_RE)) {
@@ -115,26 +115,26 @@ function preflight() {
       if (!targetKey) { problems.push(`${rel}: import path "${m[2]}" is not registered in KEY (and its module, if new, is not in MODS)`); continue; }
       // (d) MODS ORDER (ticket #560 real incident): each module is assembled as `__M.<key> = (function(){...})()`
       // in MODS array order, and a static import rewrites to `const {x} = __M.<key>` at the TOP of the importing
-      // module's own IIFE — evaluated synchronously the moment that IIFE runs. So the imported module's MODS
+      // module's own IIFE, evaluated synchronously the moment that IIFE runs. So the imported module's MODS
       // entry must come STRICTLY BEFORE the importing module's, or `__M.<key>` is still undefined and the
-      // destructure throws at runtime — a throw that (a) aborts the whole inline <script>, so `customElements.
+      // destructure throws at runtime, a throw that (a) aborts the whole inline <script>, so `customElements.
       // define` never runs and every element/method on the app looks "not a function"; and (b) never surfaces
       // in `npm test`'s headless-DOM shim (it imports the real ES modules directly, unaffected by this file's
-      // concatenation order) — only in `npm run smoke`'s real-Chrome boot. Catching it HERE keeps that class of
+      // concatenation order), only in `npm run smoke`'s real-Chrome boot. Catching it HERE keeps that class of
       // bug inside `npm test`'s own bundle step instead of the browser-only leg.
       if (modsIndex.get(targetKey) >= modsIndex.get(key)) {
-        problems.push(`${rel}: imports "${m[2]}" (MODS["${targetKey}"]) but MODS lists "${targetKey}" at or after "${key}" — move the ["${targetKey}", ...] entry earlier in MODS, before ["${key}", ...], so __M.${targetKey} is assigned before ${rel}'s own IIFE reads it`);
+        problems.push(`${rel}: imports "${m[2]}" (MODS["${targetKey}"]) but MODS lists "${targetKey}" at or after "${key}", move the ["${targetKey}", ...] entry earlier in MODS, before ["${key}", ...], so __M.${targetKey} is assigned before ${rel}'s own IIFE reads it`);
       }
     }
     for (const m of src.matchAll(DYNAMIC_IMPORT_RE)) {
       // dynamic import()s rewrite to `Promise.resolve(__M.<key>)`, resolved lazily at CALL time (not at
-      // IIFE-assembly time), so — unlike a static import above — MODS order is irrelevant here.
+      // IIFE-assembly time), so, unlike a static import above, MODS order is irrelevant here.
       if (!KEY[m[1].split("/").pop()]) problems.push(`${rel}: dynamic import("${m[1]}") is not registered in KEY (and its module, if new, is not in MODS)`);
     }
-    if (/^export\s+default\b/m.test(src)) problems.push(`${rel}: uses "export default" — not supported by this single-file inliner, use a named export instead`);
+    if (/^export\s+default\b/m.test(src)) problems.push(`${rel}: uses "export default", not supported by this single-file inliner, use a named export instead`);
   }
 
-  if (problems.length) throw new Error(`bundle.mjs preflight found ${problems.length} registry problem${problems.length === 1 ? "" : "s"} — fix these (see the MODS/KEY comment in scripts/bundle.mjs) before bundling:\n` + problems.map((p) => "  - " + p).join("\n"));
+  if (problems.length) throw new Error(`bundle.mjs preflight found ${problems.length} registry problem${problems.length === 1 ? "" : "s"}, fix these (see the MODS/KEY comment in scripts/bundle.mjs) before bundling:\n` + problems.map((p) => "  - " + p).join("\n"));
 }
 
 function transform(src) {
@@ -172,10 +172,10 @@ const css = readFileSync(`${ROOT}/src/ui/styles.css`, "utf8");
 // external request (same reason icons.js inlines its SVGs). The favicon SVG's own prefers-color-scheme
 // invert <style> is scoped to the icon's render context, not the page, so it's safe as rel=icon.
 const favHref = "data:image/svg+xml;base64," + Buffer.from(readFileSync(`${ROOT}/public/favicon/favicon.svg`)).toString("base64");
-// The GitHub Pages demo origin — og:image/og:url must be ABSOLUTE for scrapers, and the pages
+// The GitHub Pages demo origin, og:image/og:url must be ABSOLUTE for scrapers, and the pages
 // workflow ships public/icons/ + public/favicon/ alongside the single-file demo so they resolve.
 const SITE = "https://kimgranlund.github.io/ultimate-tokens/";
-const DESC = "Perceptual design tokens — color ramps with 53 semantic roles, typography and geometry, exported to CSS, Tailwind v4, shadcn/ui, Figma and DTCG.";
+const DESC = "Perceptual design tokens, color ramps with 53 semantic roles, typography and geometry, exported to CSS, Tailwind v4, shadcn/ui, Figma and DTCG.";
 const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="${favHref}">
@@ -189,7 +189,7 @@ const html = `<!doctype html>
 <meta property="og:image" content="${SITE}icons/og-ultimate-tokens.png">
 <meta property="og:image:width" content="512">
 <meta property="og:image:height" content="512">
-<meta property="og:image:alt" content="The Ultimate Tokens mark — four tonal swatches on a black square">
+<meta property="og:image:alt" content="The Ultimate Tokens mark, four tonal swatches on a black square">
 <meta name="twitter:card" content="summary">
 <style>${css}</style></head>
 <body><ultimate-tokens></ultimate-tokens>

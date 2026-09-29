@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// verify.mjs — semantic-mapping validation adapter (CRITIC side; deny-on-write to the advancer).
+// verify.mjs, semantic-mapping validation adapter (CRITIC side; deny-on-write to the advancer).
 // Checks rubric.system.semantic-mapping's [gate]s against ./semantic.js vs the canonical role-table.json.
 // Exit 0=pass / 1=fail; validate.py mints the signal from this status.
 //
@@ -131,7 +131,7 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
 // ── hpg-semantic-identity-stops: identityStops(roles) = the solid refs of the 5 identity roles, REPLACE semantics
 // after applyAccentRef (spec-muted-base-key-spikes REQ-004, EX-3). tonal.js no longer consumes this set (the
 // ramp-level identity-stop chroma lift was retired, #536, dropping the paletteStops parameter this function's
-// result used to feed) — so the cross-file parity assertion this gate used to carry (against tonal.js's
+// result used to feed), so the cross-file parity assertion this gate used to carry (against tonal.js's
 // DEFAULT_IDENTITY_STOPS literal, since removed) is gone too; this gate now only checks identityStops() itself,
 // kept exported for a possible future standalone prime-swatch system.
 {
@@ -140,7 +140,7 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
   const want = new Set([350, 400, 450, 550, 650, 700]);
   if (!same(mode, want)) FAIL("identity-stops", `'mode' set ${JSON.stringify([...mode])}, want ${JSON.stringify([...want])}`);
   const single = S.identityStops(S.applyAccentRef(ROLES, "single"));
-  if (!same(single, new Set([350, 400, 500, 650, 700]))) FAIL("identity-stops", `'single' set ${JSON.stringify([...single])}, want [350,400,500,650,700] (450/550 must drop out — replace, not union)`);
+  if (!same(single, new Set([350, 400, 500, 650, 700]))) FAIL("identity-stops", `'single' set ${JSON.stringify([...single])}, want [350,400,500,650,700] (450/550 must drop out, replace, not union)`);
   // sorted ascending, numbers, and no scrim refs leak in
   const arr = [...mode];
   if (arr.some((x, i) => typeof x !== "number" || (i && x < arr[i - 1]))) FAIL("identity-stops", "set must be ascending numbers");
@@ -153,17 +153,17 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
 //    own on-color, in both schemes. #647 made the perceptual ramp honour a palette's skew and lift,
 //    which exposed that Warning's shipped skew 40 / lift 15 put its accent at 2.18:1 against its
 //    pinned light on-color, and that "even" mode had been shipping 1.90:1 unnoticed. That ruling was
-//    Warning-only, so the other families stayed pinned wherever they sat — several of them under AA.
+//    Warning-only, so the other families stayed pinned wherever they sat, several of them under AA.
 //
 //    #662 closed that gap at the POLICY layer rather than the ramp: `onColorMode` now defaults to
 //    "contrast", and when neither ramp end clears 4.5:1 against the accent fill the on-color falls
 //    through to the white/black constant (semantic.js's applyOnColorContrast). No stop moved. So the
 //    ruled floor is now AA 4.5:1 for ALL SIXTEEN families (8 semantic + 8 data), both schemes, and it
-//    is met in every tone mode — including "peak", which before #662 was the worst of the three
+//    is met in every tone mode, including "peak", which before #662 was the worst of the three
 //    (Secondary 1.24, Success 1.58, Info 2.44, Warning 2.52 in the dark scheme) and is now the best.
 //
-//    The pair is read off brandKit's resolved kit.roles — the same object, via the same resolution
-//    ladder, that mcp/describe-mcp-core.mjs's contrastLint reads — so this gate cannot drift from the
+//    The pair is read off brandKit's resolved kit.roles, the same object, via the same resolution
+//    ladder, that mcp/describe-mcp-core.mjs's contrastLint reads, so this gate cannot drift from the
 //    lint's notion of "the accent" (550 light / 450 dark, per accentRef "mode") or "the on-color".
 //
 //    The per-family floors stay a RATCHET on top of the ruled floor: each is that family's own
@@ -175,11 +175,11 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
 //
 //    Re-measured whole again on top of #681 U2: every default palette now carries `anchor`, and
 //    model.mjs's projectView + exports.js's derivePalette were fixed to actually forward it into
-//    paletteStops (a "subset-object gap" — they were building narrowed object literals for the
+//    paletteStops (a "subset-object gap", they were building narrowed object literals for the
 //    engine call that silently dropped the new `anchor` field, so the live app/exports had been
 //    silently rendering the OLD, un-anchored ramp all along). With that fixed, every family's real
 //    accent/on-color pair moved. Perceptual and peak now measure IDENTICAL ratios: the anchored
-//    branch's ladder (tonal.js's `okhslStopsAnchored`) is mode-independent by design — the anchor
+//    branch's ladder (tonal.js's `okhslStopsAnchored`) is mode-independent by design, the anchor
 //    IS the ramp's vivid identity point already, so the even/cusp vibrancy blend that used to tell
 //    "perceptual" and "peak" apart plays no role here (see the comment above `okhslStopsAnchored`).
 //
@@ -196,14 +196,14 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
 //    basis (Finding 1). The anchored tone construction also now composes toneAt's curve, tension,
 //    vibrancy and hueSpace with the pivot instead of a straight lerp (Finding 2/F4, ruled 2026-09-18:
 //    controls stay live). Both changes only move OFF-pivot stops. Consequence of F4: perceptual and
-//    peak are NO LONGER identical for anchored palettes (the gate this ticket's F4 required) — every
+//    peak are NO LONGER identical for anchored palettes (the gate this ticket's F4 required), every
 //    family stayed >= the ruled AA 4.5 floor in every mode, both schemes; 46 of the 96 entries moved
 //    below their PRE-#681 (origin/main, bf2aaf6) value, none below 4.5. Recorded by name in
 //    `.sdlc/questions/pif-u2.md` Q-U2-5 (Finding 5) rather than re-pinned silently, since the F2 defect
 //    this repair pass retracts was itself downstream of that same forked blend.
 //
 //    Re-measured a FIFTH time (Q-U2-5 ruled, revision 17): Finding 1's literal, unconditional anchor
-//    basis (immediately above) broke REQ-002 — re-ruled to a BLEND, chromaEnvelope itself verbatim,
+//    basis (immediately above) broke REQ-002, re-ruled to a BLEND, chromaEnvelope itself verbatim,
 //    its basis input shading from the anchor's own chroma/`s` at the pivot to `rampChroma` at the
 //    ramp's ends (see paletteStopsAnchored/okhslStopsAnchored's own header comments). Every family
 //    stayed >= AA 4.5 in every mode, both schemes; the numbers move only slightly from the fourth
@@ -240,15 +240,15 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
 //    FLOORS_BF2AAF6/PENDING_U4/checkFloors below the 96-cell sweep enforce it - reds on a 42nd
 //    unlisted drop, or on any of these 41 eroding further than its value at this commit.
 //
-//    The PARK leg (#636) checks the same pairing through the OTHER derivation — exports.js's
+//    The PARK leg (#636) checks the same pairing through the OTHER derivation, exports.js's
 //    derivedAll, which is what radixColorGroup reads for Park's `solid.bg` (step 9 = the bare accent
-//    role) and `solid.fg` (`on-accent` = the `-on-{n}` role) — on the default document AND on the
+//    role) and `solid.fg` (`on-accent` = the `-on-{n}` role), on the default document AND on the
 //    committed Adia brand document, so a policy that passed via model.mjs cannot fail via the
 //    exporters. ────────────────────────────────────────────────────────────────────────────────────
 {
   const hexToRgb = (hex) => [0, 2, 4].map((i) => parseInt(String(hex).slice(1 + i, 3 + i), 16));
   const AA = 4.5;                                   // the ruled floor (#662): every family, both schemes
-  // [family, light floor, dark floor] — max(AA, own measured ratio floored to 1 decimal)
+  // [family, light floor, dark floor], max(AA, own measured ratio floored to 1 decimal)
   const FLOORS = {
     perceptual: [
       ["Neutral", 6.8, 4.8],   // measured 6.87 / 4.86 - pending U4: dark was 4.9 at bf2aaf6
@@ -322,13 +322,13 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
       const roles = kit.roles && kit.roles[key];
       const accent = roles && roles[key];
       const on = roles && roles["on" + key.charAt(0).toUpperCase() + key.slice(1)];
-      if (!accent || !on) { FAIL("role-contrast", `${mode} ${family}: no accent/on-color pair in kit.roles — the resolution ladder changed shape`); continue; }
+      if (!accent || !on) { FAIL("role-contrast", `${mode} ${family}: no accent/on-color pair in kit.roles, the resolution ladder changed shape`); continue; }
       const light = contrastRatio(hexToRgb(accent.light), hexToRgb(on.light));
       const dark = contrastRatio(hexToRgb(accent.dark), hexToRgb(on.dark));
       checked += 2;
       // the RULED floor first, stated separately from the ratchet so the ruling is legible in the text
-      if (light < AA) FAIL("role-contrast", `${mode} ${family} LIGHT: accent ${accent.light} on ${on.light} = ${light.toFixed(2)}:1, under the ruled WCAG AA floor ${AA}:1 (#662) — fix the on-color policy, do not lower this gate`);
-      if (dark < AA) FAIL("role-contrast", `${mode} ${family} DARK: accent ${accent.dark} on ${on.dark} = ${dark.toFixed(2)}:1, under the ruled WCAG AA floor ${AA}:1 (#662) — fix the on-color policy, do not lower this gate`);
+      if (light < AA) FAIL("role-contrast", `${mode} ${family} LIGHT: accent ${accent.light} on ${on.light} = ${light.toFixed(2)}:1, under the ruled WCAG AA floor ${AA}:1 (#662), fix the on-color policy, do not lower this gate`);
+      if (dark < AA) FAIL("role-contrast", `${mode} ${family} DARK: accent ${accent.dark} on ${on.dark} = ${dark.toFixed(2)}:1, under the ruled WCAG AA floor ${AA}:1 (#662), fix the on-color policy, do not lower this gate`);
       if (light < lightFloor) FAIL("role-contrast", `${mode} ${family} LIGHT: accent ${accent.light} on ${on.light} = ${light.toFixed(2)}:1, below its pinned floor ${lightFloor}:1`);
       if (dark < darkFloor) FAIL("role-contrast", `${mode} ${family} DARK: accent ${accent.dark} on ${on.dark} = ${dark.toFixed(2)}:1, below its pinned floor ${darkFloor}:1`);
     }
@@ -429,17 +429,17 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
   //    from the `-on-{n}` role, both off derivedAll's resolved `r.light.rgb` / `r.dark.rgb`. Measured
   //    on the default document and on the committed Adia brand document (the generated brands.js
   //    mirror gen-adia-derived-exports.mjs reads), so neither the app's default nor the one shipped
-  //    real-world kit can regress. rgb triples straight from the engine — no hex round-trip.
+  //    real-world kit can regress. rgb triples straight from the engine, no hex round-trip.
   let parkChecked = 0;
   {
     const adia = PRESETS.find((p) => p.name === ADIA_PRESET_NAME);
-    if (!adia) FAIL("role-contrast", `the Adia brand preset "${ADIA_PRESET_NAME}" is missing from src/ui/categories/brands.js — the Park leg has nothing to measure`);
+    if (!adia) FAIL("role-contrast", `the Adia brand preset "${ADIA_PRESET_NAME}" is missing from src/ui/categories/brands.js, the Park leg has nothing to measure`);
     const docs = [["default document", defaultDocument()], ...(adia ? [["Adia brand document", hydrate(adia)]] : [])];
     for (const [label, doc] of docs) {
       for (const p of derivedAll(stateOf(doc))) {
         const bg = p.roles.find((r) => r.suffix === "");              // Park solid.bg  (radix step 9)
         const fg = p.roles.find((r) => r.suffix === `-on-${p.n}`);    // Park solid.fg  (on-accent)
-        if (!bg || !fg) { FAIL("role-contrast", `${label} ${p.name}: no accent/on-accent role pair in derivedAll — radixColorGroup would throw`); continue; }
+        if (!bg || !fg) { FAIL("role-contrast", `${label} ${p.name}: no accent/on-accent role pair in derivedAll, radixColorGroup would throw`); continue; }
         for (const side of ["light", "dark"]) {
           const ratio = contrastRatio(bg[side].rgb, fg[side].rgb);
           parkChecked++;
@@ -452,11 +452,11 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
 
   // ── the VARIANT-SIDE leg (#662): `on{N}Variant` must sit on the SAME SIDE as `on{N}`. The policy's
   //    own contract calls the variant "a softer tint of the same end", but it used to run its OWN
-  //    independent contrast pick against the same fill, which is not the same thing — 200 and 800 are
+  //    independent contrast pick against the same fill, which is not the same thing, 200 and 800 are
   //    much closer to the fill than 050 and 950, so the two picks can disagree, and then a fill wears
   //    a dark label with a light tint beside it. Measured on bda9584, the pre-#662 engine under the
   //    contrast policy: 7 of these 96 cells straddled (perceptual Tertiary dark; even Neutral, Primary,
-  //    Tertiary and Info dark; peak Neutral and Primary dark — every one of them prime 050 against
+  //    Tertiary and Info dark; peak Neutral and Primary dark, every one of them prime 050 against
   //    variant 800). The achromatic fall-through would have added more in the other direction, with the
   //    prime on black and the variant still on the 200 tint. applyOnColorContrast now derives the
   //    variant FROM the prime's chosen end, so this is an invariant rather than a coincidence. It is
@@ -475,14 +475,14 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
         const n = slug(p.name);
         const prime = p.roles.find((r) => r.suffix === `-on-${n}`);
         const variant = p.roles.find((r) => r.suffix === `-on-${n}-variant`);
-        if (!prime || !variant) { FAIL("role-contrast", `${mode} ${p.name}: no on/on-variant role pair in projectView — the role suffixes changed shape`); continue; }
+        if (!prime || !variant) { FAIL("role-contrast", `${mode} ${p.name}: no on/on-variant role pair in projectView, the role suffixes changed shape`); continue; }
         for (const [scheme, key] of [["LIGHT", "lightRef"], ["DARK", "darkRef"]]) {
           sideChecked++;
           const a = sideOf(prime[key]);
           const b = sideOf(variant[key]);
-          if (!a) { FAIL("role-contrast", `${mode} ${p.name} ${scheme}: on-color ref ${prime[key]} is neither a known light nor dark end — a new end was added without teaching this gate`); continue; }
-          if (!b) { FAIL("role-contrast", `${mode} ${p.name} ${scheme}: on-color VARIANT ref ${variant[key]} is neither a known light nor dark end — a new end was added without teaching this gate`); continue; }
-          if (a !== b) FAIL("role-contrast", `${mode} ${p.name} ${scheme}: on-color is ${prime[key]} (${a} end) but its variant is ${variant[key]} (${b} end) — the variant must follow the side the prime chose (#662)`);
+          if (!a) { FAIL("role-contrast", `${mode} ${p.name} ${scheme}: on-color ref ${prime[key]} is neither a known light nor dark end, a new end was added without teaching this gate`); continue; }
+          if (!b) { FAIL("role-contrast", `${mode} ${p.name} ${scheme}: on-color VARIANT ref ${variant[key]} is neither a known light nor dark end, a new end was added without teaching this gate`); continue; }
+          if (a !== b) FAIL("role-contrast", `${mode} ${p.name} ${scheme}: on-color is ${prime[key]} (${a} end) but its variant is ${variant[key]} (${b} end), the variant must follow the side the prime chose (#662)`);
         }
       }
     }
@@ -494,10 +494,10 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
   // gate to notice: a skew or lift that differs between them is a silent split-brain default.
   //   `hue` is deliberately NOT compared. defaultDocument() is OKLCH-native and converts each stored
   //   cam16 seed hue on construction, so its number legitimately differs by a degree or two (Neutral
-  //   267 -> 268). That leg has its own gate — test/ui/shell.mjs's `oklch-native`, which bounds the
+  //   267 -> 268). That leg has its own gate, test/ui/shell.mjs's `oklch-native`, which bounds the
   //   converted ramp against the cam16 intent in RGB. chroma/skew/lift/anchor are raw in both files.
   //   `anchor` (ticket #681, U1): each default family's own Q2 (b) hex, same split-brain risk as
-  //   chroma/skew/lift — a value typed into only one of the two sources is exactly the "two default
+  //   chroma/skew/lift, a value typed into only one of the two sources is exactly the "two default
   //   sources have split" failure this loop already exists to catch.
   {
     const ddPalettes = defaultDocument().palettes;
@@ -507,7 +507,7 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
       if (!mine) { FAIL("role-contrast", `role-table default "${rt.name}" is missing from defaultDocument()`); continue; }
       for (const f of ["chroma", "skew", "lift", "anchor"]) {
         compared++;
-        if (mine[f] !== rt[f]) FAIL("role-contrast", `default "${rt.name}" ${f}: model.mjs has ${mine[f]}, role-table.json has ${rt[f]} — the two default sources have split`);
+        if (mine[f] !== rt[f]) FAIL("role-contrast", `default "${rt.name}" ${f}: model.mjs has ${mine[f]}, role-table.json has ${rt[f]}, the two default sources have split`);
       }
     }
     if (compared !== 4 * RT.defaults.length) FAIL("role-contrast", `default parity compared ${compared} fields, want ${4 * RT.defaults.length}`);
@@ -520,7 +520,7 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
 // below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row.
 const DECLARED = ["roles", "oncolors", "refs-canonical", "surface-mode", "identity-stops", "role-contrast", "report-static"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
-console.log("  defer  hpg-parity-roletable — engine<->Figma-binder roleTable full-object identity is verified by test/figma/binder.mjs's `parity` gate; role-table.json<->semantic.js identity is the refs-canonical gate above (both already full-object)");
+console.log("  defer  hpg-parity-roletable, engine<->Figma-binder roleTable full-object identity is verified by test/figma/binder.mjs's `parity` gate; role-table.json<->semantic.js identity is the refs-canonical gate above (both already full-object)");
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: semantic-mapping clears its checkable [gate] predicates (parity deferred)");
 process.exit(0);

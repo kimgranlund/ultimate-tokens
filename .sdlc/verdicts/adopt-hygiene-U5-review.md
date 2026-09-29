@@ -15,12 +15,12 @@ verdict: 🟢
 |---|---|---|---|
 | 1 | committed settings carry no `worktree` block; everything else unchanged | `true`, `0` 🟢 | at `39b78dc`: `false`, `1` 🟢 (matches) |
 | 2 | valid JSON, plugin flags from f9e20c5 kept | `true false` 🟢 | trailing comma planted on a scratch copy: `SyntaxError`, restored 🟢 |
-| 3 | `npm test` green, tree clean | 🟢 see below | — |
+| 3 | `npm test` green, tree clean | 🟢 see below | none |
 
 ### Criterion 3 detail
 
 `node test/repo/branding.mjs` on the `unit/hygiene-U5` head (`ed565dd`) alone shows **2**
-violations, both in `.sdlc/verdicts/adopt-hygiene-U1-review.md` — the known, already-diagnosed
+violations, both in `.sdlc/verdicts/adopt-hygiene-U1-review.md`, the known, already-diagnosed
 U1 P4 issue, fixed on `unit/hygiene-U4` @ `8ebf172` and now merged into `sdlc/adopt` @ `9fbb601`.
 Nothing in U5's own files (`.claude/settings.json`, `.sdlc/handoffs/adopt-hygiene-U5.md`) trips
 the gate.
@@ -50,7 +50,7 @@ surrounding keys (`enabledPlugins`, `extraKnownMarketplaces`) unchanged, key ord
 
 Pass 0's record itself quoted the retired brand strings verbatim while describing the
 `.sdlc/handoffs/adopt-hygiene-U5.md` violation it had found, and so failed the same branding gate
-it was reporting on — it has been reworded here to describe the finding without repeating the
+it was reporting on, it has been reworded here to describe the finding without repeating the
 retired strings.
 
 Pass 0 also flagged that unit `unit/hygiene-U4` (fixing the `.sdlc/verdicts/adopt-hygiene-U1-review.md`

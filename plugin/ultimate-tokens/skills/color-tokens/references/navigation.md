@@ -1,4 +1,4 @@
-# Navigation — navs, tabs, menus, selection, icons, focus, data-viz
+# Navigation: navs, tabs, menus, selection, icons, focus, data-viz
 
 Chrome rides `neutral`; the CURRENT/selected signal rides the accent. The pattern everywhere:
 rest = quiet neutral, hover = a container wash, current = accent-marked.
@@ -24,7 +24,7 @@ active tab: bg `--c-{p}-container`, label `--c-{p}-on-surface`.
 
 ## Links (as chrome: breadcrumbs, footers, "view all")
 
-`--c-{p}` with `-hover`/`-active`; visited state is not modeled — don't invent one. Breadcrumb
+`--c-{p}` with `-hover`/`-active`; visited state is not modeled, don't invent one. Breadcrumb
 separators and inactive crumbs: `--c-neutral-on-surface-variant`.
 
 ## Selection & highlight
@@ -36,20 +36,20 @@ separators and inactive crumbs: `--c-neutral-on-surface-variant`.
 
 ## Icons
 
-Icons inherit their text partner's role — an icon beside `-on-surface-variant` text is
+Icons inherit their text partner's role, an icon beside `-on-surface-variant` text is
 `-on-surface-variant`. Standalone icon buttons follow interactive.md's ghost recipe. Decorative
 icons may take supporting accents' bare roles; meaningful icons take intent accents.
 
 ## Focus rings (every focusable element, one recipe app-wide)
 
-`outline-color: --c-{p}` (the brand accent) — width/offset come from the geometry tokens
+`outline-color: --c-{p}` (the brand accent), width/offset come from the geometry tokens
 (`--focus-ring-width/-offset`). On accent-filled elements where the ring would vanish, ring with
 `--c-{p}-on-primary` instead, or rely on the offset gap. Never remove the ring without replacing it.
 
 ## Data-viz series
 
 Series colors: the bare accents of the non-intent palettes in kit order (`--c-primary`,
-`--c-secondary`, `--c-tertiary`, then supporting palettes) — skip `neutral` and reserve intents for
+`--c-secondary`, `--c-tertiary`, then supporting palettes), skip `neutral` and reserve intents for
 meaning-bearing series (a "failures" line may be `--c-danger`). Emphasis within one series:
-`-high` (highlighted) vs `-low` (muted context) — the mode-mirrored pair (text.md). Gridlines
+`-high` (highlighted) vs `-low` (muted context), the mode-mirrored pair (text.md). Gridlines
 `--c-neutral-outline-variant`; axis labels `-on-surface-variant`.

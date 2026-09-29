@@ -178,7 +178,7 @@ this as a non-decision in the Risks section below, not as a blocker.
 No LLD is owed at this tier either, despite `size:big`: `doc-writing-rules`' Owed chain calls for
 an LLD when a change adds or alters a component/interface contract; this ticket wires one new
 `gen:*` script into the existing `test`/`build` chains (the same shape as `gen-categories.mjs`)
-and adds two static data files — no new interface, no altered contract, nothing an LLD would
+and adds two static data files, no new interface, no altered contract, nothing an LLD would
 document beyond what R-2 through R-4 above already fix. The `big` size reflects decision count
 (scope, naming, tag scheme, pipeline-path proof), not architectural surface.
 
@@ -212,11 +212,11 @@ fails, reverts, and notes it in the PR.
    when: stripping the provenance block from each file and hashing the remainder reproduces the
    two body hashes in R-3 (`95235b6a...` and `2f03074d...`); if either differs, stop and
    diagnose (engine moved since `770297b`, or the call sequence deviates from R-3) before going
-   on. Serves Acceptance items 1, 3, 4, 5 as faithful-pipeline output — item 2's literal
+   on. Serves Acceptance items 1, 3, 4, 5 as faithful-pipeline output, item 2's literal
    `--md-sys-color-*` wording is NOT served (R-A: the real pipeline emits `--c-*`); this
    divergence, and item 3's "eight" vs the real 16 palette slugs (R-F), were escalated to #631 as
    a comment before this step runs (2026-09-13), per dispatch-ticket's discovered-design-fork
-   discipline — not silently reinterpreted.
+   discipline, not silently reinterpreted.
 3. **Gate.** Owner: builder. Status: done. Add `test/engine/adia-derived-exports.mjs` per R-7 and
    register it in `test/run.mjs`. done-when: `node test/engine/adia-derived-exports.mjs` exits 0
    on the branch, and exits 1 after a one-byte mutation of either artifact (negative control,
@@ -277,10 +277,10 @@ fails, reverts, and notes it in the PR.
   one: a second derived-export artifact request. Owner of the trigger: whoever files that ticket.
 - **R-F (attention) Ticket text says "eight palette names"; the real committed document has 16.**
   #631's Acceptance item 3 literally names "Adia's eight palette names (Neutral/Primary/
-  Secondary/Tertiary/Info/Success/Warning/Danger)" — the 8 core families only. The real committed
+  Secondary/Tertiary/Info/Success/Warning/Danger)", the 8 core families only. The real committed
   document at `770297b` (#618) is the fitted **16-family** document (8 core + 8 data), per #618's
   own commit message. Ruling: proceed against the real 16-family document (all 16 slugs checked
-  against the #630 alias-collision list in the generator, R-4) — the ticket's "eight" undercounts
+  against the #630 alias-collision list in the generator, R-4), the ticket's "eight" undercounts
   what commit `770297b` actually contains, same stale-wording class as R-A. Escalated to #631 as a
   comment (2026-09-13) alongside R-A rather than silently reinterpreted either narrower or wider.
 - **R-E (attention) Radix preset `name` is `ultimate-tokens-radix-brand-kit`, not `...-adia`.**

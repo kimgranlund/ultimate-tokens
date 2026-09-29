@@ -1,7 +1,7 @@
-# Containers — surfaces, elevation, cards, modals, dividers
+# Containers: surfaces, elevation, cards, modals, dividers
 
 All structural fills come from the chrome palette (`neutral` here). The system has THREE fill
-families with distinct jobs — page tiers, elevation ladders, and translucent containers.
+families with distinct jobs, page tiers, elevation ladders, and translucent containers.
 
 ## The base tiers
 
@@ -10,9 +10,9 @@ families with distinct jobs — page tiers, elevation ladders, and translucent c
 | page/app background (the deepest layer) | `--c-neutral-background` |
 | the default working surface on it (main pane, list body) | `--c-neutral-surface` |
 
-## Elevation — two ladders, different physics (exact; easy to get wrong)
+## Elevation: two ladders, different physics (exact; easy to get wrong)
 
-**`-surface-low…high` (mirrored)** — *relational* elevation: `lowest · lower · low · high ·
+**`-surface-low…high` (mirrored)**, *relational* elevation: `lowest · lower · low · high ·
 higher · highest`. These flip stops across modes so **low always reads recessed and high always
 reads raised**, in light AND dark. This is the ladder for UI structure:
 
@@ -23,20 +23,20 @@ reads raised**, in light AND dark. This is the ladder for UI structure:
 | higher still: sticky headers, dropdown menus | `--c-neutral-surface-higher` |
 | topmost: modals, dialogs, command palettes | `--c-neutral-surface-highest` |
 
-**`-surface-dim…bright` (mode-consistent)** — *literal* lightness: `dimmest…brightest` is darker→
+**`-surface-dim…bright` (mode-consistent)**, *literal* lightness: `dimmest…brightest` is darker→
 lighter in BOTH modes (no flip). Use when you mean actual light, not stacking order: a dimmed
 inactive pane, a spotlight/hero band, a photography-adjacent backdrop. Do not mix the two ladders
-for the same job — elevation is Low/High; lighting is Dim/Bright.
+for the same job, elevation is Low/High; lighting is Dim/Bright.
 
 Shadows are optional garnish on top of the ladder (fills carry the elevation); keep them scheme-aware
 and subtle.
 
-## Containers — the translucent tint family
+## Containers: the translucent tint family
 
 `--c-neutral-container` (+ `-low`, `-high`, and the hover/active/disabled states) are **500-stop
 translucents**: they tint whatever they sit on, so they compose on ANY tier. Use them for
-*grouped-content fills inside a surface* — chips, table row hover, selected list items, tonal
-buttons, well-within-a-card — rather than for structural elevation. Accent/intent palettes have the
+*grouped-content fills inside a surface*, chips, table row hover, selected list items, tonal
+buttons, well-within-a-card, rather than for structural elevation. Accent/intent palettes have the
 same family (`--c-primary-container`, `--c-success-container`) for meaning-tinted fills.
 
 ## Recipes
@@ -47,9 +47,9 @@ same family (`--c-primary-container`, `--c-success-container`) for meaning-tinte
 | pane / sidebar | `--c-neutral-surface` or `-surface-low` | `--c-neutral-outline-variant` divider | as above |
 | sheet / drawer | `--c-neutral-surface-higher` | top/side divider `-outline-variant` | as above |
 | modal / dialog | `--c-neutral-surface-highest` over a scrim (feedback.md) | none or `-outline-variant` | as above |
-| canvas (editor/document area) | `--c-neutral-background` or `-surface-lowest` | — | — |
+| canvas (editor/document area) | `--c-neutral-background` or `-surface-lowest` | none | none |
 | table header | `--c-neutral-surface-low` | row dividers `-outline-variant` | `-on-surface-variant` |
-| selected/hover row | `--c-neutral-container-low` hover · `-container` selected | — | `-on-surface` |
+| selected/hover row | `--c-neutral-container-low` hover · `-container` selected | none | `-on-surface` |
 
 ## Dividers & borders
 
@@ -63,7 +63,7 @@ Border WIDTH comes from the geometry tokens (`--border-thin/thick`); this palett
 
 ## Inverse surfaces
 
-`--c-neutral-inverse-surface` + `--c-neutral-inverse-on-surface` — the deliberately opposite-scheme
+`--c-neutral-inverse-surface` + `--c-neutral-inverse-on-surface`, the deliberately opposite-scheme
 pair for small floating chrome that must contrast with everything: tooltips and toasts
-(feedback.md). Not for large regions — to make a whole section opposite-scheme, set
+(feedback.md). Not for large regions, to make a whole section opposite-scheme, set
 `color-scheme` on it instead (SKILL.md law 4).

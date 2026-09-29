@@ -16,7 +16,7 @@
 | `git branch -vv \| grep -c ': gone]'` | 15 | 0 |
 | `gh api repos/:owner/:repo --jq '[.allow_squash_merge,.allow_merge_commit,.allow_rebase_merge]'` | `[true,true,true]` | `[true,false,false]` |
 
-**Note on remote branch count (criterion 5):** the plan's own criterion 4 command requires `git fetch -p` to detect gone branches. That fetch pruned two stale remote-tracking refs (`origin/agent/agent-a647be96051faad4d`, `origin/agent/agent-ae6550ee648bc1100`) whose branches had already been deleted on GitHub by someone else before this unit started — this unit issued no `git push`, no `gh api` delete, and no remote branch delete of any kind. The count moved from 42 to 40 purely because local knowledge caught up to a remote state that predates this session.
+**Note on remote branch count (criterion 5):** the plan's own criterion 4 command requires `git fetch -p` to detect gone branches. That fetch pruned two stale remote-tracking refs (`origin/agent/agent-a647be96051faad4d`, `origin/agent/agent-ae6550ee648bc1100`) whose branches had already been deleted on GitHub by someone else before this unit started, this unit issued no `git push`, no `gh api` delete, and no remote branch delete of any kind. The count moved from 42 to 40 purely because local knowledge caught up to a remote state that predates this session.
 
 ## U3 criteria (5/5 🟢)
 

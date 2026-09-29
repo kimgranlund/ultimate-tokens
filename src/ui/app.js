@@ -1,8 +1,8 @@
-// app.js — the DOM app for the HCT Palette Generator.
+// app.js, the DOM app for the HCT Palette Generator.
 //
 // One <ultimate-tokens> web component. The `document` (a palette SET) is the single
 // source of truth; the whole right side is projectView(document), recomputed on
-// every edit — NEVER stored. Palette SETS persist to localStorage; the gallery
+// every edit, NEVER stored. Palette SETS persist to localStorage; the gallery
 // lists them. The six validated capability modules do all the color/token work
 // (imported through model.mjs); this file only owns DOM + interaction.
 
@@ -63,13 +63,13 @@ class HctApp extends HTMLElement {
     ensureAppTheme(); // inject the generated --c-* design tokens once, globally
     migrateStorageKeys(); // copy any pre-rename saved sets/config into the new key namespace
     this.sets = loadSets();
-    this.profile = loadProfile(); // per-machine { tier, flagOverrides, licenseKey?, instanceId?, entitlement?, checkedAt? } — drives this.flagOf()/this.tier() (item 7)
-    // The pluggable license SEAM (item 7, Layer 2) — { activate, validate, deactivate }. Default = an offline
+    this.profile = loadProfile(); // per-machine { tier, flagOverrides, licenseKey?, instanceId?, entitlement?, checkedAt? }, drives this.flagOf()/this.tier() (item 7)
+    // The pluggable license SEAM (item 7, Layer 2), { activate, validate, deactivate }. Default = an offline
     // dev/QA service (no network). The WEB build reassigns this to a Lemon-Squeezy-backed service AFTER
     // construction; the offline Figma plugin keeps the default (the Account license UI is hidden there anyway).
     this._licenseService = defaultLicenseService;
     this._licenseDraft = ""; // the in-progress license-key text (Account section, web only)
-    this._licenseError = null; // last inline license-entry error (a friendly string — never a raw stack)
+    this._licenseError = null; // last inline license-entry error (a friendly string, never a raw stack)
     // session (UI-only, not persisted with the doc)
     this.view = "gallery"; // gallery | editor
     this.category = null; // open Category category slug within the gallery hub (null = hub). UI-session only.
@@ -89,26 +89,26 @@ class HctApp extends HTMLElement {
     this.activeId = null;
     this.doc = null;
     this.savedSnapshot = null; // JSON string of last-saved doc -> dirty detection
-    this._dirty = false; // cheap dirty bit isDirty() reads — set true on edit(), cleared on save()/openSet()/_restore()
+    this._dirty = false; // cheap dirty bit isDirty() reads, set true on edit(), cleared on save()/openSet()/_restore()
     this.sel = { kind: "palette", id: 0 };
     this.segment = "palette"; // right-pane segmented control: palette | global | roles
-    this.panesLeft = true; // left analysis rail shown (ui-session state, like segment — never persisted)
+    this.panesLeft = true; // left analysis rail shown (ui-session state, like segment, never persisted)
     this.panesRight = true; // right inspector shown
-    this.canvasTheme = "system"; // canvas preview color-scheme: system (follow OS) | light | dark — INDEPENDENT of app chrome ◐
-    this.colorMode = "system"; // Color section value-mode control: system (follow OS, until an explicit pick) | light | dark | both (Compare) — persisted (app prefs)
+    this.canvasTheme = "system"; // canvas preview color-scheme: system (follow OS) | light | dark, INDEPENDENT of app chrome ◐
+    this.colorMode = "system"; // Color section value-mode control: system (follow OS, until an explicit pick) | light | dark | both (Compare), persisted (app prefs)
     this.canvasView = "palettes"; // canvas content: palettes (the ramps) | scrims | mapping (the role→raw table) | radix (the 12-step Park UI ladder)
-    this.section = "color"; // editor section: color | typography | geometry — ui-session, routes the whole editor (never persisted)
-    this.typeSpecMode = "specimen"; // typography canvas: specimen (live faces) | tokens (editable token matrix: Base + breakpoints) — type-section sub-state
-    this.typeMode = "base"; // active Typography breakpoint mode: "base" | a doc.type.modes[].id | "compare" (Phase 5/5.3) — ui-session
-    this._schemeOverride = null; // a color Compare column forces its own canvas scheme while its scene builds (color.js) — transient; declared here so a scan of this constructor finds every ui-session field, not just the two that claim to mirror it
-    this._typeModeOverride = null; // a Compare column forces its breakpoint mode ("base"|id) while its scene builds (mirrors _schemeOverride) — transient
+    this.section = "color"; // editor section: color | typography | geometry, ui-session, routes the whole editor (never persisted)
+    this.typeSpecMode = "specimen"; // typography canvas: specimen (live faces) | tokens (editable token matrix: Base + breakpoints), type-section sub-state
+    this.typeMode = "base"; // active Typography breakpoint mode: "base" | a doc.type.modes[].id | "compare" (Phase 5/5.3), ui-session
+    this._schemeOverride = null; // a color Compare column forces its own canvas scheme while its scene builds (color.js), transient; declared here so a scan of this constructor finds every ui-session field, not just the two that claim to mirror it
+    this._typeModeOverride = null; // a Compare column forces its breakpoint mode ("base"|id) while its scene builds (mirrors _schemeOverride), transient
     this.stopsMode = "core"; // palette ramp density: core (19 display stops) | extended (25 EXPORT_STOPS)
     this.mapTextMode = false; // Mapping table raw-token editor: false = select menu, true = free text input
     this.viewport = { panX: 0, panY: 0, zoom: 1 };
     this.theme = "system"; // app chrome color scheme: system (follows OS) | light | dark
-    this.motion = "system"; // animation preference: system (respect prefers-reduced-motion) | reduced (always minimal) — app pref
-    this.fontMode = "premium"; // rendering-reliability pref: premium (as-designed families) | google (every family google-fonts-safe, per src/engine/font-fallbacks.mjs) — app pref, NOT doc-bound
-    this._loadAppPrefs(); // persisted APP prefs (theme/canvasTheme/motion/fontMode) — loaded before setColorScheme below
+    this.motion = "system"; // animation preference: system (respect prefers-reduced-motion) | reduced (always minimal), app pref
+    this.fontMode = "premium"; // rendering-reliability pref: premium (as-designed families) | google (every family google-fonts-safe, per src/engine/font-fallbacks.mjs), app pref, NOT doc-bound
+    this._loadAppPrefs(); // persisted APP prefs (theme/canvasTheme/motion/fontMode), loaded before setColorScheme below
     this.exportOpen = false;
     this.exportTab = "css";
     // which token SYSTEMS the Download-All .zip + the Brand-Kit MCP bundle (export-time opt-in, all on
@@ -127,25 +127,25 @@ class HctApp extends HTMLElement {
     this.applyGateOpen = false;
     this.applyGateRebuild = false; // the pending action: false = apply, true = regroup
     this.applyGateDontShow = false; // the "don't show again" checkbox (transient, reset on open)
-    // TKT-0004: persistent busy state for the SAME apply — true from the moment "apply" is posted
+    // TKT-0004: persistent busy state for the SAME apply, true from the moment "apply" is posted
     // until apply-done/apply-error replies (see applyToFigma/onApplyDone/onApplyError). Drives the
-    // .apply-busy host class (styles.css — an indeterminate, motion-safe indicator) AND disables the
+    // .apply-busy host class (styles.css, an indeterminate, motion-safe indicator) AND disables the
     // Apply/Regroup trigger (drawer.js) so a slow apply can't be double-fired.
     this._applyBusy = false;
     // #465: a fallback if apply-done/apply-error never arrives at all (the plugin frame detaching
-    // mid-apply, a UI reload) — without this, _applyBusy would stay true, wedging the Apply/Regroup
+    // mid-apply, a UI reload), without this, _applyBusy would stay true, wedging the Apply/Regroup
     // trigger, for the rest of the session. Armed in applyToFigma, cleared by onApplyDone/onApplyError
-    // (the normal completion path) or by itself firing (the fallback path) — never both.
+    // (the normal completion path) or by itself firing (the fallback path), never both.
     this._applyTimeoutTimer = null;
     this.settingsOpen = false; // the Settings page (token-mapping + app prefs)
     this.settingsSection = "mapping"; // which Settings nav item is active (left-nav page layout)
-    this.geomSpecMode = "controls"; // geometry canvas: controls (live mock controls on the ramp) | tokens (editable token matrix: Base + breakpoints) — geom-section sub-state
-    this.geomMode = "base"; // active Geometry breakpoint mode: "base" | a doc.geometry.modes[].id | "compare" (Phase 5/5.3) — ui-session
-    this._geomModeOverride = null; // a Compare column forces its breakpoint mode ("base"|id) while its scene builds (mirrors _schemeOverride) — transient
+    this.geomSpecMode = "controls"; // geometry canvas: controls (live mock controls on the ramp) | tokens (editable token matrix: Base + breakpoints), geom-section sub-state
+    this.geomMode = "base"; // active Geometry breakpoint mode: "base" | a doc.geometry.modes[].id | "compare" (Phase 5/5.3), ui-session
+    this._geomModeOverride = null; // a Compare column forces its breakpoint mode ("base"|id) while its scene builds (mirrors _schemeOverride), transient
     this.geomSegment = "ramp"; // right-pane Geometry inspector tab: ramp | radius | space (ui-session)
-    this.geomSize = null; // the selected size in the ramp tab (null = none expanded) — drives per-size Height tuning (the geometry analog of typeVoice)
+    this.geomSize = null; // the selected size in the ramp tab (null = none expanded), drives per-size Height tuning (the geometry analog of typeVoice)
     this.typeSegment = "scale"; // right-pane Typography inspector tab: scale | fonts | specimen (ui-session)
-    this.typeVoice = null; // the selected voice in the Scale tab (null = none expanded) — drives per-voice tuning
+    this.typeVoice = null; // the selected voice in the Scale tab (null = none expanded), drives per-voice tuning
     this.examplesExpanded = false; // right-pane preview gallery: collapsed to the first artifact until expanded (ui-session)
     this.figmaFile = "light"; // which Figma mode file the Figma tab previews/downloads
     this.radixFile = "values"; // which Radix preset file the Radix tab previews (#638: values | refs; the zip always ships both)
@@ -155,12 +155,12 @@ class HctApp extends HTMLElement {
     // history/future hold serialized doc snapshots (the SAME bytes persist.js
     // stores). A COMMITTED edit pushes the PRE-edit doc onto history and clears
     // future; undo/redo move snapshots between the two stacks. Pan/zoom/segment/
-    // selection/theme are UI-session — they never touch these stacks.
+    // selection/theme are UI-session, they never touch these stacks.
     this.history = []; // past states (most-recent last)
     this.future = []; // redo branch
     this._dragSnap = null; // pending pre-drag snapshot (a slider drag = ONE step)
     this._dragTimer = null; // debounce timer that commits a settled drag
-    this._activeDragCleanup = null; // set while a _bindRangeDrag pointer-drag is in flight — removes its window-level move/up/cancel listeners (disconnectedCallback safety net)
+    this._activeDragCleanup = null; // set while a _bindRangeDrag pointer-drag is in flight, removes its window-level move/up/cancel listeners (disconnectedCallback safety net)
     this.HISTORY_MAX = 100;
     setColorScheme(this.theme); // flip the chrome's light-dark() tokens to the initial theme
     this._installKeyboard(); // editor-scoped keyboard shortcuts (guarded vs text inputs)
@@ -176,11 +176,11 @@ class HctApp extends HTMLElement {
   }
 
 
-  // #458: full teardown of everything connectedCallback registers — the keydown/matchMedia
+  // #458: full teardown of everything connectedCallback registers, the keydown/matchMedia
   // listeners were already covered; the rest (a live-refresh rAF, the drag-settle debounce, an
   // in-flight range drag's window-level listeners, the toast timer) were never inventoried as a
   // set. None of this is reachable in production (`<ultimate-tokens>` is a page-lifetime
-  // singleton — main.ts creates it once and disconnectedCallback never fires outside tests), but
+  // singleton, main.ts creates it once and disconnectedCallback never fires outside tests), but
   // completing it is cheap and removes the risk for good rather than documenting it away.
   disconnectedCallback() {
     if (this._onKeyDown) document.removeEventListener("keydown", this._onKeyDown);
@@ -198,7 +198,7 @@ class HctApp extends HTMLElement {
     const rec = this.sets.find((s) => s.id === id);
     if (!rec) return;
     // TKT-0455: flush any in-flight drag on the OUTGOING doc (this.activeId hasn't
-    // moved yet) before switching — commitDrag() persists it via save(), so a live
+    // moved yet) before switching, commitDrag() persists it via save(), so a live
     // edit is never lost by navigating away mid-drag. A no-op when no drag is pending.
     this.commitDrag();
     this.activeId = id;
@@ -241,35 +241,35 @@ class HctApp extends HTMLElement {
   // undo step each); continuous slider drags go through editDrag() (the whole
   // drag coalesces into one step).
   //
-  // opts.live: during a continuous drag we must NOT do a full render() — that
+  // opts.live: during a continuous drag we must NOT do a full render(), that
   // replaceChildren() would DESTROY the very <input type=range> the user is
   // dragging (and the palette-name <input> being typed into), killing the native
   // pointer drag / dropping focus mid-word. So a live edit updates ONLY the
   // live-preview surfaces in place (liveRefresh) and leaves the right pane (the
   // active control) untouched. The drag's settle ('change') does a full render().
   //
-  // TKT-0455: a live edit does NOT call save() here — the pointer-move driver
+  // TKT-0455: a live edit does NOT call save() here, the pointer-move driver
   // dispatches a native `input` on every tick (unthrottled), and save() pays a full
   // serialize()+stringify() of the doc AND the whole gallery (saveSets) on every one
   // of them. The doc mutation above is still synchronous (undo/redo/isDirty always
-  // read the live this.doc, never miss an edit) — only the STORAGE WRITE is deferred
+  // read the live this.doc, never miss an edit), only the STORAGE WRITE is deferred
   // to the drag's settle. commitDrag() (the existing 250ms debounce / onchange /
   // undo-redo flush / openSet's outgoing-doc flush) is the one place that now must
-  // persist — see its own comment.
+  // persist, see its own comment.
   edit(fn, opts = {}) {
     fn(this.doc);
     this.doc.selected = this.sel.kind === "palette" ? this.sel.id : this.doc.selected;
-    this._dirty = true; // flips true immediately for live drags too — dirtiness tracks "differs from saved", not "has been persisted yet" (commitDrag persists live edits later)
+    this._dirty = true; // flips true immediately for live drags too, dirtiness tracks "differs from saved", not "has been persisted yet" (commitDrag persists live edits later)
     if (!opts.live) this.save();
     if (opts.live) this.liveRefresh();
     else this.render();
   }
 
 
-  // liveRefresh — a PARTIAL, in-place update of just the live-preview surfaces,
+  // liveRefresh, a PARTIAL, in-place update of just the live-preview surfaces,
   // used during a slider drag / name-input typing so the active control's DOM
   // node is never replaced. Re-projects the doc, then surgically updates:
-  //   • the canvas SCENE ROWS — replace the children of the EXISTING .canvas-scene
+  //   • the canvas SCENE ROWS, replace the children of the EXISTING .canvas-scene
   //     element (keep the element itself so its pan/zoom transform is preserved),
   //   • the LEFT analysis rail's graph cards in place (sliders live in the RIGHT
   //     pane, so rebuilding the left pane's graphs can't disturb the drag),
@@ -278,7 +278,7 @@ class HctApp extends HTMLElement {
   liveRefresh() {
     // Coalesce to ONE rebuild per animation frame. A slider drag fires `oninput` many times
     // per frame; re-projecting the whole doc (CAM16 math for every palette) + rebuilding the
-    // canvas scene on EVERY event janks the drag — mildly in a browser, badly in Figma's
+    // canvas scene on EVERY event janks the drag, mildly in a browser, badly in Figma's
     // throttled iframe (the reported "buggy when dragging"). The doc is already mutated
     // synchronously by edit(), and the slider readout updates synchronously in its oninput,
     // so deferring only the heavy VISUAL refresh keeps state + the number live while smoothing.
@@ -296,47 +296,47 @@ class HctApp extends HTMLElement {
     const view = projectView(this.doc);
     this._view = view;
 
-    // canvas scene rows — keep the .canvas-scene element (transform lives on it),
+    // canvas scene rows, keep the .canvas-scene element (transform lives on it),
     // swap only its children so swatches reflect the new colors live.
     const scene = this.querySelector(".canvas-scene");
     if (scene) scene.replaceChildren(this._canvasScene(view));
 
-    // canvas backdrop — lmin/lmax drive it, so repaint it as those sliders drag.
+    // canvas backdrop, lmin/lmax drive it, so repaint it as those sliders drag.
     const area = this.querySelector(".canvas-area");
     if (area) area.style.setProperty("--canvas-bg", this.canvasBg());
 
-    // right-pane example card — repaint its role colors live (no inputs inside it,
+    // right-pane example card, repaint its role colors live (no inputs inside it,
     // so this never touches the dragged slider sitting in .seg-body above it).
     const ex = this.querySelector(".seg-example");
     if (ex) ex.replaceChildren(...this.exampleArtifacts(view));
 
-    // damping-curve graph (Global tab) — redraw m(stop) live as Falloff/Amplify/Bias
+    // damping-curve graph (Global tab), redraw m(stop) live as Falloff/Amplify/Bias
     // drag; it's input-free, so refreshing it doesn't disturb the dragged slider.
     const dg = this.querySelector(".damp-graph");
     if (dg) dg.replaceChildren(this.graphDamping(this.doc));
 
-    // left analysis rail — rebuild its graph cards in place (right-pane untouched).
+    // left analysis rail, rebuild its graph cards in place (right-pane untouched).
     const leftBody = this.querySelector(".left-pane .an-body");
     if (leftBody) leftBody.replaceChildren(...this.analysisCards(view));
     // keep the "Analysis · <name>" header label in sync with the selection.
     const anSel = this.querySelector(".left-pane .an-sel");
     if (anSel) anSel.textContent = view.palettes[this.selectedIndex()]?.name || "";
 
-    // footers — recompute the counts / warning readout in place.
+    // footers, recompute the counts / warning readout in place.
     this.paintCanvasFooter();
     this.paintAppFooter(view);
   }
 
 
   // ── undo / redo ────────────────────────────────────────────────────────────
-  // snapshot — the exact bytes persist.js stores (deep, plain, domain-clamped on
+  // snapshot, the exact bytes persist.js stores (deep, plain, domain-clamped on
   // hydrate). Stacks hold these so undo/redo restore a WHOLE document.
   snapshot() {
     return JSON.stringify(serialize(this.doc));
   }
 
 
-  // pushHistory — record the CURRENT (pre-mutation) doc as an undo point and
+  // pushHistory, record the CURRENT (pre-mutation) doc as an undo point and
   // truncate the redo branch (editing after undo discards what was undone).
   // Bounded to HISTORY_MAX; the oldest entry is dropped past the cap.
   pushHistory() {
@@ -346,7 +346,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // commit — a COMMITTED discrete edit = ONE undo step: snapshot the pre-edit
+  // commit, a COMMITTED discrete edit = ONE undo step: snapshot the pre-edit
   // doc, then mutate/save/render. (add/delete/rename/enable/global/reorder.)
   commit(fn) {
     this.pushHistory();
@@ -354,22 +354,22 @@ class HctApp extends HTMLElement {
   }
 
 
-  // editDrag — a continuous control (slider) edit. The FIRST input of a drag
+  // editDrag, a continuous control (slider) edit. The FIRST input of a drag
   // captures the pre-drag snapshot once; every input mutates live; a ~250ms
   // settle (release/pause) commits that single snapshot, so one drag = one step.
   editDrag(fn) {
     if (this._dragSnap == null) this._dragSnap = this.snapshot(); // pre-drag state, once
-    this.edit(fn, { live: true }); // partial in-place update — never replace the active control
+    this.edit(fn, { live: true }); // partial in-place update, never replace the active control
     if (this._dragTimer) clearTimeout(this._dragTimer);
     this._dragTimer = setTimeout(() => this.commitDrag(), 250);
   }
 
 
-  // commitDrag — flush a settled drag's single pre-drag snapshot onto history, AND
+  // commitDrag, flush a settled drag's single pre-drag snapshot onto history, AND
   // persist the doc (TKT-0455: edit(fn,{live:true}) no longer saves per pointer-move
   // tick, so this is the drag's one storage write). Called by the debounce timeout,
   // slider onchange (pointer release), undo()/redo() (flush before restoring), and
-  // openSet() (flush the OUTGOING doc before switching sets) — every settle path, so
+  // openSet() (flush the OUTGOING doc before switching sets), every settle path, so
   // a live edit can never be lost by navigating away mid-drag.
   commitDrag() {
     if (this._dragTimer) { clearTimeout(this._dragTimer); this._dragTimer = null; }
@@ -403,7 +403,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // _restore — load a snapshot as the live doc, re-project, re-persist, and keep
+  // _restore, load a snapshot as the live doc, re-project, re-persist, and keep
   // the selection in range. Goes through hydrate so every field is domain-clamped.
   // hydrate() drops `name` (not a domain field), so carry it from the snapshot.
   _restore(snap) {
@@ -422,14 +422,14 @@ class HctApp extends HTMLElement {
   // Installed once on the document. Undo/redo work editor-wide; the nav keys
   // (↑↓ 1/2/3 Esc f +/-) fire ONLY when the editor is shown and focus is NOT in a
   // text field (so typing a palette/set name is never hijacked). Pan/zoom/segment/
-  // selection are UI-session — none of these keys snapshot history.
+  // selection are UI-session, none of these keys snapshot history.
   _installKeyboard() {
     this._onKeyDown = (e) => this._handleKey(e);
     document.addEventListener("keydown", this._onKeyDown);
   }
 
 
-  // _isTextTarget — true when focus is in a text input / textarea / contenteditable,
+  // _isTextTarget, true when focus is in a text input / textarea / contenteditable,
   // where the bare nav keys must yield to the field (only undo/redo still apply).
   _isTextTarget(t) {
     if (!t) return false;
@@ -439,7 +439,7 @@ class HctApp extends HTMLElement {
     if (tag === "select") return true;
     if (tag === "input") {
       const ty = (t.type || "text").toLowerCase();
-      // range/checkbox/etc. are NOT text — but text/search/number/etc. ARE.
+      // range/checkbox/etc. are NOT text, but text/search/number/etc. ARE.
       return !["range", "checkbox", "radio", "button", "color", "submit"].includes(ty);
     }
     return false;
@@ -450,7 +450,7 @@ class HctApp extends HTMLElement {
     if (this.view !== "editor") return;
     const meta = e.metaKey || e.ctrlKey;
 
-    // Undo / redo — work regardless of focus (standard editor behavior).
+    // Undo / redo, work regardless of focus (standard editor behavior).
     if (meta && (e.key === "z" || e.key === "Z")) {
       e.preventDefault();
       if (e.shiftKey) this.redo();
@@ -521,7 +521,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // _selectRelative — move the selection by ±1 with WRAP across all palettes.
+  // _selectRelative, move the selection by ±1 with WRAP across all palettes.
   _selectRelative(dir) {
     const n = this.doc.palettes.length;
     if (n === 0) return;
@@ -531,7 +531,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // _deselect — Esc with no drawer open: clear the right-pane/graph selection.
+  // _deselect, Esc with no drawer open: clear the right-pane/graph selection.
   // selectedIndex() clamps, so the panes fall back to palette 0; we mark the
   // session as having no explicit pick (kind:"none") so nothing renders 'sel'.
   _deselect() {
@@ -541,7 +541,7 @@ class HctApp extends HTMLElement {
 
 
   fit() {
-    // Reset to 100% with the content's TOP-LEFT corner inset (not dead-centered) — see
+    // Reset to 100% with the content's TOP-LEFT corner inset (not dead-centered), see
     // _fitTopLeftInset for the real computation, which needs the just-rendered scene's actual
     // size and so runs a frame later regardless of whether fit() lands before or after this
     // tick's render(). This placeholder keeps synchronous readers (e.g. the zoom readout) sane
@@ -550,13 +550,13 @@ class HctApp extends HTMLElement {
     requestAnimationFrame(() => this._fitTopLeftInset());
   }
 
-  // _fitTopLeftInset — positions .canvas-scene's own top-left corner at a fixed CANVAS_INSET
+  // _fitTopLeftInset, positions .canvas-scene's own top-left corner at a fixed CANVAS_INSET
   // offset from .canvas-area's top-left, replacing the naive dead-center default fit() used to
   // set. Derived from applyTransform's chain (translate(-50%,-50%) translate(pan) scale(zoom),
   // scene CSS-anchored at the area's own center via top/left:50%): at zoom 1 (fit's only zoom),
   // scale doesn't move anything, so panX = INSET - areaWidth/2 + sceneWidth/2 (same for Y) puts
   // the scene's local (0,0) at area's top-left + INSET. A no-op on the Tokens-table canvas
-  // (.is-table forces transform:none — nothing to position) and harmless if the DOM isn't ready.
+  // (.is-table forces transform:none, nothing to position) and harmless if the DOM isn't ready.
   _fitTopLeftInset() {
     const area = this.querySelector(".canvas-area");
     const scene = this.querySelector(".canvas-scene");
@@ -573,16 +573,16 @@ class HctApp extends HTMLElement {
     // (it bit gallery-search, palette names, set name, and sliders). render() still
     // rebuilds the whole subtree, but we snapshot the focused control (by its stable
     // data-fk), its text caret, and every [data-scroll] region's offset BEFORE the
-    // swap and put the user exactly back AFTER — so any fk-tagged input survives a
+    // swap and put the user exactly back AFTER, so any fk-tagged input survives a
     // full render, not just the few with bespoke liveRefresh patches.
     const focus = this._captureFocus();
     this.replaceChildren(this.view === "gallery" ? this.renderGallery() : this.renderEditor());
     this.dataset.theme = this.theme;
     this.dataset.motion = this.motion; // styles.css gates transitions/animations on [data-motion]
-    // TKT-0004: the Apply-to-Figma busy indicator — Figma-plugin-embed only (the web-app preview has
+    // TKT-0004: the Apply-to-Figma busy indicator, Figma-plugin-embed only (the web-app preview has
     // no Apply-to-Figma action, so this is never set there even if _applyBusy were somehow true).
     // ALSO stamped on the open export .drawer <dialog>: it's a native top-layer dialog (showModal()),
-    // which paints above the host's own fixed-position ring regardless of z-index — the Apply/Regroup
+    // which paints above the host's own fixed-position ring regardless of z-index, the Apply/Regroup
     // triggers live inside it, so the drawer needs its OWN ring to stay visible while it's open
     // (styles.css's dialog.drawer.apply-busy::after). Harmless no-op while the drawer is closed
     // (querySelector finds nothing to mark).
@@ -593,7 +593,7 @@ class HctApp extends HTMLElement {
     // The app-footer renders an empty shell with stable hooks; paint its dynamic
     // readouts now (the same path liveRefresh uses during a drag). NOTE the two distinct
     // "view"s one underscore apart: `this.view` is the ROUTE ("gallery"|"editor"), `this._view`
-    // is the projectView() RESULT paintAppFooter actually consumes — don't conflate them.
+    // is the projectView() RESULT paintAppFooter actually consumes, don't conflate them.
     if (this.view === "editor") this.paintAppFooter(this._view);
     this._restoreFocus(focus);
     this._syncDrawer(); // (re)open/close the native <dialog> to match exportOpen (top layer)
@@ -603,7 +603,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // _syncDrawer — reconcile the native export <dialog> with this.exportOpen AFTER each render.
+  // _syncDrawer, reconcile the native export <dialog> with this.exportOpen AFTER each render.
   // render() rebuilds the whole subtree (a fresh, closed <dialog> each time), so an open drawer
   // must be re-promoted to the top layer via showModal(). Guarded so the headless DOM shim (no
   // showModal) and any unsupported host fall back to plain state (exportOpen) with no error.
@@ -615,7 +615,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // _walkFind — first element in this subtree matching pred (works in the browser
+  // _walkFind, first element in this subtree matching pred (works in the browser
   // AND the headless DOM shim; avoids attribute-selector support in querySelector).
   _walkFind(pred) {
     const walk = (n) => {
@@ -630,7 +630,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // _captureFocus — snapshot the focused control (by data-fk), its caret, and the
+  // _captureFocus, snapshot the focused control (by data-fk), its caret, and the
   // scroll offsets of [data-scroll] regions, BEFORE a render swaps the DOM out.
   _captureFocus() {
     const snap = { fk: null, s: null, e: null, scroll: [] };
@@ -650,7 +650,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // _restoreFocus — after the render, put scroll + focus + caret back where they were.
+  // _restoreFocus, after the render, put scroll + focus + caret back where they were.
   _restoreFocus(snap) {
     for (const [key, top, left] of snap.scroll) {
       const el = this._walkFind((c) => c.dataset.scroll === key);
@@ -668,7 +668,7 @@ class HctApp extends HTMLElement {
 
 
   // ═══════════════════════════ GALLERY ═══════════════════════════
-  // buildTiles — the filtered tile list for the current search query. Split out
+  // buildTiles, the filtered tile list for the current search query. Split out
   // so typing can refresh ONLY the grid container, never the <input> (which would
   // drop focus). Returns the array of tile/new-tile nodes.
   buildTiles() {
@@ -676,7 +676,7 @@ class HctApp extends HTMLElement {
     const visible = this.sets.filter((s) => !q || s.name.toLowerCase().includes(q));
 
     const tiles = visible.map((rec) => {
-      // paletteKeyColors, NOT projectView — the tile only ever reads .key/.on below; projectView would
+      // paletteKeyColors, NOT projectView, the tile only ever reads .key/.on below; projectView would
       // additionally compute the 25-stop ramp, the 53-role table, and all 7 export formats per palette,
       // for every saved set, on every render (this list re-renders on each search keystroke).
       const keyColors = paletteKeyColors(hydrateStoredDoc(rec.doc)); // legacy stamp: a pre-hueSpace STORED set renders as cam16
@@ -687,7 +687,7 @@ class HctApp extends HTMLElement {
         ...enabled.slice(0, 8).map((p) => h("i", { style: `background:${p.key}` })), // p.key = vivid identity color
       );
       // A card with a PRIMARY action (open) + a SECONDARY action (delete). The tile is a
-      // role=button div — NOT a <button> — so the delete can be a real, keyboard-focusable
+      // role=button div, NOT a <button>, so the delete can be a real, keyboard-focusable
       // <button> without nesting interactives. Enter/Space on the tile opens it.
       const tile = h(
         "div",
@@ -751,7 +751,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // buildPresetTiles — the read-only palette shelf for ONE category category (its lazily-loaded
+  // buildPresetTiles, the read-only palette shelf for ONE category category (its lazily-loaded
   // { VOLUMES, PRESETS }). Presets ship in code (generated from docs/reference/colors/categories/), never in
   // localStorage; clicking one OPENS AN EDITABLE COPY into the user's sets (openConfigAsSet hydrates +
   // appends + opens). Grouped by volume; filtered by the search box.
@@ -762,7 +762,7 @@ class HctApp extends HTMLElement {
     const visible = PRESETS.filter((p) => !q || p.name.toLowerCase().includes(q));
     // group by VOLUME (each category ships as 12 volumes of 4 palettes), in order.
     const byVol = new Map();
-    for (const p of visible) { const v = p.vol || "—"; if (!byVol.has(v)) byVol.set(v, []); byVol.get(v).push(p); }
+    for (const p of visible) { const v = p.vol || "n/a"; if (!byVol.has(v)) byVol.set(v, []); byVol.get(v).push(p); }
     if (byVol.size === 0) return [h("div", { class: "empty-note" }, `No palettes match “${this.search.trim()}”`)];
     return [...byVol.entries()].map(([vol, ps]) => {
       const vi = VOLUMES[vol];
@@ -782,15 +782,15 @@ class HctApp extends HTMLElement {
   }
 
 
-  // presetTile — one read-only preset card. Clicking opens an editable copy into the user's sets.
+  // presetTile, one read-only preset card. Clicking opens an editable copy into the user's sets.
   // The strip's per-swatch selection/width/order is posterStripBands() (app-helpers.mjs, #646): it
   // tracks the preset's own authored dominant/supporting/accent hierarchy (story.groups[].pct via
-  // colorRole — TKT-0003) AND each swatch's own OKLCH chroma, clamped/floored/reordered so a
+  // colorRole, TKT-0003) AND each swatch's own OKLCH chroma, clamped/floored/reordered so a
   // low-chroma dominant can't starve the accent bands into slivers or drop the 2nd accent outright.
   // Sets with no `story` (a user's own "Your Palettes" set) fall back to the fixed SAMPLED_W
-  // template exactly as before — no regression there.
+  // template exactly as before, no regression there.
   presetTile(preset) {
-    // paletteKeyColors, NOT projectView — this only ever reads .key/.name/.colorRole/.on below;
+    // paletteKeyColors, NOT projectView, this only ever reads .key/.name/.colorRole/.on below;
     // projectView would additionally compute the 25-stop ramp, the 53-role table, and all 7 export
     // formats per palette, for every one of a category's 48 presets, on every category open. Measured
     // ~200-300ms/preset via projectView vs. ~0.01ms/preset here.
@@ -816,7 +816,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // refreshTiles — re-render ONLY the grid hosts' children. Used on search input so the <input>
+  // refreshTiles, re-render ONLY the grid hosts' children. Used on search input so the <input>
   // element is never replaced and keeps focus + caret. On the hub, search filters Your Palettes; inside
   // a category category it filters that category's palette shelf (only one host exists per view).
   refreshTiles() {
@@ -826,7 +826,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // openCategory / closeCategory — navigate the gallery hub. Opening a category lazily loads its module
+  // openCategory / closeCategory, navigate the gallery hub. Opening a category lazily loads its module
   // (one code-split chunk; cached after first open) and re-renders into the category page; while the
   // chunk is in flight the page shows a "Loading…" note. closeCategory returns to the hub.
   openCategory(slug) {
@@ -842,7 +842,7 @@ class HctApp extends HTMLElement {
   closeCategory() { this.category = null; this.search = ""; this.render(); }
 
 
-  // categoryCard — one category tile on the hub: a color strip sampled from the category + its name,
+  // categoryCard, one category tile on the hub: a color strip sampled from the category + its name,
   // eyebrow, tagline, and palette count. Clicking opens the category page.
   categoryCard(c) {
     return h(
@@ -861,7 +861,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // ensureSearchInput — the search <input> is created ONCE and reused across renders so typing never
+  // ensureSearchInput, the search <input> is created ONCE and reused across renders so typing never
   // loses focus (the BUG: re-render replaced it). On input we only refresh tiles.
   ensureSearchInput(label) {
     if (!this._searchInput) {
@@ -873,7 +873,7 @@ class HctApp extends HTMLElement {
         value: this.search,
         oninput: (e) => {
           this.search = e.target.value;
-          this.refreshTiles(); // tiles only — input stays put, focus + caret preserved
+          this.refreshTiles(); // tiles only, input stays put, focus + caret preserved
         },
       });
     } else if (this._searchInput.value !== this.search) {
@@ -908,15 +908,15 @@ class HctApp extends HTMLElement {
   }
 
 
-  // renderHubBody — the gallery home: a STICKY masthead (title + search · description) over the
-  // scrolling content — Your Palettes (your saved sets) and the Categories category grid.
+  // renderHubBody, the gallery home: a STICKY masthead (title + search · description) over the
+  // scrolling content, Your Palettes (your saved sets) and the Categories category grid.
   renderHubBody() {
     this._presetGridHost = null;
     this._gridHost = h("div", { class: "set-grid" }, ...this.buildTiles());
     return h(
       "div",
       { class: "gallery-body" },
-      // sticky masthead — title + search (row 1), description (row 2).
+      // sticky masthead, title + search (row 1), description (row 2).
       h(
         "div",
         { class: "gallery-masthead" },
@@ -935,21 +935,21 @@ class HctApp extends HTMLElement {
         this.renderFigmaImportRow(), // a separate row ABOVE the sets when this Figma file already has palette variables
         h("div", { class: "gallery-title" }, h("h2", {}, "Your Palettes")),
         this._gridHost,
-        // Color Categories — read-only curated categories. Opening a palette copies it into Your Palettes.
+        // Color Categories, read-only curated categories. Opening a palette copies it into Your Palettes.
         h(
           "div",
           { class: "gallery-title categories-head" },
           h("h2", {}, "Color Categories"),
           h("span", { class: "title-count" }, String(CATEGORY_INDEX.length)),
         ),
-        h("p", { class: "categories-lede" }, "Palettes sourced from real places, dishes, films, books, scenes, biomes — read for their colour, not their cliché. Open any palette as an editable copy."),
+        h("p", { class: "categories-lede" }, "Palettes sourced from real places, dishes, films, books, scenes, biomes, read for their colour, not their cliché. Open any palette as an editable copy."),
         h("div", { class: "category-grid" }, ...CATEGORY_INDEX.map((c) => this.categoryCard(c))),
       ),
     );
   }
 
 
-  // renderCategoryBody — one category category page: a STICKY masthead (back-eyebrow + search · title ·
+  // renderCategoryBody, one category category page: a STICKY masthead (back-eyebrow + search · title ·
   // description) over the category's 12 volumes × 4 palettes (lazily loaded). The eyebrow row doubles
   // as the back affordance to the hub.
   renderCategoryBody() {
@@ -996,10 +996,10 @@ class HctApp extends HTMLElement {
   }
 
 
-  // probeFigmaProject — one-shot read of the file on gallery open (Figma only): the embedded config
+  // probeFigmaProject, one-shot read of the file on gallery open (Figma only): the embedded config
   // (load-config → config-loaded → applyLoadedConfig records this.fileConfig) AND the raw-colors
   // structure (read-variables → variables-read → receiveLiveVariables). Both replies re-render the
-  // gallery, revealing the import row — preferring the lossless config, falling back to the variables.
+  // gallery, revealing the import row, preferring the lossless config, falling back to the variables.
   probeFigmaProject() {
     if (this._figmaProbed || !this.inFigma) return;
     this._figmaProbed = true;
@@ -1011,15 +1011,15 @@ class HctApp extends HTMLElement {
   }
 
 
-  // tier() — the EFFECTIVE tier (item 7, Layer 2): "pro" only when the stored tier is pro AND backed by a
+  // tier(), the EFFECTIVE tier (item 7, Layer 2): "pro" only when the stored tier is pro AND backed by a
   // currently-active entitlement; else "free". resolveTier takes the clock here (the engine stays clockless).
   tier() {
     return resolveTier(this.profile, Date.now());
   }
 
 
-  // flagOf(key) — the SINGLE gate check for a Pro/feature flag (item 7). Resolves from the EFFECTIVE tier
-  // (tier(), entitlement-backed — not the raw stored tier) plus the dev overrides; returns a boolean or a
+  // flagOf(key), the SINGLE gate check for a Pro/feature flag (item 7). Resolves from the EFFECTIVE tier
+  // (tier(), entitlement-backed, not the raw stored tier) plus the dev overrides; returns a boolean or a
   // value (e.g. maxSets → 2|Infinity). Gated surfaces MUST read this, never `this.profile.tier === "pro"`.
   // Pre-launch it returns the unlocked values (TIERS_ENFORCED is false), so wiring a guard now is a safe
   // no-op until the product flips enforcement on.
@@ -1029,7 +1029,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // setProfile(patch) — merge + clamp + persist the profile (used by the license entry + the Settings
+  // setProfile(patch), merge + clamp + persist the profile (used by the license entry + the Settings
   // « Account » dev toggles). Re-renders so any flagOf-gated UI updates.
   setProfile(patch) {
     this.profile = clampProfile({ ...this.profile, ...patch });
@@ -1038,12 +1038,12 @@ class HctApp extends HTMLElement {
   }
 
 
-  // enterLicense(key) — ACTIVATE a license key through the pluggable SEAM (this._licenseService.activate) and,
+  // enterLicense(key), ACTIVATE a license key through the pluggable SEAM (this._licenseService.activate) and,
   // on a currently-active entitlement, flip the profile to Pro (cached on this machine) AND record the
-  // activation instance id — the handle to this device's SEAT, released by clearLicense. The DEFAULT service
+  // activation instance id, the handle to this device's SEAT, released by clearLicense. The DEFAULT service
   // is offline (a dev/QA manual path); the WEB build assigns a Lemon-Squeezy-backed service that POSTs to the
   // public License API. activate CONSUMES a seat, so a Studio key with N seats rejects the (N+1)th device with
-  // a friendly seat-limit message. That fetch is WEB-ONLY and deliberately NOT written into this file — so
+  // a friendly seat-limit message. That fetch is WEB-ONLY and deliberately NOT written into this file, so
   // app.js stays network-free inside the offline Figma plugin bundle (networkAccess:"none"). Any failure
   // becomes a friendly inline message (this._licenseError); the raw detail goes to console only.
   async enterLicense(key) {
@@ -1057,12 +1057,12 @@ class HctApp extends HTMLElement {
       res = await this._licenseService.activate(k, licenseInstanceName());
     } catch (e) {
       if (typeof console !== "undefined" && console.error) console.error("license activation failed:", e);
-      this._licenseError = "Couldn't reach the license service — check your connection and try again.";
+      this._licenseError = "Couldn't reach the license service, check your connection and try again.";
       this.render();
       return false;
     }
     // activate may already have CONSUMED a seat (res.instanceId is its handle). On any post-activation bail,
-    // release that seat — else it's stranded (consumed, never stored, never freeable → leaks on retry).
+    // release that seat, else it's stranded (consumed, never stored, never freeable → leaks on retry).
     const seatId = res && res.instanceId;
     if (!res || !res.ok || !res.entitlement) {
       if (seatId) this._releaseSeat(k, seatId);
@@ -1084,7 +1084,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // _releaseSeat(licenseKey, instanceId) — best-effort, web-only, FIRE-AND-FORGET deactivation that frees the
+  // _releaseSeat(licenseKey, instanceId), best-effort, web-only, FIRE-AND-FORGET deactivation that frees the
   // activation seat for a teammate. Never throws, never blocks the UI; a failure (offline / hang) just leaves
   // the seat to lapse server-side. Used by clearLicense AND by enterLicense's bail (don't strand a seat).
   _releaseSeat(licenseKey, instanceId) {
@@ -1095,9 +1095,9 @@ class HctApp extends HTMLElement {
   }
 
 
-  // clearLicense() — drop the license + entitlement and return to Free (keeps any dev flagOverrides). Clears
+  // clearLicense(), drop the license + entitlement and return to Free (keeps any dev flagOverrides). Clears
   // LOCALLY FIRST (instant, never traps the user), THEN fires a best-effort deactivation to free this device's
-  // seat for a teammate — fire-and-forget, so an offline/slow server can't block the Remove.
+  // seat for a teammate, fire-and-forget, so an offline/slow server can't block the Remove.
   clearLicense() {
     this._licenseError = null;
     this._licenseDraft = "";
@@ -1109,10 +1109,10 @@ class HctApp extends HTMLElement {
   }
 
 
-  // revalidateLicense() — WEB-ONLY, best-effort, fired once on boot for an activated license. Re-checks the
+  // revalidateLicense(), WEB-ONLY, best-effort, fired once on boot for an activated license. Re-checks the
   // key+instance against the service to (a) refresh the cached entitlement + live seat count and (b) downgrade
   // to Free if the license/seat was DEFINITIVELY revoked (cancelled subscription, removed seat). A network
-  // error (throw) is IGNORED — never downgrade on a transient failure; the cached entitlement keeps gating
+  // error (throw) is IGNORED, never downgrade on a transient failure; the cached entitlement keeps gating
   // (main.ts's lsPost throws on 5xx so a server blip can't masquerade as a revocation). No-op in Figma / when
   // there's no pro license / with no validate method.
   async revalidateLicense() {
@@ -1124,13 +1124,13 @@ class HctApp extends HTMLElement {
       res = await this._licenseService.validate(p.licenseKey, p.instanceId);
     } catch (e) {
       if (typeof console !== "undefined" && console.error) console.error("license revalidation failed (kept cached):", e);
-      return; // transient — do NOT downgrade
+      return; // transient, do NOT downgrade
     }
     if (res && res.ok && res.entitlement && entitlementActive(res.entitlement, Date.now())) {
       this.setProfile({ entitlement: res.entitlement, seats: res.seats }); // refresh entitlement + live seat count
     } else if (res && res.revoked) {
       // ONLY a RECOGNIZED revocation downgrades (cancelled sub / removed seat / disabled key). An ambiguous
-      // not-ok (unparseable body, rate-limit page, proxy) keeps the cached license — never strip a payer on a
+      // not-ok (unparseable body, rate-limit page, proxy) keeps the cached license, never strip a payer on a
       // transient blip. Free this device's seat too, so a real revocation doesn't orphan it.
       const licenseKey = this.profile && this.profile.licenseKey;
       const instanceId = this.profile && this.profile.instanceId;
@@ -1141,7 +1141,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // setFlagOverride(key, value) — write/clear a single dev flag override (Settings › Account toggles).
+  // setFlagOverride(key, value), write/clear a single dev flag override (Settings › Account toggles).
   // value === null clears the override (inherit the tier value); a boolean pins it. Persists via setProfile.
   setFlagOverride(key, value) {
     const next = { ...(this.profile.flagOverrides || {}) };
@@ -1150,30 +1150,30 @@ class HctApp extends HTMLElement {
   }
 
 
-  // persistSets — write the gallery's sets to durable storage. The browser uses localStorage; a Figma
+  // persistSets, write the gallery's sets to durable storage. The browser uses localStorage; a Figma
   // plugin iframe can't (opaque origin), so it ALSO posts them to code.js → figma.clientStorage.
   persistSets() {
-    saveSets(this.sets); // localStorage — best-effort; a no-op in the sandboxed Figma iframe
+    saveSets(this.sets); // localStorage, best-effort; a no-op in the sandboxed Figma iframe
     if (this.inFigma) {
       try { parent.postMessage({ pluginMessage: { type: "save-sets", sets: this.sets } }, "*"); } catch { /* no frame */ }
     }
   }
 
 
-  // receiveStoredSets — the reply to load-sets (Figma): the user's sets from figma.clientStorage.
+  // receiveStoredSets, the reply to load-sets (Figma): the user's sets from figma.clientStorage.
   // Restore them into the gallery; on first run (none stored) persist the seeded Default so it
   // survives the next open. Ignored once the user has left the gallery (don't clobber a live edit).
   receiveStoredSets(sets) {
     if (this.view !== "gallery") return;
     if (Array.isArray(sets) && sets.length) this.sets = sanitizeSetRecords(sets);
-    else this.persistSets(); // first run for this user — persist the seeded Default to clientStorage
+    else this.persistSets(); // first run for this user, persist the seeded Default to clientStorage
     this.render();
   }
 
 
-  // renderFigmaImportRow — the "read a project" affordance ABOVE "Your Palettes" (Figma only).
+  // renderFigmaImportRow, the "read a project" affordance ABOVE "Your Palettes" (Figma only).
   // Prefers the file's embedded config (an EXACT round-trip); falls back to seeding from the raw-colors
-  // variables (APPROXIMATE — only each family's 500 hue+chroma, no skew/lift/curves).
+  // variables (APPROXIMATE, only each family's 500 hue+chroma, no skew/lift/curves).
   renderFigmaImportRow() {
     if (!this.inFigma) return false;
     if (this.fileConfig && Array.isArray(this.fileConfig.palettes) && this.fileConfig.palettes.length) {
@@ -1186,7 +1186,7 @@ class HctApp extends HTMLElement {
           "div",
           { class: "fir-text" },
           h("strong", {}, "This file has a saved palette set"),
-          h("span", { class: "fir-sub" }, `${np} ${np === 1 ? "palette" : "palettes"} with full controls — opens exactly as saved.`),
+          h("span", { class: "fir-sub" }, `${np} ${np === 1 ? "palette" : "palettes"} with full controls, opens exactly as saved.`),
         ),
         h("div", { class: "spacer" }),
         btn("Open saved palette", { variant: "primary", onclick: () => this.openConfigAsSet(this.fileConfig, "Opened the saved palette") }),
@@ -1208,7 +1208,7 @@ class HctApp extends HTMLElement {
           "div",
           { class: "fir-text" },
           h("strong", {}, "This file has a color structure (no saved config)"),
-          h("span", { class: "fir-sub" }, `${n} ${n === 1 ? "family" : "families"} — approximate read (each family's 500 hue + chroma). For an exact round-trip, re-apply from the editor to embed the full config.`),
+          h("span", { class: "fir-sub" }, `${n} ${n === 1 ? "family" : "families"}, approximate read (each family's 500 hue + chroma). For an exact round-trip, re-apply from the editor to embed the full config.`),
         ),
         h("div", { class: "spacer" }),
         btn("Read approx →", { onclick: () => this.readFromFigmaVariables() }),
@@ -1218,7 +1218,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // readFromFigmaVariables — seed a new set from the file's variables (the APPROXIMATE fallback when no
+  // readFromFigmaVariables, seed a new set from the file's variables (the APPROXIMATE fallback when no
   // config is embedded). configFromVariables recovers each family's 500 hue+chroma; openConfigAsSet then
   // shape-clamps + opens it. The user refines the controls and re-applies (which embeds an exact config).
   readFromFigmaVariables() {
@@ -1228,27 +1228,27 @@ class HctApp extends HTMLElement {
   }
 
 
-  // _blockedBySetCap() — true when the plan's maxSets cap is reached; also notifies + routes a web user to
-  // the Account upgrade surface. The cap is flagOf("maxSets") — Infinity while TIERS_ENFORCED is off, so this
+  // _blockedBySetCap(), true when the plan's maxSets cap is reached; also notifies + routes a web user to
+  // the Account upgrade surface. The cap is flagOf("maxSets"), Infinity while TIERS_ENFORCED is off, so this
   // is a NO-OP until go-live. Gates the user-initiated "new brand kit" actions (New / Import); a project or
-  // Figma RESTORE (openConfigAsSet) is intentionally NOT capped — reloading your own work must never block.
+  // Figma RESTORE (openConfigAsSet) is intentionally NOT capped, reloading your own work must never block.
   _blockedBySetCap() {
     const cap = this.flagOf("maxSets");
     if (!Number.isFinite(cap) || this.sets.length < cap) return false;
-    this.toast(`Free is limited to ${cap} brand kit${cap === 1 ? "" : "s"} — upgrade to Pro for unlimited.`);
+    this.toast(`Free is limited to ${cap} brand kit${cap === 1 ? "" : "s"}. Upgrade to Pro for unlimited.`);
     if (!this.inFigma) { this.settingsSection = "account"; this.openSettings(); }
     return true;
   }
 
 
-  // _proExportLocked(id) — true when an export format is Pro-gated AND the plan doesn't unlock it. A NO-OP
+  // _proExportLocked(id), true when an export format is Pro-gated AND the plan doesn't unlock it. A NO-OP
   // until go-live (flagOf("proExport") is true while TIERS_ENFORCED is off).
   _proExportLocked(id) {
     return PRO_EXPORT_FORMATS.has(id) && !this.flagOf("proExport");
   }
 
 
-  // _proUpsell(message) — a small inline Pro upsell block (web routes to Settings « Account »; Figma, where
+  // _proUpsell(message), a small inline Pro upsell block (web routes to Settings « Account »; Figma, where
   // Pro lives in the web app, just notes it). Reused by the gated export preview + the gated treatments.
   _proUpsell(message) {
     return h("div", { class: "pro-upsell" },
@@ -1259,7 +1259,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // _treatmentLocked(id, defaultId) — true when a NON-default treatment is Pro-gated and the plan doesn't
+  // _treatmentLocked(id, defaultId), true when a NON-default treatment is Pro-gated and the plan doesn't
   // unlock it (advancedTreatments). Free keeps the default (Product type / Comfortable geometry). NO-OP until
   // go-live (flagOf("advancedTreatments") is unlocked while TIERS_ENFORCED is off).
   _treatmentLocked(id, defaultId) {
@@ -1267,11 +1267,11 @@ class HctApp extends HTMLElement {
   }
 
 
-  // _treatmentBlocked(id, defaultId) — if picking `id` is Pro-gated, notify + route to Pro (web) + re-render
+  // _treatmentBlocked(id, defaultId), if picking `id` is Pro-gated, notify + route to Pro (web) + re-render
   // to REVERT the <select> back to the committed treatment, and return true so the caller skips the commit.
   _treatmentBlocked(id, defaultId) {
     if (!this._treatmentLocked(id, defaultId)) return false;
-    this.toast("That treatment is a Pro feature — upgrade for the full set.");
+    this.toast("That treatment is a Pro feature, upgrade for the full set.");
     if (this.inFigma) this.render(); else { this.settingsSection = "account"; this.openSettings(); }
     return true;
   }
@@ -1299,7 +1299,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // importSet — load a palette config (.json from Export → Config) as a NEW set. The file
+  // importSet, load a palette config (.json from Export → Config) as a NEW set. The file
   // is UNTRUSTED data: JSON.parse (never eval), require a real palettes[] shape, then
   // hydrate() domain-clamps every field. A junk/empty file is rejected, not opened.
   importSet() {
@@ -1315,7 +1315,7 @@ class HctApp extends HTMLElement {
         let parsed = null;
         try { parsed = JSON.parse(String(reader.result)); } catch { parsed = null; }
         if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.palettes) || parsed.palettes.length === 0) {
-          this.toast("Import failed — not a palette config (.json)");
+          this.toast("Import failed: not a palette config (.json)");
           return;
         }
         const doc = hydrate(parsed); // clamps every field to its domain; ignores anything off-shape
@@ -1402,55 +1402,55 @@ class HctApp extends HTMLElement {
       btn(icon("arrow-counter-clockwise"), { cls: "undo-btn", title: "Undo (⌘Z)", ariaLabel: "Undo", disabled: !this.canUndo(), onclick: () => this.undo() }),
       btn(icon("arrow-clockwise"), { cls: "redo-btn", title: "Redo (⇧⌘Z)", ariaLabel: "Redo", disabled: !this.canRedo(), onclick: () => this.redo() }),
       this.themeBtn(),
-      btn(icon("gear"), { cls: "settings-btn", title: "Settings — token mapping & preferences", ariaLabel: "Settings", onclick: () => this.openSettings() }),
+      btn(icon("gear"), { cls: "settings-btn", title: "Settings: token mapping & preferences", ariaLabel: "Settings", onclick: () => this.openSettings() }),
       btn([icon("plus"), "New"], { onclick: () => this.createSet() }),
       btn([icon("export"), "Export"], { variant: "primary", cls: "export-open-btn", title: "Open export drawer", onclick: () => this.toggleDrawer(true) }),
     );
   }
 
 
-  // sectionSwitcher — the persistent editor-section tablist « Color · Typography · Geometry ».
+  // sectionSwitcher, the persistent editor-section tablist « Color · Typography · Geometry ».
   // Routes the whole editor (each pane branches on this.section); reuses the one segmented control
   // (roving tabindex + Arrow keys baked in). A tablist matching the existing canvas-view switcher.
   sectionSwitcher() {
     return this.segmented(
       [
-        { id: "color", label: "Color", title: "Color — palettes, scrims & semantic roles" },
-        { id: "typography", label: "Typography", title: "Typography — type scale, treatments & the full specimen" },
-        { id: "geometry", label: "Geometry", title: "Geometry — size ramp & dimensional tokens (preview)" },
+        { id: "color", label: "Color", title: "Color: palettes, scrims & semantic roles" },
+        { id: "typography", label: "Typography", title: "Typography: type scale, treatments & the full specimen" },
+        { id: "geometry", label: "Geometry", title: "Geometry: size ramp & dimensional tokens (preview)" },
       ],
       this.section,
       (id) => this.setSection(id),
       // a tablist (aria-selected), matching the existing canvas-view switcher; no aria-controls (the
-      // section panels aren't formal tabpanels — claiming control of a role=group would be a contradiction).
+      // section panels aren't formal tabpanels, claiming control of a role=group would be a contradiction).
       { cls: "section-seg", ariaLabel: "Editor section", idPrefix: "section" },
     );
   }
 
 
-  // setSection — switch the active editor section. Color is byte-identical to today; the shared viewport
+  // setSection, switch the active editor section. Color is byte-identical to today; the shared viewport
   // is the one crossover, so we STASH the color pan/zoom on leave and RESTORE it on return (the old modal
-  // overlaid color without touching the viewport — this preserves that round-trip). Type/geom scenes
+  // overlaid color without touching the viewport, this preserves that round-trip). Type/geom scenes
   // start centered (fit).
   setSection(id) {
     if (id === this.section) return;
     if (this.section === "color") this._colorViewport = this.viewport; // preserve the color pan/zoom
     this.section = id;
-    if (id !== "color") this.fit(); // type/geom scenes don't pan/zoom — start centered
+    if (id !== "color") this.fit(); // type/geom scenes don't pan/zoom, start centered
     else if (this._colorViewport) this.viewport = this._colorViewport; // restore color's transform on return
     if (id === "typography") ensureTypeFonts(); // lazily inject the Google Fonts, as the old modal did
     this.render();
   }
 
 
-  // toggleLeftPane / toggleRightPane — collapse/expand a side pane (the .editor grid track → 0).
+  // toggleLeftPane / toggleRightPane, collapse/expand a side pane (the .editor grid track → 0).
   // Ephemeral ui-session state (like segment); a full render re-applies the modifier class.
   toggleLeftPane() { this.panesLeft = !this.panesLeft; this.render(); }
 
   toggleRightPane() { this.panesRight = !this.panesRight; this.render(); }
 
 
-  // paneToggle — the collapse/expand control for one side pane. The SAME button renders
+  // paneToggle, the collapse/expand control for one side pane. The SAME button renders
   // in two places by state: while the pane is OPEN it lives in that pane's own header
   // (left → the Analysis label, right → the Inspector tab row); once COLLAPSED it pops to
   // the canvas-header (left → its left edge, right → its right edge) so there's always a
@@ -1475,12 +1475,12 @@ class HctApp extends HTMLElement {
   }
 
 
-  // app-chrome color scheme — icon-only (sun/moon/auto), cycles system → light → dark.
+  // app-chrome color scheme, icon-only (sun/moon/auto), cycles system → light → dark.
   themeBtn() {
     return btn(icon(SCHEME_ICON[this.theme] || "theme"), {
       cls: "scheme-btn",
-      title: "App theme: " + this.theme + " (UI only) — click to cycle system / light / dark",
-      ariaLabel: "App theme: " + this.theme + " — cycle system / light / dark",
+      title: "App theme: " + this.theme + " (UI only), click to cycle system / light / dark",
+      ariaLabel: "App theme: " + this.theme + ", cycle system / light / dark",
       onclick: () => {
         this.theme = SCHEME_NEXT[this.theme] || "system";
         this.dataset.theme = this.theme;
@@ -1494,13 +1494,13 @@ class HctApp extends HTMLElement {
   }
 
 
-  // canvas-preview color scheme — icon-only (sun/moon/auto), cycles system → light → dark.
+  // canvas-preview color scheme, icon-only (sun/moon/auto), cycles system → light → dark.
   // "system" follows the OS; INDEPENDENT of the app-chrome theme.
   canvasThemeBtn() {
     return btn(icon(SCHEME_ICON[this.canvasTheme] || "theme"), {
       cls: "scheme-btn",
-      title: "Canvas preview scheme: " + this.canvasTheme + " — click to cycle system / light / dark",
-      ariaLabel: "Canvas preview scheme: " + this.canvasTheme + " — cycle system / light / dark",
+      title: "Canvas preview scheme: " + this.canvasTheme + ", click to cycle system / light / dark",
+      ariaLabel: "Canvas preview scheme: " + this.canvasTheme + ", cycle system / light / dark",
       onclick: () => {
         this.canvasTheme = SCHEME_NEXT[this.canvasTheme] || "system";
         this._saveAppPrefs(); // the header cycle is the same pref as Settings › Appearance
@@ -1510,7 +1510,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // resolvedCanvasScheme — the concrete light/dark the canvas paints in: "system" maps to the OS
+  // resolvedCanvasScheme, the concrete light/dark the canvas paints in: "system" maps to the OS
   // preference (prefers-color-scheme), everything else is itself.
   resolvedCanvasScheme() {
     if (this._schemeOverride) return this._schemeOverride; // a Compare column forces its own scheme while it builds
@@ -1527,12 +1527,12 @@ class HctApp extends HTMLElement {
 
   // ── left pane (ANALYSIS rail) ─────────────────────────────────────────────────
   // Stacked, scrollable analysis graphs for the SELECTED palette + (hue wheel) the
-  // whole enabled set. Every datum comes from projectView(doc) — never stored.
+  // whole enabled set. Every datum comes from projectView(doc), never stored.
   renderLeftPane(view) {
     const idx = this.selectedIndex();
     const vp = view.palettes[idx];
     const name = vp ? vp.name : "";
-    // section routing — Color shows palette analysis; Typography its scale diagnostics; Geometry a stub.
+    // section routing, Color shows palette analysis; Typography its scale diagnostics; Geometry a stub.
     const isColor = this.section === "color";
     const label = isColor ? "Analysis" : this.section === "typography" ? "Type" : "Geometry";
     const body =
@@ -1553,7 +1553,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // legend — a small key under a multi-series graph (chips match the SVG strokes:
+  // legend, a small key under a multi-series graph (chips match the SVG strokes:
   // `solid` = applied/accent line, `faint` = a dashed reference line, `fill` = the
   // gamut-ceiling area). Without it the overlaid lines are ambiguous.
   legend(items) {
@@ -1567,7 +1567,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // selectedIndex — the index of the palette driving the right pane + graphs,
+  // selectedIndex, the index of the palette driving the right pane + graphs,
   // clamped into range.
   selectedIndex() {
     const n = this.doc.palettes.length;
@@ -1576,12 +1576,12 @@ class HctApp extends HTMLElement {
   }
 
 
-  // segmented — the one segmented control for the whole app: a row of buttons where
+  // segmented, the one segmented control for the whole app: a row of buttons where
   // exactly one is active. Bakes in the APG keyboard model the hand-rolled variants
-  // were missing — roving tabindex (only the active button is tab-focusable) + Arrow
-  // keys that move selection AND focus. role:"tablist" (tabs that switch a view —
+  // were missing, roving tabindex (only the active button is tab-focusable) + Arrow
+  // keys that move selection AND focus. role:"tablist" (tabs that switch a view,
   // buttons get role=tab + aria-selected + aria-controls) or role:"group" (a
-  // single-select button group — buttons get aria-pressed). onSelect re-renders; we
+  // single-select button group, buttons get aria-pressed). onSelect re-renders; we
   // then re-focus the newly-active button by its stable id, because the fk-restore
   // path (see _restoreFocus) would otherwise return focus to the OLD button.
   //
@@ -1639,7 +1639,7 @@ class HctApp extends HTMLElement {
 
   // ── center column ────────────────────────────────────────────────────────────
   renderCenter(view) {
-    // section routing — each section owns its center (header + canvas); color is unchanged.
+    // section routing, each section owns its center (header + canvas); color is unchanged.
     if (this.section === "typography") {
       return h("div", { class: "center" },
         this.renderTypeCanvasHeader(),
@@ -1662,12 +1662,12 @@ class HctApp extends HTMLElement {
   }
 
 
-  // zoomAround — set the zoom to z1, keeping the content point under (cx, cy)
+  // zoomAround, set the zoom to z1, keeping the content point under (cx, cy)
   // FIXED, where (cx, cy) is a pixel offset from the viewport centre. The scene's
   // CSS transform is `translate(-50%,-50%) translate(pan) scale(zoom)`, so a scene
   // point p maps to screen = zoom*p + pan - half-the-(unscaled)-scene. That
   // half-size term (scene.offsetWidth/2, ignored by transforms) is exactly what the
-  // old wheel math dropped — so zoom drifted toward the content's centre, not the
+  // old wheel math dropped, so zoom drifted toward the content's centre, not the
   // cursor. Re-including it makes both the wheel (cursor) and the +/- buttons
   // (centre, cx=cy=0) zoom about the right point.
   zoomAround(z1, cx = 0, cy = 0) {
@@ -1689,7 +1689,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // applyTransform — push the live viewport (panX, panY, zoom) onto the inner
+  // applyTransform, push the live viewport (panX, panY, zoom) onto the inner
   // content layer as a single CSS transform. The scene is CSS-anchored at the
   // viewport center (top/left 50%); we translate by pan + half its own size so
   // origin (0,0) is the viewport center, then scale. Also refreshes the readout.
@@ -1705,10 +1705,10 @@ class HctApp extends HTMLElement {
   }
 
 
-  // canvasBg — the canvas backdrop. When a palette is EXPLICITLY selected it's that palette's
+  // canvasBg, the canvas backdrop. When a palette is EXPLICITLY selected it's that palette's
   // NEAR-EDGE color: its 125 stop in light preview, its 875 stop in dark (a faintly-hued near-edge
   // tone, so the backdrop carries a touch of the palette's own hue rather than washing to pure
-  // white/black). Read from fullRamp — 125/875 are EXPORT-only half-steps, absent from the 19-stop
+  // white/black). Read from fullRamp, 125/875 are EXPORT-only half-steps, absent from the 19-stop
   // display `ramp`. Follows selection (selectPalette → render) and lmin/lmax. With NO explicit
   // selection (Esc, or a click on empty canvas → _deselect), it reverts to the DEFAULT neutral gray.
   canvasBg() {
@@ -1723,11 +1723,11 @@ class HctApp extends HTMLElement {
   }
 
 
-  // containerBg — a palette ROW container is tinted with that palette's OWN faintly-hued tone, so
+  // containerBg, a palette ROW container is tinted with that palette's OWN faintly-hued tone, so
   // each card carries a wash of its palette. It tracks the CANVAS preview scheme (75 in light, 925
-  // in dark — symmetric, mirroring canvasBg's 125/875): the row's name text is var(--ink), which
+  // in dark, symmetric, mirroring canvasBg's 125/875): the row's name text is var(--ink), which
   // resolves per the canvas-area's color-scheme (= canvasTheme), so a fixed light 75 in dark preview
-  // would land light text on a light card. Read from fullRamp — 75/925 are EXPORT-only half-steps,
+  // would land light text on a light card. Read from fullRamp, 75/925 are EXPORT-only half-steps,
   // absent from the 19-stop display ramp. Returns "" if absent, so the theme-aware CSS default holds.
   containerBg(vp) {
     const ramp = vp && (vp.fullRamp || vp.ramp);
@@ -1737,7 +1737,7 @@ class HctApp extends HTMLElement {
   }
 
   // the Scale-tab editor block: a hint when on Base, or rename + delete for the active breakpoint mode.
-  // _modeWidthPresets — the common-breakpoint quick-picks under the min-width field (Phase 2). Each chip
+  // _modeWidthPresets, the common-breakpoint quick-picks under the min-width field (Phase 2). Each chip
   // sets the active mode's minWidth through the SAME setter as the number field; the matching one is active.
   _modeWidthPresets(active, onpick) {
     const a = Number(active) || 0;
@@ -1750,7 +1750,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // _tokensTableArea — the scrolling .is-table canvas shell (no pan/zoom) that hosts a tokens MATRIX,
+  // _tokensTableArea, the scrolling .is-table canvas shell (no pan/zoom) that hosts a tokens MATRIX,
   // mirroring how renderCanvasArea wraps the Mapping table. One place for both Type + Geom tables.
   _tokensTableArea(label, table) {
     return h(
@@ -1766,13 +1766,13 @@ class HctApp extends HTMLElement {
   }
 
 
-  // ── Tokens-matrix per-cell overrides (Phase 3) — the size (type) / height (geom) lever. CENTRALIZED here
+  // ── Tokens-matrix per-cell overrides (Phase 3), the size (type) / height (geom) lever. CENTRALIZED here
   // so every scale materialization (matrix · specimen/controls · exports) reads the SAME overrides. Storage:
   //   doc.type.tokenOverrides     = { "<voice>|<step>|<modeKey>": <sizePx> }
   //   doc.geometry.tokenOverrides = { "<size>|<modeKey>": <heightPx> }
   // modeKey = "base" or a breakpoint mode's id; "|" never appears in a voice/step/size name. ──
 
-  // _modeTierNudge(modeFactor) — lifted into model.mjs#modeTierNudge (A1, #456): a pure function of
+  // _modeTierNudge(modeFactor), lifted into model.mjs#modeTierNudge (A1, #456): a pure function of
   // `modeFactor` alone, it belongs with the rest of the mode-aware resolution layer. Thin delegate kept
   // here in case any external caller still reaches through the instance method.
   _modeTierNudge(modeFactor) {
@@ -1781,7 +1781,7 @@ class HctApp extends HTMLElement {
 
 
 
-  // wirePanZoom — pointer-based pan/zoom on the canvas inner content layer.
+  // wirePanZoom, pointer-based pan/zoom on the canvas inner content layer.
   // origin (0,0) is the CENTER of the viewport (the .canvas-scene is anchored at
   // 50%/50% in CSS); panX/panY translate from there. A movement threshold keeps a
   // pan-drag from registering as a swatch-row click.
@@ -1900,7 +1900,7 @@ class HctApp extends HTMLElement {
         document.createTextNode(`${this.hover.name} · ${this.hover.label} · 750 @ ${this.hover.alpha}% · ${this.hover.hex}`),
       );
     } else if (this.hover && this.hover.kind === "prime") {
-      // prime swatches have no ramp stop/tone to report — the strip is off-ramp by construction
+      // prime swatches have no ramp stop/tone to report, the strip is off-ramp by construction
       // (SPEC spec-muted-base-key-spikes REQ-034/REQ-050).
       el.replaceChildren(
         document.createTextNode(`x:${xy.x} y:${xy.y} · ${z}% · `),
@@ -1922,10 +1922,10 @@ class HctApp extends HTMLElement {
 
 
   // ── right pane (segmented inspector) ──────────────────────────────────────────
-  // [ Palette | Global | Roles ] — three panels over the SELECTED palette. The
+  // [ Palette | Global | Roles ], three panels over the SELECTED palette. The
   // selection lives in ui-session state (this.segment); default is Palette.
   renderRightPane(view) {
-    // section routing — Typography/Geometry each return their OWN whole .right-pane inspector; Color's
+    // section routing, Typography/Geometry each return their OWN whole .right-pane inspector; Color's
     // body (below) is unchanged.
     if (this.section === "typography") return this.renderTypeInspector(view);
     if (this.section === "geometry") return this.renderGeomInspector(view);
@@ -1954,11 +1954,11 @@ class HctApp extends HTMLElement {
   }
 
 
-  // exampleCard — a tiny real component (a surface with text + a primary button)
+  // exampleCard, a tiny real component (a surface with text + a primary button)
   // painted from the SELECTED palette's semantic roles, in the canvas light/dark
   // ref. It demonstrates the roles in situ; it has no inputs, so liveRefresh can
   // re-render it as controls drag without disturbing the panel above.
-  // _exampleRoles — resolve the SELECTED palette's roles for the pinned artifacts (in the canvas
+  // _exampleRoles, resolve the SELECTED palette's roles for the pinned artifacts (in the canvas
   // light/dark ref). Shared by exampleCard / exampleSlider / exampleForm so they paint identically.
   _exampleRoles(view) {
     const p = view.palettes[this.selectedIndex()];
@@ -1996,7 +1996,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // exampleSlider — a native <input type=range> themed by the tokens via CSS accent-color (the prime
+  // exampleSlider, a native <input type=range> themed by the tokens via CSS accent-color (the prime
   // accent fills the track + thumb). A static demo (tabindex -1, aria-hidden) so liveRefresh can repaint it.
   exampleSlider(view) {
     const { byKey, pick, main } = this._exampleRoles(view);
@@ -2012,7 +2012,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // exampleForm — native form controls themed by the tokens: a text field (surface/onSurface/outline) +
+  // exampleForm, native form controls themed by the tokens: a text field (surface/onSurface/outline) +
   // checkbox · radio · select with accent-color = the prime accent. Static demos (tabindex -1, aria-hidden).
   exampleForm(view) {
     const { byKey, pick, main } = this._exampleRoles(view);
@@ -2034,9 +2034,9 @@ class HctApp extends HTMLElement {
   }
 
 
-  // exampleArtifacts — the pinned preview gallery: the role card + the native slider + the native form set,
+  // exampleArtifacts, the pinned preview gallery: the role card + the native slider + the native form set,
   // each painted from the selected palette's roles. All input-free demos, so liveRefresh can replaceChildren.
-  // Collapsed to the FIRST artifact (the role card) until expanded — the slider + form are revealed by the
+  // Collapsed to the FIRST artifact (the role card) until expanded, the slider + form are revealed by the
   // toggle. examplesExpanded is ui-session view state (not doc-bound), so the toggle just flips it + refreshes.
   exampleArtifacts(view) {
     const rest = [this.exampleSlider(view), this.exampleForm(view)];
@@ -2054,8 +2054,8 @@ class HctApp extends HTMLElement {
   }
 
 
-  // slider — a range control. `onInput(v)` mutates live (through editDrag, which
-  // does a PARTIAL liveRefresh — it never replaces this <input>, so the native
+  // slider, a range control. `onInput(v)` mutates live (through editDrag, which
+  // does a PARTIAL liveRefresh, it never replaces this <input>, so the native
   // pointer drag survives). The whole drag coalesces into ONE undo step (editDrag
   // debounce). On 'oninput' we also update the sibling <b> readout DIRECTLY from
   // the event so it tracks the thumb (it lives in the right pane, which liveRefresh
@@ -2078,7 +2078,7 @@ class HctApp extends HTMLElement {
         value,
         oninput: (e) => {
           const v = parseFloat(e.target.value);
-          readout.textContent = fmtFn(v); // live readout — don't rebuild the label
+          readout.textContent = fmtFn(v); // live readout, don't rebuild the label
           onInput(v);
         },
         onchange: () => {
@@ -2090,8 +2090,8 @@ class HctApp extends HTMLElement {
   }
 
 
-  // _snapRange(frac, min, max, step) — map a 0..1 track fraction to a stepped, clamped slider value. PURE
-  // (testable) — the sensitivity fix: value is a linear function of the MEASURED track position, nothing else.
+  // _snapRange(frac, min, max, step), map a 0..1 track fraction to a stepped, clamped slider value. PURE
+  // (testable), the sensitivity fix: value is a linear function of the MEASURED track position, nothing else.
   _snapRange(frac, min, max, step) {
     frac = Math.min(1, Math.max(0, frac));
     let v = min + frac * (max - min);
@@ -2099,9 +2099,9 @@ class HctApp extends HTMLElement {
     return Math.min(max, Math.max(min, v));
   }
 
-  // _bindRangeDrag — a DELEGATED pointer-capture drag for every <input type=range>. Figma's plugin iframe
+  // _bindRangeDrag, a DELEGATED pointer-capture drag for every <input type=range>. Figma's plugin iframe
   // breaks the native range drag two ways: it loses the implicit pointer capture (the drag dies the instant
-  // the pointer leaves the thumb) and mis-maps pointer→value (over-sensitive). We drive it ourselves — capture
+  // the pointer leaves the thumb) and mis-maps pointer→value (over-sensitive). We drive it ourselves, capture
   // the pointer on the input, map clientX across the input's OWN measured rect (_snapRange), and DISPATCH the
   // native input/change events so every existing slider handler (readout · editDrag · commit) runs unchanged.
   // Bound ONCE on the app root; it survives re-renders (they replace children, not `this`). Keyboard is native.
@@ -2128,11 +2128,11 @@ class HctApp extends HTMLElement {
       };
       apply(e.clientX);
       // Drive the drag off the WINDOW, not the input. Figma's iframe drops the INPUT's own pointer events
-      // (and setPointerCapture doesn't hold) once the cursor moves far from the thumb — so an input-scoped
+      // (and setPointerCapture doesn't hold) once the cursor moves far from the thumb, so an input-scoped
       // listener cuts the drag off on a fast/far move. Window-level move/up fire wherever the pointer goes.
       const dragTarget = typeof window !== "undefined" && window.addEventListener ? window : typeof document !== "undefined" && document.addEventListener ? document : this;
       const move = (ev) => apply(ev.clientX);
-      // cleanup — remove the window-level listeners WITHOUT settling the drag (fire "change").
+      // cleanup, remove the window-level listeners WITHOUT settling the drag (fire "change").
       // Its own name so disconnectedCallback can call it mid-drag on a disconnect without also
       // triggering commitDrag()/render() on a detached element.
       const cleanup = () => {
@@ -2157,7 +2157,7 @@ class HctApp extends HTMLElement {
   // ── app footer ────────────────────────────────────────────────────────────────
   // Static structure (the · separators, theme, spacer) is built once; the dynamic
   // readouts carry stable class hooks (.af-pals / .af-tokens / .af-save / .af-warn)
-  // so paintAppFooter can reconcile them in place during a live drag — preserving
+  // so paintAppFooter can reconcile them in place during a live drag, preserving
   // the flex-gap rhythm of the original multi-span footer (no full re-render).
   renderAppFooter() {
     return h(
@@ -2176,7 +2176,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // paintAppFooter — fill / reconcile the app-footer's dynamic readouts in place.
+  // paintAppFooter, fill / reconcile the app-footer's dynamic readouts in place.
   // Called by the full render (after renderAppFooter builds the shell) and by
   // liveRefresh during a drag, so swatch edits update the counts without a render.
   paintAppFooter(view) {
@@ -2205,7 +2205,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // _saveBlob — save a Blob to disk. PREFERS the File System Access API (showSaveFilePicker): an
+  // _saveBlob, save a Blob to disk. PREFERS the File System Access API (showSaveFilePicker): an
   // explicit save dialog that writes the file directly, so it works in embedded/sandboxed webviews
   // that ignore <a download> and would otherwise NAVIGATE to (preview) the blob. Falls back to the
   // universal <a download> anchor when the picker is unsupported or blocked. Cancelling the dialog
@@ -2223,11 +2223,11 @@ class HctApp extends HTMLElement {
         this.toast("Downloaded " + filename);
         return;
       } catch (e) {
-        if (e && e.name === "AbortError") return; // user dismissed the save dialog — don't fall through
+        if (e && e.name === "AbortError") return; // user dismissed the save dialog, don't fall through
         // any other error (unsupported option, SecurityError, blocked in a sandbox) → anchor fallback
       }
     }
-    // Fallback: <a download> + a blob URL — the universal path (works in any top-level browser tab).
+    // Fallback: <a download> + a blob URL, the universal path (works in any top-level browser tab).
     try {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -2249,31 +2249,31 @@ class HctApp extends HTMLElement {
   }
 
 
-  // downloadBytes — save raw bytes (the binary sibling of download()); e.g. the Download-All .zip.
+  // downloadBytes, save raw bytes (the binary sibling of download()); e.g. the Download-All .zip.
   downloadBytes(bytes, filename, type) {
     this._saveBlob(new Blob([bytes], { type: type || "application/octet-stream" }), filename);
   }
 
 
-  // figmaBundle — public accessor: the DTCG (raw + Light/Dark, aliased) for the
+  // figmaBundle, public accessor: the DTCG (raw + Light/Dark, aliased) for the
   // CURRENT doc, the payload the Figma-plugin bridge posts to its code.js sandbox.
   figmaBundle() {
     return figmaBundle(this.doc);
   }
 
 
-  // setInFigma — the Figma bridge (gen-ui.mjs) calls this on figma-init so the app knows
+  // setInFigma, the Figma bridge (gen-ui.mjs) calls this on figma-init so the app knows
   // it runs inside Figma and can reveal the "Add Variables → Figma" action in the drawer.
   setInFigma(on) {
     this.inFigma = !!on;
     // Re-render in ANY view, not just the editor: figma-init arrives ASYNC (after the app has
     // already rendered the startup GALLERY), so the gallery must re-render here to run its one-shot
-    // probeFigmaProject() — otherwise the file's saved config never surfaces as the import row.
+    // probeFigmaProject(), otherwise the file's saved config never surfaces as the import row.
     // (Bug: editor-only re-render → gallery never probed → "saved config doesn't show in gallery".)
     this.render();
   }
 
-  // ── persisted APP prefs (theme · canvas preview · motion · font mode) — per-USER, not doc-bound →
+  // ── persisted APP prefs (theme · canvas preview · motion · font mode), per-USER, not doc-bound →
   // localStorage, versioned like the apply consent. Absent/invalid keys keep the constructor
   // defaults, so a fresh profile (or Figma's session-scoped iframe storage) boots identically to
   // pre-prefs builds.
@@ -2311,8 +2311,8 @@ class HctApp extends HTMLElement {
 
 
   // ── project source of truth (config round-trip I/O) ───────────────────────────────────
-  // The "config" is the PARAMETRIC doc (serialize) — palettes' hue/chroma/skew/lift, the global
-  // controls, AND roleOverrides — never resolved colors (colors are always re-derived). So a
+  // The "config" is the PARAMETRIC doc (serialize), palettes' hue/chroma/skew/lift, the global
+  // controls, AND roleOverrides, never resolved colors (colors are always re-derived). So a
   // round-trip restores the generator's exact state. Figma → the document's root pluginData (embedded
   // IN the .fig, travels with the file); browser → localStorage. (A read-only diff against the live
   // Figma variables, and the approximate variable-derived seed, are separate fallback paths.)
@@ -2323,11 +2323,11 @@ class HctApp extends HTMLElement {
       return;
     }
     try { localStorage.setItem(PROJECT_KEY, JSON.stringify(config)); this.toast("Saved to project"); }
-    catch { this.toast("Save failed — no storage available"); }
+    catch { this.toast("Save failed: no storage available"); }
   }
 
 
-  // loadFromProject — restore the config. Figma posts {load-config} and the answer arrives async
+  // loadFromProject, restore the config. Figma posts {load-config} and the answer arrives async
   // as {config-loaded} (relayed to applyLoadedConfig by the bridge); browser reads localStorage now.
   loadFromProject() {
     this._loadRequested = true; // an EXPLICIT load → applyLoadedConfig should OPEN it (not just record)
@@ -2342,7 +2342,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // applyLoadedConfig — the answer to a load-config request: UNTRUSTED config in (a stored slot or a
+  // applyLoadedConfig, the answer to a load-config request: UNTRUSTED config in (a stored slot or a
   // Figma {config-loaded} message). On the gallery AUTO-PROBE (no explicit load in flight) it only
   // RECORDS whether the file has an embedded config (this.fileConfig → reveals the import row); it does
   // NOT auto-open. An EXPLICIT load (⬇ Project / Open-saved set _loadRequested) opens it as a set.
@@ -2359,13 +2359,13 @@ class HctApp extends HTMLElement {
   }
 
 
-  // openConfigAsSet — shape-clamp an (untrusted) config and open it as a new set. hydrateStoredDoc()
+  // openConfigAsSet, shape-clamp an (untrusted) config and open it as a new set. hydrateStoredDoc()
   // domain-clamps every field AND applies the legacy stamp (a config lacking hueSpace was authored under
-  // cam16 — keep it cam16, consistent with openSet), so a junk/partial config is sanitized + preserved.
+  // cam16, keep it cam16, consistent with openSet), so a junk/partial config is sanitized + preserved.
   // #644: `mintData` is opt-in per call site, NOT ambient. Only the preset-gallery tile (a genuine
-  // document-CREATION path) passes `mintData: true`. The other three call sites — "Open saved palette"
+  // document-CREATION path) passes `mintData: true`. The other three call sites, "Open saved palette"
   // (which promises "opens exactly as saved"), the Figma-variables approximate read, and the ⬇ Project
-  // restore — are all "restore my own saved work" paths (REQ-012, H2: auto-mint is opt-in for an
+  // restore, are all "restore my own saved work" paths (REQ-012, H2: auto-mint is opt-in for an
   // upgraded/restored document, not a fresh one) and must stay byte-identical to before #644.
   openConfigAsSet(config, toastMsg, { mintData = false } = {}) {
     const doc = hydrateStoredDoc(config);
@@ -2382,7 +2382,7 @@ class HctApp extends HTMLElement {
 
   // ── read-only Figma-variables reference + drift diff (#3) ──────────────────────────────
   // Read the live raw-colors variables from the FILE and compare to what the generator would emit
-  // now → per-token drift in the Mapping table (✓ match / ✗ drifted / — absent). Read-only: it never
+  // now → per-token drift in the Mapping table (✓ match / ✗ drifted / n/a absent). Read-only: it never
   // reconstructs params (you cannot reverse-derive hue/chroma from a color), it only diffs colors.
   readLiveVariables() {
     if (!this.inFigma) { this.toast("Reading live variables is a Figma-plugin feature"); return; }
@@ -2399,11 +2399,11 @@ class HctApp extends HTMLElement {
     if (this.view !== "editor") return;
     if (!this.liveVarsFound) { this.toast("No raw-colors collection in this file yet"); return; }
     const d = this.driftSummary();
-    this.toast(d.drifted ? `${d.drifted} of ${d.total} tokens drifted from the file` : `In sync — all ${d.total} match the file`);
+    this.toast(d.drifted ? `${d.drifted} of ${d.total} tokens drifted from the file` : `In sync, all ${d.total} match the file`);
   }
 
 
-  // driftStatus — generated raw var "{n}/{key}" + its generated hex vs the live read.
+  // driftStatus, generated raw var "{n}/{key}" + its generated hex vs the live read.
   // null = no read yet; "absent" = not in the file; "match" / "drift".
   driftStatus(varName, genHex) {
     if (!this.liveVars) return null;
@@ -2431,9 +2431,9 @@ class HctApp extends HTMLElement {
   }
 
 
-  // downloadFigmaPlugin — the Color Tokens Semantic Binder plugin's two files (manifest.json +
+  // downloadFigmaPlugin, the Color Tokens Semantic Binder plugin's two files (manifest.json +
   // code.js). Drop both into one folder, then Figma → Plugins → Development → Import
-  // plugin from manifest. It creates the raw→semantic alias cascade native import can't — AND bakes
+  // plugin from manifest. It creates the raw→semantic alias cascade native import can't, AND bakes
   // this project's Type/Geometry breakpoint apply plans (_figmaFloatPlans, already validated + ordered)
   // into the downloaded code.js by replacing its injection anchor, so the standalone binder (no
   // postMessage channel to this UI) can still create the Typography/Geometry breakpoint-moded
@@ -2445,13 +2445,13 @@ class HctApp extends HTMLElement {
     const plans = this._figmaFloatPlans(); // [] when type+geometry both off / no breakpoints
     const injected = FIGMA_PLUGIN.code.includes(anchor)
       ? FIGMA_PLUGIN.code.replace(anchor, "JSON.parse(" + JSON.stringify(JSON.stringify(plans)) + "); /* injected */")
-      : FIGMA_PLUGIN.code; // defensive: anchor not found — ship the plugin unchanged rather than fail the download
+      : FIGMA_PLUGIN.code; // defensive: anchor not found, ship the plugin unchanged rather than fail the download
     this.download(FIGMA_PLUGIN.manifest, "manifest.json");
     setTimeout(() => this.download(injected, "code.js"), 150);
   }
 
 
-  // downloadBrandKitMcp — hand the user a ready-to-run Brand-Kit MCP package as one .zip: the zero-dep
+  // downloadBrandKitMcp, hand the user a ready-to-run Brand-Kit MCP package as one .zip: the zero-dep
   // server (inlined from mcp/), THEIR resolved tokens (brandKit), a setup README, and a package.json.
   // `node brand-kit-server.mjs` (or `claude mcp add`) and an agent can query the brand's exact tokens.
   downloadBrandKitMcp() {
@@ -2469,27 +2469,27 @@ class HctApp extends HTMLElement {
       { name: "package.json", data: pkg },
     ];
     this.downloadBytes(zipStore(files), `${base}-mcp.zip`, "application/zip");
-    this.toast("Brand-Kit MCP downloaded — `node brand-kit-server.mjs`");
+    this.toast("Brand-Kit MCP downloaded: `node brand-kit-server.mjs`");
   }
 
 
-  // downloadDescribePaletteMcp — the Pro sibling of downloadBrandKitMcp: the MERGED read+generate server
+  // downloadDescribePaletteMcp, the Pro sibling of downloadBrandKitMcp: the MERGED read+generate server
   // (mcp/brand-kit-merged-server.mjs, #374) as one ready-to-run .zip, ships BESIDE the free brand-kit
   // download rather than replacing it (spec §12 item 3). generate_kit needs the real engine, not just a
   // resolved kit.json, so DESCRIBE_MCP_FILES ships the whole self-sufficient source tree at its exact
-  // repo-relative paths (mcp/ + src/ui/ + src/engine/ + docs/reference/data/role-table.json) — Node
+  // repo-relative paths (mcp/ + src/ui/ + src/engine/ + docs/reference/data/role-table.json), Node
   // resolves the same relative imports unmodified, no bundler needed. Gated by flagOf("describePalette")
   // AT DOWNLOAD TIME (spec §9): once downloaded, a zero-dep offline stdio server has no live entitlement
   // check left to call, so the gate that matters is here, not inside the shipped code.
   downloadDescribePaletteMcp() {
     if (!this.flagOf("describePalette")) {
-      this.toast("Describe-Palette MCP is a Pro feature — upgrade to download it.");
+      this.toast("Describe-Palette MCP is a Pro feature, upgrade to download it.");
       if (!this.inFigma) { this.settingsSection = "account"; this.openSettings(); }
       return;
     }
     const kit = brandKit(this.doc, this.exportSystems);
     const base = slug(kit.name) || "brand-kit";
-    // version is the REAL engine version, not a placeholder — describe-kit-core.mjs reads its own
+    // version is the REAL engine version, not a placeholder, describe-kit-core.mjs reads its own
     // shipped package.json for every generated kit's meta.engineVersion (spec §6.4's reproducibility stamp).
     const pkg = JSON.stringify(
       { name: "ultimate-tokens-describe-palette-mcp", version: DESCRIBE_MCP_ENGINE_VERSION, type: "module", description: `Describe-Palette MCP (read "${kit.name}" + generate new kits from text)`, bin: { "describe-palette-mcp": "mcp/brand-kit-merged-server.mjs" }, private: true },
@@ -2498,13 +2498,13 @@ class HctApp extends HTMLElement {
     const files = [
       ...DESCRIBE_MCP_FILES.map(({ path, data }) => ({ name: path, data })),
       // the server's own HERE resolves to its own directory (mcp/, since it lives at mcp/brand-kit-merged-
-      // server.mjs here, unlike the flat single-file brand-kit-server.mjs) — the sibling kit sits beside it.
-      { name: "mcp/brand-kit.json", data: JSON.stringify(kit, null, 2) }, // the seeded read surface — additive, not required to call generate_kit
+      // server.mjs here, unlike the flat single-file brand-kit-server.mjs), the sibling kit sits beside it.
+      { name: "mcp/brand-kit.json", data: JSON.stringify(kit, null, 2) }, // the seeded read surface, additive, not required to call generate_kit
       { name: "README.md", data: DESCRIBE_MCP_README },
       { name: "package.json", data: pkg },
     ];
     this.downloadBytes(zipStore(files), `${base}-describe-mcp.zip`, "application/zip");
-    this.toast("Describe-Palette MCP downloaded — `node mcp/brand-kit-merged-server.mjs`");
+    this.toast("Describe-Palette MCP downloaded: `node mcp/brand-kit-merged-server.mjs`");
   }
 
 
@@ -2532,7 +2532,7 @@ class HctApp extends HTMLElement {
   }
 
 
-  // download — save text (CSS/JSON/etc.). Routes through _saveBlob, so it benefits from the same
+  // download, save text (CSS/JSON/etc.). Routes through _saveBlob, so it benefits from the same
   // File System Access save dialog (and anchor fallback) the .zip uses.
   download(text, filename) {
     this._saveBlob(new Blob([text], { type: "text/plain" }), filename);
@@ -2549,8 +2549,8 @@ class HctApp extends HTMLElement {
 
 }
 
-// mixinInto — copy every own prototype method/getter/setter from each mixin class onto Target's
-// prototype (skipping "constructor"). Plain data-preserving prototype composition — no framework,
+// mixinInto, copy every own prototype method/getter/setter from each mixin class onto Target's
+// prototype (skipping "constructor"). Plain data-preserving prototype composition, no framework,
 // no subclassing chain, no Proxy: the section/overlay classes above exist ONLY as a comma-free
 // syntax carrier for their methods and are never instantiated. Property descriptors (not bare
 // assignment) so any getter/setter method survives the copy unchanged.
@@ -2565,7 +2565,7 @@ function mixinInto(Target, ...Sources) {
       if (name === "constructor") continue;
       if (owner.has(name)) {
         throw new Error(
-          `mixinInto: "${name}" is defined on both ${owner.get(name)} and ${Source.name} — rename one before composing.`
+          `mixinInto: "${name}" is defined on both ${owner.get(name)} and ${Source.name}, rename one before composing.`
         );
       }
       owner.set(name, Source.name);
@@ -2577,11 +2577,11 @@ function mixinInto(Target, ...Sources) {
 // section's render tree lives in its own prototype-mixin file (src/ui/sections/*.js), plus three
 // cross-section overlay mixins (the export drawer, the Figma apply-consent gate, Settings) under
 // src/ui/overlays/*.js (TKT-0023: app.js is now a bootstrap + shared core; sections/overlays live
-// in per-file mixins, flattened onto ONE prototype — every call site still just reads 'this.<name>()').
+// in per-file mixins, flattened onto ONE prototype, every call site still just reads 'this.<name>()').
 mixinInto(HctApp, ColorSection, TypeSection, GeomSection, DrawerMixin, ApplyGateMixin, SettingsMixin);
 
 // The one tag. The pre-rename alias was retired with the maker brand (ADR-015): an embed on the old tag
-// now renders nothing, which is the intended, visible failure — a silently-styled ghost element would be
+// now renders nothing, which is the intended, visible failure, a silently-styled ghost element would be
 // worse. The localStorage prefix chain in migrateStorageKeys() is a SEPARATE concern and stays: it carries
 // real saved palettes across the rename, and dropping it would delete a user's work.
 customElements.define("ultimate-tokens", HctApp);

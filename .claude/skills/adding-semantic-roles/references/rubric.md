@@ -1,4 +1,4 @@
-## Rubric — a semantic-role change
+## Rubric: a semantic-role change
 
 Scores a role addition/modification in ultimate-tokens. `[gate]` = mechanically checkable
 (`grep` / a named verifier / `npm test`); `[review]` = judgment with cited evidence. Score each 1–5.
@@ -17,7 +17,7 @@ Scores a role addition/modification in ultimate-tokens. `[gate]` = mechanically 
 runtime copy is missing the row (R2), that leaves any count gate red (R3), or that mutates the canonical
 table (R6) is not done regardless of how clean the new role reads.
 
-**Top failure to look for first:** a half-applied count (R3) — one count literal left at the old number,
+**Top failure to look for first:** a half-applied count (R3), one count literal left at the old number,
 most often `test/ui/shell.mjs` (it lives under `ui/`, not `engine/`), producing a red gate that looks
 unrelated to the role you added. Grep the current count and confirm every live literal moved before trusting a
 "looks done."
