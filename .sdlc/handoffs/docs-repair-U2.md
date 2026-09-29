@@ -1,19 +1,21 @@
-# Handoff U2 pass 1 · builder to verifier
+# Handoff U2 pass 1, round 2 · builder to verifier
 
 | Field | Value |
 |---|---|
-| Branch | unit/dr-U2 @ 4095ddbf |
+| Branch | unit/dr-U2 @ e7058994 |
 | Base | plan/docs-repair @ 5d8b1c30 |
-| Files at 4095ddbf | docs/reference/SKILL.md, docs/reference/references/spec-draft.md, docs/reference/references/glossary.md, docs/reference/rubrics/acceptance-criteria.md, docs/reference/rubrics/quality-rubric.md |
+| Files at e7058994 | docs/reference/SKILL.md, docs/reference/references/spec-draft.md, docs/reference/references/glossary.md, docs/reference/rubrics/acceptance-criteria.md, docs/reference/rubrics/quality-rubric.md |
 | Files in this handoff commit | .sdlc/handoffs/docs-repair-U2.md |
-| Ran | every row below at 4095ddbf in `.worktrees/dr-U2`; `npm test` once, `✓ all 50 test files passed`, exit 0, `git status --short` empty after |
+| Ran | every row below at e7058994 in `.worktrees/dr-U2`; `npm test` once, `✓ all 50 test files passed`, exit 0, `git status --short` empty after |
 | Left out | `npm run build` and smoke (owed at pre-land, no `node_modules`); no negative controls run at B (the plan's "Today" column states the B values); `ui-plan.md` left to U1, so P6's grep still prints its two lines (`ui-plan.md:48`, `:153`) until U1 merges |
+| Round 2 (review be4e4144) | fixed `spec-draft.md:219` (`ten color export formats`); swept the four spec files for other count phrasings (numeral and word forms near format, export, exporter, tab): none left, the remaining numbers are anchors, stops and dates; Drawer glossary row now says its ten tabs differ from the ten export formats (`figma` tab in place of `exportAll`); `npm test` rerun after the ps check, `✓ all 50 test files passed`, exit 0, tree clean |
+| Q2 lines | Q2 ruling: keep the id and `name:`, change only human-facing title and description. Changed: SKILL.md :32 body prose and :86 contract `"title"` and :255 non-goal prose, all to Ultimate Tokens. Kept: `name: hct-palette-generator-spec`, the `spec.system.hct-palette-generator-spec` cell id, and spec-draft.md :41 (the spec draft's own subject sentence, not in U2's step list and no count in it) |
 | Decisions | Q2 default kept: `name: hct-palette-generator-spec` and the cell id unchanged; title and description say Ultimate Tokens. The lists of ten formats name Panda, Radix and `exportAll` where the old prose listed six or eight |
 | P3 dashed added lines | 0 (three rewritten lines carried the glyph; each dropped it: the description line, the H1, `hpg-export-theme-invariant`) |
 
 ## Ran
 
-| Id | Output at 4095ddbf | Expected |
+| Id | Output at e7058994 | Expected |
 |---|---|---|
 | U2-1 | `2`, `2`, `3`, `0`, `1` (name line count) | 1+, 1+, 1+, 0, 1 |
 | U2-2 | `1`, `1`, `1` (backticked needles), `ok` | 1+ each, ok |
