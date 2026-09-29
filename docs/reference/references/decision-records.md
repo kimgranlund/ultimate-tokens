@@ -766,6 +766,14 @@ Format: Context → Decision → Rationale → Consequences → Status.
 - **Status.** DECIDED 2026-09-20 (#681). Gated by `test/engine/anchor.mjs` (`anchor-identity`,
   `anchor-ramp`, the window and ladder allow-lists) and by the schema fields in `src/ui/persist.js`
   (`DOMAINS.palette.anchor` / `.sourceAnchor`). Knowledge-02 §9 is the reference description.
+- **Amendment (2026-09-28, #701).** The even-mode `chromaFloor` side named in the Consequences above:
+  the even floor's gamut reference is capped at the largest ceiling among stops 450, 500 and 550
+  (`chromaFloor% * min(maxc, floorRef)`, never above `intended`): gamut-relative near white and black,
+  flat on the side where the gamut widens away from the anchor. The even envelope has a smoothstep
+  shoulder at the anchor (`EVEN_NEIGHBOURHOOD_R`, R = 0.2 in `sd` units, 90 stop units at lift 0). All
+  three allow-lists it retires (the lone-spike list, the default-kit spike finding and the 90-name dip
+  baseline) are gone: the lone-spike and off-anchor dip gates count 0 with no list, and the 32 dips at
+  stop 500 are notches, printed and not gated.
 
 ## ADR-027 - A seat cites only what it measured, at the ref it is writing about
 - **Context.** Over one review round of #681 U5, four defects arose from three seats through one
