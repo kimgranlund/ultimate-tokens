@@ -72,7 +72,7 @@ Each control reverted with `git checkout -q HEAD -- .`, `git status --short | wc
 
 | Item | Why |
 |---|---|
-| P2 (`npm run build`) and its control | needs `node_modules` (`npm ci`) in the unit tree; the dispatch named `npm test` only. `baseline-agrees-check.sh` reads `ok    ui.html: baseline 4141.0 KB, tree 4141.0 KB` on the tree `npm test` regenerated |
+| P2 (`npm run build`) and its control | needs `node_modules` (`npm ci`) in the unit tree; the dispatch named `npm test` only. `baseline-agrees-check.sh` reads `ok    ui.html: baseline 4141.3 KB, tree 4141.3 KB` on the tree `npm test` regenerated |
 | `npm run smoke` | pre-land pass 2's rerun per the Landing section |
 | the CHANGELOG block re-date | the landing commit's, per U3-6 and Landing |
 | Q7 option (b) | Q7 proceeds on default (a) |
