@@ -17,7 +17,7 @@ Re-diagnosed by sdlc-planner on 2026-09-16 against `unit/hygiene-U2` @ 04b93f0 a
       - name: Require the eval key
         run: |
           if [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo "::error::ANTHROPIC_API_KEY is not set — add it as a repository secret (gh secret set ANTHROPIC_API_KEY) before this eval can run" >&2
+            echo "::error::ANTHROPIC_API_KEY is not set, add it as a repository secret (gh secret set ANTHROPIC_API_KEY) before this eval can run" >&2
             exit 1
           fi
 ```

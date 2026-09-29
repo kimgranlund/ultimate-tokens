@@ -1,10 +1,10 @@
 ---
 name: adding-export-formats
 description: >
-  Use when adding or changing a token output format in ultimate-tokens —
+  Use when adding or changing a token output format in ultimate-tokens,
   someone says "add an export format", "emit a new framework / DTCG / Figma
   file", "change an export's output shape", "wire a tab into the export drawer",
-  or "a new role didn't show up in shadcn" — or a change touches
+  or "a new role didn't show up in shadcn", or a change touches
   src/engine/exports.js, type.mjs, or geometry.mjs. Covers a new color
   serializer, a Tailwind/shadcn/DTCG/Figma variant, or a type/geometry emitter,
   plus its export-drawer tab and Download-All zip entry.
@@ -12,52 +12,52 @@ disable-model-invocation: false
 user-invocable: true
 ---
 
-# Adding (or changing) an export format — ultimate-tokens
+# Adding (or changing) an export format: ultimate-tokens
 
 An export format is one serializer that turns the resolved engine output into a portable artifact (a CSS
 string, a DTCG tree, a framework file). The **color** formats live in `src/engine/exports.js` (10 of them,
-and ONLY those 10 — see below); **type** + **geometry** formats live in `src/engine/type.mjs` and
+and ONLY those 10, see below); **type** + **geometry** formats live in `src/engine/type.mjs` and
 `src/engine/geometry.mjs`. The non-obvious truth of this repo: almost every color emitter MAPS over each
-palette's resolved `roles`, so a new semantic role emits a leaf **automatically** — you add a format, not
+palette's resolved `roles`, so a new semantic role emits a leaf **automatically**, you add a format, not
 a per-role branch. The two things that bite are (1) ShadCN is the deliberate exception to that auto-flow,
 and (2) a new serializer is invisible until it is wired into THREE places: `exportAll`, the model's
 `view.exports`, and the drawer. Depth in `references/`. The per-format output shapes are owned by
-`docs/reference/references/knowledge-04-export-formats.md` — cite it, don't re-derive it. The role-side
-auto-flow is owned by `adding-semantic-roles` — cite it, don't duplicate.
+`docs/reference/references/knowledge-04-export-formats.md`, cite it, don't re-derive it. The role-side
+auto-flow is owned by `adding-semantic-roles`, cite it, don't duplicate.
 
 **Not this skill's territory: `src/engine/ds-export.js`.** The Claude Design / Google Stitch / Figma Make
 "DS bundle" DESIGN.md-authoring subsystem (`dsColorRoles`, `exportDesignSystemTokens/Spine/Components/
 Receipt/Bundle/StitchBundle/MakeBundle`, the `dsMake*Md` prose generators) used to share a file with the 10
-color formats above — split out in TKT-0015 because it's a different KIND of code (content/prose authoring
+color formats above, split out in TKT-0015 because it's a different KIND of code (content/prose authoring
 for a consumption bundle, not token serialization) and was undocumented drift risk for this skill's own
 "10 formats" claim. It imports a handful of this file's helpers (`derivedAll`, `roleOklch`, `hexOf`, `hex8`,
 `relLumExp`, plus the already-public `cssPrefixOf`/`dialogBackdropOklch`/`exportShadcn`) but is otherwise
-independent, has no rubric of record in `docs/reference/` yet, and is out of scope here — don't route a
+independent, has no rubric of record in `docs/reference/` yet, and is out of scope here, don't route a
 DS-bundle change through this skill's procedure, and don't add its formats to `exportAll` (it is bundled by
 the UI directly, same as the type/geometry emitters).
 
 ## The format model (depth in `references/foundations.md`)
 
 `derivePalette(palette, controls, overrides)` (exports.js) computes everything an emitter needs ONCE per
-enabled palette — the slug, the solid stops, the scrims, and the resolved semantic roles (the exact return
+enabled palette, the slug, the solid stops, the scrims, and the resolved semantic roles (the exact return
 tuple + the resolved-role shape: `references/foundations.md` §1). **There is NO resolver in the returned
-object** — `resolveRef` is a local closure that runs at derivation time, so the roles arrive pre-resolved:
+object**, `resolveRef` is a local closure that runs at derivation time, so the roles arrive pre-resolved:
 emitters read `r.light`/`r.dark` for a color and use `refKey(r.lightRef)` only for the raw var-NAME fragment,
 never re-resolving a ref. `derivedAll(state)` maps it over `enabledPalettes` (the `on !== false` filter) in State
-order — so **disabled palettes are absent from every format**, for free. Every color emitter starts
+order, so **disabled palettes are absent from every format**, for free. Every color emitter starts
 `const palettes = derivedAll(state)` and loops.
 
 **The auto-flow vs the curated-contract exceptions.** `exportCSS / exportOKLCH / exportJSON / exportDTCG /
-exportUI3 / exportTailwind / exportPanda` all iterate `p.roles` directly — a new role flows through with no
+exportUI3 / exportTailwind / exportPanda` all iterate `p.roles` directly, a new role flows through with no
 edit. **`exportShadcn` and `exportRadix` do NOT.** `exportShadcn` iterates the fixed `SHADCN_ORDER` array
 (in `exports.js`) over a hand-curated suffix-lookup `MAP` that pulls roles BY SUFFIX (`rs(neutral,
-"-surface")`, `prime(primary)` = the empty-suffix accent) and picks the driver palette BY NAME REGEX —
+"-surface")`, `prime(primary)` = the empty-suffix accent) and picks the driver palette BY NAME REGEX,
 neutral-, primary-, and danger-family name matches, so it survives renamed/preset palettes (the exact
 regexes: `references/foundations.md` §3). `exportRadix` is the second curated-contract format (it produces
 the Panda-preset shape Park UI/Panda consume): it calls the same `pickDrivers` driver-selection and writes
 Park UI's own fixed `accent`/`gray`/`error`/`fg`/`canvas`/`border`/`bg` semantic keys, never a per-role loop.
 A new role appears in ShadCN or Radix only if you wire it into `MAP` (ShadCN) or the driver-copy block
-(Radix) — and that is a deliberate design choice (both have a FIXED token contract), not a gate. Don't "fix"
+(Radix), and that is a deliberate design choice (both have a FIXED token contract), not a gate. Don't "fix"
 either by spilling all roles in.
 
 **A variant of an existing format is a flag, not a new format (ticket #638).** `exportRadix(state, {
@@ -74,45 +74,45 @@ entry, and a second zip file beside the first, never a new `FORMAT_GROUPS` row, 
 namespace), the `--c-*` custom props where raw names end in DIGITS and semantic names end in a WORD so they
 share the prefix without collision, `light-dark()` for the mode flip in the semantic layer (ADR-005), and
 scrims keyed `500-{step}` at alpha% = step/10. `refKey` (from `semantic.js`) normalizes a ref to its var-name
-fragment — emitters use it to build a NAME, never to re-resolve a ref to a color.
+fragment, emitters use it to build a NAME, never to re-resolve a ref to a color.
 
-## Procedure — add a serializer, then wire its three surfaces
+## Procedure: add a serializer, then wire its three surfaces
 
 1. **Write the serializer in the right file.** A COLOR format → `export function exportX(state)` in
    `exports.js`; start `const palettes = derivedAll(state)` and loop `p.stops` / `p.scrims` / `p.roles`. Reuse
-   `hexOf` / `oklchStr` / `roleOklch` / `colorLeaf` / `pad3` / `refKey` — never hand-format a color, never
+   `hexOf` / `oklchStr` / `roleOklch` / `colorLeaf` / `pad3` / `refKey`, never hand-format a color, never
    re-resolve a ref. A TYPE format → `typeTokensX(scale)` in `type.mjs` (operate on a resolved
    `typeScale(config)`); a GEOMETRY format → `geomTokensX(scale)` in `geometry.mjs` (a resolved
    `geomScale(config, opts)`). DTCG outputs use the W3C `$type`/`$value` composite shape; `geomTokensFigma` is
-   the one that emits UNITLESS `$type:"number"` (Figma float variables) — mirror its sibling, minus the `px`.
-2. **Bundle it into `exportAll`** (exports.js, end) — color formats only; the type/geom emitters are bundled
+   the one that emits UNITLESS `$type:"number"` (Figma float variables), mirror its sibling, minus the `px`.
+2. **Bundle it into `exportAll`** (exports.js, end), color formats only; the type/geom emitters are bundled
    separately by the UI, not here.
 3. **Surface it in the model** so the UI can read it: in `src/ui/model.mjs`, `projectView`'s `exports = {…}`
-   block — add your key (JSON-shaped formats are `JSON.stringify(…, null, 2)`; CSS-shaped are raw
+   block, add your key (JSON-shaped formats are `JSON.stringify(…, null, 2)`; CSS-shaped are raw
    strings). This is the object the drawer reads as `view.exports[id]`.
 4. **Wire the drawer tab** (`renderDrawer`'s `FORMAT_GROUPS` in `src/ui/app.js`): add `[id, "Label"]` to the
-   right group (groups are by DESTINATION — CSS · Frameworks · Design tools · Typography · Geometry ·
+   right group (groups are by DESTINATION, CSS · Frameworks · Design tools · Typography · Geometry ·
    Project). A type/geom format also needs an entry in `SYSTEM_CODE` (the lazy generator) + `SYSTEM_LABEL`; a
    color format is read straight from `view.exports[this.exportTab]` and needs neither.
 5. **Add it to the Download-All zip** (`downloadAllZip` in `src/ui/app.js`): push `{ name: "folder/file.ext", data }`
-   under the correct system toggle — `sys.color` / `sys.type` / `sys.geometry`. Colour formats ride
+   under the correct system toggle, `sys.color` / `sys.type` / `sys.geometry`. Colour formats ride
    `sys.color`; the `figma/` folder + the experimental `figma-aliased/` cascade (via `this.figmaBundle()`,
    OD-004) live there too. The re-importable config is pushed ALWAYS.
-6. **Document the shape** in `docs/reference/references/knowledge-04-export-formats.md` — it is the owner of per-
+6. **Document the shape** in `docs/reference/references/knowledge-04-export-formats.md`, it is the owner of per-
    format output shapes; add a section (and keep the ten-formats header count consistent if you added a color
    format). For ShadCN/Figma constraint changes, respect the fenced ADR notes (ADR-002 resolved-vs-aliased,
-   ADR-007 UI3 is interchange-only) — do not "fix" them.
+   ADR-007 UI3 is interchange-only), do not "fix" them.
 7. **Bump rule: `EXPORT_SCHEMA_VERSION` (SPEC 0.3.0 RP-8, ticket #577).** `exports.js` exports one
-   `EXPORT_SCHEMA_VERSION` constant, stamped on every surface that can carry it — JSON `meta.schemaVersion`;
+   `EXPORT_SCHEMA_VERSION` constant, stamped on every surface that can carry it, JSON `meta.schemaVersion`;
    DTCG `$extensions["com.ultimate-tokens"].schemaVersion` at the root of all 3 files; the UI3 `$schema`
    suffix; a first-line `/* ultimate-tokens export schema N */` comment on CSS/OKLCH/Tailwind/ShadCN; the DS
    bundle's `tokens.json` `$schemaVersion` + DESIGN.md frontmatter `tokensSchema`; the brand-kit `$schema`
    (`src/ui/model.mjs`'s `brandKit()`) and the brand-kit MCP server's own `SERVER.version`
-   (`mcp/brand-kit-core.mjs`, a hand-kept sibling literal — that file ships standalone, no cross-file import).
+   (`mcp/brand-kit-core.mjs`, a hand-kept sibling literal, that file ships standalone, no cross-file import).
    **Bump it, once, in the same PR, when** your new/changed format is additive or changes an existing
-   surface's SHAPE (a new key, a renamed field, a restructured tree) — every surface above moves together, not
+   surface's SHAPE (a new key, a renamed field, a restructured tree), every surface above moves together, not
    just the one format you touched. **Never bump it for** a value-only change (a new default, a tuned chroma
-   curve, a renamed palette) — the shape is unchanged, so the version isn't either. Absence of a stamp on an
+   curve, a renamed palette), the shape is unchanged, so the version isn't either. Absence of a stamp on an
    older export means version 1 (the pre-#503 shape, retroactive). Worked example: ticket #638's
    `exportRadix` reference-form variant bumped 2 → 3, because a `var()`-link leaf is a new value SHAPE
    for a leaf that was always a baked string. That bump moves `MCP_BRAND_KIT_VERSION`
@@ -121,13 +121,13 @@ fragment — emitters use it to build a NAME, never to re-resolve a ref to a col
    cannot split apart again, the gate a #638 review round added after the first bump landed without it.
    The `hpg-export-schema-stamp` gate in
    `test/engine/exports.mjs` asserts a HARDCODED literal against every surface (deliberately never
-   `X.EXPORT_SCHEMA_VERSION` itself — reading the constant back to build the expectation would make the gate
+   `X.EXPORT_SCHEMA_VERSION` itself, reading the constant back to build the expectation would make the gate
    pass even if the constant were deleted); bump that literal in the same commit as the real constant, or the
    gate goes red on purpose until you do.
 
 ## Validate (draft → check → fix → re-check)
 
-Run the cheap pure verifier first — it is the fastest signal and gates the emitted SHAPE of every format:
+Run the cheap pure verifier first, it is the fastest signal and gates the emitted SHAPE of every format:
 
 ```
 node test/engine/exports.mjs    # well-formed DTCG leaves, on-color policy, padding, disabled-palette,
@@ -139,9 +139,9 @@ npm test                        # all of the above + headless-boot (drawer/downl
 ```
 
 The gate that catches a malformed color leaf is `leaf-valid` in `exports.mjs` (srgb, components in [0,1], hex
-reconstructs from components). The gate that catches a format you forgot to bundle is `nonempty` — it loops a
+reconstructs from components). The gate that catches a format you forgot to bundle is `nonempty`, it loops a
 fixed key list (`css/oklch/json/dtcg/ui3/tailwind/shadcn/panda/radix/radixRef`) over `exportAll`, so a new color format absent from
-either `exportAll` OR that key list is not actually checked — add it to BOTH. For a new FRAMEWORK format, add a
+either `exportAll` OR that key list is not actually checked, add it to BOTH. For a new FRAMEWORK format, add a
 dedicated `[gate]` group asserting its load-bearing structure (mirror the `tailwind` / `shadcn` gate groups:
 `@theme {` present, `oklch(` values, `:root`/`.dark` token-set parity, disabled palette absent). Don't call it
 done until `npm test` is green AND the format renders in the drawer + lands in the Download-All zip.
@@ -153,7 +153,7 @@ done until `npm test` is green AND the format renders in the drawer + lands in t
 | `references/foundations.md` | `derivePalette` / `derivedAll` (and what they DON'T return), the resolved-role shape, the auto-flow vs the ShadCN curated MAP, the shared helpers (pad3/refKey/colorLeaf/roleOklch), the DTCG `$type`/`$value` shape, the Figma-number variant |
 | `references/best-practices.md` | the do/don't (reuse the resolver-free roles, three wiring sites, ShadCN-by-design, ADR fences), a worked walkthrough from the Tailwind+ShadCN addition |
 | `references/rubric.md` | score the change before calling it done (shape gate + three-site wiring is the gate) |
-| `docs/reference/references/knowledge-04-export-formats.md` | the canonical per-format output shapes + Figma-import constraints (owned there — cite, don't copy) |
+| `docs/reference/references/knowledge-04-export-formats.md` | the canonical per-format output shapes + Figma-import constraints (owned there, cite, don't copy) |
 | `.claude/skills/adding-semantic-roles/` | the role-side auto-flow + the ShadCN-exception from the role's view (cite, don't duplicate) |
 
 **Peers:** [[color-math]] · [[type-scale]] · [[geometry-system]] (the engines it serializes) ·

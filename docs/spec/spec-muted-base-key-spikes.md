@@ -9,7 +9,7 @@ prd: none               # GitHub issues #503 and #533 are the intent records (AD
 scope: feature
 audience: builder, reviewer, planner
 ---
-# SPEC — Muted base ramps, a per-palette prime system, and 8 brand-derived data palettes
+# SPEC: Muted base ramps, a per-palette prime system, and 8 brand-derived data palettes
 
 Intent records: GitHub issue #503 (`kind:feature`, `size:big`, `lane:color-engine`) and #533 (the
 prime-system re-ruling, Findings 2026-09-11). Companion design: `docs/lld/lld-muted-base-key-spikes.md`.
