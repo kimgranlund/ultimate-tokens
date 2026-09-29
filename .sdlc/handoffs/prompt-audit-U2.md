@@ -6,7 +6,7 @@ Builder, pass 1. Code head 3d610264 on `unit/pa-U2` (cut from `plan/prompt-audit
 
 | Gate | Result |
 |---|---|
-| npm test | 🟡 owed: heavy slot held by R66, to run before the verdict |
+| npm test at 660bee9f | 🟢 `✓ all 53 test files passed`, exit 0, `git status --short` empty after (tree clean) |
 | `node test/plugin/typography-tokens.mjs` | 🟢 exit 0, five `control ok` lines |
 | `node test/plugin/color-tokens.mjs` | 🟢 exit 0, five `control ok` lines |
 | `node test/repo/em-dash.mjs` | 🟢 clean (813 files) |
@@ -23,7 +23,7 @@ Positive commands ran in the worktree at 3d610264. Controls ran in throwaway clo
 | U2-2 | 🟢 | wrapper exit 0, `5` control lines, `grep -c` needle `3`; per-voice step check and Steps column live | doc side: the Steps `sed` on both interactive rows exits 1 naming `**UI-control**` and `**UI-widget**` (`steps drift`); source side: `"UI-widget"` cut to `[9, 10, 11]` in `type.mjs` exits 1 (`**UI-widget** Steps "xs/sm/md/lg/xl/2xl", steps drift, ... are sm/md/lg`); `test/engine/type.mjs` not run (R66) |
 | U2-3 | 🟢 | `DEFAULT_CONTROLS` `1`, `DOMAINS` `2`, `onColorMode` `9`; wrapper exit 0, `5` control lines | engine side: `tonal.js` default flipped to `"fixed"`: exit 1, `default, onColorMode: contrast, onColorMode default drift, the engine default is fixed`; doc side: SKILL.md flipped to `fixed`: exit 1 (`the engine default is contrast`); the deleted-sentence and `onColorMode: auto` legs are fixture legs 3 and 5 (below) |
 | U2-4 | 🟢 | `grep -c` comparisons against `15\|13\|16\|53`: `0`, `0` | a fixture line `if (n !== 15) {}` through the same needle prints `1` |
-| U2-5 | 🟡 | `git status` after the plugin wrappers is clean of generated drift; N unchanged (no file added or registered) | npm test owed: heavy slot held by R66, to run before the verdict |
+| U2-5 | 🟢 | `npm test` at 660bee9f: `all 53 test files passed`, exit 0, tree clean after; N unchanged at 53 | not applicable |
 
 The nine new fixture legs, each an exit-1 assertion plus a named stderr pattern, with the unmodified copy asserted to pass first (so no leg reds for an unrelated reason):
 
@@ -58,4 +58,3 @@ The nine new fixture legs, each an exit-1 assertion plus a named stderr pattern,
 |---|---|
 | a sixth fixture leg for the box set | U2-2 counts exactly five control lines; the box leg's control is the clone flip above |
 | rows with a bold voice first cell in a table with no `Steps` header | ignored, so other tables cannot red; deleting the column or a row still reds through the every-voice-required rule |
-| npm test | owed: heavy slot held by R66, to run before the verdict |
