@@ -30,7 +30,8 @@ auto-flow is owned by `adding-semantic-roles`, cite it, don't duplicate.
 Receipt/Bundle/StitchBundle/MakeBundle`, the `dsMake*Md` prose generators) is a different KIND of code:
 content/prose authoring for a consumption bundle, not token serialization, so it stays outside the ten
 colour formats above. It imports a handful of `exports.js` helpers (`derivedAll`, `roleOklch`, `hexOf`, `hex8`,
-`relLumExp`, `cssPrefixOf`, `dialogBackdropOklch`, `exportShadcn`) but is otherwise
+`relLumExp`, `cssPrefixOf`, `dialogBackdropOklch`, `whiteOklch`, `blackOklch`, `exportShadcn`, `isDataPalette`,
+`oklchStr`, `EXPORT_SCHEMA_VERSION`) but is otherwise
 independent and out of scope here, don't route a
 DS-bundle change through this skill's procedure, and don't add its formats to `exportAll` (it is bundled by
 the UI directly, same as the type/geometry emitters).
@@ -90,8 +91,8 @@ fragment, emitters use it to build a NAME, never to re-resolve a ref to a color.
    block, add your key (JSON-shaped formats are `JSON.stringify(…, null, 2)`; CSS-shaped are raw
    strings). This is the object the drawer reads as `view.exports[id]`.
 4. **Wire the drawer tab** (`renderDrawer`'s `FORMAT_GROUPS` in `src/ui/overlays/drawer.js`): add `[id, "Label"]` to the
-   right group (groups are by DESTINATION, CSS · Frameworks · Design tools · Typography · Geometry ·
-   Project). A type/geom format also needs an entry in `SYSTEM_CODE` (the lazy generator) + `SYSTEM_LABEL`; a
+   right group (the groups are `Colors`, `Typography`, `Geometry`, `Design System`, `Project`; a colour
+   format goes in `Colors`). A type/geom format also needs an entry in `SYSTEM_CODE` (the lazy generator) + `SYSTEM_LABEL`; a
    color format is read straight from `view.exports[this.exportTab]` and needs neither.
 5. **Add it to the Download-All zip** (`downloadAllZip` in `src/ui/overlays/drawer.js`): push `{ name: "folder/file.ext", data }`
    under the correct system toggle, `sys.color` / `sys.type` / `sys.geometry`. Colour formats ride

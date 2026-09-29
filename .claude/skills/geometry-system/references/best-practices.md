@@ -46,9 +46,9 @@ composition history.
 ### Composition: the frame stays untouched
 
 - **`fontOverrides` may replace ONLY `font` (a rhythm member).** The composition's whole guarantee is that the
-  box geometry (frame) is identical whether or not a type scale is supplied, the `composition` test asserts
-  `composed.height === standalone.height && composed.paddingNarrow === standalone.paddingNarrow` for every step, **and** the
-  law still holds on the composed scale. If you let the type scale influence `height`/`icon`/`paddingNarrow`, the box
+  box geometry (frame) is identical whether or not a type scale is supplied, the composition block asserts
+  `JSON.stringify(composed) === JSON.stringify(base)` ("value-neutral at defaults"), so every step's frame,
+  `height`, `icon`, `paddingNarrow`, `paddingWide`, matches the standalone scale. If you let the type scale influence `height`/`icon`/`paddingNarrow`, the box
   would jump when the brand's type treatment changed, and the law could break. Keep the override surgical.
 - **The join is `opts.typeScale.categories["UI-control"]`, matched by step name.** Geometry reads the
   UI-control voice (`uiSteps[name].size`) for XS…2XL, the voice rides the full 6-step ramp,
@@ -97,10 +97,9 @@ guards):
    { typeScale: typeScale(doc.type) })`. Every caller (brandKit, the Geometry section, exports) goes through it,
    so a brand's type-treatment or `bodyBase` change moves the control text everywhere it's used.
 5. **Pinned the invariant with TWO gates, not vibes.** The engine's `composition` test block asserts, per step:
-   composed `font === ts.categories["UI-control"][name].size`; **height + padding (the frame) are
-   identical to the standalone scale**; the centering law `paddingNarrow === (height − icon)/2` still holds on the
-   composed scale; a larger type `bodyBase` scales the geometry `font` (proving the shared source of truth);
-   and `fontOverrides` wins over composition. The UI headless-boot suite then re-asserts it through the
+   the composed scale is `JSON.stringify`-equal to the standalone one at defaults ("value-neutral", so
+   **the frame is identical**); a `"UI-control|MD": 17` voice override flows into `MD.font` and leaves `LG`
+   alone (proving the shared source of truth); and `fontOverrides` wins over composition. The UI headless-boot suite then re-asserts it through the
    PRODUCTION caller (`geometryScale(doc)` + `brandKit(doc)`), so the join is gated end to end.
 6. **Validated**: `node test/engine/geometry.mjs` (all blocks green), then `npm test` (all 14 files). The
    reference-ramp, centering-law, and two-families gates stayed green because the frame was never touched.

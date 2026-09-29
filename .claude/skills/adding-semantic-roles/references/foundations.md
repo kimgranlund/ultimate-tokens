@@ -26,8 +26,8 @@ same group.
 
 **Ref validity, exactly (the `refs-canonical` gate, `test/engine/semantic.mjs`):** every role's `light`/`dark`
 is run through `validPrim`. A solid ref must be in `EXPORT_STOPS`. A **scrim** ref `500-{step}` must have
-base ∈ `SCRIM_BASES` (just `500`) and step ∈ `EXPORT_STOPS` (line ~23). Separately, the scrim-KEYED roles
-(keys matching `/^scrim/`) get a TIGHTER check (line ~32): their step must be in `SCRIM_STEPS`. Because
+base ∈ `SCRIM_BASES` (just `500`) and step ∈ `EXPORT_STOPS` (`validPrim`). Separately, the scrim-KEYED roles
+(keys matching `/^scrim/`) get a TIGHTER check (the `roles` gate's `okScrim`): their step must be in `SCRIM_STEPS`. Because
 `SCRIM_STEPS ⊂ EXPORT_STOPS`, **"pick a scrim step that is in `SCRIM_STEPS`" is the safe author rule** for
 any role, it satisfies both checks. (This is why non-scrim roles can legally ride a scrim ref like
 `containerDisabled`'s `500-100`, `100` is in `EXPORT_STOPS`.)
@@ -71,8 +71,8 @@ The 7 scrim strengths come from `SCRIM_STRENGTH_STEPS` (the alpha steps `50,100,
 with `SCRIM_SUFFIXES` and `SCRIM_KEYS`, three arrays that MUST stay the same length and order
 (weakest→strongest). They are pushed in a loop after every other role so the emitted token order groups
 regular colors → containers → surfaces → scrims (cleaner Figma variable / CSS list). Adding/removing a scrim
-means editing all three arrays AND the scrim-count asserts (`scrims.length !== 7` in
-`test/engine/semantic.mjs:30`; the `(z)` `=== 7` group assert in `headless-boot.mjs`), not just the role
+means editing all three arrays AND the scrim-count asserts (the `roles` gate's `scrims.length !== 7` in
+`test/engine/semantic.mjs`; the `(z)` `=== 7` group assert in `headless-boot.mjs`), not just the role
 count.
 
 ### 6. One source, many mirrors: why parity is the whole game

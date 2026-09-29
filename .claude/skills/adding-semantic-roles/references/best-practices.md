@@ -31,14 +31,14 @@ The non-obvious do/don'ts (each one is a real trap in this repo), then a worked 
   `docs/reference/rubrics/parity-checklist.md` (P1: `semanticRoles('primary').length === 53`), and `CLAUDE.md`
   (the "53 semantic roles" mentions), plus the `src/ui/sections/color.js` inspector label (grep `semantic roles`).
 - **LEAVE historical counts untouched:** the "36 vs 37" `surfaceHighest`-divergence anecdote in knowledge-03
-  (line ~132) and `references/decomposition.md`; `docs/reference/CHANGELOG.md` entries (which say "37"); OD/ADR
+  and `references/decomposition.md`; `docs/reference/CHANGELOG.md` entries (which say "37"); OD/ADR
   decision records ("37 (not 51)"); and color-data files (e.g. `nature.json`). Those record what WAS true at
   a point in time. Bumping them rewrites history and destroys the cautionary tale.
 - **Stale comment drift is real and is NOT a gate.** The per-palette role count is repeated in PROSE across
   the emitters (`src/engine/exports.js`), `src/ui/model.mjs`, `src/ui/app.js`, `figma/binder/bind-plan.mjs`,
   the MCP server + `mcp/README.md`, and the root `README.md`, none of which a test checks, so they silently
   rot to the OLD count. After a count change, SWEEP them deliberately (a classified grep is safe; the danger
-  is only a careless one): `git grep -nE "\b<oldcount>\b" -- src test mcp '*.md' | grep -iE "role|semantic"`,
+  is only a careless one): `git grep -nw "<oldcount>" -- src test mcp '*.md' | grep -iE "role|semantic"`,
   fix the CURRENT-state hits, then re-grep to confirm only historical references remain. `src/ui/mcp-assets.js`
   is GENERATED from `mcp/brand-kit-server.mjs` + `mcp/README.md`, regenerate with `npm run gen:mcp-assets`
   (also run by `npm test`); never hand-edit it. (This very skill must not hardcode the stale line numbers, a
@@ -66,7 +66,7 @@ The non-obvious do/don'ts (each one is a real trap in this repo), then a worked 
 Run `node test/engine/semantic.mjs` first, it is the fastest signal and the one that catches a stale
 answer key (`refs-canonical`) or a miscounted scrim block (`roles`). Then `node test/engine/exports.mjs`,
 `node test/figma/binder.mjs`, `node test/figma/plugin.mjs`, then `npm test`. Finish with
-`git grep -nE "\b37\b|\b49\b" src test docs/reference | grep -i role` and confirm every hit is an intentional
+`git grep -nwE "37|49" src test docs/reference | grep -i role` and confirm every hit is an intentional
 historical reference.
 
 ## Worked walkthrough: the interaction-states addition (condensed)

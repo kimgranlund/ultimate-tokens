@@ -58,10 +58,11 @@ colors→containers→surfaces→scrims); and on-color roles can be **re-pointed
    objects (`{key, suffix, light, dark}`, in order) against `semantic.js` directly, so a
    forgotten regenerate (a stale committed `code.js`) flags as a row-count or per-field mismatch.
 5. **Count-gate literals** (the list drifts, so find them rather than trusting one):
-   `git grep -nE "\b<oldcount>\b" test` and update every role-count hit, in the engine, figma and `ui/` tests
-   alike (`test/ui/shell.mjs` is the one most often missed because it lives under `ui/`). Some tests derive
-   the count (`semExpect`, headless-boot's `ROLES`) and need no edit; assertion messages that name the
-   count do.
+   `git grep -nw "<oldcount>" test` and update every role-count hit, in the engine, figma and `ui/` tests
+   alike (`test/ui/shell.mjs` is the one most often missed because it lives under `ui/`). headless-boot's
+   `(s4)` reads `ROLES`, a hand literal in `test/ui/counts.mjs` kept independent of the engine on purpose,
+   so edit it there. `semExpect` (`test/figma/plugin.mjs`) derives from the bundle and needs no edit;
+   assertion messages that name the count do.
    If you changed the SCRIM count, also fix the scrim asserts: the `scrims.length !== 7` assert in
    `test/engine/semantic.mjs` and the `=== 7` group assert `(z)` in `headless-boot.mjs`.
 6. **`src/ui/sections/color.js`**: the Roles inspector label (the `"… semantic roles · light / dark refs"` string;
@@ -77,7 +78,7 @@ Mapping canvas + the MCP brand-kit likewise. **EXCEPTION, ShadCN:** `exportShadc
 curated contract, NOT all roles, a new role neither breaks ShadCN nor appears in it (`adding-export-formats`
 owns the details). (The per-palette count also recurs in PROSE across the emitters, `model.mjs`, `app.js`,
 `bind-plan.mjs`, the MCP server + READMEs, and the root `README.md`. After a count change, sweep them:
-`git grep -nE "\b<oldcount>\b" -- src test mcp '*.md' | grep -iE "role|semantic"`, fix the current-state
+`git grep -nw "<oldcount>" -- src test mcp '*.md' | grep -iE "role|semantic"`, fix the current-state
 hits, LEAVE the historical (CHANGELOG, decision-records, the "36 vs 37" anecdote, docs/reference history,
 color-data), see `references/best-practices.md`.)
 
@@ -96,7 +97,7 @@ npm test                         # all of the above + headless-boot (s4) + shell
 The gate that catches a stale answer key is `refs-canonical` in `semantic.mjs` (ordered key set +
 ref deep-equal). The gate that catches a half-applied count is whichever count literal you forgot,
 most often `test/ui/shell.mjs`. Don't call it done until `npm test` is green AND
-`git grep -nE "\b<oldcount>\b" src test docs/reference | grep -i role` shows only the intentional historical
+`git grep -nw "<oldcount>" src test docs/reference | grep -i role` shows only the intentional historical
 references.
 
 ## References
