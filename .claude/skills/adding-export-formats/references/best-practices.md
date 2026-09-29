@@ -46,7 +46,7 @@ Tailwind + ShadCN addition.
 
 ### Wire all three surfaces: a serializer alone is invisible
 
-- **`exportAll` → `model.mjs view.exports` → `app.js` drawer + `downloadAllZip`.** A color format missing from
+- **`exportAll` → `model.mjs view.exports` → the drawer + `downloadAllZip` in `src/ui/overlays/drawer.js`.** A color format missing from
   `exportAll` is still missing from `model.mjs`'s `view.exports` unless you add it there too; missing from
   `view.exports` the drawer tab renders blank; missing from `FORMAT_GROUPS` it has no tab; missing from
   `downloadAllZip` it's absent from the zip. Walk the chain every time. JSON-shaped formats are
@@ -90,7 +90,7 @@ The change that took the color formats from 5 to 7 (and `exportAll` to its curre
 3. **`exportAll`**: added `tailwind: exportTailwind(state)` and `shadcn: exportShadcn(state)` to the bundle.
 4. **`model.mjs view.exports`**: added `tailwind` + `shadcn` keys (raw CSS strings) so the drawer can read
    `view.exports.tailwind` / `.shadcn`.
-5. **`app.js` drawer**: added the `["Frameworks", [["tailwind","Tailwind v4"],["shadcn","shadcn/ui"]]]`
+5. **`overlays/drawer.js` drawer**: added the `["Frameworks", [["tailwind","Tailwind v4"],["shadcn","shadcn/ui"]]]`
    group to `FORMAT_GROUPS`. No `SYSTEM_CODE` entry needed (color formats read straight from `view.exports`).
 6. **`downloadAllZip`**: pushed `{ name: \`tailwind/${s}.css\`, data: ex.tailwind }` and
    `{ name: \`shadcn/${s}.css\`, data: ex.shadcn }` under the `sys.color` branch.
