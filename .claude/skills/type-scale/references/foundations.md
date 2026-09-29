@@ -23,7 +23,8 @@ skips a layer.
   Headline `h-`, Sub-heading `sh-`, Title `t-`, Sub-title `st-`, Lead `lead-`
   (`leadLead/leadWeight/leadTrack`), Body `b-` (`bLead/bWeight`, no tracking knob, always 0), Body-mono
   `bodyMono-`, Label `label-`, Label-mono `labelMono-`, Kicker `kick-`, Tiny `tiny-` (`tinyLead/tinyWeight`),
-  Tiny-mono `tinyMono-`. A knob a treatment doesn't pass falls to the `makeVoices` default.
+  Tiny-mono `tinyMono-`, UI-control `uc-` (`ucLead/ucWeight/ucTrack`), UI-widget `uw-`
+  (`uwLead/uwWeight/uwTrack`). A knob a treatment doesn't pass falls to the `makeVoices` default.
 - **A treatment** is `{id, label, note, fonts, categories: makeVoices({...})}`. It supplies the **font
   palette** (`{display, heading, body, ui, mono}`, five roles) and CHARACTER knobs only, weight,
   tracking, leading, case. Treatments no longer differ in SIZE (§3); `note` is the human description the
@@ -96,9 +97,10 @@ paragraphIndent  = 0
 singleLineHeight = size                                # BOX voices ONLY
 ```
 
-- **FIXED SIZE TABLE, not a modular scale (2026-07-13 rewrite).** `SIZES` in type.mjs is a literal
-  `[SM, MD, LG]` px triplet per voice-scale (nine distinct triplets; the four mono-alias voices reuse
-  their sibling's), shared identically across ALL 5 treatments, matching Material 3's own approach (one
+- **FIXED SIZE TABLE, not a modular scale (2026-07-13 rewrite).** `SIZES` in type.mjs holds a
+  three-entry `SM · MD · LG` px row for thirteen voices (nine distinct rows; the four mono-alias voices
+  reuse their sibling's) and, since 2026-07-16, a six-entry `XS..2XL` row for the two interactive voices
+  (UI-control, UI-widget), shared identically across ALL 5 treatments, matching Material 3's own approach (one
   fixed scale; theme varies styling, not the numbers). Previously every voice derived `base · ratio^n`
   (a treatment's own base+ratio gave it a distinct scale feel); treatments now differ ONLY in
   font/weight/tracking/leading/case, never size.
