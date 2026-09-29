@@ -15,3 +15,6 @@ anchor-gaps has 6 revisions. Both units are merged on the plan branch (U1 🟢, 
 Options: A continue to landing, revisions allowed for pre-land findings only, no new scope (Recommended) · B continue, cap at 2 more · C re-plan
 
 Chosen:
+
+## Answer
+Chosen: A, "Continue to landing (Recommended)", owner via AskUserQuestion, 2026-09-29 (R72). Pre-land runs next; fixes come only from its findings.
