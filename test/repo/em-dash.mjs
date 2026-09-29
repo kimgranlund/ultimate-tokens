@@ -332,6 +332,50 @@ function guardAfterHolds(line, idx) {
 
 function isMd(rel) { return rel.endsWith(".md"); }
 
+// -- E1/E2/E3/E4 (#747, `.sdlc/plans/rule-gates-U4-rediagnosis.md` §1) -------------------------
+// A label separator (a heading or a bold bullet label) embedded in a STRING LITERAL of a non-`.md`
+// file -- a JS string that renders as Markdown, a UI title -- reads the same as a real heading or
+// bullet once rendered, so it earns R2/R3's colon instead of R8's blind comma (E1, E2). E3 and E4
+// are the two constructs the re-diagnosis found with no safe mechanical replacement (a short
+// title/label/toast string, a blockquoted or bullet-glyph label in `.md`): refused, not guessed.
+
+// `insideStringAt`'s own odd/even counting, extended to return the STRING'S OWN CONTENT (from
+// just after the opening quote to just before the closing one) so E1/E2/E3 can test what the
+// string itself opens with, not the line around it.
+function enclosingStringContent(line, idx) {
+  for (const q of ['"', "'", "`"]) {
+    const positions = [];
+    for (let i = 0; i < line.length; i++) if (line[i] === q) positions.push(i);
+    for (let p = 0; p + 1 < positions.length; p += 2) {
+      const open = positions[p], close = positions[p + 1];
+      if (idx > open && idx < close) return { quote: q, start: open + 1, end: close, content: line.slice(open + 1, close) };
+    }
+  }
+  return null;
+}
+// A real `//` line-comment marker (not itself inside a string) sitting before `idx` -- E2's
+// "outside a `//` comment" qualifier (a commented-out label renders as nothing, not a real bullet).
+function hasRealLineCommentBefore(line, idx) {
+  const markerIdx = line.indexOf("//");
+  return markerIdx >= 0 && markerIdx < idx && !insideStringAt(line, markerIdx);
+}
+// E1: a string opens with an ATX heading marker and carries the dash.
+const E1_RE = new RegExp(`["\`]#{1,6} [^"\`]*${DASH}`);
+// E2: a bold label immediately before the dash, one space each side.
+const E2_RE = new RegExp(`\\*\\*[^*]+\\*\\* ${DASH} `);
+// E3: one of the label/title/card/toast markers on the line, the dash inside a string whose text
+// before it is 1 to 4 words with no sentence punctuation -- a short label, never a clause to join.
+const E3_MARKER_RE = /\b(?:title|ariaLabel|labelTitle|label|note|description|hint)\s*:|\b(?:card|toast|notify)\s*\(/;
+function shortLabelBeforeDash(text) {
+  const t = text.trim();
+  if (!t || /[.,;:!?]/.test(t)) return false;
+  const words = t.split(/\s+/).filter(Boolean);
+  return words.length >= 1 && words.length <= 4;
+}
+// E4: a `.md` blockquoted bullet label, or a `•`-glyph bullet label (the two bullet forms
+// R3's line-start `BULLET_LABEL_RE` does not reach).
+const E4_RE = new RegExp(`^\\s*(?:>\\s*[-*]?\\s*\\*\\*[^*]+\\*\\* ${DASH}|• [^${DASH}]{1,40} ${DASH})`);
+
 // ---------------------------------------------------------------------------------------------
 // classifyLine(): applied to ONE line (already masked for `.md`), returns the rule that governs
 // its first actionable dash, or `null` if the line carries none. Used by both the gate (to decide
@@ -399,6 +443,27 @@ function classifyLine({ line, prevLine, md, skipStructural = false }) {
       return guardBeforeHolds(line, idx) ? { rule: "R6" } : { rule: "R0" };
     }
   }
+  // E1 (non-Markdown): a string opens with an ATX heading marker and carries the dash -- gated by
+  // the same before-side guard R6 uses, so a question mark or other non-word character right
+  // before the dash still refuses rather than guesses (a question label is not a heading).
+  if (!skipStructural && !md) {
+    const idx = idxs[0];
+    if (E1_RE.test(line) && guardBeforeHolds(line, idx)) return { rule: "R2s" };
+    // E2: a bold label immediately before the dash inside a string, outside a real `//` comment
+    // (a commented-out label renders as nothing) -- R3's colon.
+    if (E2_RE.test(line) && !hasRealLineCommentBefore(line, idx) && guardBeforeHolds(line, idx)) return { rule: "R3s" };
+    // E3: a title/label/card/toast marker on the line and a short (1 to 4 word), unpunctuated
+    // label before the dash inside a string -- refused, not guessed (which sentence break a toast
+    // wants is a human call).
+    if (E3_MARKER_RE.test(line)) {
+      const span = enclosingStringContent(line, idx);
+      if (span && shortLabelBeforeDash(span.content.slice(0, idx - span.start))) return { rule: "R0", construct: "E3" };
+    }
+  }
+  // E4 (`.md` only): a blockquoted bullet label or a `•`-glyph bullet label -- the two bullet
+  // forms R3's line-start match does not reach -- refused, not guessed.
+  if (md && E4_RE.test(line)) return { rule: "R0", construct: "E4" };
+
   // R8: every other dash that passes the guard on both sides; anything else is a plain refusal --
   // the positive test the re-diagnosis recommended, replacing the open-ended R0 list (a legend
   // naming the glyph, a drawn chart line, a heading in an exported string, a question label, a
@@ -474,7 +539,9 @@ function applyRule(raw, masked, prevRaw, prevMasked, decision) {
       return any ? result + raw.slice(last) : raw;
     }
     case "R2":
-    case "R3": {
+    case "R3":
+    case "R2s":
+    case "R3s": {
       const idx = masked.indexOf(DASH);
       const head = raw.slice(0, idx).replace(/\s+$/, "");
       const rest = raw.slice(idx + 1).replace(/^\s+/, "");
@@ -551,7 +618,7 @@ function fixLines(lines, md) {
         edits.push({ rule: "R0", construct: decision.construct, lineIndex: i, text: raw });
         break;
       }
-      if (["R1", "R2", "R3"].includes(decision.rule)) structuralDone = true;
+      if (["R1", "R2", "R3", "R2s", "R3s"].includes(decision.rule)) structuralDone = true;
       if (decision.rule === "R7") {
         const idx = masked.indexOf(DASH);
         const beforeLine = raw, beforePrev = prevRaw;
@@ -580,9 +647,9 @@ function runFix({ sample }) {
   // Counted PER LINE, not per dash-edit (#730 review finding 3): a `Set` of `rel:lineIndex` per
   // rule, so a line with two edits of the same rule (rare, but R8 can fire twice on one line)
   // counts once, matching how the plan itself counted the rule table.
-  const linesByRule = { R1: new Set(), R2: new Set(), R3: new Set(), R4: new Set(), R5: new Set(), R6: new Set(), R7: new Set(), R8: new Set() };
+  const linesByRule = { R1: new Set(), R2: new Set(), R2s: new Set(), R3: new Set(), R3s: new Set(), R4: new Set(), R5: new Set(), R6: new Set(), R7: new Set(), R8: new Set() };
   const r0Lines = [];
-  const samples = { R1: [], R2: [], R3: [], R4: [], R5: [], R6: [], R7: [], R8: [] };
+  const samples = { R1: [], R2: [], R2s: [], R3: [], R3s: [], R4: [], R5: [], R6: [], R7: [], R8: [] };
 
   for (const rel of files) {
     if (shouldSkipFix(rel)) continue;
@@ -621,7 +688,7 @@ function runFix({ sample }) {
   // rule table prints a single aggregate count; the refused list below (no cap, per P3) is where
   // a reviewer reads every line, not a `R0 <letter> <n>` breakdown.
   console.log(`R0 ${r0Lines.length}`);
-  for (const r of ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8"]) {
+  for (const r of ["R1", "R2", "R2s", "R3", "R3s", "R4", "R5", "R6", "R7", "R8"]) {
     counts[r] = linesByRule[r].size;
     console.log(`${r} ${counts[r]}`);
   }
@@ -632,7 +699,7 @@ function runFix({ sample }) {
   if (sample) {
     // P3: every rule under 50 hits lists every hit; a bigger rule gets four samples.
     console.log("\nsamples:");
-    for (const r of ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8"]) {
+    for (const r of ["R1", "R2", "R2s", "R3", "R3s", "R4", "R5", "R6", "R7", "R8"]) {
       const arr = counts[r] < 50 ? samples[r] : samples[r].slice(0, 4);
       for (const s of arr) console.log(`  ${r} ${s.rel}:${s.line} - ${s.before}\n  ${r} ${s.rel}:${s.line} + ${s.after}`);
     }
@@ -737,6 +804,22 @@ function selftest() {
     { name: "a span dash before the outside dash is never touched", md: true,
       line: `\`gallery ${DASH} editor\` shipped today ${DASH} not someday.`,
       expectRule: "R8", expectFix: `\`gallery ${DASH} editor\` shipped today, not someday.` },
+    // E1 to E4 (#747, rule-gates U4 re-diagnosis): a label separator inside a string literal reads
+    // as a real heading or bullet once rendered, so it earns R2/R3's colon; a short title/label
+    // string and a blockquoted or bullet-glyph label in `.md` have no safe mechanical replacement
+    // and are refused instead.
+    { name: "E1 heading in a string", md: false,
+      line: `const h = "## Hard rules ${DASH} IMPORTANT";`,
+      expectRule: "R2s", expectFix: `const h = "## Hard rules: IMPORTANT";` },
+    { name: "E2 bold label in a string", md: false,
+      line: `const b = "- **Pro** ${DASH} the paid tier";`,
+      expectRule: "R3s", expectFix: `const b = "- **Pro**: the paid tier";` },
+    { name: "E3 short title string", md: false,
+      line: `const t = { title: "Export kit ${DASH} all formats" };`,
+      expectRule: "R0" },
+    { name: "E4 blockquoted label bullet", md: true,
+      line: `> - **Label** ${DASH} one, two`,
+      expectRule: "R0" },
   ];
   for (const c of cases) {
     const arr = c.prevLine !== undefined ? [c.prevLine, c.line] : [c.line];
