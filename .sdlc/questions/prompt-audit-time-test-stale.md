@@ -7,3 +7,13 @@
 | Question | Who reconciles the `time test` row with adapter §1 before pre-land? |
 | Options | A a one-row records fix on main by the Conductor, both plans merge main before pre-land (recommended: the row is main's, not a plan's) · B fold the fix into prompt-audit as a plan revision · C the Verifier grades P2 on the ui.html leg only and names the time row as inherited |
 | Default if unanswered | A |
+
+## Answer
+
+| Field | Value |
+|---|---|
+| Chosen | A, "Fix on main" |
+| By | owner via AskUserQuestion (R71) |
+| Date | 2026-09-29 |
+| Written back by | Conductor |
+| Fix | adapter §1 test row now cites the baseline's row of record (167 to 268 s, under load); the quiet-host 50-file set stays as history in the same cell. Both plans merge main before pre-land. |
