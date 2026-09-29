@@ -2,7 +2,7 @@
 kind: verdict
 plan: prompt-audit
 seat: verifier
-pass: 2
+pass: 3
 ticket: "#758"
 written: 2026-09-29
 ---
@@ -103,3 +103,38 @@ sha: a24a45a9ad58cf4299d4a0d70ce06a261923dae8
 4. Note: `type-scale/references/foundations.md:21-25` lists thirteen knob prefixes beside the new `FIFTEEN voices` and omits `uc-` and `uw-` (`type.mjs:120-121`). It is an omission, not a false line; cheap in the same edit.
 5. Note: `card-source-range-check` prints `range mismatches: 3` at the head, at `$B` and at `7ff8177c`. It comes from outside this plan.
 6. Pass 3 needs a re-read of H1b and BL2, the sweep in finding 3, P1 and P3 on the new head, and CI.
+
+## Pass 3 · 🟢 at `7235d992`: U12 clears H1b, BL2 and both sweep findings; every gate, plan row and unit row holds on the new head, CI green
+
+verdict: 🟢
+sha: 7235d992ffd4a3dd957a70e37dd94ea164424956
+version: n/a (a plan landing, no release)
+
+`plan/prompt-audit` at `7235d992`, a plan-file commit on merge `bb111a6a` (main `5cd70acd` into the U12 merge `075fe194`). `$B` = `5cd70acd`; main has since moved by `.sdlc/`-only commits and `git merge-tree --write-tree 7235d992 origin/main` exits `0`. Checkers in fresh context: verifier-l2 for the gates and rows, reviewer-l3 for the delta `a24a45a9..7235d992` (PASS), both standing in while fable is capped. The seat re-read the U12 hunks, re-ran the sweep and read CI itself.
+
+| id | criterion | state | evidence | negative control |
+|---|---|---|---|---|
+| MG | both new merges are exact; the last commit is `.sdlc/` only | 🟢 | `git merge-tree --write-tree 075fe194 5cd70acd` = `b4f347ea` = `bb111a6a^{tree}`; `ba60879f f24926e5` = `69950f79` = `075fe194^{tree}`; `bb111a6a..7235d992` is `.sdlc/plans/prompt-audit.md` only | second parent swapped for its parent: `1a272b42` and `d95c8678` |
+| P0 | G0, G1 read by command | 🟢 | `1`, `3`, #751 `CLOSED` | both greps `0` at `61225d0c` |
+| P1 | `npm test` green, no node_modules, N 54, tree clean | 🟢 | `✓ all 54 test files passed`, exit 0, TESTS `54`, status `0` | `"scrimX`: `✗ 1/54 test file(s) failed`, exit 1 |
+| P2 | build green, tree clean, baseline agrees | 🟢 | after `npm ci`: exit 0, `wrote figma/plugin/ui.html 4137.0 KB`, status `0`, `stale total: 0` | KB `4130.3`: `stale total: 1` |
+| P3 | branding and em-dash clean | 🟢 | `branding: clean (960 files scanned)`, `em-dash: clean (968 files scanned)`, added glyph lines `0` | ADR copy: `FAIL: 3 branding violation(s)`; one glyph: `FAIL: 1 em dashes` |
+| P4 | scope wall | 🟢 | 96 files, wall `0`, forbidden dirs `0`, architecture `0` | six-name fixture `3`; DD11 pair `2` |
+| P5 | every finding has a fate | 🟢 | every id `1`; U6 `40 = 22 + 18` | SB14 deleted from a U6 copy: `0`, `39` |
+| P6 | no history id enters | 🟢 | added `0`, removed `41` | `+the rule (TKT-0010)`: `1` |
+| P7 | evidence copy is what it says | 🟢 | `0`, `0`, `2`; `board.py ids .sdlc` exit 0 | appended `R1` table: `R1 defined in a plan file`, exit 1 |
+| U11 | U11-1 to U11-6 hold | 🟢 | `0 1 2 15 13 2`; `0 1 1 1`; `0 0 1 1 0 15`; `0 1 1 2`; `0 1 1 1`; `4 0 1 sorted` | each at `7ff8177c` prints pass 1's figures |
+| U12 | U12-1 to U12-5 hold | 🟢 | `0 2 0 15 13 2`; `0 2 15 1 1 3 3`; `2 2 2`; `0 1 1 1 1`; P1, P3, P6 above | at `a24a45a9`: `1 0 2`, `1 0 13 0`, `5`, `1 0` |
+| H1b | pass 2's three ramp lines | 🟢 | `best-practices.md:110` and item 4 name the 2026-07-16 six-step row in the past tense; `foundations.md:100-103` says thirteen three-entry rows and, since 2026-07-16, two six-entry rows; `type.mjs:37-47` holds nine three-entry keys and two six-entry keys | the same lines at `a24a45a9` print `1` on the U12-1 and U12-2 legs |
+| BL2 | the build row's cause | 🟢 | `.sdlc/baseline.md:30` `re-measured after prompt-audit U3's MCP text rewrite, absorbed into the row at U9`; `git log -- figma/plugin/ui.html` in the plan lists U3 and merges only | the row at `a24a45a9` prints `1` on `U9's changes to the ui.html bundle` |
+| SW | the ramp-claim sweep | 🟢 | seat re-run at the head prints two lines, `type-scale/SKILL.md:40` and `foundations.md:52`, both stating thirteen plus two | `5` lines at `a24a45a9`, three false |
+| KN | the knob list | 🟢 | `foundations.md:26-27` names `uc-` and `uw-`; 15 prefixes equal the engine's `o.<prefix>Lead` set | the list at `a24a45a9` counts `13` |
+| CI | required jobs on the head | 🟢 | `gh pr view 761` (seat read) headRefOid `7235d992ffd4a3dd957a70e37dd94ea164424956`: `build-test`, `panda-smoke`, `corpus-contrast` and seven `sweeps (...)` `SUCCESS` | the same read of `plan/anchor-gaps` run `36619215161` shows `sweeps (gate:mode-isolation) failure` |
+
+### Pass 3 findings
+
+1. Every pass 2 yellow is cleared. No row is yellow or red; the plan may land.
+2. Note, outside this plan's diff: `src/engine/type.mjs:4` still says each of the fifteen voices is `a 3-step SM/MD/LG ramp`, and `:27` heads `SIZES` as `[SM, MD, LG] literal px`. A source comment the plan never touched; worth a line on #776 or its own issue.
+3. Note: `best-practices.md:12-13` says every voice's SM/MD/LG is literal px, true but silent on the six-step rows; outside U12's diff.
+4. Note: "the 2026-07-13 table put thirteen voices" holds in UTC (`422e988d` had 11 voices, `e4760c0f` made 13 the same UTC day); the repo dates the rewrite 2026-07-13 throughout.
+5. Carried: `card-source-range-check` `range mismatches: 3` predates the plan.
