@@ -26,7 +26,7 @@ UI-widget. Each is a size
 ramp, each step carrying `Size · Line Height · Letter Spacing · Weight · Case · Paragraph Spacing ·
 Indent`.
 
-**2026-07-13, size is now a FIXED, hand-authored table**, not a modular scale: every voice is a
+**2026-07-13: size is now a FIXED, hand-authored table**, not a modular scale: every voice is a
 uniform 3-step **SM · MD · LG** ramp, with literal px values shared identically across all 5
 treatments (previously each voice derived from its own `base × ratio^step`, with step counts varying
 5/3/8 by voice). Treatments now differ only in font/weight/tracking/leading/case, never size.

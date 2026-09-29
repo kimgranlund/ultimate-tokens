@@ -59,7 +59,7 @@ var(--size-{s}-radius)` (the pill). The test's `centering-law` block asserts `pa
 | **Rhythm** | the **GAP_UNIT calibration** | `gap` (caret rides its own height law; the compact pads absorb the gap into the frame edges) | density **multiplies the rhythm only** |
 
 `density` (a treatment property: comfortable 1 · compact 0.75 · spacious 1.25 · touch 1.1 · pill 1) multiplies
-**`gap` and only `gap`**, `gap = max(1, round(GAP_UNIT[name]·(bh/28)·density))`; per-breakpoint hand
+**`gap` and only `gap`**: `gap = max(1, round(GAP_UNIT[name]·(bh/28)·density))`; per-breakpoint hand
 columns (the ratified matrix) ride `opts.gapOverrides` as FINAL values. It is deliberately kept
 out of the frame:
 the frame is geometric (proportional to height), and **scaling the frame would un-center the glyph**, the slot

@@ -12,7 +12,7 @@ families with distinct jobs, page tiers, elevation ladders, and translucent cont
 
 ## Elevation: two ladders, different physics (exact; easy to get wrong)
 
-**`-surface-low…high` (mirrored)**, *relational* elevation: `lowest · lower · low · high ·
+**`-surface-low…high` (mirrored)**: *relational* elevation: `lowest · lower · low · high ·
 higher · highest`. These flip stops across modes so **low always reads recessed and high always
 reads raised**, in light AND dark. This is the ladder for UI structure:
 
@@ -23,7 +23,7 @@ reads raised**, in light AND dark. This is the ladder for UI structure:
 | higher still: sticky headers, dropdown menus | `--c-neutral-surface-higher` |
 | topmost: modals, dialogs, command palettes | `--c-neutral-surface-highest` |
 
-**`-surface-dim…bright` (mode-consistent)**, *literal* lightness: `dimmest…brightest` is darker→
+**`-surface-dim…bright` (mode-consistent)**: *literal* lightness: `dimmest…brightest` is darker→
 lighter in BOTH modes (no flip). Use when you mean actual light, not stacking order: a dimmed
 inactive pane, a spotlight/hero band, a photography-adjacent backdrop. Do not mix the two ladders
 for the same job, elevation is Low/High; lighting is Dim/Bright.

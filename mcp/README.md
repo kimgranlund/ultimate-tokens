@@ -44,7 +44,7 @@ claude mcp add brand-kit -- node /abs/path/to/brand-kit-server.mjs
 
 ## What it exposes
 
-**Resources**, `brand://kit` (full), `brand://guide`, plus (per included system) `brand://palettes` ·
+**Resources**: `brand://kit` (full), `brand://guide`, plus (per included system) `brand://palettes` ·
 `brand://semantic/light` · `brand://semantic/dark` · `brand://palette/{slug}/prime` (one per palette)
 (Color), `brand://type` (Typography), `brand://geometry` (Geometry).
 
@@ -61,7 +61,7 @@ those systems are included)
 | `get_type` | the typography scale, treatment, fonts, and the per-voice size ramp |
 | `get_geometry` | the geometry scale, the size ramp, the centering law, radius + spacing |
 
-**Prompt**, `apply_brand`: how to apply the kit (surfaces from `*/surface*`, accents from the prime
+**Prompt**: `apply_brand`, how to apply the kit (surfaces from `*/surface*`, accents from the prime
 roles, text from `*/on*`; the type voices; the geometry size ramp + centering law; never raw values).
 
 ## Protocol

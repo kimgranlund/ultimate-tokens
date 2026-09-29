@@ -3,7 +3,7 @@
 [![CI](https://github.com/kimgranlund/ultimate-tokens/actions/workflows/ci.yml/badge.svg)](https://github.com/kimgranlund/ultimate-tokens/actions/workflows/ci.yml)
 [![Live demo](https://img.shields.io/badge/demo-live-2b8a3e)](https://kimgranlund.github.io/ultimate-tokens/)
 
-**▶ [Try it live](https://kimgranlund.github.io/ultimate-tokens/)**, the dependency-free,
+**▶ [Try it live](https://kimgranlund.github.io/ultimate-tokens/)**: the dependency-free,
 single-file build, served straight from GitHub Pages. (It's the very same `.html` you get from a
 local build; download it and it runs offline from `file://`.)
 

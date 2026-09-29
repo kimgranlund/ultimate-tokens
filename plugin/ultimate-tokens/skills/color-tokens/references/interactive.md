@@ -6,7 +6,7 @@ same roles, different `{p}`). Every recipe below is a complete state family, shi
 
 ## Buttons
 
-**Filled (primary CTA)**, the accent as a fill:
+**Filled (primary CTA)**: the accent as a fill:
 
 | State | background | text/icon |
 |---|---|---|
@@ -15,7 +15,7 @@ same roles, different `{p}`). Every recipe below is a complete state family, shi
 | active/pressed | `--c-{p}-active` | `--c-{p}-on-primary-active` |
 | disabled | `--c-{p}-disabled` | `--c-{p}-on-primary-disabled` |
 
-**Tonal / soft (secondary emphasis)**, the translucent container tier:
+**Tonal / soft (secondary emphasis)**: the translucent container tier:
 
 | State | background | text/icon |
 |---|---|---|
@@ -27,7 +27,7 @@ same roles, different `{p}`). Every recipe below is a complete state family, shi
 Containers are 500-based translucents, they tint whatever surface they sit on, so a tonal button
 composes correctly on any elevation tier.
 
-**Outlined**, transparent fill, stroked:
+**Outlined**: transparent fill, stroked:
 
 | State | border | text/icon | background |
 |---|---|---|---|
@@ -36,10 +36,10 @@ composes correctly on any elevation tier.
 | active | `--c-{p}-outline-active` | `--c-{p}-active` | `--c-{p}-container` |
 | disabled | `--c-{p}-outline-disabled` | `--c-{p}-disabled` | transparent |
 
-**Ghost / text button**, text-only: text `--c-{p}` (states `-hover/-active/-disabled` on the
+**Ghost / text button**: text-only: text `--c-{p}` (states `-hover/-active/-disabled` on the
 accent), hover background `--c-{p}-container-low`, active `--c-{p}-container`.
 
-**Destructive**, the same four recipes with `{p} = danger`. Never restyle a neutral button red by
+**Destructive**: the same four recipes with `{p} = danger`. Never restyle a neutral button red by
 hand; switch the palette.
 
 ## Form fields (text inputs, textareas, selects)

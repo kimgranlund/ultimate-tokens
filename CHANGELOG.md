@@ -628,7 +628,7 @@ they landed on `main` and reference the squash-merged PR that introduced them.
   (`resolve_token`, `get_ramp`, `nearest_token`, …) + a brand-usage prompt, so the agent builds with your
   exact tokens. New `brandKit(doc)` projection; a 12th verifier drives the server over the MCP protocol.
 - **Settings modal** (⚙ in the header) for doc-level **token-mapping** preferences. First controls:
-  **Primary accent**, `Mode-specific · 550 / 450` *(default)* vs `Single · 500 / 500` (one
+  **Primary accent**: `Mode-specific · 550 / 450` *(default)* vs `Single · 500 / 500` (one
   mode-agnostic accent token), and **On-colors** (`fixed` / WCAG-`contrast`, surfaced here too). A
   resolution-layer choice (`applyAccentRef`) that re-points how the prime accent role resolves without
   touching the ramp or the canonical role table; travels with the set + applies to every export.
