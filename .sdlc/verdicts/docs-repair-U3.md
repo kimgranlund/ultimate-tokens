@@ -6,7 +6,7 @@ ticket: "#751"
 branch: unit/dr-U3
 base: 282fca8d
 grade: verifier-l1, the evidence run dispatched by the Verifier seat
-pass: 2
+pass: 3
 written: 2026-09-28
 ---
 
@@ -84,3 +84,38 @@ The criteria are plan `aab895f0`. Against `c7eafe2d`, only U3-9's expected numst
 - 🟡 In the plan, U3-9 at `aab895f0` reads `which moved the review record lines the header cites`. The direction is reversed: the reactivity reviews cite `persist.js`, and they moved because the header grew.
 - 🟡 In `docs-repair-U3-rework.md:18`, `5 at 50a7f464` is unlabelled: at that head the stripped count was 5 and the raw count 7.
 - Note: `03-stores-and-persistence.md` LOW 5 cites `persist.js:657-661`, which is off by the same amount it was at B. The citations gate reads anchors and stays green.
+
+## Pass 3 · 🟡 · every U3 row 🟢 and all four pass 2 🔴 findings fixed; build and merge debt owed at pre-land
+
+verdict: 🟡
+sha: d25150ce96abeac294606570386c3d6e6f447354
+
+Head `d25150ce`, code commit `2f085074`. B `282fca8d` (`git merge-base origin/main d25150ce`). Criteria from plan `3001a908`. The evidence run was verifier-l2 (Opus 5.5), standing in for verifier-l3 while fable is capped, in shared clones under the seat's job tmp. `verdict.py check` passes on the handoff, the rework note, review p2, the re-diagnosis and the plan, `exit 0` each.
+
+| Row | State | Evidence | Negative control |
+|---|---|---|---|
+| U3-1 | 🟢 | `1`, `1`, `1`, `1` | at B: `0`, `0`, `0` |
+| U3-2 | 🟢 | `0`, `1`, `15` | at B: `1`, `0` |
+| U3-3 | 🟢 | no `NO-CITE`, `L=2581`, `1`, `1` | at B: `L=2570`, `0`; audit reads `NEAR ... (-2)` |
+| U3-4 | 🟢 | `0`, `1`, `1`, `1`, `1`, `1`, `1` | at B: `1 0 0 0 0` |
+| U3-5 | 🟢 | ten `1`s, then `1`, `0` | at B: `0 0 0 0 0` |
+| U3-6 | 🟢 | `0`, `1`, `0` | at B: `1`, `0`, `1` |
+| U3-7 | 🟢 | `0`, `1`, `1`, `0`, `0` | at B: `1`, `0`, `0`, `1`, `2` |
+| U3-8 | 🟢 | `0` | a line added to `docs/marketing/fact-sheet.md`: `1` |
+| U3-9 | 🟢 | middle `0`; numstat `22 31 src/ui/persist.js`; baseline `3` | `baseChroma: 100` to `101` in `persist.js`: middle `6` |
+| U3-10 | 🟢 | `0`, `3`, `22`; `persist.js:22` reads `Its three imports are engine constants (...); nothing from the DOM.` above the three `import` lines, read by the seat; `grep -c 'No dependencies'` `0` | at `da8d48d1`: `1`; `No dependencies.` restored on line 22: `1`; a 23rd header line: `23` |
+| U3-11 | 🟢 | `1`; `ui.html 4125.2` twice; `` baseline `3` ``; `3` | the handoff at `da8d48d1`: `ui.html 4125.5` and `` baseline `1` `` against tree `4125.2` and `3` |
+| P1 | 🟢 | fresh clone, no `node_modules`: `✓ all 50 test files passed`, `exit 0`, tree `0` after | scrim sed on `role-table.json`: `✗ 1/50 test file(s) failed`, `exit 1`, `engine/semantic.mjs` `refs-canonical` |
+| P2 | 🟡 | baseline leg `stale total: 0`, tree `4125.236` KB against cell `4125.2`; the build leg is owed at pre-land: `npm run build` | cell set to `4124.3`: `stale total: 1` |
+| P3 | 🟢 | `branding: clean (736 files scanned)`, exit `0`; stripped `0`; raw `2`, both quotes in code spans | an ADR copy into `.sdlc/verdicts/`: `FAIL: 3 branding violation(s)`, exit `1`; a dashed prose line: stripped `1` |
+| P4 | 🟢 | `0`, `0`, `0`, `0` | four-name fixture `2`; an export appended to `persist.js`: `1` |
+| P5 | 🟢 | `✓ citations: parser self-test + STALE 0 across 10 discovered docs (HEAD d25150ce)`, `exit 0` | the `mixinInto` cite bumped to `app.js:1`: `✗ 1 citation gate failure(s)`, `exit 1` |
+| P6 | 🟡 | `12`, `10`, none in U3's wall (U1 and U2 files) | at B: `15` |
+| P7 | 🟢 | `H=2f085074`, `ancestor`, `0`; past H only the two handoffs and review p2 changed | Branch field set to `184a795a`: `3` |
+| Merge debt | 🟡 | a trial merge of origin/main `0b0a7fcf` conflicts in `12` files, among them `persist.js`, `app.js`, `ui.html`, `.claude/CLAUDE.md`; pre-land must reprove P3, P4, U3-3, U3-9 to U3-11 on the merged tree | `git merge --abort`; clone status `0` |
+
+### Findings
+
+- 🟢 Pass 2's four 🔴 findings are fixed: the `persist.js:22` header, the handoff's `4125.5 KB` and `reproduced twice` (count `0`), the U3-9 baseline figure (`3`), and the plan U3-9 wording at `3001a908`.
+- 🟡 `.sdlc/plans/docs-repair-U3-rediagnosis.md:46` at `3001a908` still says a 23rd header line sends the reactivity cites `STALE`; measured `STALE 0`. The plan row is corrected; the re-diagnosis is the planner's record, so it is not held against the unit.
+- Note. `persist.js:22` is 114 characters, the longest header line. Style only.
