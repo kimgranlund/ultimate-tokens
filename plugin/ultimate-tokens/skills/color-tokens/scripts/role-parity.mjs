@@ -19,7 +19,16 @@ const rt = JSON.parse(readFileSync(TABLE, "utf8"));
 const SUFFIXES = new Set(rt.roleTable.map((r) => r.suffix)); // "" for the bare accent
 const PALETTES = new Set(rt.defaults.map((d) => d.name.toLowerCase()));
 
-const files = ["SKILL.md", ...readdirSync(join(SKILL_DIR, "references")).filter((f) => f.endsWith(".md")).map((f) => "references/" + f)];
+// the on-colour mode: the default and the legal values are read from the engine and the persist enum
+// (behind the same guard as the table), never typed here.
+const TONAL = join(HERE, "../../../../../src/engine/tonal.js");
+const PERSIST = join(HERE, "../../../../../src/ui/persist.js");
+const haveEngine = existsSync(TONAL) && existsSync(PERSIST);
+const ON_COLOR_DEFAULT = haveEngine ? (await import(TONAL)).DEFAULT_CONTROLS.onColorMode : null;
+const ON_COLOR_VALUES = haveEngine ? new Set((await import(PERSIST)).DOMAINS.onColorMode.values) : null;
+
+const README = join(SKILL_DIR, "../../README.md"); // the plugin README states the role and palette counts too
+const files = ["SKILL.md", ...readdirSync(join(SKILL_DIR, "references")).filter((f) => f.endsWith(".md")).map((f) => "references/" + f), ...(existsSync(README) ? ["../../README.md"] : [])];
 let failed = false;
 const err = (f, tok, why) => { console.error(`✗ ${f}: ${tok}, ${why}`); failed = true; };
 
@@ -86,6 +95,21 @@ for (const f of files) {
     if (n === OUT_OF_RANGE) { err(f, m[0], `count word "${m[1]}" is outside the range role-parity's parser can resolve (one..ninety-nine), extend parseNumWord instead of letting this pass unchecked`); continue; }
     if (n !== PALETTES.size) err(f, m[0], `default-palette count drift, canon is ${PALETTES.size}`);
   }
+}
+
+// the on-colour mode claims: exactly one "default, `onColorMode: <v>`" statement across the skill, <v>
+// equal to the engine default (none is a FAIL, so deleting the sentence cannot pass), and every named
+// `onColorMode: <v>` must be a legal value of the persist enum.
+if (haveEngine) {
+  const stated = [];
+  for (const f of files) {
+    const text = readFileSync(join(SKILL_DIR, f), "utf8");
+    for (const m of text.matchAll(/default, `onColorMode: ([a-z]+)`/g)) stated.push([f, m[1]]);
+    for (const m of text.matchAll(/`onColorMode: ([a-z]+)`/g))
+      if (!ON_COLOR_VALUES.has(m[1])) err(f, m[0], `"${m[1]}" is not a legal onColorMode value in persist.js DOMAINS (${[...ON_COLOR_VALUES].join("/")})`);
+  }
+  if (stated.length !== 1) err("(onColorMode)", `${stated.length} matches`, "expected exactly one \"default, `onColorMode: <v>`\" statement across the skill files");
+  else if (stated[0][1] !== ON_COLOR_DEFAULT) err(stated[0][0], `default, \`onColorMode: ${stated[0][1]}\``, `onColorMode default drift, the engine default is ${ON_COLOR_DEFAULT}`);
 }
 
 console.log(failed ? "role-parity FAIL" : `role-parity PASS, every role token in ${files.length} files exists in the canonical table`);
