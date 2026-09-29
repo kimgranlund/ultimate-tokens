@@ -18,9 +18,11 @@
 //
 //   node test/engine/mode-isolation-gate.mjs [--full] [--capture]
 //
-// `--capture` re-generates the fixture at the CURRENT tree's rendered output and writes it, printing the
-// sha to name in this header and in the fixture's own `owner` field - used only by hand, by whichever
-// plan next moves perceptual or peak (#725 is that plan today, per the plan's revision 8 ruling).
+// `--capture` re-generates the fixture at the CURRENT tree's rendered output, writes it with the HEAD sha
+// (`unknown` outside git) in its `capturedAt` field, and prints that sha - used only by hand, by the plan
+// that moves perceptual or peak or edits a curated corpus document or the default kit (the scope of the
+// fixture's `owner` field and of the fingerprint note above); #725 is the perceptual/peak plan today
+// (#701 revision 8).
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";

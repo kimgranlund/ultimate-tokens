@@ -1523,7 +1523,7 @@ for (const mode of ["perceptual", "peak"]) {
   // two stops from the anchor; `evenChroma`'s floorRef (src/engine/tonal.js) takes the floor's gamut
   // reference as the largest ceiling among stops 450, 500 and 550 (src/engine/tonal.js floorRef, one per
   // ramp path), not the anchor stop's own ceiling (U2 pass 1's design, retired: it drained the far half
-  // toward grey), so the valley cannot form.
+  // toward grey), so at hueShift 0 on cam16 the floor does not rise from 450/550 outward (no dip guarantee).
   // The even branch below reds on ANY dip at a stop other than 500 under its own gate name,
   // `dip-gate-even`, with no membership test. Dips exactly AT stop 500 (the anchor under a higher group
   // basis, the notch class) are the owner's Q3 ruling: printed as a count and never asserted here.

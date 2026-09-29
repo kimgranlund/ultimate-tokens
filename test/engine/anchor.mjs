@@ -648,8 +648,8 @@ const RAMP_DISTINCT_ALLOW = [
 // integrated U3's own work. On the current integration head it measures 15 (all even mode) - a clean
 // SUBSET of the old 78 (0 new/unexpected members, all 63 departures are removals, verified directly).
 // Cited mechanism: commit 2573208c "re-centre chromaEnvelope on the anchor's own lifted reading" (#681
-// U3 review pass 2, R2) - the same fix this file's `anchorChromaBasis` import and tonal.mjs's C6 gate
-// (the gate the live KNOWN_BASELINE_DUP list belongs to) cite as U3's shipped chromaEnvelope shape
+// U3 review pass 2, R2) - the same fix, cited as R2 in tonal.js's comment above `chromaEnvelope` and in
+// tonal.mjs's C6 gate (the gate the live KNOWN_BASELINE_DUP list belongs to)
 // (the since-retired EVEN_DIP_BASELINE's comment cited neither 2573208c nor R2; it named
 // `paletteStopsAnchored`'s stop-500 pin and the `anchorChromaBasis` blend). R2
 // keyed the envelope's position on `liftStop(stop,lift) - liftStop(anchorStop,lift)`, the anchor's own
