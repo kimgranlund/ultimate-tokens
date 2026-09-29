@@ -1,10 +1,11 @@
 ---
 name: hct-palette-generator-spec
 description: >
-  Spec cell for the HCT Palette Generator — a single-file browser tool that builds
-  perceptually even color palettes (hue and chroma from CAM16, tone from CIELAB L-star,
-  clamped to the sRGB gamut ceiling by construction) plus a 53-role semantic token layer,
-  exporting to CSS, OKLCH, JSON, Figma DTCG, and a Figma cascade plugin. Scope: the tool and
+  Spec cell for Ultimate Tokens, a single-file browser tool that builds a brand kit of three
+  composing systems (Color, Typography, Geometry). Color builds perceptually even palettes
+  (hue and chroma from CAM16, tone from CIELAB L-star, clamped to the sRGB gamut ceiling by
+  construction) plus a 53-role semantic token layer, exporting to ten color formats (CSS, OKLCH,
+  JSON, DTCG, UI3, Tailwind, shadcn, Panda, Radix, exportAll) and a Figma cascade plugin. Scope: the tool and
   its parts — the color engine (CAM16, gamut search, fixed viewing conditions),
   tonal-scale generation (curves, skew, lift, chroma damping), the semantic token system
   (roles, on-colors, scrims, surface ramps, light/dark modes), the export formats and Figma
@@ -15,7 +16,7 @@ description: >
   generator, scrims, on-colors, or the binder plugin.
 ---
 
-# HCT Palette Generator — a perceptual, in-gamut palette + semantic-token generator
+# Ultimate Tokens: a perceptual, in-gamut palette + semantic-token generator (Color, Typography, Geometry)
 
 > **SKILL-format spec cell `spec.system.hct-palette-generator-spec`.** This file is both the
 > readable brief and — in the fenced `json` contract block below — the machine-readable
@@ -32,7 +33,7 @@ mapping stops being a simple mirror. The HCT Palette Generator removes all three
 by **treating color as a point in a perceptual space against a gamut boundary, not a scalar
 to push around**: tone is CIELAB L\*, hue/chroma is CAM16, every emitted color is clamped
 in-gamut at its tone, and the entire light/dark flip lives in one semantic `--c-*` layer over
-flat raw tokens. Output is a set of portable token artifacts (five export formats) plus an
+flat raw tokens. Output is a set of portable token artifacts (ten color export formats, plus type and geometry) plus an
 optional live raw→semantic cascade in Figma — delivered as one offline, dependency-free,
 single-file tool.
 
@@ -109,12 +110,12 @@ every role is aliased to its primitive, **idempotently** on re-apply).
     { "id": "hpg-export-resolved", "check": "with rawColl blank, NO semantic leaf carries aliasData; with rawColl set, every semantic leaf carries aliasData.targetVariableName matching {n}/{refKey} AND aliasData.targetVariableSetName === rawColl (the Color Primitives collection) — the FULL documented name+collection alias SHAPE Figma's aliasData fallback hierarchy resolves on native import when the Color Primitives collection pre-exists (AC-X6, ADR-002 re-verify 2026-06-15; the OD-004 spike). This gates the emitted SHAPE only; the native-import cascade itself is validated in Figma, not by this check" },
     { "id": "hpg-export-css-resolves", "check": "CSS var naming: RAW vars are --c-{family}-{stop|500-step} (suffix ends in digits), SEMANTIC vars are --c-{family}-{role} (suffix ends in a word) — both share the --c- prefix with no collision; every --c-* semantic var is emitted as light-dark(var(--c-rawA), var(--c-rawB)) over two raw vars that both exist in the emitted :root (AC-X2, the two-layer model ADR-005)" },
     { "id": "hpg-export-padding", "check": "every token name (CSS vars, JSON keys, DTCG names, UI3 keys) uses 3-digit stop padding; scrims use padded base + '-{step}' (e.g. the raw CSS var --c-{family}-500-200 = the 500 color at 20%) (AC-X7, ADR-006)" },
-    { "id": "hpg-export-disabled-palette", "check": "a palette with on:false is absent from all five exports; with all palettes disabled the exporters emit a valid empty-but-well-formed artifact, not an error (AC-U2)" },
-    { "id": "hpg-export-nonempty", "check": "each of the eight color formats produces non-empty output for the default state, and the JSON format gives each palette stops/scrims/semantic with 3-digit-padded stop keys (AC-X1, AC-X3)" },
+    { "id": "hpg-export-disabled-palette", "check": "a palette with on:false is absent from all ten color exports; with all palettes disabled the exporters emit a valid empty-but-well-formed artifact, not an error (AC-U2)" },
+    { "id": "hpg-export-nonempty", "check": "each of the ten color formats produces non-empty output for the default state, and the JSON format gives each palette stops/scrims/semantic with 3-digit-padded stop keys (AC-X1, AC-X3)" },
     { "id": "hpg-plugin-bindings", "check": "every {n}/{refKey} binding target the plugin emits exists among real Color Primitives variable names, including the {n}/500-{step} scrims (AC-P2)" },
     { "id": "hpg-plugin-offline", "check": "the plugin's code.js and manifest.json both parse, and manifest networkAccess is 'none' (AC-P3, the offline/dependency-free decision ADR-010)" },
     { "id": "hpg-persistence-roundtrip", "check": "for any in-domain State S, hydrate(serialize(S)) deep-equals S exactly; an out-of-domain field is clamped to its nearest valid bound (domains per knowledge-02 §2) while every in-domain field is preserved (AC-U1); AND an ABSENT field hydrates to that field's DEFAULT, NOT its domain floor: a doc predating the differential-damping fields (lacking dampCurve/dampAmp/dampBias) gets 1.5/0/0 (the legacy-equivalent), and a partial config lacking lmin/lmax/damp gets 5/100/80 (not the dark 0/60/0 floors); the result is byte-identical to hydrating the same doc with the field explicit at its default (the backward-compatible-reload guarantee)" },
-    { "id": "hpg-export-theme-invariant", "check": "for one State, the byte output of all five exporters is identical with theme 'light', 'dark', and 'auto' — the theme switch changes UI appearance only, never an exported value (AC-U3)" }
+    { "id": "hpg-export-theme-invariant", "check": "for one State, the byte output of all ten color exporters is identical with theme 'light', 'dark', and 'auto'; the theme switch changes UI appearance only, never an exported value (AC-U3)" }
   ],
   "non_goals": [
     "brand-color selection or non-HCT palette generation (opinionated about HCT, ADR-001). Palette COUNT is NOT bounded — the 16 defaults (8 brand + 8 data) are a seed set, every acceptance criterion is quantified 'for every palette' so it generalizes to any count, and the validated UI ships a configurable set (OD-005 DECIDED 2026-06-15)",
@@ -233,7 +234,10 @@ every role is aliased to its primitive, **idempotently** on re-apply).
 | `references/knowledge-01-color-engine.md` | engine math: CAM16, gamut, VC, anchors |
 | `references/knowledge-02-tonal-scale.md` | curves, `toneAt`, chroma, damping, clamp domains |
 | `references/knowledge-03-semantic-system.md` | role table, on-colors, scrims, surfaces, modes |
-| `references/knowledge-04-export-formats.md` | the eight color formats (+ type/geom) and Figma import constraints |
+| `references/knowledge-04-export-formats.md` | the ten color formats (+ type/geom) and Figma import constraints |
+| `references/ui-plan.md` | the front-end plan: tasks T1 to T9 and the arrangement of the editor |
+| `references/component-inventory.md` | the editor's components and shared primitives |
+| `../lld/app-shell.md` | the app shell LLD: frame, regions, render pipeline, state (`../` because it sits outside `docs/reference/`) |
 | `references/knowledge-05-figma-plugin.md` | the cascade binder |
 | `references/knowledge-06-palette-derivation.md` | the "New Palette" engine (`derive.mjs`): Relative / Environmental / Custom |
 | `references/decision-records.md` | the fenced choices (ADRs) — read before changing anything |

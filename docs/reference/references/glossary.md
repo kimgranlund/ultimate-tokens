@@ -29,7 +29,7 @@
 | **Role** | A named semantic token (e.g. `surfaceDim`, `outline`). 53 roles per palette. |
 | **Raw / primitive** | A mode-independent base token a ref resolves *to*: a solid export stop or a **scrim primitive** (`{base}-{step}`). Never a role. |
 | **Semantic / `--c-*`** | A role token that carries the light/dark flip via `light-dark()`, aliasing two primitives. |
-| **Mode** | Light or Dark. The flip lives only in the semantic layer. |
+| **Mode** | Light or Dark. The flip lives only in the semantic layer. Not a **Breakpoint mode** (below), which is a Typography or Geometry size override. |
 | **Mirror** | A light/dark mapping whose stops sum toward 1000 (e.g. `50/950`). Low/High surfaces mirror; Dim/Bright do not. |
 | **Ref** | A role's light/dark target: a solid stop `"550"` or a **scrim primitive** `"500-200"` — always a *primitive*, never another role. |
 | **`refKey`** | Normalizes a ref to padded form for names/vars (`"50"→"050"`, `"500-200"→"500-200"`). |
@@ -38,3 +38,12 @@
 | **Prime fill** | The `{n}` (prime) role's color: stop 550 in light, 450 in dark. On-colors are evaluated against it. Not to be confused with the `prime` SWATCH (`prime.DEFAULT`, `primeSwatches(...)[3]`), which is the middle rung of the seven-swatch prime ladder and, for an anchored palette, is the stored source hex byte for byte. |
 | **Cascade** | Raw edit propagating to semantic. Provided by the plugin (alias-by-reference), not by JSON import. |
 | **Parity** | A property of multi-impl *distribution*, not of the domain. The reference build is single-source — one `src/engine/` module set (`hct.js`, `semantic.js`, …) imported everywhere — so drift is structurally impossible and parity is automatic. The 3-implementation framing (artifact / `gen.js` / plugin) is legacy packaging; `gen.js` is not part of the current build. Parity becomes a real gate only IF ≥2 independent implementations are shipped (`hpg-engine-parity` / `hpg-parity-roletable`, conditional). |
+| **Section** | One of the three composing systems of the brand kit surfaced in the editor: `color`, `typography` or `geometry`. `this.section` is a ui-session field that routes `renderCenter`, `renderLeftPane` and `renderRightPane`; the frame is invariant and never persisted. |
+| **Canvas scene** | The pannable, zoomable `.canvas-scene` inside a section's canvas, holding that section's full dataset; pan and zoom live in `this.viewport`. Compare mounts it as `.canvas-scene.compare`. |
+| **Canvas view** | The Color section's canvas content, `this.canvasView`: `palettes`, `scrims`, `mapping` or `radix`. Typography and Geometry have their own canvas segment (`specimen \| tokens`, `controls \| tokens`) instead. |
+| **Breakpoint mode** | A named Typography or Geometry override of the base scale, chosen by `this.typeMode` or `this.geomMode` (`base`, a mode id, or `compare`). Not the light/dark **Mode**. |
+| **Compare** | Showing variants side by side. In Color it is `this.colorMode === "both"` (light and dark, drawn by `renderCompareArea`); in Typography and Geometry it is the `compare` breakpoint value, labelled `All`, offered only when modes exist. |
+| **Inspector** | The right pane of the editor, `renderRightPane`, holding the selected item's controls in tabs and pinning a `.seg-example` live control beneath them. Typography and Geometry return their own inspector. |
+| **Analysis card** | A `.an-card` in the left pane: a labelled chart or table that analyses the current document, built by each section's `renderLeftPane` body. |
+| **Gallery** | The editor's other top-level view (`this.view === "gallery"`, `renderGallery`): a hub of category tiles (`this.category`, a slug or `null`) opening to volumes of curated presets, plus the saved-set tiles filtered by `this.search`, Project and Import. |
+| **Drawer** | The export drawer (`overlays/drawer.js`), a native `<dialog>` whose format tabs come from `FORMAT_GROUPS`: Colors (ten), Typography (two), Geometry (three), Design System (two), Project (one). |
