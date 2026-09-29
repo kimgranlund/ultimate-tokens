@@ -59,7 +59,7 @@ printf '%s\n' "$ISSUES" | awk -F'\t' '{p=9; n=split($3, l, ","); for (i=1; i<=n;
 | 4 | #740 | Kits saved before #681 do not gain exact anchors on load | bug | none | small | color-engine | claimed | none | 2026-09-23T23:37:38Z | .sdlc/plans/anchor-gaps.md | #762 |
 | 5 | #744 | Hueless presets fall back to hue 0 and render mauve | bug | none | small | color-engine | none | none | 2026-09-24T12:40:42Z | none | #762 |
 | 6 | #748 | marketing: voice reread of the swept store copy, then the store section 10 walk | chore | none | S | docs | backlog | none | 2026-09-24T12:42:32Z | none | none |
-| 7 | #751 | docs-repair | chore | none | M | docs | in-review | none | 2026-09-25T15:47:18Z | .sdlc/plans/docs-repair-U3-rediagnosis.md .sdlc/plans/docs-repair.md | none |
+| 7 | #751 | docs-repair | chore | none | M | docs | done | none | 2026-09-25T15:47:18Z | .sdlc/plans/docs-repair-U3-rediagnosis.md .sdlc/plans/archive/docs-repair.md | none |
 | 8 | #752 | em dash sweep follow-up: paragraph-start bold labels in Markdown read as lists | bug | none | S | none | claimed | none | 2026-09-25T18:20:24Z | .sdlc/plans/bold-labels.md | #763 |
 | 9 | #758 | prompt-audit | chore | none | M | none | in-review | none | 2026-09-26T18:12:09Z | .sdlc/plans/prompt-audit-U1-rediagnosis.md .sdlc/plans/prompt-audit.md | #761 |
 | 10 | #764 | em-dash --fix: E1 and E2 take the colon on the line's first dash, not the enclosing string's | none | none | M | none | backlog | none | 2026-09-28T22:56:20Z | none | none |
@@ -171,7 +171,7 @@ Every `.sdlc/plans/*.md` outside `archive/`, at the tip of every ref in the REFS
 | `.sdlc/plans/chroma-floor-U3-rediagnosis.md` | d756276f | plan/chroma-floor@7829436e | none | none |
 | `.sdlc/plans/archive/chroma-floor.md` | 95dfabb8 | main@33bd8920 | "#701" | done |
 | `.sdlc/plans/docs-repair-U3-rediagnosis.md` | 87d27aec | plan/docs-repair@83faf7ad | "#751" | none |
-| `.sdlc/plans/docs-repair.md` | 512eb6b4 | plan/docs-repair@83faf7ad | "#751" (minted at activation, Q0: `adapter.py create --title docs-repair --label kind:chore --label lane:docs --size M`, body shortened to the units list because the plan exceeds GitHub's 65,536-character limit) | approved |
+| `.sdlc/plans/archive/docs-repair.md` | 512eb6b4 | main@ed759f6a | "#751" (minted at activation, Q0: `adapter.py create --title docs-repair --label kind:chore --label lane:docs --size M`, body shortened to the units list because the plan exceeds GitHub's 65,536-character limit) | done |
 | `.sdlc/plans/hex-oklch-dedupe.md` | 7e2a1926 | plan/docs-repair@83faf7ad | #731 | approved |
 | `.sdlc/plans/hex-oklch-dedupe.md` | ef257786 | plan/chroma-floor@7829436e | #731 | approved |
 | `.sdlc/plans/lane-b-tickets.md` | 41e69bd4 | plan/lane-b-tickets@a483151d | none | active |
