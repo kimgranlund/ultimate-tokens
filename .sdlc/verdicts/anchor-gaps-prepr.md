@@ -2,7 +2,7 @@
 kind: verdict
 plan: anchor-gaps
 seat: verifier
-pass: 2
+pass: 3
 ticket: "#740, #744"
 written: 2026-09-29
 ---
@@ -105,3 +105,47 @@ version: n/a (a plan landing, no release)
 3. 🟡 DT: re-date the block to the landing day in the landing commit, as the plan says.
 4. 🟡 MG, CK, RC: the `856b59ce` hand resolution is `.sdlc/` bookkeeping and the figure now agrees; CK is #701's; the U3 handoff line and the U1-5 figure are stale records.
 5. Pass 3 needs the CL sentence and plan `:114` corrected, then P3, the em-dash gate and CI green on the new head; the tree-level rows here carry if `git diff 1d03eca5 <new head>` touches only `CHANGELOG.md` and `.sdlc/`.
+
+## Pass 3 · 🔴 at `a02af6a5`: CL is fixed and every local row holds on the new tree, but no CI run exists for the head
+
+verdict: 🔴
+sha: a02af6a5677c4678871ca24cf525935a3d06f2e7
+version: n/a (a plan landing, no release)
+
+`plan/anchor-gaps` at `a02af6a5` (PR #762): merge `221c1e57` (main's #763 into the pass 2 head), revision 10 (`87e633cd`), U4 (trivial lane, review PASS at `eedb2d73`, merge `11c67050`) rewriting the #740 CHANGELOG sentence and re-dating the block, then a board tick. Outside `.sdlc/`, `87e633cd..a02af6a5` is `CHANGELOG.md` only. Checkers in fresh context: verifier-l2 re-ran every gate on the new tree (two fresh clones), reviewer-l3 read the delta (PASS), standing in for verifier-l3 and reviewer-l4 while fable is capped (b9044bb). The seat confirmed both merges and the U4 scope itself and re-read CI.
+
+### Red
+
+| id | criterion | state | evidence | negative control |
+|---|---|---|---|---|
+| CI | required jobs green on the head | 🔴 | 30 polls 21:56 to 22:26 UTC and the seat's re-read: `gh pr view 762` headRefOid `a02af6a5677c4678871ca24cf525935a3d06f2e7`, `statusCheckRollup` length `0`; `actions/runs?head_sha=a02af6a5...` `total_count 0`; `gh run list --branch plan/anchor-gaps` newest `87e633cd pull_request completed success`; no `[skip ci]` in `87e633cd..a02af6a5` | `9f5a4bac` and `d017bbc9` read `failure` and `87e633cd` reads `success`, so the read separates job states when a run exists |
+
+### Yellow
+
+| id | criterion | state | evidence | negative control |
+|---|---|---|---|---|
+| CK | every `sh .sdlc/checks/*.sh` | 🟡 | four exit 0 (`stale total: 0`, `stale total: 0`, `bad 0`, `verdicts 240 graded 240 bad 0`); `card-source-range` `range mismatches: 3`, exit 1 | `0` at `33bd8920^`, `3` at `33bd8920` and at the head: inherited from #701 |
+| TX | text precision | 🟡 | the #740 example `a user-built palette ... stays parametric` is approximate (a palette renamed onto a default row's name at its exact numbers is anchored, per the rule the sentence states first); `src/ui/app-helpers.mjs:836` comment reads ambiguously; plan `:114` says `a new ### <landing date> block` where U4 re-dated the existing one; plan U1-6's control text gives `cam16 false 15` while (f) still reds | the rule clause `a palette equal to no row of that table stays parametric` is exact, so no clause is false |
+
+### Green
+
+| id | criterion | state | evidence | negative control |
+|---|---|---|---|---|
+| CL | the #740 sentence is true of the code | 🟢 | `A stored pre-v5 palette equal to a row, a stored pre-#681 preset among them, takes that row's anchor`; probe: Maison from `git show 7d20c42d:src/ui/categories/brands.js` stored at `schemaVersion: 4` through `hydrateStoredDoc`: `v4 Success "#21701A" oklch`; reviewer: a default kit at v4 regains `16`, Primary one hue step off stays parametric | the same doc at `schemaVersion: 6`: no anchor; pass 2's head carried `pre-#681 preset palette` (U4-1 `1`) |
+| DT | block dated the landing day | 🟢 | first heading under `## [Unreleased]`: `### 2026-09-29` | `221c1e57` prints `### 2026-09-26` |
+| MG | merges since pass 2 exact; U4 scope | 🟢 | `221c1e57` tree `7f538d93` equals `git merge-tree --write-tree 1d03eca5 9ee8f2aa`; `11c67050` tree `a151167b` equals `git merge-tree --write-tree 87e633cd eedb2d73`; `git diff --stat 87e633cd a02af6a5 -- . ':!.sdlc'`: `CHANGELOG.md \| 13` only | `git diff --name-only 1d03eca5 a02af6a5 -- . ':!.sdlc'` names 20 paths, the #763 prose and generated pair plus `CHANGELOG.md` |
+| P1 | `npm test`, no node_modules, N 54, tree clean | 🟢 | `✓ all 54 test files passed`, exit 0, `54`, `0` | `"scrimX`: `✗ 1/54 test file(s) failed`, exit 1 |
+| P2 | build green, tree clean, KB agrees | 🟢 | `wrote figma/plugin/ui.html 4141.3 KB`, exit 0, `0`, `ok    ui.html: baseline 4141.3 KB, tree 4141.3 KB` | `backfillDefaultAnchors` brace removed: vite `Failed to parse code`, exit 1 |
+| SM | `npm run smoke` in real Chrome | 🟢 | `SMOKE PASS, gallery · category · editor · export dialog all render in a real browser`, exit 0 | the P2 break: `smoke exit 1`, `✗ Build failed in 69ms` |
+| P3 | branding and em-dash clean | 🟢 | `branding: clean (988 files scanned)`, `0`, `0`, `em-dash: clean (996 files scanned)`, added U+2014 `0` | ADR copy: `FAIL: 3 branding violation(s)`; a glyph line: `FAIL: 1 em dashes` |
+| P4 | scope wall and bounded hunks | 🟢 | `0`, `1 1`, `0`, `0`, `3`, `0` | seven-name fixture `3`; `2 2`; FLOORS `1`; fifth `4`; sixth `2` |
+| RE | gallery seam stamps no preset | 🟢 | `presets 343 stamped 0 differ 0 maison #21701A` | alias: `presets 343 stamped 1 differ 1 maison #21701A` |
+| MI | mode-isolation passes locally | 🟢 | `pass  mode-isolation: perceptual 990c17c5ae140e6e peak b59bd41501cd829a match fixture`, exit 0 | `brands.js` at `5cdf9ed1`: `perceptual 34e544942d500b9e ... do not match`, exit 1 |
+| U | U1-1 to U1-6, U2-1 to U2-5, U3-1 to U3-6, U4 | 🟢 | `1 1 1 true`; persist `PASS`, `15`, `1`; `0 of 16 16`; `cam16 16 15 false`; `36 36 #FFFFFF [1,0,0]`; tonal and anchor FULL `PASS`; `1 1 0 2 1`; `0 9`; U4 `0`, `1`, `0` | `return stored;`: `(a) ... got 16 of 16`; hue-0 keys back: `2 of the 24 cited baseline duplicates were not observed`; backfill call removed: `(j) ... got undefined` |
+| RV | delta review | 🟢 | reviewer-l3: `PASS`; #744 entry true (Nike the only chroma-0 sample, hue `36`); no shipped text still carries the pass 2 claim | pass 2's review read the same entry `FAIL`, so the read separates |
+
+### Findings
+
+1. 🔴 CI: GitHub has no workflow run for `a02af6a5`. The nearest run, `87e633cd`, is all green and differs from the head only in `CHANGELOG.md`, but the gate reads the head. A CI run on this head, or on a later head that adds only `.sdlc/` records, with every required job green, is all pass 4 needs: the tree rows here carry to any head whose `git diff a02af6a5 <head> -- . ':!.sdlc'` is empty.
+2. 🟢 CL is closed: the shipped sentence matches Q1's rule, and the block reads the landing day.
+3. 🟡 TX and CK: text precision notes and #701's inherited check; none blocks.
