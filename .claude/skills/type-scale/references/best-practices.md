@@ -45,8 +45,8 @@ The non-obvious do/don'ts (each a real trap in this engine), then a worked walkt
 - **Always emit family names QUOTED** (`--font-{role}: '{family}'`, and now also `--font-voice-{voice}` per
   voice via `resolvedFontFor`). A name with a digit, `Source Serif 4`, `Inter Tight`, is invalid
   *unquoted* in a strict CSS parser, and **Safari drops the entire declaration** → the specimen renders in
-  the fallback. Chrome is forgiving, so the smoke (Chrome-only) stays green while Safari is broken (see the
-  smoke-is-Chrome-only-Safari-blind-spot memory). The verifier pins `typeTokensCSS(luxury)` (which uses
+  the fallback. Chrome is forgiving, so the smoke (Chrome-only) stays green while Safari is broken (`shipping-changes`'s
+  `references/foundations.md` owns why green smoke is not Safari-proof). The verifier pins `typeTokensCSS(luxury)` (which uses
   `Source Serif 4`) contains `--font-display: 'Source Serif 4'`. If you refactor the emitter, keep the
   quotes on BOTH the role-level and voice-level font props.
 

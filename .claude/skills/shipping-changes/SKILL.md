@@ -4,9 +4,9 @@ description: >
   Use when a change in ultimate-tokens is ready to land, "ship this",
   "open a PR", "merge and sync", "release this", or proactively when work is
   done and green. Covers the full release workflow: branch from origin/main,
-  the two gates (npm test, npm run build), PR, CI watch (build · test ·
-  smoke), squash-merge, local-main sync, plus commit guards and worktree
-  isolation for fan-outs.
+  the two gates (npm test, npm run build), PR, CI watch (all four jobs:
+  build-test, panda-smoke, corpus-contrast, sweeps), squash-merge,
+  local-main sync, plus commit guards and worktree isolation for fan-outs.
 disable-model-invocation: false
 user-invocable: true
 ---
@@ -36,7 +36,7 @@ per full-corpus gate script, `gate:corpus-tonal`/`gate:corpus-anchor`/`gate:swee
 `gate:corpus-reset`/`gate:corpus-contrast`, `fail-fast: false`). All four must report `success`; a red
 `sweeps` leg is a red run, same as a red `build-test`. `npm run gate:sweeps` is the local command that
 runs the same five full-corpus gates in sequence, for a builder or verifier who wants to check them
-without waiting on CI. `npm run smoke` itself runs `npm run build` before booting Chrome (#564, a
+without waiting on CI. `npm run smoke` itself runs `npm run build` before booting Chrome (a
 standalone `npm run smoke` must never trust a stale `dist/`), so `build-test`'s own preceding build
 step is a harmless redundant rebuild, not a dependency smoke relies on. You cannot reproduce smoke's
 value locally without Chrome, so let CI be the smoke gate and download the `smoke-screenshots`
@@ -51,14 +51,13 @@ artifact if a UI change is involved.
 4. Commit + push:
    - Commit with the trailer (below), then `git push -u origin <branch>`.
    - Stage each file by name (`git add <your-files>`), not `git add -u`: in a shared tree, `-u` sweeps
-     a concurrent agent's half-finished edits into your commit, that once landed an `src/ui/app.js`
-     change missing its matching test, reddening `main` (see "Concurrency isolation").
+     a concurrent agent's half-finished edits into your commit (see "Concurrency isolation").
    - If `git status` shows files you didn't touch, stop and isolate in a worktree.
 5. PR: `gh pr create --fill` (or `--title`/`--body`); the PR title becomes the squash-commit subject,
    write it as `feat(scope): …` / `fix(scope): …` with the changelog-worthy summary (match `git log`).
    If the body has backticks or `$(…)`, pass it via `--body-file` (see quirk), not inline `--body`.
-6. Watch CI (~265 s wall on a PR, measured on run 35974499577: `build-test` about 260 s is the wall,
-   the `sweeps` legs run 70 to 190 s in parallel): poll until the run registers, then
+6. Watch CI (about four to five minutes on a PR; `build-test` is the wall and the `sweeps` legs run in
+   parallel beside it): poll until the run registers, then
    watch it (a bare `gh pr checks <n> --watch` false-greens, see quirk). Every job must pass:
    `build-test` (build, test, smoke), `panda-smoke`, `corpus-contrast` and `sweeps`.
 7. Squash-merge:
@@ -75,14 +74,14 @@ artifact if a UI change is involved.
 - `git status -s | grep .claude/docs/other` MUST be empty. `.claude/docs/other/` is local-only (ignored
   via `.git/info/exclude`, not `.gitignore`), keep it out of every commit.
 - `node_modules` stays untracked: `git ls-files | grep -c node_modules` → 0 and
-  `git status -s | grep -c node_modules` → 0. It is de-tracked AND ignored (the rule was tightened to
-  `node_modules`, so both a real dir and a stray symlink are caught); re-tracking it is the exit-194
-  regression, anecdote and why CI is blind to it in `references/foundations.md` §4.
+  `git status -s | grep -c node_modules` → 0. It is de-tracked AND ignored by the `node_modules` rule
+  in `.gitignore` (no trailing slash, so a real dir and a stray symlink are both caught); re-tracking it
+  breaks local builds in a way CI cannot see, the mechanism is in `references/foundations.md` §4.
 - Generated artifacts in sync. `figma/plugin/ui.html` + `src/ui/figma-plugin-assets.js` +
   `src/ui/mcp-assets.js` are build outputs: commit them after a clean `npm test` (which regenerates
   them) and let the generators write them, a hand-edit is drift.
 - **Renamed an emitted variable, collection, or style name? Ship its rename map** in
-  `figma/binder/migrations.mjs` (FIGMA_MIGRATIONS) in the SAME change (TKT-0012). Every apply loop
+  `figma/binder/migrations.mjs` (FIGMA_MIGRATIONS) in the SAME change. Every apply loop
   reconciles by name, a rename without a map is a prune+recreate that orphans every consumer
   binding in every existing user file. The `renamecap` gate proves the channel; your map rides it.
 - Role/step count gates. If you changed a role or step count, the count literals in
@@ -131,7 +130,7 @@ the remote. Smoke is Chrome-only, green CI is not Safari proof; reason about Web
 
 | Path | Use when |
 |---|---|
-| `references/foundations.md` | the gate model, the squash-merge mental model, why smoke isn't cross-browser, the guard rationale + the exit-194 anecdote |
+| `references/foundations.md` | the gate model, the squash-merge mental model, why smoke isn't cross-browser, the guard rationale + why a tracked `node_modules` breaks local builds |
 | `references/best-practices.md` | the worktree concurrency procedure end-to-end + collision-file recovery + parent-reconcile, worked |
 | `references/rubric.md` | score a ship before calling it landed |
 
