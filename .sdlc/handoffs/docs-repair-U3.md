@@ -46,13 +46,13 @@ The raw count outside handoffs is `2`. Both lines quote the retired `persist.js`
 
 ## Pass 2 findings
 
-| Finding | State | What changed |
-|---|---|---|
-| `No dependencies.` at `persist.js:22` | 🟢 | line 22 now reads `// Its three imports are engine constants (icon systems, the default type, the collections); nothing from the DOM.` Checked against lines 23 to 25: `ICON_SYSTEMS`/`DEFAULT_ICON_SYSTEM` (`icon-systems.mjs:13,15`), `DEFAULT_TYPE` (`type.mjs:155`), `COLLECTIONS` (`collections.js:13`) are all `export const`; the file's only `window`/`localStorage` text is in the line 4 comment. To hold 22 lines, lines 20 and 21 were shortened to `... survives` / `// as its current name, never dropped by a current-names allowlist (TKT-0016, RENAME_MAPS below).`; the TKT-0016 pointer and the RENAME_MAPS pointer stay |
-| Handoff P2 figure, build claim, U3-9 baseline, P1 head | 🟢 | this file was rewritten from the run at 2f085074, not appended to. The pass 1 figure 4125.5 (true at 0d1ebb55, where the build ran) is history only; the build claim is replaced by the owed row; U3-9's baseline count is `3`; P1 names its head |
-| Plan U3-9 note direction | 🟢 | already fixed on the plan branch at 14645215 ("which moved the `persist.js` lines the reactivity reviews cite"), merged at 184a795a; no edit here |
-| `docs-repair-U3-rework.md:18` unlabelled count | 🟢 | reads `stripped 5 and raw 7 at 50a7f464` |
-| Note: `03-stores-and-persistence.md` LOW 5 off by the same amount as at B | not in scope | the verdict raised it as a note; U3-10 holds the header at 22 lines so this pass moves no cite |
+| Finding | State | Evidence | Control |
+|---|---|---|---|
+| `No dependencies.` at `persist.js:22` | 🟢 | line 22 now reads `// Its three imports are engine constants (icon systems, the default type, the collections); nothing from the DOM.` Checked against lines 23 to 25: `ICON_SYSTEMS`/`DEFAULT_ICON_SYSTEM` (`icon-systems.mjs:13,15`), `DEFAULT_TYPE` (`type.mjs:155`), `COLLECTIONS` (`collections.js:13`) are all `export const`; the file's only `window`/`localStorage` text is in the line 4 comment. To hold 22 lines, lines 20 and 21 were shortened to `... survives` / `// as its current name, never dropped by a current-names allowlist (TKT-0016, RENAME_MAPS below).`; the TKT-0016 pointer and the RENAME_MAPS pointer stay | U3-10 at da8d48d1: `1` |
+| Handoff P2 figure, build claim, U3-9 baseline, P1 head | 🟢 | this file was rewritten from the run at 2f085074, not appended to. The pass 1 figure 4125.5 (true at 0d1ebb55, where the build ran) is history only; the build claim is replaced by the owed row; U3-9's baseline count is `3`; P1 names its head | U3-11 and P7 rows above |
+| Plan U3-9 note direction | 🟢 | already fixed on the plan branch at 14645215 ("which moved the `persist.js` lines the reactivity reviews cite"), merged at 184a795a; no edit here | `git show aab895f0:.sdlc/plans/docs-repair.md` carries the reversed phrase `review record lines the header cites` |
+| `docs-repair-U3-rework.md:18` unlabelled count | 🟢 | reads `stripped 5 and raw 7 at 50a7f464` | at 184a795a the line read `(5 at 50a7f464` |
+| Note: `03-stores-and-persistence.md` LOW 5 off by the same amount as at B | not in scope | the verdict raised it as a note; U3-10 holds the header at 22 lines so this pass moves no cite | none, no edit |
 
 ## Notes
 
