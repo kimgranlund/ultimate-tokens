@@ -342,10 +342,16 @@ function isMd(rel) { return rel.endsWith(".md"); }
 // `insideStringAt`'s own odd/even counting, extended to return the STRING'S OWN CONTENT (from
 // just after the opening quote to just before the closing one) so E1/E2/E3 can test what the
 // string itself opens with, not the line around it.
-function enclosingStringContent(line, idx) {
+function enclosingStringContent(line, idx, { openEnded = false } = {}) {
   for (const q of ['"', "'", "`"]) {
     const positions = [];
-    for (let i = 0; i < line.length; i++) if (line[i] === q) positions.push(i);
+    for (let i = 0; i < line.length; i++) {
+      if (line[i] === "\\") { i++; continue; } // an escaped quote (`\"`, `\``) opens and closes nothing
+      if (line[i] === q) positions.push(i);
+    }
+    // A template literal left open at the line's end (a multi-line template's first line) reads
+    // as a string running to the end of the line -- E1/E2 opt in; E3 keeps the paired-only scan.
+    if (openEnded && q === "`" && positions.length % 2 === 1) positions.push(line.length);
     for (let p = 0; p + 1 < positions.length; p += 2) {
       const open = positions[p], close = positions[p + 1];
       if (idx > open && idx < close) return { quote: q, start: open + 1, end: close, content: line.slice(open + 1, close) };
@@ -360,9 +366,9 @@ function hasRealLineCommentBefore(line, idx) {
   return markerIdx >= 0 && markerIdx < idx && !insideStringAt(line, markerIdx);
 }
 // E1: a string opens with an ATX heading marker and carries the dash.
-const E1_RE = new RegExp(`["\`]#{1,6} [^"\`]*${DASH}`);
+const E1_HEAD_RE = /^#{1,6} /;
 // E2: a bold label immediately before the dash, one space each side.
-const E2_RE = new RegExp(`\\*\\*[^*]+\\*\\* ${DASH} `);
+const E2_RE = new RegExp(`\\*\\*[^*]+\\*\\* ${DASH} $`);
 // E3: one of the label/title/card/toast markers on the line, the dash inside a string whose text
 // before it is 1 to 4 words with no sentence punctuation -- a short label, never a clause to join.
 const E3_MARKER_RE = /\b(?:title|ariaLabel|labelTitle|label|note|description|hint)\s*:|\b(?:card|toast|notify)\s*\(/;
@@ -378,7 +384,7 @@ const E4_RE = new RegExp(`^\\s*(?:>\\s*[-*]?\\s*\\*\\*[^*]+\\*\\* ${DASH}|• [^
 
 // ---------------------------------------------------------------------------------------------
 // classifyLine(): applied to ONE line (already masked for `.md`), returns the rule that governs
-// its first actionable dash, or `null` if the line carries none. Used by both the gate (to decide
+// its first actionable dash (R2s/R3s: the dash their `idx` names), or `null` if the line carries none. Used by both the gate (to decide
 // whether a dash counts) and `--fix` (to decide the replacement). `refuse` covers every R0
 // construct; the caller is told which one, for the residual list.
 function classifyLine({ line, prevLine, md, skipStructural = false }) {
@@ -452,10 +458,12 @@ function classifyLine({ line, prevLine, md, skipStructural = false }) {
     // same-line string encloses THAT dash and the string's own content matches, and the decision
     // carries the matched `idx` so the fix rewrites that dash, not the line's first.
     for (const di of idxs) {
-      const span = enclosingStringContent(line, di);
+      const span = enclosingStringContent(line, di, { openEnded: true });
       if (!span) continue;
       const upto = di - span.start;
-      if (E1_RE.test(span.quote + span.content.slice(0, upto + 1)) && guardBeforeHolds(line, di)) return { rule: "R2s", idx: di };
+      // Anchored at THIS dash: E1 takes the heading string's first dash, E2 the dash right after
+      // the bold label (a later dash, or one behind a failed guard, never inherits the match).
+      if (E1_HEAD_RE.test(span.content) && span.content.indexOf(DASH) === upto && guardBeforeHolds(line, di)) return { rule: "R2s", idx: di };
       // E2: a bold label immediately before the dash inside a string, outside a real `//` comment
       // (a commented-out label renders as nothing) -- R3's colon.
       if (E2_RE.test(span.content.slice(0, upto + 2)) && !hasRealLineCommentBefore(line, di) && guardBeforeHolds(line, di)) return { rule: "R3s", idx: di };
@@ -839,6 +847,27 @@ function selftest() {
     { name: "E2 template literal, no enclosing string", md: false,
       line: `- NOT "exotic ${DASH} wild jungle cat energy", INSTEAD: **"Bengal tiger ${DASH} burnt orange"** ${DASH} the Sundarbans`,
       expectRule: "R8", expectFinal: `- NOT "exotic, wild jungle cat energy", INSTEAD: **"Bengal tiger, burnt orange"**, the Sundarbans` },
+    // #764 review F1: the string scan skips escaped quotes and reads a template left open at the
+    // line's end as running to the end of the line, so main's real colons survive a replay
+    // (`ds-export.js:739`, `:769`, `describe-rubric.mjs:63`).
+    { name: "E2 bold label after escaped backticks in a template", md: false,
+      line: "  const famBullet = (f, note) => has(f) ? `- **${cap(f)} \\`${ref(f)}\\`** " + DASH + " ${note} Its label is \\`${ref(f + \"-on-\" + f)}\\`.` : \"\";",
+      expectRule: "R3s", expectFinal: "  const famBullet = (f, note) => has(f) ? `- **${cap(f)} \\`${ref(f)}\\`**: ${note} Its label is \\`${ref(f + \"-on-\" + f)}\\`.` : \"\";" },
+    { name: "E2 bold label in a template continuation line", md: false,
+      line: "    `  interaction STATE. **Foreground \\`${ref(cn + \"-on-surface\")}\\`** " + DASH + " primary text; **Muted`,",
+      expectRule: "R3s", expectFinal: "    `  interaction STATE. **Foreground \\`${ref(cn + \"-on-surface\")}\\`**: primary text; **Muted`," },
+    { name: "E1 heading in a template open at the line end", md: false,
+      line: "export const RUBRIC = `# Interpretation rubric " + DASH + " words to PaletteBrief seeds",
+      expectRule: "R2s", expectFinal: "export const RUBRIC = `# Interpretation rubric: words to PaletteBrief seeds" },
+    // Review F2: E1 is anchored at the heading string's FIRST dash. A first dash behind a failed
+    // guard leaves the whole line refused; the second dash never inherits the match.
+    { name: "E1 anchored: failed first dash refuses, second never inherits", md: false,
+      line: `const s = "## A? ${DASH} b ${DASH} c";`,
+      expectRule: "R0" },
+    // Review F4a: an E2 dash that is not the line's first must take the colon on ITS dash.
+    { name: "E2 second string, dash is not the line's first", md: false,
+      line: `const c = "a ${DASH} b"; const d = "- **Pro** ${DASH} paid";`,
+      expectRule: "R3s", expectFinal: `const c = "a, b"; const d = "- **Pro**: paid";` },
     { name: "E3 short title string", md: false,
       line: `const t = { title: "Export kit ${DASH} all formats" };`,
       expectRule: "R0" },
@@ -846,6 +875,7 @@ function selftest() {
       line: `> - **Label** ${DASH} one, two`,
       expectRule: "R0" },
   ];
+  let finalChecked = 0;
   for (const c of cases) {
     const arr = c.prevLine !== undefined ? [c.prevLine, c.line] : [c.line];
     const { edits } = fixLines(arr, c.md);
@@ -857,10 +887,15 @@ function selftest() {
       if (got !== c.expectFix) FAIL(c.name, `fix produced "${got}", expected "${c.expectFix}"`);
     }
     if (c.expectFinal !== undefined) {
+      finalChecked++;
       const finalLine = fixLines(arr, c.md).lines[arr.length - 1];
       if (finalLine !== c.expectFinal) FAIL(c.name, `final line "${finalLine}", expected "${c.expectFinal}"`);
     }
   }
+
+  // A vacuous-pass guard: every `expectFinal` fixture must actually have been read (review F4b).
+  const finalWanted = cases.filter((c) => c.expectFinal !== undefined).length;
+  if (finalWanted < 6 || finalChecked !== finalWanted) FAIL("expectFinal-leg", `${finalChecked} of ${finalWanted} whole-line results were checked`);
 
   // (3) The two exemptions. A Markdown inline span keeps its glyph byte for byte end to end
   // through `fixLines()` (checked above, "a span dash before..."), and a PINNED path is never
@@ -989,6 +1024,15 @@ function selftest() {
   const pass2 = fixLines(pass1.lines, true);
   if (pass2.edits.length !== 0) FAIL("idempotence", `a second --fix pass still made ${pass2.edits.length} edit(s): ${JSON.stringify(pass2.edits[0])}`);
   if (pass2.lines.join("\n") !== pass1.lines.join("\n")) FAIL("idempotence", "a second --fix pass changed the text without recording an edit");
+
+  // The same idempotence check on the non-Markdown path, where E1/E2 actually fire (review F3):
+  // the source must reach R2s/R3s on the first pass, and the second pass must edit nothing.
+  const idemCode = cases.filter((c) => c.expectFinal !== undefined && !c.md).map((c) => c.line);
+  const code1 = fixLines(idemCode, false);
+  const code2 = fixLines(code1.lines, false);
+  if (!code1.edits.some((e) => e.rule === "R2s") || !code1.edits.some((e) => e.rule === "R3s"))
+    FAIL("idempotence-code", "the non-Markdown leg never reached R2s and R3s");
+  if (code2.edits.length !== 0) FAIL("idempotence-code", `a second non-Markdown pass made ${code2.edits.length} edit(s): ${JSON.stringify(code2.edits[0])}`);
 
   if (fails.length) {
     console.log(`self-test: FAIL ${fails.length} case(s)`);
