@@ -118,17 +118,42 @@ for (const pin of FACT_PINS) {
   if (num !== undefined ? Number(num) !== held : held !== true) FAIL(pin.src, `fact pin "${pin.id}": ${pin.doc} says \`${pin.needle}\` but the code holds ${JSON.stringify(held)}`);
 }
 
+// (4b) a fact pin's `source` must read the code, never restate the number (#769): a literal
+// `source: () => 15` compares the doc with a typed copy of itself and can never drift. The predicate
+// matches a number literal in any bare shape (plain, arrow, async, block body) and not a body that
+// reads. It runs over this file's own FACT_PINS slice; its fixture sits below the closing `];` so
+// the slice never reads it.
+const bareLiteralSource = (text) => [...text.matchAll(/source:\s*(?:async\s*)?(?:\(\s*\)\s*=>\s*)?(?:\{\s*return\s+)?[-+]?\d+(?:\.\d+)?\s*;?\s*\}?\s*(?=[,}\n])/g)].map((m) => m.index);
+{
+  const self = txt("test/repo/citations.mjs"), a = self.indexOf("const FACT_PINS = ["), slice = self.slice(a, self.indexOf("\n];", a));
+  for (const at of bareLiteralSource(slice)) {
+    const ids = [...slice.slice(0, at).matchAll(/id: "([^"]+)"/g)];
+    FAIL("test/repo/citations.mjs", `fact pin "${ids.at(-1)?.[1] ?? "?"}": bare literal source (a source must read the code, not restate a number)`);
+  }
+  const positives = ["source: 53,", "source: () => 15,", "source: async () => 15,", "source: () => { return 15; },", "source: async () => { return 59 },", "source: () => -1.5,"];
+  const negatives = ["source: () => Object.keys(x).length },", "source: () => /a/.test(y) },", "source: async () => Object.keys((await import(\"a.mjs\")).b()).length },", "source: drawerColorFormats },", "source: () => {\n      const cell = 4;"];
+  for (const f of positives) if (!bareLiteralSource(f).length) FAIL("test/repo/citations.mjs", `bareLiteralSource missed a bare literal: ${f}`);
+  for (const f of negatives) if (bareLiteralSource(f).length) FAIL("test/repo/citations.mjs", `bareLiteralSource flagged a reading source: ${f}`);
+}
+
 // (5) symbol homes: a repo skill that says `sym` lives in `path` must be right about it. The three
 // shapes are `sym` in `path`, `sym` (`path`) and `sym` (in `path`); `sym` may carry a call suffix,
-// `path` an optional :NNN. The path is a full repo path resolved against git ls-files (a bare file
-// name, `type.mjs`, is ambiguous and prose often uses it for a family such as `typeTokensX`, so it
-// is not read) and the file must DEFINE the symbol: a declaration, a method line or a
+// `path` an optional :NNN. The path is a full repo path resolved against git ls-files, or a bare
+// source file name (`model.mjs`) resolved by unique basename under src/ (two homes is an `ambiguous
+// basename` FAIL, never a skip; BARE_EXEMPT carries the prose false-positives, each with a reason)
+// and the file must DEFINE the symbol: a declaration, a method line or a
 // property line. An import or a call is not a home (app.js imports and calls ensureTypeFonts, so a
 // text match would pass a stale citation). With :NNN the definition must sit on line NNN. A backticked
 // path with a source extension that resolves to nothing is stale too; other parentheticals
 // (`dimension` (`px`)) are prose, not citations, and are skipped.
 import { execFileSync } from "node:child_process";
-const SYMBOL_HOME_FLOOR = 12;
+const SYMBOL_HOME_FLOOR = 30;
+const BARE_EXEMPT = [
+  { sym: "typeTokensX", reason: "prose for the typeTokens* family, not one defined symbol" },
+  { sym: "geomTokensX", reason: "prose for the geomTokens* family, not one defined symbol" },
+  { sym: "steps", reason: "a plain English word beside type.mjs, not a defined symbol" },
+];
+for (const e of BARE_EXEMPT) if (!e.sym || !e.reason) FAIL("test/repo/citations.mjs", `BARE_EXEMPT entry without a sym + reason: ${JSON.stringify(e)}`);
 const tracked = execFileSync("git", ["ls-files"], { cwd: ROOT, encoding: "utf8", maxBuffer: 1 << 26 }).split("\n").filter(Boolean);
 const trackedSet = new Set(tracked);
 const defines = (line, sym) => {
@@ -144,8 +169,12 @@ for (const doc of tracked.filter((f) => /^\.claude\/skills\/.*\.md$/.test(f))) {
   txt(doc).split("\n").forEach((line, i) => {
     for (const m of line.matchAll(SHAPE)) {
       const [, sym, path, nnn] = m;
-      if (!path.includes("/")) continue;
-      const homes = trackedSet.has(path) ? [path] : [];
+      let homes;
+      if (!path.includes("/")) {
+        if (!/\.(m?js|json|html|css)$/.test(path) || BARE_EXEMPT.some((e) => e.sym === sym)) continue;
+        homes = tracked.filter((f) => f.startsWith("src/") && f.endsWith("/" + path));
+        if (homes.length > 1) { homesChecked++; homesStale.push([doc, `${doc}:${i + 1} \`${sym}\` cites bare \`${path}\`: ambiguous basename, ${homes.join(" or ")}`]); continue; }
+      } else homes = trackedSet.has(path) ? [path] : [];
       if (!homes.length) { if (/\.(m?js|json|html|css)$/.test(path)) { homesChecked++; homesStale.push([doc, `${doc}:${i + 1} \`${sym}\` cites \`${path}\`, which no tracked file matches`]); } continue; }
       homesChecked++;
       const ok = homes.some((f) => { const ls = txt(f).split("\n"); return nnn ? defines(ls[Number(nnn) - 1] ?? "", sym) : ls.some((l) => defines(l, sym)); });
