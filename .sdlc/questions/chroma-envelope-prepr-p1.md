@@ -10,3 +10,13 @@
 | Question 2 | The pre-land verifier read the C3.7 corpus-tonal timing against main at `1.414` and `1.221` (two single pairs under load 4.9 to 6.4; the base alone spread 134.5 to 115.2 s), over the plan's 1.2 bar. C3.7 is written U3-scoped and read `1.036` there. How is it ruled? |
 | Options Q2 | A (recommended): C3.7 stays U3-scoped as written; the plan-wide reading is reported, not barred (CI sweeps green on the head). · B: revision 10 also adds a plan-wide re-time under the quiet-host rule before landing |
 | Default if unanswered | none: Q1 is a revision past the cap and needs the owner |
+
+## Answer
+
+| Field | Value |
+|---|---|
+| Date | 2026-09-30 |
+| Q1 options | Yes, fix all 6 lines (Recommended) · Yes, only the 3 red lines · No, fresh plan |
+| Q1 chosen | Yes, fix all 6 lines (Recommended), option A (R84) |
+| Q2 options | Keep U3-scoped (Recommended) · Re-time plan-wide first |
+| Q2 chosen | Keep U3-scoped (Recommended), option A (R84) |
