@@ -774,6 +774,21 @@ Format: Context → Decision → Rationale → Consequences → Status.
   three allow-lists it retires (the lone-spike list, the default-kit spike finding and the 90-name dip
   baseline) are gone: the lone-spike and off-anchor dip gates count 0 with no list, and the 32 dips at
   stop 500 are notches, printed and not gated.
+- **Amendment (2026-09-29, #725, R69).** The owner ruled B on `.sdlc/questions/chroma-envelope-scope.md`.
+  R69 REVERSES the Q-U2-5 muted-in-vivid-group intent (`.sdlc/questions/pif-u2.md`, #681 revision 17):
+  the anchored basis no longer climbs above the anchor's own `s`, and the group target reads
+  `min(group, anchor)`. The perceptual and peak damping constants are the closed-form pair that meets
+  the ruled 75/25 bars: `c` = log2 3 and `d` 0.9275 (R76), mapped from `damp` by `r^2.1796`. The tone is
+  held per stop by the `l` solve, which is the OKHSL `l` to CIE L\* chroma coupling (not
+  Helmholtz-Kohlrausch). The movement is export-wide (the six identity lines over `main` at
+  `afd415c0`, `report-preset-fidelity.mjs --identity-control --authored --base afd415c0`: perceptual
+  3780 of 3780 palettes and 86008 of 94500 cells, peak 3780 of 3780 and 85463 of 94500, even 0 in
+  both; default kit perceptual 16 of 16 palettes and 347 of 400 cells, peak 16 of 16 and 352 of 400,
+  even 0 of 16) and is the second after this ADR's own. On the OKHSL anchored path the `oklch` hue is the anchor's own OKLCH hue with no per-stop
+  solve (revision 8: OKHSL hue is OKLab hue, so the solve was the identity reading the 8-bit
+  staircase); `hueSpace` is exactly identical on anchored perceptual and peak, the Q-D ruling made
+  structural. The two FLOORS cells the retune costs (peak Success light 7.5, perceptual Data 3 dark
+  4.8, R77) are recorded with the 41 pending cells.
 
 ## ADR-027: A seat cites only what it measured, at the ref it is writing about
 - **Context.** Over one review round of #681 U5, four defects arose from three seats through one
@@ -828,7 +843,7 @@ Format: Context → Decision → Rationale → Consequences → Status.
 |-----|----------------------|-------------------------------|
 | ADR-003 | on-colors fail WCAG on Warning | the historical brand override; AMENDED by ADR-025, contrast-aware on-colors are the default since #662 |
 | ADR-025 | on-colors jump to pure white/black on some accents | the ramp ends miss AA there and #662 forbids moving a stop; the achromatic constants are the only way to the floor |
-| ADR-026 | a curated palette stores a source hex that looks redundant beside its own `{hue, chroma, skew, lift}` | the four fitted numbers cannot reproduce an arbitrary sRGB colour through a cusp-derived key colour; the stored hex is the sample itself, and deleting it silently replaces every preset's own colour with a reconstruction of it |
+| ADR-026 | a curated palette stores a source hex that looks redundant beside its own `{hue, chroma, skew, lift}` | the four fitted numbers cannot reproduce an arbitrary sRGB colour through a cusp-derived key colour; the stored hex is the sample itself, and deleting it silently replaces every preset's own colour with a reconstruction of it; amended 2026-09-28 (#701, even-mode floor and shoulder) and 2026-09-29 (#725, R69: the anchored basis capped at the anchor, the retuned damping pair and the per-stop tone hold) |
 | ADR-004 | scrims unified onto one 500 ramp (SUPERSEDED) | scrims now a single 500 ramp; the former base-750-only decision is superseded |
 | ADR-002 | semantic could alias raw to cascade | native import errors on name-only aliasData; plugin does cascade |
 | ADR-011 | `role-table.json` still encodes cam16 hues though hueSpace is now OKLCH | role-table is the cam16 answer key for the parity gate; the OKLCH flip is at the doc/seed layer, not the role table |

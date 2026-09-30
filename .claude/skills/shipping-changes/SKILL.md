@@ -33,9 +33,10 @@ CI (`.github/workflows/ci.yml`) runs four jobs on every PR: `build-test` (`npm c
 `npm test` → `npm run smoke`, real headless Chrome over CDP), `panda-smoke` (the Panda/Radix codegen
 check), `corpus-contrast` (the full curated-corpus contrast sweep) and `sweeps` (a matrix, one runner
 per full-corpus gate script, `gate:corpus-tonal`/`gate:corpus-anchor`/`gate:sweep-prime`/
-`gate:corpus-reset`/`gate:corpus-contrast`, `fail-fast: false`). All four must report `success`; a red
+`gate:corpus-reset`/`gate:corpus-contrast`/`gate:mode-isolation`/`gate:even-dips`/
+`gate:chroma-envelope`, `fail-fast: false`). All four must report `success`; a red
 `sweeps` leg is a red run, same as a red `build-test`. `npm run gate:sweeps` is the local command that
-runs the same five full-corpus gates in sequence, for a builder or verifier who wants to check them
+runs the same eight full-corpus gates in sequence, for a builder or verifier who wants to check them
 without waiting on CI. `npm run smoke` itself runs `npm run build` before booting Chrome (a
 standalone `npm run smoke` must never trust a stale `dist/`), so `build-test`'s own preceding build
 step is a harmless redundant rebuild, not a dependency smoke relies on. You cannot reproduce smoke's
