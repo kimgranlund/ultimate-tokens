@@ -525,7 +525,7 @@ const RAMP_WINDOW_ALLOW = [
 // policy threshold an owner rules on); the gate's own negative control still proves it discriminates a
 // real regression from an expected member.
 // #725 U3 freeze (R74, "frozen once at U3 with the movement declared"), measured FULL on U3's head
-// (hold + retune, revision 8 hue): 72 -> 79, 13 added and 6 removed. Every added member fails only on
+// (hold + retune, revision 8 hue): 72 -> 79, 14 added and 7 removed. Every added member fails only on
 // the peak ramp at stops 50&100, 100&150 or 900&950 (the near-white and near-black ends, where a half
 // step is under one 8-bit code), none mid-ramp, and all 13 were already gap misses at U2's head (the U2
 // carry R74 moved here). Removed: cuisine "Chocolate" primary, film "The Godfather" secondary and music

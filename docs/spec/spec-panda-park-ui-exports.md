@@ -501,7 +501,7 @@ Neutral at full chroma, the emitters must be fed the resolved state, as the draw
   `primary.hover.base` moved again at #725 U3 revision 8 (was `oklch(0.3951 0.1194 258.53)`): the
   anchored `oklch` hue is now the anchor's own OKLCH hue with no per-stop solve; re-read from the same
   call, the other EX-1 and EX-2 literals did not move.
-  #725 U3 (the OKHSL damp retune and the tone hold) re-pinned four EX-2 literals the same way
+  #725 U3 (the OKHSL damp retune and the tone hold) re-pinned five EX-2 literals the same way
   (`primary.DEFAULT._dark`, both `primary.hover` values, `neutral["on-surface"].base`, `data-1.DEFAULT.base`)
   and EX-1's `primary["950"]` (was `oklch(0.1763 0.014 258.36)`: the retuned damp greys stop 950 further).
 - **EX-3 (NORMATIVE, panda type + geometry, after H-1).** `tokens.fonts.body.value === "'Inter',

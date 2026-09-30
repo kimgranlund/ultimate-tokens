@@ -74,7 +74,7 @@
    anchors stripped, or in even mode, are byte-identical to the prior capture. No token NAME, block,
    or ordering changed; line counts are identical. exportShadcn's own contract is untouched.
    #725 CARVE-OUT (chroma-envelope U3, re-captured 2026-09-29 by script from the engine, never
-   typed): the OKHSL damp retune (D 0.9275, residue r^2.0875) and the tone hold (each damped stop
+   typed): the OKHSL damp retune (D 0.9275, residue r^2.1796) and the tone hold (each damped stop
    keeps its undamped CIE L*) move every perceptual and peak ramp, anchored or not: 36 / 33 / 33
    lines (ALL / BRAND_ONLY / ALL_DATA_OFF) differ from the U2 capture, and with anchors stripped
    37 / 38 / 38 do. The same fixtures in even mode are byte-identical to the prior capture. No token
