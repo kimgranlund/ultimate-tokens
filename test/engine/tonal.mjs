@@ -761,9 +761,18 @@ for (const mode of ["perceptual", "peak"]) {
       // the OKHSL paths report the MEASURED L* of an 8-bit RGB triple, which lands a few hundredths
       // off lmin/lmax by quantisation alone (e.g. Primary 950 measures 4.953). Part (ii) below does
       // the exact-bound work on toneAt itself, so nothing is lost by the slack here.
+      // The OKHSL paths' bound widens to the palette's own UNDAMPED ramp (#725 U3): lmin/lmax set the
+      // OKHSL l endpoints, and a saturated colour at OKHSL l(lmin) reads BELOW lmin in CIE L* (measured on
+      // the U2 engine at damp 0: Primary/Data 1-3 stop 950 at 4.03 to 4.19). The damping used to grey
+      // stop 950 back up to 5; the tone hold now keeps the undamped L* at every damp (holdTone), so the
+      // undamped ramp is the bound, and a stop that leaves BOTH it and [lmin, lmax] still reds.
       const tol = mode === "even" ? 1e-9 : 0.5;
-      for (const r of rows) if (!(r.tone >= CTL.lmin - tol && r.tone <= CTL.lmax + tol))
-        FAIL("lift-monotonic", `${mode} ${p.name}: stop ${r.stop} tone ${r.tone} outside [${CTL.lmin}, ${CTL.lmax}]`);
+      const undamped = mode === "even" ? null : T.paletteStops({ hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift }, { ...CTL, toneMode: mode, damp: 0 }, STOPS);
+      rows.forEach((r, i) => {
+        const lo = Math.min(CTL.lmin, undamped ? undamped[i].tone : Infinity), hi = Math.max(CTL.lmax, undamped ? undamped[i].tone : -Infinity);
+        if (!(r.tone >= lo - tol && r.tone <= hi + tol))
+          FAIL("lift-monotonic", `${mode} ${p.name}: stop ${r.stop} tone ${r.tone} outside [${lo}, ${hi}]`);
+      });
       // the visible symptom the defect produced: a run of identical swatches.
       const distinct = new Set(rows.map((r) => r.hex)).size;
       if (distinct < STOPS.length)
@@ -903,22 +912,30 @@ for (const mode of ["perceptual", "peak"]) {
   //     cannot be compared against itself. okhslLAt/effHue/peakC are separate, independently gated engine
   //     functions, not the expression under test. Budget 3e-3: the 8-bit RGB round-trip alone costs up to
   //     2.0e-3 of OKHSL l, an order of magnitude under the ~0.02 gap between neighbouring stops.
+  //     Read at damp 0 (#725 U3): above it the tone hold re-solves each damped stop's OKHSL l so it keeps
+  //     the undamped CIE L* (holdTone), which moves l off this distribution by design (up to 0.025 at the
+  //     shipped damp); damp 0 is the hold's identity, so the distribution is read where nothing but skew
+  //     and lift can move it, and (i b) below checks the hold carries it to the shipped damp.
   const okl = (rgb) => rgbToOkhsl(rgb).l;
   const LQ = 3e-3;
   // CAP_L_EXCEPTIONS (#681 U3 pass 5): the peak-mode anchor cap (below, mode "peak" only) holds CIE L*
   // fixed at these stops, not OKHSL l  -  a deliberate, disclosed divergence from this check's own
   // independent-OKHSL-l derivation, only where the cap actually binds (dampAmp 0, chroma > anchorChroma).
-  // Bidirectionally verified: every cited key must be observed AND every observed mismatch must be cited.
+  // Bidirectionally verified: every cited key must be observed AND every observed mismatch must be cited,
+  // and each cited row must carry the cap's own `capped` flag. Re-measured at damp 0 (#725 U3): Data 1
+  // and Data 2 stop 450 join (undamped, their 450 passes the anchor's chroma and the cap binds);
+  // cam16 Secondary 550 leaves (still capped, but its l now lands inside the 3e-3 budget).
   const CAP_L_EXCEPTIONS = new Set([
+    "peak|oklch|Data 1|450",
     "peak|oklch|Data 6|550",
-    "peak|cam16|Secondary|550",
+    "peak|cam16|Data 2|450",
     "peak|cam16|Data 6|550",
   ]);
   const seenCapLExceptions = new Set();
   for (const mode of ["perceptual", "peak"]) {
     for (const hueSpace of ["oklch", "cam16"]) {
       for (const p of zeroDefaults) {
-        const ctl = OK(mode, { hueSpace, vibrancy: 0 });
+        const ctl = OK(mode, { hueSpace, vibrancy: 0, damp: 0 });
         const lLight = T.okhslLAt(ctl.lmax), lDark = T.okhslLAt(ctl.lmin);
         const cuspL = T.okhslLAt(E.peakC(T.effHue(p.hue, hueSpace, T.hueAnchorFrac(p, ctl))).tone);
         const rows = T.paletteStops({ hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift }, ctl, STOPS);
@@ -928,7 +945,10 @@ for (const mode of ["perceptual", "peak"]) {
             : lLight + (lDark - lLight) * ((r.stop - 50) / 900);
           if (Math.abs(okl(r.rgb) - want) > LQ) {
             const key = `${mode}|${hueSpace}|${p.name}|${r.stop}`;
-            if (CAP_L_EXCEPTIONS.has(key)) { seenCapLExceptions.add(key); continue; }
+            if (CAP_L_EXCEPTIONS.has(key)) {
+              if (!r.capped) FAIL("skew-lift-okhsl", `(i) ${key} is a cited CAP_L_EXCEPTIONS row but the cap did not flag it`);
+              seenCapLExceptions.add(key); continue;
+            }
             FAIL("skew-lift-okhsl", `(i) ${mode}/${hueSpace} ${p.name} stop ${r.stop}: skew 0 + lift 0 is not the unwarped distribution, emitted OKHSL l ${okl(r.rgb).toFixed(5)} vs independent ${want.toFixed(5)}`);
             break;
           }
@@ -939,6 +959,39 @@ for (const mode of ["perceptual", "peak"]) {
   if (seenCapLExceptions.size !== CAP_L_EXCEPTIONS.size) {
     const missing = [...CAP_L_EXCEPTIONS].filter((k) => !seenCapLExceptions.has(k));
     FAIL("skew-lift-okhsl", `(i) ${missing.length} of the ${CAP_L_EXCEPTIONS.size} cited CAP_L_EXCEPTIONS were not observed this run (${missing.join(", ")})  -  either fixed (remove from the list) or the corpus changed under it`);
+  }
+
+  // (i b) the tone hold (#725 U3, R69) carries (i)'s distribution to the shipped damp: every default
+  //       palette, both OKHSL modes and hue spaces, 25 stops, emits the SAME CIE L* at the shipped damp
+  //       as at damp 0, within the two rows' own 8-bit rounding floors (the largest L* step one channel
+  //       +/-1 makes on each emitted pixel). Measured 0 of 1600 rows outside; with the hold removed
+  //       (holdTone returning l unchanged) 326 rows fall outside, worst perceptual/oklch Primary stop
+  //       650, 2.53 L* against a 0.41 floor, the coupling the hold exists to cancel.
+  {
+    const floorOf = (rgb) => {
+      const b = E.lstarFromRgb(rgb);
+      let f = 0;
+      for (let c = 0; c < 3; c++) for (const d of [-1, 1]) {
+        const q = [...rgb]; q[c] = Math.max(0, Math.min(255, q[c] + d));
+        f = Math.max(f, Math.abs(E.lstarFromRgb(q) - b));
+      }
+      return f;
+    };
+    let rows = 0;
+    for (const mode of ["perceptual", "peak"]) for (const hueSpace of ["oklch", "cam16"]) for (const p of DEFAULTS) {
+      const pal = { hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift };
+      const shipped = T.paletteStops(pal, OK(mode, { hueSpace, vibrancy: 0 }), STOPS);
+      const undamped = T.paletteStops(pal, OK(mode, { hueSpace, vibrancy: 0, damp: 0 }), STOPS);
+      for (let i = 0; i < shipped.length; i++) {
+        rows++;
+        const a = shipped[i], b = undamped[i], floor = floorOf(a.rgb) + floorOf(b.rgb);
+        if (Math.abs(a.tone - b.tone) > floor) {
+          FAIL("skew-lift-okhsl", `(i b) ${mode}/${hueSpace} ${p.name} stop ${a.stop}: the shipped damp emits L* ${a.tone.toFixed(3)}, damp 0 emits ${b.tone.toFixed(3)}, apart by more than the rounding floor ${floor.toFixed(3)}  -  the tone hold is not holding (#725 U3)`);
+          break;
+        }
+      }
+    }
+    if (rows !== 2 * 2 * DEFAULTS.length * STOPS.length) FAIL("skew-lift-okhsl", `(i b) covered ${rows} rows`);
   }
 
   // (ii) a NON-ZERO skew or lift must MOVE the perceptual/peak ramp, and move it the documented way:
@@ -1012,28 +1065,31 @@ for (const mode of ["perceptual", "peak"]) {
   // combination within the user-settable ranges but unused by any shipped preset or role default.
   // Cited exactly, verified both directions: remove one and this gate FAILs naming that cell; an
   // unlisted 22nd cell also FAILs.
+  // Emptied at #725 U3: the tone hold (holdTone) keeps each damped stop at its undamped CIE L*, and none
+  // of the 21 reproduce at U3's head (FULL grid, both modes). Removed, all fixed by the hold:
+  // perceptual|oklch 165/152 skew 0 lift 40 vib 100 300&350, 107 skew 40 lift 40 vib 100 350&400;
+  // perceptual|cam16 287 skew -100 lift -40 vib 50 700&750, 165 skew -100 lift 40 vib 100 175&200,
+  // 165 skew 0 lift 40 vib 100 250&300; peak|oklch 165/152 skew 0 lift 40 300&350 and 107 skew 40
+  // lift 40 350&400 at vib 0/50/100; peak|cam16 165 skew -100 lift 40 175&200 and 165 skew 0 lift 40
+  // 250&300 at vib 0/50/100.
+  // Re-listed at #725 U3 under R77 Q4 (.sdlc/questions/chroma-envelope-U3-conflicts-2.md): 12 new
+  // QUANTIZATION keys, not R2 reopenings. All hue 165, lift 40, skew 0 or -50, stops 250 to 350, L* 94 to
+  // 97.5; each rise is +0.011 to +0.037 L*, under the row's own 8-bit rounding floor. The continuous held
+  // L* descends there (97.629 to 97.395); the 8-bit pixel near the G = 255 wall rounds it back up. Damp 0
+  // reads 0 upticks at U3's head and at the U2 base.
   const GRID_R2_EXCEPTIONS = new Set([
-    "perceptual|oklch|165|0|40|100|300&350",
-    "perceptual|oklch|152|0|40|100|300&350",
-    "perceptual|oklch|107|40|40|100|350&400",
-    "perceptual|cam16|287|-100|-40|50|700&750",
-    "perceptual|cam16|165|-100|40|100|175&200",
-    "perceptual|cam16|165|0|40|100|250&300",
-    "peak|oklch|165|0|40|0|300&350",
-    "peak|oklch|152|0|40|0|300&350",
-    "peak|oklch|107|40|40|0|350&400",
-    "peak|oklch|165|0|40|50|300&350",
-    "peak|oklch|152|0|40|50|300&350",
-    "peak|oklch|107|40|40|50|350&400",
-    "peak|oklch|165|0|40|100|300&350",
-    "peak|oklch|152|0|40|100|300&350",
-    "peak|oklch|107|40|40|100|350&400",
-    "peak|cam16|165|-100|40|0|175&200",
-    "peak|cam16|165|0|40|0|250&300",
-    "peak|cam16|165|-100|40|50|175&200",
-    "peak|cam16|165|0|40|50|250&300",
-    "peak|cam16|165|-100|40|100|175&200",
-    "peak|cam16|165|0|40|100|250&300",
+    "perceptual|oklch|165|-50|40|100|250&300",
+    "perceptual|cam16|165|-50|40|100|250&300",
+    "perceptual|cam16|165|0|40|100|300&350",
+    "peak|oklch|165|-50|40|0|250&300",
+    "peak|oklch|165|-50|40|50|250&300",
+    "peak|oklch|165|-50|40|100|250&300",
+    "peak|cam16|165|-50|40|0|250&300",
+    "peak|cam16|165|0|40|0|300&350",
+    "peak|cam16|165|-50|40|50|250&300",
+    "peak|cam16|165|0|40|50|300&350",
+    "peak|cam16|165|-50|40|100|250&300",
+    "peak|cam16|165|0|40|100|300&350",
   ]);
   // this grid is synthetic, not a corpus sweep, but at an estimated 16s quiet it decides whether the
   // 120s ceiling holds (#713 design section); SAMPLED thins it to every fifth hue, offset by
@@ -1276,26 +1332,18 @@ for (const mode of ["perceptual", "peak"]) {
   // identical mode/hue/chroma/skew/lift/stop-pair signature, so the Set naturally collapses them to one
   // entry each  -  `seenBaselineDup` still marks the key seen either way). The negative control right
   // after this gate still proves an UNLISTED collision is caught. 18 keys come first, then Nike
-  // tertiary-muted's four at hue 36 (#744; see their own comment below).
+  // tertiary-muted's four at hue 36 (#744; see their own comment below). The counts above are #744's:
+  // #725 U3 re-froze the list to 30 keys (its own note, last in the list, names each key it moved).
   const KNOWN_BASELINE_DUP = new Set([
-    "peak|240|100.00|0|0|25-stop|825&850",
     "even|240|100.00|0|0|25-stop|900&925",
     "even|79|100.00|0|0|25-stop|75&100",
     "even|280|100.00|0|0|25-stop|850&875",
-    "peak|280|100.00|0|0|25-stop|800&825",
     "peak|150|100.00|0|0|25-stop|825&850",
-    "perceptual|270|100.00|0|0|25-stop|800&825",
-    "peak|270|100.00|0|0|25-stop|800&825",
     "even|250|100.00|0|0|25-stop|900&925",
     "even|92|100.00|0|0|25-stop|75&100",
-    "peak|78|100.00|0|0|25-stop|850&875",
     "even|100|100.00|0|0|25-stop|900&925",
     "even|60|100.00|0|0|25-stop|900&925",
-    "perceptual|65|100.00|0|0|25-stop|800&825",
     "even|65|100.00|0|0|25-stop|900&925",
-    "peak|80|100.00|0|0|25-stop|875&900",
-    "perceptual|80|100.00|0|0|25-stop|800&825",
-    "peak|80|100.00|0|0|25-stop|800&825",
     // Nike tertiary-muted (anchor #FFFFFF, resolved chroma 100.00 on this group): adjacent near-white
     // stops round to the identical 8-bit hex, the same rounding-collision class every other member of
     // this list already names. At hue 0 it held five keys: even 50&75, 100&125 and 175&200 entered with
@@ -1304,10 +1352,41 @@ for (const mode of ["perceptual", "peak"]) {
     // derived neutral hue (36, not the sample's own 0), so #744 swaps those five for the four below:
     // peak 75&100 and the three even pairs at hue 36; peak 150&175 no longer collides. A mechanical
     // re-freeze, not a new construction defect (achromatic-anchor U1-4, #739's plan row, proves every OTHER anchored ramp in the corpus byte-identical).
-    "peak|36|100.00|0|0|25-stop|75&100",
     "even|36|100.00|0|0|25-stop|50&75",
     "even|36|100.00|0|0|25-stop|100&125",
     "even|36|100.00|0|0|25-stop|175&200",
+    // #725 U3 freeze (R74, "frozen once at U3 with the movement declared"), measured FULL on U3's head
+    // (hold + retune, revision 8 hue): 22 -> 30 keys, 18 added and 10 removed. Every added key sits at
+    // stops 50 to 150 or 800 to 925, or at Nike tertiary-muted's window-clamped #FFFFFF (L* 100, the
+    // 175&200 key), the same 8-bit rounding-collision class as the keys above. Revision 8 (the anchor's
+    // own OKLCH hue, no per-stop solve) adds perceptual|60 800&825: travel "Khumbu" tertiary-muted and
+    // "Rub' al Khali" primary-muted, both #1F1A16 (L* 9.70, window-clamped), whose peak 800&825 is
+    // already cited, and peak|280 875&900: music "The late-night club" primary-muted and "UK '77"
+    // secondary, both #1F1F23 (L* 11.91), #121213 at both stops (925&950 at U2's head). Pass 1's peak|60
+    // 850&875, peak|88 100&125, peak|250 825&850 and peak|270 850&875 do not reproduce at revision 8. Nike's peak stops 50, 75 and 100 now share one
+    // hex, so with 50&75 cited the gate keys the third as 50&100 and #744's peak 75&100 (above) is
+    // re-keyed here, not fixed. Removed: peak|80 875&900 (travel "Wadi Rum" primary, the tone hold
+    // separates its dark stops), peak|36 75&100 (re-keyed), and 8 keys U2's head already did not
+    // reproduce (peak|240 825&850, peak|280 800&825, perceptual|270 and peak|270 800&825, peak|78
+    // 850&875, perceptual|65 800&825, perceptual|80 and peak|80 800&825).
+    "perceptual|36|100.00|0|0|25-stop|100&125",
+    "perceptual|270|100.00|0|0|25-stop|850&875",
+    "perceptual|280|100.00|0|0|25-stop|825&850",
+    "perceptual|60|100.00|0|0|25-stop|800&825",
+    "peak|36|100.00|0|0|19-stop|50&100",
+    "peak|36|100.00|0|0|25-stop|50&75",
+    "peak|36|100.00|0|0|25-stop|50&100",
+    "peak|36|100.00|0|0|25-stop|125&150",
+    "peak|36|100.00|0|0|25-stop|175&200",
+    "peak|60|100.00|0|0|25-stop|800&825",
+    "peak|60|100.00|0|0|25-stop|900&925",
+    "peak|79|100.00|0|0|25-stop|75&100",
+    "peak|86|100.00|0|0|25-stop|50&75",
+    "peak|90|100.00|0|0|25-stop|75&100",
+    "peak|92|100.00|0|0|25-stop|75&100",
+    "peak|250|100.00|0|0|25-stop|875&900",
+    "peak|280|100.00|0|0|25-stop|825&850",
+    "peak|280|100.00|0|0|25-stop|875&900",
   ]);
   const seenBaselineDup = new Set();
 
@@ -1506,7 +1585,7 @@ for (const mode of ["perceptual", "peak"]) {
   // unlisted). Perceptual has no cap mechanism and measures 0 dips too, so it also gets no baseline.
   // Ticket #739 adds the ONE named exception below - see its own comment; the "reds on anything
   // unlisted" property is unchanged, only the empty baseline is not.
-  const TICKET_739_DIP = "67° N · January · 03:00 · The Helsinki–Rovaniemi night train, somewhere past Oulu|secondary-muted|500";
+  // The #739 name, retired at #725 U2 (see DIP_BASELINE): "67° N · January · 03:00 · The Helsinki–Rovaniemi night train, somewhere past Oulu|secondary-muted|500"
   // Ticket #739: #ACADAE (this preset's own anchor, one of the two corpus anchors under
   // ACHROMATIC_ANCHOR_C) now renders its ramp at the palette's own hue instead of its rounding-
   // residue one. That shifts `anchorChromaBasis`'s per-stop blend against `maxChromaInGamut` enough
@@ -1515,8 +1594,11 @@ for (const mode of ["perceptual", "peak"]) {
   // (okhslStopsAnchored shares the same blend for both modes; only their curve/damping fitting
   // differs). Root-caused, not reintroducing the retired peak population above; PERCEPTUAL_DIP_BASELINE
   // below is the same single name because perceptual had no baseline (0 dips) before this ticket.
-  const DIP_BASELINE = new Set([TICKET_739_DIP]);
-  const PERCEPTUAL_DIP_BASELINE = new Set([TICKET_739_DIP]);
+  // #725 U2: retired to empty. The #739 dip was the group target climbing on both sides of a grey pivot;
+  // anchorChromaBasis now blends toward min(group, anchor), so the grey pivot no longer sits in a valley
+  // (measured on FULL at ec496bd0: 0 dips in peak and perceptual, TICKET_739_DIP not observed).
+  const DIP_BASELINE = new Set();
+  const PERCEPTUAL_DIP_BASELINE = new Set();
   // Even mode has NO named baseline (#701 U2). The 90-name even dip baseline #681 shipped (57 at stop
   // 450, 32 at 500, 1 at 550, measured on the rendered, anchor-aware path) is retired. Its off-anchor
   // names were the old gamut-relative chroma floor (chromaFloor% * maxc at every stop) following maxc
@@ -1632,14 +1714,18 @@ for (const mode of ["perceptual", "peak"]) {
     const realSrc = readFileSync(new URL("../../src/engine/tonal.js", import.meta.url), "utf8");
     const hctUrl = new URL("../../src/engine/hct.js", import.meta.url).href;
     const okhslUrl = new URL("../../src/engine/okhsl.js", import.meta.url).href;
+    const CLIMB_TARGET = "const target = climb ? groupValue : Math.min(groupValue, anchorValue);";
     const patched = realSrc
       .replace('from "./hct.js"', `from "${hctUrl}"`)
       .replace('from "./okhsl.js"', `from "${okhslUrl}"`)
       .replace(
         "const w = t * t * (3 - 2 * t); // smoothstep: w(0)=0, w(1)=1, w'(0)=w'(1)=0",
         "const w = t < 0.15 ? -0.6 : t * t * (3 - 2 * t); // smoothstep: w(0)=0, w(1)=1, w'(0)=w'(1)=0"
-      );
-    if (patched === realSrc) FAIL("chroma-envelope", "(iv dip gate negative control, peak) a patch target string was not found  -  the anchorChromaBasis weight text moved, update this control");
+      )
+      // #725 U2: the blend target is min(group, anchor), so a negative weight now lifts the stop above the
+      // pivot instead of below it; the control restores the climb (the pre-U2 target) so the weight digs.
+      .replace(CLIMB_TARGET, "const target = groupValue;");
+    if (!realSrc.includes(CLIMB_TARGET) || !realSrc.includes("const w = t * t * (3 - 2 * t);")) FAIL("chroma-envelope", "(iv dip gate negative control, peak) a patch target string was not found  -  the anchorChromaBasis weight text moved, update this control");
     const BuggyT = await import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
     // #681 U3 review 4, R3/R4: calls the real findDips against the patched engine, over both stop sets,
     // instead of reimplementing the loop inline.
@@ -1804,20 +1890,29 @@ for (const mode of ["perceptual", "peak"]) {
   // new section for the identical scope/metric). This gate keeps only what it actually gates: the peak
   // count and max overshoot.
   {
+    // WHITE_PIXEL_C (#725 U2 pass 2, R74): the CAM16 chroma of #FFFFFF under HCT's viewing conditions,
+    // 2.8690 at L* 100 (hct.js cam16FromRgb). It is a floor on the white PIXEL, not on tone: the grey axis
+    // reads #F0F0F0 2.766, #787878 1.83 and #000000 0, and the least-chroma pixel in the 250 to 255 cube,
+    // #FFFBFA at L* 98.89, reads C 0.288. A near-grey anchor whose stop 500 sits below it renders stop 50 as
+    // #FFFFFF at lmax 100, which reads above stop 500 by construction and no chroma cap can lower, so such a
+    // palette is excluded (and counted) rather than read as an overshoot. A violator with stop 500 at or
+    // above this floor is a finding, never a re-pin.
+    const WHITE_PIXEL_C = 2.869;
     const measureAnchoredOvershoot = (engine, mode, docsList = docs) => {
       let violators = 0, maxRatio = 0, witness = "", measured = 0;
+      const excluded = [];
       for (const doc of docsList) {
         if ((doc.dampAmp ?? 0) !== 0) continue; // generated palettes only, matching (iii)'s own scope
         if (ADIA_CARVEOUT.has(doc.__presetName)) continue; // exempt by name, same carve-out as (iii)/(iii-b)
         const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: mode };
         for (const pal of doc.palettes) {
-          measured++;
           const chroma = rampChromaOf(pal, doc);
           const ramp = engine.paletteStops({ hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull, anchor: pal.anchor }, controls, T.STOPS);
           const c500row = ramp.find((r) => r.stop === 500);
-          if (!c500row) continue;
+          if (!c500row) { measured++; continue; }
           const c500 = c500row.chroma;
-          if (c500 <= 1e-9) continue;
+          if (c500 < WHITE_PIXEL_C) { excluded.push(`${doc.__presetName}/${pal.name} c500 ${c500.toFixed(3)}`); continue; }
+          measured++;
           let localMax = 0;
           for (const row of ramp) localMax = Math.max(localMax, row.chroma / c500);
           if (localMax > 1 + 1e-6) {
@@ -1826,13 +1921,16 @@ for (const mode of ["perceptual", "peak"]) {
           }
         }
       }
-      return { violators, maxRatio, witness, measured };
+      return { violators, maxRatio, witness, measured, excluded };
     };
 
     // Pinned this pass (2026-09-20). Anchored PEAK, generated palettes, Adia excluded by name, 19-stop
-    // display set, 3,764 total palettes measured.
-    const PEAK_VIOLATOR_PIN = 3119;
-    const PEAK_MAX_RATIO_PIN = 15.132599;
+    // display set. Re-pinned by #725 U2 (was 3119 / 15.132599 over 3,764): the anchored peak path runs the
+    // joint (s, l) cap, so nothing above stop 500 is emitted; the 72 near-grey anchors below WHITE_PIXEL_C
+    // are excluded above (15 of them are the violators the exclusion removes, 15/3764 with it off),
+    // leaving 3692 measured at 0 violators and a max ratio of at most 1.
+    const PEAK_VIOLATOR_PIN = 0;
+    const PEAK_MAX_RATIO_PIN = 1.000000;
     const peakResult = measureAnchoredOvershoot(T, "peak");
     if (peakResult.violators > PEAK_VIOLATOR_PIN)
       FAIL("chroma-envelope", `(C6 v ratchet, monitor not bar) anchored peak violator count rose to ${peakResult.violators}, pinned at ${PEAK_VIOLATOR_PIN}, e.g. ${peakResult.witness}`);
@@ -1841,6 +1939,7 @@ for (const mode of ["perceptual", "peak"]) {
     // the denominator is MEASURED, not the FULL corpus's own fixed 3,764 (#713): SAMPLED measures a
     // canary subset of the same population, whose violator count and max ratio can only ever undershoot
     // the FULL-corpus pins below (a maximum, or a count, over a subset cannot exceed the superset's own).
+    console.log(`  [monitor] C6 (v) white-pixel exclusion (stop 500 CAM16 C < ${WHITE_PIXEL_C}): ${peakResult.excluded.length} palette(s)${peakResult.excluded.length ? `: ${peakResult.excluded.join(", ")}` : ""}`);
     console.log(`  [monitor] C6 (v) anchored peak overshoot: ${peakResult.violators}/${peakResult.measured} violator(s) (pinned <= ${PEAK_VIOLATOR_PIN} on FULL), max ${peakResult.maxRatio.toFixed(6)}x stop 500's own chroma (pinned <= ${PEAK_MAX_RATIO_PIN}x on FULL)  -  a RATCHET, NOT a pass/fail bar on the population: stop 500 is the anchor's own pinned sample on this construction, not the ramp's designed peak, so most anchored palettes legitimately carry some stop above it (#701 treats these rendered cells as report-only). The anchored-EVEN companion figure is reported by scripts/report-preset-fidelity.mjs --envelope, not here.`);
 
     // Negative control: a SCRATCH copy of the real engine, patched at okhslStopsAnchored's own
@@ -1864,19 +1963,26 @@ for (const mode of ["perceptual", "peak"]) {
       const realSrc = readFileSync(new URL("../../src/engine/tonal.js", import.meta.url), "utf8");
       const hctUrl = new URL("../../src/engine/hct.js", import.meta.url).href;
       const okhslUrl = new URL("../../src/engine/okhsl.js", import.meta.url).href;
-      const NEEDLE = "const s = Math.min(1, Math.max(0, intendedS * env));";
-      if (!realSrc.includes(NEEDLE)) {
-        FAIL("chroma-envelope", "(C6 v negative control) okhslStopsAnchored's saturation line text has moved  -  update the negative control's string match");
+      // #725 revision 8: the anchored path's damped `s` is holdTone's own (the per-stop hue solve that
+      // read a separate `s` line is gone), so the saturation patch amplifies the envelope it is given.
+      const NEEDLE = "const hold = holdTone(hue, intendedS, l, env);";
+      // #725 U2: the anchored peak path caps every stop at stop 500's chroma, which absorbs a saturation
+      // amplification by construction, so the patch also lifts that cap (the regression it guards).
+      const CAP_NEEDLE = "const capPeak = mode === \"peak\" && (controls.dampAmp ?? 0) === 0;";
+      if (!realSrc.includes(NEEDLE) || !realSrc.includes(CAP_NEEDLE)) {
+        FAIL("chroma-envelope", "(C6 v negative control) okhslStopsAnchored's saturation or capPeak line text has moved  -  update the negative control's string match");
       } else {
         const patched = realSrc
           .replace('from "./hct.js"', `from "${hctUrl}"`)
           .replace('from "./okhsl.js"', `from "${okhslUrl}"`)
-          .replace(NEEDLE, "const s = Math.min(1, Math.max(0, intendedS * env * 1.6));");
+          .replace(NEEDLE, "const hold = holdTone(hue, intendedS, l, env * 1.6);")
+          .replace(CAP_NEEDLE, "const capPeak = false;");
         const BuggyT = await import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
         // peakResult.witness is `${doc.__presetName}/${pal.name}` (this function's own return shape).
         const witnessDoc = docs.find((d) => peakResult.witness.startsWith(d.__presetName + "/"));
-        const others = docs.filter((d) => d !== witnessDoc).sort((a, b) => a.__presetName.localeCompare(b.__presetName)).slice(0, 49);
-        const sampleDocs = witnessDoc ? [witnessDoc, ...others] : docs.slice(0, 50);
+        // At the 0 pin there is no witness, so the sample is the 50 sorted-first docs (still seeded).
+        const others = docs.filter((d) => d !== witnessDoc).sort((a, b) => a.__presetName.localeCompare(b.__presetName));
+        const sampleDocs = witnessDoc ? [witnessDoc, ...others.slice(0, 49)] : others.slice(0, 50);
         const buggySample = measureAnchoredOvershoot(BuggyT, "peak", sampleDocs);
         // FULL compares against the frozen pin; SAMPLED compares against this run's own unmutated max
         // ratio, never the FULL-corpus pin: the sample's own worst witness need not be the full corpus's
@@ -1914,7 +2020,9 @@ for (const mode of ["perceptual", "peak"]) {
       const countProbe = measureAnchoredOvershoot(stubEngine, "peak", syntheticDocs);
       if (!(countProbe.violators > PEAK_VIOLATOR_PIN))
         FAIL("chroma-envelope", `(C6 v negative control, count arm) a synthetic ${syntheticCount}-doc list, each overshooting a fixed 1.005x, read violators ${countProbe.violators}  -  expected > ${PEAK_VIOLATOR_PIN}  -  check measureAnchoredOvershoot or the synthetic list`);
-      if (countProbe.maxRatio > PEAK_MAX_RATIO_PIN + 1e-6)
+      // At a ratio pin of 1 (#725 U2) the two arms share one threshold: any violator also exceeds the ratio
+      // pin, so the isolation half only runs while the pin leaves room above the 1.005x stub overshoot.
+      if (PEAK_MAX_RATIO_PIN > 1.005 + 1e-6 && countProbe.maxRatio > PEAK_MAX_RATIO_PIN + 1e-6)
         FAIL("chroma-envelope", `(C6 v negative control, count arm) the synthetic list's own maxRatio (${countProbe.maxRatio.toFixed(6)}x) unexpectedly exceeded the ratio pin  -  this control is meant to isolate the count arm from the ratio arm; check the synthetic overshoot margin`);
     }
   }
