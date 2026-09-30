@@ -812,29 +812,39 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 //    binder and in the flagship. A constant the regex cannot find is a FAIL, never a compare of
 //    undefined to undefined. The flagship carries only the two maps (no SEMANTIC_RENAME_FROM). ──
 {
-  const canonSort = (v) => JSON.stringify(Array.isArray(v) ? v : Object.fromEntries(Object.keys(v).sort().map((k) => [k, v[k]])));
+  // key ORDER is part of the contract: expandVoiceAliasMap walks Object.keys(voiceMap) and stops at the first match
+  const canonSort = (v) => JSON.stringify(v);
+  // anchored to a line start (a `//` comment copy of the constant must not be read) and unique per file
+  const declRe = (name) => new RegExp(`^[ \\t]*(?:const|var|let)\\s+${name}\\s*=\\s*([\\s\\S]*?);[ \\t]*(?://.*)?$`, "gm");
   const grab = (src, name) => {
-    const m = new RegExp(`(?:const|var|let)\\s+${name}\\s*=\\s*([\\s\\S]*?);[ \\t]*(?://.*)?$`, "m").exec(src);
-    return m ? new Function(`return (${m[1]});`)() : undefined;
+    const all = [...src.matchAll(declRe(name))];
+    if (all.length === 0) return { missing: true };
+    if (all.length > 1) return { dup: all.length };
+    return { value: new Function(`return (${all[0][1]});`)() };
   };
   const CANON_RENAME = {
     SEMANTIC_RENAME_FROM: FIGMA_MIGRATIONS.color.collections["Color Roles"],
     LIBRARY_TYPE_VOICE_MAP,
     GEOMETRY_FIELD_RENAME_MAP,
   };
-  try {
-    const flagSrc = readFileSync(join(HERE, "..", "plugin", "code.js"), "utf8");
-    for (const [label, src, names] of [
-      ["binder", binderSrc, ["SEMANTIC_RENAME_FROM", "LIBRARY_TYPE_VOICE_MAP", "GEOMETRY_FIELD_RENAME_MAP"]],
-      ["flagship", flagSrc, ["LIBRARY_TYPE_VOICE_MAP", "GEOMETRY_FIELD_RENAME_MAP"]],
-    ]) {
-      for (const name of names) {
-        const got = grab(src, name);
-        if (got === undefined) { FAIL("renameparity", `${label} is missing ${name}`); continue; }
-        if (canonSort(got) !== canonSort(CANON_RENAME[name])) FAIL("renameparity", `${name} drifted between the ${label} and figma/binder/migrations.mjs (${canonSort(got)} vs ${canonSort(CANON_RENAME[name])}), hand-kept in lockstep`);
-      }
+  for (const [name, v] of Object.entries(CANON_RENAME)) {
+    if (!v || Object.keys(v).length === 0) FAIL("renameparity", `canonical ${name} in migrations.mjs is empty (floor: non-empty)`);
+  }
+  let flagSrc = "";
+  try { flagSrc = readFileSync(join(HERE, "..", "plugin", "code.js"), "utf8"); } catch (e) { FAIL("renameparity", "could not read the flagship: " + e.message); }
+  for (const [label, src, names] of [
+    ["binder", binderSrc, ["SEMANTIC_RENAME_FROM", "LIBRARY_TYPE_VOICE_MAP", "GEOMETRY_FIELD_RENAME_MAP"]],
+    ["flagship", flagSrc, ["LIBRARY_TYPE_VOICE_MAP", "GEOMETRY_FIELD_RENAME_MAP"]],
+  ]) {
+    for (const name of names) {
+      try {
+        const g = grab(src, name);
+        if (g.missing) { FAIL("renameparity", `${label} is missing ${name}`); continue; }
+        if (g.dup) { FAIL("renameparity", `${label} declares ${name} ${g.dup} times (a second declaration line would hide drift)`); continue; }
+        if (canonSort(g.value) !== canonSort(CANON_RENAME[name])) FAIL("renameparity", `${name} drifted between the ${label} and figma/binder/migrations.mjs (${canonSort(g.value)} vs ${canonSort(CANON_RENAME[name])}, key order counts), hand-kept in lockstep`);
+      } catch (e) { FAIL("renameparity", `could not load/compare ${name} in the ${label}: ${e.message}`); }
     }
-  } catch (e) { FAIL("renameparity", "could not load/compare the rename constants: " + e.message); }
+  }
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────

@@ -33,3 +33,17 @@ The gate reads `(const|var|let) NAME = <literal>;` from the binder (all three co
 C5 note: `src/ui/figma-plugin-assets.js` is a generated `src/` path that the plan's C5 name list does not expect; it moves only with the `code.js` comments. Flag for the verifier, no question filed.
 
 11 rows green, 0 red. Negative controls ran in a scratch copy of `figma/`, `src/`, `test/figma/`, `docs/reference/data`.
+
+## Pass 2 (rework of reviewer-l3 FAIL)
+
+The gate now anchors `grab` to a line start, FAILs on a duplicate declaration, compares plain `JSON.stringify` (key order counts, `expandVoiceAliasMap` walks `Object.keys`), FAILs on an empty canonical map, and wraps each name in its own `try`. `npm test`: 54 files pass, tree clean after commit.
+
+| Finding | Result | Negative control (scratch copy) |
+|---|---|---|
+| 1 comment decoy | 🟢 | decoy comment line with the true map at line 1 plus real line drifted (`heading: "DRIFT"`): FAIL naming `LIBRARY_TYPE_VOICE_MAP` and binder, exit 1 |
+| 1 duplicate | 🟢 | second `const SEMANTIC_RENAME_FROM = ...` line appended: `binder declares SEMANTIC_RENAME_FROM 2 times`, exit 1 |
+| 2 key order | 🟢 | `heading`/`ui` swapped in the binder map: FAIL, `key order counts`, exit 1 |
+| 3 empty floor | 🟢 | canonical and both copies of `GEOMETRY_FIELD_RENAME_MAP` set to `{}`: `canonical ... is empty`, exit 1 |
+| 4 per-name try | 🟢 | one `try` per name, `could not load/compare NAME in the LABEL` |
+
+Pass-1 controls U3-2 to U3-6 rerun mentally covered by the same compare path; clean run exit 0.
