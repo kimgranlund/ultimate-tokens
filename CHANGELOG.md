@@ -19,13 +19,14 @@ they landed on `main` and reference the squash-merged PR that introduced them.
   `#1C1B1E` to `#1B1C1E`, one code on R and on G). Four changes move it. The anchored chroma basis no longer
   climbs above the anchor's own chroma (the group target reads `min(group, anchor)`), and on the
   cap's own path no stop's envelope reads above stop 500's; on an anchored export a near-grey
-  palette's white stop 50 can still read above its stop 500 (15 of 3764 in the
-  `test/engine/tonal.mjs` C6 (v) ratchet). This reverses the earlier muted-in-vivid-group intent
-  (ADR-026, amendment of 2026-09-29). The perceptual and peak damping constants are retuned to the
+  palette's white stop 50 can still read above its stop 500 (15 of 3764, a peak count and
+  the set the C6 (v) ratchet excludes, counted in `test/engine/tonal.mjs`). This reverses the earlier
+  muted-in-vivid-group intent (ADR-026, amendment of 2026-09-29). The perceptual and peak damping constants are retuned to the
   closed-form pair (`c` = log2 3, `d` 0.9275) so the envelope reads 0.74 at stops 300/700 and 0.23
   at 100/900, against the ruled 0.75 and 0.25 bars. The tone is held per damped stop by solving
   OKHSL `l` for the pre-envelope CIE L\*, so a damped stop keeps the CIE L\* it had before the
-  envelope was applied (to within 0.8 L\*). Against a kit exported before this
+  envelope was applied (to within 0.8 L\*, the measured
+  maximum 0.7943 on peak and 0.4819 on perceptual). Against a kit exported before this
   change a cell's L\* moves by up to 2.4, which is the lightness drift the old chroma coupling
   carried and the hold removes. On the anchored path the `oklch` hue is the anchor's own OKLCH hue.
   The corpus render moved with it, so the mode-isolation fixture was re-captured, and two contrast
