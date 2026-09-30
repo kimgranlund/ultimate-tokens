@@ -51,3 +51,31 @@ U6 (#768) has no criteria. Its done-when, the §6 wording it must carry, and the
 ## Verdict
 
 🔴 not mobilizable: U6 carries no criteria. The 24 stated rows are all checkable (21 🟢, 3 🟡: P3, U3-4, U4-2).
+
+## Pass 2 · revision 3 (uncommitted, root checkout at 1174bcd6) · 🔴 27 of 29 checkable, U6-3 and U6-4 🔴
+
+This pass re-grades the rows revision 3 changed (P3, U3-4, U4-2) and the restored U6 (U6-1 to U6-5). It also corrects pass 1's U4-5. Every other row is unchanged and carries. Controls ran in a throwaway shared clone at 1174bcd6 under `$CLAUDE_JOB_DIR/tmp/dsb`, and `.sdlc/adapter.md` was read at `origin/main`.
+
+| # | Criterion | State | Evidence | Negative control |
+|---|---|---|---|---|
+| P3 | Claims ledger and P8 pair | 🟢 | the loop, with table escapes removed, on a handoff with bare-path anchors (`DECLARED` present in `test/figma/binder.mjs`, one `absent`, one `condition`): `3`, `1 cond`, `2 ok`, `1`, `1`. `F` and `HF` are now defined, and the bare-path anchor rule and the no-bare-number needle rule are stated | needle edited to `NOTAWORD_XYZ`: `1 MISS NOTAWORD_XYZ`; `~~~sh ran` removed: the first fence count reads `0` |
+| U3-4 | generator idempotence | 🟢 | clean clone: `0` | measured: a stale line planted above `// === GENERATED:FLOAT_EXECUTOR END ===` and committed, then the generator run reads `1` |
+| U4-2 | UI-control composes at six steps; no-opts falls back | 🟢 | probe at `bodyBase` 18 reads `6 true false` | measured: `const uiSteps = false &&` in `geometry.mjs` reads `6 false false` |
+| U4-5 | comment-stripped files identical (corrects pass 1's 🟢) | 🟡 | `sed 's#//.*0#'` leaves one whitespace-only line per comment line, so the diff counts comment lines | measured: deleting the `geometry.js:224` comment line reads `2`; see finding 1 |
+| U6-1 | §6 gained one amendment naming both shapes | 🟢 | base reads `3` `0` `0`, as stated; one planted `**Amendment (2026-09-30, #768).**` paragraph naming both shapes reads `4` `1` | the base reading is the control |
+| U6-2 | cites the archived plan, P8 row exists | 🟢 | base `grep -c 'plans/archive/docs-repair.md'` reads `0`; `ls` prints the archive path; `grep -c '^[\|] P8 '` reads `1` | the pre-archive path `.sdlc/plans/docs-repair.md` does not exist, so a citation of it reads `0` |
+| U6-3 | nothing outside §6 moved | 🔴 | `awk '!/^## 6\. Records/,/^## 7\./'` is not the complement of the range: `!/re/` starts a range at line 1, so it prints all `260` of `260` lines, §6 included | measured: the correct unit (one amendment paragraph added inside §6) reads `3`, not `0`; see finding 2 |
+| U6-4 | handoff ledger row for the amendment | 🔴 | `grep -c -F '\x60## Claims\x60'` reads `0` on a handoff that carries `` `## Claims` ``: `-F` takes `\x60` literally, where the same pattern without `-F` reads `1` | the stated control (`.sdlc/adapter.md:200` anchor) is P3's, and this row's second grep reads `1` on it; see finding 3 |
+| U6-5 | P1 to P5 | 🟢 | inherits the P rows; `P3` is 🟢 above | as the P rows |
+
+### Findings
+
+1. **U4-5 reds a legitimate rewrap.** This is the same flaw as gates-batch C5 (pass 4). U4 rewrites comments (3) and (4) into longer sentences, and the `:224` and `:171` lines are already long. A builder who wraps either one onto a second line gets a nonzero diff. The expected `0` is reachable only by rewriting each comment in place, keeping the same line count, and the plan does not say so. Dropping whitespace-only lines on both sides removes the flaw. Pass 1 graded this row 🟢, which was wrong.
+2. **U6-3 cannot read `0` for a correct unit.** In awk, `!/a/,/b/` negates only the range's start pattern. It does not print the lines outside the range. The criterion needs a real complement, such as a flag toggled at `## 6. Records` and cleared at `## 7.`.
+3. **U6-4's first grep cannot read `1` or more.** Under `-F`, the table's `\x60` convention reaches grep as four literal characters. The row also has no control of its own that reds its command.
+
+### Verdict
+
+verdict: 🔴
+
+🔴 not mobilizable: 27 of 29 criteria checkable. U6-3 and U6-4 are 🔴. U4-5 is corrected to 🟡.
