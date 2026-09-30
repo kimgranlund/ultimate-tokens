@@ -79,3 +79,22 @@ This pass re-grades the rows revision 3 changed (P3, U3-4, U4-2) and the restore
 verdict: 🔴
 
 🔴 not mobilizable: 27 of 29 criteria checkable. U6-3 and U6-4 are 🔴. U4-5 is corrected to 🟡.
+
+## Pass 3 · revision 4 (uncommitted, root checkout at eddcc477) · 🟢 29 of 29 checkable, mobilizable
+
+This pass re-grades the four rows revision 4 rewrote. Every other row carries from pass 2. All readings come from a throwaway shared clone at eddcc477 under `$CLAUDE_JOB_DIR/tmp/dsb`.
+
+| # | Criterion | State | Evidence | Negative control |
+|---|---|---|---|---|
+| U4-5 | comment-stripped, blank-dropped files identical | 🟢 | clean: `0 0 0`; the `geometry.js` `Compare = all breakpoints` comment line deleted: `0 0 0`; the `typography.js` comment rewrapped onto two lines: `0 0 0` | measured: `modes.length ?` to `modes.length >= 1 ?` in `geometry.js` reads `0 0 4` |
+| U6-1 | amendment names both shapes | 🟢 | base `3 0 0 0`; one planted amendment naming both shapes `4 1 1 1` | measured: a paragraph naming only the ledger reads `4 1 0 1` |
+| U6-3 | nothing outside §6 moved | 🟢 | the flag awk prints `240` of `260` lines, §6 excluded; base vs itself `0`; an amendment added inside §6 `0` | measured: `## 1.` to `## 1x.` reads `4` |
+| U6-4 | ledger row for the amendment, bare anchor | 🟢 | fixture ledger with the row: `1` | measured: anchor `.sdlc/adapter.md:200` reads `0`; row deleted reads `0` |
+
+Note (not a 🟡): U6-4's awk does not read the Kind column. A row of kind `absent` still reads `1`, but P3's loop then prints `STILL ## Claims` for it, so the pair of criteria covers the stated kind.
+
+### Verdict
+
+verdict: 🟢
+
+🟢 mobilizable: 29 of 29 criteria checkable, no 🔴 and no 🟡 rows. Pass 2's three findings are closed.
