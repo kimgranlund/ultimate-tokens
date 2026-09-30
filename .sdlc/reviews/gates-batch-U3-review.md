@@ -45,3 +45,17 @@ Reviewer: reviewer-l3, fresh context. Branch `unit/gb-U3` @ 8ad5946c (code 4d58a
 ## Not run
 
 `npm test`: the heavy-suite count read 5, over the cap of 2. `node test/figma/binder.mjs` alone passes on the branch. The worktree is clean. My scratch copy is still at `/Users/kimba/.claude/jobs/8c58a81c/tmp/gb3` because the `rm` was denied.
+
+# Pass 2 (rework 1, `cf0da74a`, gate change `e2a95903`)
+
+**PASS**: all four pass-1 findings are fixed. The change since pass 1 touches only `test/figma/binder.mjs` and the handoff, and all 13 controls behave as expected.
+
+| Finding | Status | Evidence (scratch copy synced to `cf0da74a`) |
+|---|---|---|
+| 1 comment decoy | 🟢 | The pattern now matches only at a line start (`^[ \t]*` with `gm`). The comment decoy plus a real `heading: "DRIFT"` edit fails the gate, exit 1. The comment decoy alone, with no drift, passes, which is correct. Adding a second real `var` declaration to the flagship fails with "declares GEOMETRY_FIELD_RENAME_MAP 2 times". |
+| 2 key order | 🟢 | A plain `JSON.stringify` compare replaces the sort. Swapping `heading`/`ui` in the binder fails, exit 1. |
+| 3 empty floor | 🟢 | Emptying the canonical map and every copy fails with "canonical GEOMETRY_FIELD_RENAME_MAP ... is empty". Emptying the "Color Roles" list fails for `SEMANTIC_RENAME_FROM`. Renaming the "Color Roles" key also fails, on the same floor check. |
+| 4 per-name try | 🟢 | A broken literal in the binder's `LIBRARY_TYPE_VOICE_MAP` gives "could not load/compare LIBRARY_TYPE_VOICE_MAP in the binder", and the other names are still checked. |
+| Pass-1 plants rerun | 🟢 | U3-2, U3-4, U3-5 and U3-6 each exit 1 with a named `renameparity` FAIL. With no plant, the gate passes. |
+
+Unchanged since pass 1: the U3-7 and U3-8 files, and the regenerated asset files (the C5 recommendation to revise the plan wording still stands). `npm test` was not run: the heavy-suite count read 4, over the cap of 2. The worktree is clean.
