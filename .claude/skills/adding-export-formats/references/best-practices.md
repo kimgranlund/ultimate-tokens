@@ -17,7 +17,7 @@ Tailwind + ShadCN addition.
 - **Never hand-format a color.** Solids → `hexOf(rgb)` or `oklchStr(rgbToOklch(rgb))`. Scrims → `hex8` /
   `oklchStrA`. A resolved role end → `roleOklch(end)` (it handles the `frac < 1` alpha case). DTCG leaves →
   `colorLeaf(rgb, frac, alias)`. Reaching for your own `toString(16)` or a bespoke `oklch(...)` template is the
-  tell you're about to drift from the other seven formats.
+  tell you're about to drift from the other formats.
 - **`rgbToOklch` is presentation-only.** The engine already produced gamut-correct sRGB; the OKLCH transform
   is for the string form, NOT for re-doing color math. Don't route generation through it.
 

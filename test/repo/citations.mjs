@@ -84,19 +84,23 @@ const ciJobs = () => {
 const FACT_PINS = [
   { id: "colorMode states", doc: "docs/lld/app-shell.md", line: /`this\.colorMode`/, needle: "system", src: "src/ui/app.js",
     source: () => /this\.colorMode = "system"/.test(lineOf("src/ui/app.js", /Color section value-mode control/)) },
-  { id: "type voices", doc: "docs/lld/app-shell.md", needle: "15 voices", src: "src/engine/type.mjs",
+  { id: "type voices", doc: "docs/lld/app-shell.md", needle: "15 voices", noun: "voices", src: "src/engine/type.mjs",
     source: async () => Object.keys((await import("../../src/engine/type.mjs")).makeVoices()).length },
-  { id: "colour formats", doc: "docs/reference/references/ui-plan.md", line: /T8 export:/, needle: "10 formats", src: "src/ui/overlays/drawer.js",
+  { id: "colour formats", doc: "docs/reference/references/ui-plan.md", line: /T8 export:/, needle: "10 formats", noun: "formats", src: "src/ui/overlays/drawer.js",
     source: drawerColorFormats },
-  { id: "roles per palette", doc: "docs/reference/references/ui-plan.md", needle: "a 53-role", src: "docs/reference/data/role-table.json",
+  { id: "roles per palette", doc: "docs/reference/references/ui-plan.md", needle: "a 53-role", noun: "roles?", src: "docs/reference/data/role-table.json",
     source: () => Object.keys(JSON.parse(txt("docs/reference/data/role-table.json")).roleTable).length },
   { id: "btn home", doc: "docs/reference/references/component-inventory.md", line: /^\| `btn\(\)` \|/, needle: "app-helpers.mjs", src: "src/ui/app-helpers.mjs",
     source: () => /^export const btn\b/m.test(txt("src/ui/app-helpers.mjs")) },
   { id: "delete mode methods", doc: ".claude/skills/building-editor-sections/SKILL.md", needle: "`deleteTypeMode`/`deleteGeomMode`", src: "src/ui/sections/{typography,geometry}.js",
     source: () => /^  deleteTypeMode\(id\) \{/m.test(txt("src/ui/sections/typography.js")) && /^  deleteGeomMode\(id\) \{/m.test(txt("src/ui/sections/geometry.js")) },
-  { id: "skill type voices", doc: ".claude/skills/type-scale/SKILL.md", needle: "fifteen voices", src: "src/engine/type.mjs",
+  { id: "skill type voices", doc: ".claude/skills/type-scale/SKILL.md", needle: "fifteen voices", noun: "voices", allow: [
+      { phrase: "thirteen voices", reason: "the SM/MD/LG subset: 13 of the 15 voices carry three steps" },
+      { phrase: "13 voices", reason: "the SM/MD/LG subset: 13 of the 15 voices carry three steps" },
+      { phrase: "five voices", reason: "the mono role's share: five voices ride the mono font" },
+    ], src: "src/engine/type.mjs",
     source: async () => Object.keys((await import("../../src/engine/type.mjs")).makeVoices()).length },
-  { id: "skill colour formats", doc: ".claude/skills/adding-export-formats/SKILL.md", needle: "ten colour formats", src: "src/ui/overlays/drawer.js",
+  { id: "skill colour formats", doc: ".claude/skills/adding-export-formats/SKILL.md", needle: "ten colour formats", noun: "formats", src: "src/ui/overlays/drawer.js",
     source: drawerColorFormats },
   { id: "skill hueSpace default", doc: ".claude/skills/color-math/SKILL.md", line: /`DEFAULT_CONTROLS\.hueSpace`/, needle: '"oklch"', src: "src/engine/tonal.js",
     source: async (needle) => { const held = `"${(await import("../../src/engine/tonal.js")).DEFAULT_CONTROLS.hueSpace}"`; return held === needle || held; } },
@@ -118,17 +122,42 @@ for (const pin of FACT_PINS) {
   if (num !== undefined ? Number(num) !== held : held !== true) FAIL(pin.src, `fact pin "${pin.id}": ${pin.doc} says \`${pin.needle}\` but the code holds ${JSON.stringify(held)}`);
 }
 
+// (4b) a fact pin's `source` must read the code, never restate the number (#769): a literal
+// `source: () => 15` compares the doc with a typed copy of itself and can never drift. The predicate
+// matches a number literal in any bare shape (plain, arrow, async, block body) and not a body that
+// reads. It runs over this file's own FACT_PINS slice; its fixture sits below the closing `];` so
+// the slice never reads it.
+const bareLiteralSource = (text) => [...text.matchAll(/source:\s*(?:async\s*)?(?:\(\s*\)\s*=>\s*)?(?:\{\s*return\s+)?[-+]?\d+(?:\.\d+)?\s*;?\s*\}?\s*(?=[,}\n])/g)].map((m) => m.index);
+{
+  const self = txt("test/repo/citations.mjs"), a = self.indexOf("const FACT_PINS = ["), slice = self.slice(a, self.indexOf("\n];", a));
+  for (const at of bareLiteralSource(slice)) {
+    const ids = [...slice.slice(0, at).matchAll(/id: "([^"]+)"/g)];
+    FAIL("test/repo/citations.mjs", `fact pin "${ids.at(-1)?.[1] ?? "?"}": bare literal source (a source must read the code, not restate a number)`);
+  }
+  const positives = ["source: 53,", "source: () => 15,", "source: async () => 15,", "source: () => { return 15; },", "source: async () => { return 59 },", "source: () => -1.5,"];
+  const negatives = ["source: () => Object.keys(x).length },", "source: () => /a/.test(y) },", "source: async () => Object.keys((await import(\"a.mjs\")).b()).length },", "source: drawerColorFormats },", "source: () => {\n      const cell = 4;"];
+  for (const f of positives) if (!bareLiteralSource(f).length) FAIL("test/repo/citations.mjs", `bareLiteralSource missed a bare literal: ${f}`);
+  for (const f of negatives) if (bareLiteralSource(f).length) FAIL("test/repo/citations.mjs", `bareLiteralSource flagged a reading source: ${f}`);
+}
+
 // (5) symbol homes: a repo skill that says `sym` lives in `path` must be right about it. The three
 // shapes are `sym` in `path`, `sym` (`path`) and `sym` (in `path`); `sym` may carry a call suffix,
-// `path` an optional :NNN. The path is a full repo path resolved against git ls-files (a bare file
-// name, `type.mjs`, is ambiguous and prose often uses it for a family such as `typeTokensX`, so it
-// is not read) and the file must DEFINE the symbol: a declaration, a method line or a
+// `path` an optional :NNN. The path is a full repo path resolved against git ls-files, or a bare
+// source file name (`model.mjs`) resolved by unique basename under src/ (two homes is an `ambiguous
+// basename` FAIL, never a skip; BARE_EXEMPT carries the prose false-positives, each with a reason)
+// and the file must DEFINE the symbol: a declaration, a method line or a
 // property line. An import or a call is not a home (app.js imports and calls ensureTypeFonts, so a
 // text match would pass a stale citation). With :NNN the definition must sit on line NNN. A backticked
 // path with a source extension that resolves to nothing is stale too; other parentheticals
 // (`dimension` (`px`)) are prose, not citations, and are skipped.
 import { execFileSync } from "node:child_process";
-const SYMBOL_HOME_FLOOR = 12;
+const SYMBOL_HOME_FLOOR = 30;
+const BARE_EXEMPT = [
+  { sym: "typeTokensX", reason: "prose for the typeTokens* family, not one defined symbol" },
+  { sym: "geomTokensX", reason: "prose for the geomTokens* family, not one defined symbol" },
+  { sym: "steps", reason: "a plain English word beside type.mjs, not a defined symbol" },
+];
+for (const e of BARE_EXEMPT) if (!e.sym || !e.reason) FAIL("test/repo/citations.mjs", `BARE_EXEMPT entry without a sym + reason: ${JSON.stringify(e)}`);
 const tracked = execFileSync("git", ["ls-files"], { cwd: ROOT, encoding: "utf8", maxBuffer: 1 << 26 }).split("\n").filter(Boolean);
 const trackedSet = new Set(tracked);
 const defines = (line, sym) => {
@@ -144,8 +173,12 @@ for (const doc of tracked.filter((f) => /^\.claude\/skills\/.*\.md$/.test(f))) {
   txt(doc).split("\n").forEach((line, i) => {
     for (const m of line.matchAll(SHAPE)) {
       const [, sym, path, nnn] = m;
-      if (!path.includes("/")) continue;
-      const homes = trackedSet.has(path) ? [path] : [];
+      let homes;
+      if (!path.includes("/")) {
+        if (!/\.(m?js|json|html|css)$/.test(path) || BARE_EXEMPT.some((e) => e.sym === sym)) continue;
+        homes = tracked.filter((f) => f.startsWith("src/") && f.endsWith("/" + path));
+        if (homes.length > 1) { homesChecked++; homesStale.push([doc, `${doc}:${i + 1} \`${sym}\` cites bare \`${path}\`: ambiguous basename, ${homes.join(" or ")}`]); continue; }
+      } else homes = trackedSet.has(path) ? [path] : [];
       if (!homes.length) { if (/\.(m?js|json|html|css)$/.test(path)) { homesChecked++; homesStale.push([doc, `${doc}:${i + 1} \`${sym}\` cites \`${path}\`, which no tracked file matches`]); } continue; }
       homesChecked++;
       const ok = homes.some((f) => { const ls = txt(f).split("\n"); return nnn ? defines(ls[Number(nnn) - 1] ?? "", sym) : ls.some((l) => defines(l, sym)); });
@@ -157,5 +190,50 @@ for (const [doc, msg] of homesStale) FAIL(doc, `symbol home: ${msg}`);
 if (homesChecked < SYMBOL_HOME_FLOOR) FAIL("test/repo/citations.mjs", `symbol homes: only ${homesChecked} citations read, below SYMBOL_HOME_FLOOR ${SYMBOL_HOME_FLOOR} (the scanner went vacuous)`);
 console.log(`symbol homes: ${homesChecked} checked, ${homesStale.length} stale`);
 
-console.log(failed ? `✗ ${failed} citation gate failure(s)` : `✓ citations: parser self-test + STALE 0 across ${Object.keys(report.docs).length} discovered docs + ${FACT_PINS.length} fact pins (HEAD ${report.head})`);
+// (4c) the count-phrase scan (#776): the needle leg above proves the doc still carries one true count,
+// not that no false one sits beside it (`fifteen voices` in one sentence, `eight voices` in the next),
+// and a skill pin read only its one file. A pin with a `noun` scans its whole reach, every line, for
+// `<number>[-\s]<qualifier>?<noun>`: a docs pin reaches its one doc, a skill pin every tracked .md
+// under its skill directory. A number that differs from what the code holds fails, naming file, line
+// and phrase, unless `allow` carries the phrase with a reason. Number words read one to ninety-nine
+// (hyphenated tens); a magnitude word (`hundred`) fails loudly instead of being skipped. An adjective
+// between number and noun (`two interactive voices`) or a singular noun (`one voice`) is outside the
+// grammar by design (the plan's `roles?` noun is the one pin that also reads a singular, `a 53-role`; a qualifier outside the fixed list, `14 type voices`, is likewise not read).
+const TENS = { twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
+const MAGNITUDE = ["dozen", "hundred", "thousand", "million", "billion"];
+const numTok = `\\d+|(?:${Object.keys(TENS).join("|")})(?:-(?:one|two|three|four|five|six|seven|eight|nine))?|${Object.keys(NUM_WORDS).join("|")}|${MAGNITUDE.join("|")}`;
+const readNum = (w) => {
+  w = w.toLowerCase();
+  if (/^\d+$/.test(w)) return Number(w);
+  if (MAGNITUDE.includes(w)) return null;
+  const [a, b] = w.split("-");
+  return Object.hasOwn(TENS, a) ? TENS[a] + (b ? NUM_WORDS[b] : 0) : NUM_WORDS[a];
+};
+const COUNT_PHRASE_FLOOR = 25;
+let phrasesRead = 0;
+for (const pin of FACT_PINS) {
+  for (const a of pin.allow ?? []) if (!a.phrase || !a.reason) FAIL("test/repo/citations.mjs", `fact pin "${pin.id}": allow entry without a phrase + reason: ${JSON.stringify(a)}`);
+  if (!pin.noun) continue;
+  let held;
+  try { held = await pin.source(pin.needle); } catch { continue; }
+  if (typeof held !== "number") continue;
+  const before = phrasesRead;
+  const reach = pin.doc.startsWith(".claude/skills/") ? tracked.filter((f) => f.startsWith(pin.doc.split("/").slice(0, 3).join("/") + "/") && f.endsWith(".md")) : [pin.doc];
+  const re = new RegExp(`(?<![\\w-])(${numTok})[- ](?:(?:named|colou?r|semantic|export) )?(?:${pin.noun})(?![\\w])`, "gi");
+  for (const doc of reach) txt(doc).split("\n").forEach((line, i) => {
+    for (const m of line.matchAll(re)) {
+      const phrase = m[0].toLowerCase().replace(/\s+/g, " "), n = readNum(m[1]);
+      phrasesRead++;
+      if (n === null) { FAIL(doc, `line ${i + 1}: \`${m[0]}\` (fact pin "${pin.id}"): \`${m[1]}\` is outside the parser's range (one to ninety-nine)`); continue; }
+      if (n === held || (pin.allow ?? []).some((a) => a.phrase.toLowerCase() === phrase)) continue;
+      FAIL(doc, `line ${i + 1}: \`${m[0]}\` but the code holds ${held} (fact pin "${pin.id}", ${pin.src})`);
+    }
+  });
+  // each pin's needle carries its own noun, so its reach must yield at least one phrase; a misspelled noun
+  // would otherwise ride on the other pins' reads under the total floor
+  if (phrasesRead === before) FAIL("test/repo/citations.mjs", `count phrases: fact pin "${pin.id}" read 0 phrases for noun \`${pin.noun}\` (the pin's scan went vacuous)`);
+}
+if (phrasesRead < COUNT_PHRASE_FLOOR) FAIL("test/repo/citations.mjs", `count phrases: only ${phrasesRead} read, below COUNT_PHRASE_FLOOR ${COUNT_PHRASE_FLOOR} (the scan went vacuous)`);
+
+console.log(failed ? `✗ ${failed} citation gate failure(s)` : `✓ citations: parser self-test + STALE 0 across ${Object.keys(report.docs).length} discovered docs + ${FACT_PINS.length} fact pins + ${phrasesRead} count phrases (HEAD ${report.head})`);
 process.exit(failed ? 1 : 0);
