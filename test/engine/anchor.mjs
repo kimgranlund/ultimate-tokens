@@ -525,15 +525,16 @@ const RAMP_WINDOW_ALLOW = [
 // policy threshold an owner rules on); the gate's own negative control still proves it discriminates a
 // real regression from an expected member.
 // #725 U3 freeze (R74, "frozen once at U3 with the movement declared"), measured FULL on U3's head
-// (hold + retune): 72 -> 83, 17 added and 6 removed. Every added member fails only on the peak ramp at
-// stops 50&100, 100&150 or 900&950 (the near-white and near-black ends, where a half step is under one
-// 8-bit code), none mid-ramp: 14 were already gap misses at U2's head (the U2 carry R74 moved here), 3
-// are new at U3 (literature "Bleak House", music "Motown" tertiary-muted and "Pop-punk" secondary, all
-// dark sources at peak 900&950, 0.490 to 0.520 L*). Removed: cuisine "Chocolate" primary, film "The
-// Godfather" secondary and music "Studio 54" secondary (the tone hold keeps stop 950 at its undamped
-// L*, peak 900&950 widens from 0.407 to 0.474 at U2 to 0.551 to 0.553), travel "Hidaka coast"
-// primary-muted (peak 850&900, 0.532 -> 0.792, same cause), and travel "Khumbu" / "Lake Baikal"
-// secondary #E0E5E6 (already not reproduced at U2's head).
+// (hold + retune, revision 8 hue): 72 -> 79, 13 added and 6 removed. Every added member fails only on
+// the peak ramp at stops 50&100, 100&150 or 900&950 (the near-white and near-black ends, where a half
+// step is under one 8-bit code), none mid-ramp, and all 13 were already gap misses at U2's head (the U2
+// carry R74 moved here). Removed: cuisine "Chocolate" primary, film "The Godfather" secondary and music
+// "Studio 54" secondary (the tone hold keeps stop 950 at its undamped L*, peak 900&950 widens from
+// 0.407 to 0.474 at U2 to 0.551 to 0.553), travel "Hidaka coast" primary-muted (peak 850&900, 0.532 ->
+// 0.792, same cause), and travel "Khumbu" / "Lake Baikal" secondary #E0E5E6 (already not reproduced at
+// U2's head). Pass 1's 4 other members are gone at revision 8 (the anchor's own OKLCH hue, no per-stop
+// solve): literature "Bleak House" tertiary-muted (peak 900&950 0.789), music "Motown" tertiary-muted
+// and "Pop-punk" secondary (0.730) and travel "Sapa" secondary (0.605, 0.442 at U2).
 const RAMP_GAP_ALLOW = [
   `architecture "Icelandic turf house · vernacular · Skógar / Glaumbær" tertiary-muted #D9D8D4`,
   `architecture "Katsura Imperial Villa · 17th c · Kyoto" primary #282322`,
@@ -566,7 +567,6 @@ const RAMP_GAP_ALLOW = [
   `film "Touch of Evil · 1958 · dir. Orson Welles · the border-town night" secondary #232428`,
   `literature "Alice's Adventures in Wonderland · Carroll, ill. Tenniel · 1865" tertiary-muted #2C2926`,
   `literature "Anna Karenina · Tolstoy · 1877 · the Moscow station in snow" tertiary-muted #252428`,
-  `literature "Bleak House · Dickens · 1853 · a November fog over the city" tertiary-muted #2C2925`,
   `literature "Fahrenheit 451 · Bradbury · 1953 · the fireman's city" tertiary-muted #282320`,
   `literature "My Brilliant Friend · Ferrante · 2011 · a poor Naples neighbourhood" tertiary-muted #D3D1CC`,
   `literature "The Bell Jar · Sylvia Plath · 1963 · New York & the suburb" primary #242427`,
@@ -581,10 +581,8 @@ const RAMP_GAP_ALLOW = [
   `music "Liquid light show · the projected oil-wheel" tertiary-muted #26232C`,
   `music "Lovers rock · the blue-light basement" primary #242428`,
   `music "Mod & British Invasion · the op-art club" tertiary #242428`,
-  `music "Motown · the glamour stage" tertiary-muted #26272B`,
   `music "Neon MV · the night-set choreography" tertiary-muted #26232C`,
   `music "P-Funk · the cosmic album art" secondary-muted #211E27`,
-  `music "Pop-punk · the skate-park sleeve" secondary #26272B`,
   `music "Pop-punk · the skate-park sleeve" tertiary-muted #D9D8D4`,
   `music "Rasta tricolour · the roots sleeve" tertiary-muted #282320`,
   `music "Riot grrrl · the zine collage" tertiary #D0CEC9`,
@@ -599,7 +597,6 @@ const RAMP_GAP_ALLOW = [
   `nature "32° N · constant · Carlsbad Caverns, New Mexico, lamp-lit" secondary #1D1D20`,
   `nature "40° S · December · 14:00 · Valdivian rainforest, Los Ríos, southern Chile" tertiary-muted #302820`,
   `travel "20° N · January · 06:30 · Rub' al Khali at first light, near the Saudi-Omani border" primary-muted #1F1A16`,
-  `travel "22° N · January · 11:00 · Sapa Sunday market, Lào Cai Province, cold mountain fog" secondary #042546`,
   `travel "23° S · December · 16:20 · Salar de Atacama, 2,305 m" secondary #EBEAE6`,
   `travel "27° N · October · 17:30 · A teahouse in Khumbu, on the trekking route from Namche to Tengboche" tertiary-muted #1F1A16`,
   `travel "30° N · March · 16:00 · Wadi Rum, the Jebel Khazali wall in late afternoon" primary #1E1D1B`,
@@ -641,15 +638,17 @@ const RAMP_GAP_ALLOW = [
 // a stop on the 25-stop export ramp under the steeper shoulder damping) plus three more dark, low-
 // chroma sources at the same 8-bit-quantization boundary (Patmos tertiary-muted, Hidaka coast
 // tertiary-muted, Viennese kaffeehaus primary-muted).
-// #725 U3 freeze (R74, same one-time re-freeze as RAMP_GAP_ALLOW above), measured FULL on U3's head:
-// 16 -> 19, 6 added and 3 removed. The 6 added were all already duplicate-hex at U2's head, each at
-// stops 50 to 125 or 825 to 875 (Andalusian patio, Villa Savoye and Trulli secondary, Black metal
-// secondary, Vaporwave secondary-muted, Carlsbad Caverns secondary). Removed: travel "Wadi Rum" primary
-// (the tone hold separates its peak and perceptual 825 to 950 stops, 25 of 25 unique), travel "Patmos"
-// tertiary-muted and "Viennese kaffeehaus" primary-muted (already not reproduced at U2's head).
+// #725 U3 freeze (R74, same one-time re-freeze as RAMP_GAP_ALLOW above), measured FULL on U3's head
+// (revision 8 hue): 16 -> 19, 6 added and 3 removed. Each added member duplicates at stops 50 to 125 or
+// 825 to 900: Andalusian patio and Villa Savoye secondary, Vaporwave secondary-muted and Carlsbad
+// Caverns secondary were already duplicate-hex at U2's head; music "The late-night club" primary-muted
+// and "UK '77" secondary (anchor L* 11.91) duplicated peak 925&950 at U2's head and now peak 875&900
+// (#121213). Removed: travel "Wadi Rum" primary (the tone hold separates its peak and perceptual 825
+// to 950 stops, 25 of 25 unique), travel "Patmos" tertiary-muted and "Viennese kaffeehaus" primary-
+// muted (already not reproduced at U2's head). Pass 1's Trulli secondary and Black metal secondary are
+// unique again at revision 8.
 const RAMP_DISTINCT_ALLOW = [
   `architecture "Andalusian patio · Moorish-Spanish vernacular · Córdoba" secondary #DFDEDC`,
-  `architecture "Trulli of Alberobello · vernacular · Puglia, Italy" secondary #E0DEDC`,
   `architecture "Villa Savoye · 1931 · Le Corbusier · Poissy" secondary #DFDEDC`,
   `brands "Burger King · The Flame Identity · 2021 rebrand" tertiary-muted #F5EBDC`,
   `brands "Nike · The Swoosh · Since 1971" secondary #101820`,
@@ -659,7 +658,8 @@ const RAMP_DISTINCT_ALLOW = [
   `film "TRON: Legacy · 2010 · dir. Kosinski · the Grid" secondary #181B1F`,
   `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" primary #161618`,
   `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" tertiary #1E211E`,
-  `music "Black metal · the forest at night" secondary #1E2024`,
+  `music "The late-night club · the smoky set" primary-muted #1F1F23`,
+  `music "UK '77 · the ransom-note sleeve" secondary #1F1F23`,
   `music "Vaporwave · the digital-pastel aesthetic" secondary-muted #D8D4CE`,
   `nature "32° N · constant · Carlsbad Caverns, New Mexico, lamp-lit" secondary #1D1D20`,
   `travel "20° N · January · 06:30 · Rub' al Khali at first light, near the Saudi-Omani border" primary-muted #1F1A16`,
@@ -1612,11 +1612,11 @@ if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); pr
 // subset with no in-file negative control this run, the exact count and the control being the FULL
 // leg's own (U3-4 proves the subset half against a real clone mutation instead, both modes).
 //
-// notch's frozen FULL count is 17, not the pre-#739 15 (Ticket #739): #ACADAE's own hue-seed change
-// shifts its per-stop gamut ceiling enough to newly notch in peak/perceptual, a mechanical re-freeze,
-// not a new construction defect (NOTCH_ALLOW's own comment, above).
+// The FULL counts read the lists' own lengths (a FULL pass has matched each by name above), so a
+// re-freeze cannot leave this line stale (#725 U3: it printed the U2 counts 72 / 16 / 17 after the
+// freeze). Each list's own comment names its movement.
 const allowListTail = FULL
-  ? "window-clamp (10), gap-19 (72), distinct-25 (16) and notch (17, Q3-resolved, +2 at #739) are named allow-lists, compared by name, each with a biting negative control"
+  ? `window-clamp (${RAMP_WINDOW_ALLOW.length}), gap-19 (${RAMP_GAP_ALLOW.length}), distinct-25 (${RAMP_DISTINCT_ALLOW.length}) and notch (${NOTCH_ALLOW.length}, Q3-resolved) are named allow-lists, compared by name, each with a biting negative control`
   : `window-clamp (${windowSorted.length}), gap-19 (${gapSorted.length}), distinct-25 (${distinctSorted.length}) and notch (${notchSorted.length}) are the same named allow-lists read as a SAMPLED subset this run (upper bound only, no in-file negative control this run - the exact count and the biting control are the FULL leg's, gate:corpus-anchor, and U3-4 proves the subset half against a real clone mutation)`;
 console.log(`\nPASS (${FULL ? "FULL" : "SAMPLED"}): C2, C3, C4 (non-anchored construction totally migrated, Q1), C6/F4 clear; C5 (monotone) is a true 0, no list; ${allowListTail}`);
 process.exit(0);

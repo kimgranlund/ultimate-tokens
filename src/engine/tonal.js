@@ -121,8 +121,10 @@ export function hueAnchorFrac(palette, controls) {
 }
 
 // solveOkhslHue, the OKHSL hue whose color at (s, l) reads back at `targetOklchHue`. The perceptual ramp
-// is AUTHORED in OKHSL but EXPORTED in OKLCH, and the two disagree on "constant hue" by a chroma- and
-// lightness-dependent amount (Abney), worst in the blues (~6°). Anchoring the KEY stop directly in the
+// is AUTHORED in OKHSL but EXPORTED in OKLCH. In the continuous domain OKHSL hue IS OKLab hue (OKHSL
+// remaps only s and l; measured max 1.1e-13° on okhslToRgbFloat, #725 revision 8), so the solve's only
+// work is the 8-bit staircase below; the Abney disagreement (worst in the blues, ~6°) is the even path's
+// CAM16 solve (solveCam16Hue), not this one. Anchoring the KEY stop directly in the
 // RENDER space, at its ACTUAL saturation/lightness, lands it on the set OKLCH hue exactly, for any damping,
 // no CAM16 round-trip. f(h)≈h (slope ≈1), so h ← h − (got − target) is Newton; converges in a few steps.
 // #657: f is an 8-BIT STAIRCASE, okhslToRgb quantises to integer RGB, so `got` is piecewise CONSTANT in h
@@ -1258,16 +1260,19 @@ function capChromaAtHeldTone(hue, s, l, rgb, chroma, ceiling, hueCam16, strictSe
 // needed, we already have the real value). "oklch" hueSpace (R3, review pass 2, 2026-09-18) used to
 // solve the OKHSL hue reproducing the anchor's own OKLCH hue reading AT THE ANCHOR'S OWN saturation/
 // lightness - a degenerate solve (that point IS the anchor's own point, so it always returned
-// anchor.okhsl.h back unchanged) that measured as dead (0 of 3,396 moved). The fix solves PER STOP
-// instead, inside the stops.map below, at that stop's OWN `l`/`s` (both already stop-dependent and,
-// unlike the CIE-L* path, independent of hue - OKHSL saturation never reads the resolved hue here - so
-// no seed/second-pass is needed, unlike paletteStopsAnchored's own per-stop solve).
+// anchor.okhsl.h back unchanged) that measured as dead (0 of 3,396 moved). #725 U3 revision 8 removes
+// the per-stop solve that replaced it: OKHSL hue IS OKLab hue by construction, so solving per stop was
+// the identity in the continuous domain and read only the 8-bit staircase, returning an arbitrary hue
+// at damped pale stops (106° against the anchor's 68.7° at default Warning perceptual 150) that the
+// tone hold then priced at the basis `s` and that differed per hueSpace. The "oklch" branch now uses
+// the anchor's own OKLCH hue, `targetOklchHue`, which equals `anchor.okhsl.h`, so both hueSpaces
+// render byte-identical anchored perceptual and peak ramps (the Q-D ruling, made structural).
 function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
   const shift = palette.hueShift ?? 0;
   const sameDir = palette.hueSameDir === true;
   // An achromatic anchor's own OKHSL hue reading is rounding residue (#739): OKHSL hue IS OKLab hue,
   // so the palette's own stored hue (already OKLCH-native) is used directly, with no solve and no
-  // effHue conversion needed - both the OKLCH target the per-stop solve chases and the pivot-clamp/
+  // effHue conversion needed - both the OKLCH hue the "oklch" branch emits and the pivot-clamp/
   // cam16-mode hue basis below. A chromatic anchor is untouched: both lines read exactly as before.
   const targetOklchHue = anchor.achromatic ? palette.hue : rgbToOklchHue(anchor.rgb);
   const oklchSpace = controls.hueSpace === "oklch";
@@ -1320,19 +1325,18 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
     // own `s = (palette.chroma/100)*m` formula exactly - at each side's endpoint (liftStop position 1),
     // by the SAME liftStop position the envelope itself keys on. No notch by construction: env(500)=1
     // and the basis's own liftStop position is 0 at the pivot, so `s` reduces to `anchor.okhsl.s`
-    // exactly as a stop approaches 500. Computed BEFORE hue resolution - unlike the CIE-L* path, `s`
-    // never reads the resolved hue, so the R3 per-stop hue solve below needs no seed/second pass.
+    // exactly as a stop approaches 500. Unlike the CIE-L* path, `s` never reads the resolved hue; the
+    // damped `s` itself is holdTone's (below).
     const env = chromaEnvelope(stop, 500, palette.lift ?? 0, controls);
     const anchorIntendedS = anchor.okhsl.s;
     const groupIntendedS = Math.min(1, Math.max(0, palette.chroma / 100));
     const intendedS = anchorChromaBasis(stop, 500, palette.lift ?? 0, anchorIntendedS, groupIntendedS);
-    const s = Math.min(1, Math.max(0, intendedS * env));
-    // hueSpace (R3): "oklch" solves the OKHSL hue that reproduces the anchor's OWN OKLCH hue AT THIS
-    // STOP'S own (s, l) - see this function's own header comment for why the ANCHOR's own point was
-    // a degenerate, dead solve.
-    const hOkStop = oklchSpace ? solveOkhslHue(targetOklchHue, s, l) : hOkSeed;
+    // hueSpace: "oklch" emits the anchor's own OKLCH hue, no per-stop solveOkhslHue (#725 revision 8:
+    // OKHSL hue is OKLab hue, so the solve was the identity reading the 8-bit staircase; see this
+    // function's header comment). "cam16" keeps hOkSeed, the same number.
+    const hOkStop = oklchSpace ? targetOklchHue : hOkSeed;
     const hue = (((hOkStop + shift * dir) % 360) + 360) % 360;
-    // Tone hold (#725 U3): the hue solved above at the pre-hold (s, l) is reused, one solve per stop.
+    // Tone hold (#725 U3): the one hue above feeds both the hold's target and the emission.
     const hold = holdTone(hue, intendedS, l, env);
     const rgb = okhslToRgb(hue, hold.s, hold.l);
     return { hue, s: hold.s, l: hold.l, rgb, chroma: cam16FromRgb(rgb).chroma, toneTarget: hold.target, toneHeld: hold.held };

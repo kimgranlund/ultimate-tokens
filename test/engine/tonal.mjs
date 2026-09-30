@@ -1356,9 +1356,14 @@ for (const mode of ["perceptual", "peak"]) {
     "even|36|100.00|0|0|25-stop|100&125",
     "even|36|100.00|0|0|25-stop|175&200",
     // #725 U3 freeze (R74, "frozen once at U3 with the movement declared"), measured FULL on U3's head
-    // (hold + retune): 22 -> 32 keys, 20 added and 10 removed. Every added key sits at stops 50 to 150 or
-    // 800 to 925, or at Nike tertiary-muted's window-clamped #FFFFFF (L* 100, the 175&200 key), the same
-    // 8-bit rounding-collision class as the keys above. Nike's peak stops 50, 75 and 100 now share one
+    // (hold + retune, revision 8 hue): 22 -> 30 keys, 18 added and 10 removed. Every added key sits at
+    // stops 50 to 150 or 800 to 925, or at Nike tertiary-muted's window-clamped #FFFFFF (L* 100, the
+    // 175&200 key), the same 8-bit rounding-collision class as the keys above. Revision 8 (the anchor's
+    // own OKLCH hue, no per-stop solve) adds perceptual|60 800&825: travel "Khumbu" tertiary-muted and
+    // "Rub' al Khali" primary-muted, both #1F1A16 (L* 9.70, window-clamped), whose peak 800&825 is
+    // already cited, and peak|280 875&900: music "The late-night club" primary-muted and "UK '77"
+    // secondary, both #1F1F23 (L* 11.91), #121213 at both stops (925&950 at U2's head). Pass 1's peak|60
+    // 850&875, peak|88 100&125, peak|250 825&850 and peak|270 850&875 do not reproduce at revision 8. Nike's peak stops 50, 75 and 100 now share one
     // hex, so with 50&75 cited the gate keys the third as 50&100 and #744's peak 75&100 (above) is
     // re-keyed here, not fixed. Removed: peak|80 875&900 (travel "Wadi Rum" primary, the tone hold
     // separates its dark stops), peak|36 75&100 (re-keyed), and 8 keys U2's head already did not
@@ -1367,23 +1372,21 @@ for (const mode of ["perceptual", "peak"]) {
     "perceptual|36|100.00|0|0|25-stop|100&125",
     "perceptual|270|100.00|0|0|25-stop|850&875",
     "perceptual|280|100.00|0|0|25-stop|825&850",
+    "perceptual|60|100.00|0|0|25-stop|800&825",
     "peak|36|100.00|0|0|19-stop|50&100",
     "peak|36|100.00|0|0|25-stop|50&75",
     "peak|36|100.00|0|0|25-stop|50&100",
     "peak|36|100.00|0|0|25-stop|125&150",
     "peak|36|100.00|0|0|25-stop|175&200",
     "peak|60|100.00|0|0|25-stop|800&825",
-    "peak|60|100.00|0|0|25-stop|850&875",
     "peak|60|100.00|0|0|25-stop|900&925",
     "peak|79|100.00|0|0|25-stop|75&100",
     "peak|86|100.00|0|0|25-stop|50&75",
-    "peak|88|100.00|0|0|25-stop|100&125",
     "peak|90|100.00|0|0|25-stop|75&100",
     "peak|92|100.00|0|0|25-stop|75&100",
-    "peak|250|100.00|0|0|25-stop|825&850",
     "peak|250|100.00|0|0|25-stop|875&900",
-    "peak|270|100.00|0|0|25-stop|850&875",
     "peak|280|100.00|0|0|25-stop|825&850",
+    "peak|280|100.00|0|0|25-stop|875&900",
   ]);
   const seenBaselineDup = new Set();
 
@@ -1960,7 +1963,9 @@ for (const mode of ["perceptual", "peak"]) {
       const realSrc = readFileSync(new URL("../../src/engine/tonal.js", import.meta.url), "utf8");
       const hctUrl = new URL("../../src/engine/hct.js", import.meta.url).href;
       const okhslUrl = new URL("../../src/engine/okhsl.js", import.meta.url).href;
-      const NEEDLE = "const s = Math.min(1, Math.max(0, intendedS * env));";
+      // #725 revision 8: the anchored path's damped `s` is holdTone's own (the per-stop hue solve that
+      // read a separate `s` line is gone), so the saturation patch amplifies the envelope it is given.
+      const NEEDLE = "const hold = holdTone(hue, intendedS, l, env);";
       // #725 U2: the anchored peak path caps every stop at stop 500's chroma, which absorbs a saturation
       // amplification by construction, so the patch also lifts that cap (the regression it guards).
       const CAP_NEEDLE = "const capPeak = mode === \"peak\" && (controls.dampAmp ?? 0) === 0;";
@@ -1970,7 +1975,7 @@ for (const mode of ["perceptual", "peak"]) {
         const patched = realSrc
           .replace('from "./hct.js"', `from "${hctUrl}"`)
           .replace('from "./okhsl.js"', `from "${okhslUrl}"`)
-          .replace(NEEDLE, "const s = Math.min(1, Math.max(0, intendedS * env * 1.6));")
+          .replace(NEEDLE, "const hold = holdTone(hue, intendedS, l, env * 1.6);")
           .replace(CAP_NEEDLE, "const capPeak = false;");
         const BuggyT = await import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
         // peakResult.witness is `${doc.__presetName}/${pal.name}` (this function's own return shape).

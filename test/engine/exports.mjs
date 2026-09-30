@@ -533,7 +533,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (ddRaw.constant.backdrop.value !== "oklch(0 0 0 / 80%)") FAIL("panda", `EX-1 colors.constant.backdrop = ${ddRaw.constant.backdrop.value}`);
   if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.4669 0.1671 258.98)", _dark: "oklch(0.5476 0.1923 259.11)" })) // #725 U3 re-pin, dark was oklch(0.5506 0.1922 259.07)
     FAIL("panda", `EX-2 colors.primary.DEFAULT = ${JSON.stringify(ddSem.primary.DEFAULT.value)}`);
-  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.3951 0.1194 258.53)", _dark: "oklch(0.6405 0.1518 258.99)" })) // #725 U3 re-pin, was base oklch(0.3971 0.1239 258.91) / dark oklch(0.6413 0.1547 259.07)
+  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.3962 0.1205 259.03)", _dark: "oklch(0.6405 0.1518 258.99)" })) // #725 U3 re-pin, was base oklch(0.3971 0.1239 258.91) / dark oklch(0.6413 0.1547 259.07); base re-pinned again at revision 8 (was oklch(0.3951 0.1194 258.53)): the anchored oklch hue is the anchor's own, no per-stop solve
     FAIL("panda", `EX-2 colors.primary.hover = ${JSON.stringify(ddSem.primary.hover.value)}`);
   if (JSON.stringify(ddSem.primary["on-primary"].value) !== JSON.stringify({ base: "oklch(1 0 0)", _dark: "oklch(1 0 0)" }))
     FAIL("panda", `EX-2 colors.primary.on-primary = ${JSON.stringify(ddSem.primary["on-primary"].value)}`);

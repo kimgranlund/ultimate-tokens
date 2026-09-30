@@ -168,7 +168,7 @@ let anyFail = envFails > 0;
 // One READING (a) block: `barCells` puts the ruled bars and OK/FAIL on each cell; `barClause` does the
 // same for the clause line. Every bar that prints FAIL sets `anyFail`; an unbarred line never does.
 function printReadingA(m, mode, heading, { barCells, barClause }) {
-  const { results, aboveTotal, adiaAboveTotal, aboveWitnesses, perceptualRunFails } = m;
+  const { results, aboveTotal, adiaAboveTotal, aboveWitnesses, perceptualRunFails, namedAbove, namedExceptions } = m;
   console.log(`  ${heading}:`);
   for (const s of REPORT_STOPS) {
     const r = results[mode][s];
@@ -179,7 +179,8 @@ function printReadingA(m, mode, heading, { barCells, barClause }) {
     console.log(`    stop ${s}: median ${r.median.toFixed(1)}% (<=${t.median} ${medOk ? "OK" : "FAIL"}) / p90 ${r.p90.toFixed(1)}% (<=${t.p90} ${p90Ok ? "OK" : "FAIL"}) n=${r.n}`);
   }
   if (!m.gatePath) console.log(`    over ${OVER_90_AT_300} at stop 300: ${m.over90At300[mode]} of ${results[mode][300].n}`);
-  const aboveOk = aboveTotal[mode] === 0;
+  // A named exception (NAMED_EXCEPTIONS, #725 R76 Q2) is counted and printed; the verdict reads the rest.
+  const aboveOk = aboveTotal[mode] - namedAbove[mode] === 0;
   if (barClause && !aboveOk) anyFail = true;
   const verdict = barClause ? ` ${aboveOk ? "OK" : "FAIL"}` : " (reported, not barred)";
   if (mode === "perceptual") {
@@ -189,7 +190,8 @@ function printReadingA(m, mode, heading, { barCells, barClause }) {
       console.log(`    window: anchors with L* in [${T.RAMP_L_MIN}, ${T.RAMP_L_MAX}] count; ${m.outsideWindow} anchored instance(s) outside it, ${m.perceptualWindowExcluded.length} violation(s) excluded${m.perceptualWindowExcluded.length ? ":" : ""}`);
       for (const x of m.perceptualWindowExcluded) console.log(`      excluded: ${x.label} anchor ${x.anchor} L* ${x.lstar.toFixed(1)} (${x.why})`);
     }
-    console.log(`    rule violations (second run or past-bound stop): ${aboveTotal[mode]}${verdict}${witnesses.length ? ` (e.g. ${witnesses.join(", ")})` : ""}`);
+    const named = namedExceptions[mode].length ? ` (named exception: ${namedExceptions[mode].join("; ")})` : "";
+    console.log(`    rule violations (second run or past-bound stop): ${aboveTotal[mode]}${named}${verdict}${witnesses.length ? ` (e.g. ${witnesses.join(", ")})` : ""}`);
   } else {
     console.log(`    clause: 0 above 100% of stop 500 (generated palettes, dampAmp 0)`);
     console.log(`    above 100% of stop 500: ${aboveTotal[mode]}${verdict}${aboveWitnesses[mode].length ? ` (e.g. ${aboveWitnesses[mode].join(", ")})` : ""}`);

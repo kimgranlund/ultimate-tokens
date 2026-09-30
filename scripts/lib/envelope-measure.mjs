@@ -37,6 +37,15 @@ export const CUSP_RUN_BOUND = 1.893005;
 // excess is mechanism 3 (a dark anchor's stop 500 sits below its hue's cusp lightness and stop 300 on
 // it, so the ratio reads the L* ladder, not the envelope); R74 reports it and bars nothing on it.
 export const OVER_90_AT_300 = 90;
+// NAMED_EXCEPTIONS  -  owner-ruled perceptual cusp-run violations on the ANCHORED path, keyed
+// "<preset name> / <palette name>" (#725 R76 Q2, plan revision 8, C3.2). A named row is still counted
+// in `aboveTotal` (the report prints it on the rule-violations line and the gate's cuspRuns ratchet
+// holds it) and is listed by name in `namedExceptions`; only the report's exit code reads the unnamed
+// count, `aboveTotal - namedAbove`. Kea primary-muted #E1F5DA (L* 94.5) sits above stop 500's chroma
+// by construction (mechanism 3 at the L* extreme), 226.02 percent at U2, carried, not caused by U3.
+export const NAMED_EXCEPTIONS = new Map([
+  ["37° N · November · 05:40 · MV passing Kea, en route Piraeus / primary-muted", "R76 Q2"],
+]);
 
 // The cusp-run count's window (#725 R74, C2.2): on the anchored path only anchors whose CIE L* sits
 // inside the ramp window [RAMP_L_MIN, RAMP_L_MAX] (src/engine/tonal.js, 9.95 to 95.05) count toward
@@ -89,6 +98,8 @@ export async function measureEnvelope({ dampAmpOverride = null, dampOverride = n
   const aboveWitnesses = { perceptual: [], peak: [], even: [] };
   const aboveTotal = { perceptual: 0, peak: 0, even: 0 };
   const adiaAboveTotal = { perceptual: 0, peak: 0, even: 0 };
+  const namedAbove = { perceptual: 0, peak: 0, even: 0 };
+  const namedExceptions = { perceptual: [], peak: [], even: [] }; // "<label> <worst>% (<ruling>)"
   const perceptualRunFails = { runs: [], bound: [] }; // witnesses, non-Adia only
   const perceptualWindowExcluded = []; // { label, anchor, lstar, why }: violations outside the L* window
   let outsideWindow = 0; // anchored instances whose anchor L* is outside the window (perceptual pass)
@@ -142,6 +153,10 @@ export async function measureEnvelope({ dampAmpOverride = null, dampOverride = n
           if (worstRatio > CUSP_RUN_BOUND + 1e-6) why.push(`${(worstRatio * 100).toFixed(2)}%`);
           if (why.length && outside) {
             perceptualWindowExcluded.push({ label, anchor: pal.anchor.toUpperCase(), lstar, why: why.join(", ") });
+          } else if (why.length && !gatePath && NAMED_EXCEPTIONS.has(`${presetName} / ${pal.name}`)) {
+            namedAbove[mode]++;
+            namedExceptions[mode].push(`${label} ${why.join(", ")} (${NAMED_EXCEPTIONS.get(`${presetName} / ${pal.name}`)})`);
+            aboveTotal[mode]++;
           } else if (why.length) {
             if (runs > 1 && perceptualRunFails.runs.length < 3) perceptualRunFails.runs.push(`${label} (${runs} runs)`);
             if (worstRatio > CUSP_RUN_BOUND + 1e-6 && perceptualRunFails.bound.length < 3) perceptualRunFails.bound.push(`${label} (${(worstRatio * 100).toFixed(2)}%)`);
@@ -170,7 +185,7 @@ export async function measureEnvelope({ dampAmpOverride = null, dampOverride = n
     }
   }
   return {
-    instances, totalCurated, results, aboveTotal, adiaAboveTotal, aboveWitnesses, perceptualRunFails,
+    instances, totalCurated, results, aboveTotal, adiaAboveTotal, namedAbove, namedExceptions, aboveWitnesses, perceptualRunFails,
     perceptualWindowExcluded, outsideWindow, over90At300, gatePath,
   };
 }

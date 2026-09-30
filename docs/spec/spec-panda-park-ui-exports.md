@@ -489,7 +489,7 @@ Neutral at full chroma, the emitters must be fed the resolved state, as the draw
   and `.dimmest` did.
 - **EX-2 (NORMATIVE, panda semantic).** `semanticTokens.colors.primary.DEFAULT.value` deep-equals
   `{ base: "oklch(0.4669 0.1671 258.98)", _dark: "oklch(0.5476 0.1923 259.11)" }`;
-  `primary.hover` `{ base: "oklch(0.3951 0.1194 258.53)", _dark: "oklch(0.6405 0.1518 258.99)" }`;
+  `primary.hover` `{ base: "oklch(0.3962 0.1205 259.03)", _dark: "oklch(0.6405 0.1518 258.99)" }`;
   `primary["on-primary"]` `{ base: "oklch(1 0 0)", _dark: "oklch(1 0 0)" }`;
   `neutral["on-surface"]` `{ base: "oklch(0.1776 0 0)", _dark: "oklch(1 0 0)" }`;
   `neutral.scrim` (the role) `{ base: "oklch(0.5056 0.0552 267.76 / 30%)", _dark: same }` next to
@@ -498,6 +498,9 @@ Neutral at full chroma, the emitters must be fed the resolved state, as the draw
   The three moved EX-2 literals (`primary.DEFAULT._dark`, `primary.hover._dark`, `data-1.DEFAULT.base`)
   were re-pinned 2026-09-29 (#725 U2, R69: the anchored basis is capped at the anchor's own `s`) from
   `exportPanda(stateOf(defaultDocument()))` on the engine, never typed; the rest did not move.
+  `primary.hover.base` moved again at #725 U3 revision 8 (was `oklch(0.3951 0.1194 258.53)`): the
+  anchored `oklch` hue is now the anchor's own OKLCH hue with no per-stop solve; re-read from the same
+  call, the other EX-1 and EX-2 literals did not move.
   #725 U3 (the OKHSL damp retune and the tone hold) re-pinned four EX-2 literals the same way
   (`primary.DEFAULT._dark`, both `primary.hover` values, `neutral["on-surface"].base`, `data-1.DEFAULT.base`)
   and EX-1's `primary["950"]` (was `oklch(0.1763 0.014 258.36)`: the retuned damp greys stop 950 further).
