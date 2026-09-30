@@ -8,6 +8,34 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 
 ## [Unreleased]
 
+### 2026-09-30
+
+#### Changed
+- **Perceptual and peak ramps are capped at the anchor, retuned, and hold their tone** (#725, R69).
+  An exported kit's perceptual or peak ramp re-exported after this change differs from one exported
+  before at most stops (90 to 91% of cells move: 86008 of 94500 perceptual and 85463 of 94500 peak
+  cells across the 3780-palette corpus, against `main` before this change). Even mode does not move,
+  and stop 500 moves in one palette of 3780 per mode (film "The Night of the Hunter" primary,
+  `#1C1B1E` to `#1B1C1E`, one code on R and on G). Four changes move it. The anchored chroma basis no longer
+  climbs above the anchor's own chroma (the group target reads `min(group, anchor)`), and on the
+  cap's own path no stop's envelope reads above stop 500's; on an anchored export a near-grey
+  palette's white stop 50 can still read above its stop 500 (15 of 3764 in the
+  `test/engine/tonal.mjs` C6 (v) ratchet). This reverses the earlier muted-in-vivid-group intent
+  (ADR-026, amendment of 2026-09-29). The perceptual and peak damping constants are retuned to the
+  closed-form pair (`c` = log2 3, `d` 0.9275) so the envelope reads 0.74 at stops 300/700 and 0.23
+  at 100/900, against the ruled 0.75 and 0.25 bars. The tone is held per damped stop by solving
+  OKHSL `l` for the pre-envelope CIE L\*, so a damped stop keeps the CIE L\* it had before the
+  envelope was applied (to within 0.8 L\*). Against a kit exported before this
+  change a cell's L\* moves by up to 2.4, which is the lightness drift the old chroma coupling
+  carried and the hold removes. On the anchored path the `oklch` hue is the anchor's own OKLCH hue.
+  The corpus render moved with it, so the mode-isolation fixture was re-captured, and two contrast
+  floors moved (peak Success light to 7.5, perceptual Data 3 dark to 4.8).
+
+#### Added
+- **`gate:chroma-envelope`** (#725): a full-corpus gate that ratchets the per-mode chroma envelope
+  (median and p90 at four stops) against `test/engine/fixtures/chroma-envelope.json`, with a direction
+  leg per mode; it is the eighth `gate:sweeps` member and a `sweeps` matrix leg in CI.
+
 ### 2026-09-29
 
 #### Fixed
