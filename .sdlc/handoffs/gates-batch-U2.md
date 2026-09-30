@@ -35,10 +35,18 @@ Branch `unit/gb-U2` (cut from `plan/gates-batch` @ ddeddfbd, U1 merged). Builder
 
 | Check | Result |
 |---|---|
-| `npm test` | `✓ all 54 test files passed`; tree clean after the asset regen commit |
+| `npm test` | `✓ all 54 test files passed` (rerun after rework 1); tree clean after |
 | C3, C4 | `test/run.mjs`, `.sdlc/baseline.md`, tonal/hct/okhsl/model/test/engine untouched |
 | C6 | `node scripts/report-preset-fidelity.mjs --identity-control --base <merge-base>`: `0 differing cells` |
 | C2 | `em-dash: clean` |
+
+## Rework pass 1 (reviewer-l3 FAIL @ bca0a33a)
+
+| # | Result | Change |
+|---|---|---|
+| 1 | 🟢 | each `noun` pin must read at least one phrase, else `count phrases: fact pin "<id>" read 0 phrases`; total floor kept. Negative control per pin (noun misspelled to `zz<noun>`): `type voices`, `colour formats`, `roles per palette`, `skill type voices`, `skill colour formats` each red naming that pin. The reviewer's repro (misspelled `skill colour formats` noun plus a planted `eight colour formats`) now reds. |
+| 2 | 🟡 declared | the plan's U2 design fixes the singular as outside the grammar and names `roles?` as that pin's noun, so singular handling stays as specified; `roles?` reading `a 53-role` and a qualifier outside `named/colour/color/semantic/export` (`14 type voices`) not being read are declared in the code comment and here, not widened |
+| 3, 4 | no change | as instructed; finding 4 (typography.js:672, :1002-1003, :1012 say eleven/11 voices) is for the Orchestrator's follow-up issue |
 
 ## Left out
 

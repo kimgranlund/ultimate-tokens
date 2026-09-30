@@ -198,7 +198,7 @@ console.log(`symbol homes: ${homesChecked} checked, ${homesStale.length} stale`)
 // and phrase, unless `allow` carries the phrase with a reason. Number words read one to ninety-nine
 // (hyphenated tens); a magnitude word (`hundred`) fails loudly instead of being skipped. An adjective
 // between number and noun (`two interactive voices`) or a singular noun (`one voice`) is outside the
-// grammar by design.
+// grammar by design (the plan's `roles?` noun is the one pin that also reads a singular, `a 53-role`; a qualifier outside the fixed list, `14 type voices`, is likewise not read).
 const TENS = { twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
 const MAGNITUDE = ["dozen", "hundred", "thousand", "million", "billion"];
 const numTok = `\\d+|(?:${Object.keys(TENS).join("|")})(?:-(?:one|two|three|four|five|six|seven|eight|nine))?|${Object.keys(NUM_WORDS).join("|")}|${MAGNITUDE.join("|")}`;
@@ -217,6 +217,7 @@ for (const pin of FACT_PINS) {
   let held;
   try { held = await pin.source(pin.needle); } catch { continue; }
   if (typeof held !== "number") continue;
+  const before = phrasesRead;
   const reach = pin.doc.startsWith(".claude/skills/") ? tracked.filter((f) => f.startsWith(pin.doc.split("/").slice(0, 3).join("/") + "/") && f.endsWith(".md")) : [pin.doc];
   const re = new RegExp(`(?<![\\w-])(${numTok})[- ](?:(?:named|colou?r|semantic|export) )?(?:${pin.noun})(?![\\w])`, "gi");
   for (const doc of reach) txt(doc).split("\n").forEach((line, i) => {
@@ -228,6 +229,9 @@ for (const pin of FACT_PINS) {
       FAIL(doc, `line ${i + 1}: \`${m[0]}\` but the code holds ${held} (fact pin "${pin.id}", ${pin.src})`);
     }
   });
+  // each pin's needle carries its own noun, so its reach must yield at least one phrase; a misspelled noun
+  // would otherwise ride on the other pins' reads under the total floor
+  if (phrasesRead === before) FAIL("test/repo/citations.mjs", `count phrases: fact pin "${pin.id}" read 0 phrases for noun \`${pin.noun}\` (the pin's scan went vacuous)`);
 }
 if (phrasesRead < COUNT_PHRASE_FLOOR) FAIL("test/repo/citations.mjs", `count phrases: only ${phrasesRead} read, below COUNT_PHRASE_FLOOR ${COUNT_PHRASE_FLOOR} (the scan went vacuous)`);
 
