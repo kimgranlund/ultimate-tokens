@@ -11,7 +11,7 @@
 //   maxChromaInGamut(hue, tone) -> number   peakC(hue) -> { c, tone }
 //   oklchToCam16Hue(h)          -> CAM16 hue (degrees)
 import { hctToRgb, hctToOklch, maxChromaInGamut, peakC, oklchToCam16Hue, lstarFromRgb, cam16FromRgb } from "./hct.js";
-import { okhslToRgb, rgbToOkhsl, rgbToOklchHue, rgbToOklabChroma } from "./okhsl.js";
+import { okhslToRgb, okhslToRgbFloat, rgbToOkhsl, rgbToOklchHue, rgbToOklabChroma } from "./okhsl.js";
 
 // ── Stop sets ────────────────────────────────────────────────────────────────
 // Display ramp: 050..950 step 50 (19 stops). Light at 050, dark at 950.
@@ -427,13 +427,34 @@ export const EVEN_DAMP_FACTOR = 0.25;
 // 50% of stop 500" was already 0 at ship - the spike is a 60% shoulder, not a collapse, so R only needs
 // to reach the two innermost stops).
 export const EVEN_NEIGHBOURHOOD_R = 0.2;
+// OKHSL_DAMP_D, OKHSL_DAMP_CURVE_GAIN (#725 U3, R69): the perceptual/peak retune, derived from the
+// ruled bars (READING (b): env <= 0.75 at stop 300 and <= 0.25 at stop 100 at the corpus's damp 70 /
+// dampCurve 1.5). With env = 1 - d*u^c at u = 4/9 and 8/9 the two residues divide to 2^c = 3, so
+// c = log2(3) = 1.585; d then has a window: d >= 0.904 meets the 0.25 bar, and d <= 0.928 keeps
+// env(100) within 0.02 of it. d is 0.9275 (env 0.744 / 0.231), not the 0.919 first derived: below
+// 0.9267 the emitted gate-path perceptual stop-300 p90 sits at 90.0013, a cluster of 14 hue-86,
+// chroma-100 yellows held on one 8-bit code, over its strict 90 bar (.sdlc/questions/chroma-envelope-U3.md).
+// Both are mode-scoped maps of the shared sliders, the same shape as EVEN_DAMP_FACTOR, so both stay
+// live and no even byte moves: dampCurve is scaled by log2(3)/1.5, and damp's headroom
+// r = (100 - damp)/100 becomes r^OKHSL_DAMP_RESIDUE_EXP, the exponent fixed so the corpus's r = 0.3
+// maps to 1 - OKHSL_DAMP_D exactly. A linear residue (100 - (100 - damp)*k) meets the same point but
+// reads 100*(1 - k) at damp 0, damping a ramp the user set to no damping; the power keeps damp 0 -> 0
+// (env 1 everywhere) and damp 100 -> 100, and is monotone in between.
+export const OKHSL_DAMP_D = 0.9275;
+export const OKHSL_DAMP_RESIDUE_EXP = Math.log(1 - OKHSL_DAMP_D) / Math.log(0.3);
+export const OKHSL_DAMP_CURVE_GAIN = Math.log2(3) / 1.5;
 export function chromaEnvelope(stop, anchorStop, lift, controls) {
   // Capped at +/-1 (#681 U10, F3): under lift the raw distance can pass 450, and |sd| > 1 clipped the
   // envelope to 0 over whole bands (neutral greys). At the cap a stop takes the 50/950 edge floor.
   const sd = Math.max(-1, Math.min(1, (liftStop(stop, lift) - liftStop(anchorStop, lift)) / 450)); // position vs the anchor's OWN lifted reading (R2)
   const isEven = controls.toneMode === "even";
-  const damp = isEven ? 100 - (100 - controls.damp) * EVEN_DAMP_FACTOR : controls.damp;
-  const dampCurve = (isEven ? EVEN_DAMP_FACTOR : 1) * (controls.dampCurve ?? 1.5);
+  // perceptual/peak (and the falsy mode paletteStops reads as perceptual) take the retune; any other
+  // string keeps the raw sliders, as before.
+  const isOkhsl = !controls.toneMode || controls.toneMode === "perceptual" || controls.toneMode === "peak";
+  const damp = isEven ? 100 - (100 - controls.damp) * EVEN_DAMP_FACTOR
+    : isOkhsl ? 100 - 100 * Math.max(0, Math.min(1, (100 - controls.damp) / 100)) ** OKHSL_DAMP_RESIDUE_EXP
+    : controls.damp;
+  const dampCurve = (isEven ? EVEN_DAMP_FACTOR : isOkhsl ? OKHSL_DAMP_CURVE_GAIN : 1) * (controls.dampCurve ?? 1.5);
   let uG = Math.abs(sd) ** dampCurve;
   if (isEven) {
     // smoothstep plateau: 0 at sd=0 (the shoulder term below still vanishes there, uG's own factor),
@@ -1058,6 +1079,29 @@ function solveLForTone(hue, s, targetTone) {
   }
   return (lo + hi) / 2;
 }
+
+// holdTone(hue, sBasis, l, env) - the per-stop tone hold on both OKHSL paths (#725 U3, R69). The
+// envelope lowers OKHSL `s` at a FIXED `l`, but OKHSL `l` is a proxy for CIE L* only at s = 0: the
+// OKHSL l to CIE L* chroma coupling (#668; not Helmholtz-Kohlrausch, which is perceived brightness
+// and cannot move a computed CIE L*) moves the emitted L* with `s`, by an amount that varies stop to
+// stop with the damping slope, so neighbouring stops damped differently can measure an L* rise (the
+// coupling that sank #681 U3's two plain retunes). The hold re-solves `l` so the damped colour
+// measures the L* the undamped one (sBasis at the same hue/l) measures: the envelope moves chroma
+// only. Read on the CONTINUOUS colour (`okhslToRgbFloat`), before any cap, rounding or monotone pass,
+// by 30 halvings of [0, 1] (L* is monotone non-decreasing in `l` at fixed hue/s, solveLForTone above).
+// At env >= 1 there is nothing to hold and `l` is returned as is.
+export function holdTone(hue, sBasis, l, env) {
+  const s = Math.min(1, Math.max(0, sBasis * env));
+  const target = lstarFromRgb(okhslToRgbFloat(hue, Math.min(1, Math.max(0, sBasis)), l));
+  if (!(env < 1)) return { s, l, target, held: lstarFromRgb(okhslToRgbFloat(hue, s, l)) };
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 30; i++) {
+    const mid = (lo + hi) / 2;
+    if (lstarFromRgb(okhslToRgbFloat(hue, s, mid)) < target) lo = mid; else hi = mid;
+  }
+  const lHeld = (lo + hi) / 2;
+  return { s, l: lHeld, target, held: lstarFromRgb(okhslToRgbFloat(hue, s, lHeld)) };
+}
 // refineNearestRgb  -  a final 8-bit-quantization-aware polish (#681 U3 pass 4/5). Measuring chroma/tone
 // back from ROUNDED 8-bit RGB introduces noise the continuous joint solve above can't predict (up to
 // ~0.15 L*, ~0.1-0.2 chroma). Sweeps a few nearby continuous tone offsets through the validated HCT
@@ -1123,6 +1167,9 @@ function refineNearestRgb(rgb, hueCam16, targetTone, chromaCeiling, chromaFloor 
 // anchored path, whose OKHSL hue is not a CAM16 hue). The caller decides WHEN it fires (peak, dampAmp 0,
 // chroma above the ceiling); this helper only caps. It reads no envelope: the envelope is already in `s`.
 // `strictSeed` is passed through to `refineNearestRgb` (true on the anchored path only).
+// `capped` (#725 U3) is true when the returned pixel differs from the one passed in: the cap's own
+// record of the stops it moved, carried onto the row so a reader (anchor.mjs f4) needs no second,
+// uncapped render to find them.
 //
 // Generated PEAK palettes (dampAmp 0) never emit more chroma than the anchor (#681 U3 pass 5, C6's
 // "0 above 100%" clause, peak only  -  perceptual keeps #55's cusp-pull richness, see below). Holds
@@ -1130,6 +1177,7 @@ function refineNearestRgb(rgb, hueCam16, targetTone, chromaCeiling, chromaFloor 
 // then re-solve l for the held tone, iterating until both hold. Hue stays the caller's OKHSL hue
 // throughout (no engine switch, no new Abney residual).
 function capChromaAtHeldTone(hue, s, l, rgb, chroma, ceiling, hueCam16, strictSeed = false) {
+  const rgbIn = rgb; // the pre-cap pixel: `capped` below reports whether this call changed it
   const targetTone = lstarFromRgb(rgb); // the pre-cap (natural) tone  -  held fixed below
   // preCapOklchHue: THIS stop's own OKLCH hue before capping  -  the invariant the fallback/polish
   // below must reproduce (#681 U3 review 2, F1). `hue` is the caller's resolved OKHSL hue (Abney-
@@ -1191,7 +1239,7 @@ function capChromaAtHeldTone(hue, s, l, rgb, chroma, ceiling, hueCam16, strictSe
   // noise, not walk chroma away from a value the solve already spent 24 bisection steps converging.
   rgb = refineNearestRgb(rgb, polishHue, targetTone, ceiling, Math.max(0, chroma - 1), strictSeed);
   chroma = cam16FromRgb(rgb).chroma;
-  return { s, l, rgb, chroma };
+  return { s, l, rgb, chroma, capped: rgb.some((v, i) => v !== rgbIn[i]) };
 }
 
 // okhslStopsAnchored - the perceptual/peak path's anchored branch: a piecewise OKHSL-`l` ladder
@@ -1284,8 +1332,10 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
     // a degenerate, dead solve.
     const hOkStop = oklchSpace ? solveOkhslHue(targetOklchHue, s, l) : hOkSeed;
     const hue = (((hOkStop + shift * dir) % 360) + 360) % 360;
-    const rgb = okhslToRgb(hue, s, l);
-    return { hue, s, l, rgb, chroma: cam16FromRgb(rgb).chroma };
+    // Tone hold (#725 U3): the hue solved above at the pre-hold (s, l) is reused, one solve per stop.
+    const hold = holdTone(hue, intendedS, l, env);
+    const rgb = okhslToRgb(hue, hold.s, hold.l);
+    return { hue, s: hold.s, l: hold.l, rgb, chroma: cam16FromRgb(rgb).chroma, toneTarget: hold.target, toneHeld: hold.held };
   };
   // Peak joint cap (#725 U2, R69): the anchored peak ramp emits no stop above stop 500's own chroma, the
   // same `capChromaAtHeldTone` construction `okhslStops` runs, scoped the same way (peak, dampAmp 0).
@@ -1298,13 +1348,15 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
       return {
         stop, tone: anchor.lstar, chroma: anchor.cam.chroma,
         maxc: maxChromaInGamut(anchor.cam.hue, anchor.lstar), rgb: anchor.rgb, hex: anchor.hex, inGamut: true,
+        toneTarget: anchor.lstar, toneHeld: anchor.lstar,
       };
     }
-    let { hue, s, l, rgb, chroma } = preCap(stop);
-    if (capPeak && chroma > ceiling + 1e-6) ({ rgb, chroma } = capChromaAtHeldTone(hue, s, l, rgb, chroma, ceiling, null, true));
+    let { hue, s, l, rgb, chroma, toneTarget, toneHeld } = preCap(stop);
+    let capped = false;
+    if (capPeak && chroma > ceiling + 1e-6) ({ rgb, chroma, capped } = capChromaAtHeldTone(hue, s, l, rgb, chroma, ceiling, null, true));
     const tone = lstarFromRgb(rgb);
     const hex = "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
-    return { stop, tone, chroma, maxc: maxChromaInGamut(anchor.cam.hue, tone), rgb, hex, inGamut: true };
+    return { stop, tone, chroma, maxc: maxChromaInGamut(anchor.cam.hue, tone), rgb, hex, inGamut: true, capped, toneTarget, toneHeld };
   });
   enforceMonotonePixelL(built);
   return built;
@@ -1389,20 +1441,22 @@ function okhslStops(palette, controls, stops, mode) {
     const hue = (((hOk + shift * dir) % 360) + 360) % 360;
     // saturation = the key colour's own OKHSL s (keyS), shaped by chromaEnvelope  -  the SAME envelope the
     // even path uses (so damp/dampCurve/dampAmp/dampBias stay meaningful here too), clamped to [0,1].
-    const s0 = Math.min(1, Math.max(0, keyS * envelopeAt.get(stop)));
-    let s = s0, l1 = l;
+    // Tone hold (#725 U3): `l` re-solved so the damped colour keeps the undamped one's CIE L*, see holdTone.
+    const hold = holdTone(hue, keyS, l, envelopeAt.get(stop));
+    let s = hold.s, l1 = hold.l;
     let rgb = okhslToRgb(hue, s, l1);
     let chroma = cam16FromRgb(rgb).chroma;
+    let capped = false;
     // Generated PEAK palettes (dampAmp 0) never emit more chroma than the anchor: the shared joint cap,
     // see `capChromaAtHeldTone`. At stop === ANCHOR_STOP this never fires: same formula as anchorChroma above.
     if (mode === "peak" && dampAmp === 0 && chroma > anchorChroma + 1e-6) {
       const hueCam16 = controls.hueSpace === "oklch" ? null : (((baseHue + shift * dir) % 360) + 360) % 360; // CAM16-space hue (hueSpace "cam16" only)
-      ({ s, l: l1, rgb, chroma } = capChromaAtHeldTone(hue, s, l1, rgb, chroma, anchorChroma, hueCam16));
+      ({ s, l: l1, rgb, chroma, capped } = capChromaAtHeldTone(hue, s, l1, rgb, chroma, anchorChroma, hueCam16));
     }
     const tone = lstarFromRgb(rgb);                                 // report ACTUAL L* (for graphs / roles)
     const hex = "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
     // chroma/maxc reported (measured) for the analysis graphs; OKHSL is in-gamut by construction (the
     // HCT fallback above is validated in-gamut too, per its own engine contract).
-    return { stop, tone, chroma, maxc: maxChromaInGamut(baseHue, tone), rgb, hex, inGamut: true };
+    return { stop, tone, chroma, maxc: maxChromaInGamut(baseHue, tone), rgb, hex, inGamut: true, capped, toneTarget: hold.target, toneHeld: hold.held };
   });
 }

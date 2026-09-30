@@ -521,7 +521,9 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   const ddSem = ddPreset.theme.extend.semanticTokens.colors;
   if (ddRaw.primary["500"].value !== "oklch(0.504 0.1867 258.99)") FAIL("panda", `EX-1 colors.primary.500 = ${ddRaw.primary["500"].value}`);
   if (ddRaw.primary["50"].value !== "oklch(1 0 0)") FAIL("panda", `EX-1 colors.primary.50 = ${ddRaw.primary["50"].value}`);
-  if (ddRaw.primary["950"].value !== "oklch(0.1763 0.014 258.36)") FAIL("panda", `EX-1 colors.primary.950 = ${ddRaw.primary["950"].value}`);
+  // #725 U3 re-pin (was oklch(0.1763 0.014 258.36), #0D1117): the damp retune greys stop 950 further
+  // (#101011) while the tone hold keeps its undamped CIE L*; stop 500 and 50 did not move.
+  if (ddRaw.primary["950"].value !== "oklch(0.1735 0.002 286.18)") FAIL("panda", `EX-1 colors.primary.950 = ${ddRaw.primary["950"].value}`);
   if (ddRaw.neutral["500"].value !== "oklch(0.5056 0.0552 267.76)") FAIL("panda", `EX-1 colors.neutral.500 = ${ddRaw.neutral["500"].value}`);
   if (ddRaw.primary.scrim["300"].value !== "oklch(0.504 0.1867 258.99 / 30%)") FAIL("panda", `EX-1 colors.primary.scrim.300 = ${ddRaw.primary.scrim["300"].value}`);
   if (ddRaw.primary.prime.prime.value !== "oklch(0.504 0.1867 258.99)") FAIL("panda", `EX-1 colors.primary.prime.prime = ${ddRaw.primary.prime.prime.value}`);
@@ -529,17 +531,17 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (ddRaw.primary.prime.dimmest.value !== "oklch(0.2669 0.1023 258.76)") FAIL("panda", `EX-1 colors.primary.prime.dimmest = ${ddRaw.primary.prime.dimmest.value}`);
   if (JSON.stringify(ddRaw.primary.prime.DEFAULT) !== JSON.stringify(ddRaw.primary.prime.prime)) FAIL("panda", "EX-1 colors.primary.prime.DEFAULT != .prime");
   if (ddRaw.constant.backdrop.value !== "oklch(0 0 0 / 80%)") FAIL("panda", `EX-1 colors.constant.backdrop = ${ddRaw.constant.backdrop.value}`);
-  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.4669 0.1671 258.98)", _dark: "oklch(0.5506 0.1922 259.07)" }))
+  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.4669 0.1671 258.98)", _dark: "oklch(0.5476 0.1923 259.11)" })) // #725 U3 re-pin, dark was oklch(0.5506 0.1922 259.07)
     FAIL("panda", `EX-2 colors.primary.DEFAULT = ${JSON.stringify(ddSem.primary.DEFAULT.value)}`);
-  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.3971 0.1239 258.91)", _dark: "oklch(0.6413 0.1547 259.07)" }))
+  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.3951 0.1194 258.53)", _dark: "oklch(0.6405 0.1518 258.99)" })) // #725 U3 re-pin, was base oklch(0.3971 0.1239 258.91) / dark oklch(0.6413 0.1547 259.07)
     FAIL("panda", `EX-2 colors.primary.hover = ${JSON.stringify(ddSem.primary.hover.value)}`);
   if (JSON.stringify(ddSem.primary["on-primary"].value) !== JSON.stringify({ base: "oklch(1 0 0)", _dark: "oklch(1 0 0)" }))
     FAIL("panda", `EX-2 colors.primary.on-primary = ${JSON.stringify(ddSem.primary["on-primary"].value)}`);
-  if (JSON.stringify(ddSem.neutral["on-surface"].value) !== JSON.stringify({ base: "oklch(0.1774 0.0044 264.46)", _dark: "oklch(1 0 0)" }))
+  if (JSON.stringify(ddSem.neutral["on-surface"].value) !== JSON.stringify({ base: "oklch(0.1776 0 0)", _dark: "oklch(1 0 0)" })) // #725 U3 re-pin, base was oklch(0.1774 0.0044 264.46)
     FAIL("panda", `EX-2 colors.neutral.on-surface = ${JSON.stringify(ddSem.neutral["on-surface"].value)}`);
   if (Object.keys(ddSem.primary).length !== 53) FAIL("panda", `EX-2 expected 53 keys under semanticTokens.colors.primary, got ${Object.keys(ddSem.primary).length}`);
   if (Object.keys(ddSem).length !== 16) FAIL("panda", `EX-2 expected 16 palette groups, got ${Object.keys(ddSem).length}`);
-  if (!ddSem["data-1"] || ddSem["data-1"].DEFAULT.value.base !== "oklch(0.5184 0.2316 272.29)") FAIL("panda", `EX-2 data-1.DEFAULT.base = ${ddSem["data-1"] && ddSem["data-1"].DEFAULT.value.base}`);
+  if (!ddSem["data-1"] || ddSem["data-1"].DEFAULT.value.base !== "oklch(0.5163 0.2329 272.15)") FAIL("panda", `EX-2 data-1.DEFAULT.base = ${ddSem["data-1"] && ddSem["data-1"].DEFAULT.value.base}`); // #725 U3 re-pin, was oklch(0.5184 0.2316 272.29)
 
   // disabled palette absent from both trees.
   const disabledPanda = X.exportPanda(oneOff);

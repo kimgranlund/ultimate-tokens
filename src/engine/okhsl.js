@@ -141,10 +141,13 @@ function getCs(L, a, b) {
   return [c0, cMid, cMax];
 }
 
-const clamp255 = (v) => Math.round(Math.min(255, Math.max(0, v)));
+const clampF = (v) => Math.min(255, Math.max(0, v));
+const clamp255 = (v) => Math.round(clampF(v));
 
-// okhslToRgb(hueDeg, s, l), OKHSL (hue °, saturation 0..1, lightness 0..1) → [r,g,b] 0..255 ints.
-export function okhslToRgb(hueDeg, s, l) {
+// okhslToRgbFloat(hueDeg, s, l), OKHSL -> [r,g,b] as UNROUNDED floats clamped to 0..255 (#725 U3): the
+// continuous colour before 8-bit rounding, which `lstarFromRgb` reads as is. The tone hold
+// (tonal.js `holdTone`) measures CIE L* here so its solve is not quantized. `okhslToRgb` below rounds it.
+export function okhslToRgbFloat(hueDeg, s, l) {
   if (l >= 1) return [255, 255, 255];
   if (l <= 0) return [0, 0, 0];
   const h = ((((hueDeg % 360) + 360) % 360)) / 360;
@@ -159,7 +162,13 @@ export function okhslToRgb(hueDeg, s, l) {
   }
   C = k0 + (t * k1) / (1 - k2 * t);
   const rgb = oklabToLinearSrgb(L, C * a, C * b);
-  return [clamp255(255 * srgbTransfer(rgb[0])), clamp255(255 * srgbTransfer(rgb[1])), clamp255(255 * srgbTransfer(rgb[2]))];
+  return [clampF(255 * srgbTransfer(rgb[0])), clampF(255 * srgbTransfer(rgb[1])), clampF(255 * srgbTransfer(rgb[2]))];
+}
+
+// okhslToRgb(hueDeg, s, l), OKHSL (hue °, saturation 0..1, lightness 0..1) → [r,g,b] 0..255 ints.
+// Byte-identical to the pre-#725 body: round(clampF(v)) is clamp255(v).
+export function okhslToRgb(hueDeg, s, l) {
+  return okhslToRgbFloat(hueDeg, s, l).map(Math.round);
 }
 
 // oklchToRgb(L, C, H), OKLCH (L 0..1, C ≥0, H degrees) → [r,g,b] 0..255 ints, gamut-clamped.

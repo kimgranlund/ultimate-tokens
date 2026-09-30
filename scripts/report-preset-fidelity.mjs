@@ -10,11 +10,13 @@
 // `--movement` (U4's own criterion, C6-iv/C9) is NOT built here  -  out of this unit's lane. This file
 // exists so U4 can add that mode to it rather than invent a second script.
 //
-//   node scripts/report-preset-fidelity.mjs --envelope [--damp-amp N] [--gate-path]
+//   node scripts/report-preset-fidelity.mjs --envelope [--damp-amp N] [--damp N] [--damp-curve N] [--gate-path]
 //
 // `--damp-amp N` is the plan's own negative control: forces every palette's `dampAmp` control to N
 // (overriding whatever the source document carries) before measuring, to prove the above-100% count
-// tracks the mechanism rather than being a static, uninspected number.
+// tracks the mechanism rather than being a static, uninspected number. `--damp N` and `--damp-curve N`
+// (#725 U3) force the damp and dampCurve sliders the same way, for a retune's counterfactual reads; the
+// engine's own mode-scoped mapping (tonal.js OKHSL_DAMP_D) still applies to what they set.
 //
 // The READING (a) corpus loop is scripts/lib/envelope-measure.mjs's `measureEnvelope` (#725 U1), the
 // same function test/engine/chroma-envelope-gate.mjs ratchets against its fixture; this report only
@@ -70,10 +72,14 @@ const mode_envelope = args.includes("--envelope");
 const mode_identity = args.includes("--identity-control");
 const dampAmpIdx = args.indexOf("--damp-amp");
 const dampAmpOverride = dampAmpIdx >= 0 ? Number(args[dampAmpIdx + 1]) : null;
+const dampIdx = args.indexOf("--damp");
+const dampOverride = dampIdx >= 0 ? Number(args[dampIdx + 1]) : null;
+const dampCurveIdx = args.indexOf("--damp-curve");
+const dampCurveOverride = dampCurveIdx >= 0 ? Number(args[dampCurveIdx + 1]) : null;
 const gatePath = args.includes("--gate-path");
 
 const USAGE =
-  "usage: node scripts/report-preset-fidelity.mjs --envelope [--damp-amp N] [--gate-path]\n" +
+  "usage: node scripts/report-preset-fidelity.mjs --envelope [--damp-amp N] [--damp N] [--damp-curve N] [--gate-path]\n" +
   "       node scripts/report-preset-fidelity.mjs --identity-control (--base <rev> | --base-dir <dir>) [--authored] [--only <category>|default-kit] [--perturb]";
 
 if (!mode_envelope && !mode_identity) {
@@ -89,8 +95,8 @@ if (mode_identity) {
 // The C6 corpus and READING (a)'s loop live in scripts/lib/envelope-measure.mjs (#725 U1), which
 // test/engine/chroma-envelope-gate.mjs imports too: one measurement, two callers.
 // The gate path is always measured (its cells carry the bars); the anchored set only on the default run.
-const gateRun = await measureEnvelope({ dampAmpOverride, gatePath: true });
-const anchoredRun = gatePath ? null : await measureEnvelope({ dampAmpOverride, gatePath: false });
+const gateRun = await measureEnvelope({ dampAmpOverride, dampOverride, dampCurveOverride, gatePath: true });
+const anchoredRun = gatePath ? null : await measureEnvelope({ dampAmpOverride, dampOverride, dampCurveOverride, gatePath: false });
 const { instances, totalCurated } = gateRun;
 
 // env(500) = 1 exactly, swept over damp/dampCurve/dampAmp/dampBias/lift/toneMode: the C6 anchor
@@ -117,7 +123,8 @@ for (const mode of MODES) {
   const ratios = { 100: [], 300: [], 700: [], 900: [] };
   for (const { label, presetName, pal, doc } of instances) {
     const controls = {
-      damp: doc.damp, dampCurve: doc.dampCurve,
+      damp: dampOverride !== null ? dampOverride : doc.damp,
+      dampCurve: dampCurveOverride !== null ? dampCurveOverride : doc.dampCurve,
       dampAmp: dampAmpOverride !== null ? dampAmpOverride : doc.dampAmp,
       dampBias: doc.dampBias, toneMode: mode, // #681 U3 review 3, N6: was missing, so this loop always
       // read the non-even branch of chromaEnvelope, even when mode === "even"
@@ -149,7 +156,7 @@ for (const mode of MODES) {
   }
 }
 
-console.log(`report-preset-fidelity --envelope${dampAmpOverride !== null ? ` --damp-amp ${dampAmpOverride}` : ""}${gatePath ? " --gate-path" : ""}`);
+console.log(`report-preset-fidelity --envelope${dampAmpOverride !== null ? ` --damp-amp ${dampAmpOverride}` : ""}${dampOverride !== null ? ` --damp ${dampOverride}` : ""}${dampCurveOverride !== null ? ` --damp-curve ${dampCurveOverride}` : ""}${gatePath ? " --gate-path" : ""}`);
 console.log(`corpus: ${totalCurated} curated palettes, ${instances.length} instances at source chroma >= 10 or in the 8 default-kit semantic families`);
 console.log(`env(500) = 1 sweep: ${envFails === 0 ? "PASS" : `FAIL (${envFails} combinations off)`}`);
 console.log("");

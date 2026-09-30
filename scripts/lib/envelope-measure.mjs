@@ -9,7 +9,9 @@
 // control); `gatePath` omits each palette's `anchor` (the report's `--gate-path`, and the barred
 // `gate path` block of its default run, #725 R74). `instances` replaces the loaded corpus with a caller's
 // own list of the same shape (`{ label, presetName, pal, doc }`), for a control that needs one planted
-// instance (the cusp-run window's L* 5 anchor) without editing a category file.
+// instance (the cusp-run window's L* 5 anchor) without editing a category file. `dampOverride` and
+// `dampCurveOverride` (#725 U3) force the damp and dampCurve SLIDERS (the report's `--damp N` and
+// `--damp-curve N`); the engine's own mode-scoped mapping still applies to what they set.
 import { readFileSync } from "node:fs";
 import { hydrate } from "../../src/ui/persist.js";
 import { defaultDocument, rampChromaOf, hexToRgb, lstarFromRgb } from "../../src/ui/model.mjs";
@@ -79,7 +81,7 @@ export async function loadEnvelopeInstances() {
 // READING (a): emitted CAM16 chroma at stops 100/300/700/900 as % of stop 500's, per mode, with the
 // clause counters (perceptual: cusp-run rule violations; peak and even: instances above 100%).
 // Returns the unrounded median/p90 per mode and stop; callers round for display.
-export async function measureEnvelope({ dampAmpOverride = null, gatePath = false, instances: injected = null } = {}) {
+export async function measureEnvelope({ dampAmpOverride = null, dampOverride = null, dampCurveOverride = null, gatePath = false, instances: injected = null } = {}) {
   const { instances, totalCurated } = injected !== null
     ? { instances: injected, totalCurated: injected.length }
     : await loadEnvelopeInstances();
@@ -96,7 +98,8 @@ export async function measureEnvelope({ dampAmpOverride = null, gatePath = false
     for (const { label, presetName, pal, doc } of instances) {
       const controls = {
         curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax,
-        damp: doc.damp, dampCurve: doc.dampCurve,
+        damp: dampOverride !== null ? dampOverride : doc.damp,
+        dampCurve: dampCurveOverride !== null ? dampCurveOverride : doc.dampCurve,
         dampAmp: dampAmpOverride !== null ? dampAmpOverride : doc.dampAmp,
         dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma,
         chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: mode,
