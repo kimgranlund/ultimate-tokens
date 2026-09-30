@@ -448,10 +448,18 @@ function classifyLine({ line, prevLine, md, skipStructural = false }) {
   // before the dash still refuses rather than guesses (a question label is not a heading).
   if (!skipStructural && !md) {
     const idx = idxs[0];
-    if (E1_RE.test(line) && guardBeforeHolds(line, idx)) return { rule: "R2s" };
-    // E2: a bold label immediately before the dash inside a string, outside a real `//` comment
-    // (a commented-out label renders as nothing) -- R3's colon.
-    if (E2_RE.test(line) && !hasRealLineCommentBefore(line, idx) && guardBeforeHolds(line, idx)) return { rule: "R3s" };
+    // E1 and E2 bind to the string that ENCLOSES each dash (#764): the leg fires only when a
+    // same-line string encloses THAT dash and the string's own content matches, and the decision
+    // carries the matched `idx` so the fix rewrites that dash, not the line's first.
+    for (const di of idxs) {
+      const span = enclosingStringContent(line, di);
+      if (!span) continue;
+      const upto = di - span.start;
+      if (E1_RE.test(span.quote + span.content.slice(0, upto + 1)) && guardBeforeHolds(line, di)) return { rule: "R2s", idx: di };
+      // E2: a bold label immediately before the dash inside a string, outside a real `//` comment
+      // (a commented-out label renders as nothing) -- R3's colon.
+      if (E2_RE.test(span.content.slice(0, upto + 2)) && !hasRealLineCommentBefore(line, di) && guardBeforeHolds(line, di)) return { rule: "R3s", idx: di };
+    }
     // E3: a title/label/card/toast marker on the line and a short (1 to 4 word), unpunctuated
     // label before the dash inside a string -- refused, not guessed (which sentence break a toast
     // wants is a human call).
@@ -542,7 +550,9 @@ function applyRule(raw, masked, prevRaw, prevMasked, decision) {
     case "R3":
     case "R2s":
     case "R3s": {
-      const idx = masked.indexOf(DASH);
+      // R2s/R3s carry the dash their enclosing string matched (#764); R2/R3 are whole-line
+      // shapes whose dash is the line's first.
+      const idx = decision.idx ?? masked.indexOf(DASH);
       const head = raw.slice(0, idx).replace(/\s+$/, "");
       const rest = raw.slice(idx + 1).replace(/^\s+/, "");
       // No trailing ": " when the dash was the last thing on the line (finding 6).
@@ -814,6 +824,21 @@ function selftest() {
     { name: "E2 bold label in a string", md: false,
       line: `const b = "- **Pro** ${DASH} the paid tier";`,
       expectRule: "R3s", expectFix: `const b = "- **Pro**: the paid tier";` },
+    // #764: E1/E2 bind to the string enclosing each dash. The issue's two-string line, a plain
+    // string first and a heading string second: the heading string's dash takes the colon and,
+    // on the next loop pass, the plain string's dash falls to R8 (comma). Pinned through the
+    // whole-line result, so it reads the fix side (`decision.idx`) as well as the classifier.
+    { name: "E1 two strings on one line", md: false,
+      line: `const c = "a ${DASH} b"; const d = "## Head ${DASH} tail";`,
+      expectRule: "R2s", expectFix: `const c = "a ${DASH} b"; const d = "## Head: tail";` },
+    { name: "E1 two strings on one line, whole-line result", md: false,
+      line: `const c = "a ${DASH} b"; const d = "## Head ${DASH} tail";`,
+      expectRule: "R2s", expectFinal: `const c = "a, b"; const d = "## Head: tail";` },
+    // P13's template-literal replay: no same-line string encloses either dash, so both fall to R8
+    // (two commas), equal to the base tool's result.
+    { name: "E2 template literal, no enclosing string", md: false,
+      line: `- NOT "exotic ${DASH} wild jungle cat energy", INSTEAD: **"Bengal tiger ${DASH} burnt orange"** ${DASH} the Sundarbans`,
+      expectRule: "R8", expectFinal: `- NOT "exotic, wild jungle cat energy", INSTEAD: **"Bengal tiger, burnt orange"**, the Sundarbans` },
     { name: "E3 short title string", md: false,
       line: `const t = { title: "Export kit ${DASH} all formats" };`,
       expectRule: "R0" },
@@ -830,6 +855,10 @@ function selftest() {
     if (c.expectFix !== undefined) {
       const got = edit.rule === "R0" ? edit.text : edit.after;
       if (got !== c.expectFix) FAIL(c.name, `fix produced "${got}", expected "${c.expectFix}"`);
+    }
+    if (c.expectFinal !== undefined) {
+      const finalLine = fixLines(arr, c.md).lines[arr.length - 1];
+      if (finalLine !== c.expectFinal) FAIL(c.name, `final line "${finalLine}", expected "${c.expectFinal}"`);
     }
   }
 
@@ -953,6 +982,8 @@ function selftest() {
     `assumes`,
     `${DASH} this file is only the mental model.`,
     `plain sentence ${DASH} continues here.`,
+    `const c = "a ${DASH} b"; const d = "## Head ${DASH} tail";`,
+    `- NOT "exotic ${DASH} wild", INSTEAD: **"Bengal tiger ${DASH} burnt orange"** ${DASH} the Sundarbans`,
   ];
   const pass1 = fixLines(idemSrc, true);
   const pass2 = fixLines(pass1.lines, true);
