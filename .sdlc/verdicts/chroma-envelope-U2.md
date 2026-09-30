@@ -6,7 +6,7 @@ ticket: "#725"
 branch: unit/ce-U2
 base: b149f8dd
 grade: verifier-l2 (opus), stand-in while fable is capped; an opus build's checkers are opus per b9044bb; evidence run chroma-envelope-U2-verifier-l2-p2, spot-checked by the Verifier seat
-pass: 2
+pass: 3
 written: 2026-09-29
 ---
 
@@ -40,3 +40,26 @@ Graded against `.sdlc/plans/chroma-envelope.md` revision 5 (`b149f8dd`, the unit
 4. 🟡 Timing: `anchor.mjs --full` runs about 28% slower than base (paired `122 s` against `93` to `97 s`). No U2 row binds it; U3's C3.7 (at most 120 s) will read red unless U3 recovers the time or a revision re-times the row.
 5. 🟡 Records: declare the 31 other FLOORS moves (peak Data 6 dark now `5.6007`, over the one-decimal line), and replace the vacuous `shell.mjs:286` control.
 6. Pass 3 needs the comment corrected and the baseline KB row moved; every other row carries if the diff from `0627f874` touches only `test/engine/tonal.mjs` comments and `.sdlc/`.
+
+## Pass 3 · 🟡 · all four pass 2 gaps closed, C2.3 now true at 72 / 0/3692, the new ac003b control bites on the regression; one pass 3 commit carries no Seat trailer
+
+verdict: 🟡
+sha: 945e92c1f1bce3f914b0307d2ec06bee232ec843
+
+Graded against plan revision 6 (e541653d). Delta `0627f874..945e92c1` outside `.sdlc/`: `test/engine/tonal.mjs` (comment, 3 lines) and `test/ui/shell.mjs` (the ac003b witness control, 12 lines); `src/`, `scripts/` and every gate file are unchanged, so pass 2's C2.1, C2.2, C2.4 to C2.7 and Scope rows carry. Evidence run by the Verifier seat itself at grade L2 in throwaway clones at `945e92c1`.
+
+| Row | State | Evidence | Negative control |
+|---|---|---|---|
+| C2.1, C2.2, C2.4 to C2.7, Scope | 🟢 | carried: `git diff --stat 0627f874 945e92c1 -- . ':!.sdlc'` lists only `test/engine/tonal.mjs` and `test/ui/shell.mjs`; `node test/engine/chroma-envelope-gate.mjs` at head: `pass  chroma-envelope: 3 modes x 4 stops x 2 stats + 3 clause counts within fixture` | pass 2 controls stand on an unchanged engine; each re-reds only if a file they read moves, and none did |
+| C2.3 | 🟢 | `tonal.mjs --full` at head: `C6 (v) white-pixel exclusion (stop 500 CAM16 C < 2.869): 72 palette(s)`, `anchored peak overshoot: 0/3692 violator(s)`; the comment at `test/engine/tonal.mjs:1850` to `:1852` now reads `the 72 near-grey anchors below WHITE_PIXEL_C are excluded above (15 of them are the violators the exclusion removes, 15/3764 with it off), leaving 3692 measured`, each figure equal to the gate | pass 2's `WHITE_PIXEL_C = 0` run on the same engine printed `0 palette(s)`, `15/3764`, ratchet FAIL `violator count rose to 15`: the "15 of them, 15/3764 off" clause is that measurement |
+| C2.8 | 🟢 | `npm test` at head: `✗ 2/54 test file(s) failed`, exactly three FAIL lines `(C6 ii) perceptual: 3 duplicate-hex pair(s)`, `anchor-ramp gap (19-stop) allow-list: 13`, `anchor-ramp distinct (25-stop) allow-list: 6`; `git status --porcelain` count `0` | pass 2's planted U+2014 (`FAIL: 1 em dashes`) and dirtied `describe-mcp-assets.js` (porcelain `M`) on the same gate chain |
+| ac003b witness control | 🟢 | `node test/ui/shell.mjs` exit 0 at head, only the declared R69 line `SKIP  ac003b must-differ for "Neutral": chroma 29 and rampChroma 30`; the control is live: a second `defaultDocument()` with Neutral's group `baseChroma` at `cn.chroma` (29), asserting `rampChromaOf === 29`, `readsChroma(crow)`, and `crow !== wrow` | regression `src/ui/model.mjs:949` `const rampChroma = p.chroma;` with FAIL de-duplication lifted: `witness control: Neutral's rows at group baseChroma 10 and 29 are identical, group chroma does not reach the ramp` (plus both witness arms); `!readsChroma(crow...)` forced true: `witness control: the must-differ predicate did not flag a live row at rampChroma 29`; `crow === wrow` compare forced true: `rows at group baseChroma 10 and 29 are identical`; each reverted, porcelain `0` |
+| Build | 🟢 | `sh .sdlc/checks/baseline-agrees-check.sh` exit 0: `ok    ui.html: baseline 4148.2 KB, tree 4148.2 KB`, `stale total: 0`; `.sdlc/baseline.md` carries a dated correction paragraph naming the cause; build output equals pass 2's measured `wrote figma/plugin/ui.html 4148.2 KB` on an unchanged `src/` | baseline row edited to `4100.0 KB`: `STALE ui.html: baseline 4100.0 KB, tree 4148.2 KB`, `stale total: 1` |
+| Records | 🟢 | `verdict.py check` exit 0 on the handoff (`--against` the `0627f874` copy), `review-p3.md`, and `baseline.md` (`--against` the `0627f874` copy); the handoff's FLOORS moves table re-derived by a `brandKit(defaultDocument(), { color: true })` probe head vs `b149f8dd`: `cells 96 moved 32 {"perceptual":13,"peak":19}`, spot cells `peak tertiary light 8.2001 8.1825`, `perceptual tertiary dark 5.6385 5.6234`, `perceptual warning dark 5.6426 5.6697`, `peak data-6 dark 5.5999 5.6007` all equal to the table; the pass 2 single `114.5 s` timing claim is gone | the same probe with both roots at `b149f8dd` would print `moved 0`: it compares per cell at 4 dp, so a mislisted cell shows as a count or value mismatch |
+| Hygiene | 🟡 | `git log --format='%h [%(trailers:key=Seat,valueonly)]' 0627f874..945e92c1`: `f6276759 [builder]`, `945e92c1 []`; neither stages `.sdlc/board.md`; pass 2's nine commits still read `[]` | plan merges read `[orchestrator]` in the same format |
+
+### Findings (pass 3)
+
+1. All four pass 2 items are fixed: the C2.3 comment is true, the baseline KB row moved with its cause named, the FLOORS moves are declared per cell and reproduce, and the ac003b control no longer compares a row with itself.
+2. The new control's third arm is what catches the regression the comment names (a `projectView` reading `p.chroma`); in the stock run the fixture arm fires first and `FAIL` keeps one message per group, so the control reads as a backstop, not the first line printed. Not a defect.
+3. Hygiene 🟡 only: `945e92c1` (the review record commit) carries no `Seat:` trailer, same precedent as pass 2. Cleared to merge.
