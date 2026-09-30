@@ -14,3 +14,12 @@
 | Question 4 | May the plan take revision 7 (an eighth revision row) to write the answers into C3.1, C3.2 and C3.6? |
 | Options | Yes (recommended) · No, the answers stand as rulings the verdict cites without plan text |
 | Default if unanswered | none: Q1 and Q2 re-rule R69's ratchet and bars, so they wait for the owner |
+
+## Answer (R76)
+
+| Question | Chosen |
+|---|---|
+| 1 | A, declared cost of the retune; both cells named with cause, every other cell holds (owner via AskUserQuestion, 2026-09-29, R76) |
+| 2 | A, Kea's muted anchor named as an authored exception, carried from U2 and reported (R76) |
+| 3 | Yes, d 0.9275, declared in the handoff (R76) |
+| 4 | Yes, revision 7 writes the answers into C3.1, C3.2 and C3.6 (R76) |
