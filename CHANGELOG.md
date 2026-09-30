@@ -13,9 +13,9 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 #### Changed
 - **Perceptual and peak ramps are capped at the anchor, retuned, and hold their tone** (#725, R69).
   An exported kit's perceptual or peak ramp re-exported after this change differs from one exported
-  before at every stop but 500; even mode and stop 500 do not move. Three changes move it. The
+  before at most stops (about 81% of cells move); even mode and stop 500 do not move. Four changes move it. The
   anchored chroma basis no longer climbs above the anchor's own chroma (the group target reads
-  `min(group, anchor)`), and the peak path emits nothing above stop 500; this reverses the earlier
+  `min(group, anchor)`), and no peak stop carries more chroma than stop 500; this reverses the earlier
   muted-in-vivid-group intent (ADR-026, amendment of 2026-09-29). The perceptual and peak damping
   constants are retuned to the closed-form pair (`c` = log2 3, `d` 0.9275) so the envelope reads
   0.74 at stops 300/700 and 0.23 at 100/900, against the ruled 0.75 and 0.25 bars. The tone is held
