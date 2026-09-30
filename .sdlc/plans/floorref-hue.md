@@ -1,0 +1,145 @@
+---
+status: approved
+ticket: "#766"
+priority: P3
+lane: color-engine (`src/engine/tonal.js`, `scripts/report-preset-fidelity.mjs`, `test/engine/`, `.claude/skills/color-math/`, `docs/reference/references/`, `CHANGELOG.md`; the regenerated bundles `dist/`, `figma/plugin/ui.html` only if an even-mode fixture in them moves, none is expected)
+size: S+M+S (U1 S = 1, U2 M = 2, U3 S = 1; 4 points)
+labels: kind:chore · status:backlog · size:S (on the issue from intake) · P3 · lane:color-engine (to mint per adapter X3)
+written: 2026-09-30
+head: b8142c16 (`origin/plan/chroma-envelope`, #725 U3 revision 8; `src/engine/tonal.js` last touched there at ec496bd0, the #725 U2 engine hunk; every figure below was read on a scratch clone of that commit under the job's tmp dir, nothing in the tree edited)
+depends: #725 (chroma-envelope) landed on `origin/main`. This plan starts only after that landing and rebases its head to the landed `main` in revision 1; `evenChroma`'s body, both `const floorRef` lines and the two `#766` deferral comments this plan retires are byte-identical between `origin/plan/chroma-envelope` and `main` today; `git diff origin/main origin/plan/chroma-envelope -- src/engine/tonal.js` touches, inside the `chromaAt` closure this plan edits, only the `anchorChromaBasis(..., true)` line one above the `evenChroma` call (#725 U2), so section 3 applies on either base and the rebase is expected to be clean. The owner's R78 (`.sdlc/runtime/owner-rulings-2026-09-22.md`, 2026-09-29): no per-hue hard-coding, the engine stays simple, honest and flexible; R79: unit reviews reviewer-l3, unit verdicts verifier-l2, reviewer-l4 and verifier-l3 only at pre-land
+inputs: gh issue #766 (body; it has no comments), `.sdlc/verdicts/chroma-floor-prepr.md` F4, `.sdlc/plans/archive/chroma-floor.md` (C13, U2 revision 14, the U4 deferral, revisions 22 and 24 that minted #766), `.sdlc/plans/chroma-envelope.md` (conventions, C6 (v), the ratchet fixture rule), `src/engine/tonal.js` (`evenChroma`, `paletteStopsAnchored` with its `chromaAt` closure and `firstStepTone`, `paletteStops`, `toneAt`, `anchorLerp`, `RAMP_L_MIN`/`RAMP_L_MAX`, `solveCam16Hue`), `src/engine/hct.js` (`maxChromaInGamut`, exact-keyed cache), `test/engine/tonal.mjs` (`dip-gate-even`, `intensity-legacy`, the `FLOOR_TARGET` data-URL negative control), `test/engine/even-dips-gate.mjs` (same control, `scaledEngine`), `test/engine/chroma-envelope-gate.mjs` and `test/engine/fixtures/chroma-envelope.json`, `test/engine/mode-isolation-gate.mjs`, `test/engine/semantic.mjs` (FLOORS, three modes), `test/engine/fixtures/tonal-legacy.json`, `scripts/report-preset-fidelity.mjs --identity-control`, `.claude/skills/color-math/SKILL.md` and `references/foundations.md`, `docs/reference/references/decision-records.md` (ADR-026 amendment), `docs/reference/references/knowledge-02-tonal-scale.md` §5, the glossary `chromaFloor` row
+measurements: read-only, planner, 2026-09-30, scratch clones of `origin/plan/chroma-envelope` at b8142c16 under `$CLAUDE_JOB_DIR/tmp/fr/` (`base/` untouched; `patched/` with the prototype of section 3 applied by string replacement to `src/engine/tonal.js`, `evenChroma` itself untouched). Corpus census `count.mjs` (hydrated curated presets plus the default kit). Movement probe `probe.mjs`: every dampAmp-0 curated doc plus the default kit, `toneMode: "even"` forced as `even-dips-gate.mjs` does, each palette rendered through `paletteStops` twice (base, patched) with its anchor (`rendered`) and without (`gate`), on `STOPS` and on `EXPORT_STOPS`, cells compared by hex and by CAM16 C. Timing `timeit.mjs`: 110 anchored palettes from 10 film docs, even, anchored path, base vs patched. Gates run in both clones: `test/engine/even-dips-gate.mjs`, `test/engine/tonal.mjs`, `test/engine/chroma-envelope-gate.mjs`, `test/engine/mode-isolation-gate.mjs`, `test/engine/semantic.mjs`
+---
+
+# The even-mode chroma floor reads its gamut reference at each stop's own rendered hue, one rule for every path, with the corpus effect measured and the dip guarantee re-gated at 0
+
+## 1. What #766 asks and what this plan decides
+
+`evenChroma(maxc, intended, env, chromaFloor, floorRef)` lifts a damped even-mode stop to `chromaFloor%` of `min(maxc, floorRef)`, where `floorRef` (#701 U2 revision 14) is the largest gamut ceiling among the pivot stop and its first display step on either side (450, 550). Both ramp paths compute `floorRef` once per ramp, at one hue: `seedHue` in `paletteStopsAnchored`, `baseHue` in `paletteStops`. Every stop then renders at a different hue whenever edge rotation (`hueShift`) is non-zero or, on the anchored path under `hueSpace: "oklch"`, at the CAM16 hue `solveCam16Hue` finds for that stop's own tone. The reference is therefore exact only at `hueShift` 0 on the cam16 path, and the anchored path adds a tone mismatch for a clamped anchor: `maxc500` is read at `anchor.lstar` while stop 500 renders at `pivotTone`. The issue (minted by `.sdlc/verdicts/chroma-floor-prepr.md` F4) asks whether the floor should read its reference at each stop's rendered hue, and for the corpus effect if so.
+
+Decision: yes, by one general rule with one stated tolerance (R78).
+
+- The rule: the floor's reference is the largest of the three gamut ceilings at the ramp's three reference tones (the pivot tone, the 450 tone, the 550 tone), read at the hue the stop actually renders at. No hue table, no per-hue constant, no branch on hue or tone window. `evenChroma`'s body, its signature and its `min(maxc, floorRef)` shape are untouched; only the value each call site passes as `floorRef` changes, from a per-ramp constant to a per-stop reading.
+- The tolerance: where the present reference is already exact (edge rotation 0 on the non-anchored path; the anchored path under `hueSpace: "cam16"` with an unclamped anchor and edge rotation 0) every rendered hex stays byte-identical. Everywhere else a stop may move by at most 10 CAM16 C (measured maximum 9.11 C, section 2), the two dip gates stay at 0, and no summary statistic of the even ratchet fixture rises. A stop that moves more than 10 C, or a ratchet cell that rises, fails U2; there is no allow-list.
+
+Why one reading and not several: the fix is the correction itself, so the plan does not ask the movement to be small, only bounded and declared. What R78 forbids is a table of hues that get special treatment; what it asks for is a formula a reader can check by hand. "Read the ceiling where the stop renders" is that formula.
+
+## 2. Measured at b8142c16 (planner, read-only, scratch clones; the numbers the criteria pin)
+
+Corpus census (`count.mjs`): 343 curated docs, 3780 palettes, 3380 anchored, 12 palettes with `hueShift` non-zero (none of them anchored; values -10, -2, -1, +1, +6), 10 anchors outside the `RAMP_L_MIN`/`RAMP_L_MAX` window (clamped). Every curated doc and the default kit persist `hueSpace: "oklch"` and `toneMode: "perceptual"`. So the even path is opt-in: no curated preset and not the default kit renders it live, and everything below is what the gates render when they force `toneMode: "even"` (as `even-dips-gate.mjs`, `dip-gate-even`, the FLOORS pins and the envelope ratchet do). User-visible renders of the shipped corpus do not move; a user's own even-mode session does.
+
+Movement, prototype of section 3 vs base (`probe.mjs`, dampAmp-0 docs plus the kit, even forced):
+
+| Path | Stop set | Cells | Cells moved | Palettes moved | Docs moved | Max dC | Histogram (dC) |
+|---|---|---|---|---|---|---|---|
+| rendered (anchor passed) | `STOPS` (19) | 71,820 | 3,870 (5.4%) | 1,522 | 339 | 9.11 C | <0.5: 899 · <1: 624 · <2: 2,213 · <4: 112 · >=4: 22 |
+| rendered (anchor passed) | `EXPORT_STOPS` (25) | 94,900 | 4,448 | 1,526 | 340 | 9.11 C | <0.5: 963 · <1: 732 · <2: 2,607 · <4: 121 · >=4: 25 |
+| gate path (anchor omitted) | `STOPS` (19) | 72,124 | 6 | 3 | 1 | 0.60 C | <0.5: 4 · <1: 2 |
+
+The 6 gate-path cells are among the 12 edge-rotated palettes; every other non-anchored palette renders at `baseHue` at every stop, so the per-stop reading is the same reading and the hex is byte-identical (the exactness fact, now a criterion). On the rendered path the movers are the pale stops of low-chroma yellow and green ramps, where the per-stop solved CAM16 hue sits a few degrees from `seedHue` on the steep side of the yellow gamut ridge: the largest are Tbilisi `secondary` stops 100 to 300 (`#FBF9AF` to `#F9F8C6` at 100, 9.11 C), Schwarzwald `tertiary-muted` 300 (6.71 C), Tórshavn `secondary` 300 (5.30 C). 134 cells in 65 palettes move 2 C or more on `STOPS` (146 on `EXPORT_STOPS`); `hueShift` is 0 in every one of them, so this movement is the OKLCH per-stop hue solve, not edge rotation. The direction is mixed by design: a stop whose rendered hue has a smaller ceiling than the seed hue loses floor, one with a larger ceiling gains it.
+
+Gates on the prototype clone, all run: `even-dips-gate.mjs` 0 dips (negative control 120), `tonal.mjs` `dip-gate-even` rendered 0 off-anchor dips (controls 1 and 38), `intensity-legacy` pass (the default kit is non-anchored with `hueShift` 0, so byte-identical), `chroma-floor` pass, `mode-isolation-gate.mjs` pass (perceptual `a874ac86f2e113b4`, peak `815dcec4262382da`, unchanged), `semantic.mjs` all pass including the 96-cell FLOORS in three modes, `chroma-envelope-gate.mjs` pass with the even row falling: median at stop 300 47.1 to 47.0, p90 100.3 to 100.0, `above100` 502 to 499 (perceptual and peak rows identical). `tonal.mjs` reports one FAIL on both clones alike, `chroma-envelope (C6 ii) perceptual: 3 duplicate-hex pair(s)`, which is #725 U3's in-flight state at b8142c16 and not this prototype's (it is byte-identical in `base/`); U2's 'Today' re-reads it on the landed `main`.
+
+Cost (`timeit.mjs`, 110 anchored palettes, even, anchored path): base 500 ms, prototype 1,240 ms (2.5x). The reference inside `chromaAt(h)` adds three `maxChromaInGamut` bisections per candidate hue of `solveCam16Hue`'s root-find, at hue keys the exact-keyed cache does not hold. The even anchored path is not on the shipped corpus's live render (above), so this cost lands in the gates that force even and in a user's even-mode session (about 11 ms per palette against 4.5 ms). U2 carries a timing criterion (C2.8) rather than an optimisation; if the ceiling binds, the two 450/550 ceilings may be read at the resolved hue after the solve only if U2 shows the solve/render chroma mismatch that reopens (#725 review pass 4 Finding 2) is below the solver's own tolerance, and says so in the code comment. Moving the reference out of `chromaAt` silently is a U2 fail (C2.3).
+
+## 3. The change, exactly
+
+`paletteStopsAnchored`: the per-ramp `floorRef` constant is removed. Inside the `chromaAt = (h) => ...` closure, after `mc`, the reference is `Math.max(maxChromaInGamut(h, pivotTone), maxChromaInGamut(h, firstStepTone(450)), maxChromaInGamut(h, firstStepTone(550)))` and is passed as `evenChroma`'s fifth argument. `pivotTone` replaces `anchor.lstar` as the 500 tone (the clamped-anchor half of the issue; for an unclamped anchor `pivotTone === anchor.lstar`, so nothing else moves). `maxc500` and `anchorRelFrac` keep reading at `anchor.lstar`: they describe the anchor sample, not the ramp, and the issue does not touch them. Because `chromaAt` is what `solveCam16Hue` converges against and what the final chroma line evaluates, the solve and the render see the same floor (the property review pass 4 Finding 2 established).
+
+`paletteStops`: the per-ramp `floorRef` constant is removed. Inside the stop loop, after `hue` and `maxc`, the reference is `Math.max(maxChromaInGamut(hue, tone500), maxChromaInGamut(hue, toneAt(450, ...)), maxChromaInGamut(hue, toneAt(550, ...)))` (the two `toneAt` values hoisted out of the loop as constants, they do not depend on the stop). The stop-500 seed `anchorChroma` keeps passing no `floorRef` (defaults to `maxc`), as today.
+
+Both readings are the same three-tone rule; U2 may factor them into one small helper (`floorRefAt(hue, tone500, tone450, tone550)`) or leave them inline, but the two call sites must state the same formula and the code comment at each retires the "deferred to #766" sentences. `evenChroma`'s body is not edited: the literal `const floorC = Math.min(((chromaFloor ?? 0) / 100) * Math.min(maxc, floorRef), intended);` is the `FLOOR_TARGET` both `even-dips-gate.mjs` and `tonal.mjs` patch for their pre-#701 negative controls, and those controls must keep biting unchanged.
+
+## Constraints every unit holds
+
+- R78: no per-hue constant, table, list or branch anywhere in `src/engine/`. The reviewer greps the diff for numeric hue literals and for `hue >`/`hue <` comparisons in the changed hunks; any is a fail.
+- Even-mode only. `okhslStops` and `okhslStopsAnchored` are not edited; `gate:mode-isolation`'s perceptual and peak hashes do not move (C2.5).
+- `evenChroma` is not edited (section 3). `FLOOR_TARGET` in `test/engine/even-dips-gate.mjs` and in `test/engine/tonal.mjs` is not edited, and both negative controls still bite.
+- Fixture movement is declared, never silent: the even cells of `test/engine/fixtures/chroma-envelope.json` are re-captured with `--capture` and shown with `--compare` to have fallen or held; a rising cell is a fail. `test/engine/fixtures/tonal-legacy.json` is expected byte-identical (C2.6); if a cell moves, that is a finding, not a re-capture.
+- Criteria name functions, gate ids and counts, never line numbers (R10). The issue body's "near lines 808 and 936" is history.
+- No U+2014 anywhere; `node test/repo/em-dash.mjs` and `node test/repo/branding.mjs` green with every unit's records present.
+- `npm test` green in the unit worktree before hand-off, and under the 120 s quiet-host ceiling (`.sdlc/baseline.md`); `npm run build` because `src/engine/` is in the bundle chain; `gate:sweeps` run once at U2.
+- Nothing in `.claude/docs/other/`; `node_modules` untracked.
+
+## Criteria (verifier-checkable; each with the command, the exact Expected, a negative control that reds, and today's value at b8142c16 unless a row says otherwise)
+
+### U1: the measurement, reproducible in the tree
+
+U1 turns the planner's throwaway probe into a report mode so the numbers in section 2 are the tree's, not this file's, and so U2's movement is read by the same instrument.
+
+| # | Command | Expected | Negative control | Today |
+|---|---|---|---|---|
+| C1.1 | `node scripts/report-preset-fidelity.mjs --floor-ref --base <rev>` (a scratch checkout of `<rev>` as `--base-dir`, the shape `--identity-control` already has) | Prints, for `rendered` and `gate` paths on `STOPS` and `EXPORT_STOPS`, the table of section 2 (cells, moved, palettes, docs, max dC, histogram at the five bands) plus the 12 largest movers by dC, and exits 0. Run with `<rev>` = the tree's own head it prints 0 moved cells in every row | Run with `--base` a tree whose `evenChroma` floor is scaled 1.6x (the `scaledEngine` data-URL recipe in `even-dips-gate.mjs`, patching `FLOOR_TARGET`) it prints > 0 moved cells on the gate path; U1 also shows the two C2 controls below biting against the prototype of section 3 (a scratch copy, not committed) so U2 inherits controls known to red | Mode does not exist; `--identity-control` is the nearest |
+| C1.2 | Same command, `--only default-kit` | Rendered and gate rows for the 16 kit palettes; 0 moved on the gate path against any base whose `paletteStops` renders `hueShift` 0 identically | As C1.1 | Does not exist |
+| C1.3 | `grep -c "floor-ref" scripts/report-preset-fidelity.mjs` and the header comment | The mode is documented in the script's header with its arguments and what a moved cell means; the header names #766 | A tree without the header lines fails the grep | 0 |
+| C1.4 | `npm test` in the worktree | Green; `report-static` (tonal.mjs) still passes, so the new mode did not break the static checks on the report | n/a | Green except the #725 in-flight row named in section 2, re-read on landed `main` |
+
+### U2: the per-stop reference on both paths
+
+| # | Command | Expected | Negative control | Today |
+|---|---|---|---|---|
+| C2.1 | `node scripts/report-preset-fidelity.mjs --floor-ref --base <merge-base>` | Gate path, `STOPS`: at most 6 moved cells, all in palettes with `hueShift !== 0`, max dC <= 1 C. Every palette with `hueShift` 0 on the gate path byte-identical (the report lists any counter-example; the list is empty) | A data-URL copy of the built `tonal.js` with the `paletteStops` per-stop reading replaced by the old per-ramp constant read at `baseHue + shift` of stop 50 (any single fixed rotated hue) moves > 6 gate-path cells (to be shown biting by U1, C1.1; unmeasured by the planner) | 0 moved (no change yet); prototype: 6 cells, 3 palettes, 0.60 C |
+| C2.2 | Same report, rendered path, `STOPS` and `EXPORT_STOPS` | Max dC <= 10 C in both stop sets; the movers list names no palette with a dC above 10; moved-cell count reported in the PR body (expected near 3,870 / 4,448, the tolerance is on dC, not on the count) | The same data-URL copy with the anchored `chromaAt` reading forced to `firstStepTone(450)` only (dropping the pivot and 550 ceilings) exceeds 10 C on at least one pale cell (to be shown biting by U1, C1.1; unmeasured by the planner) | Prototype: 9.11 C both sets |
+| C2.3 | Read `paletteStopsAnchored` | The three-ceiling reading is evaluated inside the `chromaAt(h)` closure at the candidate hue `h`, so `solveCam16Hue` and the final chroma line evaluate the same floor; the 500 ceiling is read at `pivotTone`; no per-ramp `floorRef` constant remains in either ramp function (`grep -n "const floorRef" src/engine/tonal.js` prints nothing). If a revision records the C2.8 placement decision (the 450/550 ceilings read at the resolved hue after the solve), that revision restates this row and the code comment names the measured solve/render mismatch | A tree that computes the reference once after the solve fails the grep-free check only if it keeps a `const floorRef`; the reviewer reads the closure directly, this row is a read, its control is the diff | Two `const floorRef` lines |
+| C2.4 | `npm run gate:even-dips` and `node test/engine/tonal.mjs` (`dip-gate-even`) | 0 dips gate path (19 + 25 stops), 0 off-anchor dips rendered path, both negative controls (pre-#701 floor, 1x and 1.6x) still bite with counts > 0 | The `FLOOR_TARGET` data-URL controls inside both scripts are the control; if either prints 0 the control is blind and the row is red | 0 / 0; controls 120 and 1, 38; prototype identical |
+| C2.5 | `npm run gate:mode-isolation` | Perceptual and peak hashes equal the fixture captured at the merge-base (or at #725's landing, whichever the fixture records); fixture not re-captured by this unit | A tree that edits `okhslStops` moves a hash | pass, `a874ac86f2e113b4` / `815dcec4262382da` at b8142c16 (re-read on landed `main`) |
+| C2.6 | `node test/engine/tonal.mjs` `intensity-legacy`; `git diff --stat <merge-base> -- test/engine/fixtures/tonal-legacy.json` | Pass; the fixture is byte-identical (the kit is non-anchored, `hueShift` 0) | Scaling the kit's `hueShift` to 10 in a scratch copy moves the even cells | pass, unchanged; prototype identical |
+| C2.7 | `node test/engine/chroma-envelope-gate.mjs --capture` in the unit, then `--compare <merge-base fixture>` | Even row: no cell rose (median and p90 at 100/300/700/900, `above100`); perceptual and peak rows byte-identical to the base fixture; the re-capture and the `--compare` output are in the PR body | `--compare` against a fixture whose even `above100` is hand-lowered by 1 reds | even median at 300 47.1, p90 100.3, `above100` 502; prototype 47.0 / 100.0 / 499 |
+| C2.8 | Paired timing, five runs each, base and head, `node test/engine/even-dips-gate.mjs` and `node test/engine/chroma-envelope-gate.mjs`; `npm test` wall time three runs | `gate:even-dips` median ratio head/base <= 1.2 and inside its `.sdlc/baseline.md` row; `gate:chroma-envelope` median ratio <= 2.5 (the prototype's 2.24x is the reading inside the solve; it is the one gate that renders the anchored even path over the whole corpus) with its absolute median recorded against its baseline row, the row re-timed under the quiet-host rule and the plan's Revisions naming it; `npm test` median under the 120 s ceiling with the load-under-5 rule (it runs neither gate); the pairs in the PR body. A ratio above its bound stops the unit 🟡 and the reference placement of section 2's last paragraph is decided by the Orchestrator with the solve/render mismatch measured, not by the builder | n/a (a timing row) | one run each, same host in sequence: `even-dips-gate` 5.55 s base vs 5.91 s prototype (1.07x); `chroma-envelope-gate` 13.16 s vs 29.54 s (2.24x); micro-bench 110 anchored palettes 500 ms vs 1,240 ms (2.5x) |
+| C2.9 | `node scripts/report-preset-fidelity.mjs --identity-control --authored --base <merge-base>` | Reports the same moved set as C2.1/C2.2 (no cell moves outside the even mode; perceptual and peak cells 0) | As C2.5 | 0 |
+| C2.10 | `node test/engine/semantic.mjs` | All pass; the 96 FLOORS pins hold in three modes with no new "pending" declaration | A tree that lowers `chromaFloor` in the kit reds a FLOORS cell | pass; prototype pass |
+| C2.11 | `grep -c "deferred to #766\|the issue its comment names" src/engine/tonal.js` | 0; both call-site comments state the per-stop rule and its tolerance instead | A tree with either sentence left fails | 2 |
+| C2.12 | Reviewer grep of the diff (`git diff <merge-base> -- src/engine/tonal.js`) for numeric hue literals and hue comparisons in the changed hunks | None (R78) | n/a, a read | n/a |
+
+### U3: records
+
+| # | Command | Expected | Negative control | Today |
+|---|---|---|---|---|
+| C3.1 | `grep -n "floorRef\|seed hue\|seedHue" .claude/skills/color-math/SKILL.md .claude/skills/color-math/references/foundations.md` | Every hit states the per-stop rule (three tones at the stop's rendered hue); no line says the reference is read at the seed or base hue | A record left with "at the seed hue" fails | 4 hits state the one-hue reading |
+| C3.2 | `docs/reference/references/decision-records.md` | ADR-026 gains a dated amendment paragraph (appended before the Quick map, per CLAUDE.md) naming #766, the rule, the tolerance and the measured movement from C2.1/C2.2; the Quick map row updated | A file without the amendment fails a grep for `#766` in that ADR | 0 hits for `#766` |
+| C3.3 | `docs/reference/references/knowledge-02-tonal-scale.md` §5 and the glossary `chromaFloor` row | Both state the per-stop reading | As C3.1 | Both state the one-hue reading |
+| C3.4 | `CHANGELOG.md` | An Unreleased entry naming #766, the rule, the moved-cell count and max dC from C2.2, and that the shipped corpus's live renders (perceptual) do not move | Missing entry fails | None |
+| C3.5 | `grep -n "#766" test/engine/tonal.mjs test/engine/even-dips-gate.mjs` and the `evenChroma` header comment in `tonal.js` | Every mention is history ("resolved by #766") or removed; the `evenChroma` comment's dip-guarantee paragraph says the guarantee was re-measured under the per-stop reading (C2.4) | A comment still saying "deferred" fails | Deferral wording present in the `evenChroma` header and both call sites |
+| C3.6 | `node test/repo/em-dash.mjs && node test/repo/branding.mjs` | Both green with this plan file, its verdicts and the U3 records in the tree | n/a | Green on b8142c16 |
+| C3.7 | `gh issue view 766` after landing | Closed by the PR with a closing comment carrying the C2.1/C2.2 figures | n/a | Open, `status:backlog` |
+
+## Units
+
+- [ ] U1 (S) `--floor-ref` report mode in `scripts/report-preset-fidelity.mjs`: base-vs-head even render of the dampAmp-0 corpus plus the kit, rendered and gate paths, `STOPS` and `EXPORT_STOPS`, cells moved by hex, dC histogram at the five bands, the 12 largest movers, `--only`, header documented; the two C2 negative controls shown biting against a scratch prototype and the counts recorded in the handoff (C1.1 to C1.4). No engine change · grade l3 · reviewer-l3 · verifier-l2
+- [ ] U2 (M) the per-stop reference on both ramp paths per section 3: inside `chromaAt(h)` at the candidate hue with the 500 ceiling at `pivotTone` (anchored), at the rotated `hue` with the two `toneAt` tones hoisted (non-anchored); `evenChroma` and both `FLOOR_TARGET` controls untouched; both call-site comments rewritten; `chroma-envelope.json` even cells re-captured and shown falling or held; `tonal-legacy.json` and the mode-isolation fixture unchanged; paired timing; `gate:sweeps` once; bundles regenerated (C2.1 to C2.12) · grade l5 · reviewer-l3 · verifier-l2
+- [ ] U3 (S) records: color-math skill and foundations, ADR-026 amendment and Quick map row, knowledge-02 §5 and the glossary row, CHANGELOG, the `#766` mentions in `tonal.mjs`, `even-dips-gate.mjs` and the `evenChroma` header retired to history, the PR text and issue close (C3.1 to C3.7). Touches `.mjs` comments, so not trivial-lane · grade l2 · reviewer-l3 · verifier-l2
+
+Grades per R79: reviewer-l3 and verifier-l2 for every unit; reviewer-l4 and verifier-l3 only at the pre-land record. U2 is the only engine unit and sits on opus (l5) because it edits the hue-solve closure with a timing bound and a dip guarantee to hold.
+
+## Blast radius (what each unit reports and what the PR body carries)
+
+- Live renders of the shipped corpus and the default kit: none (every doc is `toneMode: "perceptual"`; the even path is opt-in). Stated in the CHANGELOG and the PR body so nobody looks for a screenshot diff.
+- Even-mode renders (a user's even session, the gates): rendered path about 5% of cells move, the median moved cell between 1 and 2 C (39% under 1 C, 97% under 2 C), maximum under 10 C, concentrated in pale low-chroma yellows and greens with a per-stop solved hue; gate path 6 cells in the 12 edge-rotated palettes. The C2.1/C2.2 report is the declaration.
+- Fixtures: `chroma-envelope.json` even row re-captured (falls); `tonal-legacy.json`, `mode-isolation.json`, FLOORS unchanged.
+- Bundles: `dist/`, `figma/plugin/ui.html` regenerated by `npm test`; the `.sdlc/baseline.md` size row updated only if the bundle size row moves past its tolerance.
+- Records: the six documents of U3 and the two engine comments.
+
+## Not in scope
+
+- `maxc500` and `anchorRelFrac` reading at `anchor.lstar` (they describe the anchor sample; the issue names only the floor reference).
+- The perceptual and peak paths, `chromaEnvelope`, `EVEN_DAMP_FACTOR`, `anchorChromaBasis`, `enforceMonotonePixelL`.
+- Any change to what `chromaFloor` means or its default 40; any allow-list; any per-hue exception (R78).
+- The `hpg-role-contrast` FLOORS pins: expected to hold (C2.10); a moved cell there is a finding that stops U2 🟡, not a re-pin.
+- Optimising `maxChromaInGamut` or its cache. C2.8 bounds the cost; if the bound binds, the placement decision is the Orchestrator's with the mismatch measured (section 2).
+
+## Risks
+
+| Risk | Signal | Response |
+|---|---|---|
+| The per-stop reference reopens an off-anchor dip on some ramp the probe did not cover (a user's own even palette with large `hueShift`) | `dip-gate-even` or `gate:even-dips` > 0; or a hand probe at `hueShift` 60 shows a dip | The floor is `min(maxc, ref)` and `ref` now tracks `maxc`'s own hue, so a dip needs the ceiling at 450/550 to fall faster than the stop's own; U2 adds a `hueShift` 60 row to the dip gate's corpus if the gates stay 0 but the hand probe does not, and stops 🟡 if a dip appears |
+| Cost: `gate:chroma-envelope` measured 2.24x on the prototype (13 to 30 s); its baseline row will need re-timing and a further slowdown on the landed `main` could pass the 2.5 bound | C2.8 ratio above its bound, or `npm test` over the ceiling | Placement decision per section 2's last paragraph, taken by the Orchestrator with the solve/render mismatch measured; never by silently moving the reference out of `chromaAt` |
+| #725's landing changes `paletteStopsAnchored` around the `chromaAt` closure (U3 there is in flight) | Rebase conflict in revision 1, or `git diff origin/main..` on `evenChroma`/`floorRef` non-empty at landing | Revision 1 re-reads section 2 on the landed `main` before U1 is dispatched; the criteria's 'Today' cells are re-read then |
+| The tolerance of 10 C is read as a target rather than a bound and a builder adds a cap | A `Math.min(..., 10)` or similar appears in the diff | R78 fail at review (C2.12); the tolerance is a verifier bound on the measured movement, not engine code |
+| `tonal-legacy.json` moves after all (a kit palette turns out anchored or rotated on the landed `main`) | C2.6 red | Stop 🟡; a moved legacy cell means the kit changed under #725, which is a finding for the Conductor, not a re-capture here |
+
+## Revisions
+
+| Rev | Date | Change |
+|---|---|---|
+| 0 | 2026-09-30 | Draft written by the planner at b8142c16 on `origin/plan/chroma-envelope`, measured on scratch clones. Awaits #725's landing; revision 1 rebases head and 'Today' to landed `main` |
