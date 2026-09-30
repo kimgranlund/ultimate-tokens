@@ -221,7 +221,8 @@ export class GeomSectionImpl {
     const modeItems = modes.map((m) => ({ id: m.id, label: m.name || "Mode", title: `${m.name || "Mode"} · ${m.baseHeight}px base height` }));
     const items = [
       ...(baseLast ? [...modeItems, baseItem] : [baseItem, ...modeItems]),
-      // Compare = all breakpoints side by side (Phase 5.3). Meaningless with only the base, so only when ≥1 mode.
+      // Compare = all breakpoints side by side (Phase 5.3). `_geomEffectiveModes()` returns the standard Tablet and Mobile
+      // rungs when the document has no modes, so this guard never takes its empty branch and All is always offered.
       ...(modes.length ? [{ id: "compare", label: "All", title: "All breakpoints side by side" }] : []),
     ];
     return h(
