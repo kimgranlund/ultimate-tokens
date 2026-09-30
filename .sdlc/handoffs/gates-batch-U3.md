@@ -46,4 +46,4 @@ The gate now anchors `grab` to a line start, FAILs on a duplicate declaration, c
 | 3 empty floor | 🟢 | canonical and both copies of `GEOMETRY_FIELD_RENAME_MAP` set to `{}`: `canonical ... is empty`, exit 1 |
 | 4 per-name try | 🟢 | one `try` per name, `could not load/compare NAME in the LABEL` |
 
-Pass-1 controls U3-2 to U3-6 rerun mentally covered by the same compare path; clean run exit 0.
+Pass-1 controls U3-2 to U3-6 rerun against the new gate: each FAILs as before (binder, flagship, missing-constant, migrations plant), exit 1; clean run exit 0.
