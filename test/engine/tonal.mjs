@@ -1830,9 +1830,12 @@ for (const mode of ["perceptual", "peak"]) {
     };
 
     // Pinned this pass (2026-09-20). Anchored PEAK, generated palettes, Adia excluded by name, 19-stop
-    // display set, 3,764 total palettes measured.
-    const PEAK_VIOLATOR_PIN = 3119;
-    const PEAK_MAX_RATIO_PIN = 15.132599;
+    // display set, 3,764 total palettes measured. Re-pinned by #725 U2 (was 3119 / 15.132599): the
+    // anchored peak path now runs the joint (s, l) cap, so every remaining violator is a near-grey anchor
+    // (stop 500 CAM16 chroma below 2.869) whose stop 50 is #FFFFFF. White's CAM16 chroma is 2.869, the
+    // neutral floor at L* 100, and no pixel at that tone sits below it, so the cap cannot reach 0 there.
+    const PEAK_VIOLATOR_PIN = 15;
+    const PEAK_MAX_RATIO_PIN = 2.023757;
     const peakResult = measureAnchoredOvershoot(T, "peak");
     if (peakResult.violators > PEAK_VIOLATOR_PIN)
       FAIL("chroma-envelope", `(C6 v ratchet, monitor not bar) anchored peak violator count rose to ${peakResult.violators}, pinned at ${PEAK_VIOLATOR_PIN}, e.g. ${peakResult.witness}`);
@@ -1865,13 +1868,17 @@ for (const mode of ["perceptual", "peak"]) {
       const hctUrl = new URL("../../src/engine/hct.js", import.meta.url).href;
       const okhslUrl = new URL("../../src/engine/okhsl.js", import.meta.url).href;
       const NEEDLE = "const s = Math.min(1, Math.max(0, intendedS * env));";
-      if (!realSrc.includes(NEEDLE)) {
-        FAIL("chroma-envelope", "(C6 v negative control) okhslStopsAnchored's saturation line text has moved  -  update the negative control's string match");
+      // #725 U2: the anchored peak path caps every stop at stop 500's chroma, which absorbs a saturation
+      // amplification by construction, so the patch also lifts that cap (the regression it guards).
+      const CAP_NEEDLE = "const capPeak = mode === \"peak\" && (controls.dampAmp ?? 0) === 0;";
+      if (!realSrc.includes(NEEDLE) || !realSrc.includes(CAP_NEEDLE)) {
+        FAIL("chroma-envelope", "(C6 v negative control) okhslStopsAnchored's saturation or capPeak line text has moved  -  update the negative control's string match");
       } else {
         const patched = realSrc
           .replace('from "./hct.js"', `from "${hctUrl}"`)
           .replace('from "./okhsl.js"', `from "${okhslUrl}"`)
-          .replace(NEEDLE, "const s = Math.min(1, Math.max(0, intendedS * env * 1.6));");
+          .replace(NEEDLE, "const s = Math.min(1, Math.max(0, intendedS * env * 1.6));")
+          .replace(CAP_NEEDLE, "const capPeak = false;");
         const BuggyT = await import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
         // peakResult.witness is `${doc.__presetName}/${pal.name}` (this function's own return shape).
         const witnessDoc = docs.find((d) => peakResult.witness.startsWith(d.__presetName + "/"));
