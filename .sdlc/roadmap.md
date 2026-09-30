@@ -2,12 +2,12 @@
 kind: roadmap
 repo: ultimate-tokens
 status: generated (the Conductor owns this file)
-written: 2026-09-29
-head: be9cde3b023198403c8b6ae39fb93f5d8b31487c (refs/remotes/origin/main, read between 2026-09-29T22:38:24Z and 2026-09-29T22:38:25Z)
-instant: read from 2026-09-29T22:38:24Z to 2026-09-29T22:38:25Z, once; every figure below is computed from that read
+written: 2026-09-30
+head: 5b38bf8d8eb31fdbddaad52daf5a80128d41897e (refs/remotes/origin/main, read between 2026-09-30T22:01:55Z and 2026-09-30T22:01:57Z)
+instant: read from 2026-09-30T22:01:55Z to 2026-09-30T22:01:57Z, once; every figure below is computed from that read
 generator: .sdlc/scripts/roadmap-gen.mjs, read by blob 857c477ac6ca9934d6d1ae79be32c386273af071, rendered by blob 857c477ac6ca9934d6d1ae79be32c386273af071
-inputs: gh issue list --state open (14 issues), gh pr list --state open (1 PRs), git worktree list (4 worktrees), git for-each-ref (5 refs), git reflog (6 entries); commands and output verbatim in Snapshot
-generated-for: plan PR #762 3a3f2031, ticket #740
+inputs: gh issue list --state open (12 issues), gh pr list --state open (2 PRs), git worktree list (4 worktrees), git for-each-ref (6 refs), git reflog (6 entries); commands and output verbatim in Snapshot
+generated-for: plan chroma-envelope landed, ticket #725
 ---
 
 # Roadmap
@@ -45,7 +45,7 @@ What that proves, and what it cannot: exit 0 means every cell follows from the S
 
 ## Open issues
 
-Count: P0 0, P1 0, P2 0, P3 1, no P label 13, total 14. The priority breakdown is its own command:
+Count: P0 0, P1 0, P2 0, P3 1, no P label 11, total 12. The priority breakdown is its own command:
 
 ```sh
 printf '%s\n' "$ISSUES" | awk -F'\t' '{p=9; n=split($3, l, ","); for (i=1; i<=n; i++) if (l[i] ~ /^P[0-3]$/) {p=substr(l[i], 2, 1); break}; c[p]++; t++} END {printf "P0 %d, P1 %d, P2 %d, P3 %d, no P label %d, total %d\n", c[0], c[1], c[2], c[3], c[9], t}'
@@ -54,19 +54,17 @@ printf '%s\n' "$ISSUES" | awk -F'\t' '{p=9; n=split($3, l, ","); for (i=1; i<=n;
 | Order | Issue | Title | Kind | Pri | Size | Lane | Status | Other labels | Opened | Plans whose ticket: line is it, at any REFS tip | Open PRs closing it, or naming it in the title |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | 1 | #377 | hosted describe-palette MCP surface on the Phase B Worker (blocked: domains, accounts) | none | P3 | none | none | blocked | task | 2026-07-18T15:08:06Z | none | none |
-| 2 | #725 | Chroma envelope misses its muted targets in perceptual and peak mode, and nothing gates the direction | bug | none | big | none | claimed | none | 2026-09-21T03:28:33Z | .sdlc/plans/chroma-envelope.md | none |
-| 3 | #748 | marketing: voice reread of the swept store copy, then the store section 10 walk | chore | none | S | docs | backlog | none | 2026-09-24T12:42:32Z | none | none |
-| 4 | #764 | em-dash --fix: E1 and E2 take the colon on the line's first dash, not the enclosing string's | none | none | M | none | backlog | none | 2026-09-28T22:56:20Z | none | none |
-| 5 | #766 | floorRef reads gamut ceilings at the seed hue, not each stop's rendered hue | chore | none | S | none | backlog | none | 2026-09-29T08:24:53Z | none | none |
-| 6 | #768 | Name the Claims ledger and P8 ran blocks as the standard for doc units in adapter.md | chore | none | S | docs | none | none | 2026-09-29T13:47:36Z | none | none |
-| 7 | #769 | U6-4 fact-pin regex misses async and block-bodied sources and other literals | chore | none | S | tooling | none | none | 2026-09-29T13:47:37Z | none | none |
-| 8 | #770 | model.mjs's CONTROL_FONT comments and other only-when-a-mode-exists comments are stale | chore | none | S | ui | none | none | 2026-09-29T13:47:42Z | none | none |
-| 9 | #771 | gen-figma-binder-code.mjs header misstates which npm script wires it into test and build | chore | none | S | figma | none | none | 2026-09-29T13:47:44Z | none | none |
-| 10 | #772 | No test compares the binder's hand-copied rename lists with migrations.mjs | chore | none | S | figma | none | none | 2026-09-29T13:47:46Z | none | none |
-| 11 | #773 | building-editor-sections best-practices.md says scenes start centered, but fit() insets top-left | chore | none | S | docs | none | none | 2026-09-29T13:47:50Z | none | none |
-| 12 | #774 | figma/README under-describes ROLE_TABLE's SCRIM constants, binder.mjs's gate count, and the flagship's mirrored voice map | chore | none | S | figma | none | none | 2026-09-29T13:47:52Z | none | none |
-| 13 | #775 | Citations gate skips bare-filename citations in the symbol-home leg | chore | none | S | tooling | none | none | 2026-09-29T17:12:03Z | none | none |
-| 14 | #776 | citations.mjs: a whole-doc fact pin passes when a stale count sits beside a true one | none | none | M | none | backlog | none | 2026-09-29T18:02:19Z | none | none |
+| 2 | #748 | marketing: voice reread of the swept store copy, then the store section 10 walk | chore | none | S | docs | backlog | none | 2026-09-24T12:42:32Z | none | none |
+| 3 | #766 | floorRef reads gamut ceilings at the seed hue, not each stop's rendered hue | chore | none | S | none | backlog | none | 2026-09-29T08:24:53Z | .sdlc/plans/floorref-hue.md | none |
+| 4 | #768 | Name the Claims ledger and P8 ran blocks as the standard for doc units in adapter.md | chore | none | S | docs | none | none | 2026-09-29T13:47:36Z | none | none |
+| 5 | #770 | model.mjs's CONTROL_FONT comments and other only-when-a-mode-exists comments are stale | chore | none | S | ui | none | none | 2026-09-29T13:47:42Z | none | none |
+| 6 | #771 | gen-figma-binder-code.mjs header misstates which npm script wires it into test and build | chore | none | S | figma | none | none | 2026-09-29T13:47:44Z | none | none |
+| 7 | #773 | building-editor-sections best-practices.md says scenes start centered, but fit() insets top-left | chore | none | S | docs | none | none | 2026-09-29T13:47:50Z | none | none |
+| 8 | #774 | figma/README under-describes ROLE_TABLE's SCRIM constants, binder.mjs's gate count, and the flagship's mirrored voice map | chore | none | S | figma | none | none | 2026-09-29T13:47:52Z | none | none |
+| 9 | #778 | Chroma envelope: the curve as the spec, with presets and tolerance-based gates | feature | none | big | none | none | none | 2026-09-30T13:09:01Z | none | none |
+| 10 | #779 | docs-stale-batch | chore | none | S | docs | in-review | none | 2026-09-30T16:00:12Z | none | #780 |
+| 11 | #782 | typography.js: stale voice counts in comments and the specimen tab string | bug | none | small | none | backlog | none | 2026-09-30T16:23:47Z | none | none |
+| 12 | #783 | gates-batch follow-ups: gate breadth, a fourth rename-map copy, stale lines | bug | none | S | none | backlog | none | 2026-09-30T17:30:00Z | none | none |
 
 Commands for this table, the rows first and then one per column:
 
@@ -103,11 +101,11 @@ printf '%s\n' "$PRS" | awk -F'\t' -v n="$ROW" '{hit=0; k=split($6, c, ","); for 
 
 | Label prefix | Open issues without it |
 |---|---|
-| kind: | #377 #764 #776 |
-| P | #725 #748 #764 #766 #768 #769 #770 #771 #772 #773 #774 #775 #776 |
+| kind: | #377 |
+| P | #748 #766 #768 #770 #771 #773 #774 #778 #779 #782 #783 |
 | size: | #377 |
-| lane: | #377 #725 #764 #766 #776 |
-| status: | #768 #769 #770 #771 #772 #773 #774 #775 |
+| lane: | #377 #766 #778 #782 #783 |
+| status: | #768 #770 #771 #773 #774 #778 |
 
 Commands for this table, the rows first and then one per column:
 
@@ -122,11 +120,12 @@ printf '%s\n' "$ISSUES" | awk -F'\t' -v p="$ROW" '{hit=0; n=split($3, l, ","); f
 
 ## Open PRs
 
-Commits not on head counts `git rev-list be9cde3b..<head commit>`.
+Commits not on head counts `git rev-list 5b38bf8d..<head commit>`.
 
 | PR | Title | Draft | Opened | Head branch | Head commit | Closes | Commits not on head |
 |---|---|---|---|---|---|---|---|
 | #158 | feat(monetization): flip TIERS_ENFORCED → true (HELD for go-live) | true | 2026-06-30T18:32:15Z | feat/go-live-flip-held | 3497b692 | none | 1 |
+| #780 | docs-stale-batch: stale docs and comments (#779) | true | 2026-09-30T16:04:35Z | plan/docs-stale-batch | 92fa51a6 | none | 19 |
 
 Commands for this table, the rows first and then one per column:
 
@@ -158,25 +157,32 @@ Every `.sdlc/plans/*.md` outside `archive/`, at the tip of every ref in the REFS
 | Plan file | Blob | Refs whose tip carries this blob | ticket: | status: |
 |---|---|---|---|---|
 | `.sdlc/plans/adia-library-uplift.md` | b8652cb9 | plan/adia-library-uplift@c9265cd7 | "#496" | approved |
-| `.sdlc/plans/adopt-hygiene-U1-p2.md` | beb3bcbd | main@be9cde3b plan/adia-library-uplift@c9265cd7 plan/chroma-envelope@afd415c0 plan/lane-b-tickets@a483151d origin/main@be9cde3b | none | none |
-| `.sdlc/plans/adopt-hygiene-U2-p2.md` | 2b662fd7 | main@be9cde3b plan/chroma-envelope@afd415c0 origin/main@be9cde3b | none | none |
+| `.sdlc/plans/adopt-hygiene-U1-p2.md` | beb3bcbd | main@aa81d573 plan/adia-library-uplift@c9265cd7 plan/chroma-envelope@da37098f plan/docs-stale-batch@92fa51a6 plan/lane-b-tickets@a483151d origin/main@5b38bf8d | none | none |
+| `.sdlc/plans/adopt-hygiene-U2-p2.md` | 2b662fd7 | main@aa81d573 plan/chroma-envelope@da37098f plan/docs-stale-batch@92fa51a6 origin/main@5b38bf8d | none | none |
 | `.sdlc/plans/adopt-hygiene-U2-p2.md` | 2bc4b9e8 | plan/adia-library-uplift@c9265cd7 plan/lane-b-tickets@a483151d | none | none |
-| `.sdlc/plans/adopt-hygiene-U7-p2.md` | 84acb0bf | main@be9cde3b plan/adia-library-uplift@c9265cd7 plan/chroma-envelope@afd415c0 plan/lane-b-tickets@a483151d origin/main@be9cde3b | none | none |
-| `.sdlc/plans/adopt-hygiene-U8-p2.md` | 9bcd5736 | main@be9cde3b plan/adia-library-uplift@c9265cd7 plan/chroma-envelope@afd415c0 plan/lane-b-tickets@a483151d origin/main@be9cde3b | none | none |
-| `.sdlc/plans/adopt-hygiene-prepr3.md` | d9ff4846 | main@be9cde3b plan/adia-library-uplift@c9265cd7 plan/chroma-envelope@afd415c0 plan/lane-b-tickets@a483151d origin/main@be9cde3b | none | none |
-| `.sdlc/plans/baseline-regex.md` | ecf53c5e | main@be9cde3b plan/chroma-envelope@afd415c0 origin/main@be9cde3b | #718 | approved |
-| `.sdlc/plans/chroma-envelope.md` | 12a93c20 | main@be9cde3b plan/chroma-envelope@afd415c0 origin/main@be9cde3b | "#725" | approved |
-| `.sdlc/plans/chroma-floor-U2-rediagnosis.md` | afee35b3 | main@be9cde3b plan/chroma-envelope@afd415c0 origin/main@be9cde3b | none | none |
-| `.sdlc/plans/chroma-floor-U3-rediagnosis.md` | d3cc5f62 | main@be9cde3b plan/chroma-envelope@afd415c0 origin/main@be9cde3b | none | none |
-| `.sdlc/plans/chroma-floor-U4-rediagnosis.md` | 4c823235 | main@be9cde3b plan/chroma-envelope@afd415c0 origin/main@be9cde3b | "#701" | none |
-| `.sdlc/plans/docs-repair-U1-rediagnosis.md` | 49fc5f3d | main@be9cde3b plan/chroma-envelope@afd415c0 origin/main@be9cde3b | "#751" | none |
-| `.sdlc/plans/docs-repair-U2-rediagnosis.md` | 13093d1b | main@be9cde3b plan/chroma-envelope@afd415c0 origin/main@be9cde3b | "#751" | none |
-| `.sdlc/plans/docs-repair-U3-rediagnosis.md` | 897df077 | main@be9cde3b plan/chroma-envelope@afd415c0 origin/main@be9cde3b | "#751" | none |
-| `.sdlc/plans/docs-repair-U7-rediagnosis.md` | 27389669 | main@be9cde3b plan/chroma-envelope@afd415c0 origin/main@be9cde3b | "#751" | none |
+| `.sdlc/plans/adopt-hygiene-U7-p2.md` | 84acb0bf | main@aa81d573 plan/adia-library-uplift@c9265cd7 plan/chroma-envelope@da37098f plan/docs-stale-batch@92fa51a6 plan/lane-b-tickets@a483151d origin/main@5b38bf8d | none | none |
+| `.sdlc/plans/adopt-hygiene-U8-p2.md` | 9bcd5736 | main@aa81d573 plan/adia-library-uplift@c9265cd7 plan/chroma-envelope@da37098f plan/docs-stale-batch@92fa51a6 plan/lane-b-tickets@a483151d origin/main@5b38bf8d | none | none |
+| `.sdlc/plans/adopt-hygiene-prepr3.md` | d9ff4846 | main@aa81d573 plan/adia-library-uplift@c9265cd7 plan/chroma-envelope@da37098f plan/docs-stale-batch@92fa51a6 plan/lane-b-tickets@a483151d origin/main@5b38bf8d | none | none |
+| `.sdlc/plans/baseline-regex.md` | ecf53c5e | main@aa81d573 plan/chroma-envelope@da37098f plan/docs-stale-batch@92fa51a6 origin/main@5b38bf8d | #718 | approved |
+| `.sdlc/plans/chroma-envelope-U2-rediagnosis.md` | 0ac917c8 | main@aa81d573 plan/chroma-envelope@da37098f plan/docs-stale-batch@92fa51a6 origin/main@5b38bf8d | "#725" | none |
+| `.sdlc/plans/chroma-envelope-U3-rediagnosis.md` | 62e25e61 | main@aa81d573 plan/chroma-envelope@da37098f plan/docs-stale-batch@92fa51a6 origin/main@5b38bf8d | "#725" | folded into `chroma-envelope.md` revision 8 |
+| `.sdlc/plans/chroma-envelope-U4-rediagnosis.md` | 78d1eb0c | main@aa81d573 plan/chroma-envelope@da37098f plan/docs-stale-batch@92fa51a6 origin/main@5b38bf8d | "#725" | for the U4 pass 2 builder |
+| `.sdlc/plans/chroma-envelope-U5-rediagnosis.md` | a98de6c3 | main@aa81d573 plan/chroma-envelope@da37098f origin/main@5b38bf8d | none | none |
+| `.sdlc/plans/chroma-envelope.md` | d2ebd7df | main@aa81d573 plan/chroma-envelope@da37098f origin/main@5b38bf8d | "#725" | approved |
+| `.sdlc/plans/chroma-envelope.md` | f325c175 | plan/docs-stale-batch@92fa51a6 | "#725" | approved |
+| `.sdlc/plans/chroma-floor-U2-rediagnosis.md` | afee35b3 | main@aa81d573 plan/chroma-envelope@da37098f plan/docs-stale-batch@92fa51a6 origin/main@5b38bf8d | none | none |
+| `.sdlc/plans/chroma-floor-U3-rediagnosis.md` | d3cc5f62 | main@aa81d573 plan/chroma-envelope@da37098f plan/docs-stale-batch@92fa51a6 origin/main@5b38bf8d | none | none |
+| `.sdlc/plans/chroma-floor-U4-rediagnosis.md` | 4c823235 | main@aa81d573 plan/chroma-envelope@da37098f plan/docs-stale-batch@92fa51a6 origin/main@5b38bf8d | "#701" | none |
+| `.sdlc/plans/docs-repair-U1-rediagnosis.md` | 49fc5f3d | main@aa81d573 plan/chroma-envelope@da37098f plan/docs-stale-batch@92fa51a6 origin/main@5b38bf8d | "#751" | none |
+| `.sdlc/plans/docs-repair-U2-rediagnosis.md` | 13093d1b | main@aa81d573 plan/chroma-envelope@da37098f plan/docs-stale-batch@92fa51a6 origin/main@5b38bf8d | "#751" | none |
+| `.sdlc/plans/docs-repair-U3-rediagnosis.md` | 897df077 | main@aa81d573 plan/chroma-envelope@da37098f plan/docs-stale-batch@92fa51a6 origin/main@5b38bf8d | "#751" | none |
+| `.sdlc/plans/docs-repair-U7-rediagnosis.md` | 27389669 | main@aa81d573 plan/chroma-envelope@da37098f plan/docs-stale-batch@92fa51a6 origin/main@5b38bf8d | "#751" | none |
+| `.sdlc/plans/docs-stale-batch.md` | 1a9977c9 | main@aa81d573 plan/chroma-envelope@da37098f plan/docs-stale-batch@92fa51a6 origin/main@5b38bf8d | to mint at activation (Q0: `adapter.py create --title docs-stale-batch --label kind:chore --label lane:docs --size S`; the five issues #774, #773, #771, #770, #768 are closed by the same PR, `Closes` lines in the body) | approved |
+| `.sdlc/plans/floorref-hue.md` | e038e863 | main@aa81d573 plan/chroma-envelope@da37098f plan/docs-stale-batch@92fa51a6 origin/main@5b38bf8d | "#766" | approved |
 | `.sdlc/plans/lane-b-tickets.md` | 41e69bd4 | plan/lane-b-tickets@a483151d | none | active |
-| `.sdlc/plans/records-followup-U11-rediagnosis.md` | 2654da2d | main@be9cde3b plan/chroma-envelope@afd415c0 origin/main@be9cde3b | "#709" | none |
-| `.sdlc/plans/rule-gates-U3-rediagnosis.md` | a76ed726 | main@be9cde3b plan/chroma-envelope@afd415c0 origin/main@be9cde3b | "#730" | none |
-| `.sdlc/plans/rule-gates-U4-rediagnosis.md` | 1c901747 | main@be9cde3b plan/chroma-envelope@afd415c0 origin/main@be9cde3b | "#730" | none |
+| `.sdlc/plans/records-followup-U11-rediagnosis.md` | 2654da2d | main@aa81d573 plan/chroma-envelope@da37098f plan/docs-stale-batch@92fa51a6 origin/main@5b38bf8d | "#709" | none |
+| `.sdlc/plans/rule-gates-U3-rediagnosis.md` | a76ed726 | main@aa81d573 plan/chroma-envelope@da37098f plan/docs-stale-batch@92fa51a6 origin/main@5b38bf8d | "#730" | none |
+| `.sdlc/plans/rule-gates-U4-rediagnosis.md` | 1c901747 | main@aa81d573 plan/chroma-envelope@da37098f plan/docs-stale-batch@92fa51a6 origin/main@5b38bf8d | "#730" | none |
 
 Commands for this table, the rows first and then one per column:
 
@@ -197,7 +203,7 @@ git cat-file -p "$(printf '%s\n' "$ROW" | cut -d' ' -f2)" | grep -m1 '^status:' 
 
 ## Worktrees under `.git-worktrees/`
 
-0 worktrees under `.git-worktrees/`. Counts are `git rev-list` against head `be9cde3b`.
+0 worktrees under `.git-worktrees/`. Counts are `git rev-list` against head `5b38bf8d`.
 
 | Worktree | Branch | Head | Commits not on head | Head commits not on it | Open PR from its branch |
 |---|---|---|---|---|---|
@@ -227,8 +233,8 @@ Under `.worktrees/`: 2, counted the same way. The other 2 `worktree` entries in 
 
 | Worktree | Branch | Head | Commits not on head | Head commits not on it | Open PR from its branch |
 |---|---|---|---|---|---|
-| `.worktrees/ce-U1` | unit/ce-U1 | afd415c0 | 0 | 1 | none |
-| `.worktrees/plan-chroma-envelope` | plan/chroma-envelope | afd415c0 | 0 | 1 | none |
+| `.worktrees/plan-chroma-envelope` | plan/chroma-envelope | da37098f | 55 | 2 | none |
+| `.worktrees/plan-docs-stale-batch` | plan/docs-stale-batch | 92fa51a6 | 19 | 20 | #780 |
 
 Commands for this table, the rows first and then one per column:
 
@@ -251,96 +257,109 @@ B=$(printf '%s\n' "$WORKTREES" | awk -v w="worktree <ROOT>/$ROW" '$0==w {f=1; ne
 
 ## Question files
 
-Every `.sdlc/questions/*.md` at head `be9cde3b` and at `be9cde3b`, the commit checked out when the Snapshot was read, one row per distinct file content, with its first `status:` line as written. A file with no such line shows `none`; this table does not decide which questions are open.
+Every `.sdlc/questions/*.md` at head `5b38bf8d` and at `5b38bf8d`, the commit checked out when the Snapshot was read, one row per distinct file content, with its first `status:` line as written. A file with no such line shows `none`; this table does not decide which questions are open.
 
 | Question file | Blob | Read at | First status: line |
 |---|---|---|---|
-| `.sdlc/questions/A2.md` | 80ceaaa1 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/achromatic-anchor-U1-verifier-down.md` | 6f16d70a | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/achromatic-anchor-approval.md` | fd743011 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/adopt-a1-approval.md` | 44473084 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/adopt-a3-drift.md` | 1b573285 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/adopt-a5-conflicts.md` | 25b45bc1 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/adopt-hygiene-U5-merge.md` | b2de77ec | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/adopt-hygiene-approval.md` | 5a25d704 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/adopt-hygiene-bgisolation.md` | 6fe12a97 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/adopt-hygiene-land-merge-style.md` | 318bf208 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/adopt-hygiene-marketplace.md` | fee14957 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/adopt-hygiene-prepr.md` | f3222df5 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/adopt-hygiene-ticket-backend.md` | 65a4f4f1 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/adopt-hygiene-verifier.md` | 90dd63c2 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/anchor-gaps-approval.md` | 03db0271 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/anchor-gaps-revision6.md` | 8033a320 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/baseline-regex-approval.md` | b810d16e | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/bold-labels-approval.md` | 4167bea6 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/bold-labels-revision6.md` | 9a60b803 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/cache-docs-approval.md` | ec105a52 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/chroma-envelope-approval.md` | e25ec020 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/chroma-envelope-scope.md` | 46d164c8 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/chroma-floor-R57-even-dips.md` | 2b6704dd | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/chroma-floor-U1.md` | 6b2b7de2 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/chroma-floor-approval.md` | 69424822 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/chroma-floor-revision6.md` | 35ef266e | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/docs-repair-approval.md` | 43479328 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/docs-repair-revision6.md` | 2d707a53 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/fable-seats-exhausted-2026-09-20.md` | 047996f2 | origin/main@be9cde3b HEAD@be9cde3b | answered |
-| `.sdlc/questions/gate-gaps-approval.md` | 0c83dd01 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/gate-split-U6b.md` | d0f5e901 | origin/main@be9cde3b HEAD@be9cde3b | answered |
-| `.sdlc/questions/gate-split-approval.md` | 06284c66 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/gate-split-claude-md.md` | 8e140a27 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/gg-U2b-p2-time-stale.md` | 05d5e4b1 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/hex-oklch-dedupe-approval.md` | 2e0f2085 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/issue-triage-2026-09-22.md` | 74660948 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/k17-rerun-approval.md` | 5b12de2b | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/okl-memo-U1.md` | cee48799 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/okl-memo-approval.md` | d9009bc0 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/orchestrator-which-conductor.md` | 5777fe39 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/pif-u2.md` | 648aae9d | origin/main@be9cde3b HEAD@be9cde3b | open |
-| `.sdlc/questions/pif-u3-uptick-count-recheck.md` | c23a0f7d | origin/main@be9cde3b HEAD@be9cde3b | RESOLVED (2026-09-18): 89, not 92, confirmed by the reviewer |
-| `.sdlc/questions/pif-u3-yield-answer.md` | 5955c2ac | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/pif-u3-yield.md` | a526a1ee | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/pif-u3.md` | d481f2ff | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/pif-u4.md` | 54d10020 | origin/main@be9cde3b HEAD@be9cde3b | open (Q7, Q8 only - Q1-Q6 all resolved) |
-| `.sdlc/questions/pif-u5-board-seat.md` | 67ac28ff | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/pif-u5-concurrent-writer.md` | 7445a97d | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/pif-u6.md` | 4f7a5185 | origin/main@be9cde3b HEAD@be9cde3b | open |
-| `.sdlc/questions/preset-intent-fidelity-approval.md` | 0516731b | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/preset-intent-fidelity-preland.md` | 17a56e6a | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/preset-intent-fidelity-u3-movement.md` | 0a4485a6 | origin/main@be9cde3b HEAD@be9cde3b | open |
-| `.sdlc/questions/preset-intent-fidelity-u7-approval.md` | 5a0fabf8 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/preset-intent-fidelity-u8.md` | a31abc09 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/prompt-audit-approval.md` | e4b20b7d | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/prompt-audit-revision6.md` | 7502e5d0 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/prompt-audit-time-test-stale.md` | 10d894f4 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/prompt-audit-verifier-missing.md` | e7b413b3 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/records-followup-U5-refresh.md` | 29ac1c35 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/records-followup-U9-board-seat.md` | c4d001f8 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/records-followup-U9-branding-red.md` | 8a581856 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/records-followup-approval.md` | 9bdbf365 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/records-followup-landing-window.md` | 9dbf3b9a | origin/main@be9cde3b HEAD@be9cde3b | answered |
-| `.sdlc/questions/records-followup-repair-or-rebuild.md` | 1af52d01 | origin/main@be9cde3b HEAD@be9cde3b | answered |
-| `.sdlc/questions/records-followup-repoint-threshold.md` | 1543ebd7 | origin/main@be9cde3b HEAD@be9cde3b | answered |
-| `.sdlc/questions/records-followup-repoint.md` | fed7982a | origin/main@be9cde3b HEAD@be9cde3b | answered |
-| `.sdlc/questions/records-gates-approval.md` | 0e9eea56 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/records-policy-U1-controls.md` | 6e8af366 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/records-policy-approval.md` | 5a5d5337 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/records-tidy-U1-verification.md` | b1438a2d | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/records-tidy-approval.md` | 5ada871f | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/roadmap-2026-09-20.md` | 94862015 | origin/main@be9cde3b HEAD@be9cde3b | ruled: Q1 still open, Q2 retired as moot |
-| `.sdlc/questions/rule-gates-U3-rediagnosis.md` | 4df80d31 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/rule-gates-U4.md` | 3268958e | origin/main@be9cde3b HEAD@be9cde3b | answered |
-| `.sdlc/questions/rule-gates-U5-load.md` | 4333fc0a | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/rule-gates-approval.md` | f173bda3 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/rule-gates-revision6.md` | 05d5a328 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/small-fixes-approval.md` | f0953fcf | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/standing-rulings-2026-09-20.md` | 7439e551 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/survey-2026-09-18-approval.md` | a4f1661b | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/verdict-backfill-N5-fixfirst.md` | 43d914f8 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/verdict-backfill-U3-verifier.md` | 06e1943d | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/verdict-backfill-approval.md` | 93739a79 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/verdict-frontmatter-U1-4-prefix.md` | c4b24e18 | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/verdict-frontmatter-U1-counts.md` | feaeedca | origin/main@be9cde3b HEAD@be9cde3b | none |
-| `.sdlc/questions/verdict-frontmatter-approval.md` | a3448df1 | origin/main@be9cde3b HEAD@be9cde3b | none |
+| `.sdlc/questions/A2.md` | 80ceaaa1 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/achromatic-anchor-U1-verifier-down.md` | 6f16d70a | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/achromatic-anchor-approval.md` | fd743011 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/adopt-a1-approval.md` | 44473084 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/adopt-a3-drift.md` | 1b573285 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/adopt-a5-conflicts.md` | 25b45bc1 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/adopt-hygiene-U5-merge.md` | b2de77ec | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/adopt-hygiene-approval.md` | 5a25d704 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/adopt-hygiene-bgisolation.md` | 6fe12a97 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/adopt-hygiene-land-merge-style.md` | 318bf208 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/adopt-hygiene-marketplace.md` | fee14957 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/adopt-hygiene-prepr.md` | f3222df5 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/adopt-hygiene-ticket-backend.md` | 65a4f4f1 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/adopt-hygiene-verifier.md` | 90dd63c2 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/anchor-gaps-approval.md` | 03db0271 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/anchor-gaps-revision6.md` | 8033a320 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/baseline-regex-approval.md` | b810d16e | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/bold-labels-approval.md` | 4167bea6 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/bold-labels-revision6.md` | 9a60b803 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/cache-docs-approval.md` | ec105a52 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/chroma-envelope-U2-pass3.md` | 87890846 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/chroma-envelope-U3-conflicts-2.md` | 4886fca5 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/chroma-envelope-U3-conflicts.md` | 24e21dbe | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/chroma-envelope-U3.md` | cd3f559e | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/chroma-envelope-approval.md` | e25ec020 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/chroma-envelope-prepr-p1.md` | a46d2877 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/chroma-envelope-revision6.md` | 3aa5082d | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/chroma-envelope-revision9.md` | 73cd345b | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/chroma-envelope-scope.md` | 4529615f | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/chroma-floor-R57-even-dips.md` | 2b6704dd | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/chroma-floor-U1.md` | 6b2b7de2 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/chroma-floor-approval.md` | 69424822 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/chroma-floor-revision6.md` | 35ef266e | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/docs-repair-approval.md` | 43479328 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/docs-repair-revision6.md` | 2d707a53 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/docs-stale-batch-U1-order.md` | bce9f43c | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/docs-stale-batch-approval.md` | 115bbb57 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/fable-seats-exhausted-2026-09-20.md` | 047996f2 | origin/main@5b38bf8d HEAD@5b38bf8d | answered |
+| `.sdlc/questions/floorref-hue-approval.md` | 5b97d53a | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/gate-gaps-approval.md` | 0c83dd01 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/gate-split-U6b.md` | d0f5e901 | origin/main@5b38bf8d HEAD@5b38bf8d | answered |
+| `.sdlc/questions/gate-split-approval.md` | 06284c66 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/gate-split-claude-md.md` | 8e140a27 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/gates-batch-approval.md` | a8effa3c | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/gates-batch-prepr-p1.md` | 4b3968da | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/gg-U2b-p2-time-stale.md` | 05d5e4b1 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/grade-policy-fable.md` | 1ccaf5b7 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/hex-oklch-dedupe-approval.md` | 2e0f2085 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/issue-triage-2026-09-22.md` | 74660948 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/k17-rerun-approval.md` | 5b12de2b | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/okl-memo-U1.md` | cee48799 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/okl-memo-approval.md` | d9009bc0 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/orchestrator-which-conductor.md` | 5777fe39 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/pif-u2.md` | 648aae9d | origin/main@5b38bf8d HEAD@5b38bf8d | open |
+| `.sdlc/questions/pif-u3-uptick-count-recheck.md` | c23a0f7d | origin/main@5b38bf8d HEAD@5b38bf8d | RESOLVED (2026-09-18): 89, not 92, confirmed by the reviewer |
+| `.sdlc/questions/pif-u3-yield-answer.md` | 5955c2ac | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/pif-u3-yield.md` | a526a1ee | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/pif-u3.md` | d481f2ff | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/pif-u4.md` | 54d10020 | origin/main@5b38bf8d HEAD@5b38bf8d | open (Q7, Q8 only - Q1-Q6 all resolved) |
+| `.sdlc/questions/pif-u5-board-seat.md` | 67ac28ff | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/pif-u5-concurrent-writer.md` | 7445a97d | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/pif-u6.md` | 4f7a5185 | origin/main@5b38bf8d HEAD@5b38bf8d | open |
+| `.sdlc/questions/preset-intent-fidelity-approval.md` | 0516731b | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/preset-intent-fidelity-preland.md` | 17a56e6a | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/preset-intent-fidelity-u3-movement.md` | 0a4485a6 | origin/main@5b38bf8d HEAD@5b38bf8d | open |
+| `.sdlc/questions/preset-intent-fidelity-u7-approval.md` | 5a0fabf8 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/preset-intent-fidelity-u8.md` | a31abc09 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/prompt-audit-approval.md` | e4b20b7d | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/prompt-audit-revision6.md` | 7502e5d0 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/prompt-audit-time-test-stale.md` | 10d894f4 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/prompt-audit-verifier-missing.md` | e7b413b3 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/records-followup-U5-refresh.md` | 29ac1c35 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/records-followup-U9-board-seat.md` | c4d001f8 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/records-followup-U9-branding-red.md` | 8a581856 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/records-followup-approval.md` | 9bdbf365 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/records-followup-landing-window.md` | 9dbf3b9a | origin/main@5b38bf8d HEAD@5b38bf8d | answered |
+| `.sdlc/questions/records-followup-repair-or-rebuild.md` | 1af52d01 | origin/main@5b38bf8d HEAD@5b38bf8d | answered |
+| `.sdlc/questions/records-followup-repoint-threshold.md` | 1543ebd7 | origin/main@5b38bf8d HEAD@5b38bf8d | answered |
+| `.sdlc/questions/records-followup-repoint.md` | fed7982a | origin/main@5b38bf8d HEAD@5b38bf8d | answered |
+| `.sdlc/questions/records-gates-approval.md` | 0e9eea56 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/records-policy-U1-controls.md` | 6e8af366 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/records-policy-approval.md` | 5a5d5337 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/records-tidy-U1-verification.md` | b1438a2d | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/records-tidy-approval.md` | 5ada871f | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/roadmap-2026-09-20.md` | 94862015 | origin/main@5b38bf8d HEAD@5b38bf8d | ruled: Q1 still open, Q2 retired as moot |
+| `.sdlc/questions/rule-gates-U3-rediagnosis.md` | 4df80d31 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/rule-gates-U4.md` | 3268958e | origin/main@5b38bf8d HEAD@5b38bf8d | answered |
+| `.sdlc/questions/rule-gates-U5-load.md` | 4333fc0a | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/rule-gates-approval.md` | f173bda3 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/rule-gates-revision6.md` | 05d5a328 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/small-fixes-approval.md` | f0953fcf | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/standing-rulings-2026-09-20.md` | 7439e551 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/survey-2026-09-18-approval.md` | a4f1661b | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/verdict-backfill-N5-fixfirst.md` | 43d914f8 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/verdict-backfill-U3-verifier.md` | 06e1943d | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/verdict-backfill-approval.md` | 93739a79 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/verdict-frontmatter-U1-4-prefix.md` | c4b24e18 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/verdict-frontmatter-U1-counts.md` | feaeedca | origin/main@5b38bf8d HEAD@5b38bf8d | none |
+| `.sdlc/questions/verdict-frontmatter-approval.md` | a3448df1 | origin/main@5b38bf8d HEAD@5b38bf8d | none |
 
 Commands for this table, the rows first and then one per column:
 
@@ -359,7 +378,7 @@ git cat-file -p "$(printf '%s\n' "$ROW" | cut -d' ' -f2)" | grep -m1 '^status:' 
 
 ## Debt ids at head
 
-The row ids under each section of `.sdlc/debt.md` at `be9cde3b`. Ids only: `debt.md` records no machine-readable open or closed state, so this table does not say which rows are open.
+The row ids under each section of `.sdlc/debt.md` at `5b38bf8d`. Ids only: `debt.md` records no machine-readable open or closed state, so this table does not say which rows are open.
 
 | Section | Row ids |
 |---|---|
@@ -385,20 +404,135 @@ git show "$HEADSHA:.sdlc/debt.md" | awk -v h="## $ROW" '$0==h {f=1; next} /^## /
 
 ## Landed since the last generation
 
-First-parent commits on head since `a0112fa620f4814a2a6c992186b80c34d5b94fdd`, the `head:` of the roadmap at `be9cde3b`, the commit checked out when the Snapshot was read.
+First-parent commits on head since `be9cde3b023198403c8b6ae39fb93f5d8b31487c`, the `head:` of the roadmap at `5b38bf8d`, the commit checked out when the Snapshot was read.
 
 | Commit | Date | Subject |
 |---|---|---|
-| be9cde3b | 2026-09-29 | sdlc(chroma-envelope): plan branch cut and claimed, U1 builder-l5 dispatched, #725 claimed (#725) |
-| afd415c0 | 2026-09-29 | sdlc(anchor-gaps): close-out after PR #762 squash 3a3f2031; plan archived, #740 #744 closed, branch and worktree removed (#740, #744) |
-| 3a3f2031 | 2026-09-29 | fix(color): pre-v5 kits regain default anchors on load; hueless samples take the entry's neutral hue (#740, #744) (#762) |
-| 8964fddc | 2026-09-29 | sdlc(anchor-gaps): pre-land pass 4 🟢 at 183823e6, #740 #744 verified, PR #762 ready (#740, #744) |
-| 78f5c6d5 | 2026-09-29 | verdict: anchor-gaps-prepr pass 4 🟢 at 183823e6, records-only head over pass 3's tree, CI green on every required job (#740, #744) |
-| 40f349a6 | 2026-09-29 | verdict: anchor-gaps-prepr pass 3 🔴 at a02af6a5, CL fixed and every local row holds, no CI run on the head (#740, #744) |
-| 6ca2c65a | 2026-09-29 | sdlc(anchor-gaps): U4 merged on the trivial lane review PASS; pre-land pass 3 requested (#740, #744) |
-| 34227dae | 2026-09-29 | sdlc(anchor-gaps): pre-land pass 2 🔴, revision 10 adds U4 (trivial lane), builder dispatched (#740, #744) |
-| 9ee8f2aa | 2026-09-29 | verdict: anchor-gaps-prepr pass 2 🔴 at 1d03eca5, pass 1 reds fixed, CHANGELOG pre-#681 clause false and no CI run on the head (#740, #744) |
-| 1314f902 | 2026-09-29 | sdlc(roadmap): bold-labels landed, #752 closed |
+| 5b38bf8d | 2026-09-30 | plan/chroma-envelope (#777) |
+| aa81d573 | 2026-09-30 | verdict: chroma-envelope prepr pass 3 🟢 (#725) |
+| cb7437ac | 2026-09-30 | sdlc(chroma-envelope): pre-land pass 2 green, ticket verified (#725) |
+| 1b48df54 | 2026-09-30 | verdict: chroma-envelope prepr pass 2 🟢 (#725) |
+| cd5babb9 | 2026-09-30 | sdlc(chroma-envelope): U5 merged, pre-land pass 2 requested (#725) |
+| d3d196b8 | 2026-09-30 | sdlc(chroma-envelope): U5 pass 2 built, lane review p2 dispatched (#725) |
+| 465f507a | 2026-09-30 | sdlc(chroma-envelope): U5 re-diagnosis, pass 2 builder dispatched (#725) |
+| e9fc72ad | 2026-09-30 | sdlc(chroma-envelope): U5 review FAIL, pass 2 re-diagnosis (#725) |
+| b263b0fb | 2026-09-30 | sdlc(chroma-envelope): U5 built, lane review dispatched (#725) |
+| 8d0b8a5e | 2026-09-30 | sdlc(chroma-envelope): revision 10 (R84), U5 dispatched (#725) |
+| bf6f4b4a | 2026-09-30 | sdlc: owner answer chroma-envelope pre-land p1, Q1 A Q2 A (#725) |
+| 0d353d17 | 2026-09-30 | sdlc(chroma-envelope): pre-land red, question for revision 10 (#725) |
+| f38145c9 | 2026-09-30 | verdict: chroma-envelope prepr pass 1 🔴 (#725) |
+| c87c347b | 2026-09-30 | sdlc(chroma-envelope): U4 merged on verdict cleared, pre-land requested (#725) |
+| 02d609c9 | 2026-09-30 | verdict: chroma-envelope U4 pass 2 🟡 (#725) |
+| 8d40546b | 2026-09-30 | sdlc(chroma-envelope): U4 pass 2 review PASS, verdict requested (#725) |
+| 5fd87863 | 2026-09-30 | sdlc(chroma-envelope): U4 pass 2 built, review dispatched (#725) |
+| 69508c9a | 2026-09-30 | sdlc(docs-stale-batch): U1 merged on lane review PASS (#779) |
+| 2924fac1 | 2026-09-30 | sdlc(chroma-envelope): U4 pass 2 builder dispatched (#725) |
+| 5e632c1d | 2026-09-30 | sdlc(docs-stale-batch): U1 dispatched after gates-batch landed (#779) |
+| 234a2b86 | 2026-09-30 | sdlc(gates-batch): close-out, plan archived, baseline ref to 30c3a7aa (#776) |
+| 30c3a7aa | 2026-09-30 | test(gates): citations count-phrase and bare-filename legs, fact-pin literal guard, binder renameparity, em-dash string-bound E1/E2 (#776 #775 #769 #772 #764) (#781) |
+| 43e82a98 | 2026-09-30 | verdict: gates-batch pre-land pass 2 🟢 (#776) |
+| c8db3d92 | 2026-09-30 | sdlc(chroma-envelope): U4 verdict red, pass 2 re-diagnosis dispatched (#725) |
+| 76054c77 | 2026-09-30 | sdlc(gates-batch): U5 merged on review PASS, pre-land pass 2 requested (#776) |
+| 5a76f922 | 2026-09-30 | verdict: chroma-envelope U4 pass 1 🔴 (#725) |
+| ee69d244 | 2026-09-30 | sdlc(gates-batch): U5 review FAIL, rework (#776) |
+| 3940ad61 | 2026-09-30 | sdlc(gates-batch): U5 built, review dispatched (#776) |
+| 71bac829 | 2026-09-30 | sdlc(chroma-envelope): revision 9 (R82) (#725) |
+| fe97bcd7 | 2026-09-30 | sdlc(gates-batch): revision 5 (R83), U5 dispatched (#776) |
+| 7309a002 | 2026-09-30 | sdlc: owner answers, chroma-envelope revision 9 A, gates-batch pre-land Q1 A Q2 B (#725 #776) |
+| 39714992 | 2026-09-30 | sdlc(gates-batch): pre-land 🔴, question for revision 5 and PR title (#776) |
+| 3bc6d88a | 2026-09-30 | verdict: gates-batch pre-land pass 1 🔴 (#776) |
+| 3fd3e079 | 2026-09-30 | sdlc(chroma-envelope): U4 review PASS, verdict requested (#725) |
+| 592f9140 | 2026-09-30 | sdlc(chroma-envelope): U4 built, review dispatched (#725) |
+| dc177a30 | 2026-09-30 | sdlc(chroma-envelope): U3 merged, U4 dispatched, revision 9 question (#725) |
+| 0d0151ef | 2026-09-30 | verdict: chroma-envelope U3 pass 1 🟡 (#725) |
+| c8c9aa7b | 2026-09-30 | sdlc(gates-batch): pre-land record requested, follow-ups #783 (#776) |
+| 1ec6dc15 | 2026-09-30 | sdlc(gates-batch): U3 merged, all units in (#776) |
+| e07c0c3b | 2026-09-30 | sdlc(gates-batch): U4 merged (#776) |
+| 3be722a4 | 2026-09-30 | verdict: gates-batch U3 pass 2 🟡 (#776) |
+| cb53a682 | 2026-09-30 | verdict: gates-batch U4 pass 2 🟡 (#776) |
+| 9958a95a | 2026-09-30 | sdlc(gates-batch): U4 re-review PASS, verdict requested (#776) |
+| d99dae5d | 2026-09-30 | sdlc(gates-batch): U4 rework built, re-review dispatched (#776) |
+| 9ce0a3d7 | 2026-09-30 | sdlc(gates-batch): U4 review FAIL, review record (#776) |
+| f7cb616e | 2026-09-30 | sdlc(gates-batch): U4 built, review dispatched (#776) |
+| 41184ca5 | 2026-09-30 | sdlc(gates-batch): U2 merged (#776) |
+| c318f92f | 2026-09-30 | verdict: gates-batch U2 pass 1 🟡 (#776) |
+| 25829a45 | 2026-09-30 | sdlc(chroma-envelope): U3 record fixes in, verdict requested (#725) |
+| 8e19ffbd | 2026-09-30 | sdlc(gates-batch): U4 dispatched (#776) |
+| 943d4b08 | 2026-09-30 | sdlc(gates-batch): U3 re-review PASS, plan revision 4, verdict requested (#776) |
+| 9fe0770b | 2026-09-30 | sdlc(gates-batch): U3 rework built, re-review dispatched (#776) |
+| 18265588 | 2026-09-30 | sdlc(chroma-envelope): U3 review PASS, record fixes before verdict (#725) |
+| a4fe2696 | 2026-09-30 | sdlc(gates-batch): U2 re-review PASS, verdict requested (#776) |
+| 1647f233 | 2026-09-30 | sdlc(gates-batch): U3 review FAIL, review record (#776) |
+| 75ee8c89 | 2026-09-30 | sdlc(gates-batch): U2 rework built, re-review dispatched (#776) |
+| 972f5eb8 | 2026-09-30 | sdlc(docs-stale-batch): U4 merged (#779) |
+| 48587f81 | 2026-09-30 | verdict: docs-stale-batch U4 pass 1 🟡 (#779) |
+| e2dac17e | 2026-09-30 | sdlc(gates-batch): U3 built, review dispatched (#776) |
+| e9350781 | 2026-09-30 | sdlc(gates-batch): U2 review FAIL, rework notes (#776) |
+| c7b52c2a | 2026-09-30 | sdlc(gates-batch): U3 dispatched (#776) |
+| 1d8a956e | 2026-09-30 | sdlc(gates-batch): U2 built, review dispatched (#776) |
+| cce8ebfc | 2026-09-30 | sdlc(docs-stale-batch): U4 review PASS, verdict requested (#779) |
+| 8da7ada1 | 2026-09-30 | sdlc(docs-stale-batch): U4 built, review dispatched (#779) |
+| 2ff8e7fa | 2026-09-30 | sdlc(gates-batch): U2 dispatched (#776) |
+| a42590c4 | 2026-09-30 | sdlc(docs-stale-batch): U3 merged (#779) |
+| 3e63fc8c | 2026-09-30 | sdlc(gates-batch): U1 merged, draft PR #781 (#776) |
+| 29bccc63 | 2026-09-30 | verdict: docs-stale-batch U3 pass 1 🟡 (#779) |
+| 86e081ab | 2026-09-30 | verdict: gates-batch U1 pass 1 🟢 (#776) |
+| 2571ba28 | 2026-09-30 | sdlc(docs-stale-batch): U3 review PASS, verdict requested (#779) |
+| 4746c974 | 2026-09-30 | sdlc(docs-stale-batch): U4 dispatched (#779) |
+| 29306efe | 2026-09-30 | sdlc(docs-stale-batch): U3 built, review dispatched (#779) |
+| 8126e910 | 2026-09-30 | sdlc(gates-batch): U1 review PASS, verdict requested (#776) |
+| 951b3092 | 2026-09-30 | sdlc(gates-batch): U1 built, review dispatched (#776) |
+| 95a532cf | 2026-09-30 | sdlc(docs-stale-batch): U3 dispatched (#779) |
+| 171893ce | 2026-09-30 | sdlc(docs-stale-batch): U2 merged on lane review PASS (#779) |
+| a511054e | 2026-09-30 | sdlc(docs-stale-batch): U2 built, lane review dispatched; U1 order per R81 (#779) |
+| f18f8f85 | 2026-09-30 | sdlc: owner answer docs-stale-batch U1 order, A (#774) |
+| 98b91691 | 2026-09-30 | sdlc: activate gates-batch and docs-stale-batch, floorref-hue queued (#776 #779 #766) |
+| 17edb2d2 | 2026-09-30 | sdlc: approve gates-batch, docs-stale-batch, floorref-hue (#776 #768 #766) |
+| 773b42e2 | 2026-09-30 | verdict: docs-stale-batch checkability pass 3 🟢, 29 of 29 checkable |
+| eddcc477 | 2026-09-30 | verdict: docs-stale-batch checkability pass 2 🔴, 27 of 29 checkable, U6-3 U6-4 not |
+| 1174bcd6 | 2026-09-30 | verdict: floorref-hue checkability 🟢, 23 of 23 checkable, 11 🟡 (#766) |
+| c57e33fd | 2026-09-30 | verdict: gates-batch checkability pass 4 🟢, 46 of 46 checkable, C5 U2-12 🟡 (#776) |
+| e47e2861 | 2026-09-30 | verdict: docs-stale-batch checkability 🔴, U6 carries no criteria |
+| 7ecd1a51 | 2026-09-30 | verdict: gates-batch checkability pass 3 🟢, 45 of 45 checkable (#776) |
+| ef630848 | 2026-09-30 | verdict: gates-batch checkability pass 2 🔴, 43 of 45 checkable, U2-9 U4-7 not (#776) |
+| f47a0bf8 | 2026-09-30 | verdict: gates-batch checkability 🔴, 42 of 45 checkable, U2-9 U4-2 U4-5 not (#776) |
+| 8945c618 | 2026-09-30 | sdlc(chroma-envelope): U3 revision 8 built at 31bba1e6, review dispatched (#725) |
+| bd6e26f4 | 2026-09-30 | sdlc(conductor): R79 owner ruling, Fable only at pre-land |
+| 64e801c7 | 2026-09-30 | sdlc(chroma-envelope): revision 8 synced, U3 re-diagnosis recorded (#725) |
+| 3f437c2f | 2026-09-30 | sdlc(chroma-envelope): U3 pass 1 built at bd304e93 (#725) |
+| 9b96c0a3 | 2026-09-30 | sdlc(chroma-envelope): R77, U3 re-diagnosis planner dispatched (#725) |
+| dbe639f9 | 2026-09-30 | sdlc(chroma-envelope): R77 owner ruling on U3 second conflict set (#725) |
+| c28a78c6 | 2026-09-29 | sdlc(questions): chroma-envelope U3 second conflicts, Q7 FLOORS pin crossings added (#725) |
+| 1fa8b86d | 2026-09-29 | sdlc(questions): chroma-envelope U3 second conflicts, Q6 f4 codes bound added, Q2 recommendation revised (#725) |
+| 4d5319e2 | 2026-09-29 | sdlc(chroma-envelope): U3 second conflicts with owner (#725) |
+| 5f716ea4 | 2026-09-29 | sdlc(questions): chroma-envelope U3 second conflicts, (iii c) quantization and x2 hue solve (#725) |
+| 80e53b08 | 2026-09-29 | sdlc(chroma-envelope): sync revision 7 (R76) from plan branch (#725) |
+| 6bb67487 | 2026-09-29 | sdlc(chroma-envelope): R76, revision 7 planner dispatched (#725) |
+| 616e8c2b | 2026-09-29 | sdlc(chroma-envelope): R76 owner ruling on U3 plan conflicts (#725) |
+| ac2c519e | 2026-09-29 | sdlc(chroma-envelope): U3 conflicts with owner, build continues (#725) |
+| 34385f8a | 2026-09-29 | sdlc(questions): chroma-envelope U3 plan conflicts, ratchet rises, Kea and d (#725) |
+| 94206800 | 2026-09-29 | sdlc(chroma-envelope): U2 merged (verdict p3 cleared), U3 builder-l7 dispatched (#725) |
+| c3ceac3d | 2026-09-29 | verdict: chroma-envelope-U2 pass 3 🟡 at 945e92c1, all four gaps closed, one commit lacks a Seat trailer (#725) |
+| 3c712404 | 2026-09-29 | sdlc(chroma-envelope): U2 pass 3 review PASS at 945e92c1, verdict requested (#725) |
+| ae26804f | 2026-09-29 | sdlc(chroma-envelope): sync revision 6 (R75) from plan branch e541653d (#725) |
+| fe238d6c | 2026-09-29 | sdlc(chroma-envelope): U2 pass 3 built at f6276759, reviewer-l3 dispatched (#725) |
+| 3ac78dc1 | 2026-09-29 | sdlc(chroma-envelope): R75, U2 narrow pass 3 builder-l7 and revision 6 planner dispatched (#725) |
+| 3e1432e9 | 2026-09-29 | sdlc(chroma-envelope): R75 owner ruling, narrow U2 pass 3 and revision 6 (#725) |
+| b4b8f028 | 2026-09-29 | sdlc(chroma-envelope): U2 pass 2 verdict red on the C2.3 comment, pass 3 escalated (#725) |
+| edf1b5c6 | 2026-09-29 | verdict: chroma-envelope-U2 pass 2 🔴 at 0627f874, C2 rows hold, C6 (v) comment states 15 and 3,749 where the gate measures 72 and 3692 (#725) |
+| 08c48405 | 2026-09-29 | sdlc(chroma-envelope): U2 pass 2 review PASS at 0627f874, verdict requested (#725) |
+| 7de77329 | 2026-09-29 | sdlc(chroma-envelope): U2 pass 2 built at 03105f66, reviewer-l3 dispatched (#725) |
+| 484ccf9f | 2026-09-29 | sdlc(chroma-envelope): U2 pass 2 extra reds ruled R69 movement, builder re-pinning (#725) |
+| 6de599bb | 2026-09-29 | sdlc(chroma-envelope): revision 5 (R74 option A) at b149f8dd; U2 pass 2 builder-l7 dispatched (#725) |
+| 54277353 | 2026-09-29 | sdlc(chroma-envelope): R74 option A, revision 5 planner dispatched (#725) |
+| a3389e6c | 2026-09-29 | sdlc(questions): chroma-envelope U2 answered R74, gate-path bars and revision 5 (#725) |
+| 670887e4 | 2026-09-29 | sdlc(chroma-envelope): U2 re-diagnosis at b7ee8f7c, owner question for READING (a) ruling and revision 5 (#725) |
+| 96f53e58 | 2026-09-29 | sdlc(chroma-envelope): U2 re-diagnosis re-dispatched as ce-U2-planner-r2 (#725) |
+| e4c79488 | 2026-09-29 | sdlc(chroma-envelope): U2 pass 1 stopped for re-diagnosis at 322c1953, planner dispatched (#725) |
+| 423ca514 | 2026-09-29 | sdlc(chroma-envelope): U1 merged on 🟡 cleared verdict, draft PR #777; U2 builder-l6 dispatched (#725) |
+| a4ccbd0a | 2026-09-29 | verdict: chroma-envelope-U1 pass 1 🟡 at ea76d934, every C1 row holds under revision 4, report output byte-identical, hygiene only (#725) |
+| d32afbad | 2026-09-29 | merge origin/main (roadmap) into main |
+| 95c64f36 | 2026-09-29 | sdlc(chroma-envelope): U1 review PASS at ea76d934, verdict requested; plan revision 4 (#725) |
 
 Commands for this table, the rows first and then one per column:
 
@@ -415,10 +549,11 @@ git show -s --format=%s "$ROW"
 
 ## Revisions
 
-Commits that touched this file, reachable from `be9cde3b`, which is the commit whose Snapshot this file carries, or the checkout the read ran at when the Snapshot is a live read. Commits that touched it later, the one that adds this rendering among them, are not listed: a file cannot name its own commit, and it cannot see what came after the Snapshot it renders. How many those are is not stated here, because nothing in this file measures it. Each listed revision's prose is at `git show <commit>:.sdlc/roadmap.md`. This rendering: plan PR #762 3a3f2031, ticket #740, snapshot read at head `be9cde3b`.
+Commits that touched this file, reachable from `5b38bf8d`, which is the commit whose Snapshot this file carries, or the checkout the read ran at when the Snapshot is a live read. Commits that touched it later, the one that adds this rendering among them, are not listed: a file cannot name its own commit, and it cannot see what came after the Snapshot it renders. How many those are is not stated here, because nothing in this file measures it. Each listed revision's prose is at `git show <commit>:.sdlc/roadmap.md`. This rendering: plan chroma-envelope landed, ticket #725, snapshot read at head `5b38bf8d`.
 
 | Commit | Date | Subject |
 |---|---|---|
+| 791c0ed4 | 2026-09-29 | sdlc(roadmap): anchor-gaps landed, #740 and #744 closed |
 | 1314f902 | 2026-09-29 | sdlc(roadmap): bold-labels landed, #752 closed |
 | 862ba139 | 2026-09-29 | sdlc(roadmap): prompt-audit landed, #758 closed |
 | 9c30fb79 | 2026-09-29 | sdlc(roadmap): regenerated after chroma-floor and docs-repair landed (#751) |
@@ -452,7 +587,7 @@ git show -s --format=%s "$ROW"
 
 ## Snapshot
 
-Every block is the stdout of the command above it, run at `be9cde3b` between 2026-09-29T22:38:24Z and 2026-09-29T22:38:25Z, with `LC_ALL=C`, verbatim except U+2014, written `<U+2014>`, and trailing newlines, which are dropped. The generator refuses to write when any ref's newest reflog entry disagrees with the REFS or WORKTREES read, so the blocks describe one state. INSTANT is `date -u +%Y-%m-%dT%H:%M:%SZ` run before the first command and after the last. PARAMS is the generator's arguments and RENDER names the blob that rendered this file and where its snapshot came from; neither is a read.
+Every block is the stdout of the command above it, run at `5b38bf8d` between 2026-09-30T22:01:55Z and 2026-09-30T22:01:57Z, with `LC_ALL=C`, verbatim except U+2014, written `<U+2014>`, and trailing newlines, which are dropped. The generator refuses to write when any ref's newest reflog entry disagrees with the REFS or WORKTREES read, so the blocks describe one state. INSTANT is `date -u +%Y-%m-%dT%H:%M:%SZ` run before the first command and after the last. PARAMS is the generator's arguments and RENDER names the blob that rendered this file and where its snapshot came from; neither is a read.
 
 ### INSTANT
 
@@ -461,8 +596,8 @@ date -u +%Y-%m-%dT%H:%M:%SZ  # before HEAD, and again after PRS
 ```
 
 ```snapshot INSTANT
-2026-09-29T22:38:24Z
-2026-09-29T22:38:25Z
+2026-09-30T22:01:55Z
+2026-09-30T22:01:57Z
 ```
 
 ### HEAD
@@ -472,7 +607,7 @@ git symbolic-ref -q HEAD; git rev-parse HEAD
 ```
 
 ```snapshot HEAD
-be9cde3b023198403c8b6ae39fb93f5d8b31487c
+5b38bf8d8eb31fdbddaad52daf5a80128d41897e
 ```
 
 ### GENERATOR
@@ -492,11 +627,12 @@ git for-each-ref --format='%(objectname) %(refname)' refs/heads/main refs/remote
 ```
 
 ```snapshot REFS
-be9cde3b023198403c8b6ae39fb93f5d8b31487c refs/heads/main
+aa81d5737015065b87661c15acb3bbda0784497d refs/heads/main
 c9265cd731af3c8c636ce3ffc4930fb352aefee1 refs/heads/plan/adia-library-uplift
-afd415c06ff3d96314b41129c8aceaa7800df912 refs/heads/plan/chroma-envelope
+da37098f5c6667f6eca1e935ee5e825d91f4942f refs/heads/plan/chroma-envelope
+92fa51a6a5793ad9f726cbe0c749ff1bbe0da878 refs/heads/plan/docs-stale-batch
 a483151d154c3d043772aed9f1eabc9da3b776fa refs/heads/plan/lane-b-tickets
-be9cde3b023198403c8b6ae39fb93f5d8b31487c refs/remotes/origin/main
+5b38bf8d8eb31fdbddaad52daf5a80128d41897e refs/remotes/origin/main
 ```
 
 ### WORKTREES
@@ -507,20 +643,20 @@ git worktree list --porcelain | sed "s#^worktree $(git rev-parse --path-format=a
 
 ```snapshot WORKTREES
 worktree <ROOT>
-HEAD be9cde3b023198403c8b6ae39fb93f5d8b31487c
+HEAD aa81d5737015065b87661c15acb3bbda0784497d
 branch refs/heads/main
 
-worktree /private/tmp/claude-501/rm-740
-HEAD be9cde3b023198403c8b6ae39fb93f5d8b31487c
+worktree /private/tmp/claude-501/rm3
+HEAD 5b38bf8d8eb31fdbddaad52daf5a80128d41897e
 detached
 
-worktree <ROOT>/.worktrees/ce-U1
-HEAD afd415c06ff3d96314b41129c8aceaa7800df912
-branch refs/heads/unit/ce-U1
-
 worktree <ROOT>/.worktrees/plan-chroma-envelope
-HEAD afd415c06ff3d96314b41129c8aceaa7800df912
+HEAD da37098f5c6667f6eca1e935ee5e825d91f4942f
 branch refs/heads/plan/chroma-envelope
+
+worktree <ROOT>/.worktrees/plan-docs-stale-batch
+HEAD 92fa51a6a5793ad9f726cbe0c749ff1bbe0da878
+branch refs/heads/plan/docs-stale-batch
 ```
 
 ### REFLOG
@@ -530,12 +666,12 @@ branch refs/heads/plan/chroma-envelope
 ```
 
 ```snapshot REFLOG
-be9cde3b023198403c8b6ae39fb93f5d8b31487c main@{2026-09-29T15:37:58-07:00} commit: sdlc(chroma-envelope): plan branch cut and claimed, U1 builder-l5 dispatched, #725 claimed (#725)
+aa81d5737015065b87661c15acb3bbda0784497d main@{2026-09-30T14:57:14-07:00} commit: verdict: chroma-envelope prepr pass 3 🟢 (#725)
 c9265cd731af3c8c636ce3ffc4930fb352aefee1 plan/adia-library-uplift@{2026-09-19T12:17:00-07:00} commit (amend): docs(sdlc): adia-library-uplift revision 11, landing updates the baseline test-file figure
-afd415c06ff3d96314b41129c8aceaa7800df912 plan/chroma-envelope@{2026-09-29T15:37:46-07:00} branch: Created from main
+da37098f5c6667f6eca1e935ee5e825d91f4942f plan/chroma-envelope@{2026-09-30T14:54:42-07:00} commit (merge): Merge remote-tracking branch 'origin/main' into plan/chroma-envelope
+92fa51a6a5793ad9f726cbe0c749ff1bbe0da878 plan/docs-stale-batch@{2026-09-30T11:09:29-07:00} commit: sdlc(docs-stale-batch): tick U1 (#779)
 a483151d154c3d043772aed9f1eabc9da3b776fa plan/lane-b-tickets@{2026-09-19T18:57:30-07:00} commit: sdlc(lane-b-tickets): #496 parked by the owner
-afd415c06ff3d96314b41129c8aceaa7800df912 unit/ce-U1@{2026-09-29T15:37:48-07:00} branch: Created from plan/chroma-envelope
-be9cde3b023198403c8b6ae39fb93f5d8b31487c origin/main@{2026-09-29T15:38:02-07:00} update by push
+5b38bf8d8eb31fdbddaad52daf5a80128d41897e origin/main@{2026-09-30T15:01:55-07:00} fetch -q origin: fast-forward
 ```
 
 ### ISSUES
@@ -546,19 +682,17 @@ gh issue list --state open --limit 500 --json number,createdAt,labels,title --jq
 
 ```snapshot ISSUES
 377	2026-07-18T15:08:06Z	task,P3,status:blocked	hosted describe-palette MCP surface on the Phase B Worker (blocked: domains, accounts)
-725	2026-09-21T03:28:33Z	kind:bug,size:big,status:claimed	Chroma envelope misses its muted targets in perceptual and peak mode, and nothing gates the direction
 748	2026-09-24T12:42:32Z	kind:chore,status:backlog,lane:docs,size:S	marketing: voice reread of the swept store copy, then the store section 10 walk
-764	2026-09-28T22:56:20Z	size:M,status:backlog	em-dash --fix: E1 and E2 take the colon on the line's first dash, not the enclosing string's
 766	2026-09-29T08:24:53Z	kind:chore,status:backlog,size:S	floorRef reads gamut ceilings at the seed hue, not each stop's rendered hue
 768	2026-09-29T13:47:36Z	kind:chore,lane:docs,size:S	Name the Claims ledger and P8 ran blocks as the standard for doc units in adapter.md
-769	2026-09-29T13:47:37Z	kind:chore,lane:tooling,size:S	U6-4 fact-pin regex misses async and block-bodied sources and other literals
 770	2026-09-29T13:47:42Z	kind:chore,lane:ui,size:S	model.mjs's CONTROL_FONT comments and other only-when-a-mode-exists comments are stale
 771	2026-09-29T13:47:44Z	kind:chore,lane:figma,size:S	gen-figma-binder-code.mjs header misstates which npm script wires it into test and build
-772	2026-09-29T13:47:46Z	kind:chore,lane:figma,size:S	No test compares the binder's hand-copied rename lists with migrations.mjs
 773	2026-09-29T13:47:50Z	kind:chore,lane:docs,size:S	building-editor-sections best-practices.md says scenes start centered, but fit() insets top-left
 774	2026-09-29T13:47:52Z	kind:chore,lane:figma,size:S	figma/README under-describes ROLE_TABLE's SCRIM constants, binder.mjs's gate count, and the flagship's mirrored voice map
-775	2026-09-29T17:12:03Z	kind:chore,lane:tooling,size:S	Citations gate skips bare-filename citations in the symbol-home leg
-776	2026-09-29T18:02:19Z	size:M,status:backlog	citations.mjs: a whole-doc fact pin passes when a stale count sits beside a true one
+778	2026-09-30T13:09:01Z	kind:feature,size:big	Chroma envelope: the curve as the spec, with presets and tolerance-based gates
+779	2026-09-30T16:00:12Z	kind:chore,lane:docs,size:S,status:in-review	docs-stale-batch
+782	2026-09-30T16:23:47Z	kind:bug,size:small,status:backlog	typography.js: stale voice counts in comments and the specimen tab string
+783	2026-09-30T17:30:00Z	kind:bug,status:backlog,size:S	gates-batch follow-ups: gate breadth, a fourth rename-map copy, stale lines
 ```
 
 ### PRS
@@ -569,6 +703,7 @@ gh pr list --state open --limit 500 --json number,isDraft,createdAt,headRefName,
 
 ```snapshot PRS
 158	true	2026-06-30T18:32:15Z	feat/go-live-flip-held	3497b69212ababf892b7b1b51ba771b090f3e027		feat(monetization): flip TIERS_ENFORCED → true (HELD for go-live)
+780	true	2026-09-30T16:04:35Z	plan/docs-stale-batch	92fa51a6a5793ad9f726cbe0c749ff1bbe0da878		docs-stale-batch: stale docs and comments (#779)
 ```
 
 ### PARAMS
@@ -578,7 +713,7 @@ the --ticket and --by arguments
 ```
 
 ```snapshot PARAMS
-for plan PR #762 3a3f2031, ticket #740
+for plan chroma-envelope landed, ticket #725
 ```
 
 ### RENDER
