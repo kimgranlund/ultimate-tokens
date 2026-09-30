@@ -24,3 +24,9 @@ Head reviewed: 1de0e6ee on unit/gb-U5. Files changed: `.sdlc/baseline.md`, `.sdl
 | Branding | `branding: clean (1026 files scanned)` |
 
 Verdict: FAIL on finding 1 alone; every criterion otherwise reads green. After the fix, re-run U5-1, U5-2 and C3 cmd 2, then PASS.
+
+## Pass 2 (head 02fd12ec)
+
+PASS
+
+Finding 1 cleared: the build row now reads `re-measured at gates-batch U5 (#776) on unit/gb-U5 (plan/gates-batch)`; the rework commit touches `.sdlc/baseline.md` only and that one cell. Re-run: C3 cmd 1 `0`, C3 cmd 2 `0`, U5-1 `ok    ui.html: baseline 4141.8 KB, tree 4141.8 KB` and `stale total: 0`, U5-2 Correction count `1`, em-dash clean (1035 files), branding clean (1027 files), worktree tree clean. The remaining `anchor-gaps` mentions in the file are historical corrections and the see-list, not this row's provenance.
