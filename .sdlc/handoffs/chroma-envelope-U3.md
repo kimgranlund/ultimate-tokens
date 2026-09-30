@@ -147,8 +147,8 @@ No other cell crosses its FLOORS or PENDING_U4 pin. The largest drop is the Data
 
 ## Gates
 
-| Gate | Evidence | State |
-|---|---|---|
-| `npm test` | exit 1, `✗ 1/54 test file(s) failed`: `anchor.mjs` f4 (Q6) only. The three C2.8 rows and `semantic.mjs` are green. Wall time 100.0 s at load 5.0. The tree is clean after, apart from this pass's edits | 🔴 on Q6 |
-| `npm run build` | in a throwaway clone at 67cc0cde: exit 0, `wrote figma/plugin/ui.html 4158.0 KB`, tree clean after. The baseline row was updated. `baseline-agrees-check` exits 0 with stale total 0; the control (adapter corpus-tonal edited to 126) prints `STALE time gate:corpus-tonal`, exit 1 | 🟢 |
-| em-dash, branding, citations | all clean in `npm test` | 🟢 |
+| Gate | Evidence | Control | State |
+|---|---|---|---|
+| `npm test` | exit 1, `✗ 1/54 test file(s) failed`: `anchor.mjs` f4 (Q6) only. The three C2.8 rows and `semantic.mjs` are green. Wall time 100.0 s at load 5.0. The tree is clean after, apart from this pass's edits | before R77, the same run reds `semantic.mjs` Q-B as well (2/54) | 🔴 on Q6 |
+| `npm run build` | in a throwaway clone at 67cc0cde: exit 0, `wrote figma/plugin/ui.html 4158.0 KB`, tree clean after. The baseline row was updated. `baseline-agrees-check` exits 0 with stale total 0; the control (adapter corpus-tonal edited to 126) prints `STALE time gate:corpus-tonal`, exit 1 | in the row | 🟢 |
+| em-dash, branding, citations | all clean in `npm test` | the planted U+2014 control that U2's verdict ran, not re-run | 🟢 |
