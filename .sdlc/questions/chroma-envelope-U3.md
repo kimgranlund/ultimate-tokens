@@ -16,7 +16,7 @@ Rulings, 2026-09-30:
 
 Also declared (no ruling needed unless the lead disagrees):
 
-- Damp mapping: `r = (100 - damp)/100` is mapped to `r^2.0875` instead of the plan's linear `0.27 * r`. The linear form reads 73 at damp 0, which breaks C3.1's "1.0 everywhere at damp 0". Both forms meet at the corpus damp 70.
+- Damp mapping: `r = (100 - damp)/100` is mapped to `r^e` with `e = ln(1 - d) / ln(0.3)` (2.0875 at d 0.919 when this was written; 2.1796 at the ruled d 0.9275) instead of the plan's linear `0.27 * r`. The linear form reads 73 at damp 0, which breaks C3.1's "1.0 everywhere at damp 0". Both forms meet at the corpus damp 70.
 - Even mode: byte-identical over a 148,000-cell envelope grid. It does not read 1.0 at damp 0 on `main` either (0.2824 / 0.4467 at 100 / 300), so C3.1's "1.0 everywhere at damp 0" holds for perceptual and peak only.
 
 ## Found later in pass 1 (2026-09-29, while C3.3 and C3.4 ran)

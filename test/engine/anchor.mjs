@@ -1339,8 +1339,9 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
   // every other stop keeps 0.01. "The cap moved it" is the row's own `capped` flag (#725 U3), set by
   // `capChromaAtHeldTone` when it changed the pixel, on either side of the flip. U2 derived the same
   // set by rendering a scratch engine with the cap lifted and diffing hexes (about 10 s of `--full`);
-  // the flag was measured against that diff at U2's engine before the diff was removed: 7841 stops
-  // each way, 0 disagreements (.sdlc/handoffs/chroma-envelope-U3.md).
+  // the flag was measured against that diff at U3's own head (revision 8) before the diff was removed,
+  // since U2's engine has no flag: 84900 anchored peak stops, flag 7364, diff 7364, 0 disagreements
+  // each way (.sdlc/handoffs/chroma-envelope-U3.md D9). U2's 7841 was a different engine's diff count.
   const HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED = 0.02;
   const HUE_SPACE_CODES_BOUND = 2;
   const hueSpaceBoundSubjects = [...presetsByCat, { slug: "default kit", preset: dkBase }];

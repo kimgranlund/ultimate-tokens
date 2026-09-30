@@ -17,7 +17,7 @@
 
 | Id | Evidence at head | Control run | State |
 |---|---|---|---|
-| C3.1 | With damp 70 and dampCurve 1.5, perceptual and peak both read `0.7435` at 300/700 and `0.2304` at 100/900, each within 0.02 of its bar (0.75, 0.25). All three modes read 1.0 at stop 500. At damp 0, perceptual and peak read 1.0 at every stop (max \|env - 1\| 0 over lift -40 to 40, curve 0.5 to 4). Even reads 0.3175 / 0.1150, byte-identical to base. d = 0.9275, c = log2(3) = 1.585. Unchanged by revision 8 | The same probe at base ee6fadbe prints perceptual and peak 0.7926 / 0.4134 | 🟢 per R76 Q3; D2, D4 |
+| C3.1 | With damp 70 and dampCurve 1.5, perceptual and peak both read `0.7435` at 300/700 and `0.2304` at 100/900, each within 0.02 of its bar (0.75, 0.25). All three modes read 1.0 at stop 500. At damp 0, perceptual and peak read 1.0 at every stop (max \|env - 1\| 0 over lift -40 to 40, curve 0.5 to 4). Even reads 0.3175 / 0.1150, byte-identical to base. d = 0.9275, c = log2(3) = 1.585, damp residue exponent 2.1796 (`OKHSL_DAMP_RESIDUE_EXP`, D2). Unchanged by revision 8 | The same probe at base ee6fadbe prints perceptual and peak 0.7926 / 0.4134 | 🟢 per R76 Q3; D2, D4 |
 | C3.2 | `--envelope` exits 0 (33.7 s). READING (b): perceptual and peak 74.3 at 300/700, 23.0 at 100/900. READING (a) gate path: perceptual median 6.1 / 74.6 / 59.1 / 13.9, p90 10.1 / 89.3 / 63.8 / 17.4 (300 p90 89.3, strictly under 90); peak median 3.2 / 38.1 / 57.7 / 11.7, p90 8.9 / 55.9 / 67.5 / 16.6; `rule violations: 0 OK`. Anchored: perceptual median 8.4 / 71.0 / 62.7 / 14.3, p90 16.4 / 100.2 / 67.5 / 19.6, over 90 at 300: 610 (U2 1042); peak median 8.9 / 61.8 / 58.1 / 13.1, p90 14.9 / 99.5 / 63.3 / 17.7, over 90: 508 (U2 575). Peak `above 100% of stop 500: 0` on both blocks. Perceptual anchored prints `rule violations ...: 1 (named exception: travel/37° N · November · 05:40 · MV passing Kea, en route Piraeus/primary-muted 227.26% (R76 Q2)) OK`: counted and printed by name, left out of the exit verdict only. Southern trap does not fire; no second name. Nike secondary (L* 7.8) is outside the window. Even is byte-identical; its anchored above-100 is 502, reported | In a scratch copy: the exception's name blanked exits 1 on `rule violations: 1 FAIL (e.g. ...Kea.../primary-muted (227.26%))`; a second violator (CUSP_RUN_BOUND 1.6) exits 1 on `4 (named exception: Kea...) FAIL (e.g. Corsa primary-muted 162.04%...)`. `--damp-amp 55` exits 1 (gate path 300 at 109.8 / 123.6 FAIL, peak above-100 1375 FAIL). Base gate path perceptual 300 p90 97.9 FAIL | 🟢 per R76 Q1 and Q2 and revision 8 (F1 resolved) |
 | C3.3 | Probe `$T/c33.mjs` (59 s, exit 0): 15936 cases (report 5840, kit variants 16, grid 10080), both stop sets, 0 rows missing the fields. env < 1: max \|held - target\| 6.045e-8. env = 1: `held === target` on 731840 of 731840 rows; `holdTone` returns `l' === l` on 8316 of 8316. x1: 0 mismatches over 8316 points. x2 over 699968 rows: cam16 0, oklch non-anchored 0, oklch anchored 0.00000 (pass 1: 42112 rows over, max 1.00725). x3: 0 perceptual rows outside the rounding floor | Unheld stub (`holdTone` returning `l' = l`): env < 1 max 4.592, x3 puts 36862 rows outside the floor. x1 control (+0.6 per channel): 7527 mismatches. The pass 1 engine is x2's control (max 1.00725 at default Warning perceptual 150) | 🟢 (Q5 closed by revision 8) |
 | C3.4 | `tonal.mjs --full` exits 0, `PASS: tonal-generation clears all [gate] predicates`. (iii c) reads 0 beyond `GRID_R2_EXCEPTIONS`: the 12 R77 Q4 quantization keys, all observed. okhsl-modes tone rose 0; cusp-pull passes; C6 (v) pinned at 0/3692, max 0.000000. `chromaEnvelope(` appears 5 times. C6 (ii) needed the re-freeze in C3.8 (F3). The C6 (v) negative control's needle moved with revision 8 (D13) | Pass 1: the unheld stub gives 28 rises beyond the list and 4 of the 12 keys unobserved; one key removed reports exactly that key. C6 (v) negative control at revision 8: the patched copy (saturation 1.6x, cap lifted) reads sample maxRatio 5.478, over the pin, so the control holds; with the saturation arm at 1.0 it reads 3.324, so the 1.6x arm moves the ratio | 🟢 per R77 Q4 |
@@ -110,7 +110,7 @@ No other cell crosses its FLOORS or PENDING_U4 pin; `semantic.mjs` PASS.
 - **D1 d = 0.9275, not 0.919.** Ruled by R76 Q3.
   - At 0.919 to 0.9263, gate-path perceptual 300 p90 is 90.0013: 14 identical hue-86 yellows held on one 8-bit code.
   - The window is 0.9267 to 0.928.
-- **D2 damp mapping.** The residue is `r^2.0875`, not the linear `0.27 r`.
+- **D2 damp mapping.** The residue is `r^e`, not the linear `0.27 r`, with `e = ln(1 - d) / ln(0.3)` (`OKHSL_DAMP_RESIDUE_EXP`, `tonal.js:446`). At the ruled d 0.9275 (R76 Q3) the code's exponent is 2.1796; the 2.0875 in pass 1's records and the plan's C3.1 text is the same formula at the unruled d 0.919. The ruled value is d; the exponent follows from it, so 2.1796 is what ships.
   - The linear form damps at damp 0, which would break "1.0 everywhere at damp 0".
   - Both forms meet at damp 70.
 - **D3 report flags.** `--damp N` and `--damp-curve N` are added to the report.
@@ -126,7 +126,7 @@ No other cell crosses its FLOORS or PENDING_U4 pin; `semantic.mjs` PASS.
 - **D8 unheld stub.** The unheld stub does not bite C3.5 (monotone 0); the synthetic rise is the control that bites.
 - **D9 flag agreement at U3's head, not at U2's engine.**
   - U2 has no flag, so the diff and the flag were compared on the same engine.
-  - Full corpus plus the default kit, peak, both hueSpace sides: 84900 anchored stops, flag 7464, diff 7464, 0 disagreements each way.
+  - Full corpus plus the default kit, peak, both hueSpace sides: 84900 anchored stops, flag 7364, diff 7364, 0 disagreements each way.
   - With the flag forced true: flag 81514, of which 74050 the diff never moved (e.g. Barbican primary 50), exit 1.
   - U2's 7841 is a different engine's count.
 - **D10 model.mjs.** One line outside the engine lane.
@@ -151,6 +151,17 @@ No other cell crosses its FLOORS or PENDING_U4 pin; `semantic.mjs` PASS.
 - **Q1 to Q3:** ruled by R76 (`.sdlc/questions/chroma-envelope-U3-conflicts.md`): the two peak cells are a declared cost, Kea is a named exception, d is 0.9275.
 - **Q4 and Q7:** ruled by R77 (`.sdlc/questions/chroma-envelope-U3-conflicts-2.md`): the 12 quantization keys are listed; both FLOORS crossings are declared costs, Data 3 dark at 4.8 in `PENDING_U4`.
 - **Q5 and Q6:** closed by revision 8 (`.sdlc/plans/chroma-envelope-U3-rediagnosis.md`, ranked by R78): x2 anchored 0.00000, f4 codes 0 and dE 0.0000. The damped-s and basis-s solves are both gone.
+
+## Review fixes (reviewer-l3 PASS at 31bba1e6, `.sdlc/reviews/chroma-envelope-U3-review.md`)
+
+Comments and records only; no engine, bound, list or fixture change. Re-run on the touched files: `semantic.mjs`, `tonal.mjs`, `anchor.mjs` (sampled), `citations.mjs`, `em-dash.mjs`, `branding.mjs`, all exit 0.
+
+- Finding 1: `anchor.mjs` f4 comment now names the flag measurement actually taken, U3 head, 84900 stops, flag 7364, diff 7364 (was "U2's engine, 7841").
+- Finding 2: D9 typo 7464 corrected to 7364.
+- Finding 3: `tonal.mjs` KNOWN_BASELINE_DUP comment says 30 keys (was 32).
+- Finding 4: D2, C3.1 and the question doc state the code's exponent 2.1796 at the ruled d 0.9275; 2.0875 was d 0.919. The plan's C3.1 text is the planner's to repair.
+- Finding 5: `semantic.mjs` Data 3 and Success `// measured` comments read the head values (6.14 / 4.88, 7.59 / 4.87) and name the R77 Q7 re-pin.
+- Finding 6 (note, no criterion): Kea's name carries no magnitude ceiling; left as ruled by R76 Q2.
 
 ## Gates
 

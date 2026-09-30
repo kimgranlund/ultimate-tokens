@@ -1333,7 +1333,7 @@ for (const mode of ["perceptual", "peak"]) {
   // entry each  -  `seenBaselineDup` still marks the key seen either way). The negative control right
   // after this gate still proves an UNLISTED collision is caught. 18 keys come first, then Nike
   // tertiary-muted's four at hue 36 (#744; see their own comment below). The counts above are #744's:
-  // #725 U3 re-froze the list to 32 keys (its own note, last in the list, names each key it moved).
+  // #725 U3 re-froze the list to 30 keys (its own note, last in the list, names each key it moved).
   const KNOWN_BASELINE_DUP = new Set([
     "even|240|100.00|0|0|25-stop|900&925",
     "even|79|100.00|0|0|25-stop|75&100",
