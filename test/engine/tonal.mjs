@@ -1072,7 +1072,25 @@ for (const mode of ["perceptual", "peak"]) {
   // 165 skew 0 lift 40 vib 100 250&300; peak|oklch 165/152 skew 0 lift 40 300&350 and 107 skew 40
   // lift 40 350&400 at vib 0/50/100; peak|cam16 165 skew -100 lift 40 175&200 and 165 skew 0 lift 40
   // 250&300 at vib 0/50/100.
-  const GRID_R2_EXCEPTIONS = new Set([]);
+  // Re-listed at #725 U3 under R77 Q4 (.sdlc/questions/chroma-envelope-U3-conflicts-2.md): 12 new
+  // QUANTIZATION keys, not R2 reopenings. All hue 165, lift 40, skew 0 or -50, stops 250 to 350, L* 94 to
+  // 97.5; each rise is +0.011 to +0.037 L*, under the row's own 8-bit rounding floor. The continuous held
+  // L* descends there (97.629 to 97.395); the 8-bit pixel near the G = 255 wall rounds it back up. Damp 0
+  // reads 0 upticks at U3's head and at the U2 base.
+  const GRID_R2_EXCEPTIONS = new Set([
+    "perceptual|oklch|165|-50|40|100|250&300",
+    "perceptual|cam16|165|-50|40|100|250&300",
+    "perceptual|cam16|165|0|40|100|300&350",
+    "peak|oklch|165|-50|40|0|250&300",
+    "peak|oklch|165|-50|40|50|250&300",
+    "peak|oklch|165|-50|40|100|250&300",
+    "peak|cam16|165|-50|40|0|250&300",
+    "peak|cam16|165|0|40|0|300&350",
+    "peak|cam16|165|-50|40|50|250&300",
+    "peak|cam16|165|0|40|50|300&350",
+    "peak|cam16|165|-50|40|100|250&300",
+    "peak|cam16|165|0|40|100|300&350",
+  ]);
   // this grid is synthetic, not a corpus sweep, but at an estimated 16s quiet it decides whether the
   // 120s ceiling holds (#713 design section); SAMPLED thins it to every fifth hue, offset by
   // SAMPLE_SEED % 5, the same thinning prime.mjs's own grids use.

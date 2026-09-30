@@ -2,11 +2,17 @@
 
 Builder, pass 1, on `unit/ce-U3` (base ee6fadbe), 2026-09-29. The build continues while these are ruled. Each row below is measured, not predicted.
 
+Rulings, 2026-09-30:
+
+- R76 (`.sdlc/questions/chroma-envelope-U3-conflicts.md`) rules Q1 to Q3. The two peak cells are a declared cost, Kea is a named exception, and d is 0.9275.
+- R77 (`.sdlc/questions/chroma-envelope-U3-conflicts-2.md`) rules Q4 and Q7. The 12 keys are added, and Data 3 dark goes into `PENDING_U4` at 4.8.
+- Q5 and Q6 are with ce-U3-planner's re-diagnosis.
+
 | # | Conflict | Measured | What the builder does meanwhile |
 |---|---|---|---|
 | Q1 | C3.2 and C3.6 require every anchored ratchet cell at or below U2's plus 0.05, and the Constraints call a rise a defect. The plan's own matrix row "hold + retune" predicts peak 100 median 9.1 and peak 300 p90 99.6 against U2's 8.5 and 97.4 | `chroma-envelope-gate.mjs --compare <U2 fixture>`: `2 cells rose`, peak 100 median 8.5306 to 8.8953 (8.9270 was an earlier d; 8.8953 is the committed fixture), peak 300 p90 97.4215 to 99.4957. Cause: the corpus-wide `#2E7D4F` success anchor's stop 300 was 97.42 percent uncapped at U2 (#83CE99, C 41.32). Under the retune it crosses stop 500's chroma and the peak cap sets it to 99.50 percent (#7DD1A1, `capped`). The unheld scratch engine (hold off, same constants) shows the same two rises, so the retune causes it, not the hold | declares the two rises; does not re-capture over them silently |
 | Q2 | C3.2 needs perceptual `rule violations` 0, or the named anchors ruled by a plan revision the handoff cites. No such revision exists | Kea primary-muted `#E1F5DA` reads 227.26 percent (226.02 at U2, carried). Southern trap does not fire. The report exits 1 on this line alone once d is settled (Q3) | reports it; C3.2 stays 🔴 until a revision rules it |
-| Q3 | The plan's `d` 0.919 (and its "92 margin") does not clear the strict `perceptual 300 p90 < 90.0` | p90 is 90.0013 at d 0.919 to 0.9263: a cluster of 14 identical hue 86, chroma 100 gate-path yellows (`#DBB14E` at stop 300), fixed by 8-bit rounding. It first steps to 89.2982 (`#DBB14F`) at d 0.9267. C3.1's "within 0.02 of 0.25" caps d at 0.928 | takes d 0.9275 (env 0.7438 at 300, 0.2305 at 100, c = log2 3), which gives a 0.0008 window, and declares it |
+| Q3 | The plan's `d` 0.919 (and its "92 margin") does not clear the strict `perceptual 300 p90 < 90.0` | p90 is 90.0013 at d 0.919 to 0.9263: a cluster of 14 identical hue 86, chroma 100 gate-path yellows (`#DBB14E` at stop 300), fixed by 8-bit rounding. It first steps to 89.2982 (`#DBB14F`) at d 0.9267. C3.1's "within 0.02 of 0.25" caps d at 0.928 | takes d 0.9275 (env 0.7435 at 300, 0.2304 at 100, c = log2 3), which gives a 0.0008 window, and declares it |
 
 Also declared (no ruling needed unless the lead disagrees):
 

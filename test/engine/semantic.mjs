@@ -367,7 +367,8 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
     // [mode, family, side, floor pinned at this commit]
     ["perceptual", "Neutral", "dark", 4.8], ["perceptual", "Secondary", "dark", 5.2],
     ["perceptual", "Data 1", "dark", 4.6], ["perceptual", "Data 2", "dark", 4.7],
-    ["perceptual", "Data 3", "dark", 4.9], ["perceptual", "Data 4", "dark", 4.7],
+    // perceptual Data 3 dark 4.9 -> 4.8 at #725 U3 (R77 Q7, a declared cost of the retune: 4.9376 -> 4.8869).
+    ["perceptual", "Data 3", "dark", 4.8], ["perceptual", "Data 4", "dark", 4.7],
     ["perceptual", "Data 5", "dark", 5.0], ["perceptual", "Data 6", "dark", 5.2],
     ["perceptual", "Data 7", "dark", 5.1], ["perceptual", "Data 8", "dark", 4.9],
     ["even", "Secondary", "dark", 5.5], ["even", "Success", "light", 7.6],
