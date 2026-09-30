@@ -1,13 +1,13 @@
 // type.mjs, the perceptual TYPOGRAPHY engine: the type analog of the color engine. A few parameters
 // → a systematic type scale → DTCG / CSS tokens. Pure, no DOM. Fifteen named "voices", Display ·
 // Headline · Sub-heading · Title · Sub-title · Lead · Body · Body-mono · Label · Label-mono · Kicker ·
-// Tiny · Tiny-mono · UI-control · UI-widget (TKT-0008), each a 3-step SM/MD/LG ramp whose every step carries size, line-height,
+// Tiny · Tiny-mono · UI-control · UI-widget (TKT-0008), thirteen voices carry three steps (SM, MD and LG), UI-control and UI-widget carry six (XS to 2XL), and every step carries size, line-height,
 // letter-spacing, weight, and paragraph spacing. (The DTCG shape follows the Figma-variable export at
 // docs/reference/typography/typography.tokens.json, a frozen snapshot kept for reference.)
 //
 // 2026-07-13, SIZE IS NOW A FIXED, HAND-AUTHORED TABLE, not a modular scale. Previously every voice
 // derived its sizes from base·ratio^n (a treatment's own base+ratio gave it a distinct scale feel).
-// Now each voice's SM/MD/LG are literal px values (SIZES below), shared identically across all 5
+// Now each voice's steps are literal px values (SIZES below: three per voice, six for UI-control and UI-widget), shared identically across all 5
 // treatments, matching how Google's own Material 3 scale works (one fixed scale; theme varies
 // styling, not the numbers). Treatments now differ ONLY in font/weight/tracking/leading/case, never
 // size. `bodyBase` still scales the WHOLE fixed table proportionally (factor = bodyBase/16); the
@@ -24,7 +24,7 @@
 
 const round = (v, d = 0) => { const f = 10 ** d; return Math.round(v * f) / f; };
 
-// FIXED SIZE TABLE, [SM, MD, LG] literal px, shared across all 5 treatments. Body-mono aliases Body's
+// FIXED SIZE TABLE, literal px per step (SM, MD, LG; XS to 2XL for the two UI voices), shared across all 5 treatments. Body-mono aliases Body's
 // own triplet (mono role, same numbers); Label-mono and Kicker both alias Label's (mono role, same
 // numbers); Tiny-mono aliases Tiny's, every "-mono" voice and Kicker are the SAME voice-scale as
 // their non-mono sibling, dressed in the mono font, not a distinct size register of their own.

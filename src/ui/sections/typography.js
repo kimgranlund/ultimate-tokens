@@ -467,7 +467,7 @@ export class TypeSectionImpl {
     const base = cols[0].scale;
     const ov = (this.doc.type && this.doc.type.tokenOverrides) || {};
     const kebab = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-    const cats = Object.keys(base.categories); // the eleven named voices, engine order
+    const cats = Object.keys(base.categories); // the fifteen named voices, engine order
     const total = cats.reduce((a, c) => a + Object.keys(base.categories[c]).length, 0);
     // a single value cell: an editable SIZE input (px), w{weight} · {tracking} · line beneath, ↺ when overridden.
     const cell = (col, cat, step) => {
@@ -530,8 +530,8 @@ export class TypeSectionImpl {
   }
 
 
-  // renderTypographyScene, the canvas "Typography" view: the FULL specimen (all 33 steps, 11 named
-  // voices × 3 steps each, SM/MD/LG, since the 2026-07-13 fixed-size-table rewrite), grouped by voice,
+  // renderTypographyScene, the canvas "Typography" view: the FULL specimen (all 51 steps, 15 named
+  // voices: 13 × 3 (SM, MD, LG) + UI-control and UI-widget × 6 (XS to 2XL), since the 2026-07-13 fixed-size-table rewrite), grouped by voice,
   // each step a live line in the treatment's real face at its size/lineHeight/letterSpacing/weight + a
   // compact metrics readout. Lives in the same pannable .canvas-scene as the ramps; paints in the canvas
   // preview scheme (var(--ink*) flips with the area's color-scheme) and the treatment's fonts (ensureTypeFonts).
@@ -554,7 +554,7 @@ export class TypeSectionImpl {
       const faceStyle =
         `font-family:'${fam}', ${generic};font-size:${s.size}px;line-height:${s.lineHeight}px;` +
         `letter-spacing:${s.letterSpacing}px;font-weight:${s.weight};${tt}`;
-      const isPara = cat === "Body" && step === "LG"; // Body's largest step (2026-07-13: every voice is now a 3-step SM/MD/LG ramp, no more XL)
+      const isPara = cat === "Body" && step === "LG"; // Body's largest step (thirteen voices carry three steps, SM, MD and LG; the two UI voices carry six)
       return h(
         "div",
         { class: "type-spec-line" },
@@ -569,7 +569,7 @@ export class TypeSectionImpl {
         h("div", { class: "type-spec-render" + (isPara ? " para" : ""), style: faceStyle }, isPara ? PARA : TYPE_SAMPLE(cat, scale.treatment)),
       );
     };
-    const cats = Object.keys(scale.categories); // the eleven named voices, in engine order
+    const cats = Object.keys(scale.categories); // the fifteen named voices, in engine order
     const total = cats.reduce((a, c) => a + Object.keys(scale.categories[c]).length, 0);
     const groups = cats.map((cat) => {
       const steps = Object.keys(scale.categories[cat]);
