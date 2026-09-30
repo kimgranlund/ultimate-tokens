@@ -58,13 +58,13 @@ All run in `.worktrees/ce-U4` except the probe rows, which ran in a throwaway cl
 
 ## Pre-handoff check (re-diagnosis steps 1 to 8)
 
-| Step | Printed | State |
-|---|---|---|
-| 1 identity over `afd415c0` | the six lines above | 🟢 |
-| 2 C6 (v) | `15/3764 violator(s)` | 🟢 |
-| 3 `grep -n '91%\|86008\|85463\|15 of 3764\|2\.4' CHANGELOG.md` | `:16` (91%, 86008, 85463), `:22` (15 of 3764), `:29` (2.4); plus `:644`, an older unrelated entry (`2.49·h^0.58`) | 🟢 |
-| 4 old counts in ADR-026 | `grep -c '76998\|75804\|3779'` = `0` | 🟢 |
-| 5 cites | both `tonal.js:1026`, line is the def | 🟢 |
-| 6 repo gates | `STALE 0 across 10 discovered docs + 11 fact pins`, `em-dash: clean (1012 files scanned)`, `branding: clean (1004 files scanned)` | 🟢 |
-| 7 `git diff febaa601 -- src scripts \| wc -l` | `0` | 🟢 |
-| 8 `npm test` | `✓ all 54 test files passed`, status 0, real 93.43 s; `git status --short` after lists only the five pass 2 files | 🟢 |
+| Step | Evidence | Negative control | State |
+|---|---|---|---|
+| 1 identity over `afd415c0` | `identity perceptual: 3780/3780 palettes, 86008/94500`, `identity peak: 3780/3780 palettes, 85463/94500`, `identity even: 0/3780`, default kit `347/400`, `352/400`, `0/400` | verdict pass 1: `--base b8142c16` prints the U3-only `76998` / `75804`, so the base flag discriminates | 🟢 |
+| 2 C6 (v) | `15/3764 violator(s)` | not re-run this pass; verdict pass 1 at `afd415c0` read `3134` palettes over stop 500, so the probe sees the cap | 🟢 |
+| 3 `grep -n '91%\|86008\|85463\|15 of 3764\|2\.4' CHANGELOG.md` | `:16` (91%, 86008, 85463), `:22` (15 of 3764), `:29` (2.4); plus `:644`, an older unrelated entry (`2.49·h^0.58`) | at `5aa90430` the block greps `0` for `91%\|86008\|85463\|15 of 3764` and `1` for `81%` | 🟢 |
+| 4 old counts in ADR-026 | `grep -c '76998\|75804\|3779'` = `0` | at `5aa90430` the same grep prints `1` | 🟢 |
+| 5 cites | both `tonal.js:1026`, line is the def | at `5aa90430` the cite reads `tonal.js:1023`; probe clone with `00-synthesis.md` moved to `:1123`: `✗ 1 citation gate failure(s)` | 🟢 |
+| 6 repo gates | `STALE 0 across 10 discovered docs + 11 fact pins`, `em-dash: clean (1012 files scanned)`, `branding: clean (1004 files scanned)` | probe clone with a planted U+2014 in `CHANGELOG.md`: `FAIL: 1 em dashes outside inline code spans in 1 files`, exit 1 | 🟢 |
+| 7 `git diff febaa601 -- src scripts \| wc -l` | `0` | probe clone with the six scratch lines in `scripts/`: `24` | 🟢 |
+| 8 `npm test` | `✓ all 54 test files passed`, status 0, real 93.43 s; `git status --short` after lists only the five pass 2 files | probe clone with a planted U+2014 in `CHANGELOG.md`: `npm test` status 1, `✗ 1/54 test file(s) failed` (`repo/em-dash.mjs FAIL`) | 🟢 |
