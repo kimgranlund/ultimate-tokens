@@ -261,7 +261,7 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
       ["Danger", 8.2, 5.9],   // measured 8.21 / 5.94
       ["Data 1", 6.0, 4.6],   // measured 6.00 / 4.68 - pending U4: dark was 5.5 at bf2aaf6
       ["Data 2", 6.3, 4.7],   // measured 6.33 / 4.75 - pending U4: dark was 4.9 at bf2aaf6
-      ["Data 3", 6.1, 4.9],   // measured 6.10 / 4.92 - pending U4: dark was 5.1 at bf2aaf6
+      ["Data 3", 6.1, 4.8],   // measured 6.14 / 4.88 at #725 U3 revision 8 (was 6.10 / 4.92; dark re-pinned 4.9 to 4.8 per R77 Q7) - pending U4: dark was 5.1 at bf2aaf6
       ["Data 4", 5.6, 4.7],   // measured 5.67 / 4.80 - pending U4: dark was 5.5 at bf2aaf6
       ["Data 5", 5.4, 5.0],   // measured 5.45 / 5.06 - pending U4: dark was 5.8 at bf2aaf6
       ["Data 6", 5.1, 5.2],   // measured 5.16 / 5.28 - pending U4: dark was 6.2 at bf2aaf6
@@ -299,7 +299,7 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
       ["Secondary", 5.5, 5.6],   // measured 5.53 / 5.60 - pending U4: light was 11.5 at bf2aaf6, dark was 15.1 at bf2aaf6
       ["Tertiary", 8.1, 5.3],   // measured 8.1825 / 5.3795 - light re-pinned #725 U2 (was 8.2, measured 8.20): moved by the U2 engine hunk (ec496bd0), floor(measured) is 8.1; pending U4: dark was 5.5 at bf2aaf6
       ["Info", 7.0, 4.5],   // measured 7.10 / 4.57 - pending U4: dark was 7.7 at bf2aaf6
-      ["Success", 7.6, 4.8],   // measured 7.60 / 4.88 - pending U4: dark was 11.8 at bf2aaf6
+      ["Success", 7.5, 4.8],   // measured 7.59 / 4.87 at #725 U3 revision 8 (was 7.60 / 4.88; light re-pinned 7.6 to 7.5 per R77 Q7) - pending U4: dark was 11.8 at bf2aaf6
       ["Warning", 9.6, 5.2],   // measured 9.69 / 5.28 - pending U4: dark was 7.4 at bf2aaf6
       ["Danger", 8.6, 5.6],   // measured 8.63 / 5.68
       ["Data 1", 6.3, 4.9],   // measured 6.34 / 4.99 - pending U4: light was 10.0 at bf2aaf6, dark was 6.7 at bf2aaf6
@@ -367,7 +367,8 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
     // [mode, family, side, floor pinned at this commit]
     ["perceptual", "Neutral", "dark", 4.8], ["perceptual", "Secondary", "dark", 5.2],
     ["perceptual", "Data 1", "dark", 4.6], ["perceptual", "Data 2", "dark", 4.7],
-    ["perceptual", "Data 3", "dark", 4.9], ["perceptual", "Data 4", "dark", 4.7],
+    // perceptual Data 3 dark 4.9 -> 4.8 at #725 U3 (R77 Q7, a declared cost of the retune: 4.9376 -> 4.8869).
+    ["perceptual", "Data 3", "dark", 4.8], ["perceptual", "Data 4", "dark", 4.7],
     ["perceptual", "Data 5", "dark", 5.0], ["perceptual", "Data 6", "dark", 5.2],
     ["perceptual", "Data 7", "dark", 5.1], ["perceptual", "Data 8", "dark", 4.9],
     ["even", "Secondary", "dark", 5.5], ["even", "Success", "light", 7.6],

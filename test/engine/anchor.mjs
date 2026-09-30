@@ -524,25 +524,41 @@ const RAMP_WINDOW_ALLOW = [
 // which ramps sit at this boundary today, the same as every prior review-pass re-freeze above, not a
 // policy threshold an owner rules on); the gate's own negative control still proves it discriminates a
 // real regression from an expected member.
+// #725 U3 freeze (R74, "frozen once at U3 with the movement declared"), measured FULL on U3's head
+// (hold + retune, revision 8 hue): 72 -> 79, 13 added and 6 removed. Every added member fails only on
+// the peak ramp at stops 50&100, 100&150 or 900&950 (the near-white and near-black ends, where a half
+// step is under one 8-bit code), none mid-ramp, and all 13 were already gap misses at U2's head (the U2
+// carry R74 moved here). Removed: cuisine "Chocolate" primary, film "The Godfather" secondary and music
+// "Studio 54" secondary (the tone hold keeps stop 950 at its undamped L*, peak 900&950 widens from
+// 0.407 to 0.474 at U2 to 0.551 to 0.553), travel "Hidaka coast" primary-muted (peak 850&900, 0.532 ->
+// 0.792, same cause), and travel "Khumbu" / "Lake Baikal" secondary #E0E5E6 (already not reproduced at
+// U2's head). Pass 1's 4 other members are gone at revision 8 (the anchor's own OKLCH hue, no per-stop
+// solve): literature "Bleak House" tertiary-muted (peak 900&950 0.789), music "Motown" tertiary-muted
+// and "Pop-punk" secondary (0.730) and travel "Sapa" secondary (0.605, 0.442 at U2).
 const RAMP_GAP_ALLOW = [
+  `architecture "Icelandic turf house · vernacular · Skógar / Glaumbær" tertiary-muted #D9D8D4`,
   `architecture "Katsura Imperial Villa · 17th c · Kyoto" primary #282322`,
+  `architecture "Oia · Cyclades vernacular · Santorini, Greece" secondary #E3E2DF`,
   `brands "Burger King · The Flame Identity · 2021 rebrand" tertiary-muted #F5EBDC`,
   `brands "Nike · The Swoosh · Since 1971" secondary #101820`,
   `brands "Nike · The Swoosh · Since 1971" tertiary-muted #FFFFFF`,
-  `cuisine "Chocolate · the chocolatier's bench" primary #312722`,
+  `cuisine "Caramel & toffee · the confection pan" primary #DDDBD6`,
+  `cuisine "Día de Muertos table · the ofrenda" tertiary-muted #DDDBD6`,
+  `cuisine "Espresso · the café counter" tertiary-muted #DDDBD6`,
   `cuisine "Kaiseki · the seasonal course" tertiary-muted #2B2624`,
   `cuisine "Matcha & wagashi · the tea room" tertiary-muted #2B2624`,
   `film "2001: A Space Odyssey · 1968 · dir. Kubrick · the centrifuge & the stargate" tertiary-muted #1A1B1E`,
   `film "Apocalypse Now · 1979 · dir. Coppola · the river at dusk" primary #241E1A`,
+  `film "Arrival · 2016 · dir. Villeneuve · the shell interior" primary-muted #232427`,
   `film "Double Indemnity · 1944 · dir. Billy Wilder · the venetian-blind living room" primary #1B1B1D`,
   `film "Enter the Void · 2009 · dir. Gaspar Noé · the Tokyo nightlife" secondary #212129`,
   `film "Hereditary · 2018 · dir. Aster · the dollhouse home" tertiary-muted #29231F`,
+  `film "Hero · 2002 · dir. Zhang Yimou · the red courtyard duel" tertiary-muted #282421`,
   `film "John Wick · 2014 · dir. Stahelski · the Red Circle club" tertiary-muted #232428`,
   `film "Once Upon a Time in the West · 1968 · dir. Leone · the railhead town" tertiary-muted #312721`,
   `film "Spider-Man: Into the Spider-Verse · 2018 · the comic-book city" primary #232429`,
   `film "Suspiria · 1977 · dir. Argento · the ballet academy" tertiary-muted #201F25`,
   `film "TRON: Legacy · 2010 · dir. Kosinski · the Grid" secondary #181B1F`,
-  `film "The Godfather · 1972 · dir. Coppola · cin. Gordon Willis · the don's study" secondary #302721`,
   `film "The Matrix · 1999 · dir. Wachowskis · inside the simulation" tertiary-muted #1F1F24`,
   `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" primary #161618`,
   `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" tertiary #1E211E`,
@@ -552,6 +568,7 @@ const RAMP_GAP_ALLOW = [
   `literature "Alice's Adventures in Wonderland · Carroll, ill. Tenniel · 1865" tertiary-muted #2C2926`,
   `literature "Anna Karenina · Tolstoy · 1877 · the Moscow station in snow" tertiary-muted #252428`,
   `literature "Fahrenheit 451 · Bradbury · 1953 · the fireman's city" tertiary-muted #282320`,
+  `literature "My Brilliant Friend · Ferrante · 2011 · a poor Naples neighbourhood" tertiary-muted #D3D1CC`,
   `literature "The Bell Jar · Sylvia Plath · 1963 · New York & the suburb" primary #242427`,
   `literature "The Road · Cormac McCarthy · 2006 · the ash-grey wasteland" tertiary-muted #2C2926`,
   `literature "The Tale of Genji · Murasaki Shikibu · c.1010 · the Heian court" secondary-muted #292321`,
@@ -566,10 +583,11 @@ const RAMP_GAP_ALLOW = [
   `music "Mod & British Invasion · the op-art club" tertiary #242428`,
   `music "Neon MV · the night-set choreography" tertiary-muted #26232C`,
   `music "P-Funk · the cosmic album art" secondary-muted #211E27`,
+  `music "Pop-punk · the skate-park sleeve" tertiary-muted #D9D8D4`,
   `music "Rasta tricolour · the roots sleeve" tertiary-muted #282320`,
+  `music "Riot grrrl · the zine collage" tertiary #D0CEC9`,
   `music "Riot grrrl · the zine collage" tertiary-muted #242427`,
   `music "Southern trap · the night-drive cover" tertiary-muted #26222F`,
-  `music "Studio 54 · the dancefloor" secondary #2B2734`,
   `music "Symphonic & gothic metal · the cathedral set" tertiary-muted #272328`,
   `music "The late-night club · the smoky set" primary-muted #1F1F23`,
   `music "The orchestra · the concert platform" secondary #242428`,
@@ -579,24 +597,24 @@ const RAMP_GAP_ALLOW = [
   `nature "32° N · constant · Carlsbad Caverns, New Mexico, lamp-lit" secondary #1D1D20`,
   `nature "40° S · December · 14:00 · Valdivian rainforest, Los Ríos, southern Chile" tertiary-muted #302820`,
   `travel "20° N · January · 06:30 · Rub' al Khali at first light, near the Saudi-Omani border" primary-muted #1F1A16`,
-  `travel "22° N · January · 11:00 · Sapa Sunday market, Lào Cai Province, cold mountain fog" secondary #042546`,
   `travel "23° S · December · 16:20 · Salar de Atacama, 2,305 m" secondary #EBEAE6`,
-  `travel "27° N · October · 17:30 · A teahouse in Khumbu, on the trekking route from Namche to Tengboche" secondary #E0E5E6`,
   `travel "27° N · October · 17:30 · A teahouse in Khumbu, on the trekking route from Namche to Tengboche" tertiary-muted #1F1A16`,
   `travel "30° N · March · 16:00 · Wadi Rum, the Jebel Khazali wall in late afternoon" primary #1E1D1B`,
   `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" primary #221913`,
+  `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" primary-muted #D0CEC9`,
   `travel "34° S · March · 22:00 · San Telmo, Buenos Aires, a Sunday after the antiques fair has closed" secondary-muted #22242B`,
   `travel "35° N · February · 23:48 · Yamanote line, last loop, between Shinjuku and Ikebukuro" secondary #DDE5EB`,
   `travel "37° N · May · 00:00 · A Patmos Greek Orthodox church, Easter Saturday at midnight" tertiary-muted #232220`,
   `travel "37° N · November · 05:40 · MV passing Kea, en route Piraeus" primary-muted #E1F5DA`,
+  `travel "38° N · July · 11:00 · Point Reyes peninsula, California, the marine layer locked in for the third week" secondary #D0CEC9`,
   `travel "41° N · November · 00:10 · Eminönü waterfront, Istanbul, last ferries in" tertiary-muted #251B12`,
-  `travel "42° N · July · 06:00 · Hidaka coast, Hokkaido, low tide at the height of kombu season" primary-muted #282724`,
   `travel "42° N · July · 06:00 · Hidaka coast, Hokkaido, low tide at the height of kombu season" tertiary-muted #252215`,
+  `travel "47° N · June · 10:00 · St. John's harbour, dense Atlantic fog" secondary #D0CEC9`,
   `travel "48° N · February · 11:00 · Saint-Malo quay at the year's lowest tide" primary-muted #251B14`,
   `travel "48° N · November · 18:50 · A wet evening in a Viennese kaffeehaus, Mariahilf" primary-muted #24221F`,
-  `travel "59° N · January · 14:00 · Lake Baikal corridor" secondary #E0E5E6`,
   `travel "62° N · September · 09:30 · Tórshavn waterfront, thick sea-fog" tertiary-muted #221913`,
   `travel "63° N · Late August · 15:00 · Reynisfjara, south coast of Iceland" secondary #242427`,
+  `travel "67° N · January · 03:00 · The Helsinki–Rovaniemi night train, somewhere past Oulu" tertiary-muted #20263A`,
 ].sort();
 
 // RAMP_DISTINCT_ALLOW (Finding 6 fix): the 25-stop export ramp's own duplicate-hex population,
@@ -620,7 +638,18 @@ const RAMP_GAP_ALLOW = [
 // a stop on the 25-stop export ramp under the steeper shoulder damping) plus three more dark, low-
 // chroma sources at the same 8-bit-quantization boundary (Patmos tertiary-muted, Hidaka coast
 // tertiary-muted, Viennese kaffeehaus primary-muted).
+// #725 U3 freeze (R74, same one-time re-freeze as RAMP_GAP_ALLOW above), measured FULL on U3's head
+// (revision 8 hue): 16 -> 19, 6 added and 3 removed. Each added member duplicates at stops 50 to 125 or
+// 825 to 900: Andalusian patio and Villa Savoye secondary, Vaporwave secondary-muted and Carlsbad
+// Caverns secondary were already duplicate-hex at U2's head; music "The late-night club" primary-muted
+// and "UK '77" secondary (anchor L* 11.91) duplicated peak 925&950 at U2's head and now peak 875&900
+// (#121213). Removed: travel "Wadi Rum" primary (the tone hold separates its peak and perceptual 825
+// to 950 stops, 25 of 25 unique), travel "Patmos" tertiary-muted and "Viennese kaffeehaus" primary-
+// muted (already not reproduced at U2's head). Pass 1's Trulli secondary and Black metal secondary are
+// unique again at revision 8.
 const RAMP_DISTINCT_ALLOW = [
+  `architecture "Andalusian patio · Moorish-Spanish vernacular · Córdoba" secondary #DFDEDC`,
+  `architecture "Villa Savoye · 1931 · Le Corbusier · Poissy" secondary #DFDEDC`,
   `brands "Burger King · The Flame Identity · 2021 rebrand" tertiary-muted #F5EBDC`,
   `brands "Nike · The Swoosh · Since 1971" secondary #101820`,
   `brands "Nike · The Swoosh · Since 1971" tertiary-muted #FFFFFF`,
@@ -629,14 +658,15 @@ const RAMP_DISTINCT_ALLOW = [
   `film "TRON: Legacy · 2010 · dir. Kosinski · the Grid" secondary #181B1F`,
   `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" primary #161618`,
   `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" tertiary #1E211E`,
+  `music "The late-night club · the smoky set" primary-muted #1F1F23`,
+  `music "UK '77 · the ransom-note sleeve" secondary #1F1F23`,
+  `music "Vaporwave · the digital-pastel aesthetic" secondary-muted #D8D4CE`,
+  `nature "32° N · constant · Carlsbad Caverns, New Mexico, lamp-lit" secondary #1D1D20`,
   `travel "20° N · January · 06:30 · Rub' al Khali at first light, near the Saudi-Omani border" primary-muted #1F1A16`,
   `travel "23° S · December · 16:20 · Salar de Atacama, 2,305 m" secondary #EBEAE6`,
   `travel "27° N · October · 17:30 · A teahouse in Khumbu, on the trekking route from Namche to Tengboche" tertiary-muted #1F1A16`,
-  `travel "30° N · March · 16:00 · Wadi Rum, the Jebel Khazali wall in late afternoon" primary #1E1D1B`,
-  `travel "37° N · May · 00:00 · A Patmos Greek Orthodox church, Easter Saturday at midnight" tertiary-muted #232220`,
   `travel "41° N · November · 00:10 · Eminönü waterfront, Istanbul, last ferries in" tertiary-muted #251B12`,
   `travel "42° N · July · 06:00 · Hidaka coast, Hokkaido, low tide at the height of kombu season" tertiary-muted #252215`,
-  `travel "48° N · November · 18:50 · A wet evening in a Viennese kaffeehaus, Mariahilf" primary-muted #24221F`,
 ].sort();
 
 // NOTCH_ALLOW (ruling Q-C, 2026-09-18): the owner ruled the notch gate is the 70%-ratio definition AND
@@ -659,6 +689,9 @@ const RAMP_DISTINCT_ALLOW = [
 // whose notch was an artifact of that pre-R2 off-pivot reading, not a real construction defect - every
 // one was ALREADY gone before this U4 pass started (inherited from the U3 merge, ed14832b), not a
 // side effect of any U4 fix. Full 63-name departure list recorded in .sdlc/questions/pif-u4.md (Q3).
+// #725 U3 freeze (R74), measured FULL on U3's head: 17 -> 15, 0 added. Removed: travel "Helsinki-
+// Rovaniemi night train" secondary-muted #ACADAE [peak] and [perceptual], the #739 pair, which U2's
+// head already did not reproduce (the 15 even-mode members are unchanged).
 const NOTCH_ALLOW = [
   `architecture "Habitat 67 · 1967 · Moshe Safdie · Montreal" tertiary-muted #D6D5D0 [even]`,
   `architecture "Himeji Castle · 1609 · 'White Heron' keep · Japan" secondary #E0DEDA [even]`,
@@ -675,14 +708,6 @@ const NOTCH_ALLOW = [
   `travel "41° N · October · 23:00 · Tbilisi viewed from the Mtatsminda funicular at the upper station" secondary #71716E [even]`,
   `travel "48° N · November · 18:50 · A wet evening in a Viennese kaffeehaus, Mariahilf" secondary-muted #CBCAC5 [even]`,
   `travel "55° N · July · 13:00 · Lowland Kamchatkan taiga in heavy mosquito season, near the Avacha river" tertiary-muted #ABAAA7 [even]`,
-  // Ticket #739: #ACADAE (this preset's own anchor) is one of the two corpus anchors under
-  // ACHROMATIC_ANCHOR_C (the other is Nike tertiary-muted's #FFFFFF, RAMP_WINDOW_ALLOW above); its ramp
-  // now takes the palette's own hue instead of the anchor's rounding-residue one, which shifts the
-  // per-stop gamut ceiling (maxChromaInGamut) enough for stop 500 to newly notch against its neighbours
-  // in peak and perceptual - a mechanical re-freeze, not a new construction defect (U1-4 proves every
-  // OTHER anchored ramp in the corpus byte-identical).
-  `travel "67° N · January · 03:00 · The Helsinki–Rovaniemi night train, somewhere past Oulu" secondary-muted #ACADAE [peak]`,
-  `travel "67° N · January · 03:00 · The Helsinki–Rovaniemi night train, somewhere past Oulu" secondary-muted #ACADAE [perceptual]`,
 ].sort();
 
 const MODES = ["perceptual", "peak", "even"];
@@ -1311,28 +1336,15 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
   // #725 U2 pass 2 (R74): a peak stop the anchored cap moved is re-solved by `capChromaAtHeldTone`'s
   // `hctToRgb` at a per-hueSpace polish hue, then polished hue-blind, so its hueSpace flip carries more
   // than rounding (measured worst 0.0184, Jekyll and Hyde tertiary stop 400). The bound there is 0.02;
-  // every other stop keeps 0.01. The engine rows carry no cap flag, so "the cap moved it" is read here:
-  // the stop's hex differs between the real engine and a scratch copy with the anchored cap lifted
-  // (`capPeak = false`), on either side of the flip.
+  // every other stop keeps 0.01. "The cap moved it" is the row's own `capped` flag (#725 U3), set by
+  // `capChromaAtHeldTone` when it changed the pixel, on either side of the flip. U2 derived the same
+  // set by rendering a scratch engine with the cap lifted and diffing hexes (about 10 s of `--full`);
+  // the flag was measured against that diff at U3's own head (revision 8) before the diff was removed,
+  // since U2's engine has no flag: 84900 anchored peak stops, flag 7364, diff 7364, 0 disagreements
+  // each way (.sdlc/handoffs/chroma-envelope-U3.md D9). U2's 7841 was a different engine's diff count.
   const HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED = 0.02;
   const HUE_SPACE_CODES_BOUND = 2;
   const hueSpaceBoundSubjects = [...presetsByCat, { slug: "default kit", preset: dkBase }];
-  const UncappedModel = await (async () => {
-    const realSrc = readFileSync(new URL("../../src/engine/tonal.js", import.meta.url), "utf8");
-    const CAP_NEEDLE = "const capPeak = mode === \"peak\" && (controls.dampAmp ?? 0) === 0;";
-    if (!realSrc.includes(CAP_NEEDLE)) { FAIL("anchor-f4", "capped-stop read: okhslStopsAnchored's capPeak line moved - update the scratch uncapped engine's patch target"); return null; }
-    const hctUrl = new URL("../../src/engine/hct.js", import.meta.url).href;
-    const okhslUrl = new URL("../../src/engine/okhsl.js", import.meta.url).href;
-    const tonalUrl = `data:text/javascript;base64,${Buffer.from(
-      realSrc.replace('from "./hct.js"', `from "${hctUrl}"`).replace('from "./okhsl.js"', `from "${okhslUrl}"`).replace(CAP_NEEDLE, "const capPeak = false;"),
-    ).toString("base64")}`;
-    let src = readFileSync(new URL("../../src/ui/model.mjs", import.meta.url), "utf8");
-    for (const m of src.matchAll(/from "(\.\.?\/[^"]+)"/g)) {
-      const url = m[1] === "../engine/tonal.js" ? tonalUrl : new URL(m[1], new URL("../../src/ui/model.mjs", import.meta.url)).href;
-      src = src.replace(`from "${m[1]}"`, `from "${url}"`);
-    }
-    return import(`data:text/javascript;base64,${Buffer.from(src).toString("base64")}`);
-  })();
   let cappedStops = 0, cappedMaxDeltaE = 0, cappedWorst = "n/a";
   for (const modeName of ["perceptual", "peak"]) {
     let maxDiff = 0, worstCodes = "n/a", maxDeltaE = 0, worstDeltaE = "n/a", overBoundRamps = 0;
@@ -1342,21 +1354,18 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
       const base = hydrate({ ...preset, toneMode: modeName });
       const alt = hydrate({ ...base, hueSpace: base.hueSpace === "cam16" ? "oklch" : "cam16" });
       const baseV = projectView(base), altV = projectView(alt);
-      const readCap = modeName === "peak" && UncappedModel;
-      const baseU = readCap ? UncappedModel.projectView(base) : null, altU = readCap ? UncappedModel.projectView(alt) : null;
+      const readCap = modeName === "peak";
       for (const p of base.palettes) {
         if (typeof p.anchor !== "string") continue;
         const a = baseV.palettes.find((v) => v.name === p.name).fullRamp;
         const b = altV.palettes.find((v) => v.name === p.name).fullRamp;
-        const aU = readCap ? baseU.palettes.find((v) => v.name === p.name).fullRamp : null;
-        const bU = readCap ? altU.palettes.find((v) => v.name === p.name).fullRamp : null;
         let rampOverBound = false;
         for (let i = 0; i < a.length; i++) {
           const d = maxChannelDiff(a[i].hex, b[i].hex);
           if (d > maxDiff) { maxDiff = d; worstCodes = `${slug} "${preset.name}" ${p.name} stop ${a[i].stop}`; }
           if (slug === "default kit" && d > dkMaxDiff) { dkMaxDiff = d; dkWorstCodes = `${preset.name} ${p.name} stop ${a[i].stop}`; }
           const de = deltaEOk(a[i].hex, b[i].hex);
-          const capped = readCap && (a[i].hex !== aU[i].hex || b[i].hex !== bU[i].hex);
+          const capped = readCap && (a[i].capped === true || b[i].capped === true);
           const where = `${slug} "${preset.name}" ${p.name} stop ${a[i].stop}`;
           if (capped) {
             cappedStops++;
@@ -1376,8 +1385,8 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
         `hueSpace ${modeName}: ${overBoundRamps} anchored ramp(s) clear a ${HUE_SPACE_DELTA_E_BOUND} OKLab delta-E when hueSpace flips (max ${maxDeltaE.toFixed(4)}, worst ${worstDeltaE}) - the UI's "disabled, rounding only" claim for anchored ${modeName} palettes is now false`,
       );
     }
-    if (modeName === "peak" && UncappedModel && cappedStops === 0) {
-      FAIL("anchor-f4", "hueSpace peak: 0 cap-moved stops read - the uncapped scratch engine no longer differs from the real one, so the 0.02 scope is dead");
+    if (modeName === "peak" && cappedStops === 0) {
+      FAIL("anchor-f4", "hueSpace peak: 0 cap-moved stops read - no peak row carries the cap's `capped` flag, so the 0.02 scope is dead");
     }
     if (modeName === "peak" && cappedMaxDeltaE > HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED) {
       FAIL("anchor-f4", `hueSpace peak, capped stops: max OKLab dE ${cappedMaxDeltaE.toFixed(4)} over ${cappedStops} cap-moved stop(s), want <= ${HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED} (worst ${cappedWorst})`);
@@ -1604,11 +1613,11 @@ if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); pr
 // subset with no in-file negative control this run, the exact count and the control being the FULL
 // leg's own (U3-4 proves the subset half against a real clone mutation instead, both modes).
 //
-// notch's frozen FULL count is 17, not the pre-#739 15 (Ticket #739): #ACADAE's own hue-seed change
-// shifts its per-stop gamut ceiling enough to newly notch in peak/perceptual, a mechanical re-freeze,
-// not a new construction defect (NOTCH_ALLOW's own comment, above).
+// The FULL counts read the lists' own lengths (a FULL pass has matched each by name above), so a
+// re-freeze cannot leave this line stale (#725 U3: it printed the U2 counts 72 / 16 / 17 after the
+// freeze). Each list's own comment names its movement.
 const allowListTail = FULL
-  ? "window-clamp (10), gap-19 (72), distinct-25 (16) and notch (17, Q3-resolved, +2 at #739) are named allow-lists, compared by name, each with a biting negative control"
+  ? `window-clamp (${RAMP_WINDOW_ALLOW.length}), gap-19 (${RAMP_GAP_ALLOW.length}), distinct-25 (${RAMP_DISTINCT_ALLOW.length}) and notch (${NOTCH_ALLOW.length}, Q3-resolved) are named allow-lists, compared by name, each with a biting negative control`
   : `window-clamp (${windowSorted.length}), gap-19 (${gapSorted.length}), distinct-25 (${distinctSorted.length}) and notch (${notchSorted.length}) are the same named allow-lists read as a SAMPLED subset this run (upper bound only, no in-file negative control this run - the exact count and the biting control are the FULL leg's, gate:corpus-anchor, and U3-4 proves the subset half against a real clone mutation)`;
 console.log(`\nPASS (${FULL ? "FULL" : "SAMPLED"}): C2, C3, C4 (non-anchored construction totally migrated, Q1), C6/F4 clear; C5 (monotone) is a true 0, no list; ${allowListTail}`);
 process.exit(0);

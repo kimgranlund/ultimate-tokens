@@ -963,6 +963,7 @@ export function projectView(doc) {
       maxc: s.maxc,
       inGamut: s.inGamut,
       tone: s.tone,
+      ...(s.capped ? { capped: true } : {}), // the OKHSL peak cap's own flag (#725 U3), read by anchor.mjs f4
     }));
 
     const byStop = rampByStop(fullStops);                          // 25 stops, every role ref resolves

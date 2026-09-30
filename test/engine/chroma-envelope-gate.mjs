@@ -152,6 +152,7 @@ console.log(summary(measured));
 console.log(`  anchored, over 90 at stop 300 (reported): ${MODES.map((mode) => `${mode} ${m.over90At300[mode]}`).join(", ")} of ${measured.n}`);
 console.log(`  perceptual cusp-run window: ${m.outsideWindow} anchored instance(s) outside the ramp's L* window, ${m.perceptualWindowExcluded.length} violation(s) excluded from cuspRuns`);
 for (const x of m.perceptualWindowExcluded) console.log(`    excluded: ${x.label} anchor ${x.anchor} L* ${x.lstar.toFixed(1)} (${x.why})`);
+for (const x of m.namedExceptions.perceptual) console.log(`    named exception, counted in cuspRuns: ${x}`);
 
 const failures = [];
 // vacuity: a measurement over a different (or empty) population is not comparable to the fixture

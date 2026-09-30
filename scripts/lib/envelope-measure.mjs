@@ -9,7 +9,9 @@
 // control); `gatePath` omits each palette's `anchor` (the report's `--gate-path`, and the barred
 // `gate path` block of its default run, #725 R74). `instances` replaces the loaded corpus with a caller's
 // own list of the same shape (`{ label, presetName, pal, doc }`), for a control that needs one planted
-// instance (the cusp-run window's L* 5 anchor) without editing a category file.
+// instance (the cusp-run window's L* 5 anchor) without editing a category file. `dampOverride` and
+// `dampCurveOverride` (#725 U3) force the damp and dampCurve SLIDERS (the report's `--damp N` and
+// `--damp-curve N`); the engine's own mode-scoped mapping still applies to what they set.
 import { readFileSync } from "node:fs";
 import { hydrate } from "../../src/ui/persist.js";
 import { defaultDocument, rampChromaOf, hexToRgb, lstarFromRgb } from "../../src/ui/model.mjs";
@@ -35,6 +37,15 @@ export const CUSP_RUN_BOUND = 1.893005;
 // excess is mechanism 3 (a dark anchor's stop 500 sits below its hue's cusp lightness and stop 300 on
 // it, so the ratio reads the L* ladder, not the envelope); R74 reports it and bars nothing on it.
 export const OVER_90_AT_300 = 90;
+// NAMED_EXCEPTIONS  -  owner-ruled perceptual cusp-run violations on the ANCHORED path, keyed
+// "<preset name> / <palette name>" (#725 R76 Q2, plan revision 8, C3.2). A named row is still counted
+// in `aboveTotal` (the report prints it on the rule-violations line and the gate's cuspRuns ratchet
+// holds it) and is listed by name in `namedExceptions`; only the report's exit code reads the unnamed
+// count, `aboveTotal - namedAbove`. Kea primary-muted #E1F5DA (L* 94.5) sits above stop 500's chroma
+// by construction (mechanism 3 at the L* extreme), 226.02 percent at U2, carried, not caused by U3.
+export const NAMED_EXCEPTIONS = new Map([
+  ["37° N · November · 05:40 · MV passing Kea, en route Piraeus / primary-muted", "R76 Q2"],
+]);
 
 // The cusp-run count's window (#725 R74, C2.2): on the anchored path only anchors whose CIE L* sits
 // inside the ramp window [RAMP_L_MIN, RAMP_L_MAX] (src/engine/tonal.js, 9.95 to 95.05) count toward
@@ -79,7 +90,7 @@ export async function loadEnvelopeInstances() {
 // READING (a): emitted CAM16 chroma at stops 100/300/700/900 as % of stop 500's, per mode, with the
 // clause counters (perceptual: cusp-run rule violations; peak and even: instances above 100%).
 // Returns the unrounded median/p90 per mode and stop; callers round for display.
-export async function measureEnvelope({ dampAmpOverride = null, gatePath = false, instances: injected = null } = {}) {
+export async function measureEnvelope({ dampAmpOverride = null, dampOverride = null, dampCurveOverride = null, gatePath = false, instances: injected = null } = {}) {
   const { instances, totalCurated } = injected !== null
     ? { instances: injected, totalCurated: injected.length }
     : await loadEnvelopeInstances();
@@ -87,6 +98,8 @@ export async function measureEnvelope({ dampAmpOverride = null, gatePath = false
   const aboveWitnesses = { perceptual: [], peak: [], even: [] };
   const aboveTotal = { perceptual: 0, peak: 0, even: 0 };
   const adiaAboveTotal = { perceptual: 0, peak: 0, even: 0 };
+  const namedAbove = { perceptual: 0, peak: 0, even: 0 };
+  const namedExceptions = { perceptual: [], peak: [], even: [] }; // "<label> <worst>% (<ruling>)"
   const perceptualRunFails = { runs: [], bound: [] }; // witnesses, non-Adia only
   const perceptualWindowExcluded = []; // { label, anchor, lstar, why }: violations outside the L* window
   let outsideWindow = 0; // anchored instances whose anchor L* is outside the window (perceptual pass)
@@ -96,7 +109,8 @@ export async function measureEnvelope({ dampAmpOverride = null, gatePath = false
     for (const { label, presetName, pal, doc } of instances) {
       const controls = {
         curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax,
-        damp: doc.damp, dampCurve: doc.dampCurve,
+        damp: dampOverride !== null ? dampOverride : doc.damp,
+        dampCurve: dampCurveOverride !== null ? dampCurveOverride : doc.dampCurve,
         dampAmp: dampAmpOverride !== null ? dampAmpOverride : doc.dampAmp,
         dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma,
         chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: mode,
@@ -139,6 +153,10 @@ export async function measureEnvelope({ dampAmpOverride = null, gatePath = false
           if (worstRatio > CUSP_RUN_BOUND + 1e-6) why.push(`${(worstRatio * 100).toFixed(2)}%`);
           if (why.length && outside) {
             perceptualWindowExcluded.push({ label, anchor: pal.anchor.toUpperCase(), lstar, why: why.join(", ") });
+          } else if (why.length && !gatePath && NAMED_EXCEPTIONS.has(`${presetName} / ${pal.name}`)) {
+            namedAbove[mode]++;
+            namedExceptions[mode].push(`${label} ${why.join(", ")} (${NAMED_EXCEPTIONS.get(`${presetName} / ${pal.name}`)})`);
+            aboveTotal[mode]++;
           } else if (why.length) {
             if (runs > 1 && perceptualRunFails.runs.length < 3) perceptualRunFails.runs.push(`${label} (${runs} runs)`);
             if (worstRatio > CUSP_RUN_BOUND + 1e-6 && perceptualRunFails.bound.length < 3) perceptualRunFails.bound.push(`${label} (${(worstRatio * 100).toFixed(2)}%)`);
@@ -167,7 +185,7 @@ export async function measureEnvelope({ dampAmpOverride = null, gatePath = false
     }
   }
   return {
-    instances, totalCurated, results, aboveTotal, adiaAboveTotal, aboveWitnesses, perceptualRunFails,
+    instances, totalCurated, results, aboveTotal, adiaAboveTotal, namedAbove, namedExceptions, aboveWitnesses, perceptualRunFails,
     perceptualWindowExcluded, outsideWindow, over90At300, gatePath,
   };
 }
