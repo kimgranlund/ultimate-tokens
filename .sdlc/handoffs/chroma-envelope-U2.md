@@ -1,67 +1,49 @@
-# Handoff chroma-envelope U2 · builder → orchestrator (stopped for re-diagnosis)
+# Handoff chroma-envelope U2 pass 2 · builder → orchestrator
 
 | Field | Value |
 |---|---|
-| Branch | unit/ce-U2 @ ec496bd0 (off `plan/chroma-envelope` at 81043f2e; this handoff commit sits on top) |
-| Status | 🔴 stopped: the construction as planned reds C6 (ii) and four `anchor.mjs` gates the plan predicted green. Not landable. Needs a plan revision, not more code in this unit |
-| Files | `src/engine/tonal.js`, `test/engine/tonal.mjs`, this handoff |
-| Not committed | C2.5 to C2.8 were measured read-only (fixtures captured to scratch, `tonal-legacy.json` regenerated and found unchanged). No fixture, FLOORS or export is committed: committing baselines over a red construction would freeze the regressions. Waiting on the orchestrator's answer to the stop report |
-
-## What is built
-
-- `anchorChromaBasis(stop, anchorStop, lift, anchorValue, groupValue, climb = false)`: target `min(group, anchor)`. The even path passes `climb = true` and is unchanged.
-- `capChromaAtHeldTone(hue, s, l, rgb, chroma, ceiling, hueCam16, strictSeed = false)`: the peak joint cap, moved out of `okhslStops` with `solveLForTone` and `refineNearestRgb`. `okhslStopsAnchored` calls it for peak at dampAmp 0, with ceiling = stop 500's emitted chroma.
-- `refineNearestRgb` `strictSeed`: an over-ceiling input is never the incumbent. Anchored path only. Witness: Vaporwave secondary, stop 650, the `hctToRgb` fallback asked 28.63 and rendered 29.17 against a 29.13 ceiling, and the polish kept it. With it the stop reads 29.0157 and the report's peak above-100 is 0. Applied to both paths it moved non-anchored peak pixels (peak/cam16 hue 70 skew 100 lift 40 stop 350), so it is scoped.
-- Non-anchored identity: 0 of 6912 grid ramps differ from base (3 modes x 2 hue spaces x 24 hues x 4 chroma x 3 skew x 2 lift x 2 vibrancy, 25 stops).
+| Branch | unit/ce-U2 @ be227d2e (code; this handoff commit sits on top). Base merge 351eee68 = plan/chroma-envelope b149f8dd (revision 5) |
+| Status | 🔴 C2.8: `npm test` reds on the three declared rows AND five more rows the plan does not name (exports x3, shell ac003b, headless gid3). All five are caused by the pass 1 engine hunk (ec496bd0), not by pass 2, and each needs a ruling (re-pin a normative literal or baseline, or change behaviour). Not re-pinned here. Every other C2 row is 🟢 or 🟡 |
+| Files | `scripts/lib/envelope-measure.mjs`, `scripts/report-preset-fidelity.mjs`, `test/engine/chroma-envelope-gate.mjs`, `test/engine/tonal.mjs`, `test/engine/anchor.mjs`, `test/engine/semantic.mjs`, `test/engine/fixtures/mode-isolation.json`, `test/engine/fixtures/chroma-envelope.json`, `docs/reference/reviews/2026-08-20-reactivity/00-synthesis.md` and `04-context-and-messaging.md` (citation repoint), regenerated `figma/plugin/ui.html` and `src/ui/describe-mcp-assets.js`, this handoff |
+| Untouched | every `src/engine/` file; RAMP_GAP_ALLOW, RAMP_DISTINCT_ALLOW, NOTCH_ALLOW, KNOWN_BASELINE_DUP; FLOORS_BF2AAF6; `.sdlc/board.md` |
 
 ## C2 rows
 
-| Id | Evidence | Control | State |
+| Id | Evidence at head | Control (reverted after) | State |
 |---|---|---|---|
-| C2.1 | `node -e` probe, g 0.98: every stop `0.300`; g 0.20: 0.200 rising to 0.300 at 500 and back | base, stop 100, g 0.98: 0.957 (plan says ~0.98) | 🟢 |
-| C2.2 | `node scripts/report-preset-fidelity.mjs --envelope` exit 1. perceptual median 9.8 / 74.2 / 65.8 / 24.0, p90 23.1 / 106.7 / 70.8 / 29.0, cusp-run violations 2. peak median 8.5 / 64.4 / 61.1 / 21.9, p90 17.3 / 97.4 / 66.4 / 27.1, above100 0. Even unchanged (502) | scratch clone of the head with only the `min` reverted (`const target = groupValue;`): perceptual cusp runs `446` (base's value, every perceptual cell back to C1.2), peak above100 `0`, not 2592: the joint cap alone clears the peak count | 🔴 two literal misses, see Deviations 2 |
-| C2.3 | `node test/engine/tonal.mjs --full` C6 (v) line: `15/3764`, max `2.023757x` (base 3119 / 15.132599). Pins set to the measured values | the in-file ratio arm's 1.6x patch alone, under the cap, reads 15 / 2.0238 over the corpus (does not bite), so the patch also sets `capPeak = false`: 3378 violators, max 5.5605x, above the pin | 🔴 see Findings 1 |
-| C2.4 | `tonal.mjs --full` exit 1 (C6 ii). `anchor.mjs --full` exit 1: gap 89 (72), distinct 31 (16), notch 15 (17), f4 hueSpace-peak-bound 0.0184, achromatic-anchor. `monotoneOk` 0 holds, (iii c) and okhsl-modes pass | not run | 🔴 see Findings 2 to 4 |
-| C2.5 | `node scripts/report-preset-fidelity.mjs --identity-control --base afd415c0`: the six lines all `0/3780` or `0/16`, `0 differing cells` (the default strips anchors, so it is blind to this unit). With `--authored`: `identity perceptual: 3023/3780 palettes, 67892/94500 cells differ, max dL* 1.1380`; `identity peak: 3378/3780 palettes, 67796/94500 cells differ, max dL* 1.0240`; `identity even: 0/3780 palettes, 0/94500 cells differ`; default kit perceptual `16/16, 202/400, max dL* 0.4053`, peak `16/16, 189/400, max dL* 0.4274`, even `0/16, 0/400` | mode-isolation fixture not re-captured (the gate would red on the old hashes) | ⏸ measured, not committed |
-| C2.6 | `chroma-envelope-gate.mjs --capture --fixture <scratch>` then `--compare test/engine/fixtures/chroma-envelope.json --fixture <scratch>`: `0 cells rose`, perceptual and peak `moved against base`, even `byte-identical to base` | U1's `--compare` raised-cell control stands | ⏸ measured green, not committed |
-| C2.7 | `node test/engine/semantic.mjs` exit 1: `checkFloors` against `FLOORS_BF2AAF6` passes (`0 unlisted drops, 0 further erosion`), but the pinned 96-cell `FLOORS` reds `peak Tertiary LIGHT: accent #7F0FAC on #FFFFFF = 8.18:1, below its pinned floor 8.2:1` (frozen floor 7.1). `gate:corpus-contrast` PASS, worst 4.500:1. `gen-tonal-fixture.mjs`: `tonal-legacy.json` byte-unchanged | not run | 🟡 FLOORS re-read would move peak Tertiary light 8.2 to 8.1; not done while stopped |
-| C2.8 | not run: `npm test` would red on C6 (ii), the anchor gates and FLOORS | | ⏸ |
+| C2.1 | probe `anchorChromaBasis(stop, 500, 0, 0.30, g)`: g 0.98, every stop 0.300000 (max 0.300000, 500 = 0.300000); g 0.20, 0.2000 at 50/950, 0.2034 at 100/900, 0.2583 at 300/700, 0.3000 at 500 | base afd415c0 tonal.js, g 0.98: 50 0.9800, 100 0.9567, 300 0.5836 (climbs); g 0.20 identical to head | 🟢 |
+| C2.2 | `report-preset-fidelity.mjs --envelope` exit 1. Two blocks per mode. Gate path perceptual median 9.5 / 79.9 / 62.6 / 22.6, p90 17.4 / 97.9 / 66.5 / 26.3 (300 FAIL both, mechanism 1), violations 0. Gate path peak median 4.2 / 41.1 / 61.3 / 19.4, p90 11.8 / 58.1 / 69.3 / 25.2, all OK. Anchored perceptual 9.8 / 74.2 / 65.8 / 24.0 and 23.1 / 106.7 / 70.8 / 29.0; anchored peak 8.5 / 64.4 / 61.1 / 21.9 and 17.3 / 97.4 / 66.4 / 27.1 (all on the re-diagnosis row). `over 90 at stop 300`: perceptual 1042, peak 575, even 407 of 2920. Peak anchored `above 100% of stop 500: 0 OK`. Perceptual `rule violations 2 FAIL` (Studio 54 secondary 2 runs, Kea primary-muted 226.02%), window: 1 anchored instance outside, 0 violations excluded | (a) report copy with the gate block fed the anchored set: `gate path` heading prints perceptual 300 p90 106.7 FAIL. (b) base engine (afd415c0 tonal.js) report copy: anchored perceptual violations 445 + 1 window-excluded = 446, peak above100 2592 FAIL, peak anchored 300 p90 137.7. (c) climb copy (only the `min` reverted): perceptual 445 + 1 = 446, peak above100 0 (see Deviations 5). (d) window: planted instance Barbican primary with anchor #0D0D0D (L* 3.64) via `measureEnvelope({instances})` prints outsideWindow 1, counted 0, excluded `[#0D0D0D, L* 3.64, 354.54%]`; the same instance with the window check forced off counts 1, excluded 0 | 🟢 |
+| C2.3 | `tonal.mjs --full`: `C6 (v) white-pixel exclusion (stop 500 CAM16 C < 2.869): 72 palette(s)` (all named), `anchored peak overshoot: 0/3692 violator(s) (pinned <= 0), max 0.000000x (pinned <= 1x)`. WHITE_PIXEL_C re-measured: #FFFFFF CAM16 C 2.8690352 | copy with WHITE_PIXEL_C = 0: 0 excluded, `15/3764`, max 2.023757, FAILs against the pins (seen via an all-FAIL logging copy, the file dedupes to the first FAIL) | 🟡 Deviations 1 |
+| C2.4 | `anchor.mjs --full`: monotone 0; achromatic even 9 of 9 within the hue bound, 1 skipped (#FFFFFF stop 300, C 4.41), perceptual and peak 20 of 20 below C 5, pass; f4 perceptual max 0.0050, f4 peak uncapped max 0.0050, cap-moved stops 7841, max 0.0184 (want <= 0.02; Jekyll and Hyde tertiary stop 400, oklch #8B6A62 / cam16 #886C58), pass. Only `anchor-ramp` reds (gap 89 vs 72, distinct 31 vs 16, notch 15 vs 17: the lists, untouched). `tonal.mjs --full`: 1 gate failure, C6 (ii) only | climb engine copy SAMPLED: `perceptual/peak 11 of 20`, FAIL `#808080 perceptual stop 300: CAM16 C 13.28, want below 5`. Bound set to 0.01, FULL: FAIL `hueSpace peak, capped stops: max OKLab dE 0.0184 over 7841 cap-moved stop(s), want <= 0.01` | 🟡 Deviations 3, 4 |
+| C2.5 | `gate:mode-isolation` pre-capture reds `perceptual a874ac86f2e113b4 peak 815dcec4262382da do not match fixture` (old 990c17c5ae140e6e / b59bd41501cd829a); captured at 351eee68 and committed; gate passes. `--identity-control --base afd415c0`: all six lines `0 differing cells` (it strips anchors). With `--authored` (exit 1): perceptual 3023/3780 palettes, 67892/94500 cells, max dL* 1.1380; peak 3378/3780, 67796/94500, 1.0240; even 0/3780, 0/94500; default kit perceptual 16/16, 202/400, 0.4053; peak 16/16, 189/400, 0.4274; even 0/16, 0/400 | the pre-capture red above | 🟢 |
+| C2.6 | `chroma-envelope-gate.mjs --capture` at 351eee68, committed; gate passes. `--compare <base fixture>`: `0 cells rose`, even byte-identical, exit 0 | `--compare <committed> --fixture <perceptual 300 median +0.1>`: `1 cells rose ... perceptual 300 median`, exit 1 | 🟢 |
+| C2.7 | 96-cell re-read: one cell below its pin, peak Tertiary LIGHT measured 8.1825, pin 8.2 to 8.1 (`semantic.mjs:300`). `checkFloors` vs FLOORS_BF2AAF6: 0 drops. `semantic.mjs` exit 0. `gate:corpus-contrast` exit 0 (worst 4.500:1, Alice's Adventures primary/dark peak). `gen-tonal-fixture.mjs`: `tonal-legacy.json` no diff | pin left at 8.2: `FAIL role-contrast, peak Tertiary LIGHT: accent #7F0FAC on #FFFFFF = 8.18:1, below its pinned floor 8.2:1` | 🟡 Deviations 6, 7 |
+| C2.8 | `npm test` exit 1, `6/54 test file(s) failed` before the citation fix, 5 after. Declared rows red as predicted: `anchor-ramp gap (19-stop) allow-list: 13 (at most 72)`, `anchor-ramp distinct (25-stop) allow-list: 6 (at most 16)`, `chroma-envelope (C6 ii) perceptual: 3 duplicate-hex pair(s) beyond the cited list`. Extra rows, see Findings. em-dash clean, branding clean, citations STALE 0 (after repointing `okhslLAt` `tonal.js:994` to `:1003` in two review docs, moved by pass 1). Regenerated exports committed; `git status` clean | extra rows checked against the base engine (afd415c0 tonal.js in a scratch copy of HEAD): panda EX-2, radix-refs-values-unchanged, ac003b, gid3 all pass there | 🔴 |
 
-## Findings (for the plan revision)
+## Findings (C2.8, for a plan ruling)
 
-1. **C6 (v) cannot reach 0.** All 15 are near-grey anchors whose stop 50 renders #FFFFFF at tone 100.00.
-   - White-floor arithmetic: CAM16 chroma of a neutral grey is not 0 under the engine's viewing conditions. Measured: #FFFFFF 2.869 (L\* 100), #FEFEFE 2.862, #F0F0F0 2.766 (L\* 94.8), #C8C8C8 2.478 (L\* 80.6), #787878 1.825 (L\* 50.4), #3C3C3C 1.223, #1E1E1E 0.851. The least-chroma pixel at tone 100 is white itself, 2.869. Every one of the 15 has a stop 500 chroma under that (max 2.145), so the ratio 2.869 / c500 is above 1 whatever `s` is. The bisection drives `s` to 0 and the fallback cannot go lower; it is not an `hctToRgb` residue.
-   - Provenance: all 15 are in the base 3119, at far higher ratios.
+All five come from the pass 1 cap (`min(group, anchor)` and the shared peak cap) moving the default kit's anchored ramps. `main` CI is green and the only engine diff on the branch is `tonal.js`.
 
-   | Palette | Anchor | c500 | Head stop 50 | Head ratio | Base worst |
-   |---|---|---|---|---|---|
-   | Boston City Hall tertiary-muted | #2F2E2B | 2.145 | 2.869 | x1.3377 | stop 250, 22.351, x10.4210 |
-   | Andalusian patio secondary | #DFDEDC | 1.988 | 2.869 | x1.4431 | stop 750, 17.857, x8.9817 |
-   | Trulli of Alberobello secondary | #E0DEDC | 1.452 | 2.869 | x1.9753 | stop 750, 18.767, x12.9206 |
-   | Villa Savoye secondary | #DFDEDC | 1.988 | 2.869 | x1.4431 | stop 750, 17.857, x8.9817 |
-   | Double Indemnity tertiary-muted | #3A3835 | 2.016 | 2.869 | x1.4228 | stop 250, 20.993, x10.4106 |
-   | The Third Man secondary-muted | #252422 | 1.498 | 2.869 | x1.9153 | stop 250, 22.132, x14.7746 |
-   | 34° S San Telmo secondary | #343331 | 1.418 | 2.869 | x2.0238 | stop 250, 21.453, x15.1326 (the old pin's witness) |
-   | 37° N Patmos tertiary-muted | #232220 | 1.512 | 2.869 | x1.8973 | stop 250, 22.168, x14.6598 |
-   | 34° N corridor tertiary-muted | #A2A19E | 2.010 | 2.869 | x1.4275 | stop 750, 15.731, x7.8271 |
-   | 26° N shrine tertiary-muted | #BCBBB8 | 2.090 | 2.869 | x1.3731 | stop 750, 16.937, x8.1058 |
-   | 30° N Wadi Rum primary | #1E1D1B | 1.552 | 2.869 | x1.8490 | stop 250, 22.240, x14.3324 |
-   | 30° N Atchafalaya secondary-muted | #82817E | 1.950 | 2.869 | x1.4714 | stop 250, 16.581, x8.5037 |
-   | 55° N Kamchatka tertiary-muted | #ABAAA7 | 2.035 | 2.869 | x1.4100 | stop 750, 16.112, x7.9182 |
-   | 26° N Okinawa secondary-muted | #4C4B48 | 1.996 | 2.869 | x1.4373 | stop 250, 20.770, x10.4052 |
-   | 38° N Point Reyes tertiary-muted | #64625F | 1.752 | 2.869 | x1.6371 | stop 250, 17.404, x9.9310 |
-2. **C6 (ii) duplicate hex: 37 new keys, 8 cited keys gone** (base 24 physical hits, head 66). Nearly all are 25-stop near-black pairs on dark anchors (#252215, #1E211E, #101820, #1A1B1E), plus near-white ones. One is on the 19-stop display set: peak Nike tertiary-muted #FFFFFF, stops 50 and 100 both #FFFFFF. Mechanism: the chroma the anchored ramp used to overshoot with is what kept adjacent low-tone stops distinct. With it capped, adjacent stops round to the same 8-bit hex. Full list: `$CLAUDE_JOB_DIR/tmp/u2/dup-head.txt` against `dup-base.txt`.
-3. **anchor gap, distinct and notch allow-lists move** (89 / 31 / 15 against 72 / 16 / 17), the same collapse at the extremes. These lists are exact on FULL; re-freezing them is a ruling, not a builder call.
-4. **achromatic-anchor: 21 of 30 cells now fall under CAM16 C 5** (want at most 3). That is R69 working as designed: a grey anchor's own `s` now caps the ramp, so the ramp stays grey. The gate assumes chromatic neighbours, so it and R69 disagree.
-5. **f4 hueSpace-peak-bound: 30 ramps clear 0.01 OKLab dE, max 0.0184** (Jekyll and Hyde tertiary #54392E, stop 400: cam16 #886C58, oklch #8B6A62). The shared cap renders through `hctToRgb` and the hue-blind 8-bit polish, which #681 accepted for the non-anchored path. On the anchored path it turns a rounding-level pre-cap hueSpace difference into a visible hue move. Bounding it needs a hue term in the polish, which #681 already declined as a second workaround.
+1. `exports.mjs` `panda`: `EX-2 colors.primary.DEFAULT = {"base":"oklch(0.4669 0.1671 258.98)","_dark":"oklch(0.5506 0.1922 259.07)"}`, normative literal wants `_dark` `oklch(0.5504 0.1924 258.96)`.
+2. `exports.mjs` `shadcn-baseline`: `exportShadcn(ALL) drifted from the pre-refactor fixture`.
+3. `exports.mjs` `radix-refs-values-unchanged`: `exportRadix(ALL) drifted from the pre-#638 values-form baseline`.
+4. `shell.mjs` `ac003b`: `projectView(defaultDocument()) has drifted from the pinned fixture at palette "Neutral"` (regenerate with `scripts/gen-ramp-fixture.mjs` only if intentional).
+5. `headless-boot.mjs` `(gid3) a fresh doc's Neutral ramp differs from the legacy chroma-100 ramp, visibly muted, not a no-op`. This one is behaviour, not a pin: Neutral is anchored (#576485) and the cap clamps every group chroma above the anchor's own `s` to that `s`, so Material's 30 and the legacy 100 render the same ramp. Under R69 the group chroma slider no longer moves an anchored palette above its anchor. That is a product consequence the plan should rule on before anyone re-pins 1 to 4.
 
 ## Deviations
 
-1. C2.1's base control reads 0.957, not ~0.98.
-2. C2.2: perceptual cusp runs 2, not 0: music Studio 54 secondary #2B2734 (2 runs) and travel 37° N MV passing Kea primary-muted #E1F5DA (226.02%), both in the base 446 (base 316% and 256%). The control prints 446 / 0, not 446 / 2592. Capping OKHSL `s` does not bound CAM16 chroma near the lightness extremes, and perceptual has no chroma cap by ruling. Peak 300 p90 97.4 still FAILs (the plan predicted all peak cells OK). Perceptual 100 p90 23.1 now passes (the plan expected it to stay open for U3).
-3. `tonal-legacy.json` does not move (C2.7 expected perceptual rows to move): its 16 palettes render on a path this unit leaves byte-identical.
-4. C2.5's `--identity-control` without `--authored` strips anchors, so its six lines read 0 for this unit; the declared movement is the `--authored` run.
+1. C2.3: the rule "exclude c500 < 2.869" removes 72 palettes, not 15; only 15 of the 72 were violators. Plan expected `0/3749`; measured `0/3692`.
+2. C2.3/C2.4 scope: pass 1's `min` blend also hid two tonal FAILs behind C6 (ii)'s first message: the dip gate's cited baseline TICKET_739 was no longer observed (peak and perceptual), and the dip negative control produced 0 dips. Fixed test-side: DIP_BASELINE and PERCEPTUAL_DIP_BASELINE retired to empty sets (name kept in a comment), control re-targeted to replace the `min` target with `groupValue`. After it, the all-FAIL copy shows C6 (ii) only (perceptual 10 pairs, peak 40, 8 of 22 cited not observed).
+3. C2.4 f4: engine rows carry no `capped` flag, so the test reads it by rendering a second engine copy with `capPeak = false` (data-URL model import) and calling a stop capped when its hex differs. Cost: `anchor.mjs --full` 114.5 s vs 104 s (+10.5 s), inside C3.7's 120 s but close.
+4. C2.4 achromatic: the planted `skipped` control uses 10 (the gate allows at most 1).
+5. C2.2 control (c): the plan says the climb copy prints "the same two counts" as base; it prints 446 / 0 (the shared peak cap clears peak without the `min`), matching the re-diagnosis table row, not the plan row.
+6. C2.7: the plan cites `semantic.mjs:282`; the peak Tertiary pin is at line 300. Three cells sit above their pins with headroom and were left alone (even Primary light 7.52 vs 7.4, even Danger light 8.73 vs 8.6, peak Data 6 dark 5.60 vs 5.5).
+7. C2.7: `tonal-legacy.json` is byte-unchanged (the fixture is non-anchored perceptual/even), so no commit; the plan expected perceptual rows to move.
+8. The C6 (v) companion in the report still prints the unexcluded `15/3764`, max 2.023757 (report-only; the exclusion lives in the gate).
+9. Even prints both a gate-path and an anchored block; even anchored above100 502 is "(reported, not barred)".
 
 ## Left out
 
-Committing the C2.5 to C2.7 baselines (mode-isolation, chroma-envelope, FLOORS) and the exports, and C2.8, pending the ruling. All of U3 and U4. The C6 (v) pins in `test/engine/tonal.mjs` hold the measured 15 / 2.023757.
+- The (iii c) and tone-rose negative controls were not re-run in pass 2 (both gates pass at head on `tonal.mjs --full`).
+- Re-pinning panda EX-2, the shadcn and radix baselines, the ramp fixture, and gid3: waiting on a ruling.
+- `npm run build` and `npm run smoke` not run (no build-chain change).
