@@ -11,13 +11,13 @@ PASS
 
 ## Criteria
 
-| Id | State | Re-run evidence |
-|---|---|---|
-| C4.1 | 🟢 | ADR-026 section `grep -c 'Amendment (2026-'` = 2 at head, 1 at dc177a30. The #725 amendment sits after the #701 one and before ADR-027. Each clause of the plan row is present: B ruling, R69 reverses Q-U2-5 with both citations, `min(group, anchor)`, `c` = log2 3, `d` 0.9275 (R76), the tone hold named as the OKHSL `l` to CIE L\* coupling (not H-K), the six identity counts, second export-wide move, the revision 8 hue construction, the two FLOORS cells with R77 and the 41 pending. Quick map row names both amendments |
-| C4.2 | 🟢 | The 4 owner lines (gate `:25`, `:73`, fixture `owner`, adapter mode-isolation row) read "#725 moved perceptual and peak at U2/U3 and re-captured; the next plan that moves them re-captures". The gate's `:73` capture template and the fixture string are byte-equal, so a future `--capture` writes the same owner. The remaining adapter `#725` hit (`:36`) is the chroma-envelope row, not an owner line |
-| C4.3 | 🟢 | `grep -c 725 CHANGELOG.md` = 2 (base 0). `[Unreleased]` / `### 2026-09-30` entries name the cap, the retune, the tone hold, `gate:chroma-envelope` and R69. Wording nits in L2, L3 |
-| C4.4 | 🟢 | `citations.mjs` exit 0, `STALE 0 across 10 discovered docs + 11 fact pins (HEAD b12ecfd7)`; `em-dash.mjs` clean (1011 files); `branding.mjs` clean (1003 files); `npm test` skipped (see Heavy suite). The named control cannot fire; see M1 |
-| C4.5 | 🟢 | `grep -c '34e544942d500b9e\|990c17c5ae140e6e' .sdlc/baseline.md` = 0; the row prints `perceptual 8ae715d202be14b2 peak 0ac42e3c6dc6c0ef`, equal to the fixture's `perceptual`/`peak`. The `sweeps` passage grep = 1; it lists 8 gates in the same order as `ci.yml` `sweeps.matrix.gate` (lines 112 to 119) and `package.json` `gate:sweeps`, and says "eight" |
+| Id | State | Evidence | Negative control |
+|---|---|---|---|
+| C4.1 | 🟢 | ADR-026 section `grep -c 'Amendment (2026-'` = 2 at head, 1 at dc177a30. The #725 amendment sits after the #701 one and before ADR-027. Each clause of the plan row is present: B ruling, R69 reverses Q-U2-5 with both citations, `min(group, anchor)`, `c` = log2 3, `d` 0.9275 (R76), the tone hold named as the OKHSL `l` to CIE L\* coupling (not H-K), the six identity counts, second export-wide move, the revision 8 hue construction, the two FLOORS cells with R77 and the 41 pending. Quick map row names both amendments | same grep at dc177a30 prints 1 |
+| C4.2 | 🟢 | The 4 owner lines (gate `:25`, `:73`, fixture `owner`, adapter mode-isolation row) read "#725 moved perceptual and peak at U2/U3 and re-captured; the next plan that moves them re-captures". The gate's `:73` capture template and the fixture string are byte-equal, so a future `--capture` writes the same owner. The remaining adapter `#725` hit (`:36`) is the chroma-envelope row, not an owner line | the base strings read "U2 and U3 move ... U4 retires this note" (diff `-` lines) |
+| C4.3 | 🟢 | `grep -c 725 CHANGELOG.md` = 2 (base 0). `[Unreleased]` / `### 2026-09-30` entries name the cap, the retune, the tone hold, `gate:chroma-envelope` and R69. Wording nits in L2, L3 | `git show plan/chroma-envelope:CHANGELOG.md \| grep -c 725` prints 0 |
+| C4.4 | 🟢 | `citations.mjs` exit 0, `STALE 0 across 10 discovered docs + 11 fact pins (HEAD b12ecfd7)`; `em-dash.mjs` clean (1011 files); `branding.mjs` clean (1003 files); `npm test` skipped (see Heavy suite). The named control cannot fire; see M1 | scratch clone: a range moved out of file (`9301-9327`) prints STALE, exit 1; the in-file one-line move does not (M1) |
+| C4.5 | 🟢 | `grep -c '34e544942d500b9e\|990c17c5ae140e6e' .sdlc/baseline.md` = 0; the row prints `perceptual 8ae715d202be14b2 peak 0ac42e3c6dc6c0ef`, equal to the fixture's `perceptual`/`peak`. The `sweeps` passage grep = 1; it lists 8 gates in the same order as `ci.yml` `sweeps.matrix.gate` (lines 112 to 119) and `package.json` `gate:sweeps`, and says "eight" | base `baseline.md` carries the `34e544...` pair; base passage names five gates, no chroma-envelope (diff `-` lines) |
 
 ## Judged items
 
