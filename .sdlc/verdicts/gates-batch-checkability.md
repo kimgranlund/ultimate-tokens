@@ -73,3 +73,32 @@ verdict: 🔴
 ## Verdict
 
 🔴 not mobilizable: 42 of 45 criteria checkable (37 🟢, 5 🟡), 3 🔴 (U2-9, U4-2, U4-5).
+
+## Pass 2 · revision 1 (uncommitted, root checkout at f47a0bf8) · 🔴 43 of 45 checkable, U2-9 and U4-7 🔴
+
+Re-graded the six rows revision 1 changed; every other row is unchanged in the plan and carries.
+
+| # | Criterion | State | Evidence | Negative control |
+|---|---|---|---|---|
+| U2-5 | reasoned allow list | 🟢 | the command is now written out; on today's file it prints an empty line (no `phrase:` rows inside `FACT_PINS`) | a row without `reason` drops out of the printed list |
+| U2-9 | ramp comments say the split | 🔴 | today the stale-phrase grep reads `3` and the split grep `1`, as the plan says. But the revised Design (plan line 61) words the rewrite as `thirteen voices ride a 3-step SM/MD/LG ramp`, and `printf '// thirteen voices ride a 3-step SM/MD/LG ramp, UI-control and UI-widget ride a 6-step XS to 2XL ramp\n' \| grep -cE "3-step SM/MD/LG ramp\|..."` reads `1`: the Design's own sentence is one of the stale needles | a Design-following rewrite of all three lines reads `3`, the same as the unfixed file, so the first leg cannot tell a correct unit from an untouched one |
+| U3-1 | declared and green | 🟢 | expected is now a floor plus `grep -c 'const DECLARED = .*"renameparity"'`, which reads `0` today on the one-line `DECLARED` at `test/figma/binder.mjs:817` | an undeclared gate reads `0` on the second grep |
+| U3-7 | lockstep comments and README name the gate | 🟢 | the README row is now stated as a new sentence, not an existing lockstep comment; `grep -c renameparity` reads `0` on all three today | unfixed files read `0` |
+| U4-2 | two-string line fixes per string | 🟢 | clone at 8945c618, `f.js` staged, `node test/repo/em-dash.mjs --fix`: `const c = "a: b"; const d = "## Head, tail";`, the stated base shape | unstaged, both dashes stay (pass 1 run), which the row now names |
+| U4-5 | replay line | 🟢 | clone at 8945c618, `g.mjs` from `git show 37b04676^:mcp/describe-rubric.mjs`, staged, `--fix`, `sed -n 80p`: `- NOT "exotic, wild jungle cat energy": INSTEAD: **"Bengal tiger, burnt orange"**, the Sundarbans`, the stated `energy": INSTEAD` | the unstaged run leaves the line unfixed |
+| U4-7 | idempotence on the new fixtures | 🔴 | `sed -n '/idempotence/,/^}/p' test/repo/em-dash.mjs` is case-sensitive and repeats: it prints lines `589` to `643` (the `runFix` area, unrelated) and `959` to `969`. The leg's fixture array `idemSrc` sits at lines `950` to `956`, before the first lowercase `idempotence` at `:959`, so a builder who adds the two fixture lines to `idemSrc`, the natural reading of "the builder adds both", reads `0` | a correct unit and an untouched one both read `0`; only a name written between `:959` and the function's `}` reads `2` |
+
+### The two 🔴
+
+1. U2-9: the stale-phrase needle `3-step SM/MD/LG ramp` also matches the Design's replacement sentence. The needle and the rewrite wording must not overlap.
+2. U4-7: the range misses the fixture array it is meant to read and includes an unrelated one. The criterion must read the `idemSrc` array (or whatever the leg re-runs), not the lines after the first lowercase match.
+
+### Plan note (🟡, not a criterion)
+
+- P9 says `grep -c 'SM/MD/LG' src/engine/type.mjs` prints `4`; at 8945c618 and at f47a0bf8 it prints `3` (lines `:4`, `:10`, `:42`). The line P9 counts as the fourth, the size-table `[SM, MD, LG]` comment at `:27`, does not match that string.
+
+### Verdict
+
+verdict: 🔴
+
+🔴 not mobilizable: 43 of 45 checkable (all 🟢), 2 🔴 (U2-9, U4-7).
