@@ -8,6 +8,27 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 
 ## [Unreleased]
 
+### 2026-09-30
+
+#### Changed
+- **Perceptual and peak ramps are capped at the anchor, retuned, and hold their tone** (#725, R69).
+  An exported kit's perceptual or peak ramp re-exported after this change differs from one exported
+  before at every stop but 500; even mode and stop 500 do not move. Three changes move it. The
+  anchored chroma basis no longer climbs above the anchor's own chroma (the group target reads
+  `min(group, anchor)`), and the peak path emits nothing above stop 500; this reverses the earlier
+  muted-in-vivid-group intent (ADR-026, amendment of 2026-09-29). The perceptual and peak damping
+  constants are retuned to the closed-form pair (`c` = log2 3, `d` 0.9275) so the envelope reads
+  0.74 at stops 300/700 and 0.23 at 100/900, against the ruled 0.75 and 0.25 bars. The tone is held
+  per damped stop by solving OKHSL `l` for the pre-envelope CIE L\*, so the retune does not shift
+  lightness. On the anchored path the `oklch` hue is the anchor's own OKLCH hue. The corpus render
+  moved with it, so the mode-isolation fixture was re-captured, and two contrast floors moved
+  (peak Success light to 7.5, perceptual Data 3 dark to 4.8).
+
+#### Added
+- **`gate:chroma-envelope`** (#725): a full-corpus gate that ratchets the per-mode chroma envelope
+  (median and p90 at four stops) against `test/engine/fixtures/chroma-envelope.json`, with a direction
+  leg per mode; it is the eighth `gate:sweeps` member and a `sweeps` matrix leg in CI.
+
 ### 2026-09-29
 
 #### Fixed
