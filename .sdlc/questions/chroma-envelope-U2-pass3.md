@@ -10,3 +10,10 @@
 | Question 2 | May the plan take revision 6 (a seventh revision row) for the plan-text fixes above? It would also move U3's engine cap flag into U3's criteria so it recovers C3.7's time, or re-time C3.7 if it cannot. |
 | Options | Yes (recommended) · No, keep revision 5 and let U3 read C3.7 red as a declared deviation |
 | Default if unanswered | none: the protocol reserves pass 3 and a revision past the cap for the owner |
+
+## Answer (R75)
+
+| Question | Chosen |
+|---|---|
+| 1 | A, narrow pass 3 by builder-l7: comments, shell control, FLOORS declarations, baseline row; no engine or gate change (owner via AskUserQuestion, 2026-09-29, R75) |
+| 2 | Yes, revision 6 for the plan-text fixes; U3 recovers C3.7's time or re-times it (owner via AskUserQuestion, 2026-09-29, R75) |
