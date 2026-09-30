@@ -84,19 +84,23 @@ const ciJobs = () => {
 const FACT_PINS = [
   { id: "colorMode states", doc: "docs/lld/app-shell.md", line: /`this\.colorMode`/, needle: "system", src: "src/ui/app.js",
     source: () => /this\.colorMode = "system"/.test(lineOf("src/ui/app.js", /Color section value-mode control/)) },
-  { id: "type voices", doc: "docs/lld/app-shell.md", needle: "15 voices", src: "src/engine/type.mjs",
+  { id: "type voices", doc: "docs/lld/app-shell.md", needle: "15 voices", noun: "voices", src: "src/engine/type.mjs",
     source: async () => Object.keys((await import("../../src/engine/type.mjs")).makeVoices()).length },
-  { id: "colour formats", doc: "docs/reference/references/ui-plan.md", line: /T8 export:/, needle: "10 formats", src: "src/ui/overlays/drawer.js",
+  { id: "colour formats", doc: "docs/reference/references/ui-plan.md", line: /T8 export:/, needle: "10 formats", noun: "formats", src: "src/ui/overlays/drawer.js",
     source: drawerColorFormats },
-  { id: "roles per palette", doc: "docs/reference/references/ui-plan.md", needle: "a 53-role", src: "docs/reference/data/role-table.json",
+  { id: "roles per palette", doc: "docs/reference/references/ui-plan.md", needle: "a 53-role", noun: "roles?", src: "docs/reference/data/role-table.json",
     source: () => Object.keys(JSON.parse(txt("docs/reference/data/role-table.json")).roleTable).length },
   { id: "btn home", doc: "docs/reference/references/component-inventory.md", line: /^\| `btn\(\)` \|/, needle: "app-helpers.mjs", src: "src/ui/app-helpers.mjs",
     source: () => /^export const btn\b/m.test(txt("src/ui/app-helpers.mjs")) },
   { id: "delete mode methods", doc: ".claude/skills/building-editor-sections/SKILL.md", needle: "`deleteTypeMode`/`deleteGeomMode`", src: "src/ui/sections/{typography,geometry}.js",
     source: () => /^  deleteTypeMode\(id\) \{/m.test(txt("src/ui/sections/typography.js")) && /^  deleteGeomMode\(id\) \{/m.test(txt("src/ui/sections/geometry.js")) },
-  { id: "skill type voices", doc: ".claude/skills/type-scale/SKILL.md", needle: "fifteen voices", src: "src/engine/type.mjs",
+  { id: "skill type voices", doc: ".claude/skills/type-scale/SKILL.md", needle: "fifteen voices", noun: "voices", allow: [
+      { phrase: "thirteen voices", reason: "the SM/MD/LG subset: 13 of the 15 voices carry three steps" },
+      { phrase: "13 voices", reason: "the SM/MD/LG subset: 13 of the 15 voices carry three steps" },
+      { phrase: "five voices", reason: "the mono role's share: five voices ride the mono font" },
+    ], src: "src/engine/type.mjs",
     source: async () => Object.keys((await import("../../src/engine/type.mjs")).makeVoices()).length },
-  { id: "skill colour formats", doc: ".claude/skills/adding-export-formats/SKILL.md", needle: "ten colour formats", src: "src/ui/overlays/drawer.js",
+  { id: "skill colour formats", doc: ".claude/skills/adding-export-formats/SKILL.md", needle: "ten colour formats", noun: "formats", src: "src/ui/overlays/drawer.js",
     source: drawerColorFormats },
   { id: "skill hueSpace default", doc: ".claude/skills/color-math/SKILL.md", line: /`DEFAULT_CONTROLS\.hueSpace`/, needle: '"oklch"', src: "src/engine/tonal.js",
     source: async (needle) => { const held = `"${(await import("../../src/engine/tonal.js")).DEFAULT_CONTROLS.hueSpace}"`; return held === needle || held; } },
@@ -186,5 +190,46 @@ for (const [doc, msg] of homesStale) FAIL(doc, `symbol home: ${msg}`);
 if (homesChecked < SYMBOL_HOME_FLOOR) FAIL("test/repo/citations.mjs", `symbol homes: only ${homesChecked} citations read, below SYMBOL_HOME_FLOOR ${SYMBOL_HOME_FLOOR} (the scanner went vacuous)`);
 console.log(`symbol homes: ${homesChecked} checked, ${homesStale.length} stale`);
 
-console.log(failed ? `✗ ${failed} citation gate failure(s)` : `✓ citations: parser self-test + STALE 0 across ${Object.keys(report.docs).length} discovered docs + ${FACT_PINS.length} fact pins (HEAD ${report.head})`);
+// (4c) the count-phrase scan (#776): the needle leg above proves the doc still carries one true count,
+// not that no false one sits beside it (`fifteen voices` in one sentence, `eight voices` in the next),
+// and a skill pin read only its one file. A pin with a `noun` scans its whole reach, every line, for
+// `<number>[-\s]<qualifier>?<noun>`: a docs pin reaches its one doc, a skill pin every tracked .md
+// under its skill directory. A number that differs from what the code holds fails, naming file, line
+// and phrase, unless `allow` carries the phrase with a reason. Number words read one to ninety-nine
+// (hyphenated tens); a magnitude word (`hundred`) fails loudly instead of being skipped. An adjective
+// between number and noun (`two interactive voices`) or a singular noun (`one voice`) is outside the
+// grammar by design.
+const TENS = { twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
+const MAGNITUDE = ["dozen", "hundred", "thousand", "million", "billion"];
+const numTok = `\\d+|(?:${Object.keys(TENS).join("|")})(?:-(?:one|two|three|four|five|six|seven|eight|nine))?|${Object.keys(NUM_WORDS).join("|")}|${MAGNITUDE.join("|")}`;
+const readNum = (w) => {
+  w = w.toLowerCase();
+  if (/^\d+$/.test(w)) return Number(w);
+  if (MAGNITUDE.includes(w)) return null;
+  const [a, b] = w.split("-");
+  return Object.hasOwn(TENS, a) ? TENS[a] + (b ? NUM_WORDS[b] : 0) : NUM_WORDS[a];
+};
+const COUNT_PHRASE_FLOOR = 25;
+let phrasesRead = 0;
+for (const pin of FACT_PINS) {
+  for (const a of pin.allow ?? []) if (!a.phrase || !a.reason) FAIL("test/repo/citations.mjs", `fact pin "${pin.id}": allow entry without a phrase + reason: ${JSON.stringify(a)}`);
+  if (!pin.noun) continue;
+  let held;
+  try { held = await pin.source(pin.needle); } catch { continue; }
+  if (typeof held !== "number") continue;
+  const reach = pin.doc.startsWith(".claude/skills/") ? tracked.filter((f) => f.startsWith(pin.doc.split("/").slice(0, 3).join("/") + "/") && f.endsWith(".md")) : [pin.doc];
+  const re = new RegExp(`(?<![\\w-])(${numTok})[- ](?:(?:named|colou?r|semantic|export) )?(?:${pin.noun})(?![\\w])`, "gi");
+  for (const doc of reach) txt(doc).split("\n").forEach((line, i) => {
+    for (const m of line.matchAll(re)) {
+      const phrase = m[0].toLowerCase().replace(/\s+/g, " "), n = readNum(m[1]);
+      phrasesRead++;
+      if (n === null) { FAIL(doc, `line ${i + 1}: \`${m[0]}\` (fact pin "${pin.id}"): \`${m[1]}\` is outside the parser's range (one to ninety-nine)`); continue; }
+      if (n === held || (pin.allow ?? []).some((a) => a.phrase.toLowerCase() === phrase)) continue;
+      FAIL(doc, `line ${i + 1}: \`${m[0]}\` but the code holds ${held} (fact pin "${pin.id}", ${pin.src})`);
+    }
+  });
+}
+if (phrasesRead < COUNT_PHRASE_FLOOR) FAIL("test/repo/citations.mjs", `count phrases: only ${phrasesRead} read, below COUNT_PHRASE_FLOOR ${COUNT_PHRASE_FLOOR} (the scan went vacuous)`);
+
+console.log(failed ? `✗ ${failed} citation gate failure(s)` : `✓ citations: parser self-test + STALE 0 across ${Object.keys(report.docs).length} discovered docs + ${FACT_PINS.length} fact pins + ${phrasesRead} count phrases (HEAD ${report.head})`);
 process.exit(failed ? 1 : 0);
