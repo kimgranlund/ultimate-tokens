@@ -119,3 +119,24 @@ P9 now reads the raw count as `3`, which matches `grep -c 'SM/MD/LG' src/engine/
 verdict: 🟢
 
 🟢 mobilizable: 45 of 45 criteria checkable. No 🔴 and no 🟡 rows remain.
+
+## Pass 4 · revision 3 (uncommitted, root checkout at e47e2861) · 🟢 46 of 46 checkable, mobilizable, C5 and U2-12 🟡
+
+Re-graded the rows revision 3 changed or added: P15, U2-12 (U2-10 cites C5) and C5. Every other row is unchanged and carries. Simulations ran in the clone at 8945c618, whose `typography.js` is byte-identical to the root's.
+
+| # | Criterion | State | Evidence | Negative control |
+|---|---|---|---|---|
+| P15 | four stale-voice sites in `typography.js` | 🟢 | `grep -c -E 'every voice is now a 3-step\|11 named voices\|the eleven named voices\|all 33 steps'` reads `4` in the root today; sites `:470`, `:533` (wraps onto `:534`), `:557`, `:572` | the in-place fix below reads `0` |
+| U2-12 | the four comments say fifteen voices and 51 steps | 🟡 | today `4`; `0`, as the Today cell says; all four rewritten in place: `0`; `4` (expected `0`; at least `2`) | only `renderTypographyScene`'s three fixed: `1`; `3`, as the control says; the unfixed file reads `4`; `0` |
+| C5 | only comment changes in `src/` | 🟡 | today: name list empty, `0 0`; the in-place fix of all four sites reads `0 0` | `:470` `base.categories` to `base.voices` (a code token on a line with a trailing comment) reads `0 4` |
+
+### The two 🟡
+
+- **C5 reds a legitimate rewrap.** `sed 's\|//.*$\|\|'` leaves a whitespace-only line per comment line, so a fix that adds or drops a comment line diffs nonzero: `:533` rewritten with one added continuation line reads `0 2`. The `:533`/`:534` pair is the likely place a builder adds a line (see U2-12). The Design can still reach `0` by rewriting in place with the same line count, but the plan does not say so; a builder who rewraps gets a false 🔴 at verdict. The strip is also blind past a `//` inside a string: `typography.js:47`, `:76` and `:104` carry `xmlns="http://..."`, and a code edit after it on those lines (`svg" data-x="1">` on `:47`) reads `0 0`. The name list plus a reviewer read covers that gap, since those lines are nowhere near the four sites.
+- **U2-12 cannot see `:534`.** The continuation line reads `voices × 3 steps each, SM/MD/LG`, which is false for fifteen voices (P15: 13 × 3 plus 2 × 6). The four-site rewrite above leaves it unchanged and still reads `0`; `4`. The criterion passes a unit whose `:533` comment still states the wrong step shape.
+
+### Verdict
+
+verdict: 🟢
+
+🟢 mobilizable: 46 of 46 criteria checkable, C5 and U2-12 🟡 with the concerns above; neither blocks mobilizing.
