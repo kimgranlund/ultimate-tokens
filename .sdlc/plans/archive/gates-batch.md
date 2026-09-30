@@ -1,5 +1,5 @@
 ---
-status: approved
+status: done
 ticket: "#776 (anchor; the plan also closes #775, #769, #772, #764)"
 priority: P2
 lane: tooling and figma tests (`test/repo/citations.mjs`, `test/repo/em-dash.mjs`, `test/figma/binder.mjs`, `src/engine/type.mjs` and `src/ui/sections/typography.js` comments only, `figma/README.md`, the lockstep comments in `figma/binder/figma-semantic-binder/code.js` and `figma/binder/migrations.mjs`, `.claude/skills/type-scale/**/*.md` and `.claude/skills/adding-export-formats/**/*.md` only where U2's scan reds a real stale count)
@@ -75,18 +75,19 @@ Two halves. In `classifyLine`, the E1 and E2 legs iterate the line's dash indice
 |---|---|---|---|---|---|
 | C1 | `npm test` green at the branch head, N unchanged | `npm test 2>&1 \| tail -1; git status --short \| wc -l` | `✓ all 54 test files passed`, `0` | adapter §1's own control (`"scrim` to `"scrimX` in `role-table.json` in a throwaway clone: exit 1, `engine/semantic.mjs` the failing file, `refs-canonical` the gate) | P2 says 54; not run by the planner |
 | C2 | no em-dash glyph enters the tree, this plan file included | `node test/repo/em-dash.mjs 2>&1 \| tail -1` | the PASS line, exit 0 | a clone with `printf '\xe2\x80\x94' >> .sdlc/plans/gates-batch.md` exits 1 and names the file | not run by the planner; the file was written with no U+2014 |
-| C3 | no test file added, the baseline row untouched | `git diff --name-only $(git merge-base origin/main HEAD)..HEAD -- test/run.mjs .sdlc/baseline.md \| wc -l` | `0` | registering a file prints `1` | `0` |
+| C3 | no test file added; the baseline file changes only in the `ui.html` size row and one dated Correction (revision 5, R83) | `git diff --name-only $(git merge-base origin/main HEAD)..HEAD -- test/run.mjs \| wc -l`; `git diff -U0 $(git merge-base origin/main HEAD)..HEAD -- .sdlc/baseline.md \| grep -E '^[+-][^+-]' \| grep -vcE 'ui\.html\|^\+Correction \(2026-09-30, plan gates-batch'`; `sh .sdlc/checks/baseline-agrees-check.sh` | `0`; `0`; `stale total: 0`, exit 0 | registering a file prints `1`; editing any other baseline row prints `1` or more; the unfixed row prints `STALE ui.html`, exit 1 | `0`; `0`; `STALE ui.html: baseline 4141.3 KB, tree 4141.8 KB` at 8bcf5312 |
 | C4 | the chroma-envelope lane is untouched | `git diff --name-only $(git merge-base origin/main HEAD)..HEAD -- src/engine/tonal.js src/engine/hct.js src/engine/okhsl.js src/ui/model.mjs test/engine \| wc -l` | `0` | any edit there prints `1` or more | `0` |
-| C5 | the only `src/` changes are comments in `type.mjs` and `typography.js` | `git diff --name-only $(git merge-base origin/main HEAD)..HEAD -- src \| sort \| tr '\n' ' '; for f in src/engine/type.mjs src/ui/sections/typography.js; do diff <(git show $(git merge-base origin/main HEAD):$f \| sed 's\|//.*$\|\|') <(sed 's\|//.*$\|\|' $f) \| wc -l; done` | the name list is `src/engine/type.mjs src/ui/sections/typography.js` (or a subset) and both `wc -l` read `0` (comment-stripped sources identical) | a changed code token, even on a line with a trailing comment, prints a nonzero `wc -l`; a third `src/` path in the name list is out of scope | name list empty; `0`, `0` |
+| C5 | the only `src/` changes are comments in `type.mjs` and `typography.js` | `git diff --name-only $(git merge-base origin/main HEAD)..HEAD -- src \| sort \| tr '\n' ' '; for f in src/engine/type.mjs src/ui/sections/typography.js; do diff <(git show $(git merge-base origin/main HEAD):$f \| sed 's\|//.*$\|\|') <(sed 's\|//.*$\|\|' $f) \| wc -l; done` | the name list is `src/engine/type.mjs src/ui/sections/typography.js` (or a subset), plus any generated `src/ui/*-assets.js` whose bytes are generator output (tree clean after `npm test`), and both `wc -l` read `0` (comment-stripped sources identical) | a changed code token, even on a line with a trailing comment, prints a nonzero `wc -l`; a third `src/` path in the name list is out of scope | name list empty; `0`, `0` |
 | C6 | ramp identity holds (U2 and pre-land; adapter §1 row) | `node scripts/report-preset-fidelity.mjs --identity-control --base $(git merge-base origin/main HEAD) \| tail -1` | `0 differing cells` | the adapter row's own reading; a comment edit cannot move it, which is the point of running it | not run by the planner |
 | C7 | the ticket ids are on the PR body and each is closed after merge | `gh pr view <n> --json body --jq .body \| grep -oE '#(776\|775\|769\|772\|764)' \| sort -u \| wc -l` | `5` | a body missing one prints `4` | no PR yet |
 
 ## Units
 
-- [ ] U1 (S) `citations.mjs`: the bare-literal source guard (#769) and the bare-filename symbol-home resolve (#775) · builder-l3 · reviewer-l3 · verifier-l2 · touches `test/repo/citations.mjs` only
-- [ ] U2 (M) `citations.mjs`: whole-doc count-phrase scan with sibling reach and allow rules (#776); the `type.mjs` and `typography.js` ramp comments · builder-l4 · reviewer-l3 · verifier-l2 · after U1 has merged into `plan/gates-batch` · touches `test/repo/citations.mjs`, `src/engine/type.mjs`, `src/ui/sections/typography.js` (comments only), and a pinned skill `.md` only where the scan reds a real stale count
-- [ ] U3 (S) `binder.mjs`: the `renameparity` gate over `SEMANTIC_RENAME_FROM`, `LIBRARY_TYPE_VOICE_MAP`, `GEOMETRY_FIELD_RENAME_MAP` in the binder and the flagship (#772); the three lockstep comments · builder-l3 · reviewer-l3 · verifier-l2 · touches `test/figma/binder.mjs`, `figma/README.md`, comment lines in `figma/binder/figma-semantic-binder/code.js` and `figma/binder/migrations.mjs`
-- [ ] U4 (M) `em-dash.mjs --fix`: E1 and E2 bind to the enclosing string and the fix uses that dash; the two-string and template-literal fixtures (#764) · builder-l4 · reviewer-l3 · verifier-l2 · touches `test/repo/em-dash.mjs` only
+- [x] U1 (S) `citations.mjs`: the bare-literal source guard (#769) and the bare-filename symbol-home resolve (#775) · builder-l3 · reviewer-l3 · verifier-l2 · touches `test/repo/citations.mjs` only
+- [x] U2 (M) `citations.mjs`: whole-doc count-phrase scan with sibling reach and allow rules (#776); the `type.mjs` and `typography.js` ramp comments · builder-l4 · reviewer-l3 · verifier-l2 · after U1 has merged into `plan/gates-batch` · touches `test/repo/citations.mjs`, `src/engine/type.mjs`, `src/ui/sections/typography.js` (comments only), and a pinned skill `.md` only where the scan reds a real stale count
+- [x] U3 (S) `binder.mjs`: the `renameparity` gate over `SEMANTIC_RENAME_FROM`, `LIBRARY_TYPE_VOICE_MAP`, `GEOMETRY_FIELD_RENAME_MAP` in the binder and the flagship (#772); the three lockstep comments · builder-l3 · reviewer-l3 · verifier-l2 · touches `test/figma/binder.mjs`, `figma/README.md`, comment lines in `figma/binder/figma-semantic-binder/code.js` and `figma/binder/migrations.mjs`
+- [x] U4 (M) `em-dash.mjs --fix`: E1 and E2 bind to the enclosing string and the fix uses that dash; the two-string and template-literal fixtures (#764) · builder-l4 · reviewer-l3 · verifier-l2 · touches `test/repo/em-dash.mjs` only
+- [x] U5 (S) trivial lane · `.sdlc/baseline.md`: the `npm run build` `ui.html` KB figure set to the tree's `gen:figma-ui` output and one dated Correction naming the cause (U2 and U3 comment edits inlined into `figma/plugin/ui.html`), per the file's existing Correction shape (U5-1 to U5-2) · builder-l1 · reviewer-l1 · touches `.sdlc/baseline.md` only
 
 Grades per R79 (`.sdlc/questions/grade-policy-fable.md`): unit reviews reviewer-l3, unit verdicts verifier-l2; Fable (reviewer-l4, verifier-l3) only at the pre-land pair.
 
@@ -158,6 +159,13 @@ Every control below runs in a throwaway clone under `$CLAUDE_JOB_DIR/tmp/` made 
 | U4-7 | idempotence holds on the new fixtures | `sed -n '/const idemSrc = \[/,/^  \];/p' test/repo/em-dash.mjs \| grep -c '## Head\|Sundarbans'` (the idempotence leg re-runs the `idemSrc` array; the builder appends the two-string line and the replay line to it), then the self-test | `2`; PASS | an `idemSrc` without them prints `0` or `1`; a second pass that edits reds `idempotence` | `0` |
 | U4-8 | no `--fix` was run over the tree | `git diff --name-only $(git merge-base origin/main HEAD)..HEAD` | `test/repo/em-dash.mjs` and `.sdlc/` paths only | a tree-wide `--fix` would list `.md` or other files | n/a |
 
+### U5 criteria (revision 5, R83)
+
+| # | Criterion | Command | Expected | Negative control | Today |
+|---|---|---|---|---|---|
+| U5-1 | the baseline agrees with the tree | `sh .sdlc/checks/baseline-agrees-check.sh` | `stale total: 0`, exit 0 | the pre-U5 row prints `STALE ui.html`, exit 1 | `STALE ui.html: baseline 4141.3 KB, tree 4141.8 KB` |
+| U5-2 | one Correction, dated, cause named, nothing else moved | `grep -c '^Correction (2026-09-30, plan gates-batch' .sdlc/baseline.md`; C3's second command | `1`; `0` | a second Correction prints `2`; any other row edit makes C3 print `1` or more | `0`; n/a |
+
 ## Not in scope
 
 | Left out | Why |
@@ -199,6 +207,9 @@ One PR from `plan/gates-batch` to `main`, carrying the four units, this plan and
 
 | Date | Change | Why |
 |---|---|---|
+| 2026-09-30 | closed on landing of PR #781 (squash `30c3a7aa`) | last unit verified; U1 to U5 all shipped; pre-land record `.sdlc/verdicts/gates-batch-prepr.md` pass 2 🟢 at `1b3f835f` |
+| 2026-09-30 | revision 5 (R83, the owner allowed the sixth row): C3 admits the `ui.html` baseline size row and one dated Correction, and U5 (trivial lane) makes that edit, since U2's and U3's comment edits grew the inlined bundle and `baseline-agrees-check.sh` read STALE | `.sdlc/verdicts/gates-batch-prepr.md` finding 1, `.sdlc/questions/gates-batch-prepr-p1.md` |
+| 2026-09-30 | revision 4: C5 admits generated `src/ui/*-assets.js` (for example `figma-plugin-assets.js`, `describe-mcp-assets.js`) when their bytes equal generator output, since `npm test` regenerates them from a comment edit and requires a clean tree; a hand edit still reds | gates-batch U3 reviewer-l3 finding, 2026-09-30 |
 | 2026-09-30 | revision 3 (still draft): U2 widened with the four `src/ui/sections/typography.js` stale-voice comment sites handed over by docs-stale-batch (P15, U2-12); C5 now compares comment-stripped sources so a trailing-comment edit on a code line counts as a comment change | team lead dedupe with `.sdlc/plans/docs-stale-batch.md` |
 | 2026-09-30 | revision 2 (still draft): pass 2 reds fixed: the U2 Design wording no longer spells any P9 needle, U4-7 reads the `idemSrc` array by its own delimiters; P9's raw `SM/MD/LG` count corrected to 3 | reviewer-l1 pass 2, 2026-09-30 |
 | 2026-09-30 | revision 1 (still draft): checkability review `.sdlc/verdicts/gates-batch-checkability.md` reds fixed: U2-9 and P9 count the three stale phrases (a third universal claim found), U4-2 and U4-5 stage the scratch file because `--fix` walks `git ls-files` and takes no path; yellows carried: U2-5 command, U3-1 expected as a floor plus a `DECLARED` grep, U3-7 README wording, U4-7 named check, size line 6 points, U3 regex admits `var` | reviewer-l1 verdict, 2026-09-30 |
