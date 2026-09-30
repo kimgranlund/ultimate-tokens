@@ -1,10 +1,12 @@
-FAIL
+PASS
 
-# gates-batch U5 review, pass 1 (reviewer-l1, trivial lane)
+# gates-batch U5 review (latest: pass 2 PASS at 02fd12ec; pass 1 FAIL at 1de0e6ee kept below as history)
 
 Head reviewed: 1de0e6ee on unit/gb-U5. Files changed: `.sdlc/baseline.md`, `.sdlc/handoffs/gates-batch-U5.md` only. `npm test` skipped (heavy-process count was 2, limit under 2).
 
-## Findings
+## Pass 1 (history, FAIL at 1de0e6ee)
+
+### Findings
 
 1. 🟡 (blocks PASS, one-word fix) The edited `npm run build` row in `.sdlc/baseline.md` says `re-measured at gates-batch U5 (#776) on plan/anchor-gaps`. The figure was measured in `.worktrees/gb-U5` on unit/gb-U5 (plan/gates-batch), not on plan/anchor-gaps; the builder changed the unit name and kept the old branch name. Change `plan/anchor-gaps` to `plan/gates-batch` (or `unit/gb-U5`). Everything else in the cell is accurate.
 2. 🟢 The Correction paragraph matches the file's Correction shape (date, plan and unit, ticket, figure move, named cause, program output and the check's reading before and after, "Only the KB cell moves; the seconds are not re-measured."). The cause is true: the plan branch's `figma/plugin/ui.html` is 4267640 to 4268211 bytes vs main, and `src/engine/type.mjs`, `src/ui/sections/typography.js` and `figma/binder/**` comment edits are in the plan diff; pre-land record finding 1 names the same cause. It does not claim the verbatim STALE line.
