@@ -282,8 +282,16 @@ function cappedTarget(p, chroma) {
     else {
       if (JSON.stringify(wrow) !== JSON.stringify(directAt(wn, wrc, ctl))) FAIL("ac003b", "witness: Neutral's row at group baseChroma 10 differs from the direct rampChroma-10 call");
       if (readsChroma(wrow, wn, ctl)) FAIL("ac003b", `witness: Neutral's row at group baseChroma 10 equals the direct chroma-${wn.chroma} call, the ramp read palette.chroma`);
-      // Control: a row rendered at p.chroma (the regression) must be caught by the same predicate.
-      if (!readsChroma(directAt(wn, wn.chroma, ctl), wn, ctl)) FAIL("ac003b", "witness control: the must-differ predicate did not flag a row rendered at palette.chroma");
+      // Control: a LIVE row whose group baseChroma equals Neutral's own chroma must be flagged by the
+      // same predicate and must differ from the witness row, so group chroma reaches the ramp and the
+      // must-differ arm has a gap to tell apart (a projectView that reads p.chroma makes the two equal).
+      const cd = M.defaultDocument();
+      const cn = cd.palettes.find((p) => p.name === "Neutral");
+      cd.paletteGroups = { ...cd.paletteGroups, [wg]: { ...(cd.paletteGroups || {})[wg], baseChroma: cn.chroma } };
+      const crow = M.projectView(cd).palettes.find((v) => v.name === "Neutral").fullRamp.map((s) => s.hex);
+      if (M.rampChromaOf(cn, cd) !== cn.chroma) FAIL("ac003b", `witness control: Neutral's rampChroma is ${M.rampChromaOf(cn, cd)} under a group baseChroma of ${cn.chroma}, want ${cn.chroma}`);
+      else if (!readsChroma(crow, cn, ctl)) FAIL("ac003b", `witness control: the must-differ predicate did not flag a live row at rampChroma ${cn.chroma} = palette.chroma`);
+      else if (JSON.stringify(crow) === JSON.stringify(wrow)) FAIL("ac003b", `witness control: Neutral's rows at group baseChroma 10 and ${cn.chroma} are identical, group chroma does not reach the ramp`);
     }
   }
 }

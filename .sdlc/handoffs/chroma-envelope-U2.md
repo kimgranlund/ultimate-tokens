@@ -1,54 +1,74 @@
-# Handoff chroma-envelope U2 pass 2 · builder → orchestrator
+# Handoff chroma-envelope U2 pass 3 · builder → orchestrator
 
 | Field | Value |
 |---|---|
-| Branch | unit/ce-U2: code at be227d2e, R69 re-pins in the commit carrying this handoff. Base merge 351eee68 = plan/chroma-envelope b149f8dd (revision 5) |
-| Status | 🟢 C2.8: `npm test` reds on exactly the three declared rows. The five extra reds from pass 2 were ruled R69's declared cost (plan :19, Q-U2-5 reversed) and re-pinned after a trace proof, see Re-pins. Every other C2 row is 🟢 or 🟡 |
-| Files | `scripts/lib/envelope-measure.mjs`, `scripts/report-preset-fidelity.mjs`, `test/engine/chroma-envelope-gate.mjs`, `test/engine/tonal.mjs`, `test/engine/anchor.mjs`, `test/engine/semantic.mjs`, `test/engine/fixtures/mode-isolation.json`, `test/engine/fixtures/chroma-envelope.json`, `docs/reference/reviews/2026-08-20-reactivity/00-synthesis.md` and `04-context-and-messaging.md` (citation repoint), regenerated `figma/plugin/ui.html` and `src/ui/describe-mcp-assets.js`; re-pins: `test/engine/exports.mjs`, `docs/spec/spec-panda-park-ui-exports.md`, `test/engine/fixtures/shadcn-baseline.css`, `test/engine/fixtures/radix-baseline.json`, `test/ui/fixtures/default-doc-ramps.json`, `test/ui/shell.mjs`, `test/ui/headless-boot.mjs`; this handoff |
-| Untouched | every `src/engine/` file; RAMP_GAP_ALLOW, RAMP_DISTINCT_ALLOW, NOTCH_ALLOW, KNOWN_BASELINE_DUP; FLOORS_BF2AAF6; `.sdlc/board.md` |
+| Branch | unit/ce-U2: pass 3 is the commit carrying this handoff, on 0627f874 (pass 2, verdict 🔴). Base merge 351eee68 = plan/chroma-envelope b149f8dd (revision 5) |
+| Scope | R75 (`.sdlc/questions/chroma-envelope-U2-pass3.md`, Q1 A): records only. No engine, gate-logic or allow-list change |
+| Status | 🟢 all four verdict items fixed. `npm test` reds on exactly the three declared C2.8 rows, tree clean after |
+| Files | `test/engine/tonal.mjs` (comment only), `test/ui/shell.mjs` (the ac003b witness control), `.sdlc/baseline.md` (ui.html row and a correction paragraph), this handoff |
+| Untouched | every `src/` and `scripts/` file; `test/engine/chroma-envelope-gate.mjs`; RAMP_GAP_ALLOW, RAMP_DISTINCT_ALLOW, NOTCH_ALLOW, KNOWN_BASELINE_DUP; FLOORS and FLOORS_BF2AAF6; the plan file; `.sdlc/board.md` |
+| Carries | every pass 2 C2 row the verdict graded 🟢 (C2.1, C2.2, C2.4 to C2.8): no file they read changed, see Scope proof |
 
-## C2 rows
+## Fixes
 
-| Id | Evidence at head | Control (reverted after) | State |
+| Id | Fix | Evidence at head | Control | State |
+|---|---|---|---|---|
+| F1 C2.3 | `test/engine/tonal.mjs:1850` to `:1852` (was `:1850` to `:1851`) now reads: 72 near-grey anchors excluded (15 of them the violators the exclusion removes, 15/3764 with it off), 3692 measured at 0 violators, max ratio at most 1. `git diff b149f8dd` over the unit's own files shows no other `3,749` or "15 excluded" text; the only other copies are in the planner's re-diagnosis record and the review, dated records left as written | gate prints `C6 (v) white-pixel exclusion (stop 500 CAM16 C < 2.869): 72 palette(s)` and `anchored peak overshoot: 0/3692 violator(s)` (verdict C2.3 row, unchanged code) | verdict's `WHITE_PIXEL_C = 0` run: `0 palette(s)`, `15/3764`, the figures the comment now names | 🟢 |
+| F2 baseline | `.sdlc/baseline.md` `npm run build` row: `4141.3 KB` to `4148.2 KB`, plus a dated correction paragraph naming the cause (U2's `src/engine/tonal.js` rewrite and the regenerated `src/ui/describe-mcp-assets.js`, both inlined) | throwaway `git clone -q --no-hardlinks` at `0627f874`: `npm ci` exit 0, `npm run build` exit 0 `wrote figma/plugin/ui.html 4148.2 KB`, porcelain `0`; with this baseline copied in, `sh .sdlc/checks/baseline-agrees-check.sh` exit 0, `ok    ui.html: baseline 4148.2 KB, tree 4148.2 KB`, `stale total: 0` | same clone before the edit: `STALE ui.html: baseline 4141.3 KB, tree 4148.2 KB`, `stale total: 1` | 🟢 |
+| F3 FLOORS | the 31 undeclared cell moves are listed per cell in FLOORS moves below, before and after. None crosses its FLOORS pin or its PENDING_U4 pin | `node floors.mjs` (scratch probe: `brandKit(defaultDocument(), { color: true })` per mode, the same `contrastRatio` pairing `semantic.mjs` reads) at `b149f8dd` and at head: `moved at 4dp: 32, differ at all: 32, pins parsed: 96`; `semantic.mjs` exit 0 in `npm test` | verdict C2.7: the declared cell's pin left at 8.2 reds `peak Tertiary LIGHT ... 8.18:1, below its pinned floor 8.2:1` | 🟢 |
+| F4 shell | `test/ui/shell.mjs:286` compared `directAt(wn, wn.chroma)` with itself. Replaced by a live control: a second `defaultDocument()` with Neutral's group `baseChroma` set to Neutral's own chroma (29); its `projectView` row must have `rampChroma` 29, must be flagged by `readsChroma`, and must differ from the witness row at baseChroma 10 | `node test/ui/shell.mjs` exit 0, `pass  ac003b`; all-FAIL logging copy at head prints no `witness` line | scratch clone with `src/ui/model.mjs:949` set to `const rampChroma = p.chroma;`, all-FAIL logging copy prints `witness control: Neutral's rows at group baseChroma 10 and 29 are identical, group chroma does not reach the ramp`. The pass 2 line on the same scratch engine prints no `witness control` line (it could not fail) | 🟢 |
+
+## FLOORS moves (F3)
+
+Every cell whose contrast differs between `b149f8dd` and head, 32 in all. Pin is the live FLOORS value; PENDING_U4 is the frozen erosion floor where the cell has one. Measured to 4 dp; every cell that differs at all also differs at 4 dp.
+
+| Mode | Family | Side | Before | After | Delta | Pin | Crosses |
+|---|---|---|---|---|---|---|---|
+| perceptual | Primary | dark | 4.9819 | 4.9787 | -0.0033 | 4.9 | no |
+| perceptual | Secondary | dark | 5.2226 | 5.2155 | -0.0071 | 5.2, PENDING_U4 5.2 | no |
+| perceptual | Tertiary | dark | 5.6385 | 5.6234 | -0.0150 | 5.6 | no |
+| perceptual | Warning | dark | 5.6426 | 5.6697 | +0.0271 | 5.6 | no |
+| perceptual | Danger | light | 8.2100 | 8.2388 | +0.0288 | 8.2 | no |
+| perceptual | Data 1 | light | 6.0003 | 6.0201 | +0.0198 | 6.0 | no |
+| perceptual | Data 2 | light | 6.3308 | 6.3203 | -0.0105 | 6.3 | no |
+| perceptual | Data 2 | dark | 4.7470 | 4.7586 | +0.0116 | 4.7, PENDING_U4 4.7 | no |
+| perceptual | Data 3 | dark | 4.9207 | 4.9376 | +0.0170 | 4.9, PENDING_U4 4.9 | no |
+| perceptual | Data 4 | dark | 4.7966 | 4.7971 | +0.0004 | 4.7, PENDING_U4 4.7 | no |
+| perceptual | Data 6 | dark | 5.2801 | 5.2838 | +0.0037 | 5.2, PENDING_U4 5.2 | no |
+| perceptual | Data 7 | light | 5.2851 | 5.2831 | -0.0020 | 5.2 | no |
+| perceptual | Data 7 | dark | 5.1548 | 5.1565 | +0.0017 | 5.1, PENDING_U4 5.1 | no |
+| peak | Neutral | dark | 4.6630 | 4.6641 | +0.0011 | 4.6 | no |
+| peak | Primary | light | 7.4400 | 7.4566 | +0.0165 | 7.4 | no |
+| peak | Primary | dark | 4.7696 | 4.7798 | +0.0102 | 4.7 | no |
+| peak | Secondary | dark | 5.6019 | 5.6082 | +0.0062 | 5.6, PENDING_U4 5.6 | no |
+| peak | Tertiary | light | 8.2001 | 8.1825 | -0.0176 | 8.1 (was 8.2) | declared in pass 2, re-pinned |
+| peak | Tertiary | dark | 5.3935 | 5.3795 | -0.0140 | 5.3, PENDING_U4 5.3 | no |
+| peak | Info | dark | 4.5732 | 4.5726 | -0.0006 | 4.5, PENDING_U4 4.5 | no |
+| peak | Success | dark | 4.8790 | 4.8796 | +0.0005 | 4.8, PENDING_U4 4.8 | no |
+| peak | Warning | dark | 5.2824 | 5.2841 | +0.0017 | 5.2, PENDING_U4 5.2 | no |
+| peak | Danger | light | 8.6322 | 8.6300 | -0.0022 | 8.6 | no |
+| peak | Danger | dark | 5.6846 | 5.6824 | -0.0022 | 5.6 | no |
+| peak | Data 1 | light | 6.3441 | 6.3659 | +0.0218 | 6.3, PENDING_U4 6.3 | no |
+| peak | Data 2 | dark | 4.5509 | 4.5605 | +0.0096 | 4.5, PENDING_U4 4.5 | no |
+| peak | Data 4 | dark | 5.0946 | 5.0917 | -0.0029 | 5.0, PENDING_U4 5.0 | no |
+| peak | Data 5 | light | 5.6948 | 5.6941 | -0.0007 | 5.6, PENDING_U4 5.6 | no |
+| peak | Data 5 | dark | 5.3318 | 5.3320 | +0.0003 | 5.3, PENDING_U4 5.3 | no |
+| peak | Data 6 | dark | 5.5999 | 5.6007 | +0.0008 | 5.5, PENDING_U4 5.5 | no (up across the 5.6 line) |
+| peak | Data 7 | dark | 5.4752 | 5.4753 | +0.0001 | 5.4, PENDING_U4 5.4 | no |
+| peak | Data 8 | dark | 5.3224 | 5.3246 | +0.0021 | 5.3, PENDING_U4 5.3 | no |
+
+Even mode: 0 cells moved (the unit changes only the anchored perceptual and peak paths). Largest drop among the 31: perceptual Tertiary dark, -0.0150, 0.0234 above its pin.
+
+## Gates
+
+| Gate | Evidence | Control | State |
 |---|---|---|---|
-| C2.1 | probe `anchorChromaBasis(stop, 500, 0, 0.30, g)`: g 0.98, every stop 0.300000 (max 0.300000, 500 = 0.300000); g 0.20, 0.2000 at 50/950, 0.2034 at 100/900, 0.2583 at 300/700, 0.3000 at 500 | base afd415c0 tonal.js, g 0.98: 50 0.9800, 100 0.9567, 300 0.5836 (climbs); g 0.20 identical to head | 🟢 |
-| C2.2 | `report-preset-fidelity.mjs --envelope` exit 1. Two blocks per mode. Gate path perceptual median 9.5 / 79.9 / 62.6 / 22.6, p90 17.4 / 97.9 / 66.5 / 26.3 (300 FAIL both, mechanism 1), violations 0. Gate path peak median 4.2 / 41.1 / 61.3 / 19.4, p90 11.8 / 58.1 / 69.3 / 25.2, all OK. Anchored perceptual 9.8 / 74.2 / 65.8 / 24.0 and 23.1 / 106.7 / 70.8 / 29.0; anchored peak 8.5 / 64.4 / 61.1 / 21.9 and 17.3 / 97.4 / 66.4 / 27.1 (all on the re-diagnosis row). `over 90 at stop 300`: perceptual 1042, peak 575, even 407 of 2920. Peak anchored `above 100% of stop 500: 0 OK`. Perceptual `rule violations 2 FAIL` (Studio 54 secondary 2 runs, Kea primary-muted 226.02%), window: 1 anchored instance outside, 0 violations excluded | (a) report copy with the gate block fed the anchored set: `gate path` heading prints perceptual 300 p90 106.7 FAIL. (b) base engine (afd415c0 tonal.js) report copy: anchored perceptual violations 445 + 1 window-excluded = 446, peak above100 2592 FAIL, peak anchored 300 p90 137.7. (c) climb copy (only the `min` reverted): perceptual 445 + 1 = 446, peak above100 0 (see Deviations 5). (d) window: planted instance Barbican primary with anchor #0D0D0D (L* 3.64) via `measureEnvelope({instances})` prints outsideWindow 1, counted 0, excluded `[#0D0D0D, L* 3.64, 354.54%]`; the same instance with the window check forced off counts 1, excluded 0 | 🟢 |
-| C2.3 | `tonal.mjs --full`: `C6 (v) white-pixel exclusion (stop 500 CAM16 C < 2.869): 72 palette(s)` (all named), `anchored peak overshoot: 0/3692 violator(s) (pinned <= 0), max 0.000000x (pinned <= 1x)`. WHITE_PIXEL_C re-measured: #FFFFFF CAM16 C 2.8690352 | copy with WHITE_PIXEL_C = 0: 0 excluded, `15/3764`, max 2.023757, FAILs against the pins (seen via an all-FAIL logging copy, the file dedupes to the first FAIL) | 🟡 Deviations 1 |
-| C2.4 | `anchor.mjs --full`: monotone 0; achromatic even 9 of 9 within the hue bound, 1 skipped (#FFFFFF stop 300, C 4.41), perceptual and peak 20 of 20 below C 5, pass; f4 perceptual max 0.0050, f4 peak uncapped max 0.0050, cap-moved stops 7841, max 0.0184 (want <= 0.02; Jekyll and Hyde tertiary stop 400, oklch #8B6A62 / cam16 #886C58), pass. Only `anchor-ramp` reds (gap 89 vs 72, distinct 31 vs 16, notch 15 vs 17: the lists, untouched). `tonal.mjs --full`: 1 gate failure, C6 (ii) only | climb engine copy SAMPLED: `perceptual/peak 11 of 20`, FAIL `#808080 perceptual stop 300: CAM16 C 13.28, want below 5`. Bound set to 0.01, FULL: FAIL `hueSpace peak, capped stops: max OKLab dE 0.0184 over 7841 cap-moved stop(s), want <= 0.01` | 🟡 Deviations 3, 4 |
-| C2.5 | `gate:mode-isolation` pre-capture reds `perceptual a874ac86f2e113b4 peak 815dcec4262382da do not match fixture` (old 990c17c5ae140e6e / b59bd41501cd829a); captured at 351eee68 and committed; gate passes. `--identity-control --base afd415c0`: all six lines `0 differing cells` (it strips anchors). With `--authored` (exit 1): perceptual 3023/3780 palettes, 67892/94500 cells, max dL* 1.1380; peak 3378/3780, 67796/94500, 1.0240; even 0/3780, 0/94500; default kit perceptual 16/16, 202/400, 0.4053; peak 16/16, 189/400, 0.4274; even 0/16, 0/400 | the pre-capture red above | 🟢 |
-| C2.6 | `chroma-envelope-gate.mjs --capture` at 351eee68, committed; gate passes. `--compare <base fixture>`: `0 cells rose`, even byte-identical, exit 0 | `--compare <committed> --fixture <perceptual 300 median +0.1>`: `1 cells rose ... perceptual 300 median`, exit 1 | 🟢 |
-| C2.7 | 96-cell re-read: one cell below its pin, peak Tertiary LIGHT measured 8.1825, pin 8.2 to 8.1 (`semantic.mjs:300`). `checkFloors` vs FLOORS_BF2AAF6: 0 drops. `semantic.mjs` exit 0. `gate:corpus-contrast` exit 0 (worst 4.500:1, Alice's Adventures primary/dark peak). `gen-tonal-fixture.mjs`: `tonal-legacy.json` no diff | pin left at 8.2: `FAIL role-contrast, peak Tertiary LIGHT: accent #7F0FAC on #FFFFFF = 8.18:1, below its pinned floor 8.2:1` | 🟡 Deviations 6, 7 |
-| C2.8 | `npm test` exit 1, `2/54 test file(s) failed`, exactly the declared rows: `anchor-ramp gap (19-stop) allow-list: 13 (at most 72)`, `anchor-ramp distinct (25-stop) allow-list: 6 (at most 16)`, `chroma-envelope (C6 ii) perceptual: 3 duplicate-hex pair(s) beyond the cited list`. `shell.mjs` prints `SKIP ac003b must-differ for "Neutral": chroma 29 and rampChroma 30 cap to 0.2900 / 0.2903 under anchor #576485 (#725 R69)`. em-dash clean, branding clean, citations STALE 0 (after repointing `okhslLAt` `tonal.js:994` to `:1003` in two review docs, moved by pass 1). `git status` clean after the run | new gid3 on the base engine (afd415c0 tonal.js): `(gid3) a fresh doc's Neutral ramp equals the chroma-100 ramp` FAILs. ac003b witness with projectView reading `p.chroma` for Neutral (scratch copy): `witness: Neutral's row at group baseChroma 10 differs from the direct rampChroma-10 call` FAILs | 🟢 |
-
-## Re-pins (C2.8, ruled R69's declared cost)
-
-Ruling (team-lead): the five pass 2 extra reds are R69's cost (plan :19, Q-U2-5 reversed, every perceptual/peak ramp moves). Before any re-pin, a trace proof (scratch copies, head vs afd415c0 base) showed nothing outside anchored perceptual/peak ramps moved:
-
-- Anchors stripped and even mode: every output byte-identical (shadcn ALL / BRAND_ONLY / ALL_DATA_OFF, radix ALL / BRAND_ONLY / COLLIDING, panda, the default ramps).
-- Perceptual (the kit as shipped) moved: shadcn 31 lines per section (93 total), radix 600 / 339 / 301 leaves (ALL / BRAND_ONLY / COLLIDING), panda 652 leaves, default ramps 202 of 400 cells. Peak moved: shadcn 37 lines per section, radix 566 / 327 / 301, panda 596, ramps 189.
-- Every moved radix key is an anchored default family or an alias of one (accent, gray). In COLLIDING the unanchored accent-palette and error-palette are unmoved. Panda EX-1 literals are unmoved. No stray found.
-
-Movements recorded:
-
-1. Panda EX-2 (`exports.mjs` and `spec-panda-park-ui-exports.md`, both from `exportPanda(stateOf(defaultDocument()))`): `primary.DEFAULT._dark` `oklch(0.5504 0.1924 258.96)` to `oklch(0.5506 0.1922 259.07)`; `primary.hover._dark` `oklch(0.6419 0.1561 259.24)` to `oklch(0.6413 0.1547 259.07)`; `data-1.DEFAULT.base` `oklch(0.5194 0.2328 272.25)` to `oklch(0.5184 0.2316 272.29)`. The spec carries a re-pin note (2026-09-29, #725 U2, R69).
-2. `shadcn-baseline.css`: re-captured (the writer reproduces the old base byte for byte first); header gains a #725 carve-out paragraph naming the 31 lines per section.
-3. `radix-baseline.json`: re-captured the same way; `exports.mjs` notes 600 / 339 / 301 leaves moved, Accent and Error unanchored and unchanged.
-4. `default-doc-ramps.json`: regenerated by `scripts/gen-ramp-fixture.mjs`, 202 cells moved. ac003b's REQ-003 arm rewritten (ruling A plus a witness): every row equals the direct call at its rampChroma; must-differ vs the direct `p.chroma` call applies only when the capped targets differ by more than 0.01, else a SKIP line prints (Neutral: 0.2900 / 0.2903). Witness: Neutral with its group's baseChroma at 10 (capped 0.10 vs 0.29) must equal the rampChroma-10 call and differ from the chroma-29 call; an in-test control checks the predicate flags a row rendered at `p.chroma`, and a scratch control (projectView reads `p.chroma` for Neutral) reds. Neutral's default chroma unchanged.
-5. gid3 (`headless-boot.mjs`) rewritten to assert R69: a fresh kit's Neutral ramp equals the chroma-100 ramp (group chroma above the anchor's s, measured 0.2903 and asserted in (0.10, 0.30], is ignored); gid3b: the chroma-10 ramp differs from the chroma-30 ramp (it still follows below). Control: the base engine FAILs gid3.
-
-## Deviations
-
-1. C2.3: the rule "exclude c500 < 2.869" removes 72 palettes, not 15; only 15 of the 72 were violators. Plan expected `0/3749`; measured `0/3692`.
-2. C2.3/C2.4 scope: pass 1's `min` blend also hid two tonal FAILs behind C6 (ii)'s first message: the dip gate's cited baseline TICKET_739 was no longer observed (peak and perceptual), and the dip negative control produced 0 dips. Fixed test-side: DIP_BASELINE and PERCEPTUAL_DIP_BASELINE retired to empty sets (name kept in a comment), control re-targeted to replace the `min` target with `groupValue`. After it, the all-FAIL copy shows C6 (ii) only (perceptual 10 pairs, peak 40, 8 of 22 cited not observed).
-3. C2.4 f4: engine rows carry no `capped` flag, so the test reads it by rendering a second engine copy with `capPeak = false` (data-URL model import) and calling a stop capped when its hex differs. Cost: `anchor.mjs --full` 114.5 s vs 104 s (+10.5 s), inside C3.7's 120 s but close.
-4. C2.4 achromatic: the planted `skipped` control uses 10 (the gate allows at most 1).
-5. C2.2 control (c): the plan says the climb copy prints "the same two counts" as base; it prints 446 / 0 (the shared peak cap clears peak without the `min`), matching the re-diagnosis table row, not the plan row.
-6. C2.7: the plan cites `semantic.mjs:282`; the peak Tertiary pin is at line 300. Three cells sit above their pins with headroom and were left alone (even Primary light 7.52 vs 7.4, even Danger light 8.73 vs 8.6, peak Data 6 dark 5.60 vs 5.5).
-7. C2.7: `tonal-legacy.json` is byte-unchanged (the fixture is non-anchored perceptual/even), so no commit; the plan expected perceptual rows to move.
-8. The C6 (v) companion in the report still prints the unexcluded `15/3764`, max 2.023757 (report-only; the exclusion lives in the gate).
-9. Even prints both a gate-path and an anchored block; even anchored above100 502 is "(reported, not barred)".
+| C2.8 `npm test` | exit 1, `✗ 2/54 test file(s) failed`, FAIL lines exactly `(C6 ii) perceptual: 3 duplicate-hex pair(s)`, `anchor-ramp gap (19-stop) allow-list: 13`, `anchor-ramp distinct (25-stop) allow-list: 6`; `git status --porcelain` after shows only this pass's edits (93.9 s wall, load 6.7) | verdict C2.8: a planted U+2014 reds `FAIL: 1 em dashes` | 🟢 |
+| em-dash, branding, citations | `em-dash: clean (1004 files scanned)` exit 0; `branding: clean (996 files scanned)` exit 0; `citations: parser self-test + STALE 0 across 10 discovered docs + 11 fact pins` exit 0; `verdict.py check` on this handoff exit 0 | verdict C2.8 planted em dash | 🟢 |
+| Scope proof | `git diff 0627f874 -- src/ test/engine/chroma-envelope-gate.mjs scripts/` prints nothing; `git diff 0627f874 -- test/engine/tonal.mjs` is the three comment lines | the verdict's Scope row: anchor-stripped identity-control `0` cells | 🟢 |
 
 ## Left out
 
-- The (iii c) and tone-rose negative controls were not re-run in pass 2 (both gates pass at head on `tonal.mjs --full`).
-- `npm run build` and `npm run smoke` not run (no build-chain change).
+- The FLOORS table's own `// measured x / y` comments (2 dp) are not refreshed for the 31 cells; R75 limits this pass to the named records, and this table is the per-cell declaration.
+- Verdict findings 3 (plan text) and 4 (`anchor.mjs --full` timing against C3.7) belong to revision 6 and U3, not this pass.
+- Pass 2's C2 row evidence is in git at `0627f874:.sdlc/handoffs/chroma-envelope-U2.md`.

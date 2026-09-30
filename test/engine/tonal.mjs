@@ -1847,8 +1847,9 @@ for (const mode of ["perceptual", "peak"]) {
 
     // Pinned this pass (2026-09-20). Anchored PEAK, generated palettes, Adia excluded by name, 19-stop
     // display set. Re-pinned by #725 U2 (was 3119 / 15.132599 over 3,764): the anchored peak path runs the
-    // joint (s, l) cap, so nothing above stop 500 is emitted; the 15 near-grey anchors below WHITE_PIXEL_C
-    // are excluded above, leaving 3,749 measured at 0 violators and a max ratio of at most 1.
+    // joint (s, l) cap, so nothing above stop 500 is emitted; the 72 near-grey anchors below WHITE_PIXEL_C
+    // are excluded above (15 of them are the violators the exclusion removes, 15/3764 with it off),
+    // leaving 3692 measured at 0 violators and a max ratio of at most 1.
     const PEAK_VIOLATOR_PIN = 0;
     const PEAK_MAX_RATIO_PIN = 1.000000;
     const peakResult = measureAnchoredOvershoot(T, "peak");
