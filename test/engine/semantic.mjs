@@ -297,7 +297,7 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
       ["Neutral", 7.2, 4.6],   // measured 7.21 / 4.66
       ["Primary", 7.4, 4.7],   // measured 7.44 / 4.77
       ["Secondary", 5.5, 5.6],   // measured 5.53 / 5.60 - pending U4: light was 11.5 at bf2aaf6, dark was 15.1 at bf2aaf6
-      ["Tertiary", 8.2, 5.3],   // measured 8.20 / 5.39 - pending U4: dark was 5.5 at bf2aaf6
+      ["Tertiary", 8.1, 5.3],   // measured 8.1825 / 5.3795 - light re-pinned #725 U2 (was 8.2, measured 8.20): moved by the U2 engine hunk (ec496bd0), floor(measured) is 8.1; pending U4: dark was 5.5 at bf2aaf6
       ["Info", 7.0, 4.5],   // measured 7.10 / 4.57 - pending U4: dark was 7.7 at bf2aaf6
       ["Success", 7.6, 4.8],   // measured 7.60 / 4.88 - pending U4: dark was 11.8 at bf2aaf6
       ["Warning", 9.6, 5.2],   // measured 9.69 / 5.28 - pending U4: dark was 7.4 at bf2aaf6

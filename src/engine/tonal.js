@@ -552,11 +552,20 @@ export function liftStop(stop, lift) {
 // form), but its derivative is 0 at t=0 too, so the chroma trajectory leaves the pivot flat instead of
 // with a kink. `chromaEnvelope` itself stays verbatim (untouched) - only the BASIS this weight blends
 // is different; the envelope's own shoulder/damp shaping is unaffected.
-export function anchorChromaBasis(stop, anchorStop, lift, anchorValue, groupValue) {
+//
+// Capped at the anchor (#725 U2, owner ruling R69, reverses Q-U2-5 for perceptual and peak): the group
+// target the blend walks toward is `min(groupValue, anchorValue)`, so a muted sample in a vivid group no
+// longer climbs toward the group's chroma on either side of the pivot (the climb is what put perceptual
+// stop 300 at a 94% median of stop 500 and every anchored peak ramp above its own anchor). A vivid sample
+// in a muted group still falls toward the group, as before: only the climb is removed. `climb = true`
+// keeps the pre-R69 blend for the EVEN path (`paletteStopsAnchored`), which #701 owns and this ruling
+// does not move.
+export function anchorChromaBasis(stop, anchorStop, lift, anchorValue, groupValue, climb = false) {
   const sd = Math.abs(liftStop(stop, lift) - liftStop(anchorStop, lift)) / 450;
   const t = Math.min(1, sd);
   const w = t * t * (3 - 2 * t); // smoothstep: w(0)=0, w(1)=1, w'(0)=w'(1)=0
-  return anchorValue + (groupValue - anchorValue) * w;
+  const target = climb ? groupValue : Math.min(groupValue, anchorValue);
+  return anchorValue + (target - anchorValue) * w;
 }
 
 // toneAt, L* for a stop given per-palette skew/lift and the tone controls.
@@ -832,7 +841,7 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
       const mc = maxChromaInGamut(h, tone);
       const anchorIntendedH = controls.relChroma ? anchorRelFrac * mc : anchor.cam.chroma;
       const groupIntendedH = controls.relChroma ? (palette.chroma / 100) * mc : groupTarget;
-      const intendedH = anchorChromaBasis(stop, 500, lift, anchorIntendedH, groupIntendedH);
+      const intendedH = anchorChromaBasis(stop, 500, lift, anchorIntendedH, groupIntendedH, true); // even keeps the climb (#725 R69 scope)
       return evenChroma(mc, intendedH, env, controls.chromaFloor, floorRef);
     };
     let resolvedHue = seedHue;
@@ -1038,6 +1047,153 @@ function effStop(stop, palette) {
   return 50 + 900 * p;
 }
 
+// solveLForTone  -  the OKHSL lightness l in [0,1] that renders CIE L* == targetTone at a FIXED hue/s
+// (#681 U3 pass 4/5). L* is monotone non-decreasing in l at fixed hue/s (OKHSL's own construction),
+// so bisection converges reliably; 30 halvings of [0,1] resolve to ~1e-9, well inside the 0.01 L* bar.
+function solveLForTone(hue, s, targetTone) {
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 30; i++) {
+    const mid = (lo + hi) / 2;
+    if (lstarFromRgb(okhslToRgb(hue, s, mid)) < targetTone) lo = mid; else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+// refineNearestRgb  -  a final 8-bit-quantization-aware polish (#681 U3 pass 4/5). Measuring chroma/tone
+// back from ROUNDED 8-bit RGB introduces noise the continuous joint solve above can't predict (up to
+// ~0.15 L*, ~0.1-0.2 chroma). Sweeps a few nearby continuous tone offsets through the validated HCT
+// engine (exploring different rounding cells) plus a +-2-per-channel integer RGB neighbor search, both
+// bounded by the TRUE chromaCeiling (never the margin-reduced target), picking whichever candidate
+// minimizes |measuredTone - targetTone|.
+// chromaFloor (#681 U3 review 2, F1): the OLD version optimized ONLY for tone error, with no lower
+// bound on chroma at all  -  a dTone candidate that happened to round to a slightly better tone match
+// could win even if it collapsed chroma several points below what the joint solve had already
+// converged to, silently undoing the solve's own accuracy and creating the chroma dips F1 found (14
+// remained after fixing the solve's own overshoot bug, ALL of them traced to this: the solve landed
+// within ~0.1 of the target, then this polish walked it away in the name of a sub-0.05-L* tone gain).
+// Rejecting any candidate below `chromaFloor` keeps the polish to what it was named for  -  quantization
+// noise (~0.1-0.2 C)  -  not a second, uncontrolled chroma search.
+//
+// A hue-aware variant was tried and reverted (#681 U3 review 2, F1): rejecting +-2-neighbour candidates
+// more than a few degrees off the stop's pre-cap OKLCH hue improved the worst-case hue residual (max
+// 24.6 degrees down to 4.0 at a 4-degree tolerance) but did so by blocking tone-favourable candidates,
+// and that tone-accuracy loss pushed 3 cells of the skew-lift-okhsl synthetic grid (C6 iii c) into a
+// genuine CIELAB-L* uptick beyond its named exceptions  -  confirmed at BOTH a 2-degree and a 4-degree
+// tolerance, and confirmed to clear with the hue constraint removed entirely, isolating it as the
+// cause (chromaFloor alone is not: it passes on its own). The reviewer rated the hue-blindness here
+// 🟡, "acceptable... once the hue residual is reported", not a blocker  -  so per "if a second
+// workaround is needed, stop", this stays hue-blind and the residual is reported honestly instead
+// (.sdlc/handoffs/pif-u3-retune.md): still bounded (median ~1 degree, worst case, per the measured
+// table, larger than before this pass at the tail  -  see the addendum for the full numbers).
+//
+// An input already ABOVE chromaCeiling is never the incumbent (#725 U2): the `hctToRgb` fallback
+// renders at the margin-reduced target, but 8-bit rounding at a dark tone can add more than the 0.5 C
+// margin (measured: Vaporwave secondary, anchored peak, stop 650, 28.63 requested, 29.17 rendered
+// against a 29.13 ceiling). Seeded as best, that pixel won on tone error against every in-ceiling
+// candidate and shipped above stop 500. With `strictSeed` it keeps its place only if no in-ceiling
+// candidate exists. Only the anchored path passes it: `okhslStops` keeps its shipped pixels byte-identical.
+function refineNearestRgb(rgb, hueCam16, targetTone, chromaCeiling, chromaFloor = 0, strictSeed = false) {
+  let best = rgb;
+  let bestErr = strictSeed && cam16FromRgb(rgb).chroma > chromaCeiling + 1e-6 ? Infinity : Math.abs(lstarFromRgb(rgb) - targetTone);
+  const consider = (cand) => {
+    if (cand.some((v) => v < 0 || v > 255)) return;
+    const c = cam16FromRgb(cand).chroma;
+    if (c > chromaCeiling + 1e-6) return;
+    if (c < chromaFloor - 1e-6) return;
+    const err = Math.abs(lstarFromRgb(cand) - targetTone);
+    if (err < bestErr) { bestErr = err; best = cand; }
+  };
+  for (const dTone of [-0.4, -0.3, -0.2, -0.1, -0.05, 0.05, 0.1, 0.2, 0.3, 0.4]) {
+    const reqChroma = Math.min(cam16FromRgb(rgb).chroma, chromaCeiling);
+    if (reqChroma <= 1e-9) continue;
+    consider(hctToRgb(hueCam16, reqChroma, targetTone + dTone).rgb);
+  }
+  for (let dr = -2; dr <= 2; dr++) for (let dg = -2; dg <= 2; dg++) for (let db = -2; db <= 2; db++) {
+    if (dr === 0 && dg === 0 && db === 0) continue;
+    consider([best[0] + dr, best[1] + dg, best[2] + db]);
+  }
+  return best;
+}
+
+// capChromaAtHeldTone - the peak joint (s, l) cap, one construction for BOTH OKHSL paths (#725 U2: the
+// anchored path had none, so anchored peak ramps climbed past their own stop 500; `okhslStops` carried it
+// inline). Given a stop's pre-cap OKHSL (hue, s, l), its rendered rgb and measured CAM16 chroma, and the
+// ramp's chroma `ceiling` (stop 500's own emitted chroma), returns { s, l, rgb, chroma } with chroma at
+// or under the ceiling and CIE L* held at the pre-cap value. `hueCam16` is the CAM16 hue the fallback and
+// polish render at; null solves it from the stop's own pre-cap OKLCH hue (the OKLCH-hue palette and the
+// anchored path, whose OKHSL hue is not a CAM16 hue). The caller decides WHEN it fires (peak, dampAmp 0,
+// chroma above the ceiling); this helper only caps. It reads no envelope: the envelope is already in `s`.
+// `strictSeed` is passed through to `refineNearestRgb` (true on the anchored path only).
+//
+// Generated PEAK palettes (dampAmp 0) never emit more chroma than the anchor (#681 U3 pass 5, C6's
+// "0 above 100%" clause, peak only  -  perceptual keeps #55's cusp-pull richness, see below). Holds
+// tone FIXED at its pre-cap value by solving JOINTLY for (s, l): shrink s toward the target chroma,
+// then re-solve l for the held tone, iterating until both hold. Hue stays the caller's OKHSL hue
+// throughout (no engine switch, no new Abney residual).
+function capChromaAtHeldTone(hue, s, l, rgb, chroma, ceiling, hueCam16, strictSeed = false) {
+  const targetTone = lstarFromRgb(rgb); // the pre-cap (natural) tone  -  held fixed below
+  // preCapOklchHue: THIS stop's own OKLCH hue before capping  -  the invariant the fallback/polish
+  // below must reproduce (#681 U3 review 2, F1). `hue` is the caller's resolved OKHSL hue (Abney-
+  // corrected for an OKLCH-hue palette via solveOkhslHue), so reading it
+  // back here  -  rather than re-deriving from `palette.hue`  -  is correct even under a non-zero
+  // hueShift, where a non-center stop's hue differs from the nominal set hue by the rotation.
+  const preCapOklchHue = rgbToOklchHue(rgb);
+  // chroma here is measured back from 8-bit-quantized OKHSL-rendered rgb, same as the ceiling  - 
+  // independently-quantized measurements can differ by a few hundredths after the solve below lands
+  // exactly at the target, so this margin keeps the final measured value strictly under the ceiling.
+  const CAP_MARGIN = 0.5;
+  const target = ceiling - CAP_MARGIN;
+  // Bisect s toward the EXACT target chroma, re-solving l for the held tone at every step (#681 U3
+  // review 2, F1). The old single multiplicative step (`s *= target/chroma`) assumed chroma scales
+  // linearly with s at fixed l  -  but l is ALSO re-solved each time to hold tone, so that assumption
+  // is false, and one overshooting step could satisfy the loop's own naive "chroma <= ceiling" exit
+  // test while landing far below the target (measured witness: nature "Monument Valley" secondary-
+  // muted, peak, stop 550  -  one iteration took chroma from 81.89 to 29.75 against a 57.04 target,
+  // and the loop stopped there because 29.75 already cleared the ceiling). Bisection always halves
+  // its bracket regardless of overshoot direction, and this loop tracks the BEST candidate seen
+  // across every step, so a later worse step can never lose a better earlier one.
+  let sLo = 0, sHi = s;
+  let bestS = s, bestL = l, bestRgb = rgb, bestChroma = chroma, bestErr = Math.abs(chroma - target);
+  for (let i = 0; i < 24; i++) {
+    const sMid = (sLo + sHi) / 2;
+    const lMid = solveLForTone(hue, sMid, targetTone);
+    const rgbMid = okhslToRgb(hue, sMid, lMid);
+    const chromaMid = cam16FromRgb(rgbMid).chroma;
+    const err = Math.abs(chromaMid - target);
+    if (err < bestErr) { bestErr = err; bestS = sMid; bestL = lMid; bestRgb = rgbMid; bestChroma = chromaMid; }
+    if (chromaMid > target) sHi = sMid; else sLo = sMid; // chroma rises with s at a tone-held l
+  }
+  s = bestS; l = bestL; rgb = bestRgb; chroma = bestChroma;
+  // polishHue: the CAM16 hue that reproduces THIS stop's preCapOklchHue at whatever chroma/tone is
+  // about to be rendered through hctToRgb below (fallback and/or the 8-bit polish)  -  solved fresh
+  // rather than reusing the plain CAM16 proxy (`hueCam16`), which is what brought back the Abney
+  // drift `solveOkhslHue` exists to remove on an OKLCH-hue palette (F1). A CAM16-hue palette has no
+  // OKLCH-hue promise to keep, so `hueCam16` is already correct there  -  no solve needed.
+  const polishHue = hueCam16 === null ? solveCam16Hue(preCapOklchHue, Math.max(chroma, 1), targetTone) : hueCam16;
+  if (chroma > ceiling + 1e-6 || Math.abs(lstarFromRgb(rgb) - targetTone) > 0.01) {
+    // Fallback (#681 U3 review 3, N3: corrected from an earlier "rare" claim): this fires on 93.5%
+    // of capped stops measured, not rarely. The bisection's own 24 steps DO converge on chroma
+    // reliably (review 4 R5: this is a property measured directly on the bisection's own output, NOT
+    // what the ramp-shape dip gate below checks, which is unrelated), but 0.01 L* is tighter than an
+    // 8-bit RGB round-trip can usually reach at a fixed hue/chroma, so the tone-tolerance half of
+    // this condition is the one that almost always trips, sending nearly every capped stop through
+    // `hctToRgb` here rather than keeping the bisection's own continuous render. Caps via the
+    // validated HCT engine directly AT the target chroma (never the solve's own possibly-off value:
+    // the old `Math.min(chroma, target)`
+    // here is what let an overshot loop result lock in below target instead of correcting to it, F1)
+    // and the held tone, at polishHue.
+    const capped = hctToRgb(polishHue, target, targetTone);
+    rgb = capped.rgb;
+    chroma = cam16FromRgb(rgb).chroma;
+  }
+  // Polish against the 8-bit quantization floor, at polishHue: never past the TRUE ceiling (not
+  // the margin-reduced target), minimizing the residual tone error the rounding introduces. Floored
+  // 1 C below whatever the solve/fallback already achieved, so the polish can only fix quantization
+  // noise, not walk chroma away from a value the solve already spent 24 bisection steps converging.
+  rgb = refineNearestRgb(rgb, polishHue, targetTone, ceiling, Math.max(0, chroma - 1), strictSeed);
+  chroma = cam16FromRgb(rgb).chroma;
+  return { s, l, rgb, chroma };
+}
+
 // okhslStopsAnchored - the perceptual/peak path's anchored branch: a piecewise OKHSL-`l` ladder
 // pivoting on (500, the anchor's own OKHSL lightness), replacing `lightnessAt`'s even/cusp blend with
 // a pivot-preserving analog (F4, re-diagnosis Finding 2, owner-ruled 2026-09-18: the controls stay
@@ -1094,13 +1250,11 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
   const pivotL = anchor.lstar < RAMP_L_MIN ? okhslLAtChromatic(RAMP_L_MIN, hOkSeed, anchor.okhsl.s)
     : anchor.lstar > RAMP_L_MAX ? okhslLAtChromatic(RAMP_L_MAX, hOkSeed, anchor.okhsl.s)
     : anchor.okhsl.l;
-  const built = stops.map((stop) => {
-    if (stop === 500 && !clamped) {
-      return {
-        stop, tone: anchor.lstar, chroma: anchor.cam.chroma,
-        maxc: maxChromaInGamut(anchor.cam.hue, anchor.lstar), rgb: anchor.rgb, hex: anchor.hex, inGamut: true,
-      };
-    }
+  // preCap(stop) - the stop's OKHSL (hue, s, l) and render before the peak joint cap. Factored so the
+  // cap's ceiling below (stop 500's own emitted chroma) reads the SAME construction a clamped pivot
+  // renders at stop 500; an unclamped pivot's stop 500 is the verbatim anchor, so its ceiling is the
+  // anchor's own CAM16 chroma.
+  const preCap = (stop) => {
     const evenL = anchorLerp(pivotL, lLight, lDark, stop, palette.skew ?? 0, palette.lift ?? 0, "linear", 0);
     const peakL = anchorLerp(pivotL, lLight, lDark, stop, palette.skew ?? 0, palette.lift ?? 0, controls.curve, controls.tension);
     const v = palette.cuspPull ?? controls.vibrancy ?? 0;
@@ -1131,9 +1285,26 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
     const hOkStop = oklchSpace ? solveOkhslHue(targetOklchHue, s, l) : hOkSeed;
     const hue = (((hOkStop + shift * dir) % 360) + 360) % 360;
     const rgb = okhslToRgb(hue, s, l);
+    return { hue, s, l, rgb, chroma: cam16FromRgb(rgb).chroma };
+  };
+  // Peak joint cap (#725 U2, R69): the anchored peak ramp emits no stop above stop 500's own chroma, the
+  // same `capChromaAtHeldTone` construction `okhslStops` runs, scoped the same way (peak, dampAmp 0).
+  // The polish hue is solved from each stop's own pre-cap OKLCH hue (null): this path's OKHSL hue is
+  // the anchor's, never a CAM16 hue it could reuse.
+  const capPeak = mode === "peak" && (controls.dampAmp ?? 0) === 0;
+  const ceiling = !capPeak ? Infinity : clamped ? preCap(500).chroma : anchor.cam.chroma;
+  const built = stops.map((stop) => {
+    if (stop === 500 && !clamped) {
+      return {
+        stop, tone: anchor.lstar, chroma: anchor.cam.chroma,
+        maxc: maxChromaInGamut(anchor.cam.hue, anchor.lstar), rgb: anchor.rgb, hex: anchor.hex, inGamut: true,
+      };
+    }
+    let { hue, s, l, rgb, chroma } = preCap(stop);
+    if (capPeak && chroma > ceiling + 1e-6) ({ rgb, chroma } = capChromaAtHeldTone(hue, s, l, rgb, chroma, ceiling, null, true));
     const tone = lstarFromRgb(rgb);
     const hex = "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
-    return { stop, tone, chroma: cam16FromRgb(rgb).chroma, maxc: maxChromaInGamut(anchor.cam.hue, tone), rgb, hex, inGamut: true };
+    return { stop, tone, chroma, maxc: maxChromaInGamut(anchor.cam.hue, tone), rgb, hex, inGamut: true };
   });
   enforceMonotonePixelL(built);
   return built;
@@ -1203,64 +1374,6 @@ function okhslStops(palette, controls, stops, mode) {
   const anchorS = Math.min(1, Math.max(0, keyS * envelopeAt.get(ANCHOR_STOP)));
   const anchorChroma = cam16FromRgb(okhslToRgb(hOk, anchorS, anchorL)).chroma;
   const dampAmp = controls.dampAmp ?? 0;
-  // solveLForTone  -  the OKHSL lightness l in [0,1] that renders CIE L* == targetTone at a FIXED hue/s
-  // (#681 U3 pass 4/5). L* is monotone non-decreasing in l at fixed hue/s (OKHSL's own construction),
-  // so bisection converges reliably; 30 halvings of [0,1] resolve to ~1e-9, well inside the 0.01 L* bar.
-  const solveLForTone = (hue, s, targetTone) => {
-    let lo = 0, hi = 1;
-    for (let i = 0; i < 30; i++) {
-      const mid = (lo + hi) / 2;
-      if (lstarFromRgb(okhslToRgb(hue, s, mid)) < targetTone) lo = mid; else hi = mid;
-    }
-    return (lo + hi) / 2;
-  };
-  // refineNearestRgb  -  a final 8-bit-quantization-aware polish (#681 U3 pass 4/5). Measuring chroma/tone
-  // back from ROUNDED 8-bit RGB introduces noise the continuous joint solve above can't predict (up to
-  // ~0.15 L*, ~0.1-0.2 chroma). Sweeps a few nearby continuous tone offsets through the validated HCT
-  // engine (exploring different rounding cells) plus a +-2-per-channel integer RGB neighbor search, both
-  // bounded by the TRUE chromaCeiling (never the margin-reduced target), picking whichever candidate
-  // minimizes |measuredTone - targetTone|.
-  // chromaFloor (#681 U3 review 2, F1): the OLD version optimized ONLY for tone error, with no lower
-  // bound on chroma at all  -  a dTone candidate that happened to round to a slightly better tone match
-  // could win even if it collapsed chroma several points below what the joint solve had already
-  // converged to, silently undoing the solve's own accuracy and creating the chroma dips F1 found (14
-  // remained after fixing the solve's own overshoot bug, ALL of them traced to this: the solve landed
-  // within ~0.1 of the target, then this polish walked it away in the name of a sub-0.05-L* tone gain).
-  // Rejecting any candidate below `chromaFloor` keeps the polish to what it was named for  -  quantization
-  // noise (~0.1-0.2 C)  -  not a second, uncontrolled chroma search.
-  //
-  // A hue-aware variant was tried and reverted (#681 U3 review 2, F1): rejecting +-2-neighbour candidates
-  // more than a few degrees off the stop's pre-cap OKLCH hue improved the worst-case hue residual (max
-  // 24.6 degrees down to 4.0 at a 4-degree tolerance) but did so by blocking tone-favourable candidates,
-  // and that tone-accuracy loss pushed 3 cells of the skew-lift-okhsl synthetic grid (C6 iii c) into a
-  // genuine CIELAB-L* uptick beyond its named exceptions  -  confirmed at BOTH a 2-degree and a 4-degree
-  // tolerance, and confirmed to clear with the hue constraint removed entirely, isolating it as the
-  // cause (chromaFloor alone is not: it passes on its own). The reviewer rated the hue-blindness here
-  // 🟡, "acceptable... once the hue residual is reported", not a blocker  -  so per "if a second
-  // workaround is needed, stop", this stays hue-blind and the residual is reported honestly instead
-  // (.sdlc/handoffs/pif-u3-retune.md): still bounded (median ~1 degree, worst case, per the measured
-  // table, larger than before this pass at the tail  -  see the addendum for the full numbers).
-  const refineNearestRgb = (rgb, hueCam16, targetTone, chromaCeiling, chromaFloor = 0) => {
-    let best = rgb, bestErr = Math.abs(lstarFromRgb(rgb) - targetTone);
-    const consider = (cand) => {
-      if (cand.some((v) => v < 0 || v > 255)) return;
-      const c = cam16FromRgb(cand).chroma;
-      if (c > chromaCeiling + 1e-6) return;
-      if (c < chromaFloor - 1e-6) return;
-      const err = Math.abs(lstarFromRgb(cand) - targetTone);
-      if (err < bestErr) { bestErr = err; best = cand; }
-    };
-    for (const dTone of [-0.4, -0.3, -0.2, -0.1, -0.05, 0.05, 0.1, 0.2, 0.3, 0.4]) {
-      const reqChroma = Math.min(cam16FromRgb(rgb).chroma, chromaCeiling);
-      if (reqChroma <= 1e-9) continue;
-      consider(hctToRgb(hueCam16, reqChroma, targetTone + dTone).rgb);
-    }
-    for (let dr = -2; dr <= 2; dr++) for (let dg = -2; dg <= 2; dg++) for (let db = -2; db <= 2; db++) {
-      if (dr === 0 && dg === 0 && db === 0) continue;
-      consider([best[0] + dr, best[1] + dg, best[2] + db]);
-    }
-    return best;
-  };
   return stops.map((stop) => {
     // lightness per stop, STOP-based so the display(19) and export(25) ramps agree at a given stop.
     // Blend the EVEN-perceptual distribution toward the CUSP-anchored ("peak") one by `vibrancy`:
@@ -1280,75 +1393,11 @@ function okhslStops(palette, controls, stops, mode) {
     let s = s0, l1 = l;
     let rgb = okhslToRgb(hue, s, l1);
     let chroma = cam16FromRgb(rgb).chroma;
-    // Generated PEAK palettes (dampAmp 0) never emit more chroma than the anchor (#681 U3 pass 5, C6's
-    // "0 above 100%" clause, peak only  -  perceptual keeps #55's cusp-pull richness, see below). Holds
-    // tone FIXED at its pre-cap value by solving JOINTLY for (s, l): shrink s toward the target chroma,
-    // then re-solve l for the held tone, iterating until both hold. Hue stays hOk-derived throughout (no
-    // engine switch, no new Abney residual). At stop === ANCHOR_STOP this never fires: same formula as
-    // anchorChroma above.
+    // Generated PEAK palettes (dampAmp 0) never emit more chroma than the anchor: the shared joint cap,
+    // see `capChromaAtHeldTone`. At stop === ANCHOR_STOP this never fires: same formula as anchorChroma above.
     if (mode === "peak" && dampAmp === 0 && chroma > anchorChroma + 1e-6) {
-      const targetTone = lstarFromRgb(rgb); // the pre-cap (natural) tone  -  held fixed below
-      // preCapOklchHue: THIS stop's own OKLCH hue before capping  -  the invariant the fallback/polish
-      // below must reproduce (#681 U3 review 2, F1). `hue` is already hOk-derived (Abney-corrected for
-      // an OKLCH-hue palette via solveOkhslHue at the stop-500 basis, see `hOk` above), so reading it
-      // back here  -  rather than re-deriving from `palette.hue`  -  is correct even under a non-zero
-      // hueShift, where a non-center stop's hue differs from the nominal set hue by the rotation.
-      const preCapOklchHue = rgbToOklchHue(rgb);
-      const hueCam16 = (((baseHue + shift * dir) % 360) + 360) % 360; // CAM16-space hue (hueSpace "cam16" only)
-      // chroma here is measured back from 8-bit-quantized OKHSL-rendered rgb, same as anchorChroma  - 
-      // independently-quantized measurements can differ by a few hundredths after the solve below lands
-      // exactly at the target, so this margin keeps the final measured value strictly under the ceiling.
-      const CAP_MARGIN = 0.5;
-      const target = anchorChroma - CAP_MARGIN;
-      // Bisect s toward the EXACT target chroma, re-solving l for the held tone at every step (#681 U3
-      // review 2, F1). The old single multiplicative step (`s *= target/chroma`) assumed chroma scales
-      // linearly with s at fixed l  -  but l is ALSO re-solved each time to hold tone, so that assumption
-      // is false, and one overshooting step could satisfy the loop's own naive "chroma <= ceiling" exit
-      // test while landing far below the target (measured witness: nature "Monument Valley" secondary-
-      // muted, peak, stop 550  -  one iteration took chroma from 81.89 to 29.75 against a 57.04 target,
-      // and the loop stopped there because 29.75 already cleared the ceiling). Bisection always halves
-      // its bracket regardless of overshoot direction, and this loop tracks the BEST candidate seen
-      // across every step, so a later worse step can never lose a better earlier one.
-      let sLo = 0, sHi = s;
-      let bestS = s, bestL = l1, bestRgb = rgb, bestChroma = chroma, bestErr = Math.abs(chroma - target);
-      for (let i = 0; i < 24; i++) {
-        const sMid = (sLo + sHi) / 2;
-        const lMid = solveLForTone(hue, sMid, targetTone);
-        const rgbMid = okhslToRgb(hue, sMid, lMid);
-        const chromaMid = cam16FromRgb(rgbMid).chroma;
-        const err = Math.abs(chromaMid - target);
-        if (err < bestErr) { bestErr = err; bestS = sMid; bestL = lMid; bestRgb = rgbMid; bestChroma = chromaMid; }
-        if (chromaMid > target) sHi = sMid; else sLo = sMid; // chroma rises with s at a tone-held l
-      }
-      s = bestS; l1 = bestL; rgb = bestRgb; chroma = bestChroma;
-      // polishHue: the CAM16 hue that reproduces THIS stop's preCapOklchHue at whatever chroma/tone is
-      // about to be rendered through hctToRgb below (fallback and/or the 8-bit polish)  -  solved fresh
-      // rather than reusing the plain CAM16 proxy (`hueCam16`), which is what brought back the Abney
-      // drift `solveOkhslHue` exists to remove on an OKLCH-hue palette (F1). A CAM16-hue palette has no
-      // OKLCH-hue promise to keep, so `hueCam16` is already correct there  -  no solve needed.
-      const polishHue = controls.hueSpace === "oklch" ? solveCam16Hue(preCapOklchHue, Math.max(chroma, 1), targetTone) : hueCam16;
-      if (chroma > anchorChroma + 1e-6 || Math.abs(lstarFromRgb(rgb) - targetTone) > 0.01) {
-        // Fallback (#681 U3 review 3, N3: corrected from an earlier "rare" claim): this fires on 93.5%
-        // of capped stops measured, not rarely. The bisection's own 24 steps DO converge on chroma
-        // reliably (review 4 R5: this is a property measured directly on the bisection's own output, NOT
-        // what the ramp-shape dip gate below checks, which is unrelated), but 0.01 L* is tighter than an
-        // 8-bit RGB round-trip can usually reach at a fixed hue/chroma, so the tone-tolerance half of
-        // this condition is the one that almost always trips, sending nearly every capped stop through
-        // `hctToRgb` here rather than keeping the bisection's own continuous render. Caps via the
-        // validated HCT engine directly AT the target chroma (never the solve's own possibly-off value:
-        // the old `Math.min(chroma, target)`
-        // here is what let an overshot loop result lock in below target instead of correcting to it, F1)
-        // and the held tone, at polishHue.
-        const capped = hctToRgb(polishHue, target, targetTone);
-        rgb = capped.rgb;
-        chroma = cam16FromRgb(rgb).chroma;
-      }
-      // Polish against the 8-bit quantization floor, at polishHue: never past the TRUE anchorChroma (not
-      // the margin-reduced target), minimizing the residual tone error the rounding introduces. Floored
-      // 1 C below whatever the solve/fallback already achieved, so the polish can only fix quantization
-      // noise, not walk chroma away from a value the solve already spent 24 bisection steps converging.
-      rgb = refineNearestRgb(rgb, polishHue, targetTone, anchorChroma, Math.max(0, chroma - 1));
-      chroma = cam16FromRgb(rgb).chroma;
+      const hueCam16 = controls.hueSpace === "oklch" ? null : (((baseHue + shift * dir) % 360) + 360) % 360; // CAM16-space hue (hueSpace "cam16" only)
+      ({ s, l: l1, rgb, chroma } = capChromaAtHeldTone(hue, s, l1, rgb, chroma, anchorChroma, hueCam16));
     }
     const tone = lstarFromRgb(rgb);                                 // report ACTUAL L* (for graphs / roles)
     const hex = "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();

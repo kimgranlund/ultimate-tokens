@@ -6,10 +6,13 @@
 // counters. The loop is the report's own, moved verbatim; the report's printed numbers do not move.
 //
 // `dampAmpOverride` forces every palette's `dampAmp` control (the report's `--damp-amp N` negative
-// control); `gatePath` omits each palette's `anchor` (the report's `--gate-path`).
+// control); `gatePath` omits each palette's `anchor` (the report's `--gate-path`, and the barred
+// `gate path` block of its default run, #725 R74). `instances` replaces the loaded corpus with a caller's
+// own list of the same shape (`{ label, presetName, pal, doc }`), for a control that needs one planted
+// instance (the cusp-run window's L* 5 anchor) without editing a category file.
 import { readFileSync } from "node:fs";
 import { hydrate } from "../../src/ui/persist.js";
-import { defaultDocument, rampChromaOf } from "../../src/ui/model.mjs";
+import { defaultDocument, rampChromaOf, hexToRgb, lstarFromRgb } from "../../src/ui/model.mjs";
 import * as T from "../../src/engine/tonal.js";
 
 export const CATS = ["architecture", "brands", "cuisine", "film", "literature", "music", "nature", "travel"];
@@ -27,6 +30,20 @@ export const ADIA_CARVEOUT = new Set(["Adia · The product's own design system"]
 // under this bound)  -  see test/engine/tonal.mjs's gating copy (C6 iii-b) for the enforced version; this
 // copy is for REPORTING only.
 export const CUSP_RUN_BOUND = 1.893005;
+// OVER_90_AT_300  -  the anchored block's report-only count (#725 R74, C2.2): instances whose stop-300
+// ratio exceeds 90% of stop 500's chroma, the ruled p90 bar at that stop. On the anchored path that
+// excess is mechanism 3 (a dark anchor's stop 500 sits below its hue's cusp lightness and stop 300 on
+// it, so the ratio reads the L* ladder, not the envelope); R74 reports it and bars nothing on it.
+export const OVER_90_AT_300 = 90;
+
+// The cusp-run count's window (#725 R74, C2.2): on the anchored path only anchors whose CIE L* sits
+// inside the ramp window [RAMP_L_MIN, RAMP_L_MAX] (src/engine/tonal.js, 9.95 to 95.05) count toward
+// the perceptual rule. An anchor outside it renders a clamped pivot, not its own hex, at stop 500, so
+// a run measured against that stop is the clamp's, not the envelope's. Every violation the window
+// removes from the count is still returned (`perceptualWindowExcluded`) and printed by name.
+const anchorLstar = (pal) => (typeof pal.anchor === "string" && /^#[0-9a-f]{6}$/i.test(pal.anchor)
+  ? lstarFromRgb(hexToRgb(pal.anchor)) : null);
+export const inRampWindow = (lstar) => lstar >= T.RAMP_L_MIN && lstar <= T.RAMP_L_MAX;
 
 export function percentile(sorted, p) {
   if (sorted.length === 0) return NaN;
@@ -62,14 +79,18 @@ export async function loadEnvelopeInstances() {
 // READING (a): emitted CAM16 chroma at stops 100/300/700/900 as % of stop 500's, per mode, with the
 // clause counters (perceptual: cusp-run rule violations; peak and even: instances above 100%).
 // Returns the unrounded median/p90 per mode and stop; callers round for display.
-export async function measureEnvelope({ dampAmpOverride = null, gatePath = false } = {}) {
-  const { instances, totalCurated } = await loadEnvelopeInstances();
+export async function measureEnvelope({ dampAmpOverride = null, gatePath = false, instances: injected = null } = {}) {
+  const { instances, totalCurated } = injected !== null
+    ? { instances: injected, totalCurated: injected.length }
+    : await loadEnvelopeInstances();
   const results = {};
   const aboveWitnesses = { perceptual: [], peak: [], even: [] };
   const aboveTotal = { perceptual: 0, peak: 0, even: 0 };
   const adiaAboveTotal = { perceptual: 0, peak: 0, even: 0 };
   const perceptualRunFails = { runs: [], bound: [] }; // witnesses, non-Adia only
-
+  const perceptualWindowExcluded = []; // { label, anchor, lstar, why }: violations outside the L* window
+  let outsideWindow = 0; // anchored instances whose anchor L* is outside the window (perceptual pass)
+  const over90At300 = { perceptual: 0, peak: 0, even: 0 };
   for (const mode of MODES) {
     const ratios = { 100: [], 300: [], 700: [], 900: [] };
     for (const { label, presetName, pal, doc } of instances) {
@@ -97,6 +118,7 @@ export async function measureEnvelope({ dampAmpOverride = null, gatePath = false
         const pct = (at(s).chroma / c500) * 100;
         ratios[s].push(pct);
       }
+      if ((at(300).chroma / c500) * 100 > OVER_90_AT_300) over90At300[mode]++;
       const isAdia = ADIA_CARVEOUT.has(presetName);
       if (mode === "perceptual") {
         // Ruling (f): report by RUN, not by raw stop count  -  a palette's natural cusp shoulder can span
@@ -108,11 +130,20 @@ export async function measureEnvelope({ dampAmpOverride = null, gatePath = false
           else inRun = false;
         }
         if (runs > 0 && isAdia) adiaAboveTotal[mode]++;
+        const lstar = gatePath ? null : anchorLstar(pal);
+        const outside = lstar !== null && !inRampWindow(lstar);
+        if (outside) outsideWindow++;
         if (!isAdia) {
-          let bad = false;
-          if (runs > 1) { bad = true; if (perceptualRunFails.runs.length < 3) perceptualRunFails.runs.push(`${label} (${runs} runs)`); }
-          if (worstRatio > CUSP_RUN_BOUND + 1e-6) { bad = true; if (perceptualRunFails.bound.length < 3) perceptualRunFails.bound.push(`${label} (${(worstRatio * 100).toFixed(2)}%)`); }
-          if (bad) aboveTotal[mode]++;
+          const why = [];
+          if (runs > 1) why.push(`${runs} runs`);
+          if (worstRatio > CUSP_RUN_BOUND + 1e-6) why.push(`${(worstRatio * 100).toFixed(2)}%`);
+          if (why.length && outside) {
+            perceptualWindowExcluded.push({ label, anchor: pal.anchor.toUpperCase(), lstar, why: why.join(", ") });
+          } else if (why.length) {
+            if (runs > 1 && perceptualRunFails.runs.length < 3) perceptualRunFails.runs.push(`${label} (${runs} runs)`);
+            if (worstRatio > CUSP_RUN_BOUND + 1e-6 && perceptualRunFails.bound.length < 3) perceptualRunFails.bound.push(`${label} (${(worstRatio * 100).toFixed(2)}%)`);
+            aboveTotal[mode]++;
+          }
         }
       } else {
         let roseAboveHere = false;
@@ -135,5 +166,8 @@ export async function measureEnvelope({ dampAmpOverride = null, gatePath = false
       results[mode][s] = { median: percentile(sorted, 50), p90: percentile(sorted, 90), n: sorted.length };
     }
   }
-  return { instances, totalCurated, results, aboveTotal, adiaAboveTotal, aboveWitnesses, perceptualRunFails };
+  return {
+    instances, totalCurated, results, aboveTotal, adiaAboveTotal, aboveWitnesses, perceptualRunFails,
+    perceptualWindowExcluded, outsideWindow, over90At300, gatePath,
+  };
 }

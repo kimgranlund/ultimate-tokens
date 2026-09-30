@@ -1506,7 +1506,7 @@ for (const mode of ["perceptual", "peak"]) {
   // unlisted). Perceptual has no cap mechanism and measures 0 dips too, so it also gets no baseline.
   // Ticket #739 adds the ONE named exception below - see its own comment; the "reds on anything
   // unlisted" property is unchanged, only the empty baseline is not.
-  const TICKET_739_DIP = "67° N · January · 03:00 · The Helsinki–Rovaniemi night train, somewhere past Oulu|secondary-muted|500";
+  // The #739 name, retired at #725 U2 (see DIP_BASELINE): "67° N · January · 03:00 · The Helsinki–Rovaniemi night train, somewhere past Oulu|secondary-muted|500"
   // Ticket #739: #ACADAE (this preset's own anchor, one of the two corpus anchors under
   // ACHROMATIC_ANCHOR_C) now renders its ramp at the palette's own hue instead of its rounding-
   // residue one. That shifts `anchorChromaBasis`'s per-stop blend against `maxChromaInGamut` enough
@@ -1515,8 +1515,11 @@ for (const mode of ["perceptual", "peak"]) {
   // (okhslStopsAnchored shares the same blend for both modes; only their curve/damping fitting
   // differs). Root-caused, not reintroducing the retired peak population above; PERCEPTUAL_DIP_BASELINE
   // below is the same single name because perceptual had no baseline (0 dips) before this ticket.
-  const DIP_BASELINE = new Set([TICKET_739_DIP]);
-  const PERCEPTUAL_DIP_BASELINE = new Set([TICKET_739_DIP]);
+  // #725 U2: retired to empty. The #739 dip was the group target climbing on both sides of a grey pivot;
+  // anchorChromaBasis now blends toward min(group, anchor), so the grey pivot no longer sits in a valley
+  // (measured on FULL at ec496bd0: 0 dips in peak and perceptual, TICKET_739_DIP not observed).
+  const DIP_BASELINE = new Set();
+  const PERCEPTUAL_DIP_BASELINE = new Set();
   // Even mode has NO named baseline (#701 U2). The 90-name even dip baseline #681 shipped (57 at stop
   // 450, 32 at 500, 1 at 550, measured on the rendered, anchor-aware path) is retired. Its off-anchor
   // names were the old gamut-relative chroma floor (chromaFloor% * maxc at every stop) following maxc
@@ -1632,14 +1635,18 @@ for (const mode of ["perceptual", "peak"]) {
     const realSrc = readFileSync(new URL("../../src/engine/tonal.js", import.meta.url), "utf8");
     const hctUrl = new URL("../../src/engine/hct.js", import.meta.url).href;
     const okhslUrl = new URL("../../src/engine/okhsl.js", import.meta.url).href;
+    const CLIMB_TARGET = "const target = climb ? groupValue : Math.min(groupValue, anchorValue);";
     const patched = realSrc
       .replace('from "./hct.js"', `from "${hctUrl}"`)
       .replace('from "./okhsl.js"', `from "${okhslUrl}"`)
       .replace(
         "const w = t * t * (3 - 2 * t); // smoothstep: w(0)=0, w(1)=1, w'(0)=w'(1)=0",
         "const w = t < 0.15 ? -0.6 : t * t * (3 - 2 * t); // smoothstep: w(0)=0, w(1)=1, w'(0)=w'(1)=0"
-      );
-    if (patched === realSrc) FAIL("chroma-envelope", "(iv dip gate negative control, peak) a patch target string was not found  -  the anchorChromaBasis weight text moved, update this control");
+      )
+      // #725 U2: the blend target is min(group, anchor), so a negative weight now lifts the stop above the
+      // pivot instead of below it; the control restores the climb (the pre-U2 target) so the weight digs.
+      .replace(CLIMB_TARGET, "const target = groupValue;");
+    if (!realSrc.includes(CLIMB_TARGET) || !realSrc.includes("const w = t * t * (3 - 2 * t);")) FAIL("chroma-envelope", "(iv dip gate negative control, peak) a patch target string was not found  -  the anchorChromaBasis weight text moved, update this control");
     const BuggyT = await import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
     // #681 U3 review 4, R3/R4: calls the real findDips against the patched engine, over both stop sets,
     // instead of reimplementing the loop inline.
@@ -1804,20 +1811,29 @@ for (const mode of ["perceptual", "peak"]) {
   // new section for the identical scope/metric). This gate keeps only what it actually gates: the peak
   // count and max overshoot.
   {
+    // WHITE_PIXEL_C (#725 U2 pass 2, R74): the CAM16 chroma of #FFFFFF under HCT's viewing conditions,
+    // 2.8690 at L* 100 (hct.js cam16FromRgb). It is a floor on the white PIXEL, not on tone: the grey axis
+    // reads #F0F0F0 2.766, #787878 1.83 and #000000 0, and the least-chroma pixel in the 250 to 255 cube,
+    // #FFFBFA at L* 98.89, reads C 0.288. A near-grey anchor whose stop 500 sits below it renders stop 50 as
+    // #FFFFFF at lmax 100, which reads above stop 500 by construction and no chroma cap can lower, so such a
+    // palette is excluded (and counted) rather than read as an overshoot. A violator with stop 500 at or
+    // above this floor is a finding, never a re-pin.
+    const WHITE_PIXEL_C = 2.869;
     const measureAnchoredOvershoot = (engine, mode, docsList = docs) => {
       let violators = 0, maxRatio = 0, witness = "", measured = 0;
+      const excluded = [];
       for (const doc of docsList) {
         if ((doc.dampAmp ?? 0) !== 0) continue; // generated palettes only, matching (iii)'s own scope
         if (ADIA_CARVEOUT.has(doc.__presetName)) continue; // exempt by name, same carve-out as (iii)/(iii-b)
         const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: mode };
         for (const pal of doc.palettes) {
-          measured++;
           const chroma = rampChromaOf(pal, doc);
           const ramp = engine.paletteStops({ hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull, anchor: pal.anchor }, controls, T.STOPS);
           const c500row = ramp.find((r) => r.stop === 500);
-          if (!c500row) continue;
+          if (!c500row) { measured++; continue; }
           const c500 = c500row.chroma;
-          if (c500 <= 1e-9) continue;
+          if (c500 < WHITE_PIXEL_C) { excluded.push(`${doc.__presetName}/${pal.name} c500 ${c500.toFixed(3)}`); continue; }
+          measured++;
           let localMax = 0;
           for (const row of ramp) localMax = Math.max(localMax, row.chroma / c500);
           if (localMax > 1 + 1e-6) {
@@ -1826,13 +1842,16 @@ for (const mode of ["perceptual", "peak"]) {
           }
         }
       }
-      return { violators, maxRatio, witness, measured };
+      return { violators, maxRatio, witness, measured, excluded };
     };
 
     // Pinned this pass (2026-09-20). Anchored PEAK, generated palettes, Adia excluded by name, 19-stop
-    // display set, 3,764 total palettes measured.
-    const PEAK_VIOLATOR_PIN = 3119;
-    const PEAK_MAX_RATIO_PIN = 15.132599;
+    // display set. Re-pinned by #725 U2 (was 3119 / 15.132599 over 3,764): the anchored peak path runs the
+    // joint (s, l) cap, so nothing above stop 500 is emitted; the 72 near-grey anchors below WHITE_PIXEL_C
+    // are excluded above (15 of them are the violators the exclusion removes, 15/3764 with it off),
+    // leaving 3692 measured at 0 violators and a max ratio of at most 1.
+    const PEAK_VIOLATOR_PIN = 0;
+    const PEAK_MAX_RATIO_PIN = 1.000000;
     const peakResult = measureAnchoredOvershoot(T, "peak");
     if (peakResult.violators > PEAK_VIOLATOR_PIN)
       FAIL("chroma-envelope", `(C6 v ratchet, monitor not bar) anchored peak violator count rose to ${peakResult.violators}, pinned at ${PEAK_VIOLATOR_PIN}, e.g. ${peakResult.witness}`);
@@ -1841,6 +1860,7 @@ for (const mode of ["perceptual", "peak"]) {
     // the denominator is MEASURED, not the FULL corpus's own fixed 3,764 (#713): SAMPLED measures a
     // canary subset of the same population, whose violator count and max ratio can only ever undershoot
     // the FULL-corpus pins below (a maximum, or a count, over a subset cannot exceed the superset's own).
+    console.log(`  [monitor] C6 (v) white-pixel exclusion (stop 500 CAM16 C < ${WHITE_PIXEL_C}): ${peakResult.excluded.length} palette(s)${peakResult.excluded.length ? `: ${peakResult.excluded.join(", ")}` : ""}`);
     console.log(`  [monitor] C6 (v) anchored peak overshoot: ${peakResult.violators}/${peakResult.measured} violator(s) (pinned <= ${PEAK_VIOLATOR_PIN} on FULL), max ${peakResult.maxRatio.toFixed(6)}x stop 500's own chroma (pinned <= ${PEAK_MAX_RATIO_PIN}x on FULL)  -  a RATCHET, NOT a pass/fail bar on the population: stop 500 is the anchor's own pinned sample on this construction, not the ramp's designed peak, so most anchored palettes legitimately carry some stop above it (#701 treats these rendered cells as report-only). The anchored-EVEN companion figure is reported by scripts/report-preset-fidelity.mjs --envelope, not here.`);
 
     // Negative control: a SCRATCH copy of the real engine, patched at okhslStopsAnchored's own
@@ -1865,18 +1885,23 @@ for (const mode of ["perceptual", "peak"]) {
       const hctUrl = new URL("../../src/engine/hct.js", import.meta.url).href;
       const okhslUrl = new URL("../../src/engine/okhsl.js", import.meta.url).href;
       const NEEDLE = "const s = Math.min(1, Math.max(0, intendedS * env));";
-      if (!realSrc.includes(NEEDLE)) {
-        FAIL("chroma-envelope", "(C6 v negative control) okhslStopsAnchored's saturation line text has moved  -  update the negative control's string match");
+      // #725 U2: the anchored peak path caps every stop at stop 500's chroma, which absorbs a saturation
+      // amplification by construction, so the patch also lifts that cap (the regression it guards).
+      const CAP_NEEDLE = "const capPeak = mode === \"peak\" && (controls.dampAmp ?? 0) === 0;";
+      if (!realSrc.includes(NEEDLE) || !realSrc.includes(CAP_NEEDLE)) {
+        FAIL("chroma-envelope", "(C6 v negative control) okhslStopsAnchored's saturation or capPeak line text has moved  -  update the negative control's string match");
       } else {
         const patched = realSrc
           .replace('from "./hct.js"', `from "${hctUrl}"`)
           .replace('from "./okhsl.js"', `from "${okhslUrl}"`)
-          .replace(NEEDLE, "const s = Math.min(1, Math.max(0, intendedS * env * 1.6));");
+          .replace(NEEDLE, "const s = Math.min(1, Math.max(0, intendedS * env * 1.6));")
+          .replace(CAP_NEEDLE, "const capPeak = false;");
         const BuggyT = await import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
         // peakResult.witness is `${doc.__presetName}/${pal.name}` (this function's own return shape).
         const witnessDoc = docs.find((d) => peakResult.witness.startsWith(d.__presetName + "/"));
-        const others = docs.filter((d) => d !== witnessDoc).sort((a, b) => a.__presetName.localeCompare(b.__presetName)).slice(0, 49);
-        const sampleDocs = witnessDoc ? [witnessDoc, ...others] : docs.slice(0, 50);
+        // At the 0 pin there is no witness, so the sample is the 50 sorted-first docs (still seeded).
+        const others = docs.filter((d) => d !== witnessDoc).sort((a, b) => a.__presetName.localeCompare(b.__presetName));
+        const sampleDocs = witnessDoc ? [witnessDoc, ...others.slice(0, 49)] : others.slice(0, 50);
         const buggySample = measureAnchoredOvershoot(BuggyT, "peak", sampleDocs);
         // FULL compares against the frozen pin; SAMPLED compares against this run's own unmutated max
         // ratio, never the FULL-corpus pin: the sample's own worst witness need not be the full corpus's
@@ -1914,7 +1939,9 @@ for (const mode of ["perceptual", "peak"]) {
       const countProbe = measureAnchoredOvershoot(stubEngine, "peak", syntheticDocs);
       if (!(countProbe.violators > PEAK_VIOLATOR_PIN))
         FAIL("chroma-envelope", `(C6 v negative control, count arm) a synthetic ${syntheticCount}-doc list, each overshooting a fixed 1.005x, read violators ${countProbe.violators}  -  expected > ${PEAK_VIOLATOR_PIN}  -  check measureAnchoredOvershoot or the synthetic list`);
-      if (countProbe.maxRatio > PEAK_MAX_RATIO_PIN + 1e-6)
+      // At a ratio pin of 1 (#725 U2) the two arms share one threshold: any violator also exceeds the ratio
+      // pin, so the isolation half only runs while the pin leaves room above the 1.005x stub overshoot.
+      if (PEAK_MAX_RATIO_PIN > 1.005 + 1e-6 && countProbe.maxRatio > PEAK_MAX_RATIO_PIN + 1e-6)
         FAIL("chroma-envelope", `(C6 v negative control, count arm) the synthetic list's own maxRatio (${countProbe.maxRatio.toFixed(6)}x) unexpectedly exceeded the ratio pin  -  this control is meant to isolate the count arm from the ratio arm; check the synthetic overshoot margin`);
     }
   }

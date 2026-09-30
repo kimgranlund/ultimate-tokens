@@ -488,13 +488,16 @@ Neutral at full chroma, the emitters must be fed the resolved state, as the draw
   did not move, since REQ-056's verbatim-anchor identity holds whatever the ladder does; `.brightest`
   and `.dimmest` did.
 - **EX-2 (NORMATIVE, panda semantic).** `semanticTokens.colors.primary.DEFAULT.value` deep-equals
-  `{ base: "oklch(0.4669 0.1671 258.98)", _dark: "oklch(0.5504 0.1924 258.96)" }`;
-  `primary.hover` `{ base: "oklch(0.3971 0.1239 258.91)", _dark: "oklch(0.6419 0.1561 259.24)" }`;
+  `{ base: "oklch(0.4669 0.1671 258.98)", _dark: "oklch(0.5506 0.1922 259.07)" }`;
+  `primary.hover` `{ base: "oklch(0.3971 0.1239 258.91)", _dark: "oklch(0.6413 0.1547 259.07)" }`;
   `primary["on-primary"]` `{ base: "oklch(1 0 0)", _dark: "oklch(1 0 0)" }`;
   `neutral["on-surface"]` `{ base: "oklch(0.1774 0.0044 264.46)", _dark: "oklch(1 0 0)" }`;
   `neutral.scrim` (the role) `{ base: "oklch(0.5056 0.0552 267.76 / 30%)", _dark: same }` next to
   the raw group `neutral.scrim["300"]`. 53 keys under `semanticTokens.colors.primary`, 16 palette
-  groups, `data-1.DEFAULT.base === "oklch(0.5194 0.2328 272.25)"`.
+  groups, `data-1.DEFAULT.base === "oklch(0.5184 0.2316 272.29)"`.
+  The three moved EX-2 literals (`primary.DEFAULT._dark`, `primary.hover._dark`, `data-1.DEFAULT.base`)
+  were re-pinned 2026-09-29 (#725 U2, R69: the anchored basis is capped at the anchor's own `s`) from
+  `exportPanda(stateOf(defaultDocument()))` on the engine, never typed; the rest did not move.
 - **EX-3 (NORMATIVE, panda type + geometry, after H-1).** `tokens.fonts.body.value === "'Inter',
   sans-serif"`, `tokens.fonts.display.value === "'Inter Tight', sans-serif"`;
   `textStyles.body.md.value` deep-equals `{ fontFamily: "{fonts.body}", fontSize: "16px", lineHeight:

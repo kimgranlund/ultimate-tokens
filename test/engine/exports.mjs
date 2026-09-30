@@ -529,9 +529,9 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (ddRaw.primary.prime.dimmest.value !== "oklch(0.2669 0.1023 258.76)") FAIL("panda", `EX-1 colors.primary.prime.dimmest = ${ddRaw.primary.prime.dimmest.value}`);
   if (JSON.stringify(ddRaw.primary.prime.DEFAULT) !== JSON.stringify(ddRaw.primary.prime.prime)) FAIL("panda", "EX-1 colors.primary.prime.DEFAULT != .prime");
   if (ddRaw.constant.backdrop.value !== "oklch(0 0 0 / 80%)") FAIL("panda", `EX-1 colors.constant.backdrop = ${ddRaw.constant.backdrop.value}`);
-  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.4669 0.1671 258.98)", _dark: "oklch(0.5504 0.1924 258.96)" }))
+  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.4669 0.1671 258.98)", _dark: "oklch(0.5506 0.1922 259.07)" }))
     FAIL("panda", `EX-2 colors.primary.DEFAULT = ${JSON.stringify(ddSem.primary.DEFAULT.value)}`);
-  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.3971 0.1239 258.91)", _dark: "oklch(0.6419 0.1561 259.24)" }))
+  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.3971 0.1239 258.91)", _dark: "oklch(0.6413 0.1547 259.07)" }))
     FAIL("panda", `EX-2 colors.primary.hover = ${JSON.stringify(ddSem.primary.hover.value)}`);
   if (JSON.stringify(ddSem.primary["on-primary"].value) !== JSON.stringify({ base: "oklch(1 0 0)", _dark: "oklch(1 0 0)" }))
     FAIL("panda", `EX-2 colors.primary.on-primary = ${JSON.stringify(ddSem.primary["on-primary"].value)}`);
@@ -539,7 +539,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     FAIL("panda", `EX-2 colors.neutral.on-surface = ${JSON.stringify(ddSem.neutral["on-surface"].value)}`);
   if (Object.keys(ddSem.primary).length !== 53) FAIL("panda", `EX-2 expected 53 keys under semanticTokens.colors.primary, got ${Object.keys(ddSem.primary).length}`);
   if (Object.keys(ddSem).length !== 16) FAIL("panda", `EX-2 expected 16 palette groups, got ${Object.keys(ddSem).length}`);
-  if (!ddSem["data-1"] || ddSem["data-1"].DEFAULT.value.base !== "oklch(0.5194 0.2328 272.25)") FAIL("panda", `EX-2 data-1.DEFAULT.base = ${ddSem["data-1"] && ddSem["data-1"].DEFAULT.value.base}`);
+  if (!ddSem["data-1"] || ddSem["data-1"].DEFAULT.value.base !== "oklch(0.5184 0.2316 272.29)") FAIL("panda", `EX-2 data-1.DEFAULT.base = ${ddSem["data-1"] && ddSem["data-1"].DEFAULT.value.base}`);
 
   // disabled palette absent from both trees.
   const disabledPanda = X.exportPanda(oneOff);
@@ -887,6 +887,11 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
 //    #681 U10 re-capture (2026-09-23, pre-land F3, by script from the engine): chromaEnvelope caps `sd`
 //    at +/-1, so Warning (lift -36) steps 1 to 5 and a1 to a5 in all three sections moved from neutral
 //    grey (oklch C 0) to Warning's own tint. 30 leaves moved, all Warning; nothing else changed.
+//    #725 U2 re-capture (2026-09-29, by script from the engine): R69 caps the anchored basis at the
+//    anchor's own s and shares the peak joint cap. 600 / 339 / 301 leaves moved (ALL / BRAND_ONLY /
+//    COLLIDING), every one on an anchored default family or its alias (accent, gray); the unanchored
+//    Accent and Error palettes, and every section rendered without anchors or in even mode, are
+//    byte-identical. No leaf shape, key, or ordering changed.
 {
   const G = "radix-refs-values-unchanged";
   const fixture = JSON.parse(readFileSync(new URL("./fixtures/radix-baseline.json", import.meta.url), "utf8"));

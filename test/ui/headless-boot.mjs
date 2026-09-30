@@ -3527,7 +3527,17 @@ flushRaf();
   const direct30 = psGID({ hue: neutral.hue, chroma: 30, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir, anchor: neutral.anchor }, ctlGID, esGID);
   const direct100 = psGID({ hue: neutral.hue, chroma: 100, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir, anchor: neutral.anchor }, ctlGID, esGID);
   ok(JSON.stringify(freshView.palettes[nIdx].fullRamp.map((s) => s.hex)) === JSON.stringify(direct30.map((s) => s.hex)), "(gid2) a fresh doc's Neutral ramp equals a direct engine call at chroma 30 (Material's default)");
-  ok(JSON.stringify(freshView.palettes[nIdx].fullRamp.map((s) => s.hex)) !== JSON.stringify(direct100.map((s) => s.hex)), "(gid3) a fresh doc's Neutral ramp differs from the legacy chroma-100 ramp, visibly muted, not a no-op");
+  // (gid3) #725 R69 (reverses Q-U2-5): an anchored ramp's saturation basis is capped at the anchor's
+  // OWN OKHSL s (anchorChromaBasis's group target is min(group, anchor)), so Neutral (anchored) ignores
+  // any group chroma above that s, and still follows one below it. The anchor's s is measured here,
+  // never typed, and must sit strictly between the two probes for the arms to mean anything.
+  const { rgbToOkhsl: okGID } = await import("../../src/engine/okhsl.js");
+  const anchorS = okGID([1, 3, 5].map((i) => parseInt(neutral.anchor.slice(i, i + 2), 16))).s;
+  const direct10 = psGID({ hue: neutral.hue, chroma: 10, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir, anchor: neutral.anchor }, ctlGID, esGID);
+  const hexesGID = (r) => JSON.stringify(r.map((s) => s.hex));
+  ok(anchorS > 0.10 && anchorS <= 0.30, `(gid3 precondition) Neutral's anchor ${neutral.anchor} OKHSL s ${anchorS.toFixed(4)} sits in (0.10, 0.30]`);
+  ok(hexesGID(freshView.palettes[nIdx].fullRamp) === hexesGID(direct100), "(gid3) a fresh doc's Neutral ramp equals the chroma-100 ramp: R69 caps an anchored ramp at the anchor's own s, so group chroma above it is ignored");
+  ok(hexesGID(direct10) !== hexesGID(direct30), "(gid3b) Neutral still follows a group chroma BELOW its anchor's s: the chroma-10 ramp differs from the chroma-30 ramp (the mute direction is kept)");
 
   // (gid4) the Global tab renders all four group rows, each with its own base+prime chroma
   // sliders, seeded from GROUP_DEFAULTS.
