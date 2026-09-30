@@ -1,5 +1,5 @@
 ---
-status: approved
+status: done
 ticket: "#776 (anchor; the plan also closes #775, #769, #772, #764)"
 priority: P2
 lane: tooling and figma tests (`test/repo/citations.mjs`, `test/repo/em-dash.mjs`, `test/figma/binder.mjs`, `src/engine/type.mjs` and `src/ui/sections/typography.js` comments only, `figma/README.md`, the lockstep comments in `figma/binder/figma-semantic-binder/code.js` and `figma/binder/migrations.mjs`, `.claude/skills/type-scale/**/*.md` and `.claude/skills/adding-export-formats/**/*.md` only where U2's scan reds a real stale count)
@@ -207,6 +207,7 @@ One PR from `plan/gates-batch` to `main`, carrying the four units, this plan and
 
 | Date | Change | Why |
 |---|---|---|
+| 2026-09-30 | closed on landing of PR #781 (squash `30c3a7aa`) | last unit verified; U1 to U5 all shipped; pre-land record `.sdlc/verdicts/gates-batch-prepr.md` pass 2 🟢 at `1b3f835f` |
 | 2026-09-30 | revision 5 (R83, the owner allowed the sixth row): C3 admits the `ui.html` baseline size row and one dated Correction, and U5 (trivial lane) makes that edit, since U2's and U3's comment edits grew the inlined bundle and `baseline-agrees-check.sh` read STALE | `.sdlc/verdicts/gates-batch-prepr.md` finding 1, `.sdlc/questions/gates-batch-prepr-p1.md` |
 | 2026-09-30 | revision 4: C5 admits generated `src/ui/*-assets.js` (for example `figma-plugin-assets.js`, `describe-mcp-assets.js`) when their bytes equal generator output, since `npm test` regenerates them from a comment edit and requires a clean tree; a hand edit still reds | gates-batch U3 reviewer-l3 finding, 2026-09-30 |
 | 2026-09-30 | revision 3 (still draft): U2 widened with the four `src/ui/sections/typography.js` stale-voice comment sites handed over by docs-stale-batch (P15, U2-12); C5 now compares comment-stripped sources so a trailing-comment edit on a code line counts as a comment change | team lead dedupe with `.sdlc/plans/docs-stale-batch.md` |
