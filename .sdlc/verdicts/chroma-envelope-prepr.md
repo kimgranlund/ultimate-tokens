@@ -2,17 +2,17 @@
 kind: verdict
 plan: chroma-envelope
 seat: verifier
-pass: 2
+pass: 3
 ticket: "#725"
 written: 2026-09-30
 ---
 
 # Pre-PR · chroma-envelope · pass 1 · 🔴 at `a8e4a5bc`: every criterion, baseline gate and CI leg is green, but the plan's own diff leaves three wrong statements in the tree
 
-Current state: pass 2 🟢 at `3a2058f7` (the `verdict:` and `sha:` lines below name it; its section is at the end). The pass 1 section that follows graded `a8e4a5bc` 🔴 and is kept as history.
+Current state: pass 3 🟢 at `da37098f` (the `verdict:` and `sha:` lines below name it; its section is at the end), a records-only refresh of pass 2 (🟢 at `3a2058f7`). The pass 1 section that follows graded `a8e4a5bc` 🔴 and is kept as history.
 
 verdict: 🟢
-sha: 3a2058f700c7748b996fc9198ab0bfcd15c9ff9c
+sha: da37098f5c6667f6eca1e935ee5e825d91f4942f
 version: n/a (a plan landing, no release)
 
 Pass 1 lines: `verdict: 🔴` at `a8e4a5bce8926045eadb8b16df7ba68633dc2f8b`.
@@ -200,3 +200,17 @@ none
 ##### Reviewer scope
 
 Read only: scratch clone at `$S/wt`, probes under `$S`. No repo file edited, no commit. `npm test`, `build`, `smoke` and the corpus gates left to the verifier.
+
+## Pass 3 · 🟢 at `da37098f`: origin/main merged into the plan, the delta is `.sdlc/` records only, graded by the seat directly
+
+verdict: 🟢
+sha: da37098f5c6667f6eca1e935ee5e825d91f4942f
+
+`plan/chroma-envelope` at `da37098f`, the merge of origin/main (`cb7437ac`, now the merge base) into the plan so PR #777 reads `MERGEABLE`. A records-only delta, so the seat grades it itself with no new dispatch; pass 2's rows carry on byte-identical code.
+
+| Check | State | Evidence | Negative control |
+|---|---|---|---|
+| Delta is records only | 🟢 | `git diff --name-only 3a2058f7 da37098f \| grep -v '^\.sdlc/'` prints nothing; `git diff 3a2058f7 da37098f -- src figma dist scripts test package.json .github \| wc -l` = `0`. The four paths are `.sdlc/board.md` (taken from main), `.sdlc/plans/chroma-envelope-U5-rediagnosis.md`, `.sdlc/questions/chroma-envelope-prepr-p1.md` and this record, all already on main | the same filter over pass 2's own delta, `git diff --name-only 2d313964 3a2058f7 \| grep -v '^\.sdlc/' \| wc -l`, prints `5`, so it does see a non-record change |
+| Record on the branch matches main | 🟢 | `git show da37098f:.sdlc/verdicts/chroma-envelope-prepr.md` equals the pass 2 record at `1b48df54` (`diff -q` silent); the merge carries `Seat: orchestrator` and `Co-Authored-By` | any hand edit on the branch would make `git diff da37098f -- .sdlc/verdicts/chroma-envelope-prepr.md` non-empty against main's pass 2 copy; it read `0` lines before this pass was written |
+| `npm test` | 🟢 | carried: no input to the suite moved (`0` diff lines under `src`, `scripts`, `test`, `figma`, `dist`); pass 2 ran it green at `3a2058f7` (`54` files, tree clean). The Orchestrator's own run at `da37098f` reports `54/54`, noted, not relied on | the byte-identity diff above is what would print a changed test input; it prints `0` |
+| CI on the head | 🟡 | `gh pr checks 777`: run `36782615989` on `da37098f` exists, every required leg `pending` at the time of writing. This record does not certify CI; landing still needs green `build-test`, `panda-smoke`, `corpus-contrast` and `sweeps` on this sha | `gh pr view 777 --json headRefOid` = `da37098f5c6667f6eca1e935ee5e825d91f4942f`, so the pending run is on this head, not an older push |
