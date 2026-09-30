@@ -55,7 +55,7 @@ Every negative control runs in a throwaway `git clone -q --shared . "$F/neg"` ma
 
 ## Units
 
-- [ ] U1 (S) `figma/README.md` says what the ROLE_TABLE splice carries, how many binder gates there are, and which voice map is hand-mirrored (#774) · trivial lane · grade l1
+- [x] U1 (S) `figma/README.md` says what the ROLE_TABLE splice carries, how many binder gates there are, and which voice map is hand-mirrored (#774) · trivial lane · grade l1
 - [x] U2 (S) `best-practices.md` says non-color scenes reset to a top-left inset (#773) · trivial lane · grade l1
 - [x] U3 (S) the two generator headers name `gen:figma-assets` as the wiring point; regenerated assets committed (#771) · grade l1
 - [x] U4 (S) `model.mjs` CONTROL_FONT comments and the two dead `only when ≥1 mode` comments match the deciders (#770) · grade l2
