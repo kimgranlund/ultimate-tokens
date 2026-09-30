@@ -8,3 +8,12 @@
 | Question | May the plan take revision 9 (the tenth revision row), plan text only, to scope C3.3 x2 to `dampAmp` 0 (env at most 1), write C3.1 as 2.1796 with the measured prints, and swap in the substitute controls? |
 | Options | A Yes (recommended): orchestrator writes revision 9 from the verdict, no engine or gate change, before the pre-land request · B No: pre-land grades the literal text, so C3.3 x2 reads 🔴 on the carve-out preset and the plan returns to a planner |
 | Default if unanswered | none for pre-land, which waits; U4 (records) builds meanwhile |
+
+## Answer
+
+| Field | Value |
+|---|---|
+| Date | 2026-09-30 |
+| Asked | Should the plan text be updated to revision 9 before pre-land? No code changes. |
+| Options | Yes, update the text (Recommended) · No, grade it literally |
+| Chosen | Yes, update the text (Recommended), option A (R82) |

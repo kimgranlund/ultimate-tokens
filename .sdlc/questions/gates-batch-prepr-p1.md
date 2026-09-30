@@ -11,3 +11,13 @@
 | Question 2 | Who sets the title to: `test(gates): citations count-phrase and bare-filename legs, fact-pin literal guard, binder renameparity, em-dash string-bound E1/E2 (#776 #775 #769 #772 #764)`? |
 | Options | A The owner's terminal runs `gh pr edit 781 --title "<title above>"` (recommended) · B The Conductor sets it at the held land |
 | Default if unanswered | none: Q1 re-rules a plan criterion, Q2 needs an action outside the adapter |
+
+## Answer
+
+| Field | Value |
+|---|---|
+| Date | 2026-09-30 |
+| Q1 options | Yes, revision 5 (Recommended) · No, back to planner |
+| Q1 chosen | Yes, revision 5 (Recommended), option A (R83) |
+| Q2 options | Conductor, at merge (Recommended) · You, from your terminal |
+| Q2 chosen | Conductor, at merge (Recommended), option B (R83): the Conductor runs gh pr edit 781 --title before the squash |
