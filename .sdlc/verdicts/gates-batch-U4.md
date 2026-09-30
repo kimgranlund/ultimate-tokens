@@ -1,0 +1,51 @@
+---
+kind: verdict
+plan: gates-batch
+unit: U4
+ticket: 776
+branch: unit/gb-U4
+base: 7b953fb4
+grade: L2
+pass: 2
+written: 2026-09-30
+---
+
+# gates-batch U4 verdict, pass 2
+
+verdict: 🟡
+sha: 26aa4a3eece2689c7f8ee4519a6d0b0b45ae68cc
+
+Checker: verifier-l2 (opus) outside the sonnet builder family (R79). Graded by plan revision 4 (U4 rows identical on main). The reviewer skipped `npm test` at the heavy cap; this verdict's C1 is a fresh full run at head. Every control ran in a throwaway clone at the named sha. Spot-checked here: U4-1's plan grep reads `3` at base and `7` at head, the name-anchored grep `0` and `3`; `node test/repo/em-dash.mjs` at head: `self-test: PASS`, `em-dash: clean (1017 files scanned)`; unit diff over `7b953fb4` is `test/repo/em-dash.mjs` plus the handoff.
+
+| Row | State | Evidence | Negative control |
+|---|---|---|---|
+| C1 | 🟢 | Clone at `26aa4a3e`, no node_modules, heavy count `0` before start: `npm test` -> `✓ all 54 test files passed`, `exit 0`, `git status --short \| wc -l` = `0` | Planted U+2014 in `.sdlc/plans/gates-batch.md` (C2 control) makes `node test/repo/em-dash.mjs` exit `1`, a gate `npm test` runs; mutants below (U4-3 etc.) make the same file's self-test exit `1` |
+| C2 | 🟢 | `node test/repo/em-dash.mjs` at head: `self-test: PASS`, `em-dash: clean (1017 files scanned)`, `exit 0` | Clone `26aa4a3e`, `printf '\xe2\x80\x94' >> .sdlc/plans/gates-batch.md`: `exit 1`, `FAIL: 1 em dashes outside inline code spans in 1 files`, output names `gates-batch.md` (grep count `1`) |
+| C3 | 🟢 | `git diff --name-only 17edb2d2..HEAD -- test/run.mjs .sdlc/baseline.md \| wc -l` = `0` (merge-base with origin/main) | Clone: append a comment to `test/run.mjs`, commit: same command prints `1` |
+| C4 | 🟢 | `git diff --name-only 17edb2d2..HEAD -- src/engine/tonal.js ... test/engine \| wc -l` = `0` | Clone: append to `src/engine/tonal.js`, commit: prints `1` |
+| C5 | 🟢 | `git diff --name-only 17edb2d2..HEAD -- src` is empty; comment-stripped `diff` for `type.mjs` and `typography.js` both `0` | Clone: `export const` to `export let` in `type.mjs`, commit: name list `src/engine/type.mjs`, stripped diff `4` |
+| U4-1 | 🟢 | Self-test `PASS`, `exit 0`; plan grep `grep -c 'two strings on one line\|template literal'` = `7` (>= 2) | The plan's grep does NOT discriminate: it prints `3` at base `7b953fb4` (and at `8945c618`, from comments at lines 11, 86, 241), not the `0` the plan measured. Name-anchored grep `grep -cE 'name: "E1 two strings on one line\|name: "E2 template literal'` prints `0` at base, `3` at head. Self-test exit-1 controls: U4-3, U4-4, U4-6 rows. See Finding 1 |
+| U4-2 | 🟢 | Clone `26aa4a3e`, staged `probe.js` = `const c = "a <U+2014> b"; const d = "## Head <U+2014> tail";`, `--fix`: `const c = "a, b"; const d = "## Head: tail";`; no other file changed | Same run at `7b953fb4`: `const c = "a: b"; const d = "## Head, tail";` (the issue's shape) |
+| U4-3 | 🟢 | Mutant at `26aa4a3e`: `decision.idx ?? masked.indexOf(DASH)` to `masked.indexOf(DASH)`: `exit 1`, `self-test: FAIL 3 case(s)`, both two-string fixtures plus `E2 second string` | This row is the control; unmutated head exits `0` |
+| U4-4 | 🟢 | Mutant A (E2 leg tests the base whole-line regex against `line`): `exit 1`, `✗ E2 template literal, no enclosing string: matched R3s, expected R8`. Mutant B (whole base classifier block restored, `E1_RE`/`E2_RE` on `line`, `idxs[0]`): `exit 1`, FAIL 5, including the template-literal fixture | This row is the control; unmutated head exits `0` |
+| U4-5 | 🟢 | Clone `26aa4a3e`, `git show 37b04676^:mcp/describe-rubric.mjs > g.mjs; git add g.mjs; --fix; sed -n 80p`: `- NOT "exotic, wild jungle cat energy", INSTEAD: **"Bengal tiger, burnt orange"**, the Sundarbans` (matches main line 80) | Same run at `7b953fb4`: `...energy": INSTEAD: ...` (the colon on the first dash) |
+| U4-6 | 🟢 | `grep -c 'expectRule: "R2s"\|expectRule: "R3s"'` = `8` (base `2`); `E1 heading in a string` and `E2 bold label in a string` pass unchanged | Mutant `for (const di of idxs)` to `for (const di of [])` (E1/E2 dropped): `exit 1`, FAIL 10, `✗ E1 heading in a string: matched R8, expected R2s`, `✗ E2 bold label in a string: matched R8, expected R3s` |
+| U4-7 | 🟢 | `sed -n '/const idemSrc = \[/,/^  \];/p' ... \| grep -c '## Head\|Sundarbans'` = `2`; self-test PASS | Base prints `0`; clone with the two-string `idemSrc` line removed prints `1`; non-Markdown idempotence leg mutated to `fixLines(idemCode, true)`: `exit 1`, `✗ idempotence-code: the non-Markdown leg never reached R2s and R3s` and `a second non-Markdown pass made 2 edit(s)` |
+| U4-8 | 🟢 | `git diff --name-only 7b953fb4..HEAD` = `.sdlc/handoffs/gates-batch-U4.md`, `test/repo/em-dash.mjs`. The plan's literal merge-base form also lists `test/repo/citations.mjs`, `.sdlc/plans/gates-batch.md`, U1 handoff and review: all from the plan branch (U1), not U4. See Finding 2 | Clone: plant U+2014 in tracked `README.md`, `--fix`, commit: name list gains `README.md` |
+| F1 | 🟢 | Probes via staged `probe.js`, `--fix`. Escaped backticks (`famBullet` shape): `1480cf19` -> `\`**, ${note}` (comma), `26aa4a3e` -> `\`**: ${note}` (colon, as base and main). Escaped `\"` (`"- **A \"x\"** <U+2014> note"`): `1480cf19` comma, head colon. Open template (`` `# Interpretation rubric <U+2014> words ``): `1480cf19` comma, head colon | Mutant escape-skip removed: `exit 1`, FAIL 3 (`E2 bold label after escaped backticks...`, `...template continuation line`); mutant open-ended branch disabled: `exit 1`, `✗ E1 heading in a template open at the line end: matched R8, expected R2s` |
+| F2 | 🟢 | `const s = "## A? <U+2014> b <U+2014> c";`: `1480cf19` -> `"## A? <U+2014> b: c"` (a guess on the 2nd dash); head -> unchanged and listed `✗ probe.js:7` (refused, same as base) | Mutant `&& span.content.indexOf(DASH) === upto` removed: `exit 1`, `✗ E1 anchored: failed first dash refuses, second never inherits: matched R2s, expected R0` |
+| F3 | 🟢 | Head carries the `idempotence-code` leg (`fixLines(idemCode, false)`, requires R2s and R3s on pass 1, zero edits on pass 2) | `1480cf19` with its idempotence leg flipped to `md=false`: still `self-test: PASS` (blind); head with the new leg flipped to `md=true`: `exit 1` (see U4-7) |
+| F4 | 🟢 | Fixture `E2 second string, dash is not the line's first`; `expectFinal-leg` counter | (a) R3s `idx: di` dropped: `1480cf19` `PASS`, head `exit 1`, `✗ E2 second string...`. (b) `if (c.expectFinal !== undefined)` to `if (false)`: `1480cf19` `PASS`, head `exit 1`, `✗ expectFinal-leg: 0 of 6 whole-line results were checked` |
+| F5 | 🟢 | `grep -c 'R2s/R3s: the dash their \`idx\` names'` = `1` at head | Same grep at `1480cf19` = `0` (the stale "first actionable dash" header) |
+| --fix clean tree | 🟢 | Clone `26aa4a3e`: `node test/repo/em-dash.mjs --fix` twice -> `em-dash: clean (1017 files scanned)`, `git status --short \| wc -l` = `0` both times. Whole pre-sweep replay (`37b04676^` tree, head tool): second `--fix` pass leaves `git diff --stat` empty (only `R0 212` refusals reported) | Plant in tracked `README.md` then `--fix` does modify the tree (U4-8 control), so an empty status is not vacuous |
+| (a) ds-export.js:770 | 🟡 | Replay: clone at `37b04676^`, tool from each sha, `--fix`, diff. Counts: base `R2s 17 R3s 24 R8 8484`, head `R2s 18 R3s 19 R8 8487`; 7 lines differ. On `:770` base gives `\`**: secondary text; **Border ...\`**, a translucent`; head gives `\`**, secondary text; **Border ...\`**: a translucent`; main has a colon on both. The other 6 (`brand-kit-core.mjs:68`, `describe-rubric.mjs` 78, 80, 83, 142, 204) move to main's exact text | `const d = "- **A** <U+2014> x; **B** <U+2014> y";` gives `**A**: x; **B**, y` at BOTH `7b953fb4` and head: one colon per line predates U4. Head's output is correct under the tool's rules (the first dash's `**Muted` opens on line 769, invisible to a line-local check; the colon lands on the dash whose label it matched) but is still semantically half-wrong (comma after the `Muted` label). Base was equally half-wrong, by the #764 bug. Any rerun needs one hand repair; no criterion covers this line |
+| (b) single-quoted heading | 🟡 | `const q = '## Head <U+2014> tail';`: base `7b953fb4` -> `'## Head, tail'`, `1480cf19` -> comma, head -> `'## Head: tail'`. Base `E1_RE` was `["\`]#{1,6} ` (no single quote); head `E1_HEAD_RE = /^#{1,6} /` tests span content of any quote kind | No fixture has a single-quoted heading (`grep -nE "line: .*'#"` empty), so no row pins it either way; the whole-tree replay diff shows no real line it changes. Behaviour is correct (a heading string is a heading string, and the quote kind carries no meaning in JS), a widening, not a regression; Design text ("`E1_RE` against the quote plus content") implied the old quote set. See Finding 3 |
+
+## Findings
+
+1. 🟡 Plan text: U4-1's command `grep -c 'two strings on one line\|template literal'` does not discriminate. It prints `3` at base from comment prose, so the plan's Measured `0` is wrong and `2 or more` passes with no fixture. The row is green on the self-test and a `name: "`-anchored grep (`0` base, `3` head). The plan should anchor on the fixture name.
+2. 🟡 Plan text: U4-8's merge-base-with-origin/main form lists U1's files, because the unit is cut from `plan/gates-batch`. Against the unit base the list is exactly the gate file plus its handoff. It should read "against the unit base".
+3. 🟡 E1 now fires on single-quoted heading strings (`'## Head <U+2014> tail'` goes to a colon at head, a comma at base). This is correct and a widening, not a regression. No fixture pins it, and the plan's Design sentence implies the old quote set. Needs one fixture or one Design line.
+4. `src/engine/ds-export.js:770` (reviewer-accepted): the replay of the pre-sweep tree puts the colon on the second dash at head (the first at base). Main has a colon on both. The first dash's label opens on line 769, which a line-local rule cannot see, so a rerun needs one hand repair either way. This is not a regression; the one-colon-per-line shape predates U4.
+5. The handoff's pass-1 table says the U4-1 control reads `0` with fixtures removed. Base alone prints `3`, so that line is stale.
+6. Every review finding F1 to F5 has a control that passes on `1480cf19` and reds on head (rows F1 to F5).
