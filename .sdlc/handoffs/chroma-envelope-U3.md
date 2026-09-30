@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Branch | unit/ce-U3 @ HEADSHA: revision 8 applied on the merge ba7a299e (plan/chroma-envelope b8142c16 into unit/ce-U3; `.sdlc/board.md` as main has it). Pass 1's engine commit is 67cc0cde on base ee6fadbe |
+| Branch | unit/ce-U3 @ 0bbae01b (engine and records; this sha line lands in the follow-up commit): revision 8 applied on the merge ba7a299e (plan/chroma-envelope b8142c16 into unit/ce-U3; `.sdlc/board.md` as main has it). Pass 1's engine commit is 67cc0cde on base ee6fadbe |
 | Scope | the perceptual/peak damp retune (`OKHSL_DAMP_D` 0.9275, `OKHSL_DAMP_CURVE_GAIN` log2(3)/1.5, a power residue), the per-stop tone hold (`holdTone`, `okhslToRgbFloat`, `toneTarget`/`toneHeld` rows), the peak cap's own `capped` flag read by `anchor.mjs` f4, and, at revision 8, the anchored `oklch` hue as the anchor's own OKLCH hue (`hOkStop = oklchSpace ? targetOklchHue : hOkSeed`, no per-stop `solveOkhslHue`), the Kea named exception in the report and gate, the one-time allow-list freeze re-taken, the fixtures re-captured and re-pinned |
 | Status | 🟢 on every criterion; Q1 to Q7 ruled or closed (R76, R77, revision 8, R78). Findings F3 and F4 are declared below, neither changes a bar. Paired timing ratios are 0.990 / 0.934 / 1.115, all at most 1.2. |
 | Files, engine | `src/engine/tonal.js` (revision 8: the hue line, the `solveOkhslHue` and `okhslStopsAnchored` header comments, the dead `const s` line removed), `src/engine/okhsl.js`, `src/ui/model.mjs` (pass 1, one line: `capped` onto the projected row) |
