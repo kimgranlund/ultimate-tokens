@@ -2,15 +2,17 @@
 kind: verdict
 plan: gates-batch
 seat: verifier
-pass: 1
+pass: 2
 ticket: "#776, #775, #769, #772, #764"
 written: 2026-09-30
 ---
 
 # Pre-PR · gates-batch · pass 1 · 🔴 at `8bcf5312`: every plan and unit row holds and CI is green, but the branch stales the `ui.html` baseline row and the draft PR title is not the Landing title
 
-verdict: 🔴
-sha: 8bcf5312a6f9d567d94e860fa1352c4cdfdd97ef
+Current state: pass 2 🟢 at `1b3f835f` (the `verdict:` and `sha:` lines below name it; its section is at the end). The pass 1 section that follows graded `8bcf5312` 🔴 and is kept as history.
+
+verdict: 🟢
+sha: 1b3f835ff790d7a6db535b544642ac8b7e7bf2de
 version: n/a (a plan landing, no release)
 
 `plan/gates-batch` at `8bcf5312` (draft PR #781), merge of main into the plan after all four units. `$B` = `1ec6dc15` (merge base with origin/main). Checkers in fresh context: reviewer-l4 on the whole diff `$B...8bcf5312` (PASS), verifier-l3 on every C and unit row, the baseline gates, `.sdlc/checks/` and CI. The seat reproduced the baseline-agrees red and the U2-7 control itself.
@@ -84,3 +86,27 @@ version: n/a (a plan landing, no release)
 5. 🟡 Plan-text readings, recorded in the unit verdicts: U3-8's literal form is vacuous (`diff: unset`), the `--text` form reads `0` with control `2`. U4-1's `name: "` anchor needs a prefix-tolerant form (`name: ".*two strings`), since fixture names carry `E1 `/`E2 `. C5's rewrap flaw did not bite (both forms `0`, `0`).
 6. 🟡 Reviewer lows for #783: `citations.mjs:274-279` resolves a bare basename only under `src/`, so a true `figma/` basename citation reds as NOFILE. `test/figma/binder.mjs:816` names `canonSort` a function that no longer sorts, and the plan's U3 Design and the U3 handoff still say "key sort". `figma/README.md:26` is a 278-column line in a 100-wrapped file. `docs/marketing/web/landing.md:41` says `eleven voices` (engine 15), outside every pin; it belongs on #782.
 7. Pass 2 needs findings 1 to 3 fixed (plan ruling plus baseline row, PR title, fresh merge of main), then the baseline check, `npm test`, build and CI rerun on the new head. Every other row may carry forward if the new head differs by records only.
+
+## Pass 2 · 🟢 at `1b3f835f`: revision 5 (R83) admits the `ui.html` baseline row, U5 fixed it, the head's tree outside `.sdlc/` equals pass 1's, and CI is green on every required job
+
+verdict: 🟢
+sha: 1b3f835ff790d7a6db535b544642ac8b7e7bf2de
+
+`plan/gates-batch` at `1b3f835f`: U5 merged (`18508ffa`), then main merged in. Graded by plan revision 5 (R83, owner answer in `.sdlc/questions/gates-batch-prepr-p1.md`: Q1 A, Q2 B). `git diff --name-only 8bcf5312 1b3f835f` lists only `.sdlc/` paths, so pass 1's code rows, build and smoke carry forward on an identical tree. The seat ran this pass in a clone at `1b3f835f`. The records-only delta (U5 review, plan revision) needs no fresh reviewer: U5 had its own reviewer PASS (`e8b09265`).
+
+| Check | State | Evidence | Negative control |
+|---|---|---|---|
+| Tree outside `.sdlc/` unchanged since pass 1 | 🟢 | `git diff --name-only 8bcf5312 1b3f835f \| grep -v '^\.sdlc/'` prints nothing | pass 1's head against `$B` lists 17 files, so the name list reads a real diff |
+| C3 (revision 5) and U5-1 | 🟢 | merge base `ee69d244`: `test/run.mjs` diff `0`; baseline filtered diff `0` (the only changed lines are the `ui.html` row and `+Correction (2026-09-30, plan gates-batch U5, #776)`); `sh .sdlc/checks/baseline-agrees-check.sh`: `stale total: 0`, exit 0 | the `npm test` baseline row edited and committed: filtered count `2`; pass 1's `baseline.md` restored: `STALE ui.html: baseline 4141.3 KB, tree 4141.8 KB`, `stale total: 1` |
+| U5-2 one Correction | 🟢 | `grep -c '^Correction (2026-09-30, plan gates-batch' .sdlc/baseline.md` = `1` | a second Correction appended and committed: `2` |
+| `npm test` on the head | 🟢 | clone, no `node_modules`: `✓ all 54 test files passed`, exit 0, `git status --short \| wc -l` = `0` after (reruns the branding, em-dash and verdict-frontmatter scans over the new records) | pass 1's `"scrimX` control on the same suite: `FAIL  refs-canonical`, exit 1 |
+| `.sdlc/checks/*.sh` | 🟡 | `baseline-agrees` `stale total: 0`; `card-amendment` `stale total: 0`; `doc-drift-rows` `bad 0`; `verdict-frontmatter` `verdicts 253 graded 253 bad 0`; `card-source-range` `range mismatches: 3` | `card-source-range` reads `3` at pass 1's `$B` too: inherited, not this plan's; `baseline-agrees` reads `stale total: 1` on pass 1's row |
+| CI on `1b3f835f` | 🟢 | `gh pr view 781 --json headRefOid,statusCheckRollup`: head `1b3f835ff790d7a6db535b544642ac8b7e7bf2de`; `build-test`, `panda-smoke`, `corpus-contrast` and all seven `sweeps (...)` `SUCCESS`, `deploy` `SKIPPED` | the first poll read `IN_PROGRESS` on eight jobs, so the query separates a finished run from an unfinished one |
+| Main not reverted by the squash | 🟢 | `git log 1b3f835f..origin/main` is `76054c77` and `5a76f922`; `git diff --stat 1b3f835f origin/main` shows no `.sdlc/board.md` line, so the board the plan carries equals main's | pass 1 read `.sdlc/board.md` in that diff (three live rows reverted) |
+| PR title | 🟡 | `gh pr view 781 --json title`: `gates-batch: citation, binder and em-dash gates (#776)`, still not the Landing title. R83 Q2 B rules that the Conductor runs `gh pr edit 781 --title` before the squash | a string compare against the Landing title `test(gates): citations count-phrase and bare-filename legs, ...` differs |
+
+### Findings
+
+1. 🟡 The PR title is still the draft title. Per R83 Q2 B, the Conductor sets the Landing title with `gh pr edit 781 --title` before the squash; the squash subject comes from the title. Landing with the draft title would contradict the plan's Landing section.
+2. 🟡 `card-source-range-check.sh` reads `range mismatches: 3`, inherited from main, not this plan's.
+3. The pass 1 🟡 findings 5 and 6 (plan-text readings, reviewer lows) stand as recorded and ride on #782 and #783.
