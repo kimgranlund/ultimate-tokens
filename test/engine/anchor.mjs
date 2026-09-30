@@ -527,14 +527,14 @@ const RAMP_WINDOW_ALLOW = [
 // #725 U3 freeze (R74, "frozen once at U3 with the movement declared"), measured FULL on U3's head
 // (hold + retune, revision 8 hue): 72 -> 79, 14 added and 7 removed. Every added member fails only on
 // the peak ramp at stops 50&100, 100&150 or 900&950 (the near-white and near-black ends, where a half
-// step is under one 8-bit code), none mid-ramp, and all 13 were already gap misses at U2's head (the U2
+// step is under one 8-bit code), none mid-ramp, and all 14 were already gap misses at U2's head (the U2
 // carry R74 moved here). Removed: cuisine "Chocolate" primary, film "The Godfather" secondary and music
 // "Studio 54" secondary (the tone hold keeps stop 950 at its undamped L*, peak 900&950 widens from
 // 0.407 to 0.474 at U2 to 0.551 to 0.553), travel "Hidaka coast" primary-muted (peak 850&900, 0.532 ->
-// 0.792, same cause), and travel "Khumbu" / "Lake Baikal" secondary #E0E5E6 (already not reproduced at
-// U2's head). Pass 1's 4 other members are gone at revision 8 (the anchor's own OKLCH hue, no per-stop
-// solve): literature "Bleak House" tertiary-muted (peak 900&950 0.789), music "Motown" tertiary-muted
-// and "Pop-punk" secondary (0.730) and travel "Sapa" secondary (0.605, 0.442 at U2).
+// 0.792, same cause), travel "Sapa" secondary (peak 0.605, 0.442 at U2), and travel "Khumbu" /
+// "Lake Baikal" secondary #E0E5E6 (already not reproduced at U2's head). Pass 1's 3 other members are
+// gone at revision 8 (the anchor's own OKLCH hue, no per-stop solve): literature "Bleak House"
+// tertiary-muted (peak 900&950 0.789), music "Motown" tertiary-muted and "Pop-punk" secondary (0.730).
 const RAMP_GAP_ALLOW = [
   `architecture "Icelandic turf house · vernacular · Skógar / Glaumbær" tertiary-muted #D9D8D4`,
   `architecture "Katsura Imperial Villa · 17th c · Kyoto" primary #282322`,
