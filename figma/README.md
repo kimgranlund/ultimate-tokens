@@ -19,7 +19,8 @@ Two plugins live here, per the `maintaining-figma-plugins` skill (load it before
   shipped plugin. `code.js` is hand-authored around three marker-spliced sections
   (`// === GENERATED:<NAME> START/END ===`): `FLOAT_EXECUTOR` and `COLOR_EXECUTOR`, spliced verbatim
   from the flagship `figma/plugin/code.js`, and `ROLE_TABLE`, the body of `src/engine/semantic.js`'s
-  `semanticRoles()` re-wrapped as `roleTable()`. `scripts/gen-figma-binder-code.mjs` rewrites only
+  `semanticRoles()` re-wrapped as `roleTable()` together with its three supporting `SCRIM_*` constants
+  (`SCRIM_STRENGTH_STEPS`, `SCRIM_SUFFIXES`, `SCRIM_KEYS`). `scripts/gen-figma-binder-code.mjs` rewrites only
   the text between each marker pair; `npm test` and `npm run build` run it as the first half of
   `gen:figma-assets`. Every other line is hand-kept: the binding loop mirrors `bind-plan.mjs`, and
   `SEMANTIC_RENAME_FROM`, `LIBRARY_TYPE_VOICE_MAP` and `GEOMETRY_FIELD_RENAME_MAP` mirror
@@ -33,12 +34,13 @@ Two plugins live here, per the `maintaining-figma-plugins` skill (load it before
     styles on Type/Geometry primitives).
   - `binder/live-diff.mjs`: compares a live Figma read-back against an apply plan so the apply gate
     can show "N values will be overwritten" before the user commits.
-  - `binder/migrations.mjs`: the active rename/retire migration maps, imported by the app so every
-    executor path receives the same maps.
+  - `binder/migrations.mjs`: the active rename/retire migration maps, imported by the app (`app.js`,
+    `apply-gate.js`); the flagship `figma/plugin/code.js` keeps its own hand-mirrored
+    `LIBRARY_TYPE_VOICE_MAP`, checked by the `libraryparity` gate in `test/figma/plugin.mjs`.
   - `binder/splice-utils.mjs`: the shared brace-matched source-extraction helpers the generator and
     its gate both use.
 
-`npm test` runs six verifiers under `test/figma/`: `binder.mjs` (`bind-plan.mjs`, plus the
-`parity`, `floatparity` and `colorparity` gates, which prove each generated section of the binder's
-`code.js` matches its canonical source), `mode-apply.mjs`, `style-plan.mjs`, `live-diff.mjs` and
+`npm test` runs six verifiers under `test/figma/`: `binder.mjs` (declares 20 gates and imports
+`bind-plan.mjs` and `mode-apply-plan.mjs`; `parity`, `floatparity` and `colorparity` prove each
+generated section of the binder's `code.js` matches its canonical source), `mode-apply.mjs`, `style-plan.mjs`, `live-diff.mjs` and
 `migrations.mjs` (each over the module it names), and `plugin.mjs` for the app-as-plugin path.
