@@ -10,3 +10,10 @@
 | Question 2 | May the plan take revision 5 (a sixth revision row) to write the ruled option's criterion text (C2.2, C2.3, C2.4, C2.7, C3.2, and a third mechanism in the diagnosis)? |
 | Options | Yes (recommended) · No, return to the planner for a fresh plan |
 | Default if unanswered | none: this re-rules R69's measured bars, so it waits for the owner |
+
+## Answer (owner via AskUserQuestion, 2026-09-29, R74)
+
+| Field | Value |
+|---|---|
+| Question 1 | A: keep U2's engine; the R69 bars apply to the gate path, the anchored path is reported and held by the U1 ratchet plus clause counts, a white-pixel exclusion for C6 (v), allow-lists frozen once at U3 with the movement declared. Criterion text only |
+| Question 2 | Yes: revision 5 (the sixth revision row) is allowed to write the option A criterion text |
