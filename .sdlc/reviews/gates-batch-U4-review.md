@@ -50,3 +50,48 @@ Every U4 output was idempotent on a second pass. Leaving E3 on `idxs[0]` follows
 2. Anchor E1/E2 at the tested dash: the first dash in the string, and the dash right after the bold, respectively.
 3. Run the idempotence leg with `md=false` over the non-md lines, and add an E2 second-string fixture.
 4. Re-run the pre-sweep replay: its diff against the old tool should list only the intended lines.
+
+## Pass 2 (rework `af766fb3`, branch @ `26aa4a3e`)
+
+**PASS**: F1 to F5 are closed. The replay now moves every line toward main except `ds-export.js:770`, and that one is the right dash under the one-colon-per-line rule.
+
+### Replay (37b04676^, whole tree, staged scratch clone; old tool = `plan/gates-batch`)
+
+Old vs pass 2: R2s 17 to 18, R3s 24 to 19, R8 8484 to 8487; 7 changed hunks.
+
+| Line | Old tool | Pass 2 | Main | Call |
+|---|---|---|---|---|
+| `mcp/brand-kit-core.mjs:68` `` `# ${kit.name \|\| "Brand Kit"} [dash] usage `` | comma | colon | colon | 🟢 toward main (the `"` inside `${}` used to stop old E1) |
+| `mcp/describe-rubric.mjs` 78, 80, 83, 142, 204 | colon | comma | comma | 🟢 toward main (80 is the issue's case) |
+| `src/engine/ds-export.js:770` | colon on 1st dash, comma on `**Border**` | comma on 1st, colon on `**Border**` | colon on both | 🟡 accepted (below) |
+
+`ds-export.js:739`, `:769`, `:771`, the `-container` bullet and `describe-rubric.mjs:63` now come out the same as the old tool, which matches main, so pass 1's F1 regressions are gone.
+
+On `:770`, the first dash's bold label opens on line 769, so a check that stays on one line can't see it. The old tool's colon landed there only because it matched `**Border**` and then wrote to the line's first dash. That was the #764 bug, and it happened to land right. Pass 2 puts the colon on the dash that actually matched. The second colon on main was a hand repair (#752). R3's once-per-line shape rule is older than U4 and unchanged. This isn't a blocker; any later rerun still needs that one hand repair.
+
+### Controls (scratch clone @ `26aa4a3e`, self-test PASS, exit 0)
+
+| Mutant | Result |
+|---|---|
+| fix case back to `masked.indexOf` (U4-3) | FAIL 3 |
+| R3s drops `idx` (F4a) | FAIL 1 (`E2 second string`) |
+| R2s drops `idx` | FAIL 2 |
+| `expectFinal` leg disabled (F4b) | FAIL (`0 of 6 ... checked`) |
+| non-Markdown idempotence leg run with `md=true` (F3) | FAIL (`never reached R2s and R3s`) |
+| E1 first-dash anchor removed (F2) | FAIL (`matched R2s, expected R0`) |
+| escape skip removed (F1) | FAIL 3 |
+| open-ended template removed (F1) | FAIL 2 |
+| E2 slice unbounded | FAIL 6 |
+| E2 `$` anchor removed | PASS: equivalent mutant (an earlier bold dash always fires first on the same guard), no finding |
+
+F2's refusal case `"## A? [dash] b [dash] c"` is R0 again. The pass-2 fix is idempotent on every probe.
+
+### Pass 2 findings
+
+| # | Sev | Where | Finding |
+|---|---|---|---|
+| G1 | ⚪ | `em-dash.mjs:369`, `:466` | `E1_HEAD_RE` tests the span's content whatever the quote kind, so E1 now fires on a single-quoted `'## Head [dash] tail'` (old: R8). The colon is right for a heading string, and the replay shows no real line this changes. But the plan's Design and the fixtures don't mention it. Name it in the handoff or pin it with a fixture. |
+| G2 | ⚪ | `em-dash.mjs:354` | Only a backtick template counts as open-ended. A `"## Head [dash] tail` whose closing `"` is on a later line went from R2s to R8. The replay shows no such line, and a `"` string can't span lines in JS anyway. Recorded, no action. |
+| G3 | ⚪ | `em-dash.mjs:387` | The header comment line is now about 130 characters, where the surrounding lines wrap at about 100. Cosmetic. |
+
+`npm test` not run: the heavy-suite count was 2, not under the cap. The unit changes only `test/repo/em-dash.mjs` and its handoff. The rework adds no em dash to its diff.
