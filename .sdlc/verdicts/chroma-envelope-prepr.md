@@ -2,16 +2,20 @@
 kind: verdict
 plan: chroma-envelope
 seat: verifier
-pass: 1
+pass: 2
 ticket: "#725"
 written: 2026-09-30
 ---
 
 # Pre-PR · chroma-envelope · pass 1 · 🔴 at `a8e4a5bc`: every criterion, baseline gate and CI leg is green, but the plan's own diff leaves three wrong statements in the tree
 
-verdict: 🔴
-sha: a8e4a5bce8926045eadb8b16df7ba68633dc2f8b
+Current state: pass 2 🟢 at `3a2058f7` (the `verdict:` and `sha:` lines below name it; its section is at the end). The pass 1 section that follows graded `a8e4a5bc` 🔴 and is kept as history.
+
+verdict: 🟢
+sha: 3a2058f700c7748b996fc9198ab0bfcd15c9ff9c
 version: n/a (a plan landing, no release)
+
+Pass 1 lines: `verdict: 🔴` at `a8e4a5bce8926045eadb8b16df7ba68633dc2f8b`.
 
 `plan/chroma-envelope` at `a8e4a5bc` (draft PR #777), the merge of main (gates-batch `30c3a7aa`) into the plan after U1 to U4. `$B` = `02d609c9` (merge base with origin/main). Graded by plan revision 9 (R82). Checkers in fresh context: reviewer-l4 (fable) on the whole diff `$B...a8e4a5bc` (PASS, no blocker or major) and verifier-l3 (fable) on every unit criterion, the baseline gates, `.sdlc/checks/` and CI. The seat re-read the three stale lines below itself at both shas.
 
@@ -121,3 +125,78 @@ version: n/a (a plan landing, no release)
 - `docs/reference/CHANGELOG.md:28` and `.claude/skills/color-math/references/foundations.md:152` mention `gate:even-dips` as historical entries (dated), not as a gate-member list, so they are not stale.
 
 Heavy suites (npm test, build, smoke) left to the verifier per the dispatch.
+
+## Pass 2 · 🟢 at `3a2058f7`: U5 (revision 10, R84) corrects all six lines, the delta is comments and prose only, and every criterion and `npm test` holds; CI has not yet run on this head
+
+verdict: 🟢
+sha: 3a2058f700c7748b996fc9198ab0bfcd15c9ff9c
+
+`plan/chroma-envelope` at `3a2058f7`: U5 merged (`b3461577`) on lane review pass 2 (`.sdlc/reviews/chroma-envelope-U5-review-p2.md`). Graded by plan revision 10 (R84, `.sdlc/questions/chroma-envelope-prepr-p1.md`: Q1 A, all six lines; Q2 A, C3.7 stays U3-scoped), with U5's corrected command forms from `.sdlc/plans/chroma-envelope-U5-rediagnosis.md`. Checkers in fresh context: reviewer-l4 (fable) on the delta `a8e4a5bc..3a2058f7` and a re-sweep of the whole diff `02d609c9...3a2058f7` (PASS, no blocker or major), and verifier-l3 (fable) on U5-1 to U5-8 with controls, the figures the new prose asserts, and the gates. `git diff a8e4a5bc 3a2058f7 -- src scripts figma dist` is empty, so pass 1's code rows, build, smoke, sweeps and C1 to C4 carry forward on byte-identical code. The seat re-read `gh api .../commits/3a2058f7/check-runs` itself at `21:50Z`: `total_count 0`.
+
+### Seat rows, pass 2
+
+| Check | State | Evidence | Negative control |
+|---|---|---|---|
+| Pass 1 blocker closed | 🟢 | the three stale lines now read true: `residue r^2.1796` (`OKHSL_DAMP_RESIDUE_EXP` `2.1796`), `re-pinned five EX-2 literals`, `72 -> 79, 14 added and 7 removed` with all seven removed named; `grep -rn '2\.0875' test docs src` prints nothing | at U5's base `2d313964` each old phrase counts `1` and each new one `0` (verifier U5-1 to U5-3) |
+| Whole-diff review, pass 2 | 🟢 | reviewer-l4 `PASS`; `claims.py` `refused 0 ... unresolved 0`; `citations.mjs` `STALE 0`; all seven new commits carry `Co-Authored-By` | the re-sweep's counts are reproducible greps a wrong tree would change (`RAMP_GAP_ALLOW` set diff `b8142c16` vs `2ab30df7`: `14` / `7`) |
+| C3.7 plan-wide timing | 🟢 | R84 Q2 A: C3.7 stays U3-scoped as written (U3 ratio `1.036`); the plan-wide reading of pass 1 (`1.414` / `1.221`) is reported, not barred | the owner's answer row `Q2 chosen \| Keep U3-scoped (Recommended), option A (R84)` in the question file; option B (re-time first) was offered and not chosen |
+| CI on the head | 🟡 | `gh pr checks 777` at `21:47Z` to `21:50Z`: `no checks reported`; check-runs `total_count 0` on `3a2058f7` (pushed `21:42Z`). Last run `36760712421` on `a8e4a5bc`, green on every required leg, over code byte-identical to this head. This record does not certify CI; landing still needs green `build-test`, `panda-smoke`, `corpus-contrast` and `sweeps` on `3a2058f7` (re-push or re-trigger if no run appears) | `gh run list --branch plan/chroma-envelope --limit 1` names `a8e4a5bc`, not this head, so a pass 1 run is not mistaken for this one |
+| Build and smoke | 🟡 | not rerun: `git diff --stat a8e4a5bc 3a2058f7 -- src figma dist` is empty, so the generated `ui.html` and every build input equal pass 1's, where `npm run build` and `npm run smoke` passed; `npm test` on head regenerates the assets and leaves the tree clean | a byte change under `src/` would print in that `git diff --stat`; it prints nothing |
+| Record slips (reviewer minors 1 to 3) | 🟡 | `.sdlc/board.md:113` `builder-l7` vs plan `:195` `builder-l1`; plan `:6` `size:` omits U5; the U5 table `:180` to `:185` keeps the superseded command forms. All are `.sdlc/` records the Orchestrator owns and closes at landing; none is shipped text | `git diff --name-only a8e4a5bc 3a2058f7 \| grep -v '^\.sdlc/'` lists only the five U5 files, so these slips sit outside the landed product |
+
+### Verifier-l3 rows, pass 2
+
+| Check | State | Evidence | Negative control |
+|---|---|---|---|
+| U5-1 fixture header names the shipped exponent | 🟢 | `grep -cF 'r^2.0875' test/engine/fixtures/shadcn-baseline.css` = `0`; `grep -cF 'r^2.1796' ...` = `1`. Line 77 sits inside the `/*` block opened at line 76 (`opens before 77: 1, closes before 77: 0`), so the change is comment text. Figure re-measured: `T.OKHSL_DAMP_RESIDUE_EXP` = `2.1796`, recomputed `Math.log(1 - 0.9275) / Math.log(0.3)` = `2.1796` | `$S/base` at `git rev-parse HEAD` = `2d313964a8f4...`: `1`; `0` |
+| U5-2 spec count word matches the five literals | 🟢 | `grep -c 're-pinned four EX-2' docs/spec/spec-panda-park-ui-exports.md` = `0`; `grep -c 're-pinned five EX-2' ...` = `1` | `$S/base` (`2d313964`): `1`; `0` |
+| U5-3 RAMP_GAP_ALLOW comment matches the U3 merge diff | 🟢 | `grep -c '13 added and 6 removed' test/engine/anchor.mjs` = `0`; `'14 added and 7 removed'` = `1`; `'all 13 were'` = `0`; `'all 14 were'` = `1`; `"Pass 1's 4 other"` = `0`; `"Pass 1's 3 other"` = `1`. Set diff re-measured (`$S/setdiff.py`, backtick entries of `RAMP_GAP_ALLOW` at `b8142c16` vs `2ab30df7`): `72 -> 79`, `added 14`, `removed 7`; the 7 removed are Chocolate primary, The Godfather secondary, Studio 54 secondary, Sapa secondary, Khumbu secondary, Hidaka coast primary-muted, Lake Baikal secondary, exactly the seven the comment at `anchor.mjs:531-535` names; Bleak House, Motown, Pop-punk secondary are in neither list. Companion `RAMP_DISTINCT_ALLOW` `16 -> 19`, `added 6`, `removed 3` (Wadi Rum, Patmos, Viennese kaffeehaus), matching `anchor.mjs:642` | `$S/base` (`2d313964`): `1`; `0`; `1`; `0`; `1`; `0` |
+| U5-4 CHANGELOG `15 of 3764` sentence says peak count and the excluded set | 🟢 | `tr '\n' ' ' < CHANGELOG.md \| grep -o '15 of 3764[^.]*\.' \| grep -c 'peak'` = `1`; same with `grep -c 'exclu'` = `1`; `grep -c 'tonal.mjs\` C6 (v) ratchet)' CHANGELOG.md` = `0` (old form `'in the C6 (v) ratchet'` also `0`). Figure re-measured (`$S/probe.mjs`, anchored peak path, `dampAmp 0`, Adia excluded by name, `T.STOPS`): `palettes 3764; excluded(c500<2.869) 72; measured 3692; violators with exclusion off 15 (of them white stop50 15); violators among excluded 15; ratchet violators 0/3692`, so 15 of 3764 is the peak count with the C6 (v) exclusion off and every one is in the excluded set | `$S/base` (`2d313964`): `0`; `0`; `1` |
+| U5-5 tone-hold sentence names the measured maximum | 🟢 | `grep -c 'maximum 0.7943 on peak and 0.4819 on perceptual' CHANGELOG.md` = `1`. Figure re-measured (`$S/probe2.mjs`, all 8 categories, `EXPORT_STOPS`, `max abs(lstarFromRgb(row.rgb) - row.toneTarget)`): `peak: palettes 3780; cells 94500; max 0.7943 at Trulli of Alberobello secondary stop 75`; `perceptual: palettes 3780; cells 94500; max 0.4819 at Adia Success stop 250`. On the 19-stop `T.STOPS` gate population the maxima are lower (`0.5180` / `0.2492`), so 0.7943 / 0.4819 is the export-population maximum, the population the CHANGELOG sentence is about | `$S/base` (`2d313964`): `0` |
+| U5-6 Success comment matches what the gate prints | 🟢 | `grep -c 'measured 7.59 /' test/engine/semantic.mjs` = `0`; `sed -n 302p test/engine/semantic.mjs \| grep -c '7.5994 / 4.8740'` = `1`. Figure re-measured on the gate's own path (`$S/probe.mjs`: `defaultDocument()`, `doc.toneMode = "peak"`, `brandKit(doc, {color: true})`, `kit.roles.success.{success,onSuccess}`, `contrastRatio`): `success peak 7.5994 4.8740` (perceptual `7.1885 5.0700`, even `7.7621 4.9426`) | `$S/base` (`2d313964`): `1`; `0` |
+| U5-7 nothing but comments and prose moved | 🟢 | `git diff --name-only 2d313964..3a2058f7 \| grep -v '^\.sdlc/'` = exactly `CHANGELOG.md`, `docs/spec/spec-panda-park-ui-exports.md`, `test/engine/anchor.mjs`, `test/engine/fixtures/shadcn-baseline.css`, `test/engine/semantic.mjs`; `git diff -U0 2d313964..3a2058f7 -- '*.mjs' \| grep -E '^[-+] ' \| cut -c2- \| sed 's#//.*##' \| sort \| uniq -u \| wc -l` = `0`. Delta vs pass 1: `git diff a8e4a5bc 3a2058f7 -- src scripts \| wc -l` = `0`; `git diff --stat a8e4a5bc 3a2058f7 -- src figma dist` empty; every changed `.mjs` line starts with `//` and the one `.css` line is inside the `/*` block (raw diff listed, 12 lines) | `$S/neg` (`git rev-parse HEAD` = `3a2058f7...`) with `["Success", 7.5, 4.8]` edited to `["Success", 7.4, 4.8]`: the same pipeline against `2d313964` prints `2`; reverted, `git status --short \| wc -l` = `0` |
+| U5-8 gates | 🟢 | `npm test` in `$S/clone` at head: `✓ all 54 test files passed`, `real 93.01` s, exit `0`, `git status --short` after = `0` lines. `node test/repo/em-dash.mjs` = `em-dash: clean (1054 files scanned)` exit `0`; `node test/repo/branding.mjs` = `branding: clean (1046 files scanned)` exit `0`; `node test/repo/citations.mjs` = `STALE 0 across 10 discovered docs + 11 fact pins + 35 count phrases (HEAD 3a2058f7)` exit `0`; `node test/repo/verdict-frontmatter.mjs` = `verdicts 254 graded 254 bad 0` exit `0`; `sh .sdlc/checks/baseline-agrees-check.sh` = `stale total: 0` exit `0` (note line: baseline ref `30c3a7aa`, tree moved since, numbers unproven at this head, counts toward neither) | `$S/neg` with `<!-- planted (U+2014) control -->` appended to `CHANGELOG.md`: `FAIL: 1 em dashes outside inline code spans in 1 files`, exit `1`; reverted, status `0` lines. Heavy-suite cap before `npm test`: `pgrep -fl 'test/run.mjs\|vite build\|smoke.mjs' \| wc -l` = `0` |
+| build / smoke | 🟡 skipped | Not rerun this pass. `git diff --stat a8e4a5bc 3a2058f7 -- src figma dist` prints nothing and `git diff a8e4a5bc 3a2058f7 -- src scripts \| wc -l` = `0`, so `src/`, `figma/` (incl. the generated `figma/plugin/ui.html`) and `dist` are byte-identical to the pass 1 head where build and smoke were green (`.sdlc/verdicts/chroma-envelope-prepr.md`); `npm test` above regenerated the committed assets and the tree stayed clean | `baseline-agrees-check.sh` `ui.html: baseline 4159.4 KB, tree 4159.4 KB` on head, the same size pass 1 built |
+| CI `gh pr checks 777` | 🟡 pending | `gh pr view 777`: `OPEN draft=true head=plan/chroma-envelope headRefOid=3a2058f700c7...` (= target). `gh pr checks 777` at `21:47:06Z`, `21:47:42Z` and `21:48:36Z`: `no checks reported on the 'plan/chroma-envelope' branch`; `commits/3a2058f7/check-runs` `total 0`; combined status `pending`. The remote tip is `3a2058f7` (`git ls-remote`), committed `14:41:54-07:00` (`21:41:54Z`), PR `updated 21:42:00Z`; six minutes on, no `pull_request` run has been created for it. Latest `ci.yml` run on the branch is `36760712421` on `a8e4a5bc` (pass 1 head), `completed success 18:44:16Z` | `gh run list --workflow ci.yml --branch plan/chroma-envelope`: `36674493753` on `32777db3` shows `completed failure`, so the listing distinguishes states; `main` run `36781114722` on `cd5babb9` was `in_progress` at `21:48Z`, so the runner is live |
+
+### Findings, pass 2
+
+1. 🟢 Pass 1's only blocker is closed, and the three 🟡 wording lines were fixed in the same unit (R84 Q1 A).
+2. 🟡 CI has no run on `3a2058f7` yet. The record grades the tree; the landing gate on CI is separate and still open.
+3. 🟡 Build and smoke carry from pass 1 on byte-identical inputs.
+4. 🟡 Three `.sdlc/` record slips for the Orchestrator's close-out (board builder grade, plan `size:`, U5 table command forms), and reviewer nit 4: `15 of 3764, a peak count and the set the C6 (v) ratchet excludes` is looser than true (the 15 are violators inside the 72 excluded), numbers correct.
+
+#### Verifier-l3 findings
+
+1. 🟢 Every U5 criterion (U5-1 to U5-8) holds at `3a2058f7` with the rediagnosis's corrected command forms, and every base control at `2d313964` flips as the plan table predicts. All five figures the new prose asserts were re-measured independently and match to the digit: `OKHSL_DAMP_RESIDUE_EXP` `2.1796`; `RAMP_GAP_ALLOW` `72 -> 79`, 14 added, 7 removed with the seven names the comment lists (Sapa now among the removed, `Pass 1's 3 other members` correct); Success peak `7.5994 / 4.8740` on the gate path; tone hold max `0.7943` peak / `0.4819` perceptual over 94500 export cells; `15` of `3764` peak violators with the C6 (v) exclusion off, all inside the 72 excluded, ratchet `0/3692`.
+2. 🟢 The delta `a8e4a5bc..3a2058f7` touches no code: `src`, `scripts`, `figma`, `dist` diff empty; the `.mjs` changes are `//` comment lines only and the `.css` change is inside a comment block. `npm test` green on head (54 files, 93 s, tree clean); em-dash, branding, citations, verdict-frontmatter, baseline-agrees all clean.
+3. 🟡 CI: no workflow run exists yet for the PR head `3a2058f7` as of `21:48:36Z` (pushed `21:42Z`); check-runs total `0`, combined status `pending`. The last green run on this PR is `36760712421` on `a8e4a5bc`, whose code is byte-identical to head. Pending is pending: the Verifier needs a run on `3a2058f7` (or a re-push / `gh run rerun` if GitHub never creates one) before the CI row can read 🟢.
+4. 🟡 build and smoke were not rerun this pass on the stated grounds (item 2); if the Verifier wants a head run rather than the byte-identity argument, `npm run build` and `npm run smoke` in a scratch clone are the next command.
+5. Note, not a finding: on the 19-stop `T.STOPS` gate population the tone-hold maxima read `0.5180` / `0.2492`; the CHANGELOG's `0.7943` / `0.4819` are the 25-stop export population (`EXPORT_STOPS`, 3780 palettes, 94500 cells), which is the population the sentence describes (a peak stop 75, an extra stop, is the witness). Consistent with the U4 verdict's own probe.
+
+#### Reviewer-l4 findings
+
+### blocker
+
+none
+
+##### major
+
+none
+
+##### minor
+
+1. Grade of record disagrees between two records the delta wrote. `.sdlc/board.md:113` `ce-U5-reviewer-l1-p2 (builder-l7; reviewer-l1; trivial lane)` vs `.sdlc/plans/chroma-envelope.md:195` `builder-l1 · reviewer-l1`. Neither the handoff nor the reviews name the builder grade, so one of the two is wrong; close-out should settle which.
+2. Plan frontmatter not moved by revision 10. `.sdlc/plans/chroma-envelope.md:6` `size: M+M+L+S (U1 M = 2, U2 M = 2, U3 L = 4, U4 S = 1; 9 points)` omits U5 (S, 1 point).
+3. Carried from review p2 (🟡): the U5 criteria table `:180` to `:185` still carries the superseded command forms. U5-1 `grep -c 'r^2.0875'` (ugrep anchor), U5-5 `[^.]*` stops at the decimal, U5-6 `the Success light ratio node test/engine/semantic.mjs prints` (the gate prints no figure); the corrected forms live in `.sdlc/plans/chroma-envelope-U5-rediagnosis.md` on `origin/main`. Fold at close per the orchestrator's note.
+
+##### nit
+
+4. `CHANGELOG.md:22` `15 of 3764, a peak count and the set the C6 (v) ratchet excludes`: the ratchet excludes 72 (`tonal.mjs:1929` `the 72 near-grey anchors below WHITE_PIXEL_C are excluded`); the 15 are the violators within that set, not the set. True numbers, loose apposition.
+5. `test/engine/fixtures/shadcn-baseline.css:80` `line counts are identical`: the `ALL` and `BRAND_ONLY` sections each gained one trailing blank line against the U2 capture (125 -> 126, 116 -> 117; `ALL_DATA_OFF` 116 -> 116). The gate compares `got.trimEnd()` per marker (`test/engine/exports.mjs:374`), so it never sees it; token line counts are identical as the sentence means.
+6. Carried, unchanged from pass 1 nit 6: `.sdlc/baseline.md:32` cites "chroma-envelope U2 corrections below" for the 4159.4 KB row while the intermediate U3 steps are named inline only. Figure true.
+7. The revision 10 row (`plan:243`) cites `.sdlc/verdicts/chroma-envelope-prepr.md` and `.sdlc/questions/chroma-envelope-prepr-p1.md`, and the handoff cites `chroma-envelope-U5-rediagnosis.md`; all three are tracked on `origin/main` (`f38145c9`, `bf6f4b4a`, `465f507a`) and absent from the plan tree, so they resolve after the post-land sync, not on the branch. The seat practice, noted for the record.
+
+##### Reviewer scope
+
+Read only: scratch clone at `$S/wt`, probes under `$S`. No repo file edited, no commit. `npm test`, `build`, `smoke` and the corpus gates left to the verifier.
