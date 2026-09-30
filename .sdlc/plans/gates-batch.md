@@ -84,7 +84,7 @@ Two halves. In `classifyLine`, the E1 and E2 legs iterate the line's dash indice
 ## Units
 
 - [x] U1 (S) `citations.mjs`: the bare-literal source guard (#769) and the bare-filename symbol-home resolve (#775) · builder-l3 · reviewer-l3 · verifier-l2 · touches `test/repo/citations.mjs` only
-- [ ] U2 (M) `citations.mjs`: whole-doc count-phrase scan with sibling reach and allow rules (#776); the `type.mjs` and `typography.js` ramp comments · builder-l4 · reviewer-l3 · verifier-l2 · after U1 has merged into `plan/gates-batch` · touches `test/repo/citations.mjs`, `src/engine/type.mjs`, `src/ui/sections/typography.js` (comments only), and a pinned skill `.md` only where the scan reds a real stale count
+- [x] U2 (M) `citations.mjs`: whole-doc count-phrase scan with sibling reach and allow rules (#776); the `type.mjs` and `typography.js` ramp comments · builder-l4 · reviewer-l3 · verifier-l2 · after U1 has merged into `plan/gates-batch` · touches `test/repo/citations.mjs`, `src/engine/type.mjs`, `src/ui/sections/typography.js` (comments only), and a pinned skill `.md` only where the scan reds a real stale count
 - [ ] U3 (S) `binder.mjs`: the `renameparity` gate over `SEMANTIC_RENAME_FROM`, `LIBRARY_TYPE_VOICE_MAP`, `GEOMETRY_FIELD_RENAME_MAP` in the binder and the flagship (#772); the three lockstep comments · builder-l3 · reviewer-l3 · verifier-l2 · touches `test/figma/binder.mjs`, `figma/README.md`, comment lines in `figma/binder/figma-semantic-binder/code.js` and `figma/binder/migrations.mjs`
 - [ ] U4 (M) `em-dash.mjs --fix`: E1 and E2 bind to the enclosing string and the fix uses that dash; the two-string and template-literal fixtures (#764) · builder-l4 · reviewer-l3 · verifier-l2 · touches `test/repo/em-dash.mjs` only
 
