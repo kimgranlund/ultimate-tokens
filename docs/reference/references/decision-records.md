@@ -780,10 +780,11 @@ Format: Context → Decision → Rationale → Consequences → Status.
   `min(group, anchor)`. The perceptual and peak damping constants are the closed-form pair that meets
   the ruled 75/25 bars: `c` = log2 3 and `d` 0.9275 (R76), mapped from `damp` by `r^2.1796`. The tone is
   held per stop by the `l` solve, which is the OKHSL `l` to CIE L\* chroma coupling (not
-  Helmholtz-Kohlrausch). The movement is export-wide (the six identity lines' counts: perceptual
-  3779 of 3780 palettes and 76998 of 94500 cells, peak 3779 of 3780 and 75804 of 94500, even 0 in
-  both, default kit perceptual 16 of 16, peak 16 of 16, even 0 of 16) and is the second after this
-  ADR's own. On the OKHSL anchored path the `oklch` hue is the anchor's own OKLCH hue with no per-stop
+  Helmholtz-Kohlrausch). The movement is export-wide (the six identity lines over `main` at
+  `afd415c0`, `report-preset-fidelity.mjs --identity-control --authored --base afd415c0`: perceptual
+  3780 of 3780 palettes and 86008 of 94500 cells, peak 3780 of 3780 and 85463 of 94500, even 0 in
+  both; default kit perceptual 16 of 16 palettes and 347 of 400 cells, peak 16 of 16 and 352 of 400,
+  even 0 of 16) and is the second after this ADR's own. On the OKHSL anchored path the `oklch` hue is the anchor's own OKLCH hue with no per-stop
   solve (revision 8: OKHSL hue is OKLab hue, so the solve was the identity reading the 8-bit
   staircase); `hueSpace` is exactly identical on anchored perceptual and peak, the Q-D ruling made
   structural. The two FLOORS cells the retune costs (peak Success light 7.5, perceptual Data 3 dark
