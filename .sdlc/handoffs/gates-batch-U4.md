@@ -27,3 +27,17 @@ Branch `unit/gb-U4` (cut from `plan/gates-batch`). Builder: gb-U4 (#764).
 
 - The replay line's quotes pair up, so the dashes do have enclosing strings, but neither string matches E1 (no heading) or E2 (no `**` inside the string), so both fall to R8 as the plan expects.
 - E2 tests the string content up to one character past the dash (its regex needs the trailing space); E3 still keys on the line's first dash, untouched (Q1 keep).
+
+## Pass 2 (rework of review `.sdlc/reviews/gates-batch-U4-review.md`)
+
+| Finding | Result | Evidence | Negative control |
+|---|---|---|---|
+| F1 | 🟢 | `enclosingStringContent` skips backslash-escaped quotes; E1/E2 pass `openEnded` so a template open at the line end runs to the line end. Fixtures: `ds-export.js:739` shape, a `:769` continuation line, `describe-rubric.mjs:63` shape, all keep the colon. Replay over `37b04676^` (old vs new tool, staged clone): the cited lines are identical to the plan tool and main | removing the escape skip or the open-ended branch reds the self-test |
+| F2 | 🟢 | E1 needs the string to open with a heading and the tested dash to be its first; E2's regex is anchored at the dash (`$`). `"## A? D b D c"` stays refused (R0 fixture) | dropping the `indexOf(DASH) === upto` anchor reds |
+| F3 | 🟢 | new `idempotence-code` leg runs the non-`.md` fixtures through `fixLines(..., false)`, requires R2s and R3s on pass 1 and zero edits on pass 2 | running it with `md=true` reds |
+| F4 | 🟢 | fixture `E2 second string, dash is not the line's first`; `expectFinal-leg` counter fails if any whole-line result goes unchecked | dropping `idx: di` reds; `if (false)` in place of the `expectFinal` leg reds |
+| F5 | 🟢 | `classifyLine` header comment names the `idx` exception | n/a |
+
+Replay note: old (plan) vs new over the pre-sweep tree differs on 7 hunks, all toward main (`brand-kit-core.mjs:68` and `describe-rubric.mjs:78,80,83,142,204` now match main) except `ds-export.js:770`, a line with two bold-label dashes: the tool cannot emit two colons (R3s fires once per line), old put the colon on the first and new puts it on the second (the one with its bold label on that line); main has two colons either way.
+
+`npm test`: all 54 files pass, tree clean after.
