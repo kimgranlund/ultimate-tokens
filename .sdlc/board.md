@@ -114,8 +114,8 @@ Orchestrator-only. Rows edited in place. The five loose `adopt-hygiene-*` fragme
 | gates-batch U2 citations.mjs count-phrase scan and ramp comments | #776 | M | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/gates-batch.md | after U1 merges; builder-l4 |
 | gates-batch U3 binder.mjs renameparity gate | #776 | S | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/gates-batch.md | queued behind the heavy-suite cap; builder-l3 |
 | gates-batch U4 em-dash.mjs --fix binds to the enclosing string | #776 | M | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/gates-batch.md | queued behind the heavy-suite cap; builder-l4 |
-| docs-stale-batch U1 figma/README.md splice, gate count, voice map | #779 | S | ⚪ | 0 | orchestrator | none | none | none | .sdlc/questions/docs-stale-batch-U1-order.md | waits for gates-batch to land (default A); trivial lane l1 |
-| docs-stale-batch U2 best-practices.md top-left inset | #779 | S | ⚪ | 1 | orchestrator | dsb-U2-builder-l1-p1 | unit/dsb-U2 @ 17edb2d2 | .worktrees/dsb-U2 | .sdlc/plans/docs-stale-batch.md | building; trivial lane, reviewer-l1 closes it |
+| docs-stale-batch U1 figma/README.md splice, gate count, voice map | #779 | S | ⚪ | 0 | orchestrator | none | none | none | .sdlc/questions/docs-stale-batch-U1-order.md | waits for gates-batch to land (R81, option A); trivial lane l1 |
+| docs-stale-batch U2 best-practices.md top-left inset | #779 | S | ⚪ | 1 | orchestrator | dsb-U2-reviewer-l1-p1 | unit/dsb-U2 @ f6e5b174 | .worktrees/dsb-U2 | .sdlc/handoffs/docs-stale-batch-U2.md | built 5/5 green; trivial-lane review (reviewer-l1) |
 | docs-stale-batch U3 generator headers name gen:figma-assets | #779 | S | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/docs-stale-batch.md | queued; builder-l1 |
 | docs-stale-batch U4 model.mjs CONTROL_FONT and dead mode comments | #779 | S | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/docs-stale-batch.md | queued; builder-l2 |
 | docs-stale-batch U6 adapter.md section 6 doc-unit standard | #779 | S | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/docs-stale-batch.md | after #725 lands; trivial lane l1 |
