@@ -12,6 +12,7 @@ import { gateReport } from "../gate-report.mjs";
 import { semanticRoles } from "../../src/engine/semantic.js";
 import { COLLECTIONS } from "../../src/engine/collections.js";
 import { extractFunctionSource } from "../../figma/binder/splice-utils.mjs";
+import { FIGMA_MIGRATIONS, LIBRARY_TYPE_VOICE_MAP, GEOMETRY_FIELD_RENAME_MAP } from "../../figma/binder/migrations.mjs";
 
 const HERE = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "figma", "binder"); // the binder lives in figma/binder/
 const RT = JSON.parse(readFileSync(new URL("../../docs/reference/data/role-table.json", import.meta.url), "utf8"));
@@ -806,6 +807,36 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
   } catch (e) { FAIL("floatparity", "could not load/compare the flagship executor: " + e.message); }
 }
 
+// ── renameparity (#772): the three hand-copied rename constants (the Figma sandbox can't import
+//    figma/binder/migrations.mjs) are deep-compared against their canonical exports there, in the
+//    binder and in the flagship. A constant the regex cannot find is a FAIL, never a compare of
+//    undefined to undefined. The flagship carries only the two maps (no SEMANTIC_RENAME_FROM). ──
+{
+  const canonSort = (v) => JSON.stringify(Array.isArray(v) ? v : Object.fromEntries(Object.keys(v).sort().map((k) => [k, v[k]])));
+  const grab = (src, name) => {
+    const m = new RegExp(`(?:const|var|let)\\s+${name}\\s*=\\s*([\\s\\S]*?);[ \\t]*(?://.*)?$`, "m").exec(src);
+    return m ? new Function(`return (${m[1]});`)() : undefined;
+  };
+  const CANON_RENAME = {
+    SEMANTIC_RENAME_FROM: FIGMA_MIGRATIONS.color.collections["Color Roles"],
+    LIBRARY_TYPE_VOICE_MAP,
+    GEOMETRY_FIELD_RENAME_MAP,
+  };
+  try {
+    const flagSrc = readFileSync(join(HERE, "..", "plugin", "code.js"), "utf8");
+    for (const [label, src, names] of [
+      ["binder", binderSrc, ["SEMANTIC_RENAME_FROM", "LIBRARY_TYPE_VOICE_MAP", "GEOMETRY_FIELD_RENAME_MAP"]],
+      ["flagship", flagSrc, ["LIBRARY_TYPE_VOICE_MAP", "GEOMETRY_FIELD_RENAME_MAP"]],
+    ]) {
+      for (const name of names) {
+        const got = grab(src, name);
+        if (got === undefined) { FAIL("renameparity", `${label} is missing ${name}`); continue; }
+        if (canonSort(got) !== canonSort(CANON_RENAME[name])) FAIL("renameparity", `${name} drifted between the ${label} and figma/binder/migrations.mjs (${canonSort(got)} vs ${canonSort(CANON_RENAME[name])}), hand-kept in lockstep`);
+      }
+    }
+  } catch (e) { FAIL("renameparity", "could not load/compare the rename constants: " + e.message); }
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
 // The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
 // call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
@@ -814,7 +845,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 // site, or a call site whose name is not declared, fails loudly on its own (report-static).
 // "compliance" was the live hole (#699 correction): it had a real call site above but was never
 // declared, so a compliance FAIL used to exit 1 with no named row.
-const DECLARED = ["bindings", "themes", "offline", "parity", "floatanchor", "floatcreate", "floatindep", "floatnoop", "colorprov", "primereport", "adoptconsent", "librarygeom", "libraryidem", "prunemono", "colorparity", "collparity", "floatparity", "compliance", "report-static"];
+const DECLARED = ["bindings", "themes", "offline", "parity", "floatanchor", "floatcreate", "floatindep", "floatnoop", "colorprov", "primereport", "adoptconsent", "librarygeom", "libraryidem", "prunemono", "colorparity", "collparity", "floatparity", "renameparity", "compliance", "report-static"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 console.log(`  (checked ${targets ? targets.length : 0} binding targets vs ${CANON.size} canonical raw-colors names)`);
 console.log("  defer  hpg-parity-roletable, this file's `parity` gate above verifies the engine<->Figma-binder leg (full role objects, in order, per default palette); the canonical role-table.json<->semantic.js leg is verified by semantic-mapping's own refs-canonical gate");
