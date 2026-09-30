@@ -102,3 +102,20 @@ Re-graded the six rows revision 1 changed; every other row is unchanged in the p
 verdict: 🔴
 
 🔴 not mobilizable: 43 of 45 checkable (all 🟢), 2 🔴 (U2-9, U4-7).
+
+## Pass 3 · revision 2 (uncommitted, root checkout at ef630848) · 🟢 45 of 45 checkable, mobilizable
+
+Re-graded the two rows pass 2 found 🔴, plus P9 and the Design paragraph they depend on; every other row is unchanged and carries.
+
+| # | Criterion | State | Evidence | Negative control |
+|---|---|---|---|---|
+| U2-9 | ramp comments say the split | 🟢 | clone at 8945c618, the revised Design sentence (`thirteen voices carry three steps, SM, MD and LG; UI-control and UI-widget carry six, XS to 2XL`) applied to lines `:4`, `:10`, `:27`: stale-phrase grep `a=0`, split grep `b=4` (at least 3, as expected); today `3` and `1`, as the plan's Today cell says | the same wording on lines `:4` and `:27` only (the issue's two): `partial a=1`; the unfixed file reads `3` |
+| U4-7 | idempotence on the new fixtures | 🟢 | `sed -n '/const idemSrc = \[/,/^  \];/p'` now covers exactly `idemSrc`, lines `950` to `956` (one range, no stray one); today `grep -c '## Head\|Sundarbans'` reads `0`; with the two lines appended to `idemSrc` in the clone it reads `planted=2` | an `idemSrc` without them reads `0`; a second pass that edits reds `idempotence` |
+
+P9 now reads the raw count as `3`, which matches `grep -c 'SM/MD/LG' src/engine/type.mjs` at ef630848. The pass 2 plan note is closed.
+
+### Verdict
+
+verdict: 🟢
+
+🟢 mobilizable: 45 of 45 criteria checkable. No 🔴 and no 🟡 rows remain.
