@@ -29,7 +29,8 @@ const SEMANTIC_COLLECTION = "Color Roles"; // #491 (was "Color Semantic", "Color
 const PRIME_COLLECTION = "Color Prime"; // REQ-054 (#539): this binder reads nothing from it this round (LLD "Figma plugin apply" row), the literal exists only so `collparity` can diff it against the flagship and src/engine/collections.js
 // SEMANTIC_RENAME_FROM, the old names ensureCollection adopts an existing registry-tracked collection
 // from, in place (renameFrom, mirrors FIGMA_MIGRATIONS.color.collections, this sandbox can't import
-// migrations.mjs, so the same list is hand-kept here; see figma/binder/migrations.mjs).
+// migrations.mjs, so the same list is hand-kept here, and gated by `renameparity` in test/figma/binder.mjs;
+// see figma/binder/migrations.mjs).
 const SEMANTIC_RENAME_FROM = ["Color Semantic", "Color Modes"];
 
 // The 8 default palettes (knowledge-05 §3; defaults[].name in data/role-table.json).
@@ -77,13 +78,13 @@ const COLOR_REGISTRY_KEY = "ultimate-tokens-color-collections";
 
 // LIBRARY_TYPE_VOICE_MAP (#495), "published library" mode's static old->new Type-voice kebab-segment
 // map (mirrors migrations.mjs's LIBRARY_TYPE_VOICE_MAP, this sandbox can't import it; hand-kept in
-// lockstep, same discipline as SEMANTIC_RENAME_FROM above). Applies to any OLD-voice-named variable in
+// lockstep and gated by `renameparity`, same discipline as SEMANTIC_RENAME_FROM above). Applies to any OLD-voice-named variable in
 // the merged "Geometry" collection's type/ half (this binder never touches Font/Type Primitives at all,
 // see applyFloatPlans below).
 const LIBRARY_TYPE_VOICE_MAP = { heading: "headline", ui: "ui-control", caption: "label", legal: "tiny", code: "label-mono" };
 
 // GEOMETRY_FIELD_RENAME_MAP (#498), "published library" mode's static old->new Geometry size/* field-
-// spelling map (mirrors migrations.mjs's GEOMETRY_FIELD_RENAME_MAP, hand-kept in lockstep, same
+// spelling map (mirrors migrations.mjs's GEOMETRY_FIELD_RENAME_MAP, hand-kept in lockstep and gated by `renameparity`, same
 // discipline as LIBRARY_TYPE_VOICE_MAP above). "font" is deliberately excluded, see migrations.mjs's
 // own header comment for the cross-collection execution-order reason.
 const GEOMETRY_FIELD_RENAME_MAP = { edgePadding: "padding-wide", gap: "icon-gap", minWidth: "min-width", padding: "padding-narrow", radius: "pill-radius" };

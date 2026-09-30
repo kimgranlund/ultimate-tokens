@@ -95,7 +95,7 @@ export const FIGMA_MIGRATIONS = {
 // covers them, no alias/deprecate involvement at all. "quote" has no entry either, no current
 // counterpart, so it falls straight to DEPRECATE (renamed under "_deprecated/", id preserved).
 // figma/plugin/code.js carries the SAME map as a literal (LIBRARY_TYPE_VOICE_MAP), the VM can't import
-// this file; kept in lockstep by hand, same discipline as SEMANTIC_RENAME_FROM in the standalone binder.
+// this file; kept in lockstep by hand (and gated by `renameparity` in test/figma/binder.mjs), same discipline as SEMANTIC_RENAME_FROM in the standalone binder.
 export const LIBRARY_TYPE_VOICE_MAP = { heading: "headline", ui: "ui-control", caption: "label", legal: "tiny", code: "label-mono" };
 
 // GEOMETRY_FIELD_RENAME_MAP (#498), the STATIC old->new Geometry size/* FIELD-SPELLING map "published
@@ -112,6 +112,6 @@ export const LIBRARY_TYPE_VOICE_MAP = { heading: "headline", ui: "ui-control", c
 // real caller, so on a first-time apply the cross-collection target wouldn't exist yet, an
 // old size/{step}/font name is left unmapped (deprecates, id-preserving), a documented scope decision
 // rather than a cross-collection create from the wrong execution phase. figma/plugin/code.js carries
-// the SAME map as a literal, the VM can't import this file; kept in lockstep by hand, same discipline
+// the SAME map as a literal, the VM can't import this file; kept in lockstep by hand (and gated by `renameparity`), same discipline
 // as LIBRARY_TYPE_VOICE_MAP above.
 export const GEOMETRY_FIELD_RENAME_MAP = { edgePadding: "padding-wide", gap: "icon-gap", minWidth: "min-width", padding: "padding-narrow", radius: "pill-radius" };
