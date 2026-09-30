@@ -2,9 +2,9 @@
 
 | Field | Value |
 |---|---|
-| Branch | unit/ce-U2 @ be227d2e (code; this handoff commit sits on top). Base merge 351eee68 = plan/chroma-envelope b149f8dd (revision 5) |
-| Status | 🔴 C2.8: `npm test` reds on the three declared rows AND five more rows the plan does not name (exports x3, shell ac003b, headless gid3). All five are caused by the pass 1 engine hunk (ec496bd0), not by pass 2, and each needs a ruling (re-pin a normative literal or baseline, or change behaviour). Not re-pinned here. Every other C2 row is 🟢 or 🟡 |
-| Files | `scripts/lib/envelope-measure.mjs`, `scripts/report-preset-fidelity.mjs`, `test/engine/chroma-envelope-gate.mjs`, `test/engine/tonal.mjs`, `test/engine/anchor.mjs`, `test/engine/semantic.mjs`, `test/engine/fixtures/mode-isolation.json`, `test/engine/fixtures/chroma-envelope.json`, `docs/reference/reviews/2026-08-20-reactivity/00-synthesis.md` and `04-context-and-messaging.md` (citation repoint), regenerated `figma/plugin/ui.html` and `src/ui/describe-mcp-assets.js`, this handoff |
+| Branch | unit/ce-U2: code at be227d2e, R69 re-pins in the commit carrying this handoff. Base merge 351eee68 = plan/chroma-envelope b149f8dd (revision 5) |
+| Status | 🟢 C2.8: `npm test` reds on exactly the three declared rows. The five extra reds from pass 2 were ruled R69's declared cost (plan :19, Q-U2-5 reversed) and re-pinned after a trace proof, see Re-pins. Every other C2 row is 🟢 or 🟡 |
+| Files | `scripts/lib/envelope-measure.mjs`, `scripts/report-preset-fidelity.mjs`, `test/engine/chroma-envelope-gate.mjs`, `test/engine/tonal.mjs`, `test/engine/anchor.mjs`, `test/engine/semantic.mjs`, `test/engine/fixtures/mode-isolation.json`, `test/engine/fixtures/chroma-envelope.json`, `docs/reference/reviews/2026-08-20-reactivity/00-synthesis.md` and `04-context-and-messaging.md` (citation repoint), regenerated `figma/plugin/ui.html` and `src/ui/describe-mcp-assets.js`; re-pins: `test/engine/exports.mjs`, `docs/spec/spec-panda-park-ui-exports.md`, `test/engine/fixtures/shadcn-baseline.css`, `test/engine/fixtures/radix-baseline.json`, `test/ui/fixtures/default-doc-ramps.json`, `test/ui/shell.mjs`, `test/ui/headless-boot.mjs`; this handoff |
 | Untouched | every `src/engine/` file; RAMP_GAP_ALLOW, RAMP_DISTINCT_ALLOW, NOTCH_ALLOW, KNOWN_BASELINE_DUP; FLOORS_BF2AAF6; `.sdlc/board.md` |
 
 ## C2 rows
@@ -18,17 +18,23 @@
 | C2.5 | `gate:mode-isolation` pre-capture reds `perceptual a874ac86f2e113b4 peak 815dcec4262382da do not match fixture` (old 990c17c5ae140e6e / b59bd41501cd829a); captured at 351eee68 and committed; gate passes. `--identity-control --base afd415c0`: all six lines `0 differing cells` (it strips anchors). With `--authored` (exit 1): perceptual 3023/3780 palettes, 67892/94500 cells, max dL* 1.1380; peak 3378/3780, 67796/94500, 1.0240; even 0/3780, 0/94500; default kit perceptual 16/16, 202/400, 0.4053; peak 16/16, 189/400, 0.4274; even 0/16, 0/400 | the pre-capture red above | 🟢 |
 | C2.6 | `chroma-envelope-gate.mjs --capture` at 351eee68, committed; gate passes. `--compare <base fixture>`: `0 cells rose`, even byte-identical, exit 0 | `--compare <committed> --fixture <perceptual 300 median +0.1>`: `1 cells rose ... perceptual 300 median`, exit 1 | 🟢 |
 | C2.7 | 96-cell re-read: one cell below its pin, peak Tertiary LIGHT measured 8.1825, pin 8.2 to 8.1 (`semantic.mjs:300`). `checkFloors` vs FLOORS_BF2AAF6: 0 drops. `semantic.mjs` exit 0. `gate:corpus-contrast` exit 0 (worst 4.500:1, Alice's Adventures primary/dark peak). `gen-tonal-fixture.mjs`: `tonal-legacy.json` no diff | pin left at 8.2: `FAIL role-contrast, peak Tertiary LIGHT: accent #7F0FAC on #FFFFFF = 8.18:1, below its pinned floor 8.2:1` | 🟡 Deviations 6, 7 |
-| C2.8 | `npm test` exit 1, `6/54 test file(s) failed` before the citation fix, 5 after. Declared rows red as predicted: `anchor-ramp gap (19-stop) allow-list: 13 (at most 72)`, `anchor-ramp distinct (25-stop) allow-list: 6 (at most 16)`, `chroma-envelope (C6 ii) perceptual: 3 duplicate-hex pair(s) beyond the cited list`. Extra rows, see Findings. em-dash clean, branding clean, citations STALE 0 (after repointing `okhslLAt` `tonal.js:994` to `:1003` in two review docs, moved by pass 1). Regenerated exports committed; `git status` clean | extra rows checked against the base engine (afd415c0 tonal.js in a scratch copy of HEAD): panda EX-2, radix-refs-values-unchanged, ac003b, gid3 all pass there | 🔴 |
+| C2.8 | `npm test` exit 1, `2/54 test file(s) failed`, exactly the declared rows: `anchor-ramp gap (19-stop) allow-list: 13 (at most 72)`, `anchor-ramp distinct (25-stop) allow-list: 6 (at most 16)`, `chroma-envelope (C6 ii) perceptual: 3 duplicate-hex pair(s) beyond the cited list`. `shell.mjs` prints `SKIP ac003b must-differ for "Neutral": chroma 29 and rampChroma 30 cap to 0.2900 / 0.2903 under anchor #576485 (#725 R69)`. em-dash clean, branding clean, citations STALE 0 (after repointing `okhslLAt` `tonal.js:994` to `:1003` in two review docs, moved by pass 1). `git status` clean after the run | new gid3 on the base engine (afd415c0 tonal.js): `(gid3) a fresh doc's Neutral ramp equals the chroma-100 ramp` FAILs. ac003b witness with projectView reading `p.chroma` for Neutral (scratch copy): `witness: Neutral's row at group baseChroma 10 differs from the direct rampChroma-10 call` FAILs | 🟢 |
 
-## Findings (C2.8, for a plan ruling)
+## Re-pins (C2.8, ruled R69's declared cost)
 
-All five come from the pass 1 cap (`min(group, anchor)` and the shared peak cap) moving the default kit's anchored ramps. `main` CI is green and the only engine diff on the branch is `tonal.js`.
+Ruling (team-lead): the five pass 2 extra reds are R69's cost (plan :19, Q-U2-5 reversed, every perceptual/peak ramp moves). Before any re-pin, a trace proof (scratch copies, head vs afd415c0 base) showed nothing outside anchored perceptual/peak ramps moved:
 
-1. `exports.mjs` `panda`: `EX-2 colors.primary.DEFAULT = {"base":"oklch(0.4669 0.1671 258.98)","_dark":"oklch(0.5506 0.1922 259.07)"}`, normative literal wants `_dark` `oklch(0.5504 0.1924 258.96)`.
-2. `exports.mjs` `shadcn-baseline`: `exportShadcn(ALL) drifted from the pre-refactor fixture`.
-3. `exports.mjs` `radix-refs-values-unchanged`: `exportRadix(ALL) drifted from the pre-#638 values-form baseline`.
-4. `shell.mjs` `ac003b`: `projectView(defaultDocument()) has drifted from the pinned fixture at palette "Neutral"` (regenerate with `scripts/gen-ramp-fixture.mjs` only if intentional).
-5. `headless-boot.mjs` `(gid3) a fresh doc's Neutral ramp differs from the legacy chroma-100 ramp, visibly muted, not a no-op`. This one is behaviour, not a pin: Neutral is anchored (#576485) and the cap clamps every group chroma above the anchor's own `s` to that `s`, so Material's 30 and the legacy 100 render the same ramp. Under R69 the group chroma slider no longer moves an anchored palette above its anchor. That is a product consequence the plan should rule on before anyone re-pins 1 to 4.
+- Anchors stripped and even mode: every output byte-identical (shadcn ALL / BRAND_ONLY / ALL_DATA_OFF, radix ALL / BRAND_ONLY / COLLIDING, panda, the default ramps).
+- Perceptual (the kit as shipped) moved: shadcn 31 lines per section (93 total), radix 600 / 339 / 301 leaves (ALL / BRAND_ONLY / COLLIDING), panda 652 leaves, default ramps 202 of 400 cells. Peak moved: shadcn 37 lines per section, radix 566 / 327 / 301, panda 596, ramps 189.
+- Every moved radix key is an anchored default family or an alias of one (accent, gray). In COLLIDING the unanchored accent-palette and error-palette are unmoved. Panda EX-1 literals are unmoved. No stray found.
+
+Movements recorded:
+
+1. Panda EX-2 (`exports.mjs` and `spec-panda-park-ui-exports.md`, both from `exportPanda(stateOf(defaultDocument()))`): `primary.DEFAULT._dark` `oklch(0.5504 0.1924 258.96)` to `oklch(0.5506 0.1922 259.07)`; `primary.hover._dark` `oklch(0.6419 0.1561 259.24)` to `oklch(0.6413 0.1547 259.07)`; `data-1.DEFAULT.base` `oklch(0.5194 0.2328 272.25)` to `oklch(0.5184 0.2316 272.29)`. The spec carries a re-pin note (2026-09-29, #725 U2, R69).
+2. `shadcn-baseline.css`: re-captured (the writer reproduces the old base byte for byte first); header gains a #725 carve-out paragraph naming the 31 lines per section.
+3. `radix-baseline.json`: re-captured the same way; `exports.mjs` notes 600 / 339 / 301 leaves moved, Accent and Error unanchored and unchanged.
+4. `default-doc-ramps.json`: regenerated by `scripts/gen-ramp-fixture.mjs`, 202 cells moved. ac003b's REQ-003 arm rewritten (ruling A plus a witness): every row equals the direct call at its rampChroma; must-differ vs the direct `p.chroma` call applies only when the capped targets differ by more than 0.01, else a SKIP line prints (Neutral: 0.2900 / 0.2903). Witness: Neutral with its group's baseChroma at 10 (capped 0.10 vs 0.29) must equal the rampChroma-10 call and differ from the chroma-29 call; an in-test control checks the predicate flags a row rendered at `p.chroma`, and a scratch control (projectView reads `p.chroma` for Neutral) reds. Neutral's default chroma unchanged.
+5. gid3 (`headless-boot.mjs`) rewritten to assert R69: a fresh kit's Neutral ramp equals the chroma-100 ramp (group chroma above the anchor's s, measured 0.2903 and asserted in (0.10, 0.30], is ignored); gid3b: the chroma-10 ramp differs from the chroma-30 ramp (it still follows below). Control: the base engine FAILs gid3.
 
 ## Deviations
 
@@ -45,5 +51,4 @@ All five come from the pass 1 cap (`min(group, anchor)` and the shared peak cap)
 ## Left out
 
 - The (iii c) and tone-rose negative controls were not re-run in pass 2 (both gates pass at head on `tonal.mjs --full`).
-- Re-pinning panda EX-2, the shadcn and radix baselines, the ramp fixture, and gid3: waiting on a ruling.
 - `npm run build` and `npm run smoke` not run (no build-chain change).
