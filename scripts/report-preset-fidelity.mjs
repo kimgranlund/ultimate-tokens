@@ -20,11 +20,19 @@
 // same function test/engine/chroma-envelope-gate.mjs ratchets against its fixture; this report only
 // prints it against the ruled bars.
 //
-// `--gate-path` (#701 U1, C5): renders WITHOUT each palette's own `anchor` (the construction
-// the since-retired `EVEN_DIP_BASELINE`'s `findDips` and this same file's pre-fa0264fa reading both used  -  what a
-// user's own non-anchored palette actually renders), at both call sites that otherwise pass
-// `anchor: pal.anchor` (READING (a)/(b) above, and the C6 (v) companion below). Omitted, the default
-// run is the RENDERED path (anchor passed), unchanged since fa0264fa.
+// READING (a) prints TWICE per mode (#725 R74, option A, C2.2): a `gate path` block (each palette
+// rendered WITHOUT its own `anchor`, what a user's own non-anchored palette renders) that carries the
+// ruled bars (`TARGET`, unchanged) and their OK/FAIL suffixes, and an `anchored` block (the RENDERED
+// path, anchor passed, since fa0264fa) that prints each median and p90 with no bar, the count of
+// instances over 90% at stop 300, and the clause lines. The anchored cells are held by the
+// chroma-envelope gate's ratchet, not by a bar: their stop-300 excess is a lightness effect (a dark
+// anchor's stop 500 sits below its hue's cusp lightness, stop 300 on it) that no chroma cap reaches.
+// The anchored clause lines stay barred for perceptual (the cusp-run rule, L*-window scoped) and peak
+// (0 above 100%); even's anchored clause is reported only (#701 Q2), its barred clause is the gate path's.
+//
+// `--gate-path` (#701 U1, C5): prints the `gate path` block only, and renders the C6 (v) companion
+// below without `anchor` too (the construction the since-retired `EVEN_DIP_BASELINE`'s `findDips` and
+// this same file's pre-fa0264fa reading both used). #701's C5 extraction reads its even block.
 //
 // `--identity-control` (#715 U2, closing C4's other yellow row) is a SEPARATE mode: it renders the
 // base tree's 8 category files plus its default kit on TWO engine copies (the base tree named by
@@ -48,7 +56,7 @@ import { join as pathJoin, resolve as pathResolve, dirname } from "node:path";
 import { hydrate } from "../src/ui/persist.js";
 import { rampChromaOf, EXPORT_STOPS, lstarFromRgb } from "../src/ui/model.mjs";
 import * as T from "../src/engine/tonal.js";
-import { CATS, REPORT_STOPS, MODES, ADIA_CARVEOUT, CUSP_RUN_BOUND, percentile, measureEnvelope } from "./lib/envelope-measure.mjs";
+import { CATS, REPORT_STOPS, MODES, ADIA_CARVEOUT, CUSP_RUN_BOUND, OVER_90_AT_300, percentile, measureEnvelope } from "./lib/envelope-measure.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = pathJoin(HERE, "..");
@@ -80,8 +88,10 @@ if (mode_identity) {
 
 // The C6 corpus and READING (a)'s loop live in scripts/lib/envelope-measure.mjs (#725 U1), which
 // test/engine/chroma-envelope-gate.mjs imports too: one measurement, two callers.
-const { instances, totalCurated, results, aboveTotal, adiaAboveTotal, aboveWitnesses, perceptualRunFails } =
-  await measureEnvelope({ dampAmpOverride, gatePath });
+// The gate path is always measured (its cells carry the bars); the anchored set only on the default run.
+const gateRun = await measureEnvelope({ dampAmpOverride, gatePath: true });
+const anchoredRun = gatePath ? null : await measureEnvelope({ dampAmpOverride, gatePath: false });
+const { instances, totalCurated } = gateRun;
 
 // env(500) = 1 exactly, swept over damp/dampCurve/dampAmp/dampBias/lift/toneMode: the C6 anchor
 // property. toneMode is swept explicitly (#681 U3 review 3, N6): chromaEnvelope branches internally on
@@ -148,26 +158,43 @@ console.log("(the literal text of C6: \"CAM16 chroma at stops 100/300/700/900 ov
 
 const TARGET = { 100: { median: 25, p90: 35 }, 300: { median: 75, p90: 90 }, 700: { median: 75, p90: 90 }, 900: { median: 25, p90: 35 } };
 let anyFail = envFails > 0;
-for (const mode of MODES) {
-  console.log(`${mode}:`);
+// One READING (a) block: `barCells` puts the ruled bars and OK/FAIL on each cell; `barClause` does the
+// same for the clause line. Every bar that prints FAIL sets `anyFail`; an unbarred line never does.
+function printReadingA(m, mode, heading, { barCells, barClause }) {
+  const { results, aboveTotal, adiaAboveTotal, aboveWitnesses, perceptualRunFails } = m;
+  console.log(`  ${heading}:`);
   for (const s of REPORT_STOPS) {
     const r = results[mode][s];
+    if (!barCells) { console.log(`    stop ${s}: median ${r.median.toFixed(1)}% / p90 ${r.p90.toFixed(1)}% n=${r.n}`); continue; }
     const t = TARGET[s];
     const medOk = r.median <= t.median, p90Ok = r.p90 <= t.p90;
     if (!medOk || !p90Ok) anyFail = true;
-    console.log(`  stop ${s}: median ${r.median.toFixed(1)}% (<=${t.median} ${medOk ? "OK" : "FAIL"}) / p90 ${r.p90.toFixed(1)}% (<=${t.p90} ${p90Ok ? "OK" : "FAIL"}) n=${r.n}`);
+    console.log(`    stop ${s}: median ${r.median.toFixed(1)}% (<=${t.median} ${medOk ? "OK" : "FAIL"}) / p90 ${r.p90.toFixed(1)}% (<=${t.p90} ${p90Ok ? "OK" : "FAIL"}) n=${r.n}`);
   }
+  if (!m.gatePath) console.log(`    over ${OVER_90_AT_300} at stop 300: ${m.over90At300[mode]} of ${results[mode][300].n}`);
   const aboveOk = aboveTotal[mode] === 0;
-  if (!aboveOk) anyFail = true;
+  if (barClause && !aboveOk) anyFail = true;
+  const verdict = barClause ? ` ${aboveOk ? "OK" : "FAIL"}` : " (reported, not barred)";
   if (mode === "perceptual") {
     const witnesses = [...perceptualRunFails.runs, ...perceptualRunFails.bound].slice(0, 3);
-    console.log(`  clause: one cusp run, at or under ${(CUSP_RUN_BOUND * 100).toFixed(4)}% of stop 500 (#55 cusp-pull ships unchanged; ruling (f))`);
-    console.log(`  rule violations (second run or past-bound stop): ${aboveTotal[mode]} ${aboveOk ? "OK" : "FAIL"}${witnesses.length ? ` (e.g. ${witnesses.join(", ")})` : ""}`);
-    console.log(`  (${adiaAboveTotal[mode]} additional instance(s) from the named Adia carve-out, exempt from this clause)`);
+    console.log(`    clause: one cusp run, at or under ${(CUSP_RUN_BOUND * 100).toFixed(4)}% of stop 500 (#55 cusp-pull ships unchanged; ruling (f))`);
+    if (!m.gatePath) {
+      console.log(`    window: anchors with L* in [${T.RAMP_L_MIN}, ${T.RAMP_L_MAX}] count; ${m.outsideWindow} anchored instance(s) outside it, ${m.perceptualWindowExcluded.length} violation(s) excluded${m.perceptualWindowExcluded.length ? ":" : ""}`);
+      for (const x of m.perceptualWindowExcluded) console.log(`      excluded: ${x.label} anchor ${x.anchor} L* ${x.lstar.toFixed(1)} (${x.why})`);
+    }
+    console.log(`    rule violations (second run or past-bound stop): ${aboveTotal[mode]}${verdict}${witnesses.length ? ` (e.g. ${witnesses.join(", ")})` : ""}`);
   } else {
-    console.log(`  clause: 0 above 100% of stop 500 (generated palettes, dampAmp 0)`);
-    console.log(`  above 100% of stop 500: ${aboveTotal[mode]} ${aboveOk ? "OK" : "FAIL"}${aboveWitnesses[mode].length ? ` (e.g. ${aboveWitnesses[mode].join(", ")})` : ""}`);
-    console.log(`  (${adiaAboveTotal[mode]} additional instance(s) from the named Adia carve-out, exempt from this clause)`);
+    console.log(`    clause: 0 above 100% of stop 500 (generated palettes, dampAmp 0)`);
+    console.log(`    above 100% of stop 500: ${aboveTotal[mode]}${verdict}${aboveWitnesses[mode].length ? ` (e.g. ${aboveWitnesses[mode].join(", ")})` : ""}`);
+  }
+  console.log(`    (${adiaAboveTotal[mode]} additional instance(s) from the named Adia carve-out, exempt from this clause)`);
+}
+for (const mode of MODES) {
+  console.log(`${mode}:`);
+  printReadingA(gateRun, mode, `gate path (anchor omitted; the ruled bars apply)`, { barCells: true, barClause: true });
+  if (anchoredRun) {
+    printReadingA(anchoredRun, mode, `anchored (rendered path; reported, no bar, ratcheted by test/engine/fixtures/chroma-envelope.json)`,
+      { barCells: false, barClause: mode !== "even" });
   }
 }
 
@@ -248,7 +275,7 @@ console.log(" the SAME scope test/engine/tonal.mjs's C6 (v) gates for peak; even
 }
 
 console.log("");
-console.log(`READING (a) (emitted chroma): ${anyFail ? "FAIL" : "PASS"}`);
+console.log(`READING (a) (emitted chroma; gate-path cells and the barred clause lines): ${anyFail ? "FAIL" : "PASS"}`);
 console.log(`READING (b) (envelope multiplier): ${envAnyFail ? "FAIL" : "PASS"}`);
 console.log("");
 console.log((anyFail || envAnyFail) ? "FAIL: the envelope table does not clear the plan's ruled targets under at least one reading" : "PASS: envelope table clears the plan's ruled targets under both readings");

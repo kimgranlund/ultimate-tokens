@@ -1,39 +1,39 @@
 {
  "owner": "the change that moves a perceptual, peak or even ramp at stops 100/300/700/900 (or edits the curated corpus or the default kit) re-captures this fixture with --capture in that same change and shows with --compare against the prior fixture that no cell rose: the ratchet only falls (#725 plan constraints). #725 U2 and U3 move perceptual and peak and re-capture",
- "capturedAt": "afd415c06ff3d96314b41129c8aceaa7800df912",
+ "capturedAt": "351eee6868bbcc716cc1e9f6aad6d6018ee9cd1c",
  "corpus": "3780 curated palettes, 2920 instances (source chroma >= 10 or a default-kit semantic family), rendered anchored path",
  "slack": "0.05 percentage points on each median and p90 cell; 0 on the three counts (the gate's SLACK constant)",
  "n": 2920,
  "modes": {
   "perceptual": {
    "median": {
-    "100": 17.358795751551952,
-    "300": 94.04928010984135,
-    "700": 74.51693390246048,
-    "900": 31.681364793395105
+    "100": 9.7543062359382,
+    "300": 74.24215412081473,
+    "700": 65.83293974192159,
+    "900": 23.95050302034546
    },
    "p90": {
-    "100": 35.118467892063386,
-    "300": 146.24024591743367,
-    "700": 119.27492895159646,
-    "900": 66.54423260988703
+    "100": 23.061465707867153,
+    "300": 106.737887553473,
+    "700": 70.79563579011854,
+    "900": 28.95732193332263
    },
-   "cuspRuns": 446
+   "cuspRuns": 2
   },
   "peak": {
    "median": {
-    "100": 11.744536318425684,
-    "300": 83.9987148420176,
-    "700": 68.80021444317757,
-    "900": 29.37513651653635
+    "100": 8.530570926703225,
+    "300": 64.40786395795163,
+    "700": 61.065888459206164,
+    "900": 21.92180272414084
    },
    "p90": {
-    "100": 23.622511141435957,
-    "300": 137.68492322582628,
-    "700": 111.12389592788715,
-    "900": 62.14746055239561
+    "100": 17.303131935250523,
+    "300": 97.42151822229947,
+    "700": 66.41382715960937,
+    "900": 27.07916100126713
    },
-   "above100": 2592
+   "above100": 0
   },
   "even": {
    "median": {

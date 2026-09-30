@@ -1308,8 +1308,32 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
     return Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]), Math.abs(a[2] - b[2]));
   };
   const HUE_SPACE_DELTA_E_BOUND = 0.01;
+  // #725 U2 pass 2 (R74): a peak stop the anchored cap moved is re-solved by `capChromaAtHeldTone`'s
+  // `hctToRgb` at a per-hueSpace polish hue, then polished hue-blind, so its hueSpace flip carries more
+  // than rounding (measured worst 0.0184, Jekyll and Hyde tertiary stop 400). The bound there is 0.02;
+  // every other stop keeps 0.01. The engine rows carry no cap flag, so "the cap moved it" is read here:
+  // the stop's hex differs between the real engine and a scratch copy with the anchored cap lifted
+  // (`capPeak = false`), on either side of the flip.
+  const HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED = 0.02;
   const HUE_SPACE_CODES_BOUND = 2;
   const hueSpaceBoundSubjects = [...presetsByCat, { slug: "default kit", preset: dkBase }];
+  const UncappedModel = await (async () => {
+    const realSrc = readFileSync(new URL("../../src/engine/tonal.js", import.meta.url), "utf8");
+    const CAP_NEEDLE = "const capPeak = mode === \"peak\" && (controls.dampAmp ?? 0) === 0;";
+    if (!realSrc.includes(CAP_NEEDLE)) { FAIL("anchor-f4", "capped-stop read: okhslStopsAnchored's capPeak line moved - update the scratch uncapped engine's patch target"); return null; }
+    const hctUrl = new URL("../../src/engine/hct.js", import.meta.url).href;
+    const okhslUrl = new URL("../../src/engine/okhsl.js", import.meta.url).href;
+    const tonalUrl = `data:text/javascript;base64,${Buffer.from(
+      realSrc.replace('from "./hct.js"', `from "${hctUrl}"`).replace('from "./okhsl.js"', `from "${okhslUrl}"`).replace(CAP_NEEDLE, "const capPeak = false;"),
+    ).toString("base64")}`;
+    let src = readFileSync(new URL("../../src/ui/model.mjs", import.meta.url), "utf8");
+    for (const m of src.matchAll(/from "(\.\.?\/[^"]+)"/g)) {
+      const url = m[1] === "../engine/tonal.js" ? tonalUrl : new URL(m[1], new URL("../../src/ui/model.mjs", import.meta.url)).href;
+      src = src.replace(`from "${m[1]}"`, `from "${url}"`);
+    }
+    return import(`data:text/javascript;base64,${Buffer.from(src).toString("base64")}`);
+  })();
+  let cappedStops = 0, cappedMaxDeltaE = 0, cappedWorst = "n/a";
   for (const modeName of ["perceptual", "peak"]) {
     let maxDiff = 0, worstCodes = "n/a", maxDeltaE = 0, worstDeltaE = "n/a", overBoundRamps = 0;
     let dkMaxDiff = 0, dkWorstCodes = "n/a";
@@ -1318,17 +1342,29 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
       const base = hydrate({ ...preset, toneMode: modeName });
       const alt = hydrate({ ...base, hueSpace: base.hueSpace === "cam16" ? "oklch" : "cam16" });
       const baseV = projectView(base), altV = projectView(alt);
+      const readCap = modeName === "peak" && UncappedModel;
+      const baseU = readCap ? UncappedModel.projectView(base) : null, altU = readCap ? UncappedModel.projectView(alt) : null;
       for (const p of base.palettes) {
         if (typeof p.anchor !== "string") continue;
         const a = baseV.palettes.find((v) => v.name === p.name).fullRamp;
         const b = altV.palettes.find((v) => v.name === p.name).fullRamp;
+        const aU = readCap ? baseU.palettes.find((v) => v.name === p.name).fullRamp : null;
+        const bU = readCap ? altU.palettes.find((v) => v.name === p.name).fullRamp : null;
         let rampOverBound = false;
         for (let i = 0; i < a.length; i++) {
           const d = maxChannelDiff(a[i].hex, b[i].hex);
           if (d > maxDiff) { maxDiff = d; worstCodes = `${slug} "${preset.name}" ${p.name} stop ${a[i].stop}`; }
           if (slug === "default kit" && d > dkMaxDiff) { dkMaxDiff = d; dkWorstCodes = `${preset.name} ${p.name} stop ${a[i].stop}`; }
           const de = deltaEOk(a[i].hex, b[i].hex);
-          if (de > maxDeltaE) { maxDeltaE = de; worstDeltaE = `${slug} "${preset.name}" ${p.name} stop ${a[i].stop}`; }
+          const capped = readCap && (a[i].hex !== aU[i].hex || b[i].hex !== bU[i].hex);
+          const where = `${slug} "${preset.name}" ${p.name} stop ${a[i].stop}`;
+          if (capped) {
+            cappedStops++;
+            if (de > cappedMaxDeltaE) { cappedMaxDeltaE = de; cappedWorst = `${where} (${base.hueSpace} ${a[i].hex} / ${alt.hueSpace} ${b[i].hex})`; }
+            if (de > HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED) rampOverBound = true;
+            continue;
+          }
+          if (de > maxDeltaE) { maxDeltaE = de; worstDeltaE = where; }
           if (de > HUE_SPACE_DELTA_E_BOUND) rampOverBound = true;
         }
         if (rampOverBound) { overBoundRamps++; overBoundNames.add(`${slug}|${preset.name}|${p.name}`); }
@@ -1340,6 +1376,12 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
         `hueSpace ${modeName}: ${overBoundRamps} anchored ramp(s) clear a ${HUE_SPACE_DELTA_E_BOUND} OKLab delta-E when hueSpace flips (max ${maxDeltaE.toFixed(4)}, worst ${worstDeltaE}) - the UI's "disabled, rounding only" claim for anchored ${modeName} palettes is now false`,
       );
     }
+    if (modeName === "peak" && UncappedModel && cappedStops === 0) {
+      FAIL("anchor-f4", "hueSpace peak: 0 cap-moved stops read - the uncapped scratch engine no longer differs from the real one, so the 0.02 scope is dead");
+    }
+    if (modeName === "peak" && cappedMaxDeltaE > HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED) {
+      FAIL("anchor-f4", `hueSpace peak, capped stops: max OKLab dE ${cappedMaxDeltaE.toFixed(4)} over ${cappedStops} cap-moved stop(s), want <= ${HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED} (worst ${cappedWorst})`);
+    }
     if (dkMaxDiff > HUE_SPACE_CODES_BOUND) {
       FAIL(
         "anchor-f4",
@@ -1347,7 +1389,9 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
       );
     }
     const codesNote = maxDiff > HUE_SPACE_CODES_BOUND ? `${FULL ? "full-corpus" : "SAMPLED-corpus"} codes reach ${maxDiff} (worst ${worstCodes}) - reported only, not gated; default kit's own codes bound held (max ${dkMaxDiff}, want <= ${HUE_SPACE_CODES_BOUND})` : `codes bound held everywhere (max ${maxDiff})`;
-    console.log(`  ${maxDeltaE <= HUE_SPACE_DELTA_E_BOUND && dkMaxDiff <= HUE_SPACE_CODES_BOUND ? "pass" : "FAIL"}  anchor-f4 hueSpace-${modeName}-bound: ${FULL ? "full" : "SAMPLED"} corpus + default kit, max OKLab dE ${maxDeltaE.toFixed(4)} (want <= ${HUE_SPACE_DELTA_E_BOUND}, worst ${worstDeltaE}); ${codesNote}`);
+    const cappedNote = modeName === "peak" ? `; cap-moved stops ${cappedStops}, max OKLab dE ${cappedMaxDeltaE.toFixed(4)} (want <= ${HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED}, worst ${cappedWorst})` : "";
+    const cappedOk = modeName !== "peak" || cappedMaxDeltaE <= HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED;
+    console.log(`  ${maxDeltaE <= HUE_SPACE_DELTA_E_BOUND && dkMaxDiff <= HUE_SPACE_CODES_BOUND && cappedOk ? "pass" : "FAIL"}  anchor-f4 hueSpace-${modeName}-bound: ${FULL ? "full" : "SAMPLED"} corpus + default kit, max OKLab dE ${maxDeltaE.toFixed(4)} over uncapped stops (want <= ${HUE_SPACE_DELTA_E_BOUND}, worst ${worstDeltaE})${cappedNote}; ${codesNote}`);
   }
 
   // Negative control (review pass 3, Finding 4, 2026-09-18): the prior in-suite "reference lerp"
@@ -1475,10 +1519,14 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
   // every stop, not just the pivot) passes vacuously ("0 of 0"). skippedOk is the predicate both the
   // real run and the planted control below call, so the control exercises the SAME check the real
   // assertion uses, not a second copy that could disagree with it.
-  const skippedOk = (skipped) => skipped <= 3;
-  if (skippedOk(30)) FAIL("achromatic-anchor", "negative control: a planted 30-of-30-skipped run did not fail skippedOk - the floor cannot bite");
-  const HUE = 250, CHROMA = 50;
-  let bound = 0, skipped = 0;
+  // #725 U2 pass 2 (R69, R74): the anchored perceptual and peak paths blend toward min(group, anchor),
+  // so an achromatic anchor's ramp is achromatic by construction there and its CAM16 hue is noise. The
+  // hue bound is scoped to even (10 cells, at most 1 skipped: #FFFFFF's own stop 300 reads C 4.41), and
+  // perceptual and peak assert the R69 property itself, CAM16 C < 5 on all 20 cells.
+  const skippedOk = (skipped) => skipped <= 1;
+  if (skippedOk(10)) FAIL("achromatic-anchor", "negative control: a planted 10-of-10-skipped run did not fail skippedOk - the floor cannot bite");
+  const HUE = 250, CHROMA = 50, ACHROMATIC_CELL_C = 5;
+  let bound = 0, skipped = 0, greyCells = 0, greyOk = 0;
   for (const anchor of ["#808080", "#808081", "#FFFFFF", "#000000", "#010101"]) {
     for (const toneMode of ["perceptual", "peak", "even"]) {
       const controls = { ...DEFAULT_CONTROLS, toneMode };
@@ -1486,10 +1534,16 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
       const twin = paletteStops({ hue: HUE, chroma: CHROMA, skew: 0, lift: 0 }, controls, [300, 500, 700]);
       for (const stop of [300, 700]) {
         const a = cam16FromRgb(hexToRgb(anchored.find((s) => s.stop === stop).hex));
+        if (toneMode !== "even") {
+          greyCells++;
+          if (a.chroma < ACHROMATIC_CELL_C) greyOk++;
+          else FAIL("achromatic-anchor", `${anchor} ${toneMode} stop ${stop}: CAM16 C ${a.chroma.toFixed(2)}, want below ${ACHROMATIC_CELL_C} (an achromatic anchor's ${toneMode} ramp stays achromatic, R69)`);
+          continue;
+        }
         // A near-white (or near-black) anchor pulls its OWN nearest light (or dark) stop toward
         // achromatic too - CAM16 hue is noise below C=5, the same floor U1-3's own row filters on -
         // so the bound only applies where the anchored stop itself carries a real hue to test.
-        if (a.chroma < 5) { skipped++; continue; }
+        if (a.chroma < ACHROMATIC_CELL_C) { skipped++; continue; }
         const t = cam16FromRgb(hexToRgb(twin.find((s) => s.stop === stop).hex));
         const d = Math.abs(((a.hue - t.hue + 540) % 360) - 180);
         if (d > 12) FAIL("achromatic-anchor", `${anchor} ${toneMode} stop ${stop}: hue ${d.toFixed(0)}deg from the palette-hue twin, want at most 12`);
@@ -1497,7 +1551,8 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
       }
     }
   }
-  if (!skippedOk(skipped)) FAIL("achromatic-anchor", `${skipped} of 30 cells skipped under CAM16 C 5, want at most 3 - too many stops rendered achromatic to trust the ${bound}-cell bound below it`);
+  if (greyCells !== 20) FAIL("achromatic-anchor", `${greyCells} perceptual/peak cells checked, want 20`);
+  if (!skippedOk(skipped)) FAIL("achromatic-anchor", `${skipped} of 10 even cells skipped under CAM16 C 5, want at most 1 - too many stops rendered achromatic to trust the ${bound}-cell bound below it`);
   // Negative control: the predicate must actually bite. Two codes off grey (#808082, OKLab C ~0.0030,
   // above the 0.002 constant) is chromatic, so this file first proves the achromatic branch would
   // fail this exact assertion if the constant swallowed it - by asserting #808082's own OKLab C sits
@@ -1514,7 +1569,7 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
     const rampB = paletteStops({ hue: 10, chroma: CHROMA, skew: 0, lift: 0, anchor: "#808082" }, controls, STOPS).map((s) => s.hex).join(",");
     if (rampA !== rampB) { chromaticIdentical = false; FAIL("achromatic-anchor", `#808082 ${toneMode}: ramp changed with the palette's stored hue (250 vs 10) - a chromatic anchor must render from its own hue only`); }
   }
-  console.log(`  ${fails.some((f) => f.startsWith("achromatic-anchor:")) ? "FAIL" : "pass"}  achromatic-anchor: ${bound} of ${5 * 3 * 2 - skipped} anchored/twin hue distances at most 12deg (#808080, #808081, #FFFFFF, #000000, #010101 x 3 tone modes x stop 300/700, ${skipped} skipped under CAM16 C 5 - a near-white/black anchor's own nearest stop), #808082 (OKLab C ${twoOff.toFixed(4)}, above the constant) chromatic and hue-stable across a moved palette hue: ${chromaticIdentical}`);
+  console.log(`  ${fails.some((f) => f.startsWith("achromatic-anchor:")) ? "FAIL" : "pass"}  achromatic-anchor: even ${bound} of ${10 - skipped} anchored/twin hue distances at most 12deg (#808080, #808081, #FFFFFF, #000000, #010101 x stop 300/700, ${skipped} skipped under CAM16 C 5 - a near-white/black anchor's own nearest stop); perceptual/peak ${greyOk} of ${greyCells} cells CAM16 C below ${ACHROMATIC_CELL_C}; #808082 (OKLab C ${twoOff.toFixed(4)}, above the constant) chromatic and hue-stable across a moved palette hue: ${chromaticIdentical}`);
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────

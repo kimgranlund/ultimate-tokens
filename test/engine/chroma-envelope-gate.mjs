@@ -11,6 +11,11 @@
 //   and even instances above 100% of stop 500) may not rise at all. The report's ruled bars (25/35,
 //   75/90) are NOT read here: today's cells miss them (#725), so the ratchet holds the measured
 //   figures while U2 and U3 bring them down, and each of those units re-captures.
+//   This is the report's `anchored` block (#725 R74, option A): reported and ratcheted, never barred.
+//   The report's `gate path` block (anchor omitted) is the one that carries the bars; this gate does
+//   not read it. The perceptual cusp-run count is the shared measurement's L*-window-scoped one (an
+//   anchor outside [RAMP_L_MIN, RAMP_L_MAX] is excluded from the count and printed by name), and the
+//   count of instances over 90% at stop 300 is printed beside the summary, reported, not ratcheted.
 // - an absolute DIRECTION leg, fixture-independent: in every mode the stop-100 median sits below the
 //   stop-300 median and the stop-900 median below the stop-700 median (the ramp gets more muted
 //   toward its ends, never less).
@@ -144,6 +149,9 @@ if (CAPTURE) {
 const FX = readFixture(FIXTURE_URL, fixtureLabel);
 console.log(`chroma-envelope-gate${dampAmpOverride !== null ? ` --damp-amp ${dampAmpOverride}` : ""}: ${corpusLabel}`);
 console.log(summary(measured));
+console.log(`  anchored, over 90 at stop 300 (reported): ${MODES.map((mode) => `${mode} ${m.over90At300[mode]}`).join(", ")} of ${measured.n}`);
+console.log(`  perceptual cusp-run window: ${m.outsideWindow} anchored instance(s) outside the ramp's L* window, ${m.perceptualWindowExcluded.length} violation(s) excluded from cuspRuns`);
+for (const x of m.perceptualWindowExcluded) console.log(`    excluded: ${x.label} anchor ${x.anchor} L* ${x.lstar.toFixed(1)} (${x.why})`);
 
 const failures = [];
 // vacuity: a measurement over a different (or empty) population is not comparable to the fixture
