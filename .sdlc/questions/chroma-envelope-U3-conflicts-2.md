@@ -16,3 +16,12 @@
 | Question 3 | May the plan take revision 8 to write these answers into C3.3, C3.4, the f4 row and the construction text? |
 | Options | Yes (recommended) · No, the answers stand as rulings the verdict cites |
 | Default if unanswered | none: both change a bar or a list rule the plan set |
+
+## Answer (R77)
+
+| Question | Chosen |
+|---|---|
+| 1 | A, the 12 sub-rounding rises join `GRID_R2_EXCEPTIONS` as named quantization keys (owner via AskUserQuestion, 2026-09-30, R77) |
+| 2 | A, planner re-diagnosis of the hold and hue-solve coupling first; bars unchanged until then; builder finishes C3.5 to C3.8 (R77; supersedes an earlier basis-s pick made before the f4 finding) |
+| 4 | A, both FLOORS pin crossings are the retune's declared cost; 4.8 moves into `PENDING_U4`, U4 records it (R77) |
+| 3 | Yes, revision 8 (R77) |
