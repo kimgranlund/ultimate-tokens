@@ -326,9 +326,10 @@ function solveCam16Hue(targetOklchHue, chroma, tone, gamutClamp = false, { chrom
 // floorRef instead of following maxc up. The old floor, chromaFloor%*maxc at every stop, followed maxc
 // up that side while the damped value fell, and the two met in a valley one or two stops out: the
 // 400/450/550 dips #701 retires. Why the first step and not the anchor stop alone: at 450/550 the cap
-// equals that stop's own ceiling (exact at hueShift 0 on the cam16 path; both floorRef call sites name
-// the approximate cases), so from there outward the floor never rises, and one stop in no dip can
-// bottom; capping at the anchor stop's own ceiling instead (U2 pass 1) set the floor's LEVEL over
+// equals that stop's own ceiling (read at each stop's hue before edge rotation, floorRefAt; under rotation
+// maxc follows the rotated hue while the floor holds its level, and the guarantee there is the measured
+// hueShift grid of npm run gate:even-dips), so from there outward the floor never rises, and one stop in
+// no dip can bottom; capping at the anchor stop's own ceiling instead (U2 pass 1) set the floor's LEVEL over
 // the whole ramp from the pivot's gamut, which near white or black is a few C, and drained the far half
 // of those ramps toward grey. When the damped value is itself non-increasing outward (constant
 // `intended`) no off-anchor dip can form; with relChroma or the anchored basis blend `intended` varies,
@@ -342,14 +343,16 @@ function evenChroma(maxc, intended, env, chromaFloor, floorRef = maxc) {
 }
 
 // floorRefAt (#766): evenChroma's floorRef for one stop, the largest gamut ceiling among the ramp's three
-// reference tones (the pivot's, 450's and 550's, at the tones the ramp renders them) read at the hue
-// THIS stop renders at. One rule for both ramp paths: no per-ramp constant, no table, no branch on hue.
-// Where every stop renders at one hue (hueShift 0 on the non-anchored path; cam16 with an unclamped
-// anchor and hueShift 0 on the anchored path) it equals the old per-ramp reading, so those renders are
-// byte-identical; elsewhere a stop moves by at most 10 CAM16 C (measured 9.11 C over the curated corpus,
-// .sdlc/plans/floorref-hue.md, C2.2). evenChroma only ever reads min(maxc, floorRef), so the reading
-// stops at the first ceiling that reaches the stop's own maxc and returns maxc: the same floor, exactly,
-// for fewer gamut bisections (the anchored path calls this once per candidate hue of its hue solve).
+// reference tones (the pivot's, 450's and 550's, at the tones the ramp renders them), read at the stop's
+// own hue before edge rotation: the CAM16 hue the anchored path's per-stop OKLCH solve finds for that
+// stop's tone, otherwise the ramp's own hue. Edge rotation (hueShift) is not followed: the ceilings are
+// not monotone in hue, so a reference that follows the rotation rises or falls along the ramp against
+// stops that do not move with it, and both directions measured off-anchor dips (#766, ADR-026 amendment).
+// Where every stop reads one hue (the non-anchored path at any hueShift; cam16 with an unclamped anchor)
+// the floor equals the old per-ramp floor and the render is byte-identical. Elsewhere the movement is a
+// measurement, not a bound: at most 9.11 CAM16 C over the curated corpus (#766). evenChroma only ever
+// reads min(maxc, floorRef), so the reading stops at the first ceiling that reaches the stop's own maxc
+// and returns maxc: the same floor (not the same value) for fewer gamut bisections.
 function floorRefAt(hue, maxc, tone500, tone450, tone550) {
   let ref = 0;
   for (const t of [tone500, tone450, tone550]) {
@@ -857,8 +860,10 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
   // floorRefAt reads the three ceilings inside chromaAt below, at the candidate hue h, so the per-stop
   // OKLCH hue solve and the final chroma line evaluate the same floor; the pivot's ceiling is read at
   // pivotTone, where stop 500 renders, not at anchor.lstar (they differ only for a clamped anchor).
-  // Exact against the old per-ramp reading (seedHue) under cam16 with an unclamped anchor and hueShift 0;
-  // under the per-stop solve or edge rotation a stop moves by at most 10 C (floorRefAt's comment).
+  // chromaAt's second parameter is the hue the reference is read at: the candidate hue inside the solve,
+  // the solved hue (before edge rotation) on the final line. Exact against the old per-ramp reading under
+  // cam16 with an unclamped anchor at any hueShift; the per-stop OKLCH solve moves stops by a measured
+  // amount (floorRefAt's comment).
   const firstStepTone = (s) => anchorLerp(pivotTone, controls.lmax ?? 100, controls.lmin ?? 5, s, palette.skew ?? 0, palette.lift ?? 0, controls.curve, controls.tension);
   const tone450 = firstStepTone(450);
   const tone550 = firstStepTone(550);
@@ -879,12 +884,12 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
     // the final chroma line below evaluates, factored out so the hue solve (review pass 4, Finding 2)
     // can converge against the real render, not a stand-in seed chroma that the render then discards -
     // see solveCam16Hue's own header comment for why that mismatch mattered.
-    const chromaAt = (h) => {
+    const chromaAt = (h, hRef = h) => {
       const mc = maxChromaInGamut(h, tone);
       const anchorIntendedH = controls.relChroma ? anchorRelFrac * mc : anchor.cam.chroma;
       const groupIntendedH = controls.relChroma ? (palette.chroma / 100) * mc : groupTarget;
       const intendedH = anchorChromaBasis(stop, 500, lift, anchorIntendedH, groupIntendedH, true); // even keeps the climb (#725 R69 scope)
-      return evenChroma(mc, intendedH, env, controls.chromaFloor, floorRefAt(h, mc, pivotTone, tone450, tone550));
+      return evenChroma(mc, intendedH, env, controls.chromaFloor, floorRefAt(hRef, mc, pivotTone, tone450, tone550));
     };
     let resolvedHue = seedHue;
     if (oklchSpace) {
@@ -897,7 +902,7 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
     }
     const hue = (((resolvedHue + shift * dir) % 360) + 360) % 360;
     const maxc = maxChromaInGamut(hue, tone);
-    const chroma = chromaAt(hue);
+    const chroma = chromaAt(hue, resolvedHue);
     const out = hctToRgb(hue, chroma, tone);
     const hex =
       "#" +
@@ -989,10 +994,9 @@ export function paletteStops(palette, controls, stops) {
   const anchorChroma = evenChroma(maxc500, intended500, envelopeAt.get(ANCHOR_STOP), controls.chromaFloor);
   // evenChroma's floorRef (#701 U2, revision 14; per stop since #766): as in paletteStopsAnchored, the
   // pivot's ceiling or its first display step's (450, 550), whichever is larger, read by floorRefAt at
-  // the hue each stop renders at (baseHue plus its edge rotation, below). At hueShift 0 every stop
-  // renders at baseHue, so the reading equals the old per-ramp one and the render is byte-identical;
-  // under edge rotation a stop moves by at most 10 C (floorRefAt's comment). The 450/550 tones do not
-  // depend on the stop, so they are read once here.
+  // baseHue, the hue every stop has before its edge rotation (floorRefAt's comment says why rotation is
+  // not followed), so this path renders byte-identically to the old per-ramp reading at every hueShift.
+  // The 450/550 tones do not depend on the stop, so they are read once here.
   const tone450 = toneAt(450, palette.skew, palette.lift, ctl);
   const tone550 = toneAt(550, palette.skew, palette.lift, ctl);
   const dampAmp = controls.dampAmp ?? 0;
@@ -1019,7 +1023,7 @@ export function paletteStops(palette, controls, stops) {
     // NEVER past the anchor's own envelope of 1 (a muted palette stays muted, a neutral stays neutral,
     // saturated stops already clamp at/near maxc so the floor never binds). Shared with the stop-500 hue
     // anchor so they can't drift.
-    let chroma = evenChroma(maxc, intended, envelopeAt.get(stop), controls.chromaFloor, floorRefAt(hue, maxc, tone500, tone450, tone550));
+    let chroma = evenChroma(maxc, intended, envelopeAt.get(stop), controls.chromaFloor, floorRefAt(baseHue, maxc, tone500, tone450, tone550));
     // Generated palettes (dampAmp 0) never emit more chroma than the anchor itself (#681 U3 pass 3, the
     // C6 "0 above 100%" clause). At stop === ANCHOR_STOP this is an exact no-op (same formula, same
     // inputs, chroma === anchorChroma already). Authored dampAmp>0 overrides (Adia, C6's named carve-out)
