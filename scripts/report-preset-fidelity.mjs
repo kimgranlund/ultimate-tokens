@@ -50,6 +50,32 @@
 // is this mode's own negative control (the `--damp-amp` pattern above): it flips the last hex digit
 // of the first rendered cell on the HEAD side before the compare, so a green run can be told apart
 // from a compare that silently never ran.
+//
+// `--floor-ref` (#766 U1) is a THIRD, separate mode: the movement report for the even-mode chroma floor's
+// gamut reference (`evenChroma`'s `floorRef`). It loads the same base tree as `--identity-control`
+// (`--base <rev>` or `--base-dir <dir>`) and renders every curated document plus the default
+// kit, `toneMode` forced to "even" (the way test/engine/even-dips-gate.mjs does), on the base engine and
+// on this file's own tree, then diffs the cells. Each subject renders twice: `rendered` (the palette's
+// own `anchor` passed, what projectView emits) and `gate` (anchor omitted, what a user's own palette
+// renders), on `STOPS` (19) and on `EXPORT_STOPS` (25). Per path and stop set it prints cells, cells
+// moved by hex, palettes and documents moved, the max dC (CAM16 C, the ramp row's own `chroma`), the dC
+// histogram at <0.5 / <1 / <2 / <4 / >=4, the palettes moved with `hueShift` 0 (a counter-example list;
+// on the gate path the per-stop reading and the per-ramp one are the same number there, so it stays
+// empty), and the 12 largest movers. A moved cell means the head renders a different hex than the base
+// for the same palette, controls and stop (controls are the doc's own fields, the even-dips-gate shape, not
+// projectView's slice: equivalent while hydrate fills every field): a run against the tree's own head prints 0 everywhere.
+// The `rendered` rows read the dampAmp-0 documents and the kit; the `gate` rows read every document. The
+// scope is the one #766's own cell counts imply (rendered `STOPS` 71,820, gate `STOPS` 72,124). The dampAmp-70
+// document (Adia) is left off the rendered rows because none of its palettes is anchored, so its rendered
+// path equals its gate path, which the gate rows already count; the edge-rotated palettes that can move on
+// the gate path sit in it, which is why the gate rows must read it.
+//
+//   node scripts/report-preset-fidelity.mjs --floor-ref (--base <rev> | --base-dir <dir>)
+//     [--only <category>|default-kit]
+//
+// `--only` narrows the subjects to one category or `default-kit`, as in `--identity-control`. The mode
+// reports and exits 0; the bounds (#766 C2.1/C2.2) are read off its output by the verifier, not enforced
+// here.
 import { mkdtempSync, rmSync, existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -66,10 +92,13 @@ const REPO_ROOT = pathJoin(HERE, "..");
 // call process.exit) before this module's own top-level `const` lines further down are reached
 const IDENTITY_CATS = ["architecture", "brands", "cuisine", "film", "literature", "music", "nature", "travel"];
 const IDENTITY_MODES = ["perceptual", "peak", "even"];
+const FLOOR_BANDS = ["<0.5", "<1", "<2", "<4", ">=4"];
+const floorBand = (dC) => (dC < 0.5 ? "<0.5" : dC < 1 ? "<1" : dC < 2 ? "<2" : dC < 4 ? "<4" : ">=4");
 
 const args = process.argv.slice(2);
 const mode_envelope = args.includes("--envelope");
 const mode_identity = args.includes("--identity-control");
+const mode_floorRef = args.includes("--floor-ref");
 const dampAmpIdx = args.indexOf("--damp-amp");
 const dampAmpOverride = dampAmpIdx >= 0 ? Number(args[dampAmpIdx + 1]) : null;
 const dampIdx = args.indexOf("--damp");
@@ -80,9 +109,10 @@ const gatePath = args.includes("--gate-path");
 
 const USAGE =
   "usage: node scripts/report-preset-fidelity.mjs --envelope [--damp-amp N] [--damp N] [--damp-curve N] [--gate-path]\n" +
-  "       node scripts/report-preset-fidelity.mjs --identity-control (--base <rev> | --base-dir <dir>) [--authored] [--only <category>|default-kit] [--perturb]";
+  "       node scripts/report-preset-fidelity.mjs --identity-control (--base <rev> | --base-dir <dir>) [--authored] [--only <category>|default-kit] [--perturb]\n" +
+  "       node scripts/report-preset-fidelity.mjs --floor-ref (--base <rev> | --base-dir <dir>) [--only <category>|default-kit]";
 
-if (!mode_envelope && !mode_identity) {
+if (!mode_envelope && !mode_identity && !mode_floorRef) {
   console.error(USAGE);
   process.exit(2);
 }
@@ -90,6 +120,10 @@ if (!mode_envelope && !mode_identity) {
 if (mode_identity) {
   await runIdentityControl(args);
   // runIdentityControl always exits the process itself; nothing below this line runs for this mode.
+}
+if (mode_floorRef) {
+  await runFloorRef(args);
+  // runFloorRef always exits the process itself; nothing below this line runs for this mode.
 }
 
 // The C6 corpus and READING (a)'s loop live in scripts/lib/envelope-measure.mjs (#725 U1), which
@@ -517,4 +551,135 @@ async function runIdentityControl(args) {
 
   console.log(`${totalDiff} differing cells`);
   exitIdentity(totalDiff > 0 ? 1 : 0);
+}
+
+// ── --floor-ref ─────────────────────────────────────────────────────────────────────────────────
+// #766 U1: the even-mode floor-reference movement report (see the header). Reads the same base tree
+// shape as --identity-control, renders both engines in "even", and reports the per-stop movement.
+
+async function runFloorRef(args) {
+  const baseIdx = args.indexOf("--base");
+  const baseDirIdx = args.indexOf("--base-dir");
+  const onlyIdx = args.indexOf("--only");
+  const only = onlyIdx >= 0 ? args[onlyIdx + 1] : null;
+  if ((baseIdx < 0) === (baseDirIdx < 0)) { console.error(USAGE); process.exit(2); }
+  if (only !== null && only !== "default-kit" && !IDENTITY_CATS.includes(only)) {
+    console.error(`usage: --only must be one of ${IDENTITY_CATS.join(", ")} or default-kit, got "${only}"`);
+    process.exit(2);
+  }
+
+  let baseDir;
+  if (baseDirIdx >= 0) {
+    baseDir = pathResolve(process.cwd(), args[baseDirIdx + 1]);
+  } else {
+    const rev = args[baseIdx + 1];
+    if (!rev) { console.error(USAGE); process.exit(2); }
+    const scratch = mkdtempSync(pathJoin(tmpdir(), "floor-ref-"));
+    process.on("exit", () => { try { rmSync(scratch, { recursive: true, force: true }); } catch { /* best effort */ } });
+    try {
+      const archive = execFileSync("git", ["archive", rev, "src"], { cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 256 });
+      execFileSync("tar", ["-x", "-C", scratch], { input: archive });
+    } catch (e) {
+      console.error(`usage: --base ${rev} could not be archived: ${e.message}`);
+      process.exit(2);
+    }
+    baseDir = scratch;
+  }
+
+  const need = { "src/ui/persist.js": ["hydrate"], "src/ui/model.mjs": ["defaultDocument", "rampChromaOf"], "src/engine/tonal.js": ["paletteStops"] };
+  const mods = {};
+  for (const rel of Object.keys(need)) {
+    if (!existsSync(pathJoin(baseDir, rel))) { console.error(`usage: base tree at ${baseDir} is missing ${rel}`); process.exit(2); }
+    try { mods[rel] = await import(pathToFileURL(pathJoin(baseDir, rel)).href); }
+    catch (e) { console.error(`usage: base tree at ${baseDir} failed to load: ${e.message}`); process.exit(2); }
+    for (const name of need[rel]) {
+      if (!(name in mods[rel])) { console.error(`usage: base tree at ${baseDir} is missing the export ${name}`); process.exit(2); }
+    }
+  }
+  const basePersist = mods["src/ui/persist.js"], baseModel = mods["src/ui/model.mjs"], baseTonal = mods["src/engine/tonal.js"];
+  const engines = {
+    base: { rampChromaOf: baseModel.rampChromaOf, paletteStops: baseTonal.paletteStops },
+    head: { rampChromaOf, paletteStops: T.paletteStops },
+  };
+
+  const subjects = [];
+  const wantKit = only === null || only === "default-kit";
+  const wantCats = only === null ? IDENTITY_CATS : (only === "default-kit" ? [] : [only]);
+  let docCount = 0, skippedAmp = 0;
+  // Every curated doc and the default kit is a subject. The rendered path reads only the dampAmp-0 docs and
+  // the kit, the gate path reads all of them (the scope #766's own cell counts imply). A dampAmp != 0 doc
+  // (Adia) has no anchored palette, so its rendered path equals its gate path, already counted by the gate
+  // rows; and its edge-rotated (hueShift != 0) palettes are the gate row's only possible movers, so the
+  // gate rows must read it. Both sides render each doc as given.
+  const addDoc = (slug, name, doc, always = false) => {
+    const ampZero = always || (doc.dampAmp ?? 0) === 0;
+    if (!ampZero) skippedAmp++;
+    docCount++;
+    for (const pal of doc.palettes) subjects.push({ label: `${slug}/${name}/${pal.name}`, docLabel: `${slug}/${name}`, pal, doc, ampZero });
+  };
+  for (const slug of wantCats) {
+    const catPath = pathJoin(baseDir, `src/ui/categories/${slug}.js`);
+    if (!existsSync(catPath)) { console.error(`usage: base tree at ${baseDir} is missing category ${slug}`); process.exit(2); }
+    const { PRESETS } = await import(pathToFileURL(catPath).href);
+    for (const preset of PRESETS) addDoc(slug, preset.name, basePersist.hydrate({ ...preset }));
+  }
+  if (wantKit) addDoc("default-kit", "kit", baseModel.defaultDocument(), true);
+  if (subjects.length === 0) { console.log("FAIL: vacuity, no palettes loaded"); process.exit(1); }
+
+  const render = (engine, pal, doc, stops, withAnchor) => {
+    const controls = {
+      curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax,
+      damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias,
+      hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor,
+      vibrancy: doc.vibrancy, toneMode: "even",
+    };
+    return engine.paletteStops(
+      { hue: pal.hue, chroma: engine.rampChromaOf(pal, doc), skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull, ...(withAnchor && pal.anchor ? { anchor: pal.anchor } : {}) },
+      controls, stops,
+    );
+  };
+
+  console.log(`report-preset-fidelity --floor-ref (#766 U1)${only ? ` --only ${only}` : ""}`);
+  console.log(`base: ${baseDir}`);
+  console.log(`subjects: ${docCount} document(s), ${subjects.length} palettes (${skippedAmp} dampAmp != 0 doc(s), gate path only), toneMode forced to even`);
+
+  let totalMoved = 0;
+  for (const [path, withAnchor] of [["rendered", true], ["gate", false]]) {
+    for (const [setName, stops] of [["STOPS", T.STOPS], ["EXPORT_STOPS", EXPORT_STOPS]]) {
+      let cells = 0, moved = 0, maxDC = 0, palsMoved = 0;
+      const docsMoved = new Set(), hist = Object.fromEntries(FLOOR_BANDS.map((b) => [b, 0])), movers = [], zeroShiftMoved = new Set();
+      for (const { label, docLabel, pal, doc, ampZero } of subjects) {
+        if (withAnchor && !ampZero) continue;
+        const a = render(engines.base, pal, doc, stops, withAnchor);
+        const b = render(engines.head, pal, doc, stops, withAnchor);
+        let pm = false;
+        const n = Math.min(a.length, b.length);
+        for (let i = 0; i < n; i++) {
+          cells++;
+          if (a[i].hex === b[i].hex) continue;
+          const dC = Math.abs(a[i].chroma - b[i].chroma);
+          moved++; pm = true;
+          if (dC > maxDC) maxDC = dC;
+          hist[floorBand(dC)]++;
+          movers.push({ label, stop: a[i].stop, from: a[i].hex, to: b[i].hex, dC, hueShift: pal.hueShift ?? 0 });
+        }
+        if (pm) {
+          palsMoved++; docsMoved.add(docLabel);
+          if ((pal.hueShift ?? 0) === 0) zeroShiftMoved.add(label);
+        }
+      }
+      totalMoved += moved;
+      console.log("");
+      console.log(`=== ${path} path, ${setName} (${stops.length} stops) ===`);
+      console.log(`  cells ${cells} · moved ${moved}${cells ? ` (${(100 * moved / cells).toFixed(1)}%)` : ""} · palettes moved ${palsMoved} · docs moved ${docsMoved.size} · max dC ${maxDC.toFixed(2)} C`);
+      console.log(`  histogram (dC): ${FLOOR_BANDS.map((k) => `${k}: ${hist[k]}`).join(" · ")}`);
+      console.log(`  moved in hueShift 0 palettes: ${zeroShiftMoved.size} palette(s)${!withAnchor && zeroShiftMoved.size ? ` (counter-examples: ${[...zeroShiftMoved].slice(0, 5).join(", ")})` : ""}`);
+      movers.sort((x, y) => y.dC - x.dC);
+      console.log(`  ${Math.min(12, movers.length)} largest mover(s):`);
+      for (const m of movers.slice(0, 12)) console.log(`    ${m.dC.toFixed(2)} C  ${m.label} stop ${m.stop}  ${m.from} -> ${m.to}  (hueShift ${m.hueShift})`);
+    }
+  }
+  console.log("");
+  console.log(`${totalMoved} moved cell(s) in total`);
+  process.exit(0);
 }
