@@ -24,8 +24,9 @@
 // manifest/PALETTES/refKey/targetName/main() and all surrounding comments) untouched. Idempotent,
 // re-running with no source changes reproduces byte-identical output.
 //
-// Wired into `npm test` / `npm run build` via the gen:figma-binder-code script (runs BEFORE
-// gen:figma-assets, which embeds this file's post-splice content into the download). The `parity`,
+// `npm test` and `npm run build` reach this generator as the first command of gen:figma-assets (it runs
+// BEFORE gen-figma-assets.mjs, which embeds this file's post-splice content into the download);
+// gen:figma-binder-code is the standalone script for running it by hand. The `parity`,
 // `floatparity`, and `colorparity` gates in test/figma/binder.mjs are now a TRIPWIRE over this
 // generator's output, they prove the splice actually matches the canonical source, not the mechanism
 // preventing drift.

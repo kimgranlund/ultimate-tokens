@@ -20,7 +20,8 @@
 // GENERATED SECTIONS (TKT-0019, +COLOR_EXECUTOR at TKT-0024): the three "// === GENERATED:... ==="
 // blocks below (the five float-executor functions + the three color-provenance functions + roleTable())
 // are SPLICED from their canonical sources at build time by scripts/gen-figma-binder-code.mjs (npm test /
-// npm run build run it as gen:figma-binder-code), not hand-copied. Regenerate:
+// npm run build reach it as the first command of gen:figma-assets; gen:figma-binder-code is the standalone
+// hand-run script), not hand-copied. Regenerate:
 // `node scripts/gen-figma-binder-code.mjs`. Never hand-edit inside a marker pair; edit the canonical
 // source (figma/plugin/code.js or src/engine/semantic.js) and regenerate.
 

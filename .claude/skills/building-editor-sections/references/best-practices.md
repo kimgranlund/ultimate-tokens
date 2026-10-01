@@ -26,7 +26,8 @@ The non-obvious do/don'ts (each one cost a real bug or review cycle), then a con
   one-line "coming / from treatment" note. **Never fake an editable control** the engine + the persist fuzz
   generator can't round-trip, it lies to the user and breaks the persist test.
 - **`setSection(id)`**: stash the color viewport on leave (`_colorViewport`), restore on return; call
-  `this.fit()` for non-color (their scenes start centered, not at the color pan); lazy-init section assets
+  `this.fit()` for non-color (it resets the viewport to zoom 1 and insets the scene's top-left corner via
+  `_fitTopLeftInset`, not centered and not at the color pan); lazy-init section assets
   (`ensureTypeFonts()` for typography). Keep Color byte-identical, the viewport round-trip is the one
   crossover.
 - **Guard the live refresh.** `_liveRefreshNow()` early-returns for non-color. If a Color sub-mode replaces

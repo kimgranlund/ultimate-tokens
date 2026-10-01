@@ -42,8 +42,9 @@ import { typeScale, DEFAULT_TYPE } from "../engine/type.mjs";
 import { geomScale, DEFAULT_GEOMETRY, RAMP_LADDER } from "../engine/geometry.mjs";
 
 // geometryScale, the resolved geometry for a doc, COMPOSED with its type scale so a control's text
-// size (the per-step `font` at SM/MD/LG) comes from the brand's UI-CONTROL voice (TKT-0008, rerouted
-// off Label 2026-07-16; XS/XL/2XL fall back to the engine's fixed CONTROL_FONT ramp). The single place
+// size (the per-step `font`) comes from the brand's UI-CONTROL voice at every step of the XS..2XL ramp
+// (TKT-0008, rerouted off Label 2026-07-16); the engine's fixed CONTROL_FONT ramp is the fallback for
+// whichever step the voice lacks and for the no-opts form, per `geomScale`. The single place
 // the two systems are joined; brandKit + the app's Geometry section/exports all go through it (via
 // `geomScaleFor`, below, this wrapper stays for external/back-compat callers that pass ad-hoc override
 // slices rather than a modeKey; the no-opts case IS `geomScaleFor(doc, "base")`).
@@ -164,8 +165,8 @@ export function typeScaleFor(doc, modeKey) {
 
 // geomScaleFor(doc, modeKey), the resolved geometry scale for a mode WITH that mode's per-cell
 // HEIGHT overrides applied, COMPOSED with the type scale at the SAME mode, a control's text size
-// (SM/MD/LG `font`) is the UI-CONTROL voice at that mode (TKT-0008; XS/XL/2XL fall back to the
-// engine's fixed control-text ramp / the tier columns in `geomModeScales`).
+// (`font`) is the UI-CONTROL voice at that mode at every XS..2XL step (TKT-0008); `CONTROL_FONT` is
+// the fallback for whichever step the voice lacks, per `geomScale` (see the tier columns in `geomModeScales`).
 export function geomScaleFor(doc, modeKey) {
   const g = doc.geometry || DEFAULT_GEOMETRY;
   // a mode's rampContrast: mode-explicit wins; otherwise it INHERITS the doc's (the desktop-anchored
