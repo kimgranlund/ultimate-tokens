@@ -13,7 +13,7 @@
 
 | Field | Value |
 |---|---|
-| Date | |
-| Asked | |
-| Options | |
-| Chosen | |
+| Date | 2026-10-01 |
+| Asked | #766 floor reference: no rule follows the hue rotation and keeps the no-dip guarantee. Which rule ships? |
+| Options | A per-stop solve (recommended) · B rotation, downward only · C keep pass 1 as built · D close #766, no engine change |
+| Chosen | A: per-stop solve (R85). The rotation half of #766 is declined with its measured reason |
