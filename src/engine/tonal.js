@@ -326,16 +326,16 @@ function solveCam16Hue(targetOklchHue, chroma, tone, gamutClamp = false, { chrom
 // floorRef instead of following maxc up. The old floor, chromaFloor%*maxc at every stop, followed maxc
 // up that side while the damped value fell, and the two met in a valley one or two stops out: the
 // 400/450/550 dips #701 retires. Why the first step and not the anchor stop alone: at 450/550 the cap
-// equals that stop's own ceiling (read at each stop's hue before edge rotation, floorRefAt; under rotation
-// maxc follows the rotated hue while the floor holds its level, and the guarantee there is the measured
-// hueShift grid of npm run gate:even-dips), so from there outward the floor never rises, and one stop in
-// no dip can bottom; capping at the anchor stop's own ceiling instead (U2 pass 1) set the floor's LEVEL over
-// the whole ramp from the pivot's gamut, which near white or black is a few C, and drained the far half
-// of those ramps toward grey. When the damped value is itself non-increasing outward (constant
-// `intended`) no off-anchor dip can form; with relChroma or the anchored basis blend `intended` varies,
-// so that is not a structural guarantee there: it is a measurement, gated at 0 on both paths
-// (test/engine/tonal.mjs `dip-gate-even`, `npm run gate:even-dips`). Continuous in the anchor's L* (no
-// branch on the tone window). Defaults to maxc, so the stop-500 seeds, which pass none, are unchanged.
+// equals that stop's own ceiling, read at its hue before edge rotation (floorRefAt); where every stop reads
+// one hue and nothing rotates, the floor cannot rise past 450/550, and one stop in no dip can bottom. On
+// the anchored OKLCH path each stop reads its own solved hue, so the floor can rise outward of 450/550
+// (#766: 36.18 / 35.83 / 35.43 C at 350 / 400 / 450 on a random anchored ramp at hueShift 0, over a flat
+// 34.45 per-ramp floor); there, and under edge rotation, no-dip is a measurement of npm run gate:even-dips,
+// not a structural property. The pivot's ceiling alone (U2 pass 1) set the floor from the pivot's gamut, a
+// few C near white or black, and drained the far half grey. A damped value non-increasing outward (constant
+// `intended`) forms no off-anchor dip; relChroma and the anchored basis blend vary `intended`, so that too is
+// a measurement, gated at 0 over the corpus (test/engine/tonal.mjs `dip-gate-even`, npm run gate:even-dips).
+// Continuous in the anchor's L* (no tone-window branch). Defaults to maxc (the stop-500 seeds pass none).
 function evenChroma(maxc, intended, env, chromaFloor, floorRef = maxc) {
   const damped = Math.min(intended * env, maxc);
   const floorC = Math.min(((chromaFloor ?? 0) / 100) * Math.min(maxc, floorRef), intended);
