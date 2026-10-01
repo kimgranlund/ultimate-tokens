@@ -13,6 +13,6 @@
 
 | Field | Value |
 |---|---|
-| Date | |
-| Options | |
-| Chosen | |
+| Date | 2026-10-01 |
+| Options | A accept the trade (recommended) · B re-plan the anchored path · C ship as built · D close #766, no change |
+| Chosen | A: accept the measured trade (R87); revision 4, one records-and-gate pass, no engine change |
