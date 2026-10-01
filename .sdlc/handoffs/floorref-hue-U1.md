@@ -40,3 +40,7 @@ subjects: 344 document(s), 3796 palettes (1 dampAmp != 0 doc(s), gate path only)
 0 moved cell(s) in total
 ✓ all 54 test files passed
 ~~~
+
+## Correction after verdict pass 1 (orchestrator, from `.sdlc/verdicts/floorref-hue-U1.md`)
+
+The C2.1 control under plan revision 2 is the stop-300 mutant judged by the pinned hex set: gate STOPS shows `Success stop 150  #C7EABD -> #C6EABD`, 6 cells moved, 0.34 C. The stop-50 mutant recorded above (7 cells, 0.78 C, judged by a count bound) is superseded. The 1.6x-floor control counts, with the `FLOOR_TARGET` literal scaled by `1.6 *`, reproduce as gate STOPS 41103, rendered 50778 and kit gate 182; the earlier 41,140, 50,783 and 183 came from an unrecorded patch and do not reproduce. The control bites by tens of thousands of cells either way.
