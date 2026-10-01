@@ -16,6 +16,6 @@
 
 | Field | Value |
 |---|---|
-| Ruled by | pending |
-| Source, verbatim | pending |
-| Chosen | pending |
+| Ruled by | owner, via the Conductor's AskUserQuestion, 2026-10-01 (R88, R89, R90) |
+| Source, verbatim | "A: scale each palette (Recommended)" · side question: "Accept the shift" · chrome theme: "Keep chrome theme (Recommended)" |
+| Chosen | A, the group value scales the anchor's own saturation. Side: material default stays 30 and the shift is accepted (no migration), so `(gid3)` is rewritten, not kept. Chrome theme stays; only the canvas and preview scheme toggles go |
