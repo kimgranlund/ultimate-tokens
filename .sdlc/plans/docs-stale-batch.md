@@ -60,7 +60,7 @@ Every negative control runs in a throwaway `git clone -q --shared . "$F/neg"` ma
 - [x] U3 (S) the two generator headers name `gen:figma-assets` as the wiring point; regenerated assets committed (#771) · grade l1
 - [x] U4 (S) `model.mjs` CONTROL_FONT comments and the two dead `only when ≥1 mode` comments match the deciders (#770) · grade l2
 - [x] U6 (S) `.sdlc/adapter.md` §6 names the `## Claims` ledger and the P8 ran-block pair as the doc-unit standard (#768) · trivial lane · grade l1 · after #725 or per Q1
-- [ ] U7 (S) pre-land records (revision 5): the baseline `ui.html` row and its Correction, the U1 handoff rewritten to the P3 shape, the U4 ran block re-captured without ANSI, and the `migrations.mjs:3` overclaim (U7-1 to U7-6) · trivial lane · grade l1 · reviewer-l1
+- [x] U7 (S) pre-land records (revision 5): the baseline `ui.html` row and its Correction, the U1 handoff rewritten to the P3 shape, the U4 ran block re-captured without ANSI, and the `migrations.mjs:3` overclaim (U7-1 to U7-6) · trivial lane · grade l1 · reviewer-l1
 
 ### U1: `figma/README.md` (#774) · trivial lane · l1
 
