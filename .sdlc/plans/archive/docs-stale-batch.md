@@ -1,5 +1,5 @@
 ---
-status: approved
+status: done
 ticket: to mint at activation (Q0: `adapter.py create --title docs-stale-batch --label kind:chore --label lane:docs --size S`; the five issues #774, #773, #771, #770, #768 are closed by the same PR, `Closes` lines in the body)
 priority: P3
 lane: docs (`figma/README.md`, `.claude/skills/building-editor-sections/references/best-practices.md`, `scripts/gen-figma-binder-code.mjs` header comment, `figma/binder/figma-semantic-binder/code.js` header comment, `src/ui/model.mjs` comments, `src/ui/sections/typography.js` comments, `src/ui/sections/geometry.js` comments, `.sdlc/adapter.md` §6, plus the regenerated `figma/plugin/ui.html`, `src/ui/figma-plugin-assets.js` and `src/ui/describe-mcp-assets.js` those comment edits and the #725 main merge move; revision 5 (U7) adds `figma/binder/migrations.mjs` (line 3 comment), the `.sdlc/baseline.md` ui.html row and the U1, U4 and U7 handoffs; no `lanes.json` exists, so the globs are this list)
@@ -185,6 +185,7 @@ One PR from `plan/docs-stale-batch` to `main`, title `docs(stale): five stale-do
 
 | Date | Change | Why |
 |---|---|---|
+| 2026-09-30 | closed on landing of PR #780 (squash 74850019), pre-land pass 2 🟢 at 2ebef86a | the plan landed; U1 to U4, U6 and U7 verified or lane-reviewed, #774 #773 #771 #770 #768 closed by the PR |
 | 2026-09-30 | revision 5, orchestrator, at 1875f256: U7 (S, trivial lane) closes the pre-land pass 1 🔴 (baseline `ui.html` row, U1 handoff shape) and its 🟡 on `migrations.mjs:3` and U4 ANSI; U1-2 Expected re-pointed to `20 20`; the lane line names `describe-mcp-assets.js` and the U7 paths | `.sdlc/verdicts/docs-stale-batch-prepr.md` pass 1, findings 1 to 5; the fifth revision row, inside the cap |
 | 2026-09-30 | revision 1, the plan as written at ef630848, status draft | the team lead's ask: one plan for #774, #773, #771, #770, #768 plus the #776 `type.mjs` comment |
 | 2026-09-30 | revision 4: U6-3 gets a true awk complement of §6, U6-4 becomes a pipe-split awk over the ledger with its own control, U6-1 greps the two shapes separately, U4-5 drops whitespace-only lines so a rewrapped comment is free; cells write `${B}:` | `.sdlc/verdicts/docs-stale-batch-checkability.md` pass 2 🔴, findings 1 to 3 |
