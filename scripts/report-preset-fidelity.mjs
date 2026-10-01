@@ -600,8 +600,10 @@ async function runFloorRef(args) {
   const wantKit = only === null || only === "default-kit";
   const wantCats = only === null ? IDENTITY_CATS : (only === "default-kit" ? [] : [only]);
   let docCount = 0, skippedAmp = 0;
-  const addDoc = (slug, name, doc) => {
-    if ((doc.dampAmp ?? 0) !== 0) { skippedAmp++; return; }
+  // the kit is always a subject (#766 section 2: "every dampAmp-0 curated doc plus the default kit"); its
+  // own dampAmp is not 0, but the report renders it as given on both sides, so the compare stays even
+  const addDoc = (slug, name, doc, always = false) => {
+    if (!always && (doc.dampAmp ?? 0) !== 0) { skippedAmp++; return; }
     docCount++;
     for (const pal of doc.palettes) subjects.push({ label: `${slug}/${name}/${pal.name}`, docLabel: `${slug}/${name}`, pal, doc });
   };
@@ -611,7 +613,7 @@ async function runFloorRef(args) {
     const { PRESETS } = await import(pathToFileURL(catPath).href);
     for (const preset of PRESETS) addDoc(slug, preset.name, basePersist.hydrate({ ...preset }));
   }
-  if (wantKit) addDoc("default-kit", "kit", baseModel.defaultDocument());
+  if (wantKit) addDoc("default-kit", "kit", baseModel.defaultDocument(), true);
   if (subjects.length === 0) { console.log("FAIL: vacuity, no palettes loaded"); process.exit(1); }
 
   const render = (engine, pal, doc, stops, withAnchor) => {
@@ -629,7 +631,7 @@ async function runFloorRef(args) {
 
   console.log(`report-preset-fidelity --floor-ref (#766 U1)${only ? ` --only ${only}` : ""}`);
   console.log(`base: ${baseDir}`);
-  console.log(`subjects: ${docCount} dampAmp-0 document(s) (${skippedAmp} skipped, dampAmp != 0), ${subjects.length} palettes, toneMode forced to even`);
+  console.log(`subjects: ${docCount} document(s) (dampAmp-0 curated plus the kit) (${skippedAmp} skipped, dampAmp != 0), ${subjects.length} palettes, toneMode forced to even`);
 
   let totalMoved = 0;
   for (const [path, withAnchor] of [["rendered", true], ["gate", false]]) {
