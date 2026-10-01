@@ -53,7 +53,7 @@
 //
 // `--floor-ref` (#766 U1) is a THIRD, separate mode: the movement report for the even-mode chroma floor's
 // gamut reference (`evenChroma`'s `floorRef`). It loads the same base tree as `--identity-control`
-// (`--base <rev>` or `--base-dir <dir>`) and renders every dampAmp-0 curated document plus the default
+// (`--base <rev>` or `--base-dir <dir>`) and renders every curated document plus the default
 // kit, `toneMode` forced to "even" (the way test/engine/even-dips-gate.mjs does), on the base engine and
 // on this file's own tree, then diffs the cells. Each subject renders twice: `rendered` (the palette's
 // own `anchor` passed, what projectView emits) and `gate` (anchor omitted, what a user's own palette
@@ -63,6 +63,8 @@
 // on the gate path the per-stop reading and the per-ramp one are the same number there, so it stays
 // empty), and the 12 largest movers. A moved cell means the head renders a different hex than the base
 // for the same palette, controls and stop: a run against the tree's own head prints 0 everywhere.
+// The `rendered` rows read the dampAmp-0 documents and the kit; the `gate` rows read every document, since
+// the edge-rotated palettes that can move there sit in a dampAmp-70 one.
 //
 //   node scripts/report-preset-fidelity.mjs --floor-ref (--base <rev> | --base-dir <dir>)
 //     [--only <category>|default-kit]
@@ -600,12 +602,16 @@ async function runFloorRef(args) {
   const wantKit = only === null || only === "default-kit";
   const wantCats = only === null ? IDENTITY_CATS : (only === "default-kit" ? [] : [only]);
   let docCount = 0, skippedAmp = 0;
-  // the kit is always a subject (#766 section 2: "every dampAmp-0 curated doc plus the default kit"); its
-  // own dampAmp is not 0, but the report renders it as given on both sides, so the compare stays even
+  // Every curated doc and the default kit is a subject. The rendered path reads only the dampAmp-0 docs
+  // and the kit (the corpus #766 section 2 pins; a dampAmp != 0 doc renders a damped
+  // envelope the floor is not read against), the gate path reads all of them: it renders no anchor and the 12 edge-rotated
+  // (hueShift != 0) palettes the exactness fact is read against live in a dampAmp-70 doc, so dropping it
+  // would leave the gate row's only possible movers out of the compare. Both sides render each doc as given.
   const addDoc = (slug, name, doc, always = false) => {
-    if (!always && (doc.dampAmp ?? 0) !== 0) { skippedAmp++; return; }
+    const ampZero = always || (doc.dampAmp ?? 0) === 0;
+    if (!ampZero) skippedAmp++;
     docCount++;
-    for (const pal of doc.palettes) subjects.push({ label: `${slug}/${name}/${pal.name}`, docLabel: `${slug}/${name}`, pal, doc });
+    for (const pal of doc.palettes) subjects.push({ label: `${slug}/${name}/${pal.name}`, docLabel: `${slug}/${name}`, pal, doc, ampZero });
   };
   for (const slug of wantCats) {
     const catPath = pathJoin(baseDir, `src/ui/categories/${slug}.js`);
@@ -631,14 +637,15 @@ async function runFloorRef(args) {
 
   console.log(`report-preset-fidelity --floor-ref (#766 U1)${only ? ` --only ${only}` : ""}`);
   console.log(`base: ${baseDir}`);
-  console.log(`subjects: ${docCount} document(s) (dampAmp-0 curated plus the kit) (${skippedAmp} skipped, dampAmp != 0), ${subjects.length} palettes, toneMode forced to even`);
+  console.log(`subjects: ${docCount} document(s), ${subjects.length} palettes (${skippedAmp} dampAmp != 0 doc(s), gate path only), toneMode forced to even`);
 
   let totalMoved = 0;
   for (const [path, withAnchor] of [["rendered", true], ["gate", false]]) {
     for (const [setName, stops] of [["STOPS", T.STOPS], ["EXPORT_STOPS", EXPORT_STOPS]]) {
       let cells = 0, moved = 0, maxDC = 0, palsMoved = 0;
       const docsMoved = new Set(), hist = Object.fromEntries(FLOOR_BANDS.map((b) => [b, 0])), movers = [], zeroShiftMoved = new Set();
-      for (const { label, docLabel, pal, doc } of subjects) {
+      for (const { label, docLabel, pal, doc, ampZero } of subjects) {
+        if (withAnchor && !ampZero) continue;
         const a = render(engines.base, pal, doc, stops, withAnchor);
         const b = render(engines.head, pal, doc, stops, withAnchor);
         let pm = false;
