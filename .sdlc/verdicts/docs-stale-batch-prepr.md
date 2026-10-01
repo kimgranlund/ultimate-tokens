@@ -2,16 +2,20 @@
 kind: verdict
 plan: docs-stale-batch
 seat: verifier
-pass: 1
+pass: 2
 ticket: "#779, #774, #773, #771, #770, #768"
 written: 2026-10-01
 ---
 
 # Pre-PR · docs-stale-batch · pass 1 · 🔴 at `1875f256`: every changed doc line is true and `npm test` is green, but the `ui.html` baseline row is stale and U1's handoff breaks the record shape this same plan ratifies
 
-verdict: 🔴
-sha: 1875f256183d9aa9dc821cac670914db3ef91918
+Current state: pass 2 🟢 at `2ebef86a` (tree graded at `396141ed`; `2ebef86a` merges origin/main and differs from it in `.sdlc/board.md` and this record only) (the `verdict:` and `sha:` lines below name it; its section is at the end). The pass 1 section that follows graded `1875f256` 🔴 and is kept as history.
+
+verdict: 🟢
+sha: 2ebef86a5edda3f2941f0e7185511abcd000cbf6
 version: n/a (a plan landing, no release)
+
+Pass 1 lines: `verdict: 🔴` at `1875f256183d9aa9dc821cac670914db3ef91918`.
 
 `plan/docs-stale-batch` at `1875f256` (draft PR #780), after U1 to U4 and U6 (U5 moved to gates-batch) and the main merge `0d71383a`. `$B` = `8428280e` (merge base with origin/main). Checkers in fresh context: reviewer-l4 (fable) on the whole diff `$B...1875f256` (PASS, two majors) and verifier-l3 (fable) on every unit criterion, P1 to P6, the baseline gates, `.sdlc/checks/` and CI. The seat reproduced the baseline-agrees red and the U1 handoff gap itself.
 
@@ -103,3 +107,82 @@ version: n/a (a plan landing, no release)
 #### Not re-run here (verifier's)
 
 `npm test` (P1), `npm run build`, `npm run smoke`, P6 ramp identity. The U3, U4 and U6 records report P1 green with a clean tree at their heads; the generator rerun above is the pre-land proof that the committed assets match head source.
+
+## Pass 2 · 🟢 at `2ebef86a`: U7 (revision 5) closes both reds and both pass 1 yellows; build and smoke green on the new `ui.html`; main merged in, CI pending
+
+verdict: 🟢
+sha: 2ebef86a5edda3f2941f0e7185511abcd000cbf6
+
+`plan/docs-stale-batch` at `2ebef86a` (the checkers ran at `396141ed`; the Orchestrator then merged origin/main, and `git diff --name-only 396141ed 2ebef86a` prints only `.sdlc/board.md` and `.sdlc/verdicts/docs-stale-batch-prepr.md`, so every tree result below holds at `2ebef86a`): U7 merged (`90dd93ff`) on lane review PASS (`.sdlc/reviews/docs-stale-batch-U7-review.md`). Graded by plan revision 5 (U7-1 to U7-6, P1 to P5). Checkers in fresh context: reviewer-l4 (fable) on the delta `1875f256..396141ed` and a re-sweep of `8428280e...396141ed` (PASS, no blocker or major), and verifier-l3 (fable) on U7, P3 and P4 over all six handoffs, `npm test`, `npm ci && npm run build`, `npm run smoke`, `.sdlc/checks/` and CI. The seat read `gh pr view 780 --json mergeable` itself: `CONFLICTING`.
+
+### Seat rows, pass 2
+
+| Check | State | Evidence | Negative control |
+|---|---|---|---|
+| Pass 1 reds closed | 🟢 | `baseline-agrees-check.sh` `stale total: 0` with the row at `4160.0 KB`, equal to `wrote figma/plugin/ui.html 4160.0 KB` from both `npm test` and `npm run build`; the U1 handoff now carries `## Claims` (4 `present`, 1 `absent`, bare paths) and the ran pair, P3 `ok` and P4 `SAME` at `bf3a73af` | at `1875f256` the same check printed `STALE ui.html: baseline 4159.4 KB, tree 4160.0 KB` and the U1 `## Claims` count was `0` (pass 1 seat rows) |
+| Pass 1 yellows closed | 🟢 | `figma/binder/migrations.mjs:3` no longer reads `every executor path` (`grep -c` `0`), names the flagship's hand-mirrored `LIBRARY_TYPE_VOICE_MAP`; comment-only diff; U4 ran block ANSI count `0`, P4 `SAME` | at `1875f256` the phrase counted `1` and the U4 block carried escapes that broke a non-TTY replay |
+| CI and mergeability | 🟡 | at `396141ed` `gh pr view 780 --json mergeable` read `CONFLICTING` on `.sdlc/board.md` and no checks existed (the verifier read that 🔴). The Orchestrator merged origin/main as `2ebef86a`; the seat then read `MERGEABLE`, `mergeStateStatus` `BLOCKED`, and `gh pr checks 780` shows `build-test`, `panda-smoke`, `corpus-contrast` and the `sweeps` matrix all `pending` on run `36802381141`. This record grades the tree, not CI: landing needs those required legs green on `2ebef86a` | `git diff --name-only 396141ed 2ebef86a` lists only two `.sdlc/` files, so the merge cannot move a code or gate result; a non-records path in that list would have voided the carry-over |
+| `card-source-range-check.sh` | 🟡 | red at head (`range mismatches: 3`, ADR-026/027) and identically at the base `8428280e`: inherited from main, not owed to this plan; named here so it is not lost | the identical count at the base is the control: a plan-caused red would differ between the two shas |
+
+### Verifier-l3 rows, pass 2
+
+| Check | State | Evidence | Negative control |
+|---|---|---|---|
+| U7-1 `migrations.mjs:3` overclaim gone, hand-mirrored map named | 🟢 | at head `grep -c 'every executor path' figma/binder/migrations.mjs` = `0`; `grep -c 'hand-mirrored'` = `1`; line 3 reads `style plans); the flagship code.js keeps its own hand-mirrored LIBRARY_TYPE_VOICE_MAP.` | clone at `1875f256183d9aa9dc821cac670914db3ef91918`: `grep -c 'every executor path' figma/binder/migrations.mjs` = `1` |
+| U7-2 baseline `ui.html` row equals what the tree writes, dated Correction | 🟢 | `sh .sdlc/checks/baseline-agrees-check.sh \| tail -1` = `stale total: 0`; `grep -c 'Correction (2026-.*docs-stale-batch' .sdlc/baseline.md` = `1` (line 390, names U3, U4 and U7 comment edits as the cause); baseline row 34 carries `wrote figma/plugin/ui.html 4160.0 KB`; `npm test` in `c2` printed `wrote figma/plugin/ui.html 4160.0 KB`; `npm run build` in `c3` printed `wrote figma/plugin/ui.html 4160.0 KB` | clone at `1875f256`: the check prints `STALE ui.html: baseline 4159.4 KB, tree 4160.0 KB` and `stale total: 1` |
+| U7-3 U1 handoff in the P3 shape; P3 and P4 pass at its named head | 🟢 | `HF=.sdlc/handoffs/docs-stale-batch-U1.md`: P3 rows `5` (`4 present` + `1 absent`: `SCRIM_KEYS`, `DECLARED`, `LIBRARY_TYPE_VOICE_MAP`, `libraryparity` present; `executor path` absent from `figma/README.md`), `5 ok`, `path:line` anchors `0`, `grep -c '^~~~sh ran'` = `1`, `grep -c '^~~~out ran'` = `1`; P4 replay at named head `bf3a73af` printed `SAME` | clone at `1875f256`: `grep -c '^## Claims'` = `0`, `grep -c '^~~~sh ran'` = `0` on that file; P4 replayed at `8428280e` instead: line 1 `bf3a73af` vs `8428280e`, `diff exit 1` |
+| U7-4 U4 handoff out block free of ANSI, non-TTY P4 `SAME` | 🟢 | `grep -c $'\x1b\\['  .sdlc/handoffs/docs-stale-batch-U4.md` = `0`; P4 with `HF=.sdlc/handoffs/docs-stale-batch-U4.md` replayed at named head `6497a7bd` (clone had `refs/remotes/origin/main` set to `93d63add`): `SAME` | clone at `1875f256`: the grep prints `2`; its block replayed at `6497a7bd` differs on lines 3 and 8 (`^[[33m6^[[39m ^[[33mtrue^[[39m ^[[33mfalse^[[39m` vs `6 true false`, `^[[33m2^[[39m ...` vs `2 2 2`), `diff exit 1` |
+| U7-5 only records and the one comment moved; no code token in `migrations.mjs` | 🟢 | `git diff --name-only 1875f256..HEAD` = `.sdlc/baseline.md .sdlc/board.md .sdlc/handoffs/docs-stale-batch-U1.md .sdlc/handoffs/docs-stale-batch-U4.md .sdlc/handoffs/docs-stale-batch-U7.md .sdlc/plans/docs-stale-batch.md .sdlc/reviews/docs-stale-batch-U7-review.md figma/binder/migrations.mjs figma/plugin/ui.html` (the three extra paths are the orchestrator's plan, board and lane-review records, all `.sdlc/*.md`); `git diff 1875f256..HEAD -- figma/binder/migrations.mjs \| grep '^[-+][^-+]' \| grep -vc '^[-+] *//'` = `0` (the only `-`/`+` pair is the `//` line 3); unit delta `git diff --name-only 66dfb49b..7b6275e5 \| grep -v '\.md$'` = `figma/binder/migrations.mjs figma/plugin/ui.html`, nothing under `scripts/`, `githooks/`, `hooks/` | clone at `396141ed` with `plan/docs-stale-batch` reset to `66dfb49b`, `printf '\nexport const PLANTED = 1;\n' >> figma/binder/migrations.mjs; git commit -qam plant`: the second command prints `1` |
+| U7-6 P1 at head | 🟢 | `c2` (no `node_modules`), `npm test`: `✓ all 54 test files passed`, `exit 0`, `git status --porcelain \| wc -l` = `0`, `real 305.98` s (two other suites were running on the host; over adapter's 80 to 90 s but not a correctness signal) | control clone at `396141ed`, `sed -i '' 's/"scrim/"scrimX/' docs/reference/data/role-table.json` (`1 file changed, 7 insertions(+), 7 deletions(-)`): `▶ engine/semantic.mjs FAIL`, `FAIL refs-canonical, ordered key set != canonical`, `✗ 1/54 test file(s) failed`, `exit 1` |
+| U7-6 P2 at head | 🟢 | `node test/repo/em-dash.mjs \| tail -1` = `em-dash: clean (1068 files scanned)`; `node test/repo/branding.mjs \| tail -1` = `branding: clean (1060 files scanned)`; the 2 U+2014 bytes in `.sdlc/baseline.md` lines 33 and 35 are quoted gate output inside code spans, present at `8428280e` too, `git diff 8428280e 396141ed -- .sdlc/baseline.md \| grep -c $'^[-+].*\xe2\x80\x94'` = `0` | clone at `396141ed`, `printf '\nplanted \xe2\x80\x94 dash\n' >> .sdlc/handoffs/docs-stale-batch-U7.md`: `✗ .sdlc/handoffs/docs-stale-batch-U7.md:61`, `FAIL: 1 em dashes outside inline code spans in 1 files`, `exit 1` |
+| U7-6 P3 on the U7 handoff | 🟢 | `HF=.sdlc/handoffs/docs-stale-batch-U7.md`: rows `5`, `5 ok` (3 present, 2 absent), `path:line` anchors `0`, `~~~sh ran` `1`, `~~~out ran` `1`, ANSI `0` | clone at `396141ed`, `sed -i '' 's/\x60hand-mirrored\x60/\x60hand-mirroredXYZ\x60/' "$HF"`: the loop prints `1 MISS hand-mirroredXYZ`, `4 ok`; then `sed -i '' '/^~~~sh ran/d'`: `grep -c '^~~~sh ran'` = `0` |
+| U7-6 P4 on the U7 handoff | 🟢 | named head `14a15aa9`; replayed in a clone at `14a15aa9` with `plan/docs-stale-batch` reset to `66dfb49b` (the unit's fork point, `git merge-base 66dfb49b 14a15aa9` = `66dfb49b`): `SAME` (10 lines incl. `stale total: 0`, the 5-path U7-5 list, `em-dash: clean`, `branding: clean`) | first replay with the clone's `plan/docs-stale-batch` at `396141ed`: the U7-5 list came out empty, `7,11d6`, diff exit 1 (the ref reconstruction is the only difference) |
+| U7-6 P5 lane | 🟢 | `git diff --name-only 66dfb49b..7b6275e5`: `.sdlc/baseline.md`, three handoffs, `figma/binder/migrations.mjs`, `figma/plugin/ui.html`; none under `scripts/`, `githooks/`, `hooks/`; review `.sdlc/reviews/docs-stale-batch-U7-review.md` first line `PASS` | the planted-code clone of U7-5 above lists `figma/binder/migrations.mjs` with a non-comment hunk (`1`) |
+| P3 on U2, U3, U4, U6 handoffs | 🟢 | U2 rows `3` (`2 ok`, `1 cond`); U3 rows `7` (`7 ok`); U4 rows `7` (`5 ok`, `2 cond`); U6 rows `8` (`8 ok`); every file `~~~sh ran` `1`, `~~~out ran` `1`, `path:line` anchors `0`, ANSI `0`; U6-4 awk on the U6 ledger = `1`, `grep -c 'Amendment (2026-09-30, #768)' .sdlc/adapter.md` = `1` | the U7 needle-edit control above (`MISS`) exercises the same loop |
+| P4 on U2, U3, U4, U6 handoffs | 🟢 | replays at named heads `53aa63e1` (U2), `1bff0594` (U3), `6497a7bd` (U4), `20b5cfea` (U6): all `SAME`; U4 and U6 needed `refs/remotes/origin/main` = `93d63add` in the clone; U6 needed `HF` as the absolute path to the head's copy of its handoff (its U6-4 row reads the handoff, which was committed at `49a0f10a`, after the named head) | U6 replay with the relative `HF`: `awk: can't open file .sdlc/handoffs/docs-stale-batch-U6.md`, diff exit 1; merge-base replay of U1 above |
+| U1-1 SCRIM constants named | 🟢 | `for n in SCRIM_STRENGTH_STEPS SCRIM_SUFFIXES SCRIM_KEYS; do grep -c "$n" figma/README.md; done` = `1 1 1` | clone at `8428280edaad280b3863dd62ec62c0d5ff9bdf13`: `0 0 0` |
+| U1-2 gate count = `DECLARED` length (revision 5: 20) | 🟢 | `echo "$R $D"` = `20 20`, `SAME`, `grep -c 'mode-apply-plan.mjs' figma/README.md` = `2` | clone at `396141ed`, `sed -i '' 's/20 gates/19 gates/' figma/README.md`: `19 20`, no `SAME`; clone at `8428280e`: `R` empty (`[]`), module count `1` |
+| U1-3 `libraryparity` named, overclaim gone | 🟢 | `grep -c 'libraryparity' figma/README.md` = `1`; `grep -c 'executor path' figma/README.md` = `0`; `grep -c 'libraryparity' test/figma/plugin.mjs` = `59` | clone at `8428280e`: `0`, `1` |
+| U2-1, U3-1, U3-3, U3-4, U4-1, U4-3, U4-5 spot re-run at head | 🟢 | U2-1 `0 1 4`; U3-1 `0 0`; U3-3 `0` per file, porcelain `0`; U3-4 `0` (generator idempotent); U4-1 `0`; U4-3 `0 0 8 8`; U4-5 `0 0 0` with `B=8428280e` | pass 1 controls stand (record `.sdlc/verdicts/docs-stale-batch-prepr.md`); the U7 delta touches none of these files except `figma/plugin/ui.html`, which U3-3 re-covers (`0`) |
+| `npm ci && npm run build` at head | 🟢 | `c3` at `396141ed`: `ci exit 0`; `npm run build` `✓ built in 640ms`, `wrote figma/plugin/ui.html 4160.0 KB`, `real 7.32`, `build exit 0`, porcelain `0` | the `c2` run proves the no-`node_modules` leg separately; the baseline check's `STALE` at `1875f256` is the figure's own control |
+| `npm run smoke` at head | 🟢 | `c3`: `SMOKE PASS, gallery · category · editor · export dialog all render in a real browser`, `✓ all 4 self-hosted faces APPLY in real DOM layout`, `smoke exit 0`, `real 39.88`, porcelain `0`, screenshots in `$S/c3/smoke-out/` (`editor.png`, `geometry.png`, `typography.png`, ...) | smoke rebuilt first (`npm run build` inside `npm run smoke`, #564), so a stale `dist/` cannot have passed it |
+| `.sdlc/checks/*` at head | 🟢 | `baseline-agrees-check.sh` `stale total: 0` (exit 0); `card-amendment-check.sh` `stale total: 0`; `doc-drift-rows-check.sh` `rows 56 drifted 11 holds 45 undetermined 0 bad 0`; `verdict-frontmatter-check.sh` `verdicts 255 graded 255 bad 0`; `ceiling-counts-check.mjs` `clean`; `card-source-range-check.sh` exit 1 `range mismatches: 3` (ADR-026/027 ranges) | clone at `8428280e` prints the same `range mismatches: 3`, so that red is inherited from main, not this branch |
+| citations | 🟢 | `node test/repo/citations.mjs`: `✓ citations: parser self-test + STALE 0 across 10 discovered docs + 11 fact pins + 35 count phrases (HEAD 396141ed)`, `symbol homes: 37 checked, 0 stale`, exit 0 | the em-dash plant above shows the repo gates redden on a planted record |
+| engine moved? sweeps owed? | 🟢 not owed | `git diff 8428280e 396141ed -- src/engine \| wc -l` = `0`; no engine file in `git diff --name-only 8428280e 396141ed` | U4-2's `geometry.mjs` sed control from pass 1 is the engine-side reddening; nothing to re-run |
+| PR #780 head and CI | 🟡 (seat ruling; worker read 🔴) | `gh pr view 780`: headRefOid `396141edd4ee6a73f6b2cf527b10a98f28330c47`, `draft=true`, `plan/docs-stale-batch->main`; `git ls-remote origin` = `396141ed`. `gh pr checks 780` at `01:26:12Z`, `01:31:10Z`, `01:38:42Z`, `01:39:35Z`: `no checks reported`; `actions/runs?head_sha=396141ed` `total_count` `0`; `gh api .../commits/396141ed/status` `pending`. Cause: `gh pr view 780 --json mergeable,mergeStateStatus` = `CONFLICTING DIRTY`; scratch `git merge --no-commit gh/main` at the head conflicts on `.sdlc/board.md` (`git diff --name-only --diff-filter=U`); GitHub builds no `refs/pull/780/merge` for a conflicting PR, so `pull_request` CI never fires. Last run is `36785030880` on `0d71383a` (22:20Z, green); `git diff --name-only 0d71383a 396141ed` now includes `figma/binder/migrations.mjs` and `figma/plugin/ui.html`, so pass 1's "only `.sdlc/` paths since the last green run" no longer holds | the push at `00:00:29Z` (`1875f256`) also produced no run, consistent with the conflict, while `0d71383a` (pushed after a main merge) did |
+
+### Findings, pass 2
+
+1. 🟢 Both pass 1 blockers and both pass 1 yellows are closed by U7; build and smoke are green on the regenerated `ui.html`.
+2. 🟡 CI: main is merged in at `2ebef86a` (records only) and the required legs are pending; landing needs them green on `2ebef86a`. Any further push to the plan branch needs this record refreshed for the new sha.
+3. 🟡 `card-source-range-check.sh` is red on main as well as here (ADR-026/027 range mismatches); a main-level item for the Orchestrator, not this plan's.
+4. 🟡 Plan text for the archive step: U1-2's negative control still says `19 gates`; adapter `:218` `short string per R10`; `model.mjs:46-47` double reading; PR body `Closes` lines and title owed at un-draft.
+
+#### Verifier-l3 findings
+
+1. 🟡 (seat ruling, worker read 🔴) CI: PR #780 is `CONFLICTING` with `main` on `.sdlc/board.md` (`main` moved to `5ff6063f`, nine `.sdlc` commits past `$B`), so no `pull_request` run exists for `396141ed` (or for `1875f256`); required `build-test`, `panda-smoke`, `corpus-contrast`, `sweeps` have no result on this head. The branch needs `origin/main` merged (one `.sdlc/board.md` resolution) and pushed; CI will then fire on the new head and this row re-reads. The merge base stays `8428280e` and nothing outside `.sdlc/` differs between `8428280e` and `gh/main`, so the code evidence above carries to that head.
+2. 🟢 The two pass-1 reds are closed at `396141ed`: `baseline-agrees-check.sh` `stale total: 0` with the row at `4160.0 KB` matching both `npm test` and `npm run build` output; the U1 handoff carries a `## Claims` ledger (4 present, 1 absent, bare paths) and the P8 pair, P3 and P4 `SAME` at `bf3a73af`.
+3. 🟢 All six handoffs replay `SAME` at their named heads; U4's ANSI is gone (`0`).
+4. 🟡 Replay conventions, not defects: U6's ran block reads its own handoff (committed after its named head), so P4 needs `HF` as an absolute path; U7's block reads `plan/docs-stale-batch`, which must sit at the fork point `66dfb49b` in the clone. Both are reconstructions of the builder's environment of the kind the dispatch allowed for `origin/main`.
+5. 🟡 U7-5's name-only list carries three orchestrator records beyond the plan's enumerated list (`.sdlc/board.md`, `.sdlc/plans/docs-stale-batch.md`, `.sdlc/reviews/docs-stale-batch-U7-review.md`); all `.sdlc/*.md`, all "records", within the criterion's intent.
+6. 🟡 `card-source-range-check.sh` is red (`range mismatches: 3`, ADR-026/027) at the head and identically at `8428280e`; inherited from `main`, not owed to this plan.
+7. 🟢 Engine untouched (`src/engine` diff empty), sweeps not owed. `npm test` 306 s under a loaded host (two other suites), not a correctness signal.
+8. Nothing written outside `$S`; the shared worktree was never checked out or switched (`c1` is a clone; its trial merge was aborted, porcelain `0`).
+
+#### Reviewer-l4 findings
+
+##### Blocker
+none
+
+##### Major
+none
+
+##### Minor
+1. `.sdlc/plans/docs-stale-batch.md:72` U1-2's negative control still reads `sed -i '' 's/19 gates/18 gates/' figma/README.md` prints `18 19`; revision 5 moved Expected to `20 20` but not the control, which now matches nothing in the README (`grep -c '19 gates' figma/README.md` = `0`). Plan-text only, for the archive step.
+
+##### Nit
+1. `figma/binder/migrations.mjs:3` `the flagship code.js keeps its own hand-mirrored LIBRARY_TYPE_VOICE_MAP` is true but names one of two: `figma/binder/figma-semantic-binder/code.js:85` also hand-mirrors the map (`gated by renameparity`, `:88`). Not false (it mirrors the README's sentence, which #774 asked for), and `migrations.mjs:97` already names the flagship copy.
+2. Carried from pass 1, unchanged and not this unit's scope: adapter `:218` `short string per R10` vs R10's `never exact prose`; `model.mjs:46-47` `per geomScale` double reading; PR #780 body `Closes` lines and title owed at un-draft; CI run on the head sha is the verifier's to cite.
+
+##### Not run here (verifier's)
+`npm test`, `npm run build`, `npm run smoke`, P6. The generator rerun above with porcelain `0` is this review's proof that the committed assets match head source.
