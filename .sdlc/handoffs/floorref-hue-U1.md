@@ -9,6 +9,15 @@ Branch unit/fh-U1, ticket #766. One file changed: `scripts/report-preset-fidelit
 | C1.3 | `grep -c floor-ref scripts/report-preset-fidelity.mjs`; header read | `8`; header names #766, arguments, moved-cell meaning | at HEAD~2 (before the mode) `git grep -c floor-ref` prints nothing | 🟢 |
 | C1.4 | `npm test` in the worktree | `all 54 test files passed`, tree clean | a failing test file in the same run would drop the count from 54 (suite stops at the first red) | 🟢 |
 
+## Review pass 1 fixes (review `.sdlc/reviews/floorref-hue-U1-review.md`, PASS)
+
+| Finding | Fix |
+|---|---|
+| F2 | scope-rule comments (header and `addDoc`) now give the real reason: the plan's own cell counts imply the scope, and Adia has no anchored palette so its rendered path equals its gate path |
+| F3 | unused `defaultDocument` import dropped |
+| F4 | not routed through `controlsOf`: it is a module-local function in `src/ui/model.mjs`, so using it means a src edit outside this unit. Stated in the script header instead (controls are the doc's own fields, equivalent while hydrate fills every field) |
+| F1, F5 | planner and U2 dispatch items, no U1 change |
+
 ## Claims
 
 | Claim | Evidence |

@@ -62,9 +62,13 @@
 // histogram at <0.5 / <1 / <2 / <4 / >=4, the palettes moved with `hueShift` 0 (a counter-example list;
 // on the gate path the per-stop reading and the per-ramp one are the same number there, so it stays
 // empty), and the 12 largest movers. A moved cell means the head renders a different hex than the base
-// for the same palette, controls and stop: a run against the tree's own head prints 0 everywhere.
-// The `rendered` rows read the dampAmp-0 documents and the kit; the `gate` rows read every document, since
-// the edge-rotated palettes that can move there sit in a dampAmp-70 one.
+// for the same palette, controls and stop (controls are the doc's own fields, the even-dips-gate shape, not
+// projectView's slice: equivalent while hydrate fills every field): a run against the tree's own head prints 0 everywhere.
+// The `rendered` rows read the dampAmp-0 documents and the kit; the `gate` rows read every document. The
+// scope is the one #766's own cell counts imply (rendered `STOPS` 71,820, gate `STOPS` 72,124). The dampAmp-70
+// document (Adia) is left off the rendered rows because none of its palettes is anchored, so its rendered
+// path equals its gate path, which the gate rows already count; the edge-rotated palettes that can move on
+// the gate path sit in it, which is why the gate rows must read it.
 //
 //   node scripts/report-preset-fidelity.mjs --floor-ref (--base <rev> | --base-dir <dir>)
 //     [--only <category>|default-kit]
@@ -78,7 +82,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { tmpdir } from "node:os";
 import { join as pathJoin, resolve as pathResolve, dirname } from "node:path";
 import { hydrate } from "../src/ui/persist.js";
-import { rampChromaOf, EXPORT_STOPS, lstarFromRgb, defaultDocument } from "../src/ui/model.mjs";
+import { rampChromaOf, EXPORT_STOPS, lstarFromRgb } from "../src/ui/model.mjs";
 import * as T from "../src/engine/tonal.js";
 import { CATS, REPORT_STOPS, MODES, ADIA_CARVEOUT, CUSP_RUN_BOUND, OVER_90_AT_300, percentile, measureEnvelope } from "./lib/envelope-measure.mjs";
 
@@ -602,11 +606,11 @@ async function runFloorRef(args) {
   const wantKit = only === null || only === "default-kit";
   const wantCats = only === null ? IDENTITY_CATS : (only === "default-kit" ? [] : [only]);
   let docCount = 0, skippedAmp = 0;
-  // Every curated doc and the default kit is a subject. The rendered path reads only the dampAmp-0 docs
-  // and the kit (the corpus #766 section 2 pins; a dampAmp != 0 doc renders a damped
-  // envelope the floor is not read against), the gate path reads all of them: it renders no anchor and the 12 edge-rotated
-  // (hueShift != 0) palettes the exactness fact is read against live in a dampAmp-70 doc, so dropping it
-  // would leave the gate row's only possible movers out of the compare. Both sides render each doc as given.
+  // Every curated doc and the default kit is a subject. The rendered path reads only the dampAmp-0 docs and
+  // the kit, the gate path reads all of them (the scope #766's own cell counts imply). A dampAmp != 0 doc
+  // (Adia) has no anchored palette, so its rendered path equals its gate path, already counted by the gate
+  // rows; and its edge-rotated (hueShift != 0) palettes are the gate row's only possible movers, so the
+  // gate rows must read it. Both sides render each doc as given.
   const addDoc = (slug, name, doc, always = false) => {
     const ampZero = always || (doc.dampAmp ?? 0) === 0;
     if (!ampZero) skippedAmp++;
