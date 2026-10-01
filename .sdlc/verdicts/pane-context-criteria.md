@@ -2,15 +2,19 @@
 kind: criteria-review
 plan: pane-context
 seat: verifier
-pass: 1
+pass: 2
 ticket: none yet
 written: 2026-10-01
 ---
 
-# pane-context criteria review · pass 1 · 🔴 at `d23b42db`
+# pane-context criteria review · pass 2 · 🟢 at `11828f00`
 
-verdict: 🔴
-sha: d23b42db
+Current state: pass 2 🟢 at `11828f00` (plan revision 1); every criterion is checkable and the plan may be mobilized. Pass 1 (🔴 at `d23b42db`) follows as history.
+
+verdict: 🟢
+sha: 11828f00
+
+Pass 1 lines: `verdict: 🔴` at `d23b42db`.
 
 Plan `.sdlc/plans/pane-context.md` at `d23b42db` (revision 0, head 38b0e8b1), rows C1.1 to C4.9. Graded by the Verifier seat directly. Every needle, label and "Today" value was read with `git show d23b42db:<path>` (`test/ui/headless-boot.mjs`, `test/run.mjs`, `src/ui/**`, `test/smoke/smoke.mjs`, the two docs, the question file, `scripts/report-preset-fidelity.mjs`); the default kit was counted with `node -e` on `src/ui/model.mjs` (unchanged since `d23b42db`). 🟢 means I can name now the command that fails if the unit is missing or wrong. 🔴 means the row as written cannot be graded: its Expected is false on a green tree, collides with an existing label, or depends on an unruled choice.
 
@@ -55,3 +59,35 @@ Plan `.sdlc/plans/pane-context.md` at `d23b42db` (revision 0, head 38b0e8b1), ro
 3. 🔴 U2 option A against the `material` default of 30: the plan's blast radius, C2.5 and C2.7 assume a move only where the anchor s exceeds 0.30. The shim's own `(gid3 precondition)` puts Neutral at or below 0.30, and under A at 30 Neutral still moves. C2.5's `(gid3)` claim and C2.7's `0.00` hold only under the side question's default (material to 100 plus migration), and C2.7's command cannot see a `persist.js` defaults change (adapter §1).
 4. 🔴 The test count: `TESTS` is `54`, not `56`. Grade the count as `exit 0` plus `all N test files passed`, with N taken at the head.
 5. 🟡 Five rows carry `n/a` controls (C1.4, C2.3, C4.1, C4.6, C4.8). Each has a natural control, named in its row; write them in so the unit verdicts can be 🟢.
+
+## Pass 2 · 🟢 at `11828f00`: revision 1 closes all ten pass 1 reds and the five `n/a` controls
+
+verdict: 🟢
+sha: 11828f00
+
+Plan revision 1 at `11828f00`, graded by the seat directly against the pass 1 rows. The owner's rulings (`.sdlc/questions/pane-context-group-chroma.md` `## Answer`: `Chosen` A, material default stays 30, the shift is accepted, the chrome theme stays) are folded into C2.3, C2.5 and C2.7. Labels and counts were re-read with `git show 11828f00:<path>`.
+
+| # | State | Check I would run | What changed, and the control |
+|---|---|---|---|
+| C1.1 | 🟢 | shim run, new `(j6-seg)` (`grep -cF` = `0` at `11828f00`) | the label is free and the existing `(j6b)` is kept as is; control: revert `_deselect`'s `segment` write |
+| C1.4 | 🟢 | the `case` grep = `3` | control written in: delete one case, prints `2` |
+| C1.5, C2.8, C3.4, C4.9 | 🟢 | `npm test` exit `0`, `all N test files passed` with N = `TESTS.length` at head | N reads `54` at `11828f00` (`TESTS` counted from `test/run.mjs`); control: the `"scrim` rename (`7` hits in the role table) |
+| C2.3 | 🟢 | `grep -c '^\| Chosen \| pending'` = `0` (the `Chosen` cell names A) | control written in: a copy with the cell set back to `pending` prints `1` |
+| C2.4 | 🟢 | `tonal.mjs` case `group-chroma-ratio` | the Expected is now one formula: `anchorChromaBasis(stop, 500, lift, s0, 0.5 * s0, false)`, in OKHSL 0 to 1 units, which matches the signature `anchorChromaBasis(stop, anchorStop, lift, anchorValue, groupValue, climb = false)` in `src/engine/tonal.js`; the `Math.min` control reds the 50 row and spares the pin |
+| C2.5 | 🟢 | shim `(gid` lines; new `(gid-ratio)` (`0` today) | `(gid3)` is rewritten to the ruling: fresh Neutral at 30 differs from 100 and equals an explicit 30, with stop 500 byte-identical; control: reverting the engine reds both `(gid3)` and `(gid-ratio)`. The colliding `(gid5)` is gone from the plan (`grep -c 'gid5'` = `0`) |
+| C2.6 | 🟢 | `chroma-envelope-gate.mjs --compare <38b0e8b1 fixture>`, `even` row unchanged | the gate keys its rows per mode (`COUNT_KEY` `perceptual`, `peak`, `even`); control: the ratio target applied on `climb=true` moves the even row |
+| C2.7 | 🟢 | `--group-chroma ... --base 38b0e8b1` rendering the head's `GROUP_DEFAULTS`, plus `node -e` printing material's default `30` | a check now reads the head's defaults (pass 1's adapter §1 blind spot is gone); controls: default set to 100 prints `100`, and option B moves the brand rows at 100 |
+| C2.8 (option C) | 🟢 | dropped | the owner ruled A, so the row no longer exists and the `(gid4b)` collision with it |
+| C3.1 | 🟢 | `(i-all)`: `16` tables, `848` role rows (`.rrow` without `rhead`), `16` `.rhead`, `864` `.rrow` | header policy stated (kept per table); Today now reads `54` `.rrow`; control: the selected-only branch prints `1` / `53` / `54` |
+| C3.2 | 🟢 | `(i-one)`: one `.roles-table` and one `.roles-table-name` (new class, `git grep` finds it nowhere in `src` today) whose text equals `palettes[2].name` | the heading is now named; control: dropping the `sel.kind` branch renders `16` |
+| C3.3 | 🟢 | `.rrow .sw-pair` = `864` | header pairs counted; Today `54`; control prints `54` |
+| C4.1, C4.2, C4.6, C4.8 | 🟢 | the greps | controls written in: today's counts (`2`/`7`/`1`/`1`/`1`; `21`/`10`/`1`/`1`/`2`/`0`; `4`; `8`), and for C4.6 a dropped column rule |
+
+Rows not listed (C1.2, C1.3, C2.1, C2.2, C4.3 to C4.5, C4.7) were 🟢 at pass 1 and are unchanged in substance.
+
+### Findings, pass 2
+
+1. 🟢 All ten pass 1 reds are closed, and the five `n/a` controls are written in.
+2. 🟡 For U2's builder and verifier: `(gid2)` (a fresh doc's Neutral equals a direct engine call at chroma 30) is not named in C2.5. It should hold under A if the direct call goes through the same anchored basis. If it reds, that is a finding against the engine change, not a reason to rewrite it silently.
+3. 🟡 For U4: `(k1b)` and `(k1d)` pin `.example-card` counts `1` and `3`, which double with two `.example-scheme` wrappers. U4 rewrites them, and the handoff should say so.
+
