@@ -1,6 +1,6 @@
 # Handoff floorref-hue U1 · builder → reviewer
 
-Branch unit/fh-U1, ticket #766. One file changed: `scripts/report-preset-fidelity.mjs` (new `--floor-ref` mode, header documented).
+Branch unit/fh-U1 @ 3e815253 (code head), ticket #766. One file changed: `scripts/report-preset-fidelity.mjs` (new `--floor-ref` mode, header documented).
 
 | Id | Command | Evidence | Negative control | State |
 |---|---|---|---|---|
@@ -22,6 +22,7 @@ Branch unit/fh-U1, ticket #766. One file changed: `scripts/report-preset-fidelit
 
 | Claim | Evidence |
 |---|---|
+| Code head is 3e815253; the ran block below replays at it | `git rev-parse --short HEAD` prints `3e815253` before this record's own commit |
 | Rendered path reads dampAmp-0 docs plus the kit; gate path reads all 344 docs | `subjects: 344 document(s), 3796 palettes`; rendered cells 71,820 / 94,500, gate 72,124 / 94,900 |
 | The 12 hueShift palettes sit in the dampAmp-70 Adia doc (11) and BZZR (1, hueShift -1) | `/Users/kimba/.claude/jobs/8c58a81c/tmp/c.mjs` census: 12 palettes, none anchored |
 | Prototype rendered EXPORT_STOPS reads 4,441 / 1,523 palettes / 339 docs, not the plan's 4,448 / 1,526 / 340 | plan's EXPORT row evidently included the Adia doc on the rendered path while its STOPS row (3,870) did not; the 7 cell, 3 palette difference is exactly Adia's gate-path movers |
