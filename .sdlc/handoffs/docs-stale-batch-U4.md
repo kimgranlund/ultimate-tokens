@@ -42,12 +42,12 @@ node scripts/report-preset-fidelity.mjs --identity-control --base $(git merge-ba
 ~~~out ran
 6497a7bd
 0
-[33m6[39m [33mtrue[39m [33mfalse[39m
+6 true false
 0
 0
 8
 8
-[33m2[39m [33m2[39m [33m2[39m
+2 2 2
 0
 0
 0
