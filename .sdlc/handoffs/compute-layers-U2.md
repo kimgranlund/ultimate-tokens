@@ -29,3 +29,7 @@ Notes for the reviewer.
 | Files | `src/engine/layers.mjs` (new), `test/engine/layers.mjs` (new), `test/run.mjs`, `scripts/bundle.mjs`, `scripts/gen-describe-mcp-assets.mjs`, `CHANGELOG.md`, regenerated `src/ui/describe-mcp-assets.js` and `figma/plugin/ui.html` |
 | Ran | `npm test` (56/56 green, twice) · `npm ci && npm run build` (exit 0, tree clean) · both IDENT runs (`0 differing cells`) · every row's control above |
 | Not run | `npm run smoke` |
+
+## Checkers (orchestrator)
+
+Reviewer reviewer-l3 PASS (.sdlc/reviews/compute-layers-U2-review.md, ce6ea792). Verifier worker: verifier-l2 (opus high), R86 and R92: no Fable.
