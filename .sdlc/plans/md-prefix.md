@@ -43,21 +43,21 @@ Geometry families under the root (all follow): `size`, `radius`, `space`, `inset
 
 ## 3. Units
 
-- [ ] U1 (S) Preset, hydrate rewrite, schema bump, emitted prose: settings.js triple, persist.js, `EXPORT_SCHEMA_VERSION`, `SERVER.version`, comments, ds-export prose, tests, regenerated assets (builder-l2)
+- [ ] U1 (S) Preset, hydrate rewrite (a v7 RENAME_MAPS entry), schema bump, emitted prose, the stale `maintaining-brand-kit-mcp` references (`foundations.md`, `best-practices.md`: schema and server version lines): settings.js triple, persist.js, `EXPORT_SCHEMA_VERSION`, `SERVER.version`, comments, ds-export prose, tests, regenerated assets (builder-l2)
 - [ ] U2 (S) Records: consumer plugin, geometry-system skill, CHANGELOG, marketing corpus via `marketing-manager-agent` (builder-l1)
 
 ### U1 criteria
 
 | # | Check (command) | Expected | Today | Negative control |
 |---|---|---|---|---|
-| C1.1 | `git grep -n "md-sys" -- src test mcp figma/binder figma/plugin/code.js scripts` | no output, exit 1 | 40+ hits (settings.js 8, exports/type/geometry/drawer/ds-export comments, tests) | leave settings.js `:119` unchanged: hits return |
+| C1.1 | `git grep -n "md-sys" -- src test mcp figma/binder figma/plugin/code.js scripts ':!src/ui/persist.js' ':!test/ui/persist.mjs'` and `git grep -c "md-sys" -- src/ui/persist.js` | first: no output, exit 1; second: every hit sits inside the RENAME_MAPS entry for the old export root (the literal is written plainly there, never split to evade the grep) | 40+ hits (settings.js 8, exports/type/geometry/drawer/ds-export comments, tests) | leave settings.js `:119` unchanged: hits return |
 | C1.2 | `grep -c "md-sys" figma/plugin/ui.html src/ui/describe-mcp-assets.js` after `npm test` | `0` each | `19`, `4` | skip regeneration: counts nonzero |
 | C1.3 | headless group rxr4 (`test/ui/headless-boot.mjs`) applies the Material preset through the Settings path (`_setNamingScheme("material")`), then exports: CSS contains `--md-color-` and no `--md-sys-`; type CSS contains `--md-typescale-display-weight-medium:`; geometry CSS contains `--md-size-md-height:` and `.md-control-md {`. Run: `npm test` | exit 0 | the preset path emits `--md-sys-*`, so the new assertions red | put the old triple back at the settings.js apply line (`idOrBrand === "material"`): the new forms vanish, rxr4 reds |
 | C1.4 | headless group rxr4 (`test/ui/headless-boot.mjs`) selects the Material preset and asserts the note and zip README name `--md-color-*`; settings `_namingScheme()` returns `"material"` for `md-color`/`md-typescale`/`md` | `npm test` exit 0 | asserts `--md-sys-color-*` | put the old triple back in the `_namingScheme()` detector only: it returns `"custom"`, rxr4 reds |
 | C1.5 | `exportUI3(defaultDocument())` and the same with the Material preset applied: variable and collection names equal byte-for-byte; `git diff $(git merge-base origin/main HEAD) -- figma/binder/migrations.mjs` | names identical; empty diff | identical (prefix never reaches UI3) | inject the prefix into a UI3 name: names differ, and the migrations rule then requires an entry |
 | C1.6 | `exportCSS(defaultDocument())` sha256 at HEAD versus merge-base, from line 2 on (`tail -n +2`; line 1 is the schema stamp that C1.9 moves) | equal | n/a | change the default `colorPrefix`: hashes differ |
 | C1.7 | `npm test` then `git status --porcelain` | exit 0, empty | exit 0 | leave a generated asset stale: tree dirty |
-| C1.8 | `hydrate(serialize(kit with colorPrefix "md-sys-color", typePrefix "md-sys-typescale", geomPrefix "md-sys"))` returns `md-color`/`md-typescale`/`md`; a lone `colorPrefix:"md-sys-color"` with a non-Material type prefix stays as typed | both true | first returns `md-sys-*` | drop the rewrite: first assertion reds |
+| C1.8 | the rewrite is a `RENAME_MAPS` entry (version 7) and `CURRENT_SCHEMA_VERSION` is 7: `hydrate` of a doc below schema 7 carrying colorPrefix "md-sys-color", typePrefix "md-sys-typescale", geomPrefix "md-sys" returns `md-color`/`md-typescale`/`md`; a lone `colorPrefix:"md-sys-color"` with a non-Material type prefix stays as typed; the same old triple on a doc stamped schemaVersion 7 stays as typed (the once proof) | all three true | first returns `md-sys-*` | drop the RENAME_MAPS entry: first assertion reds; apply the rewrite in `clampExport` again: the v7 case reds |
 | C1.9 | `git show $(git merge-base origin/main HEAD):src/engine/exports.js \| grep -o "EXPORT_SCHEMA_VERSION = [0-9]*"` versus the same on HEAD; `SERVER.version` in `mcp/brand-kit-core.mjs` versus merge-base | HEAD constant equals merge-base value plus 1; `SERVER.version` minor moves by one; `npm test` exit 0 (`test/mcp/brand-kit.mjs` pins the package version to `SERVER.version`) | `3` on both, `0.3.0` on both (4 and 0.4.0 after #789) | leave the constant at the merge-base value: values equal, check reds |
 
 ### U2 criteria
@@ -86,3 +86,4 @@ File overlap: `src/engine/exports.js` (comment at `:415` only), `src/engine/ds-e
 |---|---|---|
 | 2 | 2026-10-03 | Orchestrator, mobilization: ticket 791 minted; frontmatter status normalized to `approved`; no criterion changed |
 | 3 | 2026-10-03 | Orchestrator, md-U1 builder finding: C1.6 as written (whole-file sha256) cannot hold with C1.9, since line 1 of the CSS export is the schema stamp; the hash now excludes line 1, the control is unchanged |
+| 4 | 2026-10-03 | Orchestrator, md-U1 review: C1.8 now requires the rewrite through the file's own versioned RENAME_MAPS channel (CURRENT_SCHEMA_VERSION 6 to 7, persist.js standing convention) so it runs once; C1.1 excludes the two legacy-name sites and checks them separately, ending the split-string evasion; the two `maintaining-brand-kit-mcp` references move from U2 to U1 (U1 invalidates them) |
