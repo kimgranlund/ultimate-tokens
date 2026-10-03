@@ -2060,10 +2060,8 @@ class HctApp extends HTMLElement {
   // expanded, the slider + form are revealed by the single toggle below the wrappers. examplesExpanded is
   // ui-session view state (not doc-bound), so the toggle just flips it + refreshes.
   exampleArtifacts(view) {
-    const schemes = this.exampleSchemes(() => [
-      this.exampleCard(view),
-      ...(this.examplesExpanded ? [this.exampleSlider(view), this.exampleForm(view)] : []),
-    ]);
+    const artifacts = [() => this.exampleCard(view), () => this.exampleSlider(view), () => this.exampleForm(view)];
+    const schemes = this.exampleSchemes(() => (this.examplesExpanded ? artifacts : artifacts.slice(0, 1)).map((build) => build()));
     const toggle = h(
       "button",
       {
@@ -2072,7 +2070,7 @@ class HctApp extends HTMLElement {
         "aria-expanded": this.examplesExpanded ? "true" : "false",
         onclick: () => { this.examplesExpanded = !this.examplesExpanded; this.liveRefresh(); },
       },
-      this.examplesExpanded ? "Show less" : "Show 2 more examples",
+      this.examplesExpanded ? "Show less" : `Show ${artifacts.length - 1} more examples`,
     );
     return [...schemes, toggle];
   }
