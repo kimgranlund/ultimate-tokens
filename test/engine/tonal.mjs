@@ -1753,8 +1753,10 @@ for (const mode of ["perceptual", "peak"]) {
   // both is > 0 off-anchor dips, since the real engine reads 0: (1) the floor restored to its pre-#701
   // gamut-relative form, chromaFloor% * maxc at every stop (floorRef dropped), which is the mechanism
   // the gate retired; (2) the same, amplified 1.6x. The shipped floor scaled 1.6x on its own is NOT a
-  // control: min(maxc, floorRef) is non-increasing away from the anchor at any scale, so it opens no
-  // off-anchor dip (measured 0, both paths). A missing patch target is itself a FAIL (the floor line
+  // control: where every stop reads one hue (the gate path, anchored cam16) min(maxc, floorRef) is
+  // non-increasing away from the anchor at any scale, so it opens no off-anchor dip (measured 0 at #701, both
+  // paths); on the anchored OKLCH path each stop reads its own solved hue (#766), so there that is a
+  // measurement, not a structural property. A missing patch target is itself a FAIL (the floor line
   // moved: update the control, never delete it).
   {
     const realSrc = readFileSync(new URL("../../src/engine/tonal.js", import.meta.url), "utf8");

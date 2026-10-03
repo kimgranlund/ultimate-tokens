@@ -23,9 +23,11 @@
 // `floorRef` dropped) and scaled 1.6x must produce more than 0 dips, or the script fails with
 // `negative control DID NOT bite`. `--floor-scale <k>` runs the MAIN sweep on that patched engine at
 // scale k instead (the verifier's by-hand control: `--floor-scale 1.6` prints a non-zero count and
-// FAIL). Why not the shipped floor scaled alone: the shipped floor is non-increasing away from the
-// anchor for ANY scale (min(maxc, floorRef) does not depend on it), so scaling it cannot open a dip on
-// either path (measured: 0 off-anchor dips at 1.6x, gate path and rendered). The control therefore
+// FAIL). Why not the shipped floor scaled alone: where every stop reads one hue (the gate path) the
+// shipped floor is non-increasing away from the anchor for ANY scale (min(maxc, floorRef) does not depend
+// on it), so scaling it cannot open a dip there (measured at #701: 0 off-anchor dips at 1.6x, gate path and
+// rendered); on the anchored OKLCH path each stop reads its own solved hue (#766), so the rendered zero is
+// a measurement, not a structural property. The control therefore
 // removes the one thing the redesign added, which is what a regression would have to remove.
 //
 // The hueShift grid (#766), printed before the corpus lines. The curated corpus's largest |hueShift| is

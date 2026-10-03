@@ -804,12 +804,12 @@ Format: Context → Decision → Rationale → Consequences → Status.
   path moves 3,870 of 71,820 `STOPS` cells (5.4%, 1,522 palettes, 339 docs) and 4,441 `EXPORT_STOPS` cells,
   at most 9.11 CAM16 C (Tbilisi `secondary` 100), in pale low-chroma yellows and greens where the solved
   hue sits off `seedHue`. Every curated doc and the default kit persist `toneMode: "perceptual"`, so no
-  shipped render moves; a user's even-mode session does. The trade is declared, not closed (R87, option A,
-  `.sdlc/questions/floorref-hue-U2-p2.md`): on 5,000 random anchored palettes the kept per-stop solve removes
-  16 merge-base dip cells and opens 4 (2 palettes, oklch, `hueShift` 39 and 49), so on the anchored OKLCH
-  path the floor can rise outward of 450/550 and no-dip is the measurement of `npm run gate:even-dips`
-  (the corpus lines and the `hueShift` grid lines (a) and (b1) at 0, grid line (b2) bounded at the
-  merge-base's pinned count of 7), not a structural property. `evenChroma`'s body and signature are
+  shipped render moves; a user's even-mode session does. On the anchored OKLCH path each stop reads its own
+  solved hue, so the floor can rise outward of 450/550 and no-dip there is the measurement of
+  `npm run gate:even-dips` (the corpus lines and the `hueShift` grid lines (a) and (b1) at 0, grid line (b2)
+  bounded at the merge-base's pinned count of 7), not a structural property. The measured trade is declared,
+  not closed (R87, option A, `.sdlc/questions/floorref-hue-U2-p2.md`): on 5,000 random anchored palettes the
+  kept per-stop solve removes 16 merge-base dip cells and opens 4 (2 palettes, oklch, `hueShift` 39 and 49). `evenChroma`'s body and signature are
   unchanged. Gated by `test/engine/even-dips-gate.mjs` (the grid block and its controls) and
   `test/engine/chroma-envelope-gate.mjs` (the even row falls, 502 to 499 cells above 100% of stop 500).
 

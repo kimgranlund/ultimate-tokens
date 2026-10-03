@@ -1,4 +1,4 @@
-# Handoff floorref-hue U3 · builder-l2 → reviewer
+# Handoff floorref-hue U3 · pass 1 rework · builder-l2 → reviewer
 
 | Field | Value |
 |---|---|
@@ -28,3 +28,13 @@ Notes for the reviewer:
 - The ADR amendment sits at the end of ADR-026's own section, after the #701 and #725 amendments and before ADR-027 and the Quick map, which is where this file keeps ADR-026's amendments; no new ADR number.
 - The adapter row for `sweeps` is derived by summing the eight rows, so it moves with the `even-dips` row; the figure is still "not itself a timed composite run".
 - Baseline loads for the verifier's five pairs are not restated per run (the verdict says each started under 1-minute load 5); the row cites the verdict instead of inventing them.
+
+## Rework after review FAIL (comment edits only)
+
+| Finding | Fix | Evidence | Negative control |
+|---|---|---|---|
+| 1 stale "non-increasing, cannot open a dip" in two gate files | both qualified to the paths where every stop reads one hue (gate path, anchored cam16); the 1.6x zero is dated to #701 and the anchored OKLCH rendered zero is called a measurement | `test/engine/tonal.mjs` (negative-control rationale before the `realSrc` block) and `test/engine/even-dips-gate.mjs` header; `node --check` both ok; C2.14 grep prints nothing, `rc=1` | `git show HEAD:test/engine/even-dips-gate.mjs \| grep -c "cannot open a dip on"` is `1`, now `0` |
+| 2 glossary `chromaFloor` row lacked the anchored OKLCH caveat | clause added: each stop reads its own solved hue, so the floor can rise outward of 450/550, no-dip is a measurement of `npm run gate:even-dips` (#766) | `grep -c "can rise outward" docs/reference/references/glossary.md` prints `1` | `git show HEAD:docs/reference/references/glossary.md \| grep -c "can rise outward"` is `0` |
+| 3 ADR-026 cause chained from the random-set trade | reordered: anchored OKLCH solves per stop, so the floor can rise and no-dip is a measurement; then the measured R87 trade (16 removed, 4 opened) | amendment text in `decision-records.md`, the "On the anchored OKLCH path" sentence precedes "The measured trade" | HEAD text has "so on the anchored OKLCH" after the trade figures; `git show HEAD:docs/reference/references/decision-records.md \| grep -c "so on the anchored OKLCH"` is `1`, now `0` |
+
+Ran after rework: `npm test` 🟢 `✓ all 54 test files passed`, tree clean apart from these four files. Finding 4 is the Orchestrator's at pre-land.
