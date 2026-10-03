@@ -486,6 +486,36 @@ ok(app.history.length - nHistPre === 1, `(h) the whole rename is ONE undo step (
 // ── (i) NON-drag edits + UI still do a FULL render (regression guard) ─────────────────
 app.openSet(app.sets[0].id);
 flushRaf();
+// (i-all) / (i-one) pane-context U3: Roles shows every enabled palette with nothing selected, one with a palette selected.
+{
+  const keepSel = app.sel, keepSeg = app.segment, keepDocSel = app.doc.selected;
+  const offIdx = 3, offName = app.doc.palettes[offIdx].name;
+  app.commit((d) => (d.palettes[offIdx].on = false)); // one palette off: the all-palettes list is the ENABLED ones only
+  const enabled = app.doc.palettes.filter((p) => p.on !== false);
+  const enabledN = enabled.length;
+  ok(enabledN === app.doc.palettes.length - 1, `(i-all) setup: exactly one palette is off (${enabledN} of ${app.doc.palettes.length} enabled)`);
+  const textOf = (n) => (n.children || []).reduce((t, c) => t + textOf(c), n._text || "");
+  const names = () => app.querySelectorAll(".roles-table-name").map(textOf);
+  const roleRows = () => app.querySelectorAll(".rrow").filter((e) => !e.classList.contains("rhead"));
+  const pairsIn = (rows) => rows.map((e) => e.querySelectorAll(".sw-pair"));
+  app._deselect(); app.setSegment("roles"); flushRaf();
+  ok(app.querySelectorAll(".roles-table").length === enabledN && enabledN > 1, `(i-all) nothing selected: one .roles-table per enabled palette (got ${app.querySelectorAll(".roles-table").length} of ${enabledN})`);
+  ok(roleRows().length === 53 * enabledN, `(i-all) role rows are 53 per palette (got ${roleRows().length})`);
+  ok(app.querySelectorAll(".rhead").length === enabledN && app.querySelectorAll(".rrow").length === 54 * enabledN, `(i-all) each table keeps its header row (.rhead ${app.querySelectorAll(".rhead").length}, .rrow ${app.querySelectorAll(".rrow").length})`);
+  ok(JSON.stringify(names()) === JSON.stringify(enabled.map((p) => p.name)), `(i-all) headings are the enabled palette names in canvas order (got ${names().length})`);
+  const allPairs = pairsIn(app.querySelectorAll(".rrow"));
+  ok(allPairs.length === 54 * enabledN && allPairs.every((q) => q.length === 1), `(i-all) every .rrow, header included, carries one .sw-pair (${allPairs.reduce((n, q) => n + q.length, 0)} pairs over ${allPairs.length} rows)`);
+  const swTitles = (q) => q[0].children.map((c) => c.getAttribute("title") || "");
+  ok(pairsIn(roleRows()).every((q) => q[0].children.length === 2 && swTitles(q)[0].startsWith("light ref ") && swTitles(q)[1].startsWith("dark ref ")), "(i-all) each role pair holds two swatches, light then dark");
+  ok(!names().includes(offName), `(i-all) the disabled palette "${offName}" has no table`);
+  app.selectPalette(2); app.setSegment("roles"); flushRaf();
+  ok(app.querySelectorAll(".roles-table").length === 1 && app.querySelectorAll(".roles-table-name").length === 1, `(i-one) a palette selected: exactly one table and one heading (got ${app.querySelectorAll(".roles-table").length} and ${app.querySelectorAll(".roles-table-name").length})`);
+  ok(names()[0] === app.doc.palettes[2].name, `(i-one) the heading is the selected palette's name (got "${names()[0]}")`);
+  const onePairs = pairsIn(app.querySelectorAll(".rrow"));
+  ok(app.querySelectorAll(".rrow").length === 54 && onePairs.every((q) => q.length === 1), `(i-one) the one table keeps 53 role rows plus the header, each with one pair (got ${app.querySelectorAll(".rrow").length} rows)`);
+  app.commit((d) => (d.palettes[offIdx].on = true));
+  app.sel = keepSel; app.segment = keepSeg; app.doc.selected = keepDocSel; app.render(); flushRaf();
+}
 const palCount0 = app.doc.palettes.length;
 app.addPalette(); // commit() path → full render
 ok(app.doc.palettes.length === palCount0 + 1, "add palette (full-render path) still works");

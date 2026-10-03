@@ -1034,6 +1034,9 @@ input[type="range"]::-moz-range-thumb {
 .preset-vol-title { font-size: 15px; font-weight: 600; color: var(--ink); margin-left: 8px; }
 .preset-vol-intro { margin: 5px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-dim); max-width: 78ch; }
 
+.roles-group + .roles-group { margin-top: 14px; }
+.roles-table-name { margin: 10px 0 4px; font-size: 11.5px; font-weight: 600; color: var(--ink); }
+.roles-group + .roles-group .roles-table-name { margin-top: 0; }
 .roles-table { font-size: 11px; }
 .roles-table .rrow { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
 .roles-table .rrow.rhead { color: var(--ink-faint); font-weight: 600; border-bottom: 1px solid var(--line); padding-bottom: 5px; margin-bottom: 3px; }
