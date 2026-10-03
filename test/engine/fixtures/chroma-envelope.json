@@ -1,19 +1,19 @@
 {
  "owner": "the change that moves a perceptual, peak or even ramp at stops 100/300/700/900 (or edits the curated corpus or the default kit) re-captures this fixture with --capture in that same change and shows with --compare against the prior fixture that no cell rose: the ratchet only falls (#725 plan constraints). #725 U2 and U3 move perceptual and peak and re-capture",
- "capturedAt": "ba7a299e58f2ba08100cca4339df3b9ea893a202",
+ "capturedAt": "be9de1581d2e3231a219dac709c9668838bc7aac",
  "corpus": "3780 curated palettes, 2920 instances (source chroma >= 10 or a default-kit semantic family), rendered anchored path",
  "slack": "0.05 percentage points on each median and p90 cell; 0 on the three counts (the gate's SLACK constant)",
  "n": 2920,
  "modes": {
   "perceptual": {
    "median": {
-    "100": 8.436930380177667,
+    "100": 8.339660512620615,
     "300": 70.96644766369964,
-    "700": 62.72037764924861,
-    "900": 14.32521157749608
+    "700": 62.70460263656071,
+    "900": 14.310932320194588
    },
    "p90": {
-    "100": 16.44789937574455,
+    "100": 16.323192751912675,
     "300": 100.15110879269871,
     "700": 67.49999934895148,
     "900": 19.638542140532923
@@ -22,33 +22,33 @@
   },
   "peak": {
    "median": {
-    "100": 8.907616548211614,
+    "100": 8.863724282767784,
     "300": 61.8291547477592,
-    "700": 58.09728329858501,
-    "900": 13.057878642240933
+    "700": 58.074276028738794,
+    "900": 13.045297471249013
    },
    "p90": {
-    "100": 14.893646053724396,
+    "100": 14.71257861465623,
     "300": 99.49567043660777,
-    "700": 63.25785598614937,
-    "900": 17.7327146619181
+    "700": 63.22991416920979,
+    "900": 17.71989378401386
    },
    "above100": 0
   },
   "even": {
    "median": {
     "100": 15.602032673570926,
-    "300": 47.0855490762643,
+    "300": 46.909240776866135,
     "700": 42.4556877528699,
     "900": 22.86073050919401
    },
    "p90": {
-    "100": 37.04002905912877,
-    "300": 100.3223763148011,
-    "700": 80.22382621002164,
-    "900": 51.95347014992466
+    "100": 36.9583172703633,
+    "300": 101.15882148648696,
+    "700": 79.88385156934687,
+    "900": 51.364107742565785
    },
-   "above100": 502
+   "above100": 503
   }
  }
 }
