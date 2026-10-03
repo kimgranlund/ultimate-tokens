@@ -146,7 +146,7 @@ Orchestrator-only. Rows edited in place. The five loose `adopt-hygiene-*` fragme
 | compute-layers U3 one evaluator compute(doc) | #788 | M | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/compute-layers.md | after U2, #785 U2 and #766 U2 land |
 | compute-layers U4 pins, frozen versions, preset pins, stamps | #788 | L | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/compute-layers.md | after U3 |
 | compute-layers U5 R102 removals | #788 | M | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/compute-layers.md | after U4 |
-| prime-name U1 engine emitters, tests, generated assets | #789 | S | ⚪ | 0 | orchestrator | pn-U1-builder-l2-p1 (builder-l2; reviewer-l3; verifier-l2) | unit/pn-U1 | .worktrees/pn-U1 | .sdlc/plans/prime-name.md | 🔵 builder-l2 building; schema bump vs compute-layers U4 (C4.5 says 4) |
+| prime-name U1 engine emitters, tests, generated assets | #789 | S | 🟢 | 1 | orchestrator | pn-U1-builder-l2-p1 (builder-l2; reviewer-l3; verifier-l2) | unit/pn-U1 (merged) | removed | .sdlc/verdicts/prime-name-U1.md | merged into plan/prime-name; U2 next (C2.5 added at revision 4) |
 | prime-name U2 records | #789 | S | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/prime-name.md | after U1 |
 | md-prefix U1 preset, hydrate rewrite, schema bump, assets | #791 | S | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/md-prefix.md | waits for prime-name #789 to land; then cut plan/md-prefix off origin/main; builder-l2, reviewer-l3, verifier-l2 |
 | md-prefix U2 records | #791 | S | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/md-prefix.md | after U1; builder-l1 and marketing-manager-agent |

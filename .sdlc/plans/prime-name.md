@@ -80,14 +80,14 @@ Unchanged, by key shape (nested, no hyphen join): JSON `palettes[n].prime.prime`
 
 Grades per R92 (no Fable): every unit runs reviewer-l3 then verifier-l2, and the pre-land pair is reviewer-l3 plus verifier-l2. Order: U1, then U2. U1 bumps `EXPORT_SCHEMA_VERSION` and edits `src/engine/exports.js`, which compute-layers U1 and U4 also edit; sequencing is the Orchestrator's call per Q2 (see Revisions).
 
-- [ ] U1 (S) engine emitters, tests, generated assets: the bare `prime` name, schema bump (C1.1 to C1.7) · grade l2 · reviewer-l3 · verifier-l2
+- [x] U1 (S) engine emitters, tests, generated assets: the bare `prime` name, schema bump (C1.1 to C1.7) · grade l2 · reviewer-l3 · verifier-l2
 - [ ] U2 (S) records: docs, skill, CHANGELOG (C2.1 to C2.5) · grade l1 · reviewer-l3 · verifier-l2
 
 ## 6. Progress
 
 | Unit | Size | Status |
 |---|---|---|
-| U1 | S | not started |
+| U1 | S | merged, verified 🟢 at 37e0fabb |
 | U2 | S | not started |
 
 ## Revisions
