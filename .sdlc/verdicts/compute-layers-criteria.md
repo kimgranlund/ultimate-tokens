@@ -2,18 +2,19 @@
 kind: criteria-review
 plan: compute-layers
 seat: verifier
-pass: 4
-ticket: none yet
+pass: 5
+ticket: 788
 written: 2026-10-03
 ---
 
-# compute-layers criteria review · pass 4 · 🟢 at `14a9e3ce`
+# compute-layers criteria review · pass 5 · 🟢 at `9378c1bb`
 
-Current state: pass 4 🟢 at `14a9e3ce` (revision 3). C5.4 now keeps the `stampIntensity` step and counts its lines, so every row C1.1 to C5.6 is checkable. The plan is mobilizable on criteria; U3 to U5 still carry their stated waits (U3 after #785 U2 and #766 U2). Passes 3 to 1 follow as history.
+Current state: pass 5 🟢 at `9378c1bb` (revision 4, ticket #788). C4.5 now expects `EXPORT_SCHEMA_VERSION` at U4's merge-base value plus 1, which holds whichever of prime-name #789 and this plan lands first; every row C1.1 to C5.6 stays checkable. The plan is mobilizable on criteria; U3 to U5 keep their stated waits. Passes 4 to 1 follow as history.
 
 verdict: 🟢
-sha: 14a9e3ce
+sha: 9378c1bb
 
+Pass 4 lines: `verdict: 🟢` at `14a9e3ce`.
 Pass 3 lines: `verdict: 🔴` at `2d86b64e`.
 Pass 2 lines: `verdict: 🔴` at `bc7d7597`.
 Pass 1 lines: `verdict: 🔴` at `567de3a8`.
@@ -125,3 +126,18 @@ Revision 3 at `14a9e3ce`, graded by the seat directly on `git diff 2d86b64e 14a9
 | # | State | Check I would run | Why / what to change, and the control |
 |---|---|---|---|
 | C5.4 | 🟢 | (a) and (b) as written; (c) the hydrate test and the constant | Today `persist.js` has `7` `baseIntensity` lines (two `DOMAINS` comments, the `DOMAINS` field, the `stampIntensity` comment, its test, its stamp, the `hydrate` clamp), matching the row's control; outside it, `src/ui/model.mjs`, `src/ui/sections/color.js` and the excluded generated asset. The `stampIntensity` step (`version: 2`) carries exactly one comment line plus the two code lines, so keeping it and adding one `RENAME_MAPS` line gives `4`. Ordering holds: migrations run by version, so the v2 stamp precedes the v7 rename. The count assumes the new entry and its comment name the old field on one line only; a builder who writes it on two lines prints `5`, which the row's wording ("exactly 4") makes a fair red |
+
+## Pass 5 · 🟢 at `9378c1bb`: C4.5 schema made relative
+
+`git diff 14a9e3ce 9378c1bb` on the plan and ADR draft changes only C4.5, the schema wording in section 1, the phase table, the U4 progress line, ADR draft item 4 and the R101 line, plus the frontmatter (`status: approved`, `ticket: 788`). Rows 🟢 at pass 4 other than C4.5 stand unchanged.
+
+### Rows
+
+| # | State | Evidence | Negative control |
+|---|---|---|---|
+| C4.5 | 🟢 | The base read runs today: `git show $(git merge-base origin/main HEAD):src/engine/exports.js` with the grep prints `export const EXPORT_SCHEMA_VERSION = 3;`, so Expected is a fixed number at grade time (4, or 5 after #789 lands with 4). The 10/10 pins check is unchanged from pass 4. The CSS stamp line now reads the constant, so it cannot pin a stale number. No `schema 4` survives outside the revision 1 history row. | Leave the constant at the base value: the base-versus-HEAD comparison reds. Remove the pins from `exportRadixModule`: the engine test exits non-zero naming it. Both runnable. |
+
+### Findings
+
+- 🟢 C4.5 agrees with prime-name C1.6 (merge-base plus 1), so the two plans cannot both claim 4.
+- 🟡 C4.5's first control says "exit non-zero", but an engine test inside `npm test` cannot read the merge-base; the red comes from the verifier's base-versus-HEAD comparison, not from the test's exit. The check still fails as it should; the wording should not lead a builder to put git calls in the test.
