@@ -1076,7 +1076,7 @@ for (const mode of ["perceptual", "peak"]) {
   //       which closes that class to exactly 0. #681 U3's R2 (chromaEnvelope re-centred on the anchor's
   //       OWN lifted reading, closing the exact-env(anchor)=1-at-every-lift gap and the two rendered-path
   //       duplicate-hex ramps R1 left  -  see chromaEnvelope's own comment) reopens 21 of these 10,080
-  //       SYNTHETIC cells (chroma pinned at 95, skew as extreme as ±100  -  within the user-settable
+  //       SYNTHETIC cells (chroma pinned at 95, at 100 since #785; skew as extreme as ±100, within the user-settable
   //       ranges, but unused by any shipped preset or role default), 20 near-white (tone 90.9-99.5) and
   //       one near-black (tone 7.55, hue 287 skew -100 lift -40), worst +0.1314 L*  -  about a sixth of
   //       the defect this unit repairs, and, measured on the corpus the product actually
@@ -1120,19 +1120,39 @@ for (const mode of ["perceptual", "peak"]) {
   // 97.5; each rise is +0.011 to +0.037 L*, under the row's own 8-bit rounding floor. The continuous held
   // L* descends there (97.629 to 97.395); the 8-bit pixel near the G = 255 wall rounds it back up. Damp 0
   // reads 0 upticks at U3's head and at the U2 base.
+  // Moved to chroma 100 at #785 U2 (R94 to R98; owner ruling on .sdlc/questions/pane-context-U2.md Q2,
+  // option B). Below 100 the group damper scales the at-100 ramp's s and re-solves each stop, so a grid
+  // at 95 measured the at-100 rises plus 8-bit re-quantization (47 beyond the 12 keys above, 0 of them
+  // seen). The grid now reads the at-100 ramp, the one construction the damper scales. The 12 keys
+  // above are not reproduced there; the 25 below are, identically on the pre-#785 engine at 100 (they
+  // were never in reach while the grid read 95). All lift 40 or 5, hues 107/145/152/165, L* 90.66 to
+  // 99.50, each rise +0.0036 to +0.0915 L*. Damped-ramp monotonicity below 100 is not bounded here (Q2).
   const GRID_R2_EXCEPTIONS = new Set([
-    "perceptual|oklch|165|-50|40|100|250&300",
-    "perceptual|cam16|165|-50|40|100|250&300",
-    "perceptual|cam16|165|0|40|100|300&350",
-    "peak|oklch|165|-50|40|0|250&300",
-    "peak|oklch|165|-50|40|50|250&300",
-    "peak|oklch|165|-50|40|100|250&300",
-    "peak|cam16|165|-50|40|0|250&300",
-    "peak|cam16|165|0|40|0|300&350",
-    "peak|cam16|165|-50|40|50|250&300",
-    "peak|cam16|165|0|40|50|300&350",
-    "peak|cam16|165|-50|40|100|250&300",
-    "peak|cam16|165|0|40|100|300&350",
+    "perceptual|oklch|152|40|40|0|175&200", // +0.0036 at L* 98.04
+    "perceptual|oklch|152|-20|40|100|300&350", // +0.0103 at L* 96.30
+    "perceptual|oklch|152|0|40|100|150&175", // +0.0439 at L* 98.36
+    "perceptual|oklch|107|100|5|100|400&450", // +0.0915 at L* 99.50
+    "perceptual|cam16|165|-100|40|100|250&300", // +0.0216 at L* 90.66
+    "perceptual|cam16|145|-50|40|100|250&300", // +0.0201 at L* 94.47
+    "perceptual|cam16|152|0|40|100|175&200", // +0.0702 at L* 98.18
+    "peak|oklch|152|-20|40|0|300&350", // +0.0103 at L* 96.30
+    "peak|oklch|152|0|40|0|150&175", // +0.0439 at L* 98.36
+    "peak|oklch|107|100|5|0|400&450", // +0.0915 at L* 99.50
+    "peak|oklch|152|-20|40|50|300&350", // +0.0103 at L* 96.30
+    "peak|oklch|152|0|40|50|150&175", // +0.0439 at L* 98.36
+    "peak|oklch|107|100|5|50|400&450", // +0.0915 at L* 99.50
+    "peak|oklch|152|-20|40|100|300&350", // +0.0103 at L* 96.30
+    "peak|oklch|152|0|40|100|150&175", // +0.0439 at L* 98.36
+    "peak|oklch|107|100|5|100|400&450", // +0.0915 at L* 99.50
+    "peak|cam16|165|-100|40|0|250&300", // +0.0216 at L* 90.66
+    "peak|cam16|145|-50|40|0|250&300", // +0.0201 at L* 94.47
+    "peak|cam16|152|0|40|0|175&200", // +0.0702 at L* 98.18
+    "peak|cam16|165|-100|40|50|250&300", // +0.0216 at L* 90.66
+    "peak|cam16|145|-50|40|50|250&300", // +0.0201 at L* 94.47
+    "peak|cam16|152|0|40|50|175&200", // +0.0702 at L* 98.18
+    "peak|cam16|165|-100|40|100|250&300", // +0.0216 at L* 90.66
+    "peak|cam16|145|-50|40|100|250&300", // +0.0201 at L* 94.47
+    "peak|cam16|152|0|40|100|175&200", // +0.0702 at L* 98.18
   ]);
   // this grid is synthetic, not a corpus sweep, but at an estimated 16s quiet it decides whether the
   // 120s ceiling holds (#713 design section); SAMPLED thins it to every fifth hue, offset by
@@ -1143,7 +1163,7 @@ for (const mode of ["perceptual", "peak"]) {
   for (const mode of ["perceptual", "peak"]) for (const hueSpace of ["oklch", "cam16"]) for (const vibrancy of [0, 50, 100])
     for (const skew of SKEW_G) for (const lift of LIFT_G) for (const hue of GRID_HUES) {
       gridCells++;
-      const rows = T.paletteStops({ hue, chroma: 95, skew, lift }, OK(mode, { hueSpace, vibrancy }), STOPS);
+      const rows = T.paletteStops({ hue, chroma: 100, skew, lift }, OK(mode, { hueSpace, vibrancy }), STOPS);
       const ls = rows.map((r) => okl(r.rgb));
       for (let i = 1; i < ls.length; i++) if (ls[i] > ls[i - 1] + LQ) {
         FAIL("skew-lift-okhsl", `(iii b) ${mode}/${hueSpace} hue ${hue} skew ${skew} lift ${lift} vibrancy ${vibrancy}: OKHSL lightness ROSE at stop ${STOPS[i - 1]}->${STOPS[i]} (${ls[i - 1].toFixed(5)} -> ${ls[i].toFixed(5)})`);
