@@ -1,6 +1,6 @@
 {
  "owner": "the change that moves a perceptual, peak or even ramp at stops 100/300/700/900 (or edits the curated corpus or the default kit) re-captures this fixture with --capture in that same change and shows with --compare against the prior fixture that no cell rose: the ratchet only falls (#725 plan constraints). #725 U2 and U3 move perceptual and peak and re-capture",
- "capturedAt": "be9de1581d2e3231a219dac709c9668838bc7aac",
+ "capturedAt": "1e3fe1ebc7724b23a9498a72393be09eba7e1cc7",
  "corpus": "3780 curated palettes, 2920 instances (source chroma >= 10 or a default-kit semantic family), rendered anchored path",
  "slack": "0.05 percentage points on each median and p90 cell; 0 on the three counts (the gate's SLACK constant)",
  "n": 2920,
