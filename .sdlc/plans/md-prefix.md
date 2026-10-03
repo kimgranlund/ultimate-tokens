@@ -1,5 +1,5 @@
 ---
-status: draft (revision 1)
+status: approved (revision 1)
 ticket: none yet (minted on approval)
 priority: P2
 lane: naming-scheme (`src/ui/overlays/settings.js`, `src/engine/ds-export.js` prose, comments in `src/engine/{exports.js,type.mjs,geometry.mjs}` and `src/ui/overlays/drawer.js`, `test/engine/{exports,type,geometry}.mjs`, `test/ui/{persist,headless-boot}.mjs`, `src/ui/persist.js` (Q1 A), `src/engine/exports.js` `EXPORT_SCHEMA_VERSION` and `mcp/brand-kit-core.mjs` `SERVER.version` (Q2 B), `plugin/ultimate-tokens/`, `.claude/skills/geometry-system/`, `CHANGELOG.md`, `docs/marketing/`; regenerated `figma/plugin/ui.html`, `src/ui/describe-mcp-assets.js`)
