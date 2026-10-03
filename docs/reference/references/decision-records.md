@@ -803,6 +803,38 @@ Format: Context → Decision → Rationale → Consequences → Status.
   kit's Neutral moves (3 of 19 hexes, max dC 2.65), accepted (R97). No persist migration (R98): a saved
   doc's stored value now reads as a damper. The R69 amendment above keeps its text as the record of
   what it ruled.
+- **Amendment (2026-10-03, #766, R85, R87).** The even-mode floor's gamut reference, which #701 took once per
+  ramp, is now read per stop (`floorRefAt` in `tonal.js`): the largest ceiling at the ramp's three reference
+  tones (the pivot, 450, 550) at that stop's own hue BEFORE edge rotation, which is the CAM16 hue the
+  per-stop OKLCH solve finds for its tone on the anchored OKLCH path, `seedHue` on anchored cam16 and
+  `baseHue` on the non-anchored path; the pivot ceiling is read at `pivotTone`, so a clamped anchor no
+  longer reads it at the anchor's own L\*. Edge rotation is NOT followed (the owner's R85, option A, on
+  `.sdlc/questions/floorref-hue-U2-rule.md`, declining the rotation half of #766): the gamut ceilings are
+  not monotone in hue, so a reference that follows the rotation rises or falls along the ramp against
+  stops that do not move with it, and both directions measured off-anchor dips (4 / 20 / 64 at `hueShift`
+  30 / 45 / 60 on a default-kit grid, base 0). The tolerance is a corpus measurement, not an engine bound
+  (`scripts/report-preset-fidelity.mjs --floor-ref`): 0 gate-path cells move (72,124 `STOPS` and 94,900
+  `EXPORT_STOPS` cells, every non-anchored palette byte-identical at every `hueShift`); the rendered
+  path moves 3,870 of 71,820 `STOPS` cells (5.4%, 1,522 palettes, 339 docs) and 4,441 `EXPORT_STOPS` cells,
+  at most 9.11 CAM16 C (Tbilisi `secondary` 100), in pale low-chroma yellows and greens where the solved
+  hue sits off `seedHue`. Every curated doc and the default kit persist `toneMode: "perceptual"`, so no
+  shipped render moves; a user's even-mode session does. On the anchored OKLCH path each stop reads its own
+  solved hue, so the floor can rise outward of 450/550 and no-dip there is the measurement of
+  `npm run gate:even-dips` (the corpus lines and the `hueShift` grid lines (a) and (b1) at 0, grid line (b2)
+  bounded at the merge-base's pinned count of 7), not a structural property. The measured trade is declared,
+  not closed (R87, option A, `.sdlc/questions/floorref-hue-U2-p2.md`): on 5,000 random anchored palettes the
+  kept per-stop solve removes 16 merge-base dip cells and opens 4 (2 palettes, oklch, `hueShift` 39 and 49). `evenChroma`'s body and signature are
+  unchanged. Gated by `test/engine/even-dips-gate.mjs` (the grid block and its controls) and
+  `test/engine/chroma-envelope-gate.mjs` (the even row falls, 502 to 499 cells above 100% of stop 500 under #766 alone; with the damper merged under it the committed fixture holds 500).
+- **Amendment (2026-10-03, #785, #766).** With the group-value damper (R94, R98) merged under #766's floor
+  reference, `palette.chroma` reaches `evenChroma` only at 100; every other value renders at 100 and is
+  scaled by `g/100` after the floor, which shrinks each dip's depth by that ratio. The `even-dips` grid
+  therefore gains the chroma-100 cell: line (a) runs chroma 30/45/60/100 (2,304 palettes; 100 is the only
+  undamped render and bounds every `g`, since a dip at `g` needs a chroma-100 depth of at least `300/g`),
+  and line (b2) renders its random anchored palettes at chroma 100, the chroma draw still consumed in its
+  slot. Its pin is the same block's count on the merge-base `8428280e` read the same way, 8 dip cells in
+  5 palettes (the #766 amendment's "pinned count of 7" above was that block with the drawn chroma, and
+  stays as history). No engine change: the damper is as ruled, and the gate measures the law that ships.
 
 ## ADR-027: A seat cites only what it measured, at the ref it is writing about
 - **Context.** Over one review round of #681 U5, four defects arose from three seats through one
@@ -857,7 +889,7 @@ Format: Context → Decision → Rationale → Consequences → Status.
 |-----|----------------------|-------------------------------|
 | ADR-003 | on-colors fail WCAG on Warning | the historical brand override; AMENDED by ADR-025, contrast-aware on-colors are the default since #662 |
 | ADR-025 | on-colors jump to pure white/black on some accents | the ramp ends miss AA there and #662 forbids moving a stop; the achromatic constants are the only way to the floor |
-| ADR-026 | a curated palette stores a source hex that looks redundant beside its own `{hue, chroma, skew, lift}` | the four fitted numbers cannot reproduce an arbitrary sRGB colour through a cusp-derived key colour; the stored hex is the sample itself, and deleting it silently replaces every preset's own colour with a reconstruction of it; amended 2026-09-28 (#701, even-mode floor and shoulder), 2026-09-29 (#725, R69: the anchored basis capped at the anchor, the retuned damping pair and the per-stop tone hold) and 2026-10-03 (#785, R94: the group value is one damper on the whole ramp, `r * at-100`, stop 500 included) |
+| ADR-026 | a curated palette stores a source hex that looks redundant beside its own `{hue, chroma, skew, lift}` | the four fitted numbers cannot reproduce an arbitrary sRGB colour through a cusp-derived key colour; the stored hex is the sample itself, and deleting it silently replaces every preset's own colour with a reconstruction of it; amended 2026-09-28 (#701, even-mode floor and shoulder), 2026-09-29 (#725, R69: the anchored basis capped at the anchor, the retuned damping pair and the per-stop tone hold), 2026-10-03 (#785, R94: the group value is one damper on the whole ramp, `r * at-100`, stop 500 included), 2026-10-03 (#766, R85: the even floor's gamut reference read per stop at its own hue before edge rotation, which edge rotation does not move) and 2026-10-03 (#785, #766: the `even-dips` grid renders the chroma-100 cell, the only chroma that reaches the floor, and its random line is pinned at 8) |
 | ADR-004 | scrims unified onto one 500 ramp (SUPERSEDED) | scrims now a single 500 ramp; the former base-750-only decision is superseded |
 | ADR-002 | semantic could alias raw to cascade | native import errors on name-only aliasData; plugin does cascade |
 | ADR-011 | `role-table.json` still encodes cam16 hues though hueSpace is now OKLCH | role-table is the cam16 answer key for the parity gate; the OKLCH flip is at the doc/seed layer, not the role table |

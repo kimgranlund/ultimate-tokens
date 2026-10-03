@@ -532,29 +532,25 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
   min-height: 0;
   cursor: grab;
   touch-action: none; /* let pointer-drag pan, don't scroll the page */
-  /* backdrop neutral comes from the global tonal range: lmax in light preview,
-     lmin in dark preview (set inline as --canvas-bg by app.js#canvasBg). */
-  background: var(--canvas-bg, var(--bg));
+  /* the area sits on the chrome ground; each scheme column (.compare-col) carries its own near-edge
+     ground (lmax in light, lmin in dark, set inline as --canvas-bg by app.js#canvasBg). */
+  background: var(--bg);
 }
 .canvas-area.panning { cursor: grabbing; }
-/* canvas color-scheme, flips ONLY the preview's color-scheme, independent of app
-   chrome; the backdrop fill itself is the lmin/lmax-derived --canvas-bg above. */
-.canvas-area.canvas-scheme-light { color-scheme: light; }
-.canvas-area.canvas-scheme-dark  { color-scheme: dark; }
 .canvas-scene {
   position: absolute; top: 50%; left: 50%;
   transform-origin: 0 0;
   will-change: transform;
 }
-/* Color "Both" / Compare, the scene rendered in Light + Dark side by side, in ONE pannable scene so
-   pan/zoom/fit move both columns together. Each column forces its own color-scheme (so light-dark()
-   tokens + var(--ink) resolve per column) and carries its own --canvas-bg near-edge ground. */
-.canvas-area.canvas-compare { background: var(--bg); }
+/* Every scene: one column per (scheme, shown breakpoint), light first, in ONE pannable scene so
+   pan/zoom/fit move all columns together. A column (and a pane-example wrapper, .example-scheme) forces
+   its own color-scheme (so light-dark() tokens + var(--ink) resolve per column; independent of the app
+   chrome) and carries its own --canvas-bg near-edge ground. */
+.canvas-scheme-light { color-scheme: light; }
+.canvas-scheme-dark  { color-scheme: dark; }
 .canvas-scene.compare { display: flex; gap: 32px; align-items: flex-start; }
 .compare-col { position: relative; padding: 12px 14px 16px; border-radius: var(--r-lg);
   background: var(--canvas-bg, var(--bg)); box-shadow: 0 0 0 1px var(--line); }
-.compare-col.canvas-scheme-light { color-scheme: light; }
-.compare-col.canvas-scheme-dark  { color-scheme: dark; }
 .compare-col-label { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
   color: var(--ink-faint); margin: 0 0 8px 4px; }
 /* canvas = the ramps as the 2D space; each row IS the palette navigator */
@@ -880,8 +876,6 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
   background: var(--accent); color: var(--accent-ink); box-shadow: var(--shadow);
 }
 .segmented button:not(.on):hover { background: var(--line-2); color: var(--ink); }
-/* colorCompareBtn's active state (Compare/Both is on), same treatment as a selected segment. */
-.scheme-btn.on { background: var(--accent); color: var(--accent-ink); }
 /* canvas-header variant of .segmented, inline + compact (no right-pane margins, auto-width). */
 .canvas-seg { margin: 0; }
 /* two labeled segmented controls side-by-side in the inspector (Hue space · On-colors) */
@@ -894,6 +888,8 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 /* live component preview, pinned below the panel on every tab, painted from the
    selected palette's semantic roles (surface / onSurface / onSurfaceVariant / primary). */
 .seg-example { flex: none; border-top: 1px solid var(--line); padding: 14px; background: var(--panel); display: flex; flex-direction: column; gap: 10px; }
+/* one wrapper per scheme (light then dark): the pane examples painted in that scheme on its own ground */
+.example-scheme { display: flex; flex-direction: column; gap: 10px; padding: 10px; border-radius: var(--r-lg); background: var(--canvas-bg, var(--bg)); box-shadow: 0 0 0 1px var(--line); }
 .example-card { border-radius: 14px; padding: 16px 18px; }
 .ex-title { font-weight: 700; font-size: 15px; line-height: 1.2; }
 .ex-sub { font-size: 13px; margin-top: 3px; }
@@ -1361,7 +1357,7 @@ a.account-manage:hover { text-decoration: underline; }
 
 /* Typography specimen, the full 21-step scale as a pannable canvas scene (parallel to .ramp-stack).
    Lives inside .canvas-scene, so it pans/zooms with the viewport. Colors resolve via --ink* against the
-   canvas-area color-scheme, so it tracks the canvas preview light/dark. */
+   scheme column (.compare-col), so it tracks each column's light/dark. */
 .type-spec { display: flex; flex-direction: column; gap: 22px; padding: 16px 20px; width: 720px; max-width: 720px; }
 .type-spec-head { display: flex; align-items: baseline; gap: 10px; }
 .type-spec-head b { font-size: 14px; color: var(--ink); }

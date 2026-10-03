@@ -250,17 +250,18 @@ Each palette also carries a `prime` group: seven raw swatches, `brightest · bri
 prime · dim · dimmer · dimmest` (REQ-054, knowledge-02 §8.3), computed on the key colour's own
 OKHSL lightness ladder rather than the ramp. Flat and mode-independent (R2): one set of values,
 no `light-dark()` wrapper, identical in Light and Dark. Emitted for every palette, always (not
-opt-in like key colors).
+opt-in like key colors). The centre step is the bare `--{pfx}-{n}-prime` (no step suffix); the
+other six are `-prime-{step}`.
 
 **Where it appears:**
 
 | Format | Placement |
 |---|---|
-| CSS (hex/oklch) | `--{pfx}-{n}-prime-{step}` lines, per palette, between that palette's solid stops and its scrims |
+| CSS (hex/oklch) | `--{pfx}-{n}-prime-{step}` lines (the centre is the bare `--{pfx}-{n}-prime`), per palette, between that palette's solid stops and its scrims |
 | JSON | `{paletteSlug}.prime: {"{step}": {hex, oklch}}`, keyed by step NAME (a word, not padded, mirroring `keyColors`' role keys); JSON has no `palettes` wrapper |
 | DTCG | `palette.tokens.json` (RAW): a `prime` group nested under the palette, keyed by step (`{n}.prime.{step}`), mirrors `scrim`'s two-segment shape, resolved `colorLeaf`s |
 | UI3 (Figma) | its OWN top-level collection, `Color Prime` (`COLLECTIONS.colorPrime`), one `Base` mode, `{n}/{step}` variable paths (no `raw/` prefix, same convention `Color Roles` already uses) |
-| Tailwind `@theme` | `--color-{n}-prime-{step}` lines, per palette, next to that palette's scale |
+| Tailwind `@theme` | `--color-{n}-prime-{step}` lines (the centre is the bare `--color-{n}-prime`), per palette, next to that palette's scale |
 | ShadCN | not emitted (curated subset, out of scope, same as scrims for Tailwind) |
 | Panda CSS | `raw.prime.{step}` per palette (unpadded stop namespace, §11), plus `raw.prime.DEFAULT` aliasing `raw.prime.prime` |
 | Radix | one leaf only, `colors.{n}.prime` (`base` only, no `_dark`, mode-independent per REQ-024, §12); Park UI's own ladder has no slot for the other six prime steps |
@@ -346,7 +347,7 @@ palette. */` string sentinel (mirroring `exportShadcn`'s own no-driver sentinel)
   above (one format, not an eleventh) with every numbered step leaf's `base`/`_dark` a
   `var(--{pfx}-{n}-{frag})` LINK into this kit's own CSS custom-property layer instead of a baked
   `oklch(...)` value. Steps 1..8 link the ratified raw stop; 9..12 link the driving role's own
-  `lightRef`/`darkRef`; `prime` links the `prime-prime` primitive; alpha steps `a1..a12` stay
+  `lightRef`/`darkRef`; `prime` links the bare `--{pfx}-{n}-prime` primitive; the Panda key path stays nested (`prime.prime` and `prime.DEFAULT`); alpha steps `a1..a12` stay
   computed (no primitive exists for an alpha projection). The `#630` reserved-alias-key collision
   case links the palette's RAW slug, never the renamed `<slug>-palette` group key, because the
   primitive surfaces only ever emit under the raw slug. This file is NOT self-contained: its values

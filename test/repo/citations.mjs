@@ -58,7 +58,7 @@ if (report && Object.keys(report.docs).length !== discovered.length)
 for (const e of DOCS_EXEMPT) if (!e.path || !e.reason) FAIL("scripts/audit-citations.mjs", `DOCS_EXEMPT entry without a path + reason: ${JSON.stringify(e)}`);
 
 // (4) fact pins: the audit checks that a cited line still carries its anchor, not that a claim is
-// true, which is how `11 voices` and a three-state colorMode survived with STALE 0. Each pin is a
+// true, which is how `11 voices` and a three-state canvas toggle survived with STALE 0. Each pin is a
 // claim the docs make about the code. `needle` is the exact text the doc must carry (inside a line
 // matching `line`, when given); `source()` reads the code and returns what it holds (a count, a
 // boolean); a needle carrying a number must equal it, otherwise `source()` must be true. There is
@@ -82,8 +82,6 @@ const ciJobs = () => {
   return out;
 };
 const FACT_PINS = [
-  { id: "colorMode states", doc: "docs/lld/app-shell.md", line: /`this\.colorMode`/, needle: "system", src: "src/ui/app.js",
-    source: () => /this\.colorMode = "system"/.test(lineOf("src/ui/app.js", /Color section value-mode control/)) },
   { id: "type voices", doc: "docs/lld/app-shell.md", needle: "15 voices", noun: "voices", src: "src/engine/type.mjs",
     source: async () => Object.keys((await import("../../src/engine/type.mjs")).makeVoices()).length },
   { id: "colour formats", doc: "docs/reference/references/ui-plan.md", line: /T8 export:/, needle: "10 formats", noun: "formats", src: "src/ui/overlays/drawer.js",
