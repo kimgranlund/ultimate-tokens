@@ -10,6 +10,8 @@ Target: unit/pc-U1 @ bf605767 (code 76e750d5), cut from plan/pane-context at e06
 
 Every criterion replays green on the head and every new assertion reds under its control, including the two controls the builder did not re-run (C1.4, C1.5) and the plan-literal broad form of the `(b2)` control. The diff is the handoff's file list and nothing more. Findings are advisory.
 
+R98: none found. The source diff adds two plain assignments (`segment` to `palette` in `selectPalette`, to `global` in `_deselect`) with no compatibility shim, no dead-key fallback and no special-case override; the `selectedIndex()` fallback is pre-existing, untouched, and kept by the plan's Not in scope.
+
 ## Scope
 
 | Check | Evidence | State | Control |
