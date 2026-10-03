@@ -1049,6 +1049,9 @@ input[type="range"]::-moz-range-thumb {
 .preset-vol-title { font-size: 15px; font-weight: 600; color: var(--ink); margin-left: 8px; }
 .preset-vol-intro { margin: 5px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-dim); max-width: 78ch; }
 
+.roles-group + .roles-group { margin-top: 14px; }
+.roles-table-name { margin: 10px 0 4px; font-size: 11.5px; font-weight: 600; color: var(--ink); }
+.roles-group + .roles-group .roles-table-name { margin-top: 0; }
 .roles-table { font-size: 11px; }
 .roles-table .rrow { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
 .roles-table .rrow.rhead { color: var(--ink-faint); font-weight: 600; border-bottom: 1px solid var(--line); padding-bottom: 5px; margin-bottom: 3px; }
@@ -16958,20 +16961,32 @@ class ColorSectionImpl {
   }
 
 
-  // Roles panel, the 53-role table for the selected palette: key · suffix · the
-  // light ref swatch + the dark ref swatch · plus a small live semantic preview.
+  // Roles panel: with a palette selected, that palette's 53-role table; with nothing selected, one
+  // table per enabled palette in canvas order. Each table sits under its palette name; every row is
+  // key · suffix · the light ref swatch + the dark ref swatch.
   renderRolesInspector(view) {
-    const idx = this.selectedIndex();
-    const p = view.palettes[idx] || view.palettes[0];
-    const ns = p ? slug(p.name) : "";
+    const one = this.sel.kind === "palette";
+    const shown = one ? [view.palettes[this.selectedIndex()] || view.palettes[0]] : view.palettes.filter((p) => p.on);
+    const tables = shown.filter(Boolean).map((p) => this._rolesTable(p));
     return h(
       "div",
       {},
       h("h3", { class: "insp-title" }, icon("roles"), "Roles"),
-      h("div", { class: "insp-sub" }, `${p ? p.name : ""}: 53 semantic roles · light / dark refs`),
+      h("div", { class: "insp-sub" }, one ? "53 semantic roles · light / dark refs" : `${tables.length} palettes · 53 semantic roles each · light / dark refs`),
       // (the live component preview is pinned at the bottom of the pane on every
       // tab, see .seg-example / exampleCard, so the Roles panel no longer repeats
       // it here at the top.)
+      ...tables,
+    );
+  }
+
+  // _rolesTable, one palette's heading + 53-role table (the unit renderRolesInspector repeats).
+  _rolesTable(p) {
+    const ns = slug(p.name);
+    return h(
+      "div",
+      { class: "roles-group" },
+      h("h4", { class: "roles-table-name" }, p.name),
       h(
         "div",
         { class: "roles-table" },
@@ -16982,22 +16997,20 @@ class ColorSectionImpl {
           h("span", { class: "suf" }, "suffix"),
           h("span", { class: "sw-pair" }, h("span", {}, "L"), h("span", {}, "D")),
         ),
-        ...(p
-          ? p.roles.map((r) =>
-              h(
-                "div",
-                { class: "rrow" },
-                h("span", { class: "k", title: "--c-" + ns + r.suffix }, r.key),
-                h("span", { class: "suf" }, r.suffix || "n/a"),
-                h(
-                  "span",
-                  { class: "sw-pair" },
-                  swatch(r.lightHex, { size: 16, title: "light ref " + r.lightHex, onClick: () => this.copy(r.lightHex, "Copied " + r.lightHex) }),
-                  swatch(r.darkHex, { size: 16, title: "dark ref " + r.darkHex, onClick: () => this.copy(r.darkHex, "Copied " + r.darkHex) }),
-                ),
-              ),
-            )
-          : []),
+        ...p.roles.map((r) =>
+          h(
+            "div",
+            { class: "rrow" },
+            h("span", { class: "k", title: "--c-" + ns + r.suffix }, r.key),
+            h("span", { class: "suf" }, r.suffix || "n/a"),
+            h(
+              "span",
+              { class: "sw-pair" },
+              swatch(r.lightHex, { size: 16, title: "light ref " + r.lightHex, onClick: () => this.copy(r.lightHex, "Copied " + r.lightHex) }),
+              swatch(r.darkHex, { size: 16, title: "dark ref " + r.darkHex, onClick: () => this.copy(r.darkHex, "Copied " + r.darkHex) }),
+            ),
+          ),
+        ),
       ),
     );
   }
