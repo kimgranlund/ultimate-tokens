@@ -26,7 +26,7 @@ within a minute of clicking. Posture: **social/short-form** (§4). Facts:
 • Export a design system to Claude, Google Stitch, or Figma Make; each
   generates on-brand UI from your kit. Free, every tier. → {{APP_URL}}
 • Export your tokens under your own names: Ultimate, Material 3-style
-  --md-sys-*, or a --{brand}-* root. They land in the convention you already
+  --md-*, or a --{brand}-* root. They land in the convention you already
   run. → {{APP_URL}}
 • 336 curated palettes from real places, dishes, films, and biomes, each
   carrying its story, each opening as an editable kit. → {{APP_URL}}

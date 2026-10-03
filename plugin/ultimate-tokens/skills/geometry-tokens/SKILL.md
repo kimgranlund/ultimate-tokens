@@ -25,7 +25,7 @@ and around components). Your job is never to type a px value, it's to pick the s
    `tokens.css`; a DTCG `*.tokens.json` and utility classes may sit beside it). **The prefix is
    configurable:** the default is the native `--size-*` / `--radius-*` / `--space-*` (class
    `.control-*`), but a Material scheme namespaces the whole system under one root,
-   `--md-sys-size-*` / `--md-sys-radius-*` / `.md-sys-control-*` (or a custom `--{brand}-*`). **Read
+   `--md-size-*` / `--md-radius-*` / `.md-control-*` (or a custom `--{brand}-*`). **Read
    the actual prefix from the file**; the token grammar after it is identical. If none exists, stop
    and ask, do not hardcode dimensions.
 2. **Know the two tiers.** *Control* geometry is per-size (`--size-{step}-*`, steps XS–2XL) and

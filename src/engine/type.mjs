@@ -536,7 +536,7 @@ const relTrackEm = (ratio) => `${round(ratio, 4)}em`;
 const relLinePx = (px, size) => (size > 0 ? round(px / size, 3) : 0);
 
 // `pfx`, the type-scale custom-property prefix (the `type` in `--type-*` and the `.type-*` class).
-// Default "type" (historical); a Material scheme sets "md-sys-typescale". Font families stay `--font-*`
+// Default "type" (historical); a Material scheme sets "md-typescale". Font families stay `--font-*`
 // (the typeface-primitive layer, the M3-ref analog, shared regardless of the scale prefix).
 function typeVarLines(scale, indent = "  ", unit = "px", pfx = "type") {
   const out = [];

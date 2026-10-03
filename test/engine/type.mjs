@@ -190,8 +190,8 @@ ok(T.typeScale({ treatment: "nope" }).treatment === T.TYPE_TREATMENTS[0].id, "un
   ok(T.dimUnit(24, "rem") === "1.5rem" && T.dimUnit(18, "rem") === "1.125rem" && T.dimUnit(2, "rem") === "0.125rem", "dimUnit: 24→1.5rem · 18→1.125rem · 2→0.125rem (rem-clean)");
   // naming-scheme PREFIX (the `type` in --type-*/.type-*): a Material scheme namespaces the scale; fonts
   // stay --font-* (the family layer). Default "type" ⇒ byte-identical (identity gate). Responsive too.
-  const md = T.typeTokensCSS(s, { prefix: "md-sys-typescale" });
-  ok(md.includes("--md-sys-typescale-body-md-size:") && md.includes(".md-sys-typescale-body-md {") && !md.includes("--type-body-md"), "prefix rewrites --type-*/.type-* to the scheme prefix (no stray --type-*)");
+  const md = T.typeTokensCSS(s, { prefix: "md-typescale" });
+  ok(md.includes("--md-typescale-body-md-size:") && md.includes(".md-typescale-body-md {") && !md.includes("--type-body-md"), "prefix rewrites --type-*/.type-* to the scheme prefix (no stray --type-*)");
   ok(md.includes("--font-body:") && md.includes("var(--font-voice-body)"), "font families stay --font-*/--font-voice-* under a scale prefix (utility classes bind to the per-voice prop, TKT-0006)");
   ok(T.typeTokensCSS(s, { prefix: "type" }) === T.typeTokensCSS(s), "prefix 'type' is byte-identical to the default (identity gate)");
   ok(T.typeTokensDTCG(s, { unit: "rem" }).typography.body.md.$value.fontSize === "1rem" && T.typeTokensDTCG(s).typography.body.md.$value.fontSize === "16px", "DTCG carries the unit (fontSize 1rem) + defaults to px");
@@ -216,7 +216,7 @@ ok(T.typeScale({ treatment: "nope" }).treatment === T.TYPE_TREATMENTS[0].id, "un
   const reversed = T.typeTokensBreakpointCSS([{ name: "Mobile", minWidth: 476, scale: mobile }, { name: "Tablet", minWidth: 992, scale: tablet }]);
   ok(JSON.stringify(reversed) === JSON.stringify(two), "order-independent: reversed storage order yields the identical file set");
 
-  ok(T.typeTokensBreakpointCSS([{ name: "M", minWidth: 768, scale: base }], { prefix: "md-sys-typescale" })[0].css.includes("--md-sys-typescale-body-md-size:"), "the prefix threads into a breakpoint file too");
+  ok(T.typeTokensBreakpointCSS([{ name: "M", minWidth: 768, scale: base }], { prefix: "md-typescale" })[0].css.includes("--md-typescale-body-md-size:"), "the prefix threads into a breakpoint file too");
   ok(T.typeTokensBreakpointCSS([{ name: "M", minWidth: 768, scale: T.typeScale({ treatment: "product", bodyBase: 13 }) }], { unit: "rem" })[0].css.includes("--type-body-md-size: 0.8125rem;"), "a breakpoint file honors the unit (13px = 0.8125rem)");
   ok(T.typeTokensBreakpointCSS([{ name: "Wide", minWidth: 1400, scale: base }], { desktopMinWidth: 1600 })[0].css.includes("@media (max-width: 1599px)"), "desktopMinWidth is overridable (a custom mode wider than the app's own 1280 default)");
 }

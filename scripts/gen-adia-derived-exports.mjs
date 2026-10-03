@@ -73,8 +73,11 @@ export const ARTIFACTS = [
   // 2.0.0 / 1.3.0 (#789, prime-name): the centre prime step custom property was renamed in the CSS
   // artifact (the doubled name became the bare one), a key renamed, so `major` for oklch; the Radix
   // values artifact moved only its schema stamp (EXPORT_SCHEMA_VERSION 4) and this block, so `minor`.
-  { name: "adia-oklch-export", file: "adia-oklch-export.css", key: "oklch", version: "2.0.0" },
-  { name: "adia-radix-export", file: "adia-radix-export.mjs", key: "radix", version: "1.3.0" },
+  // 2.1.0 / 1.4.0 (#791, md-prefix): the same document re-exported under EXPORT_SCHEMA_VERSION 5 (the
+  // Material preset's root rename; these artifacts use the default prefix, so only the schema stamp
+  // and this block moved), `minor` for both.
+  { name: "adia-oklch-export", file: "adia-oklch-export.css", key: "oklch", version: "2.1.0" },
+  { name: "adia-radix-export", file: "adia-radix-export.mjs", key: "radix", version: "1.4.0" },
 ];
 
 // exportRadix's own reserved alias keys (I4, ticket #637): promoted into src/engine/exports.js as

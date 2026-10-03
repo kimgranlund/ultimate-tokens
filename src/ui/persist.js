@@ -374,7 +374,12 @@ function clampOverrides(o) {
 // v6 (ticket #681, U2 re-diagnosis Finding 3): palette.preDetachHue/Chroma/Lift ADDED, same shape
 // as v5, brand-new optional fields, no RENAME_MAPS entry needed. A pre-v6 doc simply has none of the
 // three, which is already clampPalette's correct absent-stays-absent behavior.
-export const CURRENT_SCHEMA_VERSION = 6;
+//
+// v7 (ticket #791): the Material naming preset's CSS root was renamed, so a kit saved on the old
+// preset carries the old export prefix triple. A RENAME_MAPS entry (renameExportRoot) rewrites that
+// exact triple once, for a doc stamped below v7; a v7 doc is never touched, so a kit that deliberately
+// carries those names after the bump stays as typed.
+export const CURRENT_SCHEMA_VERSION = 7;
 
 // DROPPED_KEYS (TKT-0455), the loud-fail accounting channel. hydrate() attaches the report of every
 // unknown voice/treatment/tokenOverrides key it dropped as a NON-ENUMERABLE property on its return
@@ -415,6 +420,16 @@ const RENAME_MAPS = [
     // stale keyIntensity, the same never-clobber shape renameKeyedMap already applies to renameVoices.
     version: 3,
     renameControls: { keyIntensity: "primeChroma" },
+  },
+  {
+    // the Material preset's export root rename (#791): the OLD preset triple (all three prefixes, exact)
+    // becomes the new one. A lone old colour prefix beside any other type or geometry prefix is not the
+    // preset, so it stays as typed. Only a doc stamped below v7 is rewritten, so this runs once.
+    version: 7,
+    renameExportRoot: {
+      from: { colorPrefix: "md-sys-color", typePrefix: "md-sys-typescale", geomPrefix: "md-sys" },
+      to: { colorPrefix: "md-color", typePrefix: "md-typescale", geomPrefix: "md" },
+    },
   },
 ];
 
@@ -472,6 +487,11 @@ function applyRenameMaps(snapshot) {
         const { [oldKey]: oldVal, ...rest } = s;
         s = newKey in rest ? rest : { ...rest, [newKey]: oldVal };
       }
+    }
+    // renameExportRoot: the exact old export prefix triple -> the new one (all three must match).
+    if (entry.renameExportRoot && s && s.export && typeof s.export === "object") {
+      const { from, to } = entry.renameExportRoot;
+      if (Object.keys(from).every((k) => s.export[k] === from[k])) s = { ...s, export: { ...s.export, ...to } };
     }
   }
   return s;
@@ -632,9 +652,10 @@ function clampExport(e) {
   // attached only when non-empty AND not the system's DEFAULT (so a default round-trips as absent,
   // the identity gate). Defaults: colour "c", type "type", geometry "" (native).
   const clean = (s, repair) => typeof s === "string" ? s.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").replace(/^(\d)/, repair + "$1").slice(0, 40) : "";
-  const cp = clean(e.colorPrefix, "c"); const colorPrefix = cp && cp !== "c" ? cp : null;
-  const tp = clean(e.typePrefix, "t"); const typePrefix = tp && tp !== "type" ? tp : null;
-  const gp = clean(e.geomPrefix, "g"); const geomPrefix = gp || null;
+  const cp = clean(e.colorPrefix, "c"), tp = clean(e.typePrefix, "t"), gp = clean(e.geomPrefix, "g");
+  const colorPrefix = cp && cp !== "c" ? cp : null;
+  const typePrefix = tp && tp !== "type" ? tp : null;
+  const geomPrefix = gp || null;
   const out = { ...(unit ? { unit } : {}), ...(colorPrefix ? { colorPrefix } : {}), ...(typePrefix ? { typePrefix } : {}), ...(geomPrefix ? { geomPrefix } : {}) };
   return Object.keys(out).length ? { export: out } : {};
 }
