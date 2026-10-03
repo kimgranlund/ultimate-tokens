@@ -2,18 +2,19 @@
 kind: criteria-review
 plan: pane-context
 seat: verifier
-pass: 3
+pass: 4
 ticket: none yet
 written: 2026-10-01
 ---
 
-# pane-context criteria review · pass 3 · 🔴 at `b59139a0`
+# pane-context criteria review · pass 4 · 🔴 at `744e7dd1`
 
-Current state: pass 3 🔴 at `b59139a0` (plan revision 3; requested at revision 2, `7bdc3c70`, and revision 3 landed during grading, changing only section 2 prose, the units line and the new C2.10). U2 rows only, rulings R94 to R96. Four rows from revision 2 are not checkable, and revision 3's C2.10, which pins the owner's base 4 case, would fail a correct build. U1, U3 and U4 stay 🟢 from pass 2 (not re-graded). Pass 2 (🟢 at `11828f00`) and pass 1 (🔴 at `d23b42db`) follow as history.
+Current state: pass 4 🔴 at `744e7dd1` (plan revision 6, U2 rows only, rulings R94 to R98). The four pass 3 reds and C2.10 are fixed and checkable. Two rows, C2.2 and C2.7, expect Neutral `19/19` hexes moved, and a correct build moves `17/19`: the default kit's Neutral stops 50 (`#FFFFFF`) and 950 (`#111111`) have OKHSL `s` `0` at 100, so no damper can move them. U1, U3 and U4 stay 🟢 from pass 2 (not re-graded). Passes 3, 2 and 1 follow as history.
 
 verdict: 🔴
-sha: b59139a0
+sha: 744e7dd1
 
+Pass 3 lines: `verdict: 🔴` at `b59139a0`.
 Pass 2 lines: `verdict: 🟢` at `11828f00`.
 Pass 1 lines: `verdict: 🔴` at `d23b42db`.
 
@@ -120,3 +121,29 @@ Plan revision 2 at `7bdc3c70`, U2 rows C2.1 to C2.9, plus revision 3 at `b59139a
 4. 🔴 The owner's case is now pinned by C2.10 (revision 3), but its CAM16 C window `[0.02, 0.06]` excludes what R94 produces (about `0.08` mid-ramp, more at the ends, by the seat's simulation). In OKHSL `s`, R94's own unit, the same render reads about `0.04`. Restate the window in `s`, or measure a CAM16 window on a prototype. The prime half of C2.10 is checkable as written.
 5. 🟢 C2.1, C2.2, C2.3, C2.5, C2.7 and C2.8 are checkable as written.
 
+
+## Pass 4 · 🔴 at `744e7dd1`: revisions 4 to 6 fix every pass 3 red; C2.2 and C2.7 count two achromatic stops as movable
+
+verdict: 🔴
+sha: 744e7dd1
+
+Plan revision 6 at `744e7dd1` (revision 5 at `348ccce7` plus C2.7 and C2.9 restated for R98), U2 rows C2.1 to C2.10, graded by the seat directly. Expected values that depend on the damper were checked against a simulation of a correct R94/R98 build on the current engine (`$CLAUDE_JOB_DIR/tmp/c210/q.mjs` and `e.mjs`): render the default kit with every group at 100, then scale each display stop's OKHSL `s` (perceptual) or CAM16 C (even, via `hctToRgb` at the same hue and tone) by `r`, round to hex, and read back.
+
+| # | State | Check I would run | Why / what to change, and the control |
+|---|---|---|---|
+| C2.1 | 🟢 | the `--group-chroma --group brand --values 100,40` rows; control `--values 100,100` | Primary's C@500 is about 62 at 100, so a 0.4 damper puts `dC@500` far below `-5.00`; the stripped `-10.00` bound carries over from section 2 |
+| C2.2 | 🔴 | `--group material --values 30,100`, the kept Neutral row | `19/19` cannot be met. Simulation, r = 0.3 on Neutral's 19 display stops: `moved 17`, unmoved `50 #FFFFFF` and `950 #111111`, both `s 0.000` at 100. Write `17/19` (or "every stop whose at-100 `s` is above 0", naming 50 and 950). `dC@500` above `+5.00` holds (Neutral C@500 `24.77`, so the move is about +17). Controls are sound |
+| C2.3 | 🟢 | the two greps; control on `git show 306f9a9e:` copy | ok |
+| C2.4 | 🟢 | `test/engine/tonal.mjs`, the `group-chroma-damper` case; three scratch-clone controls | Pass 3 red fixed: one law per path, read in that path's own unit. Simulation of a correct build: perceptual max `abs(s_g - r * s_100)` is `0.015` at r 0.5 and `0.009` at r 0.1 on Primary's 19 stops (bound `0.02`); even, CAM16 C at the same hue and tone, `0` stops outside `max(0.5, 0.03 * C_100)` at r 0.5, 0.1 and 0 for Primary and Neutral. The input-placement control reds on floored pale stops, as section 2 argues |
+| C2.5 | 🟢 | shim `(gid` lines, `(gid-damp500)` (`grep -cF` `0`); both controls | the `(gid3)` 0.02 bound holds in simulation (Neutral max error `0.009` at r 0.5) |
+| C2.6 | 🟢 | the three gates, then `--compare` | Pass 3 red fixed: the row now reads the per-mode lines and `N cells rose`, which `chroma-envelope-gate.mjs` prints (lines 103 and 105) and exits 1 on any rise (line 106), so the amplify control (`r = g / 90`) can fail it |
+| C2.7 | 🔴 | `--group-chroma --defaults --base ...`, the new `--saved-material 30` leg, `node -e` on `GROUP_DEFAULTS` | The defaults leg is checkable. The `--saved-material 30` leg expects Neutral `19/19` moved in `perceptual`, and the control expects the same `19/19`; both read `17/19` on a correct build for the reason in C2.2 (stops 50 and 950 are achromatic at 100). Fix both counts |
+| C2.8 | 🟢 | the two greps on `src/ui/persist.js`; control adds a v7 entry | ok, matches R98 |
+| C2.9 | 🟢 | `npm test`, `--identity-control` twice, `git status --short` | Pass 3 red fixed: the base side's stored 30 is now the expected cause of the Neutral difference, `1/16` per mode on `--only default-kit`. One wording gap, not a red: the "skips the damper" control prints `0/16` only in `perceptual` and `peak`; in `even` a head that ignores the group renders Neutral at 100 against the base's 30, which section 2 measured as `4/25` moved, so `even` would still print `1/16`. Scope the control to `perceptual` and `peak` |
+| C2.10 | 🟢 | shim `(gid-owner4)`; both controls | Pass 3 red fixed exactly as recommended: OKHSL `s`, `owner4-span` 200 to 800 with at-100 `s` above `0.05`, window `[0.025, 0.055]` against the pass 3 simulation's `0.030` to `0.044`; the prime half is unchanged and checkable |
+
+### Findings
+
+1. 🔴 C2.2 and C2.7 (its `--saved-material 30` leg and its control): Neutral `19/19` moved is unreachable; the correct figure is `17/19`, stops 50 and 950 being achromatic at 100.
+2. 🟡 C2.9: scope the "skips the damper" control's `0/16` to `perceptual` and `peak`.
+3. 🟢 Every other U2 row is checkable, and the owner's base 4 case is pinned by C2.10 in R94's own unit.
