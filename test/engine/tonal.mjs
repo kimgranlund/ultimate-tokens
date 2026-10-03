@@ -1124,7 +1124,7 @@ for (const mode of ["perceptual", "peak"]) {
   // option B). Below 100 the group damper scales the at-100 ramp's s and re-solves each stop, so a grid
   // at 95 measured the at-100 rises plus 8-bit re-quantization (47 beyond the 12 keys above, 0 of them
   // seen). The grid now reads the at-100 ramp, the one construction the damper scales. The 12 keys
-  // above are not reproduced there; the 25 below are, identically on the pre-#785 engine at 100 (they
+  // described above are not reproduced there; the 25 below are, identically on the pre-#785 engine at 100 (they
   // were never in reach while the grid read 95). All lift 40 or 5, hues 107/145/152/165, L* 90.66 to
   // 99.50, each rise +0.0036 to +0.0915 L*. Damped-ramp monotonicity below 100 is not bounded here (Q2).
   const GRID_R2_EXCEPTIONS = new Set([

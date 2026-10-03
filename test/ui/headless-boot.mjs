@@ -3151,7 +3151,7 @@ app.addStandardGeomModes(); flushRaf();
 // ── (bpc) Base chroma / Prime chroma sliders + per-palette Prime chroma (SPEC
 // spec-muted-base-key-spikes 0.3.0 AC-032, slider portion, "Add data palettes"/"Re-derive" are
 // U8's own scope). There is NO "Intensity" slider any more, in any group (REQ-032), the ramp's
-// chroma target now comes entirely from the palette's group. ───────────────────────────────
+// chroma damper (#785) now comes entirely from the palette's group. ─────────────────────
 app.openSet(app.sets[0].id); flushRaf();
 app.setSegment("global"); app.render(); flushRaf();
 const baseChromaInput = findFk("slider:Base chroma");

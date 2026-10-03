@@ -11,7 +11,7 @@
 5. Chroma targeting and edge damping
 6. `paletteStops`: the per-stop pipeline
 7. Worked example
-8. Palette groups, base chroma, and the prime system (absolute per-group ramp chroma, seven prime swatches)
+8. Palette groups, base chroma, and the prime system (per-group whole-ramp damper, seven prime swatches)
 9. Anchored palettes (a stored source colour, exact at `prime.DEFAULT` and at stop 500)
 
 ---
@@ -212,12 +212,12 @@ lmin 5, lmax 100, damp 80:
 
 ## 8. Palette groups, base chroma, and the prime system
 
-> Spec: `docs/spec/spec-muted-base-key-spikes.md` 0.3.0 (REQ-001..011 palette groups + absolute
-> per-group base chroma, REQ-050..057 the prime system); design:
+> Spec: `docs/spec/spec-muted-base-key-spikes.md` 0.3.0 (REQ-001..011 palette groups + per-group
+> base chroma, absolute there, a damper since #785; REQ-050..057 the prime system); design:
 > `docs/lld/lld-muted-base-key-spikes.md` 0.3.0. Shipped in the engine (`tonal.js`, `prime.mjs`,
 > the new `src/engine/resolve.mjs`) and the UI (`src/ui/model.mjs`, `src/ui/persist.js`). Unlike
 > 0.2.0's shipped defaults, the 0.3.0 `GROUP_DEFAULTS` (§8.1) make a REAL visual change to the
-> default document: Neutral (material) renders visibly muted and the eight data palettes render
+> default document: Neutral (material) rendered muted until #785 (R96) and the eight data palettes render
 > at equal ramp chroma regardless of their own `chroma` field, see the CHANGELOG. The 0.1.0
 > "key-stop spike" on the ramp (identity stops, `keyIntensity`) was retired under #533; the ramp
 > is continuous and the vivid identity colours live in the prime system (§8.3) below.
@@ -436,7 +436,7 @@ palette leaves stop 500 unchanged while the same edit on a non-anchored copy mov
 
 **Chroma at the pivot is a blend, not a pin.** The anchored branches call the same `chromaEnvelope`
 (§5) as everything else; what differs is the BASIS fed to it. `anchorChromaBasis` blends the anchor's
-own measured chroma exactly at the pivot toward the group's resolved ramp target at each side's
+own measured chroma exactly at the pivot toward `min(groupValue, anchorValue)` at each side's
 endpoint, weighted by a smoothstep on the `liftStop` position, so the weight and its derivative are
 both 0 at the pivot. That is what keeps a near-grey anchor from reading as a notch against its own
 neighbours. The basis is always computed at group 100; a group's Base chroma below 100 then damps

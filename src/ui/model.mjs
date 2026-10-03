@@ -634,7 +634,7 @@ export function stateOf(doc) {
     // SPEC 0.3.0: each palette's `group` is resolved to a definite id here (resolvedPalettes) so
     // exports.js's derivePalette never re-derives the by-name default rule; `paletteGroups` (below)
     // carries the four groups' own baseChroma/primeChroma/locked. Neither `chroma` nor `primeChroma`
-    // is touched on the palette itself, derivePalette resolves the ramp's absolute chroma target
+    // is touched on the palette itself, derivePalette resolves the ramp's group damper value (#785)
     // AND the prime system's resolved primeChroma through engine/resolve.mjs's rampChromaOf/
     // primeChromaOf, the SAME pure functions projectView calls (via this file's own doc-shaped
     // wrappers below), so the two paths can never resolve a palette's group differently (Risk 0b).

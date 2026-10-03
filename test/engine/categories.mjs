@@ -6,7 +6,7 @@
 // smaller, verbatim `geometry` pass-through (#485, currently only Adia's `{ramp:"linear4"}`) the same way,
 // and the (groups) block pins the `paletteGroups` pass-through (#617) the same way again, plus a
 // standalone (groups-discriminate) synthetic-fixture check proving the opt-in actually changes the
-// derived ramp-chroma target, not just that it round-trips inertly.
+// derived ramp-chroma value (the group damper, #785), not just that it round-trips inertly.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -309,7 +309,7 @@ for (const slug of CATS) {
 }
 
 // (groups-discriminate) #617's DISCRIMINATING control: a category preset carrying an explicit
-// `paletteGroups` override must actually resolve to a DIFFERENT ramp-chroma target than the same
+// `paletteGroups` override must actually resolve to a DIFFERENT ramp-chroma value than the same
 // preset without one, proving the schema slot is real plumbing, not inert JSON that generate/hydrate
 // silently ignore. Runs buildCategory() (the REAL generator function, not a reimplementation) against
 // a synthetic doc, NOT a real curated category, so this stays independent of whatever real values
