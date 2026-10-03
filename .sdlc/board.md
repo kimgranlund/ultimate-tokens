@@ -143,7 +143,7 @@ Orchestrator-only. Rows edited in place. The five loose `adopt-hygiene-*` fragme
 | pane-context U3 Roles shows selected palette or all | #785 | S | 🟢 | 1 | orchestrator | none | unit/pc-U3 (merged) | none | .sdlc/verdicts/pane-context-U3.md | merged, verified 🟢 at 30c0dccb; pc-U4 waits on its criteria revision |
 | pane-context U4 light and dark side by side, toggles removed | #785 | L | ⚪ | 2 | orchestrator | pc-U4-builder-l7-p2 (builder-l7; reviewer-l3; verifier-l2) | unit/pc-U4 | .worktrees/pc-U4 | .sdlc/plans/pane-context.md | 🔵 builder-l7 re-deriving the even-dips gate (revision 12, owner A) |
 | compute-layers U1 one controls resolver | #788 | S | 🟢 | 1 | orchestrator | none | unit/cl-U1 (merged) | none | .sdlc/verdicts/compute-layers-U1.md | merged, verified 🟡 at 48b7b5ff (records only; baseline figures at pre-land) |
-| compute-layers U2 layer registry | #788 | S | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/compute-layers.md | after U1 |
+| compute-layers U2 layer registry | #788 | S | 🟢 | 1 | orchestrator | none | unit/cl-U2 (merged) | removed | .sdlc/verdicts/compute-layers-U2.md | merged; verdict 🟡 records-only (IDENT control dead for inputs, three lane files, baseline 2 stale at pre-land); cl-U3 waits on pane-context landing |
 | compute-layers U3 one evaluator compute(doc) | #788 | M | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/compute-layers.md | after U2, #785 U2 and #766 U2 land |
 | compute-layers U4 pins, frozen versions, preset pins, stamps | #788 | L | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/compute-layers.md | after U3 |
 | compute-layers U5 R102 removals | #788 | M | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/compute-layers.md | after U4 |
