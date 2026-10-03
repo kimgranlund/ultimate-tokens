@@ -141,7 +141,7 @@ Orchestrator-only. Rows edited in place. The five loose `adopt-hygiene-*` fragme
 | pane-context U2 group base chroma ratio, measured and ruled | #785 | M | ⚪ | 0 | orchestrator | pc-U2-builder-l6-p1-r7 (builder-l6; reviewer-l3; verifier-l2) | unit/pc-U2 | .worktrees/pc-U2 | .sdlc/plans/pane-context.md | 🔵 builder-l6 building on plan revision 7 (old-spec tree discarded); tonal.js overlap with fh-U2 resolved at merge |
 | pane-context U3 Roles shows selected palette or all | #785 | S | ⚪ | 0 | orchestrator | pc-U3-builder-l2-p1 (builder-l2; reviewer-l3; verifier-l2) | unit/pc-U3 | .worktrees/pc-U3 | .sdlc/plans/pane-context.md | 🔵 builder-l2 building (owner: keep U1 as written, #786) |
 | pane-context U4 light and dark side by side, toggles removed | #785 | L | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/pane-context.md | after U3 |
-| compute-layers U1 one controls resolver | #788 | S | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/compute-layers.md | building |
+| compute-layers U1 one controls resolver | #788 | S | ⚪ | 0 | orchestrator | cl-U1-builder-l3-p1 (builder-l3; reviewer-l3; verifier-l2) | unit/cl-U1 | .worktrees/cl-U1 | .sdlc/plans/compute-layers.md | 🔵 builder-l3 building; lands ADR-028 too |
 | compute-layers U2 layer registry | #788 | S | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/compute-layers.md | after U1 |
 | compute-layers U3 one evaluator compute(doc) | #788 | M | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/compute-layers.md | after U2, #785 U2 and #766 U2 land |
 | compute-layers U4 pins, frozen versions, preset pins, stamps | #788 | L | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/compute-layers.md | after U3 |
