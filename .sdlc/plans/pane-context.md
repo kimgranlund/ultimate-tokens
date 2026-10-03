@@ -1,10 +1,10 @@
 ---
 status: approved
-ticket: none yet (to mint per adapter X3 at approval: `kind:feature`, `size:L`, `lane:editor-ui`; U2 is a `kind:defect` finding carried inside this plan, not a second issue)
+ticket: 785 (kind:feature, size:L, P2, lane:ui; U2 is a kind:defect finding carried inside this plan, not a second issue)
 priority: P2
 lane: editor-ui (`src/ui/app.js`, `src/ui/sections/color.js`, `src/ui/sections/typography.js`, `src/ui/sections/geometry.js`, `src/ui/overlays/settings.js`, `src/ui/styles.css`, `src/ui/persist.js`, `test/ui/headless-boot.mjs`, `test/smoke/smoke.mjs`, `docs/lld/app-shell.md`, `docs/reference/references/component-inventory.md`, `CHANGELOG.md`; U2 alone reaches `src/engine/tonal.js`, `test/engine/`, `scripts/report-preset-fidelity.mjs`; the regenerated bundles `dist/`, `figma/plugin/ui.html` on every UI unit)
 size: S+M+S+L (U1 S = 1, U2 M = 2, U3 S = 1, U4 L = 4; 8 points)
-labels: kind:feature · status:backlog · size:L · P2 · lane:editor-ui (to mint per adapter X3)
+labels: kind:feature · status:claimed · size:L · P2 · lane:ui
 written: 2026-10-01
 head: 38b0e8b1 (`main`, the #766 revision 4 copy)
 depends: nothing landed. The owner ruled `.sdlc/questions/pane-context-group-chroma.md` at 437967ab (option A; material default stays 30, the shift accepted, no migration; the chrome theme stays), so U2's engine half is no longer gated. R86 (2026-10-01, `.sdlc/runtime/owner-rulings-2026-09-22.md`): no Fable seats until Friday, so every unit and the pre-land pair run reviewer-l3 and verifier-l2
