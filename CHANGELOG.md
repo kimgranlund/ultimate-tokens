@@ -24,6 +24,8 @@ they landed on `main` and reference the squash-merged PR that introduced them.
   old prefix beside a custom one stays as typed. Consumers whose stylesheets reference the old
   variable names must rename them. Export schema is now `ultimate-tokens-brand-kit/5` and the brand-kit
   MCP server is 0.5.0.
+- **The consumer plugin `@ultimate-tokens/claude` is 0.2.2** (#791). Its skill text now names the `--md-*`
+  Material variables, so an agent reading the plugin binds to the variables the preset emits.
 - **The even-mode chroma floor reads its gamut reference per stop, at the stop's own hue before edge
   rotation** (#766). The floor's reference was one ceiling per ramp, read at one hue; it is now the largest
   ceiling at the pivot, 450 and 550 tones read at each stop's own hue: the CAM16 hue the per-stop OKLCH solve
