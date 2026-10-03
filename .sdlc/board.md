@@ -149,5 +149,5 @@ Orchestrator-only. Rows edited in place. The five loose `adopt-hygiene-*` fragme
 | compute-layers U5 R102 removals | #788 | M | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/compute-layers.md | after U4 |
 | prime-name U1 engine emitters, tests, generated assets | #789 | S | 🟢 | 1 | orchestrator | pn-U1-builder-l2-p1 (builder-l2; reviewer-l3; verifier-l2) | unit/pn-U1 (merged) | removed | .sdlc/verdicts/prime-name-U1.md | merged into plan/prime-name; U2 next (C2.5 added at revision 4) |
 | prime-name U2 records | #789 | S | 🟢 | 2 | orchestrator | none | unit/pn-U2 (merged) | none | .sdlc/verdicts/prime-name-U2.md | merged, verified 🟢 at ef699c2f; pre-land pair next |
-| md-prefix U1 preset, hydrate rewrite, schema bump, assets | #791 | S | ⚪ | 1 | orchestrator | md-U1-builder-l2-p1 (builder-l2; reviewer-l3; verifier-l2) | unit/md-U1 @ b24e6a1f | .worktrees/md-U1 | .sdlc/plans/md-prefix.md | 🔵 builder pass 1; then reviewer-l3, verifier-l2|
-| md-prefix U2 records | #791 | S | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/md-prefix.md | after U1; builder-l1 and marketing-manager-agent |
+| md-prefix U1 preset, hydrate rewrite, schema bump, assets | #791 | S | 🟢 | 1 | orchestrator | none | unit/md-U1 (merged) | none | .sdlc/verdicts/md-prefix-U1.md | merged on plan/md-prefix; verdict 🟡 cleared (baseline ui.html KB fixed at pre-land) |
+| md-prefix U2 records | #791 | S | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/md-prefix.md | 🔵 next: builder-l1 and marketing-manager-agent |
