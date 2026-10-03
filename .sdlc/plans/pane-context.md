@@ -1,5 +1,5 @@
 ---
-status: draft
+status: approved
 ticket: none yet (to mint per adapter X3 at approval: `kind:feature`, `size:L`, `lane:editor-ui`; U2 is a `kind:defect` finding carried inside this plan, not a second issue)
 priority: P2
 lane: editor-ui (`src/ui/app.js`, `src/ui/sections/color.js`, `src/ui/sections/typography.js`, `src/ui/sections/geometry.js`, `src/ui/overlays/settings.js`, `src/ui/styles.css`, `src/ui/persist.js`, `test/ui/headless-boot.mjs`, `test/smoke/smoke.mjs`, `docs/lld/app-shell.md`, `docs/reference/references/component-inventory.md`, `CHANGELOG.md`; U2 alone reaches `src/engine/tonal.js`, `test/engine/`, `scripts/report-preset-fidelity.mjs`; the regenerated bundles `dist/`, `figma/plugin/ui.html` on every UI unit)
