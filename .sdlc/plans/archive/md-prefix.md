@@ -1,5 +1,5 @@
 ---
-status: approved
+status: done
 ticket: 791
 priority: P2
 lane: naming-scheme (`src/ui/overlays/settings.js`, `src/engine/ds-export.js` prose, comments in `src/engine/{exports.js,type.mjs,geometry.mjs}` and `src/ui/overlays/drawer.js`, `test/engine/{exports,type,geometry}.mjs`, `test/ui/{persist,headless-boot}.mjs`, `src/ui/persist.js` (Q1 A), `src/engine/exports.js` `EXPORT_SCHEMA_VERSION` and `mcp/brand-kit-core.mjs` `SERVER.version` (Q2 B), `plugin/ultimate-tokens/`, `.claude/skills/geometry-system/`, `CHANGELOG.md`, `docs/marketing/`; regenerated `figma/plugin/ui.html`, `src/ui/describe-mcp-assets.js`)
@@ -104,3 +104,4 @@ File overlap: `src/engine/exports.js` (comment at `:415` only), `src/engine/ds-e
 | 6 | 2026-10-03 | Orchestrator, md-U1 re-review: C1.1's first command also excludes `src/ui/describe-mcp-assets.js` (the embedded persist.js copy C1.2 already pins at 1); knowledge-02 section 8.4 states the persisted schema number, so U1 repairs it. Cross-plan note: pane-context C2.8 and compute-layers C5.4 pin `CURRENT_SCHEMA_VERSION` absolutely; whichever plan lands second re-pins |
 | 7 | 2026-10-03 | Orchestrator, owner ruling at `.sdlc/questions/md-prefix-plugin-version.md` (8f4aef68, answer A): the consumer plugin bumps to 0.2.2 as one small trivial-lane unit U3 (the pre-land record takes pass 2 at the new head). This is the sixth revision row; the owner answer on that question is the authority for it |
 | 8 | 2026-10-03 | Orchestrator, pre-land pass 2 (`.sdlc/verdicts/md-prefix-prepr.md`, 🔴 at e8a8be11) and owner ruling A at `.sdlc/questions/md-prefix-revision8.md`: U3 pass 2 fixes the manifest description count (`eleven-voice` to `fifteen-voice`, C3.5) and the CHANGELOG 0.2.2 line (first publish since 0.2.1, the #792 prime rename, C3.6); C3.4 allows the pass-2 review record; the builder found the repo-root `.claude-plugin/marketplace.json` description carries the same count, so C3.5b and C3.4 take that one file too (stale-record rule) |
+| 9 | 2026-10-03 | Close-out: landed as PR #795, squash 620d0323 on main; pre-land record `.sdlc/verdicts/md-prefix-prepr.md` 🟢 at 66dddf50 (pass 3; pass 2 was 🔴 on the stale `eleven-voice` plugin description, fixed in U3 pass 2). Stale `eleven-voice` wording outside the publish surface filed as #796. Status done, plan archived. |
