@@ -2,18 +2,19 @@
 kind: criteria-review
 plan: pane-context
 seat: verifier
-pass: 2
+pass: 3
 ticket: none yet
 written: 2026-10-01
 ---
 
-# pane-context criteria review · pass 2 · 🟢 at `11828f00`
+# pane-context criteria review · pass 3 · 🔴 at `b59139a0`
 
-Current state: pass 2 🟢 at `11828f00` (plan revision 1); every criterion is checkable and the plan may be mobilized. Pass 1 (🔴 at `d23b42db`) follows as history.
+Current state: pass 3 🔴 at `b59139a0` (plan revision 3; requested at revision 2, `7bdc3c70`, and revision 3 landed during grading, changing only section 2 prose, the units line and the new C2.10). U2 rows only, rulings R94 to R96. Four rows from revision 2 are not checkable, and revision 3's C2.10, which pins the owner's base 4 case, would fail a correct build. U1, U3 and U4 stay 🟢 from pass 2 (not re-graded). Pass 2 (🟢 at `11828f00`) and pass 1 (🔴 at `d23b42db`) follow as history.
 
-verdict: 🟢
-sha: 11828f00
+verdict: 🔴
+sha: b59139a0
 
+Pass 2 lines: `verdict: 🟢` at `11828f00`.
 Pass 1 lines: `verdict: 🔴` at `d23b42db`.
 
 Plan `.sdlc/plans/pane-context.md` at `d23b42db` (revision 0, head 38b0e8b1), rows C1.1 to C4.9. Graded by the Verifier seat directly. Every needle, label and "Today" value was read with `git show d23b42db:<path>` (`test/ui/headless-boot.mjs`, `test/run.mjs`, `src/ui/**`, `test/smoke/smoke.mjs`, the two docs, the question file, `scripts/report-preset-fidelity.mjs`); the default kit was counted with `node -e` on `src/ui/model.mjs` (unchanged since `d23b42db`). 🟢 means I can name now the command that fails if the unit is missing or wrong. 🔴 means the row as written cannot be graded: its Expected is false on a green tree, collides with an existing label, or depends on an unruled choice.
@@ -90,4 +91,32 @@ Rows not listed (C1.2, C1.3, C2.1, C2.2, C4.3 to C4.5, C4.7) were 🟢 at pass 1
 1. 🟢 All ten pass 1 reds are closed, and the five `n/a` controls are written in.
 2. 🟡 For U2's builder and verifier: `(gid2)` (a fresh doc's Neutral equals a direct engine call at chroma 30) is not named in C2.5. It should hold under A if the direct call goes through the same anchored basis. If it reds, that is a finding against the engine change, not a reason to rewrite it silently.
 3. 🟡 For U4: `(k1b)` and `(k1d)` pin `.example-card` counts `1` and `3`, which double with two `.example-scheme` wrappers. U4 rewrites them, and the handoff should say so.
+
+## Pass 3 · 🔴 at `b59139a0`: U2 rewritten to the damper (R94 to R96); four rows uncheckable, and C2.10's window excludes the ruled result
+
+verdict: 🔴
+sha: b59139a0
+
+Plan revision 2 at `7bdc3c70`, U2 rows C2.1 to C2.9, plus revision 3 at `b59139a0` (`git diff 7bdc3c70 b59139a0 --stat`: one file, `+7 -1`: C2.10, the base and prime composition paragraph, the units line), graded by the seat directly. Everything was read with `git show 7bdc3c70:<path>`: the plan's section 2 "The ruled meaning", `evenChroma` in `src/engine/tonal.js`, the `--compare` branch of `test/engine/chroma-envelope-gate.mjs`, the `--identity-control` branch of `scripts/report-preset-fidelity.mjs`, `GROUP_DEFAULTS` and `RENAME_MAPS` in `src/ui/persist.js`, the question file and the shim labels.
+
+| # | State | Check I would run | Why / what to change, and the control |
+|---|---|---|---|
+| C2.1 | 🟢 | `--group-chroma --group brand --values 100,40`, kept `dC@500` below `-5.00` for three palettes | ok; control `--values 100,100` |
+| C2.2 | 🟢 | `--group material --values 30,100`, kept Neutral `19/19`, `dC@500` above `+5.00` | ok; Neutral's C@500 is `24.77`, so 0.3 to 1.0 moves it about 17 C; control: the engine reverted prints `0/19` |
+| C2.3 | 🟢 | `grep -c 'R94'` on the question file (`2` already at `7bdc3c70`), `Chosen \| pending` `0` | ok; Today `0` is stale (the Answer was already updated), harmless; control: the `306f9a9e` copy prints `0` |
+| C2.4 | 🔴 | `tonal.mjs` `group-chroma-damper` | Two gaps on the `even` rows. (1) Where the damper sits: section 2's even formula scales `intendedH` before `evenChroma`. `evenChroma` returns `min(maxc, max(intended * env, min(F, intended)))`, with `F` the chroma-floor constant, so wherever the floor binds (`F` below `r * intended`, the damped pale stops) the output is `F` at both `r = 1` and `r = 0.5`: not linear. The section's own sentence "multiplies whatever that path renders with the group at 100" puts it on the output instead. State one placement. Output placement makes the row hold; input placement needs a stated floor exception. (2) The unit: the even path damps CAM16 C (`intendedH`) and renders through the per-stop hue solve, so OKHSL `s` read back from the hex is not exactly linear in it, and `0.02` absolute may red a correct build at high `s`. Read the even rows in CAM16 C (`abs(C_g - r * C_100) <= tol`, tolerance named) or give a relative tolerance. Perceptual and peak rows are fine as written |
+| C2.5 | 🟢 | shim `(gid` lines; `(gid-damp500)` is free (`grep -cF` = `0`) | ok; controls: revert the engine reds `(gid3)` (Neutral `s0` in `(0.10, 0.30]`, so 50 equals 100 under the cap) and `(gid-damp500)`, and revert only `GROUP_DEFAULTS` reds `(gid1b)`/`(gid2)` |
+| C2.6 | 🔴 | `chroma-envelope-gate.mjs --compare` | The compare prints one line per mode (`<mode>: byte-identical to base` or `moved against base`) and the `rose:` cells. Its fixture cells are corpus statistics per mode, stop and stat, with no per-palette or per-group-value row. So "no moved cell on any row whose group value is 100" cannot be read from it, and the control ("a group-100 row still reports 0") cannot be run. Pin what the gate prints: each mode's `byte-identical`/`moved` line, plus `0 cells rose`. If a mode may move, say which and require `0 cells rose` (the ratchet's own rule, re-capture in the same change) |
+| C2.7 | 🟢 | `--group-chroma --defaults --base <merge-base>` plus `node -e` material default | ok: base at 30 under the R69 cap and head at 100 with `r = 1` render the 16-palette kit alike in `perceptual`/`peak`; control: material back to 30 moves Neutral `19/19` |
+| C2.8 | 🟢 | `test/ui/persist.mjs` `v7-material` (free, `0` in `test/`); `CURRENT_SCHEMA_VERSION` `6` today, `RENAME_MAPS` and `stampIntensity` exist | ok; controls as written |
+| C2.9 | 🔴 | `--identity-control --base <merge-base> --authored`, `identity <mode>` lines | The Expected assumes the base side renders migrated values ("100 or migrated-to-100 on the base"). The tool hydrates through the BASE tree's `persist.js` and resolves chroma with the BASE `rampChromaOf` (`baseModule.persist.hydrate`, `baseModule.model.rampChromaOf`), then renders both engines at that chroma (adapter §1 says the same). At the merge base, material is `30` with no v7 migration. So the head engine gets `30` and damps every anchored material palette to 0.3, `default-kit` Neutral included: its `identity perceptual` line cannot print `0`. Also, the lines are `identity <mode><suffix>: P/T palettes, C/T cells differ` over the run, not per category (only `--only` scopes them). Restate it: expect material palettes to differ on the authored leg, run `--only default-kit` for the kit line, and leave the defaults claim to C2.7 |
+| C2.10 (owner's case, revision 3) | 🔴 | shim `(gid-owner4)` (free); the prime half: `primeChromaOf` feeds only `primeSwatches` (`src/ui/model.mjs`, `projectView`), so the prime-100 vs prime-0 byte-identity and its control are sound | The ratio half reads CAM16 C, but R94 damps OKHSL `s`, and CAM16 C is not proportional to `s` near grey. Seat simulation (`$CLAUDE_JOB_DIR/tmp/c210/sim.mjs`): take the default kit Primary's 25-stop `fullRamp` at base 100, set each stop's OKHSL `s` to `0.04 * s` at the same `h` and `l` (R94's formula), round to hex, and read both units. `C(4) / C(100)` reads `0.079` at 500, `0.080` at 400, `0.085` at 600, `0.079` to `0.20` from 175 to 900, and up to `1.000` at 50: `outside [0.02,0.06] with C100>2: 24`, which is every stop with C100 above 2 (only 950, C100 `1.6`, is exempt). The OKHSL `s` ratio reads `0.039` at 500 and `0.030` to `0.044` from 200 to 800 (`0.030` to `0.061` from 125 to 875, `0.098` at 900), with hex quantization at the ends (`NaN` at 50, `0.000` at 75, 100, 925, 950). A correct R94 build therefore reds C2.10 as written. Fix: read the ratio in OKHSL `s` with an ends rule (for example stops whose at-100 `s` exceeds a named floor, or 200 to 800), or keep CAM16 C with a window measured from a prototype (the mid stops read about `0.08`). The owner-facing "about 4%" is then 4% of the at-100 saturation, which this row should say |
+
+### Findings, pass 3
+
+1. 🔴 C2.4 even rows: the damper's placement relative to `evenChroma`'s floor decides whether the linear law can hold, and the plan states both placements. The OKHSL `s` read-back is also the wrong unit for a CAM16-damped path.
+2. 🔴 C2.6 asks the envelope `--compare` for per-group rows it does not print.
+3. 🔴 C2.9's ramp-identity Expected relies on base-side migration the identity control never runs; at the merge base, material `30` reaches the head engine and moves the kit's Neutral.
+4. 🔴 The owner's case is now pinned by C2.10 (revision 3), but its CAM16 C window `[0.02, 0.06]` excludes what R94 produces (about `0.08` mid-ramp, more at the ends, by the seat's simulation). In OKHSL `s`, R94's own unit, the same render reads about `0.04`. Restate the window in `s`, or measure a CAM16 window on a prototype. The prime half of C2.10 is checkable as written.
+5. 🟢 C2.1, C2.2, C2.3, C2.5, C2.7 and C2.8 are checkable as written.
 
