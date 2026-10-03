@@ -8,3 +8,12 @@
 | Question | Keep the behaviour as the plan states it, or make the Roles tab survive those five callers? |
 | Options | A (recommended): keep as written; U3 ships, and the arrow-step bounce is a filed follow-up issue. · B: plan revision 10 moves the `segment` write from `selectPalette` into the row click handlers (C1.2 and (j7b) rewritten), so keyboard and add, duplicate, delete leave the tab alone. · C: `selectPalette` keeps the write and the five non-click callers restore the prior segment (a special case, R98 says no) |
 | Default if unanswered | A |
+
+## Answer
+
+| Field | Value |
+|---|---|
+| Asked | AskUserQuestion, 2026-10-03 |
+| Options shown | Keep, file follow-up (Recommended) · Fix in plan rev 10 · Restore tab in 5 callers |
+| Chosen | Keep, file follow-up (Recommended) |
+| Effect | Option A: U3 ships on the plan as written; the arrow-step bounce is a follow-up issue. |
