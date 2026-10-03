@@ -79,7 +79,7 @@ The existing naming-scheme note sits inside `## [Unreleased]`, so it is rewritte
 | C3.1 | `grep -c '"version": "0.2.2"' plugin/ultimate-tokens/.claude-plugin/plugin.json` | `1` | `0` | put 0.2.1 back: reads `0` |
 | C3.2 | `node test/plugin/hosted-pack.mjs` then `npm test` | exit 0 each, tree clean after | exit 0 at 0.2.1 | set the version to a non-semver string: hosted-pack reds |
 | C3.3 | `awk '/^## \[Unreleased\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md \| grep -c '0\.2\.2'`, and the same slice `\| grep -c md-sys` | first at least `1`; second `0` | `0`; `0` | drop the CHANGELOG line: first reads `0` |
-| C3.4 | `git diff --name-only $(git merge-base HEAD plan/md-prefix) HEAD` on the unit branch | `plugin/ultimate-tokens/.claude-plugin/plugin.json`, `CHANGELOG.md`, and the review record only | n/a | touch another file: the list grows |
+| C3.4 | `git diff --name-only $(git merge-base HEAD plan/md-prefix) HEAD` on the unit branch | `plugin/ultimate-tokens/.claude-plugin/plugin.json`, `CHANGELOG.md`, `.sdlc/handoffs/md-prefix-U3.md` and the review record (`.sdlc/reviews/md-prefix-U3-review.md`) only | n/a | touch another file: the list grows |
 
 ## 4. Owner rulings (2026-10-03, relayed by the Conductor)
 
