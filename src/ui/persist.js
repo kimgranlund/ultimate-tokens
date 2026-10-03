@@ -37,10 +37,12 @@ export const PALETTE_GROUPS = ["material", "brand", "system", "data"];
 // import-back-and-re-export shape as PALETTE_GROUPS above: persist.js must never import model.mjs,
 // so this is the single canonical definition. model.mjs's rampChromaOf/primeChromaOf still own the
 // RESOLUTION rule that reads these numbers; this export is only the shape persist.js defaults an
-// absent/invalid stored group value against. baseChroma is an ABSOLUTE ramp-chroma target now
-// (REQ-002), not a multiplier, same `%`-of-peak units `palette.chroma` already used.
+// absent/invalid stored group value against. baseChroma is the group's chroma damper (#785, R94 to
+// R98): 0 to 100, the ramp's chroma at every stop is its at-100 render times baseChroma / 100
+// (tonal.js `dampStops`). Every group defaults to 100, the ramp as sampled; a stored value below 100
+// loads as is and damps.
 export const GROUP_DEFAULTS = {
-  material: { baseChroma: 30, primeChroma: 60 },
+  material: { baseChroma: 100, primeChroma: 60 },
   brand: { baseChroma: 100, primeChroma: 100 },
   system: { baseChroma: 100, primeChroma: 100 },
   data: { baseChroma: 100, primeChroma: 100, locked: true },

@@ -785,6 +785,7 @@ function enforceMonotonePixelL(stopsOut) {
     cur.tone = lstarFromRgb(best);
     const cam = cam16FromRgb(best);
     cur.chroma = cam.chroma;
+    if (cur.hue !== undefined) cur.hue = cam.hue;
     cur.maxc = maxChromaInGamut(cam.hue, cur.tone);
     // cur.inGamut stays true - the search above only ever considers in-gamut [0,255]^3 candidates.
   }
@@ -848,7 +849,7 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
   const built = stops.map((stop) => {
     if (stop === 500 && !clamped) {
       return {
-        stop, tone: anchor.lstar, chroma: anchor.cam.chroma,
+        stop, tone: anchor.lstar, chroma: anchor.cam.chroma, hue: anchor.cam.hue,
         maxc: maxc500, rgb: anchor.rgb, hex: anchor.hex, inGamut: true,
       };
     }
@@ -883,7 +884,7 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
     const hex =
       "#" +
       out.rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
-    return { stop, tone, chroma, maxc, rgb: out.rgb, hex, inGamut: out.inGamut };
+    return { stop, tone, chroma, hue, maxc, rgb: out.rgb, hex, inGamut: out.inGamut };
   });
   enforceMonotonePixelL(built);
   return built;
@@ -891,7 +892,7 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
 
 // paletteStops, full per-stop pipeline for one palette.
 // palette: { hue, chroma, skew, lift }; controls: DEFAULT_CONTROLS-shaped.
-// Returns [{ stop, tone, chroma, maxc, rgb, hex, inGamut }] for each stop.
+// Returns [{ stop, tone, chroma, maxc, rgb, hex, inGamut }] for each stop (even adds its CAM16 `hue`, for `dampStops`).
 // Performance note (review pass 5, then a review-6 perf/memo-safety pass, both 2026-09-19):
 // `projectView` (model.mjs) used to re-derive every anchored palette's full ramp roughly 10x per
 // document - once for the live canvas, then again once per export format via `derivePalette`
@@ -920,6 +921,7 @@ export function paletteStops(palette, controls, stops) {
   // non-even branch): a caller cannot assume "missing or wrong toneMode" degrades the same way at every
   // call site in this file.
   const mode = controls.toneMode || "perceptual";
+  if (palette.chroma !== 100) return dampStops(paletteStops({ ...palette, chroma: 100 }, controls, stops), groupDamper(palette.chroma), mode, controls.hueSpace);
   if (mode === "perceptual" || mode === "peak") return okhslStops(palette, controls, stops, mode);
   const anchor = resolveAnchor(palette);
   if (anchor) return paletteStopsAnchored(palette, controls, stops, anchor);
@@ -1011,7 +1013,7 @@ export function paletteStops(palette, controls, stops) {
     const hex =
       "#" +
       out.rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
-    return { stop, tone, chroma, maxc, rgb: out.rgb, hex, inGamut: out.inGamut };
+    return { stop, tone, chroma, hue, maxc, rgb: out.rgb, hex, inGamut: out.inGamut };
   });
 }
 
@@ -1462,5 +1464,50 @@ function okhslStops(palette, controls, stops, mode) {
     // chroma/maxc reported (measured) for the analysis graphs; OKHSL is in-gamut by construction (the
     // HCT fallback above is validated in-gamut too, per its own engine contract).
     return { stop, tone, chroma, maxc: maxChromaInGamut(baseHue, tone), rgb, hex, inGamut: true, capped, toneTarget: hold.target, toneHeld: hold.held };
+  });
+}
+
+// ── Group chroma damper (#785 U2, owner rulings R94 to R98) ───────────────────────────────────────
+// The `<group> base chroma` value g (`rampChromaOf`, handed to `paletteStops` as `palette.chroma`) is
+// a magnitude damper on the whole ramp, stop 500 included. It enters `paletteStops` at one line, its
+// first branch, and nowhere else in the engine. `paletteStops` renders every stop exactly
+// as its path does with the group at 100 (every floor, cap, hold and gamut step included), then
+// `dampStops` scales each emitted stop's chroma coordinate by r = g / 100, holding the stop's tone and
+// its hue in the palette's own hue space. Perceptual and peak: OKHSL `s` read back from the emitted
+// pixel (the unit the stop is measured in), with `l` re-solved through `holdTone`, the same CIE L* hold
+// those paths run on their own envelope, so the damped stop keeps the emitted pixel's L*; the pixel's
+// OKHSL `h` (its OKLab, so OKLCH, hue) is held through the damped pixel's 8-bit staircase by
+// `solveOkhslHue`, the solve those paths run for their key stop. Even: the CAM16 C the
+// path reports, at the tone and CAM16 hue it rendered (`hue` on each even stop); under hueSpace "oklch"
+// the CAM16 hue is re-solved at the damped chroma so the stop keeps its at-100 OKLCH hue (the solve the
+// even paths run for their own chroma; held CAM16 hue drifts blues 7 to 10 degrees of OKLCH hue at g 30
+// to 50), and the chroma takes the path's own gamut ceiling at that hue. One law on every path,
+// anchored and unanchored alike, with no per-mode, per-palette or floor exception. Damp only (R95): r is
+// clamped to [0, 1], and r = 1 returns the at-100 ramp itself, so g = 100 is byte-identical to the
+// render before the damper.
+export function groupDamper(chroma) {
+  return Math.min(1, Math.max(0, (chroma ?? 0) / 100));
+}
+
+function dampStops(at100, r, mode, hueSpace) {
+  if (r >= 1) return at100;
+  const okhslPath = mode === "perceptual" || mode === "peak";
+  return at100.map((st) => {
+    const out = { ...st };
+    if (okhslPath) {
+      const { h, s, l } = rgbToOkhsl(st.rgb);
+      const hold = holdTone(h, s, l, r);
+      out.rgb = okhslToRgb(solveOkhslHue(h, hold.s, hold.l), hold.s, hold.l);
+      out.tone = lstarFromRgb(out.rgb);
+      out.chroma = cam16FromRgb(out.rgb).chroma;
+    } else {
+      const chromaAt = (h) => Math.min(st.chroma * r, maxChromaInGamut(h, st.tone));
+      if (hueSpace === "oklch") out.hue = solveCam16Hue(hctToOklch(st.hue, st.chroma, st.tone)[2], 0, st.tone, false, { chromaAt });
+      out.maxc = maxChromaInGamut(out.hue, st.tone);
+      out.chroma = chromaAt(out.hue);
+      ({ rgb: out.rgb, inGamut: out.inGamut } = hctToRgb(out.hue, out.chroma, st.tone));
+    }
+    out.hex = "#" + out.rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
+    return out;
   });
 }

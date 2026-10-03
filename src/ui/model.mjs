@@ -276,8 +276,9 @@ export { SCRIM_BASES, SCRIM_STEPS, exportDesignSystemTokens, exportDesignSystemS
 //
 // `anchor` (ticket #681 U1, Q2 (b) ruled): each default family's own TODAY's stop-550 hex, measured
 // against this file's own `chroma`/`skew`/`lift` in "perceptual" mode (the shipped default toneMode),
-// with the ramp chroma resolved through each family's CANVAS GROUP (rampChromaOf: Neutral is
-// "material" baseChroma 30, every other default is "brand"/"system"/"data" baseChroma 100, never
+// with the ramp chroma resolved through each family's CANVAS GROUP (rampChromaOf: Neutral was
+// "material" baseChroma 30 then, every other default "brand"/"system"/"data" baseChroma 100; every
+// group defaults to 100 since #785, which renders Neutral's perceptual ramp the same; never
 // the raw `chroma` field above, which only feeds the prime/key-colour construction, REQ-002). Minted
 // so no default family's prime ladder collapses under U6's equal-compress wall rule (mechanism (3));
 // re-verified against this branch's own base before being typed in here (a stale value would fail
@@ -943,9 +944,9 @@ export function projectView(doc) {
     // accent-ref-resolved roles ("single" → prime accent 500/500), computed before the ramp, reused below
     // for the on-color-contrast step so it's derived once per palette.
     const accentRoles = applyAccentRef(semanticRoles(n), controls.accentRef);
-    // SPEC 0.3.0 REQ-002/008: rampChromaOf is the ABSOLUTE chroma target the ramp is built from,
-    // it REPLACES p.chroma below, never multiplies it (there is no more per-palette ramp override in
-    // any group). primeChromaOf feeds the prime system alone, via primeSwatches' own `controls`
+    // SPEC 0.3.0 REQ-002/008: rampChromaOf is the group's chroma damper (#785, R94: tonal.js
+    // `dampStops` scales the at-100 ramp by it / 100); it REPLACES p.chroma below, never multiplies
+    // it (there is no more per-palette ramp override in any group). primeChromaOf feeds the prime system alone, via primeSwatches' own `controls`
     // param below; p.chroma itself stays untouched and still feeds deriveKeyColor (REQ-002/052).
     const rampChroma = rampChromaOf(p, doc);
     const primeChromaResolved = primeChromaOf(p, doc);

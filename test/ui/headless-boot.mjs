@@ -3542,39 +3542,43 @@ flushRaf();
   app.undo();
 }
 
-// ── (gid) Per-group base chroma (SPEC spec-muted-base-key-spikes 0.3.0, #556/#559 re-ruling): the
-// group's Base chroma is an ABSOLUTE ramp-chroma target, Material 30/60 by default, Brand/System/
-// Data 100/100, Data LOCKED (no per-palette Prime chroma override). There is NO per-palette ramp
-// override in ANY group any more, REQ-002 retires it entirely, not just for Data. ───────────────
+// ── (gid) Per-group base chroma (SPEC spec-muted-base-key-spikes 0.3.0, #556/#559 re-ruling; #785 U2,
+// R94 to R98): the group's Base chroma is a damper on the whole ramp, each stop's chroma coordinate
+// at r = value / 100 of its group-100 render, stop 500 included. Defaults Material 100/60, Brand/
+// System/Data 100/100, Data LOCKED (no per-palette Prime chroma override). There is NO per-palette
+// ramp override in ANY group any more, REQ-002 retires it entirely, not just for Data. ───────────
 {
   const { defaultDocument: ddGID, paletteGroup: pgGID, projectView: pvGID, rampChromaOf: rcGID, GROUP_DEFAULTS: GIDDEF } = await import("../../src/ui/model.mjs");
   const { paletteStops: psGID, EXPORT_STOPS: esGID } = await import("../../src/engine/tonal.js");
 
-  // (gid1) a FRESH default document already resolves Neutral (Material) to rampChroma 30, matching
-  // a DIRECT engine call at chroma:30 byte for byte (never a document-level "pin", since there is no
-  // more palette.intensity field at all), and the legacy chroma:100 call produces a DIFFERENT ramp
-  // (the mute is real, not a no-op).
+  // (gid1) a FRESH default document already resolves Neutral (Material) to rampChroma 100, matching
+  // a DIRECT engine call at chroma:100 byte for byte (never a document-level "pin", since there is no
+  // more palette.intensity field at all); (gid3) proves a lower value is a real mute, not a no-op.
   const freshDoc = ddGID();
   const freshView = pvGID(freshDoc);
   const nIdx = freshDoc.palettes.findIndex((p) => p.name === "Neutral");
   const neutral = freshDoc.palettes[nIdx];
   ok(pgGID(neutral) === "material", "(gid1) Neutral defaults to the Material group");
-  ok(rcGID(neutral, freshDoc) === 30, `(gid1b) rampChromaOf(Neutral) resolves to Material's default 30 (got ${rcGID(neutral, freshDoc)})`);
+  ok(rcGID(neutral, freshDoc) === 100, `(gid1b) rampChromaOf(Neutral) resolves to Material's default 100 (got ${rcGID(neutral, freshDoc)})`);
   const ctlGID = { toneMode: freshDoc.toneMode, hueSpace: freshDoc.hueSpace, lmin: freshDoc.lmin, lmax: freshDoc.lmax, damp: freshDoc.damp, dampCurve: freshDoc.dampCurve, dampAmp: freshDoc.dampAmp, dampBias: freshDoc.dampBias, curve: freshDoc.curve, tension: freshDoc.tension, relChroma: freshDoc.relChroma, chromaFloor: freshDoc.chromaFloor, vibrancy: freshDoc.vibrancy };
   const direct30 = psGID({ hue: neutral.hue, chroma: 30, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir, anchor: neutral.anchor }, ctlGID, esGID);
   const direct100 = psGID({ hue: neutral.hue, chroma: 100, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir, anchor: neutral.anchor }, ctlGID, esGID);
-  ok(JSON.stringify(freshView.palettes[nIdx].fullRamp.map((s) => s.hex)) === JSON.stringify(direct30.map((s) => s.hex)), "(gid2) a fresh doc's Neutral ramp equals a direct engine call at chroma 30 (Material's default)");
-  // (gid3) #725 R69 (reverses Q-U2-5): an anchored ramp's saturation basis is capped at the anchor's
-  // OWN OKHSL s (anchorChromaBasis's group target is min(group, anchor)), so Neutral (anchored) ignores
-  // any group chroma above that s, and still follows one below it. The anchor's s is measured here,
-  // never typed, and must sit strictly between the two probes for the arms to mean anything.
+  ok(JSON.stringify(freshView.palettes[nIdx].fullRamp.map((s) => s.hex)) === JSON.stringify(direct100.map((s) => s.hex)), "(gid2) a fresh doc's Neutral ramp equals a direct engine call at chroma 100 (Material's default)");
+  // (gid3) #785 U2 (R94, reverses #725 R69's cap): the group value damps the anchored ramp's whole
+  // group-100 render, so Neutral at 50 differs from its fresh (100) ramp and each stop's OKHSL s is
+  // half its chroma-100 value, stop 500 included (within 0.02, 8-bit hex). Under R69's cap an anchor
+  // s in (0.10, 0.30] made 50 render the same as 100; the precondition keeps that witness measured,
+  // never typed.
   const { rgbToOkhsl: okGID } = await import("../../src/engine/okhsl.js");
   const anchorS = okGID([1, 3, 5].map((i) => parseInt(neutral.anchor.slice(i, i + 2), 16))).s;
   const direct10 = psGID({ hue: neutral.hue, chroma: 10, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir, anchor: neutral.anchor }, ctlGID, esGID);
   const hexesGID = (r) => JSON.stringify(r.map((s) => s.hex));
   ok(anchorS > 0.10 && anchorS <= 0.30, `(gid3 precondition) Neutral's anchor ${neutral.anchor} OKHSL s ${anchorS.toFixed(4)} sits in (0.10, 0.30]`);
-  ok(hexesGID(freshView.palettes[nIdx].fullRamp) === hexesGID(direct100), "(gid3) a fresh doc's Neutral ramp equals the chroma-100 ramp: R69 caps an anchored ramp at the anchor's own s, so group chroma above it is ignored");
-  ok(hexesGID(direct10) !== hexesGID(direct30), "(gid3b) Neutral still follows a group chroma BELOW its anchor's s: the chroma-10 ramp differs from the chroma-30 ramp (the mute direction is kept)");
+  const direct50 = psGID({ hue: neutral.hue, chroma: 50, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir, anchor: neutral.anchor }, ctlGID, esGID);
+  const sGID = (hex) => okGID([1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))).s;
+  const halfOff = direct50.filter((s, i) => Math.abs(sGID(s.hex) - 0.5 * sGID(direct100[i].hex)) > 0.02).map((s) => s.stop);
+  ok(hexesGID(freshView.palettes[nIdx].fullRamp) !== hexesGID(direct50) && halfOff.length === 0 && direct50.some((s) => s.stop === 500), `(gid3) a fresh doc's Neutral ramp differs from the chroma-50 ramp, and the chroma-50 ramp's OKHSL s is 0.5 x the chroma-100 ramp's at every stop, stop 500 included (off at: ${halfOff.join(" ") || "none"})`);
+  ok(hexesGID(direct10) !== hexesGID(direct30), "(gid3b) the damper keeps biting low: Neutral's chroma-10 ramp differs from its chroma-30 ramp");
 
   // (gid4) the Global tab renders all four group rows, each with its own base+prime chroma
   // sliders, seeded from GROUP_DEFAULTS.
@@ -3612,6 +3616,35 @@ flushRaf();
   ok(JSON.stringify(beforeRamps.palettes[brandIdx2].ramp) !== JSON.stringify(afterRamps.palettes[brandIdx2].ramp), "(gid8b) ...and the second Brand palette's ramp too, every ramp in the group is a chroma peer");
   app.doc.paletteGroups.brand.baseChroma = 100; // restore for later assertions
   app.render(); flushRaf();
+
+  // (gid-damp500) #785 U2 (R94): the damper reaches stop 500 of an anchored ramp. Material at 60
+  // through the Global slider moves Neutral's stop 500 hex (R69's cap held it on the anchor).
+  {
+    const nI = app.doc.palettes.findIndex((p) => p.name === "Neutral");
+    const s500Before = pvGID(app.doc).palettes[nI].fullRamp.find((s) => s.stop === 500).hex;
+    app.setSegment("global"); app.render(); flushRaf();
+    const materialBaseInput = findFk("slider:Material base chroma");
+    materialBaseInput.value = "60"; materialBaseInput.dispatch("input", {});
+    app.commitDrag(); app.render(); flushRaf();
+    const s500After = pvGID(app.doc).palettes[nI].fullRamp.find((s) => s.stop === 500).hex;
+    ok(app.doc.paletteGroups.material.baseChroma === 60 && s500After !== s500Before, `(gid-damp500) Material base chroma 60 through the Global slider moves Neutral's stop 500 (${s500Before} to ${s500After})`);
+    app.doc.paletteGroups.material.baseChroma = GIDDEF.material.baseChroma; // restore for later assertions
+    app.render(); flushRaf();
+  }
+
+  // (gid-owner4) #785 U2, the owner's screenshot (2026-10-03): Brand base chroma 4 must mute Primary's
+  // whole ramp to about 4% of its group-100 saturation, its vivid middle (stops 400 to 600) included.
+  // Read as OKHSL s over owner4-span: stops 200 to 800 whose at-100 s exceeds 0.05 (outside it 8-bit
+  // hex quantization dominates). Prime chroma never reaches the ramp: the base-4 ramp is the same
+  // with Brand prime chroma 100 and 0.
+  {
+    const brandAt = (base, prime) => { const d = ddGID(); d.paletteGroups.brand = { ...d.paletteGroups.brand, baseChroma: base, primeChroma: prime }; return pvGID(d).palettes.find((p) => p.name === "Primary").fullRamp; };
+    const at100 = brandAt(100, 100), at4 = brandAt(4, 100), at4p0 = brandAt(4, 0);
+    const span = at100.map((s, i) => ({ stop: s.stop, s100: sGID(s.hex), s4: sGID(at4[i].hex) })).filter((x) => x.stop >= 200 && x.stop <= 800 && x.s100 > 0.05);
+    const outside = span.filter((x) => !(x.s4 / x.s100 >= 0.025 && x.s4 / x.s100 <= 0.055));
+    const covers = [400, 500, 600].every((st) => span.some((x) => x.stop === st));
+    ok(span.length > 0 && covers && outside.length === 0 && hexesGID(at4) === hexesGID(at4p0), `(gid-owner4) Brand base 4 holds Primary's owner4-span (${span.length} stops, 400/500/600 in: ${covers}) at s(4)/s(100) in [0.025, 0.055] (outside: ${outside.map((x) => `${x.stop}:${(x.s4 / x.s100).toFixed(3)}`).join(" ") || "none"}; 500 reads ${((span.find((x) => x.stop === 500) || {}).s4 / (span.find((x) => x.stop === 500) || {}).s100).toFixed(3)}), and prime 100 and 0 render it the same: ${hexesGID(at4) === hexesGID(at4p0)}`);
+  }
 
   // (gid9) moving a palette OUT of Data restores its stored per-palette PRIME override (ratified
   // Open Question 1, the ramp itself has no per-palette override to restore any more, REQ-002): a
