@@ -17,6 +17,13 @@ they landed on `main` and reference the squash-merged PR that introduced them.
   (`-prime-brightest` through `-prime-dimmest`). Consumers referencing the old name must rename it.
   The Panda key path for the centre is unchanged (`prime.prime`, `prime.DEFAULT`). Export schema is
   now `ultimate-tokens-brand-kit/4` and the brand-kit MCP server is 0.4.0.
+- **Breaking: the Material naming scheme is `--md-*`** (#791). The Material 3-style preset now emits
+  `--md-color-*` (colour), `--md-typescale-*` (type) and `--md-*` (geometry, for example `--md-size-3-height`
+  and `.md-control-md`); the old `--md-` plus system-segment roots are gone and nothing emits them. A kit
+  saved on the old Material triple loads through the v7 hydrate rewrite, once, to the new triple; a lone
+  old prefix beside a custom one stays as typed. Consumers whose stylesheets reference the old
+  variable names must rename them. Export schema is now `ultimate-tokens-brand-kit/5` and the brand-kit
+  MCP server is 0.5.0.
 
 ### 2026-09-30
 
@@ -445,8 +452,8 @@ they landed on `main` and reference the squash-merged PR that introduced them.
   product engines in `npm test`, so it cannot drift from the tokens it documents. (#186, #187, #188, #192,
   #193, #194, #196)
 - **Configurable token naming scheme across all three systems.** Colour/type/geometry exports emit the
-  default (`--c-*` / `--type-*` / `--size-*`), a **Material 3-flavoured** scheme (`--md-sys-color-*` /
-  `--md-sys-typescale-*` / `--md-sys-*`), or a **custom `--{brand}-*`** prefix, chosen in Settings and
+  default (`--c-*` / `--type-*` / `--size-*`), a **Material 3-flavoured** scheme (`--md-color-*` /
+  `--md-typescale-*` / `--md-*`), or a **custom `--{brand}-*`** prefix, chosen in Settings and
   unified across colour, type, and geometry. (#189, #191)
 - **Geometry container tier**: semantic inset/gap tokens plus stroke/border tokens beside the existing
   control geometry, so spacing and dividers are tokenised too. (#183)

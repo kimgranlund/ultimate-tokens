@@ -74,7 +74,7 @@ a consumer adds in any subset, any order. The constants + the reference table: `
 container−2`, `text = h/4+6` doubling as font AND caret) evaluating AdiaUI's scale-ladder. Its ten
 steps are named NUMERICALLY, `LADDER_SIZE_KEYS = ["0".."9"]` (a final owner ruling; the
 CSV's ten rows map onto ten CONSECUTIVE +4 steps 20·24·28·32·36·40·44·48·52·56, exported as
-`--{pfx}-size-{0..9}-{field}`, e.g. `--md-sys-size-3-height: 32px`, gen-ui-kit binds these directly).
+`--{pfx}-size-{0..9}-{field}`, e.g. `--md-size-3-height: 32px`, gen-ui-kit binds these directly).
 Step `"3"` (32px) is the MD-equivalent, `LADDER_MD_STEP`, since there is no `.MD` key on this ramp at
 all; `SIZES`/`SIZE_KEYS` above are UNCHANGED (still exactly six t-shirt names at 20·24·28·36·48·64) and
 the two ramps' naming schemes are entirely disjoint, not overlapping strings.
