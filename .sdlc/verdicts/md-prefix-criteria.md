@@ -2,17 +2,39 @@
 kind: criteria-review
 plan: md-prefix
 seat: verifier
-pass: 1
+pass: 2
 ticket: none yet
 written: 2026-10-03
 ---
 
-# md-prefix criteria review · pass 1 · 🔴 at `65ad60d0`
+# md-prefix criteria review · pass 2 · 🟢 at `b5f325c4`
 
-Current state: pass 1 🔴 at `65ad60d0`. Five of twelve rows are not checkable as written (C1.3, C1.4, C2.1, C2.2, C2.3); the plan is not mobilizable until they are repaired. Q1 and Q2 graded against their recommended answers (A, A): C1.8 is in scope, C1.9 is not.
+Current state: pass 2 🟢 at `b5f325c4` (revision 1; owner rulings Q1 A, Q2 B). All five pass 1 reds are repaired, C2.2 is dropped, and the new C1.9 is checkable, so every live row C1.1 to C2.4 is checkable. The plan is mobilizable on criteria, sequenced after prime-name #789. Pass 1 follows as history.
 
-verdict: 🔴
-sha: 65ad60d0
+verdict: 🟢
+sha: b5f325c4
+
+Pass 1 lines: `verdict: 🔴` at `65ad60d0`.
+
+## Pass 2 · 🟢 at `b5f325c4`: pass 1 reds repaired, C1.9 added
+
+Plan `.sdlc/plans/md-prefix.md` at `b5f325c4`, graded by the Verifier seat directly on the root at `2225965c`. Rows 🟢 at pass 1 and unchanged (C1.1, C1.2, C1.6, C1.7, C1.8, C2.4) stand; C1.5 is re-graded for its base fix. C2.2 is dropped in revision 1 with its reason (no plugin parity test sees the prefix; C2.1 owns the needle), so it has no row here.
+
+### Rows
+
+| # | State | Evidence | Negative control |
+|---|---|---|---|
+| C1.3 | 🟢 | Now goes through the preset: `_setNamingScheme` exists (`settings.js:116`) and its `idOrBrand === "material"` branch sets `md-sys-color`/`md-sys-typescale`/`md-sys` today, so the new assertions red without the unit. | Old triple back at the apply branch: new forms vanish, rxr4 reds. Runnable. |
+| C1.4 | 🟢 | Names `_namingScheme()`, which exists (`settings.js:108`) and returns `"material"` only for the `md-sys-*` triple today. rxr4 asserts `--md-sys-color-*` today. | Old triple back in the detector only: returns `"custom"`, the new `_namingScheme()` assertion reds. Runnable. |
+| C1.5 | 🟢 | Diff base is now `$(git merge-base origin/main HEAD)`; pass 1 concern closed. | Inject the prefix into a UI3 name: names differ. |
+| C1.9 | 🟢 | Merge-base read runs: `EXPORT_SCHEMA_VERSION = 3`; `SERVER = { ..., version: "0.3.0" }` at `mcp/brand-kit-core.mjs:15`; `test/mcp/brand-kit.mjs:29` asserts the generated package version equals `SERVER.version`, so a `SERVER.version` move without `npm run gen:mcp-assets` reds `npm test`. Relative to the merge-base, so it holds in any order with #789 and #788. | Leave the constant at the base value: values equal, check reds. Leave `SERVER.version`: minor unchanged, check reds. |
+| C2.1 | 🟢 | `git grep -c md-sys -- plugin .claude/skills docs/marketing` reads 17 lines over 13 files, the corrected Today; the control's needle is a line's content (`--md-sys-color-*` in `token-integrator.md`), not a line number. | Leave the `token-integrator.md` line: grep prints it. |
+| C2.3 | 🟢 | Unreleased slice: `grep -cF -- '--md-*'` 0 today, `grep -c md-sys` 2 today (the naming-scheme note), matching Today. The note is now rewritten, not kept, so it will not ship stale. | Drop the new entry: first reads 0. Leave the old note: second reads 2. Both runnable. |
+
+### Findings
+
+- 🟢 Pass 1 reds closed; pass 1 line-number concern closed for C2.1 and C1.3 (needles now symbols).
+- 🟡 C1.9's Today says "4 and 0.4.0 after #789". prime-name section 2 says `SERVER.version` moves with Q2, but no prime-name criterion checks it (C1.6 checks only the constant). If #789 lands without moving `SERVER.version`, the two drift. md-prefix's own check stays correct (it is relative), but prime-name's U1 should gate `SERVER.version` too, or compute-layers and md-prefix inherit the gap.
 
 ## Pass 1 · 🔴 at `65ad60d0`: draft
 
