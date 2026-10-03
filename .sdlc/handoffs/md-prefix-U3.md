@@ -68,6 +68,14 @@ Load before the gates: 0 matching processes (limit 3) for hosted-pack; 2 before 
 
 ### Notes for the reviewer
 
-- Out of scope, not changed: the repo-root `.claude-plugin/marketplace.json:14` (the GitHub-channel catalog, not in the npm package) still says `eleven-voice scale`. C3.4 allows no other file; a follow-up would need its own unit.
+- The repo-root `.claude-plugin/marketplace.json:14` carried the same stale count; fixed in this pass after the Orchestrator widened C3.4 and added C3.5b (see below).
 - The pass-1 Breaking prime entry in the CHANGELOG cites #789 for the rename; the commit `8e7157cd` and the criteria cite #792. The new entry uses #792 as C3.6 requires; the older cite is untouched.
 - The README's "first publish since 0.2.1" rests on the owner ruling and `plugin.json` having stayed at 0.2.1 through the 22 commits; the builder did not query the npm registry.
+
+### Pass 2 addendum: `.claude-plugin/marketplace.json`
+
+| Id | Command | Evidence | Negative control | State |
+|---|---|---|---|---|
+| C3.5b | `grep -c 'eleven-voice' .claude-plugin/marketplace.json` | `0` (line 14 now reads `fifteen-voice scale`; `grep -n eleven` on the file finds nothing) | the file at the previous head (`git show HEAD:.claude-plugin/marketplace.json`, a scratch copy): reads `1` | 🟢 |
+| C3.4 | `git diff --name-only $(git merge-base HEAD plan/md-prefix) HEAD` | the earlier three paths plus `.claude-plugin/marketplace.json` | scratch index tree with a modified `plugin/ultimate-tokens/README.md`: the list grows by that path (shown in the table above) | 🟢 |
+| C3.2 | rerun: `unset NODE_OPTIONS`, `node test/plugin/hosted-pack.mjs`, `npm test` | hosted-pack rc 0 (`PASS, @ultimate-tokens/claude@0.2.2`); `npm test` rc 0, `all 54 test files passed`; em-dash and branding clean; 1 matching process before the run (limit 3) | extract with version `banana`: hosted-pack rc 1, `is not semver` (shown in the table above) | 🟢 |
