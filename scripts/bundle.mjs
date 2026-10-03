@@ -29,6 +29,7 @@ const MODS = [
   ["controls", "src/engine/controls.mjs"], // pure, imports tonal only (above); BEFORE exports (derivedAll) AND model (docControls)
   ["prime", "src/engine/prime.mjs"], // pure, imports hct/okhsl/tonal only (all above); BEFORE exports/ds-export
   // (which import it for the prime-emitter block, #550) AND model (which imports it, #533 P3)
+  ["layers", "src/engine/layers.mjs"], // pure registry, imports the engines above (controls/resolve/tonal/prime/semantic/type/geometry); nothing imports it yet
   ["exports", "src/engine/exports.js"],
   ["dsExport", "src/engine/ds-export.js"], // the DS-bundle subsystem (TKT-0015); imports from `exports`, so after it
   ["figmaPlugin", "src/ui/figma-plugin-assets.js"], ["mcpAssets", "src/ui/mcp-assets.js"], ["describeMcpAssets", "src/ui/describe-mcp-assets.js"], ["typeFonts", "src/ui/type-fonts.js"],
@@ -57,7 +58,7 @@ const MODS = [
   ["app", "src/ui/app.js"],
 ];
 const KEY = { "hct.js": "hct", "okhsl.js": "okhsl", "semantic.js": "semantic", "tonal.js": "tonal", "derive.mjs": "derive", "font-fallbacks.mjs": "fontFallbacks", "type.mjs": "type", "geometry.mjs": "geometry", "flags.js": "flags", "persist.js": "persist",
-  "ds-gates.js": "dsGates", "exports.js": "exports", "ds-export.js": "dsExport", "figma-plugin-assets.js": "figmaPlugin", "mcp-assets.js": "mcpAssets", "describe-mcp-assets.js": "describeMcpAssets", "type-fonts.js": "typeFonts", "zip.mjs": "zip", "mode-apply-plan.mjs": "modeApplyPlan", "migrations.mjs": "figmaMigrations", "live-diff.mjs": "liveDiff", "collections.js": "collections", "style-plan.mjs": "stylePlan", "icon-systems.mjs": "iconSystems", "motion.mjs": "motion", "icons.js": "icons", "data-hues.mjs": "dataHues", "prime.mjs": "prime", "resolve.mjs": "resolve", "controls.mjs": "controls", "model.mjs": "model",
+  "ds-gates.js": "dsGates", "exports.js": "exports", "ds-export.js": "dsExport", "figma-plugin-assets.js": "figmaPlugin", "mcp-assets.js": "mcpAssets", "describe-mcp-assets.js": "describeMcpAssets", "type-fonts.js": "typeFonts", "zip.mjs": "zip", "mode-apply-plan.mjs": "modeApplyPlan", "migrations.mjs": "figmaMigrations", "live-diff.mjs": "liveDiff", "collections.js": "collections", "style-plan.mjs": "stylePlan", "icon-systems.mjs": "iconSystems", "motion.mjs": "motion", "icons.js": "icons", "data-hues.mjs": "dataHues", "prime.mjs": "prime", "resolve.mjs": "resolve", "controls.mjs": "controls", "layers.mjs": "layers", "model.mjs": "model",
   "app-helpers.mjs": "appHelpers", "color.js": "colorSection", "typography.js": "typeSection", "geometry.js": "geomSection",
   "drawer.js": "drawerMixin", "apply-gate.js": "applyGateMixin", "settings.js": "settingsMixin",
   ...Object.fromEntries(CATEGORY_FILES.map((f) => [f, categoryKey(f)])) };

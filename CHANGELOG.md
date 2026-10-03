@@ -17,6 +17,10 @@ they landed on `main` and reference the squash-merged PR that introduced them.
   a hand-built state) now renders as OKLCH, the engine default, where it used to render as cam16; every
   stored document and preset carries `hueSpace` already and renders byte-identically (ramp-identity gate,
   0 differing cells). ADR-028 records the layered-compute direction this opens.
+- **A registry names the seven compute layers** (#788, compute-layers U2). `LAYERS` in
+  `src/engine/layers.mjs` lists `controls`, `group-chroma`, `ramp`, `prime`, `roles`, `type` and `geometry`
+  at version 1, each with its declared inputs, outputs and the engine function it runs. Nothing calls it
+  yet and no output moves; `test/engine/layers.mjs` checks the shape and the input graph.
 
 ### 2026-09-30
 
