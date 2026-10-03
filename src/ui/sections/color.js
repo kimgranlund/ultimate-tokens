@@ -872,7 +872,7 @@ export class ColorSectionImpl {
   }
 
 
-  // renderCompareArea, the Color canvas: the scene rendered in Light AND Dark, side by side, inside ONE
+  // renderCompareArea, the Color canvas (palettes, scrims, radix): the scene in Light AND Dark, side by side, inside ONE
   // pannable .canvas-scene (so pan/zoom/fit move both columns together). Each column builds inside its own
   // scheme (_schemeColumn), so canvasBg() + every resolvedCanvasScheme() read while the scene builds
   // resolves per column. Light first.
