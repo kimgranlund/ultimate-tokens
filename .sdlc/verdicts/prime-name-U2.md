@@ -3,15 +3,31 @@ kind: verdict
 plan: prime-name
 unit: U2
 seat: verifier
-pass: 1
+pass: 2
 ticket: "#789"
 written: 2026-10-03
 ---
 
-# prime-name U2 · pass 1 · 🟡 at `fe6a31cb`
+# prime-name U2 · pass 2 · 🟢 at `ef699c2f`
 
-verdict: 🟡
-sha: fe6a31cbead99f0abf96d32749e9a728d7e50419
+verdict: 🟢
+sha: ef699c2f4e085352ce61c883838e67bf3370532d
+
+Current state: 🟢. Pass lines: pass 1 🟡 at `fe6a31cb` (Finding 1, 8 doc lines derive the retired name); pass 2 🟢 at `ef699c2f` clears it.
+
+## Pass 2
+
+Delta `fe6a31cb..ef699c2f` is docs plus the handoff only (docs fix `6193690e`): `knowledge-04-export-formats.md`, `knowledge-02-tonal-scale.md`, `spec-muted-base-key-spikes.md`, `lld-muted-base-key-spikes.md`, `.sdlc/handoffs/prime-name-U2.md`. No reviewer re-run, per the Orchestrator. The seat ran pass 2 itself (a docs-only delta at its own grade) in the pass 1 clone checked out at `ef699c2f`. The builder was sonnet; the seat is opus, outside its family. The pass 2 handoff passed `verdict.py check`. Pass 1 rows C2.1 to C2.5 stand: the delta touches none of their files except the docs C2.1 greps, re-run below.
+
+| # | State | Evidence | Negative control |
+|---|---|---|---|
+| F1 cleared | 🟢 | `git grep -nE 'prime-\{step\}' ef699c2f -- docs plugin .claude/skills ':!docs/tickets' ':!docs/plan/archive'` gives 9 hits; `grep -vc bare` on them prints `1`, and that one is `knowledge-04-export-formats.md:254` (`other six are -prime-{step}`), the second line of the new sentence at `:253` that names the bare `--{pfx}-{n}-prime`. All 8 pass 1 lines now carry a bare-centre note (`knowledge-04:260,264`, `knowledge-02:298`, `spec-muted-base-key-spikes.md:300,302,636`, `lld-muted-base-key-spikes.md:128,132`) | Same pipeline at `fe6a31cb` prints `8` unnoted, so the check reds on the unfixed docs |
+| C2.1 re-run | 🟢 | `git grep -l prime-prime ef699c2f -- docs plugin src mcp figma test ':!docs/tickets' ':!docs/plan/archive' ':!docs/reference/data'` printed nothing, rc 1 | Pass 1 control stands (the `f70c3f94` spec file restored surfaces it); the new text spells only the bare form |
+| C2.4 re-run | 🟢 | `npm test` in the clone at `ef699c2f`: `✓ all 54 test files passed`, rc 0, `git status --porcelain` 0 lines; `node test/repo/em-dash.mjs` `em-dash: clean (1106 files scanned)`, `node test/repo/branding.mjs` `branding: clean (1098 files scanned)` | Pass 1 adapter control stands (`"scrimX` in role-table, `node test/run.mjs` exit 1) |
+
+Pass 1 Finding 2 (the Panda parenthetical at `knowledge-04:349`) is low and still open; not blocking.
+
+## Pass 1 · 🟡 at `fe6a31cb`
 
 `unit/pn-U2` at `fe6a31cb`, unit range `f70c3f94..fe6a31cb` (merge-base with main `f57abf5d`), against `.sdlc/plans/prime-name.md` C2.1 to C2.5 (criteria 🟢 at pass 4, `1869b4f9`). Evidence run: verifier-l2 (opus) in a throwaway clone; `npm test` once (the reviewer skipped it). The builder was sonnet, so the checker sits outside its family. The unit touches no `src`, `figma`, `mcp`, `scripts` or `test` file, so build and smoke were not run. The seat re-read `knowledge-04-export-formats.md:247-263` at `fe6a31cb` itself. Handoff and review passed `verdict.py check`; neither was used as evidence. Every criterion is met. The verdict is 🟡 for the reviewer's Medium, confirmed: the canonical prime tables still teach the retired name by derivation (Findings 1).
 
