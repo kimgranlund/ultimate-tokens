@@ -85,7 +85,7 @@ per stop:
   intended = relChroma ? (chroma/100)·maxc : target   # per-stop ceiling basis vs base-peak basis
   damped   = min(intended·m, maxc)
   floorC   = min((chromaFloor/100)·min(maxc, floorRef), intended)  # NEVER above intended → muted stays muted, neutral stays neutral
-                                                  # floorRef = max ceiling of stops 450/500/550 (#701): the floor never rises past the first step
+                                                  # floorRef = floorRefAt(...) (#701, #766): max ceiling at the pivot, 450 and 550 tones, read at THIS stop's own hue before edge rotation
   chroma   = min(maxc, max(damped, floorC))
   rgb      = hctToRgb(hue, chroma, tone)
 ```
@@ -140,16 +140,27 @@ chromaEnvelope(stop, anchorStop, lift, controls):        # src/engine/tonal.js, 
   `intended` (kills the near-white "dead zone") but is capped at `intended`, so it never over-saturates a
   muted palette and never tints a true neutral (`intended≈0` → floorC 0). Saturated ramps already clamp at
   `maxc`, so the floor never binds. (The `chroma-floor` gate proves all four.) Its gamut reference is
-  `min(maxc, floorRef)` (#701 U2, revision 14), `floorRef` the largest ceiling among the anchor stop and its
-  first display step either side (450, 550): near white and black `maxc` is the smaller, so the floor stays
-  gamut-relative there; on the side where the gamut widens away from the anchor it holds flat. The old
+  `min(maxc, floorRef)` (#701 U2, revision 14), `floorRef` the largest ceiling among the ramp's three
+  reference tones (the pivot tone and the first display step either side, 450 and 550), read per stop by
+  `floorRefAt` (#766) at that stop's own hue before edge rotation: the CAM16 hue the per-stop OKLCH solve
+  finds for its tone on the anchored OKLCH path, `seedHue` on anchored cam16, `baseHue` non-anchored. Near
+  white and black `maxc` is the smaller, so the floor stays gamut-relative there; on the side where the
+  gamut widens away from the anchor it holds flat. Edge rotation (`hueShift`) is deliberately NOT followed:
+  the ceilings are not monotone in hue, so a reference that follows the rotation rises or falls along the
+  ramp against stops that do not move with it, and both directions measured off-anchor dips (ADR-026
+  amendment, 2026-10-03). Where every stop reads one hue (non-anchored at any `hueShift`, anchored cam16
+  with an unclamped anchor) the render is byte-identical to a one-hue-per-ramp reading; on the anchored
+  OKLCH path the per-stop solved hue moves a curated stop by at most 9.11 CAM16 C (a corpus measurement,
+  not an engine bound), and the floor can rise outward of 450/550. The old
   `chromaFloor%·maxc` followed `maxc` up that side while the damped value fell, and the two met in a valley
   one or two stops out, which with the envelope's infinite slope at the anchor made the 58 off-anchor dips
   (57 at 450, 1 at 550) of the retired 90-name even dip baseline; the 32 at stop 500 are notches, still
   present and not gated. With a damped value that is non-increasing
   outward (constant `intended`) no off-anchor dip can form; with `relChroma` or the anchored basis blend that
   is a measurement, not a guarantee, gated at 0 by `test/engine/tonal.mjs` (`dip-gate-even`, rendered path)
-  and `npm run gate:even-dips` (gate path) with no list. Capping at the anchor stop alone drains the far half
+  and `npm run gate:even-dips` (gate path and the `hueShift` grid lines (a) and (b1)) with no list; grid
+  line (b2), 1,000 pinned-seed random anchored palettes, is bounded at the merge-base's count (7 dip cells),
+  not at 0, because the per-stop OKLCH solve trades dips on random anchored input under rotation. Capping at the anchor stop alone drains the far half
   of a near-white or near-black ramp; the first-step reference is continuous across the tone window.
 
 ### 6. The OKHSL-path pipeline (`okhslStops`, perceptual/peak)

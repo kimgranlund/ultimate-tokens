@@ -82,8 +82,11 @@ A palette carrying a valid 6-hex `anchor` (a STORED source colour, never fitted)
 
 1. **In-gamut by construction.** Even path: `chroma = min(maxc, max(min(intended·m, maxc), floorC))`, the
    `min(·, maxc)` is load-bearing. `floorC = min((chromaFloor/100)·min(maxc, floorRef), intended)`, with
-   `floorRef` the largest ceiling among stops 450/500/550 (#701), so the floor never rises past the first
-   step; `m` is `chromaEnvelope`, which in `even` only has a flat-start shoulder at the anchor
+   `floorRef` the largest ceiling among the ramp's three reference tones (pivot, 450, 550; #701), read per
+   stop at that stop's own hue before edge rotation (the solved CAM16 hue on the anchored OKLCH path, `seedHue`
+   on anchored cam16, `baseHue` non-anchored; `floorRefAt`, #766), so the floor never rises past the first
+   step where every stop reads one hue (on the anchored OKLCH path it can, and no-dip there is a
+   measurement of `npm run gate:even-dips`); `m` is `chromaEnvelope`, which in `even` only has a flat-start shoulder at the anchor
    (`EVEN_NEIGHBOURHOOD_R`). The same formula runs on the anchored and non-anchored even paths: a change to
    one is a change to both. OKHSL path: in-gamut by OKHSL bijection (`s∈[0,1]`), asserted `inGamut:true`.
 2. **Hits the tone.** Even path: `hctToRgb` binary-searches CAM16 `J` (18 iters) so the pixel's L\* == `toneAt`

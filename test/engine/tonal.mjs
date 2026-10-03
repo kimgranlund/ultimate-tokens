@@ -1605,10 +1605,12 @@ for (const mode of ["perceptual", "peak"]) {
   // DOWN toward a dark or light anchor while the damped value rose toward it, meeting in a valley one or
   // two stops from the anchor; `evenChroma`'s floorRef (src/engine/tonal.js) takes the floor's gamut
   // reference as the largest ceiling among stops 450, 500 and 550 (src/engine/tonal.js floorRefAt, read
-  // at each stop's hue before edge rotation, #766), not the anchor stop's own ceiling (U2 pass 1's design,
-  // retired: it drained the far half toward grey), so the floor does not rise from 450/550 outward; under
-  // the per-stop OKLCH solve and edge rotation that is a measurement, gated at 0 here and by the hueShift
-  // grid in npm run gate:even-dips.
+  // at each stop's own hue before edge rotation, #766), not the anchor stop's own ceiling (U2 pass 1's design,
+  // retired: it drained the far half toward grey). Where every stop reads one hue the floor does not rise
+  // from 450/550 outward; on the anchored OKLCH path each stop reads its own solved hue, so it can, and under
+  // edge rotation the trade is measured, not structural: no-dip is a measurement, gated at 0 here (rendered
+  // path, corpus) and in npm run gate:even-dips (gate path and the hueShift grid lines (a) and (b1)), with
+  // grid line (b2), the pinned random anchored set, bounded at the merge-base's dip count rather than at 0.
   // The even branch below reds on ANY dip at a stop other than 500 under its own gate name,
   // `dip-gate-even`, with no membership test. Dips exactly AT stop 500 (the anchor under a higher group
   // basis, the notch class) are the owner's Q3 ruling: printed as a count and never asserted here.
