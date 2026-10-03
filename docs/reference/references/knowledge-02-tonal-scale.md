@@ -437,7 +437,7 @@ palette leaves stop 500 unchanged while the same edit on a non-anchored copy mov
 **Chroma at the pivot is a blend, not a pin.** The anchored branches call the same `chromaEnvelope`
 (§5) as everything else; what differs is the BASIS fed to it. `anchorChromaBasis` blends the anchor's
 own measured chroma exactly at the pivot toward `min(groupValue, anchorValue)` at each side's
-endpoint, weighted by a smoothstep on the `liftStop` position, so the weight and its derivative are
+endpoint on perceptual and peak, and toward `groupValue` itself on even (`climb = true`), weighted by a smoothstep on the `liftStop` position, so the weight and its derivative are
 both 0 at the pivot. That is what keeps a near-grey anchor from reading as a notch against its own
 neighbours. The basis is always computed at group 100; a group's Base chroma below 100 then damps
 the whole anchored ramp by `g / 100` (§8.1), stop 500 included, so stop 500 is byte-exact to the
