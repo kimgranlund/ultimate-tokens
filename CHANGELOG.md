@@ -32,6 +32,19 @@ they landed on `main` and reference the squash-merged PR that introduced them.
   (`-prime-brightest` through `-prime-dimmest`). Consumers referencing the old name must rename it.
   The Panda key path for the centre is unchanged (`prime.prime`, `prime.DEFAULT`). Export schema is
   now `ultimate-tokens-brand-kit/4` and the brand-kit MCP server is 0.4.0.
+- **Breaking: the Material naming scheme is `--md-*`** (#791). The Material 3-style preset now emits
+  `--md-color-*` (colour), `--md-typescale-*` (type) and `--md-*` (geometry, for example `--md-size-3-height`
+  and `.md-control-md`); the old `--md-` plus system-segment roots are gone and nothing emits them. A kit
+  saved on the old Material triple loads through the v7 hydrate rewrite, once, to the new triple; a lone
+  old prefix beside a custom one stays as typed. Consumers whose stylesheets reference the old
+  variable names must rename them. Export schema is now `ultimate-tokens-brand-kit/5` and the brand-kit
+  MCP server is 0.5.0.
+- **The consumer plugin `@ultimate-tokens/claude` is 0.2.2** (#791). This is the first publish since 0.2.1. Its
+  skill text now names the `--md-*` Material variables (#791), so an agent reading the plugin binds to the
+  variables the preset emits. It also carries the breaking prime rename (#792): the color skill names the centre
+  step `--{pfx}-{n}-prime`, not `--{pfx}-{n}-prime-prime`. Other plugin changes since 0.2.1 include the
+  fifteen-voice type scale (#310), the four geometry pads (#316) and the "Radix" export name with its
+  token-referencing variant (#615, #684).
 - **The even-mode chroma floor reads its gamut reference per stop, at the stop's own hue before edge
   rotation** (#766). The floor's reference was one ceiling per ramp, read at one hue; it is now the largest
   ceiling at the pivot, 450 and 550 tones read at each stop's own hue: the CAM16 hue the per-stop OKLCH solve
@@ -472,8 +485,8 @@ they landed on `main` and reference the squash-merged PR that introduced them.
   product engines in `npm test`, so it cannot drift from the tokens it documents. (#186, #187, #188, #192,
   #193, #194, #196)
 - **Configurable token naming scheme across all three systems.** Colour/type/geometry exports emit the
-  default (`--c-*` / `--type-*` / `--size-*`), a **Material 3-flavoured** scheme (`--md-sys-color-*` /
-  `--md-sys-typescale-*` / `--md-sys-*`), or a **custom `--{brand}-*`** prefix, chosen in Settings and
+  default (`--c-*` / `--type-*` / `--size-*`), a **Material 3-flavoured** scheme (`--md-color-*` /
+  `--md-typescale-*` / `--md-*`), or a **custom `--{brand}-*`** prefix, chosen in Settings and
   unified across colour, type, and geometry. (#189, #191)
 - **Geometry container tier**: semantic inset/gap tokens plus stroke/border tokens beside the existing
   control geometry, so spacing and dividers are tokenised too. (#183)

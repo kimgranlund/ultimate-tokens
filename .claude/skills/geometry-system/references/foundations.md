@@ -183,7 +183,7 @@ gaps, section rhythm). This is the space **BETWEEN** components, a **distinct co
   `geometry.css`; no breakpoint bolt-on siblings (out of scope for #487). **gen-ui-kit's ADR-0109 PR1
   landed 2026-09-03 (f43853d)** (#500): AdiaUI now vendors this file verbatim as
   `packages/web-components/styles/foundation/size-ladder.css` and binds `--a-size` / `--a-ui-size` /
-  `--a-caret-size` / `--a-icon-size` / `--a-ui-inset` to our `--md-sys-size-{step}-*` for every explicit
+  `--a-caret-size` / `--a-icon-size` / `--a-ui-inset` to our `--md-size-{step}-*` for every explicit
   `[scale]×[size]` cell (their bare `:root` default is deliberately left unbound, their own REQ-L-001).
   AdiaUI's control register is no longer an independent set of literals to track for drift, WE are the
   source of truth, live. PR2 (Anatomy, gen-ui-kit#3041) and PR3 (icon-override sweep, gen-ui-kit#3042)

@@ -26,7 +26,7 @@ properties. Your job is never to pick a px size or a font stack, it is to pick t
 1. **Find the export.** A CSS file defining `--font-*` families and the type-scale variables (often
    `type.css` / `tokens.css`; a DTCG `*.tokens.json` and utility classes may sit beside it). **The
    scale prefix is configurable:** the default is `--type-*` (class `.type-*`), but a Material scheme
-   exports `--md-sys-typescale-*` or a custom `--{brand}-type-*`, **read the actual prefix from the
+   exports `--md-typescale-*` or a custom `--{brand}-type-*`, **read the actual prefix from the
    file**; the grammar after it (`-{voice}-{step}-{prop}`) is identical, and font families stay
    `--font-*` regardless. If none exists, stop and ask, do not hardcode sizes.
 2. **Read the fonts.** Five family roles: `--font-display`, `--font-heading`, `--font-body`,

@@ -23,7 +23,7 @@ in as a seat and hands back cleanly rather than starting a competing one.
 ## How it works
 
 Each skill **binds to your project first**: it finds the exported CSS/DTCG, reads the actual variable
-prefix (default `--c-*` / `--type-*` / `--size-*`, or a Material `--md-sys-*` / custom `--{brand}-*`
+prefix (default `--c-*` / `--type-*` / `--size-*`, or a Material `--md-*` / custom `--{brand}-*`
 scheme), enumerates what the kit exports, then applies the usage laws with your real token names. It
 names the semantic token for the job rather than inventing a value, or stops and asks.
 

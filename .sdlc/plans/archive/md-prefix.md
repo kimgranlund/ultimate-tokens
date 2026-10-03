@@ -1,5 +1,5 @@
 ---
-status: approved
+status: done
 ticket: 791
 priority: P2
 lane: naming-scheme (`src/ui/overlays/settings.js`, `src/engine/ds-export.js` prose, comments in `src/engine/{exports.js,type.mjs,geometry.mjs}` and `src/ui/overlays/drawer.js`, `test/engine/{exports,type,geometry}.mjs`, `test/ui/{persist,headless-boot}.mjs`, `src/ui/persist.js` (Q1 A), `src/engine/exports.js` `EXPORT_SCHEMA_VERSION` and `mcp/brand-kit-core.mjs` `SERVER.version` (Q2 B), `plugin/ultimate-tokens/`, `.claude/skills/geometry-system/`, `CHANGELOG.md`, `docs/marketing/`; regenerated `figma/plugin/ui.html`, `src/ui/describe-mcp-assets.js`)
@@ -44,7 +44,8 @@ Geometry families under the root (all follow): `size`, `radius`, `space`, `inset
 ## 3. Units
 
 - [x] U1 (S) Preset, hydrate rewrite (a v7 RENAME_MAPS entry), schema bump, emitted prose, the stale `maintaining-brand-kit-mcp` references (`foundations.md`, `best-practices.md`: schema and server version lines), and `docs/reference/references/knowledge-02-tonal-scale.md` section 8.4 (the persisted schema number): settings.js triple, persist.js, `EXPORT_SCHEMA_VERSION`, `SERVER.version`, comments, ds-export prose, tests, regenerated assets (builder-l2)
-- [ ] U2 (S) Records: consumer plugin, geometry-system skill, CHANGELOG, marketing corpus via `marketing-manager-agent` (builder-l1)
+- [x] U2 (S) Records: consumer plugin, geometry-system skill, CHANGELOG, marketing corpus via `marketing-manager-agent` (builder-l1)
+- [x] U3 (S) · trivial lane · Consumer plugin 0.2.2: `plugin/ultimate-tokens/.claude-plugin/plugin.json` (version, and the description's voice count: `fifteen-voice`, matching the README, the typography skill and `src/engine/type.mjs`) and the CHANGELOG 0.2.2 line (it names the first publish since 0.2.1 and the breaking #792 prime rename). Pass 2 after pre-land pass 2 (builder-l3)
 
 ### U1 criteria
 
@@ -71,6 +72,18 @@ Geometry families under the root (all follow): `size`, `radius`, `space`, `inset
 
 The existing naming-scheme note sits inside `## [Unreleased]`, so it is rewritten to the new names (it would be false at release); C2.3 checks it. Left as history, never rewritten: `docs/plan/archive/*`, `docs/reference/reviews/2026-07-17-export-drift.md`, `.sdlc/records/*`, `.sdlc/plans/archive/*`.
 
+### U3 criteria
+
+| # | Check (command) | Expected | Today | Negative control |
+|---|---|---|---|---|
+| C3.1 | `grep -c '"version": "0.2.2"' plugin/ultimate-tokens/.claude-plugin/plugin.json` | `1` | `0` | put 0.2.1 back: reads `0` |
+| C3.2 | `node test/plugin/hosted-pack.mjs` then `npm test` | exit 0 each, tree clean after | exit 0 at 0.2.1 | set the version to a non-semver string: hosted-pack reds |
+| C3.3 | `awk '/^## \[Unreleased\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md \| grep -c '0\.2\.2'`, and the same slice `\| grep -c md-sys` | first at least `1`; second `0` | `0`; `0` | drop the CHANGELOG line: first reads `0` |
+| C3.4 | `git diff --name-only $(git merge-base HEAD plan/md-prefix) HEAD` on the unit branch | `plugin/ultimate-tokens/.claude-plugin/plugin.json`, `CHANGELOG.md`, `.claude-plugin/marketplace.json` (its plugin description carries the same stale count), `.sdlc/handoffs/md-prefix-U3.md` and the review records (`.sdlc/reviews/md-prefix-U3-review.md`, `-review-p2.md`) only | n/a | touch another file: the list grows |
+| C3.5 | `grep -c 'eleven-voice' plugin/ultimate-tokens/.claude-plugin/plugin.json` and `grep -c 'fifteen-voice' plugin/ultimate-tokens/.claude-plugin/plugin.json`; the README's count word: `grep -c 'fifteen-voice' plugin/ultimate-tokens/README.md` | `0`, `1`, `1` | `1`, `0`, `1` | put `eleven-voice` back: first reads `1` |
+| C3.5b | `grep -c 'eleven-voice' .claude-plugin/marketplace.json` | `0` | `1` | put it back: reads `1` |
+| C3.6 | `awk '/^## \[Unreleased\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md \| grep -F -A6 '@ultimate-tokens/claude' \| grep -c '#792'`, and the same block `\| grep -c 'since 0\.2\.1'` | each at least `1` | `0`, `0` | drop the added sentence: both read `0` |
+
 ## 4. Owner rulings (2026-10-03, relayed by the Conductor)
 
 - Q1 A (the recommendation). `hydrate` rewrites the exact old triple (all three of `md-sys-color`, `md-sys-typescale`, `md-sys`) to `md-color`/`md-typescale`/`md`, once, on load. Nothing emits the old names afterwards. A lone `md-sys-color` with any other type or geometry prefix stays as typed. C1.8.
@@ -89,3 +102,6 @@ File overlap: `src/engine/exports.js` (comment at `:415` only), `src/engine/ds-e
 | 4 | 2026-10-03 | Orchestrator, md-U1 review: C1.8 now requires the rewrite through the file's own versioned RENAME_MAPS channel (CURRENT_SCHEMA_VERSION 6 to 7, persist.js standing convention) so it runs once; C1.1 excludes the two legacy-name sites and checks them separately, ending the split-string evasion; the two `maintaining-brand-kit-mcp` references move from U2 to U1 (U1 invalidates them) |
 | 5 | 2026-10-03 | Orchestrator, md-U1 builder finding: the generated `ui.html` and `describe-mcp-assets.js` embed `persist.js`, so C1.2's `0` cannot hold once the RENAME_MAPS entry names the old root plainly; the counts are now pinned to the embedded copies (1 and 2), so any other hit still reds |
 | 6 | 2026-10-03 | Orchestrator, md-U1 re-review: C1.1's first command also excludes `src/ui/describe-mcp-assets.js` (the embedded persist.js copy C1.2 already pins at 1); knowledge-02 section 8.4 states the persisted schema number, so U1 repairs it. Cross-plan note: pane-context C2.8 and compute-layers C5.4 pin `CURRENT_SCHEMA_VERSION` absolutely; whichever plan lands second re-pins |
+| 7 | 2026-10-03 | Orchestrator, owner ruling at `.sdlc/questions/md-prefix-plugin-version.md` (8f4aef68, answer A): the consumer plugin bumps to 0.2.2 as one small trivial-lane unit U3 (the pre-land record takes pass 2 at the new head). This is the sixth revision row; the owner answer on that question is the authority for it |
+| 8 | 2026-10-03 | Orchestrator, pre-land pass 2 (`.sdlc/verdicts/md-prefix-prepr.md`, 🔴 at e8a8be11) and owner ruling A at `.sdlc/questions/md-prefix-revision8.md`: U3 pass 2 fixes the manifest description count (`eleven-voice` to `fifteen-voice`, C3.5) and the CHANGELOG 0.2.2 line (first publish since 0.2.1, the #792 prime rename, C3.6); C3.4 allows the pass-2 review record; the builder found the repo-root `.claude-plugin/marketplace.json` description carries the same count, so C3.5b and C3.4 take that one file too (stale-record rule) |
+| 9 | 2026-10-03 | Close-out: landed as PR #795, squash 620d0323 on main; pre-land record `.sdlc/verdicts/md-prefix-prepr.md` 🟢 at 66dddf50 (pass 3; pass 2 was 🔴 on the stale `eleven-voice` plugin description, fixed in U3 pass 2). Stale `eleven-voice` wording outside the publish surface filed as #796. Status done, plan archived. |

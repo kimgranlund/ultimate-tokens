@@ -42,7 +42,7 @@ library's series-color source, and the data palettes' own roles for everything e
    colour variables via `light-dark(...)` (often `palette.css` / `tokens.css`; a DTCG
    `*.tokens.json` may sit beside it). If none exists, stop and ask, do not fabricate tokens.
    **The prefix is configurable:** the default is `--c-*`, but a kit may export a Material-flavoured
-   `--md-sys-color-*` or a custom `--{brand}-*` prefix, **read the actual prefix from the file** and
+   `--md-color-*` or a custom `--{brand}-*` prefix, **read the actual prefix from the file** and
    use it throughout; the examples below use `--c-` as the default, but the role grammar after the
    prefix (`-{palette}-{role}`) is identical. *This guide is for the CSS export;* the Tailwind
    (`--color-*`), shadcn, Panda CSS, and Radix exports use different grammars, the role SEMANTICS

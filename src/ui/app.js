@@ -2379,7 +2379,7 @@ class HctApp extends HTMLElement {
 
   // openConfigAsSet, shape-clamp an (untrusted) config and open it as a new set via hydrateConfig() (clamp and
   // legacy stamp, no #740 backfill: its reach is the stored set list, which none of the four callers opens).
-  // openSet's second pass through hydrateStoredDoc is inert only because serialize() stamps schemaVersion 6.
+  // openSet's second pass through hydrateStoredDoc is inert only because serialize() stamps the current schemaVersion.
   // #644: `mintData` is opt-in per call site, NOT ambient. Only the preset-gallery tile (a genuine
   // document-CREATION path) passes `mintData: true`. The other three call sites, "Open saved palette"
   // (which promises "opens exactly as saved"), the Figma-variables approximate read, and the ⬇ Project

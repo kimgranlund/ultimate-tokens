@@ -242,18 +242,34 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   if ("export" in U.hydrate(U.serialize(bad))) FAIL("export", "an all-invalid export object must drop entirely");
   // colorPrefix (the configurable --{prefix}-* colour naming): a sanitized non-default value persists;
   // the default "c" drops (identity); junk sanitizes; a leading digit is repaired.
-  const pfx = JSON.parse(JSON.stringify(base)); pfx.export = { colorPrefix: "md-sys-color" };
-  if (U.hydrate(U.serialize(pfx)).export.colorPrefix !== "md-sys-color") FAIL("export", "colorPrefix must round-trip");
+  const pfx = JSON.parse(JSON.stringify(base)); pfx.export = { colorPrefix: "md-color" };
+  if (U.hydrate(U.serialize(pfx)).export.colorPrefix !== "md-color") FAIL("export", "colorPrefix must round-trip");
   const defp = JSON.parse(JSON.stringify(base)); defp.export = { colorPrefix: "c" };
   if ("export" in U.hydrate(U.serialize(defp))) FAIL("export", "the default colorPrefix 'c' must drop (identity gate)");
-  const junk = JSON.parse(JSON.stringify(base)); junk.export = { colorPrefix: "MD Sys!!" };
-  if (U.hydrate(U.serialize(junk)).export.colorPrefix !== "md-sys") FAIL("export", `colorPrefix must sanitize to a legal ident core (got ${JSON.stringify(U.hydrate(U.serialize(junk)).export)})`);
+  const junk = JSON.parse(JSON.stringify(base)); junk.export = { colorPrefix: "MD Foo!!" };
+  if (U.hydrate(U.serialize(junk)).export.colorPrefix !== "md-foo") FAIL("export", `colorPrefix must sanitize to a legal ident core (got ${JSON.stringify(U.hydrate(U.serialize(junk)).export)})`);
   const dig = JSON.parse(JSON.stringify(base)); dig.export = { colorPrefix: "3x" };
   if (U.hydrate(U.serialize(dig)).export.colorPrefix !== "c3x") FAIL("export", "a leading-digit colorPrefix must be repaired (CSS idents can't start with a digit)");
   // typePrefix (default "type" drops) + geomPrefix (default "" absent), the type/geometry naming scheme.
-  const sch = JSON.parse(JSON.stringify(base)); sch.export = { typePrefix: "md-sys-typescale", geomPrefix: "md-sys" };
+  const sch = JSON.parse(JSON.stringify(base)); sch.export = { typePrefix: "md-typescale", geomPrefix: "md" };
   const rs = U.hydrate(U.serialize(sch)).export;
-  if (rs.typePrefix !== "md-sys-typescale" || rs.geomPrefix !== "md-sys") FAIL("export", `type/geom prefixes must round-trip (got ${JSON.stringify(rs)})`);
+  if (rs.typePrefix !== "md-typescale" || rs.geomPrefix !== "md") FAIL("export", `type/geom prefixes must round-trip (got ${JSON.stringify(rs)})`);
+  // #791: the Material preset's root was renamed (v7 RENAME_MAPS entry): a kit saved on the exact old
+  // triple, stamped below v7, is rewritten once on load. serialize() stamps the CURRENT version, so each
+  // case sets schemaVersion by hand.
+  const OLD_TRIPLE = { colorPrefix: "md-sys-color", typePrefix: "md-sys-typescale", geomPrefix: "md-sys" };
+  const NEW_TRIPLE = { colorPrefix: "md-color", typePrefix: "md-typescale", geomPrefix: "md" };
+  const withExport = (exp, schemaVersion) => { const d = U.serialize(base); d.export = exp; if (schemaVersion === undefined) delete d.schemaVersion; else d.schemaVersion = schemaVersion; return d; };
+  for (const v of [undefined, 0, 6]) {
+    const rOld = U.hydrate(withExport({ ...OLD_TRIPLE }, v)).export;
+    if (JSON.stringify(rOld) !== JSON.stringify(NEW_TRIPLE)) FAIL("export", `the exact old Material triple on a doc stamped ${v} must hydrate to md-color/md-typescale/md (got ${JSON.stringify(rOld)})`);
+  }
+  const rV7 = U.hydrate(withExport({ ...OLD_TRIPLE }, 7)).export;
+  if (JSON.stringify(rV7) !== JSON.stringify(OLD_TRIPLE)) FAIL("export", `the same triple on a doc stamped v7 must stay as typed, the rewrite runs once (got ${JSON.stringify(rV7)})`);
+  const rLone = U.hydrate(withExport({ colorPrefix: OLD_TRIPLE.colorPrefix, typePrefix: "brand-type" }, 6)).export;
+  if (rLone.colorPrefix !== OLD_TRIPLE.colorPrefix || rLone.typePrefix !== "brand-type") FAIL("export", `a lone old colour prefix beside a non-Material type prefix must stay as typed (got ${JSON.stringify(rLone)})`);
+  const rPart = U.hydrate(withExport({ colorPrefix: OLD_TRIPLE.colorPrefix, typePrefix: OLD_TRIPLE.typePrefix }, 6)).export;
+  if (rPart.colorPrefix !== OLD_TRIPLE.colorPrefix || rPart.typePrefix !== OLD_TRIPLE.typePrefix || "geomPrefix" in rPart) FAIL("export", `a partial old triple (no geometry root) is not the preset and must stay as typed (got ${JSON.stringify(rPart)})`);
   const dflt = JSON.parse(JSON.stringify(base)); dflt.export = { typePrefix: "type", geomPrefix: "" };
   if ("export" in U.hydrate(U.serialize(dflt))) FAIL("export", "default typePrefix 'type' + empty geomPrefix must drop (identity gate)");
 }
@@ -637,13 +653,13 @@ import { defaultDocument, projectView, DEFAULT_PALETTES } from "../../src/ui/mod
   if (stampedB !== 15) FAIL("stored-anchors", `(b) an edited Primary row must leave 15 of 16 stamped, got ${stampedB}`);
   if (hydStrippedB.palettes[primaryIdx].anchor) FAIL("stored-anchors", "(b) the edited Primary row itself must not be stamped");
 
-  // (c) the same snapshot stamped schemaVersion: 6 (current) is left untouched: 0 stamped.
+  // (c) the same snapshot stamped with the CURRENT schemaVersion is left untouched: 0 stamped.
   const strippedC = U.serialize(fresh); delete strippedC.schemaVersion;
   for (const p of strippedC.palettes) { delete p.anchor; delete p.sourceAnchor; }
-  strippedC.schemaVersion = 6;
+  strippedC.schemaVersion = U.CURRENT_SCHEMA_VERSION;
   const hydStrippedC = hydrateStoredDoc(strippedC);
   const stampedC = hydStrippedC.palettes.filter((p) => p.anchor && p.sourceAnchor).length;
-  if (stampedC !== 0) FAIL("stored-anchors", `(c) a doc already stamped schemaVersion 6 must not be backfilled, got ${stampedC} anchors`);
+  if (stampedC !== 0) FAIL("stored-anchors", `(c) a doc already stamped with the current schemaVersion must not be backfilled, got ${stampedC} anchors`);
 
   // (d) the raw, pre-hueSpace legacy form (DEFAULT_PALETTES' own CAM16 hues, no `anchor`, no
   // `hueSpace`) also carries 16 anchors after hydrateStoredDoc, and stamps hueSpace "cam16".
@@ -697,7 +713,7 @@ import { defaultDocument, projectView, DEFAULT_PALETTES } from "../../src/ui/mod
 // openConfigAsSet method body in src/ui/app.js calls hydrateConfig( and not hydrateStoredDoc( (an
 // HctApp method needs the DOM shim, so the source is read), and Maison through the method's real chain
 // (hydrateConfig, serialize, then openSet's hydrateStoredDoc) opens with Success unanchored: that
-// second pass is inert only because serialize() stamps schemaVersion 6 and the backfill returns at
+// second pass is inert only because serialize() stamps the current schemaVersion and the backfill returns at
 // >= 5. Every red sub-gate joins one FAIL message, since FAIL keeps one message per gate name.
 import { readFileSync } from "node:fs";
 import { hydrateConfig } from "../../src/ui/app-helpers.mjs";

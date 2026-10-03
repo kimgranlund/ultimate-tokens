@@ -86,7 +86,7 @@ export class SettingsMixinImpl {
 
 
   // _colorPrefix, the CSS custom-property prefix core for the colour export (the `c` in `--c-*`).
-  // Default "c" (the historical Ultimate naming); a user may set "md-sys-color" (Material-flavoured)
+  // Default "c" (the historical Ultimate naming); a user may set "md-color" (Material-flavoured)
   // or any custom namespace, extended with our roles. Sanitized so the preview matches the export.
   _colorPrefix() {
     const raw = this.doc.export && typeof this.doc.export.colorPrefix === "string" ? this.doc.export.colorPrefix : "";
@@ -96,19 +96,19 @@ export class SettingsMixinImpl {
 
   // _typePrefix / _geomPrefix, the naming-scheme prefixes for the type + geometry CSS exports.
   // Type default "type" (--type-*); geometry default "" (native --size-/--radius-/…). A Material scheme
-  // sets them to "md-sys-typescale" and "md-sys" so the whole system exports under one root.
+  // sets them to "md-typescale" and "md" so the whole system exports under one root.
   _typePrefix() { const p = this.doc.export && typeof this.doc.export.typePrefix === "string" ? this.doc.export.typePrefix.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").replace(/^(\d)/, "t$1") : ""; return p || "type"; }
 
   _geomPrefix() { const p = this.doc.export && typeof this.doc.export.geomPrefix === "string" ? this.doc.export.geomPrefix.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").replace(/^(\d)/, "g$1") : ""; return p; }
 
 
   // _namingScheme, the coherent naming convention across all three systems (colour · type · geometry).
-  // "ultimate" = the native names (--c-* · --type-* · --size-*); "material" = one --md-sys-* root
-  // (--md-sys-color-* · --md-sys-typescale-* · --md-sys-*); "custom" = a --{brand}-* root the user types.
+  // "ultimate" = the native names (--c-* · --type-* · --size-*); "material" = one --md-* root
+  // (--md-color-* · --md-typescale-* · --md-*); "custom" = a --{brand}-* root the user types.
   _namingScheme() {
     const cp = this._colorPrefix();
     if (cp === "c" && this._typePrefix() === "type" && !this._geomPrefix()) return "ultimate";
-    if (cp === "md-sys-color" && this._typePrefix() === "md-sys-typescale" && this._geomPrefix() === "md-sys") return "material";
+    if (cp === "md-color" && this._typePrefix() === "md-typescale" && this._geomPrefix() === "md") return "material";
     return "custom";
   }
 
@@ -116,7 +116,7 @@ export class SettingsMixinImpl {
   _setNamingScheme(idOrBrand) {
     let color, type, geom;
     if (idOrBrand === "ultimate") { color = ""; type = ""; geom = ""; } // "" ⇒ defaults drop (identity)
-    else if (idOrBrand === "material") { color = "md-sys-color"; type = "md-sys-typescale"; geom = "md-sys"; }
+    else if (idOrBrand === "material") { color = "md-color"; type = "md-typescale"; geom = "md"; }
     else {
       const brand = String(idOrBrand || "").toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").replace(/^(\d)/, "b$1").slice(0, 24);
       if (!brand) { color = ""; type = ""; geom = ""; } else { color = `${brand}-color`; type = `${brand}-type`; geom = brand; }
@@ -235,9 +235,9 @@ export class SettingsMixinImpl {
         this._settingRow("CSS units", "The unit the Typography + Geometry CSS/DTCG use. rem = px ÷ 16 (clean, thanks to the nice-number sizes). Figma stays px.", units, this._exportUnit(),
           (id) => this._setExportUnit(id), "setexportunit"),
         // Naming convention, one coherent scheme across colour · type · geometry. Ultimate = native
-        // names; Material = the --md-sys-* root; Custom = a --{brand}-* root. The app chrome is
+        // names; Material = the --md-* root; Custom = a --{brand}-* root. The app chrome is
         // unaffected (it dogfoods a fixed --c-* theme); only the CSS EXPORT names change.
-        this._settingRow("Naming convention", "The naming of the CSS variables the export emits, across colour, type, and geometry. Material uses M3-style --md-sys-* naming, extended with our roles. The app's own UI is unaffected.", schemePresets, scheme,
+        this._settingRow("Naming convention", "The naming of the CSS variables the export emits, across colour, type, and geometry. Material uses M3-style --md-* naming, extended with our roles. The app's own UI is unaffected.", schemePresets, scheme,
           (id) => this._setNamingScheme(id === "custom" ? (brand || "brand") : id), "setnaming"),
         h("div", { class: "settings-row" },
           h("div", { class: "settings-row-text" }, h("b", {}, "Custom brand root"),
