@@ -1,6 +1,6 @@
 # Handoff md-prefix U1 · #791 Material preset `--md-*`
 
-Builder, grade l2, pass 2 (review FAIL findings 1 to 3 fixed against plan revision 4). Branch `unit/md-U1`, worktree `.worktrees/md-U1`, cut from `plan/md-prefix` at `b24e6a1f` (= merge-base with `origin/main`). Pass-1 code commit `99559c41`; pass-2 code commit `adfc6ba8`; this handoff is the commit on top. Owner rulings applied: every `md-sys-*` family becomes `--md-*`, Q1 A (hydrate rewrite, exact old triple only), Q2 B (schema and server version to merge-base plus 1), R98 (no alias layer, no fallback).
+Builder, grade l2, pass 3 (re-review finding 1 fixed against plan revision 6; findings 1 to 3 of the first review fixed in pass 2). Branch `unit/md-U1`, worktree `.worktrees/md-U1`, cut from `plan/md-prefix` at `b24e6a1f` (= merge-base with `origin/main`). Pass-1 code commit `99559c41`; pass-2 code commit `adfc6ba8`; pass-3 doc commit follows it; this handoff is in the head commit. Owner rulings applied: every `md-sys-*` family becomes `--md-*`, Q1 A (hydrate rewrite, exact old triple only), Q2 B (schema and server version to merge-base plus 1), R98 (no alias layer, no fallback).
 
 ## Files
 
@@ -13,6 +13,7 @@ Builder, grade l2, pass 2 (review FAIL findings 1 to 3 fixed against plan revisi
 | `src/engine/{ds-export.js,geometry.mjs,type.mjs}`, `src/ui/overlays/drawer.js` | comment and prose only |
 | `scripts/gen-adia-derived-exports.mjs` | artifact versions: oklch 2.0.0 to 2.1.0, radix 1.3.0 to 1.4.0 (same document under a bumped schema, "minor" in the file's own policy) |
 | `test/engine/{exports,geometry,type}.mjs`, `test/ui/{persist,headless-boot}.mjs` | prefix literals to the new names; rxr4 extended (preset read-back, colour, type and geometry CSS through the Settings path) with a structural stray check (any `--md-` custom property outside an owned family reds, the retired segment included); persist gains the old-triple cases for docs stamped undefined, 0 and 6, the v7-stays case, the lone-prefix and partial-triple cases; the sanitize cases use `MD Foo!!` |
+| `docs/reference/references/knowledge-02-tonal-scale.md` | section 8.4 retitled "schema v7", `CURRENT_SCHEMA_VERSION` 6 to 7, plus the v7 sentence (first `RENAME_MAPS` entry since v3, old Material triple rewritten once below v7). Other persisted-schema-number claims in `docs/reference`, `.claude/skills`, `plugin`: only CHANGELOG history (v2, v3) and knowledge-02 line 261 ("retired at schema v4"), all historical and still true |
 | `src/ui/{app-helpers.mjs,app.js}` | two comments say "current schemaVersion" instead of a stale "schemaVersion 6" |
 | `.claude/skills/maintaining-brand-kit-mcp/references/{foundations,best-practices}.md` | `brand-kit/4` to `brand-kit/5`, server `0.4.0` to `0.5.0` (moved from U2 to U1 by plan revision 4) |
 | `test/engine/exports.mjs` (`v`, radix-refs-module literal), `test/engine/fixtures/shadcn-baseline.css`, `test/figma/plugin.mjs`, `test/mcp/*.mjs` | schema literal 4 to 5 (stamp only on the fixture) |
@@ -39,6 +40,9 @@ Controls ran in the unit tree after `npm test` was green, each as a one-line mut
 | C1.9 | `EXPORT_SCHEMA_VERSION` at the merge-base versus HEAD; `SERVER.version` likewise | `4` to `5`; `0.4.0` to `0.5.0`; `npm test` exit 0 (`test/mcp/brand-kit.mjs` pins the package version to `SERVER.version`) | constant left at 4: `FAIL hpg-export-schema-stamp ... want "/* ultimate-tokens export schema 5 */"` plus `shadcn-baseline` and `radix-refs-module`; restored | 🟢 |
 
 ## Notes for the reviewer
+
+- Pass 3 check: `grep -n "schema v6\|CURRENT_SCHEMA_VERSION. is 6" docs/reference/references/knowledge-02-tonal-scale.md` prints nothing (at the pass-2 head it printed lines 387 and 389); `npm test` exit 0, 54 of 54.
+- C1.1 now follows plan revision 6 (the exclusion also names `src/ui/describe-mcp-assets.js`); the C1.2 embed note in the Ran table stands for `figma/plugin/ui.html`.
 
 - C1.6 as written ("sha256 equal") cannot hold together with C1.9: the CSS export's first line is the schema stamp, so the default kit's full text moves from `schema 4` to `schema 5`. The substance claim, that the default naming is unchanged, holds: the body from line 2 on is byte-identical. The plan's C1.6 wants a one-line amendment ("equal after the stamp line"); I left the plan alone.
 - Review findings 1 to 3 (pass 1 FAIL): the rewrite now rides the versioned channel (v7 entry, `CURRENT_SCHEMA_VERSION` 7) and does not run on a v7-stamped doc; the old triple is written plainly in the entry (no split-string); the "repo gate" comments are gone (`grep -rn "repo gate" src test` prints nothing); the two `maintaining-brand-kit-mcp` references are repaired in this unit.
