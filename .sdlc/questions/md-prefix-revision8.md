@@ -9,3 +9,11 @@
 | Options | A (recommended): yes, both findings · B: fix F1 only, record F2 as a deliberate omission · C: no, land at 0.2.2 as is and ship 0.2.3 later |
 | Diagnosis | none separately: the pre-land record states cause and fix for both findings, and no workaround has been tried |
 | Default if unanswered | none: a revision past the cap needs the owner |
+
+## Answer
+
+| Field | Value |
+|---|---|
+| Asked | 2026-10-03, via AskUserQuestion |
+| Chosen | A: "Fix both (Recommended)" |
+| Ruling | revision 8: U3 pass 2 fixes the description count and the CHANGELOG 0.2.2 line, then pre-land pass 3 at the new head |
