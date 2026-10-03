@@ -2,18 +2,19 @@
 kind: criteria-review
 plan: pane-context
 seat: verifier
-pass: 5
+pass: 6
 ticket: none yet
 written: 2026-10-01
 ---
 
-# pane-context criteria review · pass 5 · 🟢 at `600751b0`
+# pane-context criteria review · pass 6 · 🔴 at `2d5263b6`
 
-Current state: pass 5 🟢 at `600751b0` (plan revision 7). The two pass 4 reds, C2.2 and C2.7, now read Neutral `17/19`, the figure a correct build produces. Every U2 row C2.1 to C2.10 is checkable; U1, U3 and U4 stay 🟢 from pass 2. The plan is mobilizable. Passes 4 to 1 follow as history.
+Current state: pass 6 🔴 at `2d5263b6` (plan revision 8, the new C2.11 only). C2.11's `min(group, anchor)` grep on `decision-records.md` expects `0`, but the one hit is the dated R69 amendment to ADR-026, which the row itself says a new amendment supersedes; a faithful build appends and keeps that history, so it prints `1`. Every other U2 row stays 🟢 from pass 5; U1, U3 and U4 stay 🟢 from pass 2. Passes 5 to 1 follow as history.
 
-verdict: 🟢
-sha: 600751b0
+verdict: 🔴
+sha: 2d5263b6
 
+Pass 5 lines: `verdict: 🟢` at `600751b0`.
 Pass 4 lines: `verdict: 🔴` at `744e7dd1`.
 Pass 3 lines: `verdict: 🔴` at `b59139a0`.
 Pass 2 lines: `verdict: 🟢` at `11828f00`.
@@ -162,3 +163,18 @@ Revision 7 at `600751b0`, graded by the seat directly on `git diff 744e7dd1 6007
 | C2.7 | 🟢 | `--group-chroma --defaults --base ...`, its `--saved-material 30` leg, `node -e` on `GROUP_DEFAULTS` | The saved-doc leg and the control both read `17/19` with the same reason; the defaults leg is unchanged from pass 4. The control (default back to 30) can fail the row: it prints `17/19` where the row expects `0/19` and `30` where it expects `100` |
 
 C2.1, C2.3 to C2.6 and C2.8 to C2.10 carry over 🟢 from pass 4 unchanged. Pass 4's wording note on C2.9 (the "skips the damper" control reads `0/16` only in `perceptual` and `peak`) is not taken up; it stays a note for the unit's verifier, not a red.
+
+## Pass 6 · 🔴 at `2d5263b6`: C2.11 asks a dated ADR amendment to lose its own text
+
+verdict: 🔴
+sha: 2d5263b6
+
+Revision 8 at `2d5263b6`, graded by the seat directly on `git diff 600751b0 2d5263b6 -- .sdlc/plans/pane-context.md` (the lane line, C2.11, the U2 checklist line, the revision row). Today's counts read with `git show 2d5263b6:<path>`.
+
+| # | State | Check I would run | Why / what to change, and the control |
+|---|---|---|---|
+| C2.11 | 🔴 | the three greps as written; `npm test` for ac003b | Today's values match the row: `cappedTarget` in `test/ui/shell.mjs` `4`; `min(group, anchor)` in `test/engine/anchor.mjs` `1` and in `decision-records.md` `1`; `R94` there `0`. The `test/ui/shell.mjs`, `test/engine/anchor.mjs` and `R94` needles are checkable and their controls hold. The `decision-records.md` needle is not: its one hit is line 780, inside `**Amendment (2026-09-29, #725, R69).**` of ADR-026, a dated record that also carries the measured identity lines at `afd415c0`. The row asks for a new 2026-10-03 amendment that supersedes it, which is how the file records change (ADR-011 "supersedes ADR-008", ADR-004 "SUPERSEDED" in the Quick map); the superseded amendment keeps its text. A build that does exactly that prints `1` and reds, and one that also quotes the old rule in the new amendment prints `2`. Drop `decision-records.md` from the `min(group, anchor)` grep and pin the amendment directly: for example `grep -c 'Amendment (2026-10-03' docs/reference/references/decision-records.md` at least `1` with `R94` inside it, and a needle for the Quick map row (today nothing in the row checks "its Quick map row names it") |
+
+### Findings
+
+1. 🔴 C2.11: the `decision-records.md` leg of the `min(group, anchor)` grep reds a correct, history-keeping amendment; replace it with a positive needle on the new amendment and one on its Quick map row.
