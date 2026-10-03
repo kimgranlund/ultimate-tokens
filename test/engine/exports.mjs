@@ -960,7 +960,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   // U1.2, every numbered leaf 1..12 of every palette is a var() link in BOTH modes.
   {
     const G = "radix-refs-shape";
-    const RE = /^var\(--c-(?:white|black|[a-z0-9-]+-(?:\d{3}|scrim-\d{3}|prime-[a-z]+))\)$/;
+    const RE = /^var\(--c-(?:white|black|[a-z0-9-]+-(?:\d{3}|scrim-\d{3}|prime(?:-[a-z]+)?))\)$/;
     for (const p of derived) {
       const g = refColors[p.n];
       if (!g) { FAIL(G, `colors.${p.n} missing from the reference form`); continue; }
@@ -1063,7 +1063,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   }
 
   // U1.7, the two additive leaves: on-accent follows the `-on-{n}` role's own refs; prime links the
-  //        mode-independent prime-prime identity primitive and stays base-only (REQ-024).
+  //        mode-independent bare-prime identity primitive and stays base-only (REQ-024).
   {
     const G = "radix-refs-extras";
     for (const p of derived) {
@@ -1072,7 +1072,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
       const onRole = p.roles.find((x) => x.suffix === `-on-${p.n}`);
       const wantOn = { base: wantLink(p.n, onRole.lightRef), _dark: wantLink(p.n, onRole.darkRef) };
       if (JSON.stringify(g["on-accent"].value) !== JSON.stringify(wantOn)) FAIL(G, `colors.${p.n}.on-accent = ${JSON.stringify(g["on-accent"].value)}, want ${JSON.stringify(wantOn)}`);
-      if (g.prime.value.base !== `var(--c-${p.n}-prime-prime)`) FAIL(G, `colors.${p.n}.prime.base = ${JSON.stringify(g.prime.value.base)}, want var(--c-${p.n}-prime-prime)`);
+      if (g.prime.value.base !== `var(--c-${p.n}-prime)`) FAIL(G, `colors.${p.n}.prime.base = ${JSON.stringify(g.prime.value.base)}, want var(--c-${p.n}-prime)`);
       if (g.prime.value._dark !== undefined) FAIL(G, `colors.${p.n}.prime must stay mode-independent (base only), got ${JSON.stringify(g.prime.value)}`);
     }
   }
@@ -1145,7 +1145,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     const refMod = X.exportRadixModule(refPreset);
     const valMod = X.exportRadixModule(valPreset);
     const lines = refMod.split("\n");
-    if (lines[0] !== `/* ultimate-tokens export schema ${3} */`) FAIL(G, `reference module first line = ${JSON.stringify(lines[0])}`);
+    if (lines[0] !== `/* ultimate-tokens export schema ${4} */`) FAIL(G, `reference module first line = ${JSON.stringify(lines[0])}`);
     if (!lines[1].startsWith("/* Radix preset")) FAIL(G, `reference module header does not open with the Radix preset comment: ${JSON.stringify(lines[1])}`);
     if (!lines[2].includes("LINKS")) FAIL(G, `the header's second comment line must name the link form, got ${JSON.stringify(lines[2])}`);
     if (!/css-hex|css-oklch/.test(refMod)) FAIL(G, "the reference header never tells the consumer which export to load first");
@@ -1288,17 +1288,31 @@ const noKeyUi3 = X.exportUI3(C(ALL)).collections["Color Primitives"].variables;
 if (Object.keys(noKeyUi3).some((k) => k.startsWith(`raw/${slug0}/key/`))) FAIL("keycolors-ui3", "UI3 key/ variables present when no keyColors set");
 
 // ── hpg-export-prime (#539/P4, REQ-054, AC-051, the seven-swatch prime group, engine-emitter half) ──
-// Naming per REQ-054: CSS/OKLCH "--{pfx}-{n}-prime-{step}"; JSON palette.prime[step] = {hex, oklch};
-// Tailwind "--color-{n}-prime-{step}". exportShadcn has no slot (non-goal), proven as a negative
-// control below rather than assumed. UI3/DTCG naming has its own gates further down.
+// Naming per REQ-054 + #789: CSS/OKLCH "--{pfx}-{n}-prime" (the centre) and "--{pfx}-{n}-prime-{step}"
+// for the other six; JSON palette.prime[step] = {hex, oklch}; Tailwind "--color-{n}-prime[-{step}]".
+// exportShadcn has no slot (non-goal), proven as a negative control below rather than assumed.
+// UI3/DTCG naming has its own gates further down.
+// The name rule is restated here, never imported from the engine's primeSlug, so the gate cannot
+// pass by reading the helper back. The retired doubled needle is BUILT, never a literal (#789).
+const primeName = (step) => (step === "prime" ? "prime" : `prime-${step}`);
+const OLD_PRIME_NEEDLE = ["prime", "prime"].join("-");
 const primeCss = X.exportCSS(C(ALL));
 const primeOklch = X.exportOKLCH(C(ALL));
 for (const step of PRIME_STEPS) {
-  if (!new RegExp(`--c-${slug0}-prime-${step}:\\s*#[0-9A-F]{6};`).test(primeCss)) FAIL("prime", `CSS missing --c-${slug0}-prime-${step} (hex)`);
-  if (!new RegExp(`--c-${slug0}-prime-${step}:\\s*oklch\\(`).test(primeOklch)) FAIL("prime", `OKLCH missing --c-${slug0}-prime-${step}`);
+  if (!new RegExp(`--c-${slug0}-${primeName(step)}:\\s*#[0-9A-F]{6};`).test(primeCss)) FAIL("prime", `CSS missing --c-${slug0}-${primeName(step)} (hex)`);
+  if (!new RegExp(`--c-${slug0}-${primeName(step)}:\\s*oklch\\(`).test(primeOklch)) FAIL("prime", `OKLCH missing --c-${slug0}-${primeName(step)}`);
 }
-// count: every format except shadcn emits 7 * enabledCount prime leaves (AC-051).
-const primeCssCount = (css) => (css.match(/--c-[a-z0-9-]+-prime-[a-z]+:/g) || []).length;
+// the centre is the bare name and the doubled one is gone from every flat surface (R98: no alias).
+const primeRadixRefs = JSON.stringify(X.exportRadix(C(ALL), { refs: true }));
+for (const [label, text] of [["CSS", primeCss], ["OKLCH", primeOklch], ["Radix refs", primeRadixRefs]]) {
+  if (text.includes(OLD_PRIME_NEEDLE)) FAIL("prime", `${label} still emits the retired doubled prime name`);
+}
+if (!primeCss.includes(`--c-${slug0}-prime: #`)) FAIL("prime", `CSS centre is not the bare --c-${slug0}-prime`);
+if (!primeRadixRefs.includes(`var(--c-${slug0}-prime)`)) FAIL("prime", `Radix refs centre does not link the bare var(--c-${slug0}-prime)`);
+// count: every format except shadcn emits 7 * enabledCount prime leaves (AC-051): the bare centre
+// plus the six suffixed steps, matched by exact name so a stray \`-prime:\` role cannot inflate it.
+const primeNameAlt = PRIME_STEPS.map(primeName).join("|");
+const primeCssCount = (css) => (css.match(new RegExp(`--c-[a-z0-9-]+-(?:${primeNameAlt}):`, "g")) || []).length;
 const wantPrime = 7 * enabledCount(C(ALL));
 if (primeCssCount(primeCss) !== wantPrime) FAIL("prime", `CSS prime leaf count ${primeCssCount(primeCss)} != ${wantPrime}`);
 if (primeCssCount(primeOklch) !== wantPrime) FAIL("prime", `OKLCH prime leaf count ${primeCssCount(primeOklch)} != ${wantPrime}`);
@@ -1317,15 +1331,16 @@ if (primeJsonCount !== wantPrime) FAIL("prime", `JSON prime leaf count ${primeJs
 
 const primeTw = X.exportTailwind(C(ALL));
 for (const step of PRIME_STEPS) {
-  if (!new RegExp(`--color-${slug0}-prime-${step}:\\s*oklch\\(`).test(primeTw)) FAIL("prime", `Tailwind missing --color-${slug0}-prime-${step}`);
+  if (!new RegExp(`--color-${slug0}-${primeName(step)}:\\s*oklch\\(`).test(primeTw)) FAIL("prime", `Tailwind missing --color-${slug0}-${primeName(step)}`);
 }
-const primeTwCount = (tw) => (tw.match(/--color-[a-z0-9-]+-prime-[a-z]+:/g) || []).length;
+if (primeTw.includes(OLD_PRIME_NEEDLE)) FAIL("prime", "Tailwind still emits the retired doubled prime name");
+const primeTwCount = (tw) => (tw.match(new RegExp(`--color-[a-z0-9-]+-(?:${primeNameAlt}):`, "g")) || []).length;
 if (primeTwCount(primeTw) !== wantPrime) FAIL("prime", `Tailwind prime leaf count ${primeTwCount(primeTw)} != ${wantPrime}`);
 
 // disabled palette: zero prime leaves anywhere for the disabled slug, and total counts drop by 7.
 const primeOff = C(ALL.map((p, i) => (i === 1 ? { ...p, on: false } : p)));
-if (X.exportCSS(primeOff).includes(`--c-${offName}-prime-`)) FAIL("prime", `disabled palette '${offName}' still emits CSS prime tokens`);
-if (X.exportTailwind(primeOff).includes(`--color-${offName}-prime-`)) FAIL("prime", `disabled palette '${offName}' still emits Tailwind prime tokens`);
+if (new RegExp(`--c-${offName}-prime[-:]`).test(X.exportCSS(primeOff))) FAIL("prime", `disabled palette '${offName}' still emits CSS prime tokens`);
+if (new RegExp(`--color-${offName}-prime[-:]`).test(X.exportTailwind(primeOff))) FAIL("prime", `disabled palette '${offName}' still emits Tailwind prime tokens`);
 const offJson = X.exportJSON(primeOff);
 if (offJson[offName]) FAIL("prime", `disabled palette '${offName}' still present in JSON export`);
 const wantPrimeOff = 7 * enabledCount(primeOff);
@@ -2198,8 +2213,11 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
     for (const step of PRIME_STEPS) {
       const want = rawJson[f] && rawJson[f].prime[step];
       if (!want) continue;
-      if (!makeStyles.includes(`--${pfx}-${f}-prime-${step}: ${want.oklch};`)) FAIL("design-system-prime", `Make styles.css missing/mismatched --${pfx}-${f}-prime-${step} (want ${want.oklch})`);
+      const wantName = step === "prime" ? "prime" : `prime-${step}`;
+      if (!makeStyles.includes(`--${pfx}-${f}-${wantName}: ${want.oklch};`)) FAIL("design-system-prime", `Make styles.css missing/mismatched --${pfx}-${f}-${wantName} (want ${want.oklch})`);
     }
+    if (makeStyles.includes(["prime", "prime"].join("-"))) FAIL("design-system-prime", "Make styles.css still carries the retired doubled prime name");
+    if (!makeColorMd.includes(`\`--${pfx}-{family}-prime\``)) FAIL("design-system-prime", "Make foundations/color.md Prime swatches section does not name the bare centre step");
   }
   // unconditional like Claude Code/Stitch, present even with NO data palettes enabled.
   const makeFilesNoData = X.exportDesignSystemMakeBundle(C(BRAND_ONLY), tsc, gsc, { date: "2026-09-11" });
@@ -2367,7 +2385,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 // `v` is bumped alongside it in the same PR, that IS the bump-rule contract, not a bug in the gate.
 {
   const G = "hpg-export-schema-stamp";
-  const v = 3;
+  const v = 4;
   const doc = defaultDocument();
   const state = stateOf(doc);
   const tsc = typeScale({});
