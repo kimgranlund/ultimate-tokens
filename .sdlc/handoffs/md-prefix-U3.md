@@ -29,3 +29,53 @@ Load before the gates: 2 matching processes (limit 3), so `npm test` ran straigh
 
 - C3.3 first command reads `1`: the slice holds one `0.2.2`, the new entry.
 - The entry avoids the retired maker brand, the string `md-sys` and U+2014.
+
+## Pass 2 (after pre-land pass 2, owner ruling A, `.sdlc/questions/md-prefix-revision8.md`)
+
+Builder, trivial lane. Same branch and worktree, cut from `plan/md-prefix` at `18a6d981`. Criteria: plan revision 8, C3.1 to C3.6.
+
+### Files
+
+| File | Change |
+|---|---|
+| `plugin/ultimate-tokens/.claude-plugin/plugin.json` | F1: the description's `eleven-voice` to `fifteen-voice`; nothing else in the description moved |
+| `CHANGELOG.md` | F2: the 0.2.2 entry in `## [Unreleased]` rewritten: first publish since 0.2.1, `--md-*` Material variables (#791), the breaking prime rename (#792), and the plugin changes since 0.2.1 that were verified in the log (#310, #316, #615, #684) |
+
+### Verified before editing
+
+| Claim | Read |
+|---|---|
+| fifteen is the count | `plugin/ultimate-tokens/README.md:11` ("the fifteen-voice scale"), `skills/typography-tokens/SKILL.md:8,20,49` ("fifteen-voice", "The fifteen-role scale"), `src/engine/type.mjs:2,67` ("Fifteen named voices", "the FIFTEEN named type VOICES") |
+| the description reaches the npm package | `scripts/gen-plugin-pack.mjs:64,76` copy `manifest.description` into the in-package `marketplace.json` and the npm `package.json`; nothing else carries the count there |
+| 22 plugin commits since 0.2.1 | `git log --oneline e6fca1a9..origin/main -- plugin/ultimate-tokens` (22 lines); `8e7157cd` (#792) edits `skills/color-tokens/SKILL.md` to the bare `-prime`, which `SKILL.md:20-23` now reads; `4ddd76f9` (#310), `17b2d496` (#316), `fcdeb1d6` (#615), `381b8d5c` (#684) each touch `plugin/ultimate-tokens` |
+| `plugin.json` `version` was 0.2.1 across that range | `git diff e6fca1a9 origin/main -- plugin/ultimate-tokens/.claude-plugin/plugin.json` changes the description only |
+
+### Ran
+
+Controls ran on throwaway copies under `$CLAUDE_JOB_DIR/tmp/md-U3p2/` (a `git archive HEAD` extract, or a mutated copy of one file), never in the unit tree.
+
+| Id | Command | Evidence | Negative control | State |
+|---|---|---|---|---|
+| C3.1 | `grep -c '"version": "0.2.2"' plugin/ultimate-tokens/.claude-plugin/plugin.json` | `1` | copy with 0.2.1: reads `0` | 🟢 |
+| C3.2 | `unset NODE_OPTIONS`, `node test/plugin/hosted-pack.mjs`, then `npm test` | hosted-pack rc 0 (`hosted-pack PASS, @ultimate-tokens/claude@0.2.2`); `npm test` rc 0, `all 54 test files passed`; `git status --porcelain` lists only `CHANGELOG.md` and `plugin.json` | extract with version `banana`: hosted-pack rc 1, `plugin.json version "banana" is not semver` | 🟢 |
+| C3.3 | the awk slice of `## [Unreleased]` to `grep -c '0\.2\.2'`, and to `grep -c md-sys` | `1`; `0` | slice with the 0.2.2 lines dropped: first reads `0` | 🟢 |
+| C3.4 | `git diff --name-only $(git merge-base HEAD plan/md-prefix) HEAD` | `.sdlc/handoffs/md-prefix-U3.md`, `CHANGELOG.md`, `plugin/ultimate-tokens/.claude-plugin/plugin.json` | a modified `plugin/ultimate-tokens/README.md` in a scratch index tree: the list grows by that path (four paths) | 🟢 |
+| C3.5 | `grep -c 'eleven-voice'` and `grep -c 'fifteen-voice'` on `plugin.json`, `grep -c 'fifteen-voice'` on the README | `0`, `1`, `1` | `eleven-voice` put back in a copy: `1`, `0` | 🟢 |
+| C3.6 | the awk slice, `grep -F -A6 '@ultimate-tokens/claude'`, then `grep -c '#792'` and `grep -c 'since 0\.2\.1'` | `1`, `2` | the pass-1 entry (`git show HEAD:CHANGELOG.md`): `0`, `0` | 🟢 |
+| Extra | `node test/repo/em-dash.mjs`; `node test/repo/branding.mjs` | `em-dash: clean (1136 files scanned)`; `branding: clean (1128 files scanned)` | U+2014 appended to the README in a git-initialised extract: em-dash reds (`README.md:51`, `FAIL: 1 em dashes`) | 🟢 |
+
+Load before the gates: 0 matching processes (limit 3) for hosted-pack; 2 before `npm test`.
+
+### Notes for the reviewer
+
+- The repo-root `.claude-plugin/marketplace.json:14` carried the same stale count; fixed in this pass after the Orchestrator widened C3.4 and added C3.5b (see below).
+- The pass-1 Breaking prime entry in the CHANGELOG cites #789 for the rename; the commit `8e7157cd` and the criteria cite #792. The new entry uses #792 as C3.6 requires; the older cite is untouched.
+- The README's "first publish since 0.2.1" rests on the owner ruling and `plugin.json` having stayed at 0.2.1 through the 22 commits; the builder did not query the npm registry.
+
+### Pass 2 addendum: `.claude-plugin/marketplace.json`
+
+| Id | Command | Evidence | Negative control | State |
+|---|---|---|---|---|
+| C3.5b | `grep -c 'eleven-voice' .claude-plugin/marketplace.json` | `0` (line 14 now reads `fifteen-voice scale`; `grep -n eleven` on the file finds nothing) | the file at the previous head (`git show HEAD:.claude-plugin/marketplace.json`, a scratch copy): reads `1` | 🟢 |
+| C3.4 | `git diff --name-only $(git merge-base HEAD plan/md-prefix) HEAD` | the earlier three paths plus `.claude-plugin/marketplace.json` | scratch index tree with a modified `plugin/ultimate-tokens/README.md`: the list grows by that path (shown in the table above) | 🟢 |
+| C3.2 | rerun: `unset NODE_OPTIONS`, `node test/plugin/hosted-pack.mjs`, `npm test` | hosted-pack rc 0 (`PASS, @ultimate-tokens/claude@0.2.2`); `npm test` rc 0, `all 54 test files passed`; em-dash and branding clean; 1 matching process before the run (limit 3) | extract with version `banana`: hosted-pack rc 1, `is not semver` (shown in the table above) | 🟢 |
