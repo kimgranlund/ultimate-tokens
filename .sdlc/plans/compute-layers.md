@@ -68,7 +68,7 @@ Decisions:
 |---|---|---|---|
 | C3.1 | `grep -c "applyRoleOverrides(" src/ui/model.mjs src/engine/exports.js` | `0` and `0`; `compute(doc)` in `src/engine/layers.mjs` is the one caller | on `main` `1` and `1` |
 | C3.2 | `test/engine/layers.mjs` renders `defaultDocument()` and every `PRESETS` entry, loaded the way `report-preset-fidelity.mjs` loads them (`import('../src/ui/categories/${slug}.js')` over every file in `src/ui/categories/` except `index.js`), through `projectView` and `derivedAll`; per palette and stop the hexes and role refs match; it prints `presets N` | exit 0, `N` equal to the sum of `PRESETS.length` over those files (`343` at bc7d7597: 7 files of `48`, brands `7`) plus 1 for the default kit | perturb one role ref in `derivedAll`'s view: exit non-zero |
-| C3.3 | `IDENT`, `npm test`, `npm run build` | `0 differing cells`, exit 0 | as C1.4 |
+| C3.3 | `IDENT`, `npm test`, `npm run build` | `0 differing cells`, exit 0 | scale the chroma `compute(doc)` returns for the default kit by `1.05`: `IDENT --only default-kit` prints `117 differing cells` (the U1 verdict's own control); restored, `0 differing cells` |
 
 ### U4: pins, frozen versions, preset pins, stamps (R100, R101)
 
@@ -90,13 +90,13 @@ Decisions:
 | C5.3 | a fixture doc with `hueSpace: "cam16"` pinned `ramp: 1` renders byte-equal to the merge-base; the same doc re-pinned to 2 renders as OKLCH hues (differs) | test exit 0 | route `ramp: 1` to `ramp@2`: the first half reds |
 | C5.4 | the rename is one v6 to v7 `RENAME_MAPS` entry (`baseIntensity` to `baseChroma`); the earlier `stampIntensity` step stays untouched and runs first, so a pre-feature doc is stamped `baseIntensity: 100` then renamed. (a) `grep -rn "baseIntensity" src/ --exclude=persist.js --exclude=describe-mcp-assets.js`; (b) `grep -n "baseIntensity" src/ui/persist.js`; (c) `CURRENT_SCHEMA_VERSION` and a hydrate test: a v6 doc with `baseIntensity: 40` hydrates to `baseChroma: 40` and no `baseIntensity` key | (a) prints nothing; (b) prints exactly 4 lines: the `stampIntensity` comment, its `typeof s.baseIntensity` test, its `baseIntensity: 100` stamp, and the new `RENAME_MAPS` entry (no `DOMAINS` field, no `hydrate` clamp); (c) `7`, test exit 0 | on `main` (a) prints hits in `src/ui/model.mjs` and `src/ui/sections/color.js`, (b) prints 7 lines; drop the rename entry: the hydrate test reds |
 | C5.5 | after `npm test` regenerates it, `grep -c baseIntensity src/ui/describe-mcp-assets.js` | `0` | on `main` nonzero |
-| C5.6 | `npm test`, `npm run build`; `IDENT` | exit 0; `0 differing cells` (presets carried `hueSpace: "oklch"` already, so `ramp@2` matches) | as C1.4 |
+| C5.6 | `npm test`, `npm run build`; `IDENT` | exit 0; `0 differing cells` (presets carried `hueSpace: "oklch"` already, so `ramp@2` matches) | scale `ramp@2`'s output chroma by `1.05`: `IDENT --only default-kit` prints a nonzero count (`117` on the U1 head's equivalent change); restored, `0 differing cells` |
 
 ## Units
 
 Grades per R92 (no Fable): every unit runs reviewer-l3 then verifier-l2; the pre-land pair is reviewer-l3 plus verifier-l2. Builder grades: U1 l3, U2 l3, U3 l5, U4 l6, U5 l5.
 
-- [ ] U1 (S) one `resolveControls` in `src/engine/controls.mjs`, default `"oklch"`, both drivers import it (C1.1 to C1.4)
+- [x] U1 (S) one `resolveControls` in `src/engine/controls.mjs`, default `"oklch"`, both drivers import it (C1.1 to C1.4)
 - [ ] U2 (S) `LAYERS` registry at version 1 with named engine `run`s and its graph test (C2.1 to C2.4)
 - [ ] U3 (M) `compute(doc)`; `projectView` and `derivedAll` become views over it (C3.1 to C3.3); after #785 U2 and #766 U2 land
 - [ ] U4 (L) doc pins, pre-pin docs at version 1, presets at latest, frozen-module mechanism and hash gate, export stamps at the merge-base schema plus 1 (C4.1 to C4.6)
@@ -122,6 +122,7 @@ Order: U1, U2, U3, U4, U5 serial.
 | # | Date | Change |
 |---|---|---|
 | 0 | 2026-10-03 | draft from R99, R98 and the read-only survey at add40292 |
+| 5 | 2026-10-03 | Owner option A (`.sdlc/questions/compute-layers-ident-control.md`, a007fd1d): U1's verdict Finding 1 found `IDENT` cannot see the resolver default, so C3.3 and C5.6 ("as C1.4") carried a dead control. Their control columns now name a live one: scale the chroma `compute(doc)` returns (C3.3) or `ramp@2`'s output (C5.6) by `1.05`, and `IDENT --only default-kit` prints `117 differing cells`. The resolver default stays pinned by C1.2 in `npm test`. No criteria added, no engine work |
 | 4 | 2026-10-03 | C4.5 schema made relative: prime-name #789 lands first and takes 4 (owner: first to land takes 4), so U4 expects the merge-base value plus 1; the CSS stamp line reads the constant; section 1, the phase table, U4 and the ADR draft item 4 and R101 line follow |
 | 3 | 2026-10-03 | Verifier criteria pass 3 (🔴 at 2d86b64e, C5.4 only): C5.4 keeps the `stampIntensity` step untouched and expects exactly its 3 `baseIntensity` lines plus the `RENAME_MAPS` entry in `persist.js`, nothing elsewhere in `src/` |
 | 2 | 2026-10-03 | Verifier criteria pass 2 (🔴 at bc7d7597) fixed: C3.2 names the loader and the count (`343` presets plus the default kit); C4.2 names `presetDoc` = `pinLatest(hydrate(preset))`, distinct from C4.3's hydrate-to-1, called from `openConfigAsSet`; C4.3 and C4.4 get controls that run at U4 through the synthetic hashed `test-layer@1`/`@2`; C4.5 names 10 exporter functions and gives `exportCSS` a new stamp line; C5.1 reads the merge-base count; C5.4 scoped to the v6 to v7 step |
