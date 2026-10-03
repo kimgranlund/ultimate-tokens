@@ -68,9 +68,10 @@ methods, not new grid structure.
 
 ## 6. Scheme and mode
 
-Sections paint in a **canvas preview scheme** (`canvas-scheme-light`/`-dark` sets `color-scheme`, so
-`light-dark()` tokens + `var(--ink*)` resolve per the preview, independent of the app chrome). Color's
-scheme is driven by its **Mode control** (`this.colorMode ∈ {light, dark, both}`); `both` is the Compare
-view (two scheme-forced columns in one pannable scene). Typography/Geometry use `canvasThemeBtn`
-(`this.canvasTheme`) until breakpoints give them real modes. `resolvedCanvasScheme()` is the single
-resolver, it honors a transient `_schemeOverride` (a Compare column forces its own scheme while it builds).
+Sections paint in **scheme columns**: a canvas is one `.canvas-scene` holding a `.compare-col` per
+(scheme, shown breakpoint), light first, built by `_schemeColumn(scheme, label, build)`.
+`canvas-scheme-light`/`-dark` only set `color-scheme`, so `light-dark()` tokens + `var(--ink*)` resolve per
+column, independent of the app chrome. There is no scheme toggle. `_inScheme(scheme, build)` is the only
+writer of `_columnScheme`; `resolvedCanvasScheme()` reads it with no fallback, so anything that needs the
+scheme (a backdrop, a role hex, a drag ghost via `_schemeOfColumn`) must run inside a column or an
+`exampleSchemes` wrapper. Table views (Mapping, the Type/Geometry tokens) have no scheme.
