@@ -146,3 +146,5 @@ Orchestrator-only. Rows edited in place. The five loose `adopt-hygiene-*` fragme
 | compute-layers U3 one evaluator compute(doc) | #788 | M | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/compute-layers.md | after U2, #785 U2 and #766 U2 land |
 | compute-layers U4 pins, frozen versions, preset pins, stamps | #788 | L | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/compute-layers.md | after U3 |
 | compute-layers U5 R102 removals | #788 | M | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/compute-layers.md | after U4 |
+| prime-name U1 engine emitters, tests, generated assets | #789 | S | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/prime-name.md | building soon |
+| prime-name U2 records | #789 | S | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/prime-name.md | after U1 |
