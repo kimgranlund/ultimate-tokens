@@ -8,3 +8,11 @@
 | Options | A (recommended): yes, revision 14 with U5 as above. · B: yes, but the engine removal only; records go to a follow-up issue. · C: no, land as is with the dead branch recorded |
 | Also for the owner's eyes | The verdict records that a default-kit doc saved with material 30 moves Neutral by up to 21 dL* (peak) after the damper (358 of 3780 corpus palettes), already ruled under R98 (no migration), and that the Adia preset (groups 25/41/32/27) renders muter; the CHANGELOG will say so. |
 | Default if unanswered | A, proceeding so the pass is not delayed; R98 already rules the removal |
+
+## Answer
+
+| Field | Value |
+|---|---|
+| Asked | via AskUserQuestion, 2026-10-03 |
+| Options shown | Yes, add U5 (Recommended) · Engine fix only · Land as is |
+| Chosen | A: Yes, add U5 (Recommended) |
