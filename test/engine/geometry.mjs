@@ -93,15 +93,15 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
   ok(css.includes("--radius-default: var(--radius-md);"), "CSS aliases --radius-default to the treatment's favoured corner (comfortable → md)");
   ok(/\.control-md\s*\{[^}]*block-size: var\(--size-md-height\)[^}]*padding-block: 0/.test(css), "CSS emits a .control-md utility class (block-size lever, padding-block 0)");
   // naming-scheme PREFIX: a Material scheme namespaces the WHOLE dimensional system under one root
-  // (--md-sys-size-* · --md-sys-radius-* · --md-sys-inset-* · --md-sys-focus-* · .md-sys-control-*);
+  // (--md-size-* · --md-radius-* · --md-inset-* · --md-focus-* · .md-control-*);
   // the --radius-default alias + the .control-* refs thread the prefix. Empty ⇒ native (identity gate).
   const g = G.geomScale({ treatment: "comfortable" });
-  const md = G.geomTokensCSS(g, { prefix: "md-sys" });
-  ok(md.includes("--md-sys-size-md-height:") && md.includes("--md-sys-radius-md:") && md.includes("--md-sys-space-4:") && md.includes("--md-sys-inset-card:") && md.includes("--md-sys-focus-ring-width:"), "prefix namespaces every geometry family under the scheme root");
-  ok(md.includes("--md-sys-radius-default: var(--md-sys-radius-md);"), "the radius-default alias threads the prefix on both sides");
-  ok(md.includes(".md-sys-control-md {") && md.includes("var(--md-sys-size-md-height)") && !md.includes("--size-md-height"), "the .control-* class + its refs thread the prefix (no stray --size-*)");
+  const md = G.geomTokensCSS(g, { prefix: "md" });
+  ok(md.includes("--md-size-md-height:") && md.includes("--md-radius-md:") && md.includes("--md-space-4:") && md.includes("--md-inset-card:") && md.includes("--md-focus-ring-width:"), "prefix namespaces every geometry family under the scheme root");
+  ok(md.includes("--md-radius-default: var(--md-radius-md);"), "the radius-default alias threads the prefix on both sides");
+  ok(md.includes(".md-control-md {") && md.includes("var(--md-size-md-height)") && !md.includes("--size-md-height"), "the .control-* class + its refs thread the prefix (no stray --size-*)");
   ok(G.geomTokensCSS(g, { prefix: "" }) === css, "empty prefix is byte-identical to the native default (identity gate)");
-  ok(G.geomTokensBreakpointCSS([{ name: "M", minWidth: 768, scale: g }], { prefix: "md-sys" })[0].css.includes("--md-sys-size-md-height:"), "a breakpoint file threads the prefix too");
+  ok(G.geomTokensBreakpointCSS([{ name: "M", minWidth: 768, scale: g }], { prefix: "md" })[0].css.includes("--md-size-md-height:"), "a breakpoint file threads the prefix too");
 }
 
 // ── geomTokensSizesCSS (issue #487): a SIZE-ONLY sibling of geomTokensCSS, just the --size-* :root
@@ -109,26 +109,26 @@ ok(G.geomScale({ treatment: "nope" }).treatment === G.GEOMETRY_TREATMENTS[0].id,
 // for either ramp (default t-shirt names or the linear-ladder's numbered steps, #483/#484) ──
 {
   const g = G.geomScale({ treatment: "comfortable" });
-  const full = G.geomTokensCSS(g, { prefix: "md-sys" });
-  const sizes = G.geomTokensSizesCSS(g, { prefix: "md-sys" });
-  ok(sizes.includes("--md-sys-size-md-height:") && sizes.includes("--md-sys-size-md-padding-narrow:") && sizes.includes("--md-sys-size-md-font:"), "the size-only CSS carries the full per-size field set");
-  ok(!sizes.includes("--md-sys-density") && !sizes.includes("--md-sys-radius-") && !sizes.includes("--md-sys-space-") && !sizes.includes("--md-sys-inset-") && !sizes.includes("--md-sys-gap-") && !sizes.includes("--md-sys-border-") && !sizes.includes("--md-sys-focus-"), `the size-only CSS carries NOTHING but size tokens (got ${JSON.stringify(sizes)})`);
-  ok(!sizes.includes(".md-sys-control-"), "the size-only CSS carries no .control-* class rules");
+  const full = G.geomTokensCSS(g, { prefix: "md" });
+  const sizes = G.geomTokensSizesCSS(g, { prefix: "md" });
+  ok(sizes.includes("--md-size-md-height:") && sizes.includes("--md-size-md-padding-narrow:") && sizes.includes("--md-size-md-font:"), "the size-only CSS carries the full per-size field set");
+  ok(!sizes.includes("--md-density") && !sizes.includes("--md-radius-") && !sizes.includes("--md-space-") && !sizes.includes("--md-inset-") && !sizes.includes("--md-gap-") && !sizes.includes("--md-border-") && !sizes.includes("--md-focus-"), `the size-only CSS carries NOTHING but size tokens (got ${JSON.stringify(sizes)})`);
+  ok(!sizes.includes(".md-control-"), "the size-only CSS carries no .control-* class rules");
   ok(sizes.trimEnd().startsWith(":root {") && sizes.trimEnd().endsWith("}"), "the size-only CSS is a single, complete :root block");
   // every size row the full export carries also appears, byte-identical, in the size-only export,
   // it's a strict SUBSET of the same lines, not a re-derivation.
   for (const name of G.orderedSizeNames(g)) {
     const s = name.toLowerCase(); // no special chars in any t-shirt/numbered name, kebab(name) === toLowerCase() here
-    const line = new RegExp(`--md-sys-size-${s}-height: \\d+px;.*--md-sys-size-${s}-min: \\d+px;`);
+    const line = new RegExp(`--md-size-${s}-height: \\d+px;.*--md-size-${s}-min: \\d+px;`);
     const fm = full.match(line), sm = sizes.match(line);
     ok(fm && sm && fm[0] === sm[0], `size-only ${name}'s row is byte-identical to the full export's own row`);
   }
   ok(G.geomTokensSizesCSS(g, { prefix: "" }) === G.geomTokensSizesCSS(g), "empty prefix is byte-identical to the native default (identity gate)");
   // works on the ladder too, numbered steps, no t-shirt names.
   const ladder = G.geomScale({ treatment: "comfortable", ramp: G.RAMP_LADDER });
-  const ladderSizes = G.geomTokensSizesCSS(ladder, { prefix: "md-sys" });
-  ok(ladderSizes.includes(`--md-sys-size-3-height: ${ladder.sizes["3"].height}px;`) && !ladderSizes.includes("size-md-"), `the size-only CSS renders the ladder's numbered steps (got MD-equivalent line present: ${ladderSizes.includes("size-3-height")})`);
-  ok((ladderSizes.match(/--md-sys-size-\d-height:/g) || []).length === 10, "the ladder's size-only CSS carries all 10 numbered steps");
+  const ladderSizes = G.geomTokensSizesCSS(ladder, { prefix: "md" });
+  ok(ladderSizes.includes(`--md-size-3-height: ${ladder.sizes["3"].height}px;`) && !ladderSizes.includes("size-md-"), `the size-only CSS renders the ladder's numbered steps (got MD-equivalent line present: ${ladderSizes.includes("size-3-height")})`);
+  ok((ladderSizes.match(/--md-size-\d-height:/g) || []).length === 10, "the ladder's size-only CSS carries all 10 numbered steps");
 }
 
 // ── CSS export unit (px/rem/em): even-grid geometry converts clean to rem ──

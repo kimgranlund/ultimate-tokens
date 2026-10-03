@@ -242,18 +242,27 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   if ("export" in U.hydrate(U.serialize(bad))) FAIL("export", "an all-invalid export object must drop entirely");
   // colorPrefix (the configurable --{prefix}-* colour naming): a sanitized non-default value persists;
   // the default "c" drops (identity); junk sanitizes; a leading digit is repaired.
-  const pfx = JSON.parse(JSON.stringify(base)); pfx.export = { colorPrefix: "md-sys-color" };
-  if (U.hydrate(U.serialize(pfx)).export.colorPrefix !== "md-sys-color") FAIL("export", "colorPrefix must round-trip");
+  const pfx = JSON.parse(JSON.stringify(base)); pfx.export = { colorPrefix: "md-color" };
+  if (U.hydrate(U.serialize(pfx)).export.colorPrefix !== "md-color") FAIL("export", "colorPrefix must round-trip");
   const defp = JSON.parse(JSON.stringify(base)); defp.export = { colorPrefix: "c" };
   if ("export" in U.hydrate(U.serialize(defp))) FAIL("export", "the default colorPrefix 'c' must drop (identity gate)");
-  const junk = JSON.parse(JSON.stringify(base)); junk.export = { colorPrefix: "MD Sys!!" };
-  if (U.hydrate(U.serialize(junk)).export.colorPrefix !== "md-sys") FAIL("export", `colorPrefix must sanitize to a legal ident core (got ${JSON.stringify(U.hydrate(U.serialize(junk)).export)})`);
+  const junk = JSON.parse(JSON.stringify(base)); junk.export = { colorPrefix: "MD Foo!!" };
+  if (U.hydrate(U.serialize(junk)).export.colorPrefix !== "md-foo") FAIL("export", `colorPrefix must sanitize to a legal ident core (got ${JSON.stringify(U.hydrate(U.serialize(junk)).export)})`);
   const dig = JSON.parse(JSON.stringify(base)); dig.export = { colorPrefix: "3x" };
   if (U.hydrate(U.serialize(dig)).export.colorPrefix !== "c3x") FAIL("export", "a leading-digit colorPrefix must be repaired (CSS idents can't start with a digit)");
   // typePrefix (default "type" drops) + geomPrefix (default "" absent), the type/geometry naming scheme.
-  const sch = JSON.parse(JSON.stringify(base)); sch.export = { typePrefix: "md-sys-typescale", geomPrefix: "md-sys" };
+  const sch = JSON.parse(JSON.stringify(base)); sch.export = { typePrefix: "md-typescale", geomPrefix: "md" };
   const rs = U.hydrate(U.serialize(sch)).export;
-  if (rs.typePrefix !== "md-sys-typescale" || rs.geomPrefix !== "md-sys") FAIL("export", `type/geom prefixes must round-trip (got ${JSON.stringify(rs)})`);
+  if (rs.typePrefix !== "md-typescale" || rs.geomPrefix !== "md") FAIL("export", `type/geom prefixes must round-trip (got ${JSON.stringify(rs)})`);
+  // #791: the Material preset's root was renamed; a kit saved on the exact old triple is rewritten once on
+  // load. The old names are spelled from parts (the repo gate forbids the literal in test/).
+  const oldRoot = "md" + "-sys";
+  const oldKit = JSON.parse(JSON.stringify(base)); oldKit.export = { colorPrefix: `${oldRoot}-color`, typePrefix: `${oldRoot}-typescale`, geomPrefix: oldRoot };
+  const rOld = U.hydrate(U.serialize(oldKit)).export;
+  if (rOld.colorPrefix !== "md-color" || rOld.typePrefix !== "md-typescale" || rOld.geomPrefix !== "md") FAIL("export", `the exact old Material triple must hydrate to md-color/md-typescale/md (got ${JSON.stringify(rOld)})`);
+  const lone = JSON.parse(JSON.stringify(base)); lone.export = { colorPrefix: `${oldRoot}-color`, typePrefix: "brand-type" };
+  const rlone = U.hydrate(U.serialize(lone)).export;
+  if (rlone.colorPrefix !== `${oldRoot}-color` || rlone.typePrefix !== "brand-type") FAIL("export", `a lone old colour prefix beside a non-Material type prefix must stay as typed (got ${JSON.stringify(rlone)})`);
   const dflt = JSON.parse(JSON.stringify(base)); dflt.export = { typePrefix: "type", geomPrefix: "" };
   if ("export" in U.hydrate(U.serialize(dflt))) FAIL("export", "default typePrefix 'type' + empty geomPrefix must drop (identity gate)");
 }

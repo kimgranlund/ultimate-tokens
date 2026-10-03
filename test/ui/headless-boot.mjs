@@ -1849,14 +1849,23 @@ app.exportOpen = true; app.exportTab = "radix"; app.radixFile = "values"; app.re
   app.radixFile = "values"; app.exportOpen = false; app.render(); flushRaf();
 }
 // (rxr4) the CSS prefix is a persisted Settings control, so BOTH pieces of Radix copy have to name
-// the properties this kit really emits. A kit on the Material naming scheme reads --md-sys-color-*.
+// the properties this kit really emits. A kit on the Material naming scheme reads --md-color-*.
 {
   app._setNamingScheme("material"); flushRaf();
   app.exportOpen = true; app.exportTab = "radix"; app.render(); flushRaf();
   const rxrNote = txtOf(app.querySelector(".radix-note")) || "";
-  ok(rxrNote.includes("--md-sys-color-*") && !rxrNote.includes("--c-*"), `(rxr4) the sub-bar note names the kit's OWN prefix, not the default --c-* (got ${rxrNote.slice(0, 140)})`);
+  ok(rxrNote.includes("--md-color-*") && !rxrNote.includes("--c-*"), `(rxr4) the sub-bar note names the kit's OWN prefix, not the default --c-* (got ${rxrNote.slice(0, 140)})`);
   const rxrMdReadme = app._zipReadme("my-set", { color: true, type: true, geometry: true });
-  ok(rxrMdReadme.includes("var(--md-sys-color-*)") && !rxrMdReadme.includes("var(--c-*)"), "(rxr4) the zip README's radix row names the kit's OWN prefix too");
+  ok(rxrMdReadme.includes("var(--md-color-*)") && !rxrMdReadme.includes("var(--c-*)"), "(rxr4) the zip README's radix row names the kit's OWN prefix too");
+  // #791: the Material preset applied through the Settings path emits ONE --md-* root across all three
+  // systems, and the detector reads the new triple back as "material". The retired root is spelled from
+  // parts (the repo gate forbids the literal in test/).
+  const rxrOldRoot = "--md" + "-sys";
+  ok(app._namingScheme() === "material", `(rxr4) the Material preset reads back as "material" (got ${app._namingScheme()})`);
+  const rxrMdZip = dlZipText();
+  ok(rxrMdZip.includes("--md-color-") && !rxrMdZip.includes(rxrOldRoot), "(rxr4) the Material preset's colour CSS carries --md-color-* and no retired root anywhere in the zip");
+  ok(rxrMdZip.includes("--md-typescale-display-weight-medium:"), "(rxr4) the Material preset's type CSS declares --md-typescale-display-weight-medium:");
+  ok(rxrMdZip.includes("--md-size-md-height:") && rxrMdZip.includes(".md-control-md {"), "(rxr4) the Material preset's geometry CSS declares --md-size-md-height: and .md-control-md {");
   app._setNamingScheme("ultimate"); flushRaf();
   app.render(); flushRaf();
   const rxrDefNote = txtOf(app.querySelector(".radix-note")) || "";

@@ -126,7 +126,7 @@ export const GEOMETRY_RAMPS = [RAMP_LADDER];
 // BOTH the interim 7-name 0..6 mapping AND the t-shirt names it used): gen-ui-kit binds its content
 // tiers to this engine's --size-* CSS export and needs the 48/52/56 rungs, so the ladder exposes the
 // WHOLE table; and the steps are named NUMERICALLY ("0".."9"), not with t-shirt letters, exported
-// tokens read `--{pfx}-size-{0..9}-{field}` (e.g. `--md-sys-size-3-height: 32px`). Step "3" (32px) is
+// tokens read `--{pfx}-size-{0..9}-{field}` (e.g. `--md-size-3-height: 32px`). Step "3" (32px) is
 // the MD-equivalent anchor, see LADDER_MD_STEP below. The default ramp's six t-shirt names are
 // UNCHANGED (SIZES/SIZE_KEYS above still name exactly XS·SM·MD·LG·XL·2XL at 20·24·28·36·48·64,
 // byte-identical), the two ramps use ENTIRELY DIFFERENT naming schemes, not overlapping strings.
@@ -326,7 +326,7 @@ const dimUnit = (px, unit) => (unit === "rem" || unit === "em" ? `${parseFloat((
 
 // ns(pfx, name), a geometry namespace token core: native `size`/`radius`/… by default, or
 // `{pfx}-size`/`{pfx}-radius`/… when a scheme prefix is set (so a Material scheme namespaces the whole
-// dimensional system under one root: `--md-sys-size-*`, `--md-sys-radius-*`, …). Empty pfx ⇒ native.
+// dimensional system under one root: `--md-size-*`, `--md-radius-*`, …). Empty pfx ⇒ native.
 const ns = (pfx, name) => (pfx ? `${pfx}-${name}` : name);
 
 function geomSizeVarLines(scale, indent = "  ", unit = "px", pfx = "") {

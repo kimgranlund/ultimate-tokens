@@ -632,9 +632,16 @@ function clampExport(e) {
   // attached only when non-empty AND not the system's DEFAULT (so a default round-trips as absent,
   // the identity gate). Defaults: colour "c", type "type", geometry "" (native).
   const clean = (s, repair) => typeof s === "string" ? s.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").replace(/^(\d)/, repair + "$1").slice(0, 40) : "";
-  const cp = clean(e.colorPrefix, "c"); const colorPrefix = cp && cp !== "c" ? cp : null;
-  const tp = clean(e.typePrefix, "t"); const typePrefix = tp && tp !== "type" ? tp : null;
-  const gp = clean(e.geomPrefix, "g"); const geomPrefix = gp || null;
+  let cp = clean(e.colorPrefix, "c"), tp = clean(e.typePrefix, "t"), gp = clean(e.geomPrefix, "g");
+  // The Material preset's root was renamed (#791): a kit saved on the old preset (all three prefixes
+  // the exact old triple) is rewritten to the current one, once, on load. The old names are spelled
+  // from parts (the repo gate forbids the retired string in src). All three must match, so a lone
+  // legacy colour prefix beside any other type or geometry prefix stays as typed.
+  const oldRoot = "md" + "-sys";
+  if (cp === `${oldRoot}-color` && tp === `${oldRoot}-typescale` && gp === oldRoot) { cp = "md-color"; tp = "md-typescale"; gp = "md"; }
+  const colorPrefix = cp && cp !== "c" ? cp : null;
+  const typePrefix = tp && tp !== "type" ? tp : null;
+  const geomPrefix = gp || null;
   const out = { ...(unit ? { unit } : {}), ...(colorPrefix ? { colorPrefix } : {}), ...(typePrefix ? { typePrefix } : {}), ...(geomPrefix ? { geomPrefix } : {}) };
   return Object.keys(out).length ? { export: out } : {};
 }

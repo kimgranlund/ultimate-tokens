@@ -52,7 +52,7 @@ export const relLumExp = (rgb) => {
 // Bump rule (adding-export-formats/SKILL.md carries the same note): any additive or shape change
 // to an emitted format bumps this ONE constant, once, across every surface, in the same PR; a
 // value-only change (e.g. a chroma default) never bumps it.
-export const EXPORT_SCHEMA_VERSION = 4;
+export const EXPORT_SCHEMA_VERSION = 5;
 
 // ── Constants (from data/role-table.json) ─────────────────────────────────────
 // Scrims are a 500-based translucency ramp: a scrim primitive "{n}/500-{step}" is the
@@ -412,7 +412,7 @@ export function exportCSS(state, derived) {
 }
 
 // cssPrefixOf, the configurable CSS custom-property prefix (the `c` in `--c-*`). Lets a kit emit
-// Material-flavoured names (`--md-sys-color-*`) or any custom namespace, extended with our roles.
+// Material-flavoured names (`--md-color-*`) or any custom namespace, extended with our roles.
 // Sanitized to a legal CSS ident core: lowercased, non-[a-z0-9-] stripped, edge/leading-digit hyphens
 // trimmed. Empty / default "c" ⇒ the historical `--c-*` (identity, existing kits byte-identical).
 export function cssPrefixOf(state) {
