@@ -1,6 +1,6 @@
 # Handoff pane-context U4 (#785)
 
-Builder, grade l6, pass 1. Branch `unit/pc-U4`, worktree `.worktrees/pc-U4`, cut from `plan/pane-context`; main merged in first (`19ce51c4`). Code heads: `a2f01328` (source), `7a456243` (shim), `2aa99e80` (smoke), `e82df638` to `cdc1ee93` (pin, docs, CHANGELOG, bundle). The `ran` block below names its head on its first line, `cdc1ee93`.
+Builder, grade l6, pass 2 (review `85d01a7f` findings 1 to 6 fixed; pass 1 text below stays true). Branch `unit/pc-U4`, worktree `.worktrees/pc-U4`, cut from `plan/pane-context`; main merged in first (`19ce51c4`). Code heads: `a2f01328` (source), `7a456243` (shim), `2aa99e80` (smoke), `e82df638` to `cdc1ee93` (pin, docs, CHANGELOG, bundle), `94d475ac`, `73672868`, `74f85381` (review pass 1 fixes). The `ran` block below names its head on its first line, `74f85381`.
 
 ## Files
 
@@ -53,6 +53,19 @@ Positive evidence is in the `ran` block (re-runnable) or the gate runs below. Co
 
 Marketing check: `grep -ril 'compare\|light/dark toggle' docs/marketing/` printed nothing.
 
+## Review pass 1 fixes (reviewer FAIL at `85d01a7f`, no engine change)
+
+| Finding | Fix | Control |
+|---|---|---|
+| 1 MEDIUM: a light-column reorder drag moved the `.drop-ghost` into the dark column | `_wireReorder` and `_rampStack` (the last stack built, always the dark one) are deleted. `_beginReorder` takes the stack and the column from the dragged row's own ancestors (`_ancestorWithClass`, a `parentNode` walk that works in the shim), and `_rowRects()` hit-tests that stack only. The shim tests drive the light stack through `lightStack()` | shim `(rr-col)`: a drag begun in the light column, then in the dark column, hit-tests only that column's rows. With `_rowRects` reading the last `.ramp-stack` the shim reds: `(rr-col) a drag begun in the light column hit-tests only that column's rows (16 rects)`, plus the reorder rows. Smoke asserts the placeholder sits in the dragged row's `.compare-col` and none in the other, after the lift and after a reslot: with the old last-stack hit-test `SMOKE FAIL (2)` on both rows; with the fix `SMOKE PASS` |
+| 2 LOW: `srcRow.closest(".compare-col")` threw outside a column | the ghost reads `st.col`, the column found by the same ancestor walk when the drag begins | covered by the same shim and smoke rows (both directions of the ghost scheme still pass) |
+| 3 LOW: ADR-026 #766 amendment said 502 to 499 | now says that is #766 alone, and that with the damper merged under it the committed fixture holds 500 | claim row below |
+| 4 NIT: `chroma-envelope.json` `capturedAt` named `2f45a4bb` | names the merge commit `19ce51c4c47f6cf159dfa1e3c858c7264e55c03d`, whose tree the values describe; the gate still passes (it prints the field, never compares it) | `ran` block |
+| 5 NIT: missing semicolon on `want9` | added | shim passes |
+| 6 NIT: toggle label hard-coded "Show 2 more examples" | the artifacts are a list; the label is `Show ${artifacts.length - 1} more examples` and the wrapper shows the first one until expanded | `grep -c 'Show 2 more' src/ui/app.js` is `0`; the shim `(k1b)` to `(k1e)` toggle rows still pass |
+
+Gates at `74f85381`: `npm test` 54 of 54 (tree dirty only by the regenerated `ui.html`, committed), citation audit exit `0`, `npm run build` exit `0`, `npm run smoke` `SMOKE PASS` with the two new rows.
+
 ## Left out
 
 - `src/ui/persist.js` and the chrome theme (`themeBtn`, `[data-theme]`, Settings App theme) are untouched, as the plan says.
@@ -80,6 +93,7 @@ Every sentence U4 wrote or changed in the five doc files, one row per anchor. `K
 | README: the canvas always shows both schemes | `The canvas always shows Light and Dark side by side` | README.md | present |
 | README no longer names the mode setter | `setColorMode` | README.md | absent |
 | skill reference: the scheme is set only by `_inScheme` | `_inScheme(scheme, build)` | .claude/skills/building-editor-sections/references/foundations.md | present |
+| ADR-026 states the merged fixture value | `the committed fixture holds 500` | docs/reference/references/decision-records.md | present |
 | skill reference: no Light/Dark/Both control | `Light · Dark · Both` | .claude/skills/building-editor-sections/references/best-practices.md | absent |
 
 ~~~sh ran
@@ -104,12 +118,16 @@ grep -c '_columnScheme' docs/lld/app-shell.md
 grep -c 'colorMode\|canvasTheme' figma/plugin/ui.html
 # marketing
 grep -ril 'compare\|light/dark toggle' docs/marketing/ | wc -l
+# review pass 1
+grep -rc '_rampStack\|_wireReorder' src test | grep -v ':0$'; echo "review end"
+grep -c 'Show 2 more' src/ui/app.js
+grep -c 'capturedAt": "19ce51c4' test/engine/fixtures/chroma-envelope.json
 # claims
 H=.sdlc/handoffs/pane-context-U4.md; awk '/^## Claims/,0' $H | grep -E '^\| ' | grep -v -E '^\| (Claim|---)' | while IFS='|' read -r _ claim needle anchor kind _; do n=$(printf '%s' "$needle" | sed 's/^ *`//; s/` *$//'); a=$(printf '%s' "$anchor" | tr -d ' `'); k=$(printf '%s' "$kind" | tr -d ' '); c=$(grep -cF -- "$n" "$a"); if [ "$k" = present ]; then [ "$c" -ge 1 ] && echo "OK present $a" || echo "FAIL present $a"; else [ "$c" -eq 0 ] && echo "OK absent $a" || echo "FAIL absent $a"; fi; done
 ~~~
 
 ~~~out ran
-cdc1ee93
+74f85381
 0
 0
 src/ui/app.js:0
@@ -137,6 +155,10 @@ docs/reference/references/ui-plan.md:0
 2
 0
        0
+test/ui/headless-boot.mjs:5
+review end
+0
+1
 OK present docs/lld/app-shell.md
 OK present docs/lld/app-shell.md
 OK present docs/lld/app-shell.md
@@ -151,6 +173,7 @@ OK absent docs/reference/references/ui-plan.md
 OK present README.md
 OK absent README.md
 OK present .claude/skills/building-editor-sections/references/foundations.md
+OK present docs/reference/references/decision-records.md
 OK absent .claude/skills/building-editor-sections/references/best-practices.md
 ~~~
 
