@@ -2,18 +2,19 @@
 kind: criteria-review
 plan: pane-context
 seat: verifier
-pass: 4
+pass: 5
 ticket: none yet
 written: 2026-10-01
 ---
 
-# pane-context criteria review · pass 4 · 🔴 at `744e7dd1`
+# pane-context criteria review · pass 5 · 🟢 at `600751b0`
 
-Current state: pass 4 🔴 at `744e7dd1` (plan revision 6, U2 rows only, rulings R94 to R98). The four pass 3 reds and C2.10 are fixed and checkable. Two rows, C2.2 and C2.7, expect Neutral `19/19` hexes moved, and a correct build moves `17/19`: the default kit's Neutral stops 50 (`#FFFFFF`) and 950 (`#111111`) have OKHSL `s` `0` at 100, so no damper can move them. U1, U3 and U4 stay 🟢 from pass 2 (not re-graded). Passes 3, 2 and 1 follow as history.
+Current state: pass 5 🟢 at `600751b0` (plan revision 7). The two pass 4 reds, C2.2 and C2.7, now read Neutral `17/19`, the figure a correct build produces. Every U2 row C2.1 to C2.10 is checkable; U1, U3 and U4 stay 🟢 from pass 2. The plan is mobilizable. Passes 4 to 1 follow as history.
 
-verdict: 🔴
-sha: 744e7dd1
+verdict: 🟢
+sha: 600751b0
 
+Pass 4 lines: `verdict: 🔴` at `744e7dd1`.
 Pass 3 lines: `verdict: 🔴` at `b59139a0`.
 Pass 2 lines: `verdict: 🟢` at `11828f00`.
 Pass 1 lines: `verdict: 🔴` at `d23b42db`.
@@ -147,3 +148,17 @@ Plan revision 6 at `744e7dd1` (revision 5 at `348ccce7` plus C2.7 and C2.9 resta
 1. 🔴 C2.2 and C2.7 (its `--saved-material 30` leg and its control): Neutral `19/19` moved is unreachable; the correct figure is `17/19`, stops 50 and 950 being achromatic at 100.
 2. 🟡 C2.9: scope the "skips the damper" control's `0/16` to `perceptual` and `peak`.
 3. 🟢 Every other U2 row is checkable, and the owner's base 4 case is pinned by C2.10 in R94's own unit.
+
+## Pass 5 · 🟢 at `600751b0`: C2.2 and C2.7 read 17/19
+
+verdict: 🟢
+sha: 600751b0
+
+Revision 7 at `600751b0`, graded by the seat directly on `git diff 744e7dd1 600751b0 -- .sdlc/plans/pane-context.md` (three cells changed plus the revision row; no other row moved).
+
+| # | State | Check I would run | What changed, and the control |
+|---|---|---|---|
+| C2.2 | 🟢 | `--group material --values 30,100`, the kept Neutral row | Expected is now `17/19`, naming stops 50 and 950 as achromatic at 100. Pass 4 simulation (r = 0.3 on Neutral's 19 display stops) reads `moved 17`, unmoved exactly `50 #FFFFFF` and `950 #111111`. Controls unchanged and sound: `--values 30,30` and the engine-revert clone print `0/19` |
+| C2.7 | 🟢 | `--group-chroma --defaults --base ...`, its `--saved-material 30` leg, `node -e` on `GROUP_DEFAULTS` | The saved-doc leg and the control both read `17/19` with the same reason; the defaults leg is unchanged from pass 4. The control (default back to 30) can fail the row: it prints `17/19` where the row expects `0/19` and `30` where it expects `100` |
+
+C2.1, C2.3 to C2.6 and C2.8 to C2.10 carry over 🟢 from pass 4 unchanged. Pass 4's wording note on C2.9 (the "skips the damper" control reads `0/16` only in `perceptual` and `peak`) is not taken up; it stays a note for the unit's verifier, not a red.
