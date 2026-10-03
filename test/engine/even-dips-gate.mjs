@@ -23,8 +23,8 @@
 // `floorRef` dropped) and scaled 1.6x must produce more than 0 dips, or the script fails with
 // `negative control DID NOT bite`. `--floor-scale <k>` runs the MAIN sweep on that patched engine at
 // scale k instead (the verifier's by-hand control: `--floor-scale 1.6` prints a non-zero count and
-// FAIL). Why not the shipped floor scaled alone: where every stop reads one hue (the gate path) the
-// shipped floor is non-increasing away from the anchor for ANY scale (min(maxc, floorRef) does not depend
+// FAIL). Why not the shipped floor scaled alone: where every stop reads one hue and nothing rotates
+// (the gate path at hueShift 0) the shipped floor is non-increasing away from the anchor for ANY scale (min(maxc, floorRef) does not depend
 // on it), so scaling it cannot open a dip there (measured at #701: 0 off-anchor dips at 1.6x, gate path and
 // rendered); on the anchored OKLCH path each stop reads its own solved hue (#766), so the rendered zero is
 // a measurement, not a structural property. The control therefore

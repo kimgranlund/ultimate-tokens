@@ -85,8 +85,8 @@ A palette carrying a valid 6-hex `anchor` (a STORED source colour, never fitted)
    `floorRef` the largest ceiling among the ramp's three reference tones (pivot, 450, 550; #701), read per
    stop at that stop's own hue before edge rotation (the solved CAM16 hue on the anchored OKLCH path, `seedHue`
    on anchored cam16, `baseHue` non-anchored; `floorRefAt`, #766), so the floor never rises past the first
-   step where every stop reads one hue (on the anchored OKLCH path it can, and no-dip there is a
-   measurement of `npm run gate:even-dips`); `m` is `chromaEnvelope`, which in `even` only has a flat-start shoulder at the anchor
+   step where every stop reads one hue and nothing rotates (on the anchored OKLCH path it can, and with
+   edge rotation `maxc` moves against the floor, so no-dip there is a measurement of `npm run gate:even-dips`); `m` is `chromaEnvelope`, which in `even` only has a flat-start shoulder at the anchor
    (`EVEN_NEIGHBOURHOOD_R`). The same formula runs on the anchored and non-anchored even paths: a change to
    one is a change to both. OKHSL path: in-gamut by OKHSL bijection (`s∈[0,1]`), asserted `inGamut:true`.
 2. **Hits the tone.** Even path: `hctToRgb` binary-searches CAM16 `J` (18 iters) so the pixel's L\* == `toneAt`

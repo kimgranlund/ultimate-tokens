@@ -1606,7 +1606,7 @@ for (const mode of ["perceptual", "peak"]) {
   // two stops from the anchor; `evenChroma`'s floorRef (src/engine/tonal.js) takes the floor's gamut
   // reference as the largest ceiling among stops 450, 500 and 550 (src/engine/tonal.js floorRefAt, read
   // at each stop's own hue before edge rotation, #766), not the anchor stop's own ceiling (U2 pass 1's design,
-  // retired: it drained the far half toward grey). Where every stop reads one hue the floor does not rise
+  // retired: it drained the far half toward grey). Where every stop reads one hue and nothing rotates the floor does not rise
   // from 450/550 outward; on the anchored OKLCH path each stop reads its own solved hue, so it can, and under
   // edge rotation the trade is measured, not structural: no-dip is a measurement, gated at 0 here (rendered
   // path, corpus) and in npm run gate:even-dips (gate path and the hueShift grid lines (a) and (b1)), with
@@ -1753,7 +1753,7 @@ for (const mode of ["perceptual", "peak"]) {
   // both is > 0 off-anchor dips, since the real engine reads 0: (1) the floor restored to its pre-#701
   // gamut-relative form, chromaFloor% * maxc at every stop (floorRef dropped), which is the mechanism
   // the gate retired; (2) the same, amplified 1.6x. The shipped floor scaled 1.6x on its own is NOT a
-  // control: where every stop reads one hue (the gate path, anchored cam16) min(maxc, floorRef) is
+  // control: where every stop reads one hue and nothing rotates (gate path and anchored cam16 at hueShift 0) min(maxc, floorRef) is
   // non-increasing away from the anchor at any scale, so it opens no off-anchor dip (measured 0 at #701, both
   // paths); on the anchored OKLCH path each stop reads its own solved hue (#766), so there that is a
   // measurement, not a structural property. A missing patch target is itself a FAIL (the floor line

@@ -4,7 +4,7 @@
 |---|---|
 | Branch | `unit/fh-U3` from `04a36e9b` (plan/floorref-hue after U2 merged); code head in the Orchestrator reply |
 | Ticket | #766 |
-| Files | `.claude/skills/color-math/SKILL.md` · `.claude/skills/color-math/references/foundations.md` · `docs/reference/references/decision-records.md` · `docs/reference/references/knowledge-02-tonal-scale.md` · `docs/reference/references/glossary.md` · `CHANGELOG.md` · `test/engine/tonal.mjs` (comment only) · `.sdlc/baseline.md` · `.sdlc/adapter.md` · `.sdlc/plans/floorref-hue-pr-body.md` · this handoff |
+| Files | `.claude/skills/color-math/SKILL.md` · `.claude/skills/color-math/references/foundations.md` · `docs/reference/references/decision-records.md` · `docs/reference/references/knowledge-02-tonal-scale.md` · `docs/reference/references/glossary.md` · `CHANGELOG.md` · `test/engine/tonal.mjs` (comment only) · `test/engine/even-dips-gate.mjs` (header comment only, rework) · `.sdlc/baseline.md` · `.sdlc/adapter.md` · `.sdlc/plans/floorref-hue-pr-body.md` · this handoff |
 | Engine | not touched (`git diff 04a36e9b -- src/` is empty); `figma/plugin/ui.html` and `describe-mcp-assets.js` did not regenerate, tree clean after `npm test` |
 | Ran | `npm test` 🟢 `✓ all 54 test files passed` (225 s wall on a loaded host, 1-minute load about 5.5, not a timing reading) · `node test/repo/em-dash.mjs` 🟢 · `node test/repo/branding.mjs` 🟢 |
 | Left out | C3.7 (needs the landed PR); the plan file's Revisions (Orchestrator's); the `even-dips-gate.mjs` and `tonal.js` `#766` mentions are already history or the citation (U2 pass 3), so no edit there |
@@ -38,3 +38,8 @@ Notes for the reviewer:
 | 3 ADR-026 cause chained from the random-set trade | reordered: anchored OKLCH solves per stop, so the floor can rise and no-dip is a measurement; then the measured R87 trade (16 removed, 4 opened) | amendment text in `decision-records.md`, the "On the anchored OKLCH path" sentence precedes "The measured trade" | HEAD text has "so on the anchored OKLCH" after the trade figures; `git show HEAD:docs/reference/references/decision-records.md \| grep -c "so on the anchored OKLCH"` is `1`, now `0` |
 
 Ran after rework: `npm test` 🟢 `✓ all 54 test files passed`, tree clean apart from these four files. Finding 4 is the Orchestrator's at pre-land.
+
+## Rework 2 (verdict finding 1 and 5)
+
+"and nothing rotates" added to the one-hue premise at `.claude/skills/color-math/SKILL.md` (the invariant 1 paragraph), `test/engine/tonal.mjs` (the `dip-gate-even` header and the negative-control rationale) and the `test/engine/even-dips-gate.mjs` header; `grep -c "and nothing rotates"` over the four files prints 1 / 2 / 1. Control: the same grep at the previous head (`12f6b353`) prints 0 for all. The Files row now lists `even-dips-gate.mjs`. Comments and records only.
+
