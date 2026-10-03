@@ -12,4 +12,4 @@
 |---|---|
 | Asked | 2026-10-03, via AskUserQuestion |
 | Chosen | A: "Bump to 0.2.2 (Recommended)" |
-| Ruling | PR #795 lands at its gated head unchanged; the 0.2.2 bump follows as its own small change on main |
+| Ruling | the 0.2.2 bump goes into plan/md-prefix as one small unit; the pre-land record takes pass 2 at the new head before PR #795 lands |
