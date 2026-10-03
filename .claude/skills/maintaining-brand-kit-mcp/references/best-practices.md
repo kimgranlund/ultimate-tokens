@@ -67,10 +67,10 @@ addition history.
 
 ### Versions and identity
 
-- **Two version numbers, unrelated:** `kit.$schema` (`"ultimate-tokens-brand-kit/4"`, the data shape) vs
+- **Two version numbers, unrelated:** `kit.$schema` (`"ultimate-tokens-brand-kit/5"`, the data shape) vs
   `PROTOCOL_VERSION` (`"2025-06-18"`, the MCP wire version in the `initialize` reply). Bump the schema only when
   `brandKit`'s output shape changes; bump the protocol only to track an MCP spec revision. The test asserts
-  `kit.$schema === "ultimate-tokens-brand-kit/4"` and `serverInfo.name === "ultimate-tokens-brand-kit"`.
+  `kit.$schema === "ultimate-tokens-brand-kit/5"` and `serverInfo.name === "ultimate-tokens-brand-kit"`.
 - **The schema digit is not a literal to keep by hand.** It is `EXPORT_SCHEMA_VERSION`
   (`src/engine/exports.js`), interpolated by `brandKit`; check the constant rather than trusting a number
   written in prose. A bump there also moves `SERVER.version` in `mcp/brand-kit-core.mjs` and, by

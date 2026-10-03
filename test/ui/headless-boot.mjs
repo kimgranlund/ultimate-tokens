@@ -1858,12 +1858,12 @@ app.exportOpen = true; app.exportTab = "radix"; app.radixFile = "values"; app.re
   const rxrMdReadme = app._zipReadme("my-set", { color: true, type: true, geometry: true });
   ok(rxrMdReadme.includes("var(--md-color-*)") && !rxrMdReadme.includes("var(--c-*)"), "(rxr4) the zip README's radix row names the kit's OWN prefix too");
   // #791: the Material preset applied through the Settings path emits ONE --md-* root across all three
-  // systems, and the detector reads the new triple back as "material". The retired root is spelled from
-  // parts (the repo gate forbids the literal in test/).
-  const rxrOldRoot = "--md" + "-sys";
+  // systems, and the detector reads the new triple back as "material". Every --md- custom property in the
+  // zip must open with a family the root owns, so any other segment (the retired one included) reds.
   ok(app._namingScheme() === "material", `(rxr4) the Material preset reads back as "material" (got ${app._namingScheme()})`);
   const rxrMdZip = dlZipText();
-  ok(rxrMdZip.includes("--md-color-") && !rxrMdZip.includes(rxrOldRoot), "(rxr4) the Material preset's colour CSS carries --md-color-* and no retired root anywhere in the zip");
+  const rxrStray = rxrMdZip.match(/--md-(?!(?:color|typescale|size|radius|space|inset|focus|border|gap|font)-|density\b)[a-z0-9][a-z0-9-]*/g);
+  ok(rxrMdZip.includes("--md-color-") && !rxrStray, `(rxr4) the Material preset's colour CSS carries --md-color-* and every --md-* in the zip opens with an owned family (stray: ${JSON.stringify(rxrStray && rxrStray.slice(0, 3))})`);
   ok(rxrMdZip.includes("--md-typescale-display-weight-medium:"), "(rxr4) the Material preset's type CSS declares --md-typescale-display-weight-medium:");
   ok(rxrMdZip.includes("--md-size-md-height:") && rxrMdZip.includes(".md-control-md {"), "(rxr4) the Material preset's geometry CSS declares --md-size-md-height: and .md-control-md {");
   app._setNamingScheme("ultimate"); flushRaf();
