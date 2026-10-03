@@ -1,0 +1,57 @@
+PASS
+
+# Review compute-layers U1 · reviewer-l3
+
+| Field | Value |
+|---|---|
+| Branch | `unit/cl-U1` at 4943fb03 (the lead's merge of plan revision 4 landed after the 342a9e18 handoff; code is unchanged since 84c075a5, `git diff 84c075a5 4943fb03` touches only the handoff, the two plan files and the ADR) |
+| Merge-base | d1862f91 |
+| Criteria | `.sdlc/plans/compute-layers.md` U1 C1.1 to C1.4, ADR-028 against `.sdlc/plans/compute-layers-adr-draft.md` revision 4 |
+| Scratch | `$CLAUDE_JOB_DIR/tmp/clU1rev` (`base/` = merge-base archive, `clone/` = `git clone --shared` at 4943fb03) |
+
+## Verdict by criterion
+
+| # | State | Evidence | Control |
+|---|---|---|---|
+| C1.1 | 🟢 | `grep -n "function controlsOf" src/ui/model.mjs src/engine/exports.js` prints nothing (rc 1); `grep -rn "export function resolveControls" src/` prints the one definition (`src/engine/controls.mjs:15`; the other hit is the generated `describe-mcp-assets.js` copy). `controlsOf` appears nowhere in `src/`, `scripts/`, `test/`, `mcp/`, `figma/` except the new test's own regex. Both drivers import it: `exports.js` (`derivedAll`) and `model.mjs` (`docControls`, used by `rampChromaOf`, `primeChromaOf`, `stateOf`, `brandKit`, `paletteKeyColors`, `projectView`). `DEFAULT_CONTROLS` keys (15) equal the old explicit key list in `exports.js`'s copy, so the loop over them threads the same set. `hueSpace` default is `DEFAULT_CONTROLS.hueSpace` = `"oklch"`. No `baseIntensity` in `src/engine`. | the same grep on the merge-base archive prints 2 lines (`model.mjs`, `exports.js`) |
+| C1.2 | 🟢 | `node test/engine/controls.mjs` exit 0, six `pass` lines. Registered in `TESTS` in `test/run.mjs` (55 files). Bites on the merge-base: the test copied into a `git archive d1862f91` tree with the resolver import and resolver-only block removed prints `FAIL a-export`, `FAIL b-bytes`, `FAIL one-resolver`, exit 1 (`a-canvas` passes there; the canvas already defaulted to oklch). Each check also asserts the cam16 render differs, so none is vacuous. Cross-tree half of (b) reproduced with my own script: HEAD raw `7a51f292e1a683db`/9160 B equals HEAD oklch and merge-base oklch; merge-base raw is `67203d462ef17cca`/9159 B (equals cam16). The accepted 1-byte shift is the owner-approved one (`.sdlc/questions/compute-layers-approval.md`). | test copied onto the merge-base: exit 1, 3 checks fail |
+| C1.3 | 🟢 for `npm test`, not run for build | `npm test` in the clone at 4943fb03: `all 55 test files passed`, exit 0, 253 s, `git status --porcelain` 0 lines after. `npm run build` not run, per instruction; the builder's handoff row and its syntax-error control stand as the builder's claim only. Em-dash and branding gates clean (run by hand and inside `npm test`). | builder's role-table `scrim` corruption row (C1.3c) not re-run; `npm test` itself is the gate |
+| C1.4 | 🟢 in substance (see finding 1) | `IDENT` plain: `0 differing cells`, 0/94500 per mode on the corpus and 0/400 on the default kit; `--only default-kit`: `0 differing cells`. Base given as `--base d1862f91`. | scratch script plus `out.hueSpace = "cam16"`: 280 differing cells; honest resolver 0 |
+
+## ADR-028
+
+🟢. Sits at `decision-records.md` line 841, before `## Quick map` (899 in the builder's count, same order now); one Quick map row (`| ADR-028 |`, last row); no `status: draft` front matter in the file; status line `ACCEPTED 2026-10-03`, backed by `.sdlc/questions/compute-layers-approval.md` ("Approve plan + ADR"). Text checked against the draft at revision 4: the survey table, decisions 1 to 3a, 5, the alternatives table and the rulings all match; decision 4 and the R101 line carry the revision 4 wording ("one `EXPORT_SCHEMA_VERSION` bump", then-current value plus 1, 5 if #789 lands first; "relative to the value when U4 lands: 4 or 5"). The Consequences paragraph adds the U1 OKLCH-shift sentence and the "five units" line, both consistent with the plan. No em dash; branding gate clean.
+
+## Files beyond the spec
+
+| File | Call |
+|---|---|
+| `scripts/bundle.mjs` (MODS and KEY entries) | IN. `exports.js` and `model.mjs` now import `controls.mjs`; the single-file bundle fails without it. Order is correct (after `resolve`, before `exports`). |
+| `scripts/gen-describe-mcp-assets.mjs` (FILES) | IN. The describe-MCP asset embeds `model.mjs`, which now imports the new file. |
+| `test/engine/anchor.mjs` (rewrite entry and a comment) | IN. The loader rewrites engine import specifiers; without the entry `model.mjs` does not load. The comment change replaces a stale line range with symbol names, which is the plan's "no line numbers" rule. |
+| `test/run.mjs` | IN. K17 registration. |
+| `.claude/skills/adding-export-formats/references/foundations.md` | IN. It named `controlsOf`; repaired in the same change per the stale-context rule. |
+| `docs/lld/lld-muted-base-key-spikes.md` row 39 | IN, same reason. Row 182 (the historical P3 build-sequence line) still says `controlsOf`; leave it, it records what P3 built then. |
+| `CHANGELOG.md` | IN, see finding 3. |
+| `figma/plugin/ui.html`, `src/ui/describe-mcp-assets.js` | IN. Generator output; the clone's tree was clean after `npm test`, so committed bytes equal regenerated bytes. |
+| `docs/reference/reviews/2026-08-20-reactivity/02-sections-and-resolvers.md` (`model.mjs:1081` to `:1068`) | OUT, see finding 2. |
+
+Stray `scripts/` edits from the first run: gone. `git diff d1862f91 4943fb03 -- scripts` shows only the two registration edits; `scripts/report-preset-fidelity.mjs` is untouched; worktree clean.
+
+## Findings, ranked
+
+| # | Sev | Finding |
+|---|---|---|
+| 1 | Low | The stock `IDENT` run never exercises the new `hueSpace` default. `identityRender` takes `hueSpace` straight from `doc.hueSpace` on both sides; the head side reaches `resolveControls` only through HEAD's `rampChromaOf` (the `baseChroma` and `primeChroma` path). Reproduced the builder's control with my own scratch patch (head side `hueSpace` from `resolveControls({ ...doc, hueSpace: undefined })`, base side from the doc): honest resolver `0 differing cells`; `out.hueSpace = "cam16"` added to `controls.mjs` gives `280 differing cells` (`even` mode 280/400, max dL* 0.3872; `perceptual` and `peak` 0/400); the same cam16 edit with the stock script still prints `0`, confirming the blindness. So C1.4 is met in substance: it proves no stored doc or preset moved, which holds because `hydrate` stamps `hueSpace`; the resolver default itself is pinned by C1.2 and the scratch control, not by the committed gate. Nothing to fix in U1. Suggest the Orchestrator note it in the plan so U5's C5.6 is not read as covering the resolver default either. |
+| 2 | Low | The reactivity review edit is a partial repair of a dated review record: that file keeps other `model.mjs:N` cites that drifted the same way, and the 1081 cite pointed at the `ui3` line, not the shadcn line, even at the merge-base. Not needed by C1.1 to C1.4 and no gate reads it. Revert or leave; either is fine. |
+| 3 | Low | `CHANGELOG.md` header says entries reference the squash-merged PR; the new entry cites ticket `#788`. The Orchestrator adds the PR number at land. |
+| 4 | Info | `.sdlc/baseline.md` still reads N = 54 test files; U1 makes it 55. `baseline-agrees-check.sh` and `ceiling-counts-check.mjs` are green, so nothing is red; the Orchestrator owns the baseline correction note, as in the prior N raises. |
+| 5 | Info | Test coverage note: `test/engine/controls.mjs` pins the cross-path default in-tree (raw vs raw plus oklch, both at HEAD); the HEAD-vs-merge-base byte diff lives only in the handoff and my reproduction above, as C1.2 (b) anticipated. |
+
+## R98
+
+R98: one item, in plan, not a violation. `docControls` in `src/ui/model.mjs` still reads the document's `baseIntensity` and hands it to the resolver as `baseChroma`; this is the single boundary rename the file already carried (`stateOf` did it before), kept because AC-004 bars the literal in `src/engine`. U5 C5.4 (a) removes it with the `RENAME_MAPS` entry. No override, shim, dead-key fallback, special case or legacy layer was added: the resolver is one loop over `DEFAULT_CONTROLS` plus three `?? 100` / `?? {}` defaults that the two old copies already held, and the old `?? "cam16"` special case is gone.
+
+## Load
+
+Heavy count (`pgrep -fl 'test/(run|engine|ui|repo)|smoke' | grep -cE '^[0-9]+ (/[^ ]*/)?node '`) was 3 when I stopped waiting and 4 at the instant `npm test` started and during the two IDENT runs. One over the limit; every figure here is a correctness result, not a timing one. Another seat had an `npm test` running inside `.worktrees/cl-U1`, so I ran the gate in a `--shared` clone at the same commit instead of the unit tree. `npm run build` and `npm run smoke` not run.

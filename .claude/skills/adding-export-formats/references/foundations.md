@@ -28,7 +28,7 @@ at derivation time so the roles arrive pre-resolved. An emitter does NOT resolve
 needs the raw var-name fragment to point a semantic var at a raw one (CSS/OKLCH `light-dark(var,var)`, UI3
 in-file aliases, DTCG `aliasData`).
 
-`derivedAll(state)` runs `controlsOf(state)` (which threads the tonal + distribution controls), filters to
+`derivedAll(state)` runs `resolveControls(state)` (`src/engine/controls.mjs`, the one resolver `src/ui/model.mjs` also uses; it threads the tonal + distribution controls), filters to
 `enabledPalettes(state)` (`p.on !== false`), and maps `derivePalette` (passing `state.roleOverrides`) in
 State order. **Every color emitter opens with `const palettes = derivedAll(state)` and loops.** The
 disabled-palette filter therefore applies to every format with zero per-format code, that is why
