@@ -44,7 +44,7 @@ Geometry families under the root (all follow): `size`, `radius`, `space`, `inset
 ## 3. Units
 
 - [x] U1 (S) Preset, hydrate rewrite (a v7 RENAME_MAPS entry), schema bump, emitted prose, the stale `maintaining-brand-kit-mcp` references (`foundations.md`, `best-practices.md`: schema and server version lines), and `docs/reference/references/knowledge-02-tonal-scale.md` section 8.4 (the persisted schema number): settings.js triple, persist.js, `EXPORT_SCHEMA_VERSION`, `SERVER.version`, comments, ds-export prose, tests, regenerated assets (builder-l2)
-- [ ] U2 (S) Records: consumer plugin, geometry-system skill, CHANGELOG, marketing corpus via `marketing-manager-agent` (builder-l1)
+- [x] U2 (S) Records: consumer plugin, geometry-system skill, CHANGELOG, marketing corpus via `marketing-manager-agent` (builder-l1)
 
 ### U1 criteria
 
