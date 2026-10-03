@@ -2,18 +2,19 @@
 kind: criteria-review
 plan: compute-layers
 seat: verifier
-pass: 3
+pass: 4
 ticket: none yet
 written: 2026-10-03
 ---
 
-# compute-layers criteria review · pass 3 · 🔴 at `2d86b64e`
+# compute-layers criteria review · pass 4 · 🟢 at `14a9e3ce`
 
-Current state: pass 3 🔴 at `2d86b64e` (revision 2). The five pass 2 reds (C3.2, C4.2 to C4.5) are fixed and checkable, and C5.1's count is now relative. One new red: C5.4 now says earlier migration steps stay untouched, yet still expects `baseIntensity` on exactly one line in `src/` outside the generated asset; the untouched `stampIntensity` step in `persist.js` keeps the name on at least two more lines, so a build that follows the row reds it. Pass 2 and pass 1 follow as history.
+Current state: pass 4 🟢 at `14a9e3ce` (revision 3). C5.4 now keeps the `stampIntensity` step and counts its lines, so every row C1.1 to C5.6 is checkable. The plan is mobilizable on criteria; U3 to U5 still carry their stated waits (U3 after #785 U2 and #766 U2). Passes 3 to 1 follow as history.
 
-verdict: 🔴
-sha: 2d86b64e
+verdict: 🟢
+sha: 14a9e3ce
 
+Pass 3 lines: `verdict: 🔴` at `2d86b64e`.
 Pass 2 lines: `verdict: 🔴` at `bc7d7597`.
 Pass 1 lines: `verdict: 🔴` at `567de3a8`.
 
@@ -113,3 +114,14 @@ Revision 2 at `2d86b64e`, graded by the seat directly on `git diff bc7d7597 2d86
 
 1. 🔴 C5.4: "earlier steps untouched" and "1 line" cannot both hold; pick one and restate the Expected.
 2. 🟡 C4.2: the engine's first import from `src/ui/` (`hydrate`), DOM-free today; state it in the ADR so a later `persist.js` edit knows the engine depends on it staying pure.
+
+## Pass 4 · 🟢 at `14a9e3ce`: C5.4 counts the kept migration step
+
+verdict: 🟢
+sha: 14a9e3ce
+
+Revision 3 at `14a9e3ce`, graded by the seat directly on `git diff 2d86b64e 14a9e3ce -- .sdlc/plans/compute-layers.md` (C5.4 and the revision row only). Facts read with `git show 14a9e3ce:<path>`.
+
+| # | State | Check I would run | Why / what to change, and the control |
+|---|---|---|---|
+| C5.4 | 🟢 | (a) and (b) as written; (c) the hydrate test and the constant | Today `persist.js` has `7` `baseIntensity` lines (two `DOMAINS` comments, the `DOMAINS` field, the `stampIntensity` comment, its test, its stamp, the `hydrate` clamp), matching the row's control; outside it, `src/ui/model.mjs`, `src/ui/sections/color.js` and the excluded generated asset. The `stampIntensity` step (`version: 2`) carries exactly one comment line plus the two code lines, so keeping it and adding one `RENAME_MAPS` line gives `4`. Ordering holds: migrations run by version, so the v2 stamp precedes the v7 rename. The count assumes the new entry and its comment name the old field on one line only; a builder who writes it on two lines prints `5`, which the row's wording ("exactly 4") makes a fair red |
