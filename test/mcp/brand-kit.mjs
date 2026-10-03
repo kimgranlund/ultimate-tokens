@@ -20,7 +20,7 @@ const ok = (c, m) => { if (!c) fails.push(m); };
 // 1. generate a real brand kit from the default doc (no systems arg → all three, the back-compat default)
 const kit = brandKit(defaultDocument());
 // $schema/2 (RP-8, ticket #577, plan PR #571 step E6): EXPORT_SCHEMA_VERSION stamped verbatim.
-ok(kit.$schema === "ultimate-tokens-brand-kit/3" && kit.palettes.length === 16, `brandKit shape: $schema=${kit.$schema}, ${kit.palettes.length} palettes (want ultimate-tokens-brand-kit/3, 16)`);
+ok(kit.$schema === "ultimate-tokens-brand-kit/4" && kit.palettes.length === 16, `brandKit shape: $schema=${kit.$schema}, ${kit.palettes.length} palettes (want ultimate-tokens-brand-kit/4, 16)`);
 // ZIP PACKAGE VERSION (#638 review F1): the downloaded Brand-Kit MCP zip declares a package.json
 // version, and it must be the version the server it packages reports over MCP. app.js used to carry
 // a hand-kept copy of that string, which the EXPORT_SCHEMA_VERSION 2 -> 3 bump left at 0.2.0 while

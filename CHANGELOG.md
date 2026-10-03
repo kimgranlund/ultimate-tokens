@@ -20,6 +20,24 @@ they landed on `main` and reference the squash-merged PR that introduced them.
   before in perceptual and peak; in even mode the default Neutral moves slightly (3 of 19 hexes).
   Saved documents are not migrated: a kit saved with material 30, or any group below 100, now loads
   muter than before. To get the at-100 look back, raise that group's Base chroma slider to 100.
+- **Breaking: the prime centre step is the bare `--{pfx}-{n}-prime`** (#789). The CSS variable (and the
+  Tailwind `--color-{n}-prime`) for the centre swatch of each palette's `prime` group was the doubled
+  `--{pfx}-{n}-prime-prime`; it is now `--{pfx}-{n}-prime`. The other six steps keep their names
+  (`-prime-brightest` through `-prime-dimmest`). Consumers referencing the old name must rename it.
+  The Panda key path for the centre is unchanged (`prime.prime`, `prime.DEFAULT`). Export schema is
+  now `ultimate-tokens-brand-kit/4` and the brand-kit MCP server is 0.4.0.
+- **The even-mode chroma floor reads its gamut reference per stop, at the stop's own hue before edge
+  rotation** (#766). The floor's reference was one ceiling per ramp, read at one hue; it is now the largest
+  ceiling at the pivot, 450 and 550 tones read at each stop's own hue: the CAM16 hue the per-stop OKLCH solve
+  finds for that stop on an anchored ramp, the ramp's hue otherwise. Edge rotation (`hueShift`) is not
+  followed, because the gamut ceilings are not monotone in hue and a reference that follows the rotation
+  rises or falls against stops that do not move with it, which measured off-anchor dips in both directions.
+  No non-anchored even ramp moves at any `hueShift` (0 gate-path cells, against `main` before this change); on
+  anchored ramps 3,870 of 71,820 `STOPS` cells move (5.4%), by at most 9.11 CAM16 C, in pale low-chroma
+  yellows and greens. The shipped corpus and the default kit render `perceptual`, so none of their live
+  renders move; only a session in the opt-in even tone mode does. Random anchored input under edge rotation
+  is bounded rather than dip-free (`npm run gate:even-dips` holds a pinned set at or under `main`'s
+  count before this change).
 
 ### 2026-09-30
 

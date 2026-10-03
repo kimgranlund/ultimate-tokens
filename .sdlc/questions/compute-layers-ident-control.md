@@ -8,3 +8,11 @@
 | Question | May the plan take revision 5 with that one-line control rewrite of C3.3 and C5.6? |
 | Options | A (recommended): yes, revision 5 as above; the Verifier runs a checkability pass before cl-U3 is cut. · B: no, leave "as C1.4"; C1.2 pins the default and C3.3 and C5.6 stay met as written with a known-dead control |
 | Default if unanswered | none: a revision past the cap needs the owner |
+
+## Answer
+
+| Field | Value |
+|---|---|
+| Asked | 2026-10-03, via AskUserQuestion |
+| Chosen | Allow revision 5 (Recommended), option A |
+| Ruling | revision 5 as proposed; the Verifier runs a checkability pass before cl-U3 is cut |

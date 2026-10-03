@@ -1,0 +1,45 @@
+# Handoff floorref-hue U3 · pass 1 rework · builder-l2 → reviewer
+
+| Field | Value |
+|---|---|
+| Branch | `unit/fh-U3` from `04a36e9b` (plan/floorref-hue after U2 merged); code head in the Orchestrator reply |
+| Ticket | #766 |
+| Files | `.claude/skills/color-math/SKILL.md` · `.claude/skills/color-math/references/foundations.md` · `docs/reference/references/decision-records.md` · `docs/reference/references/knowledge-02-tonal-scale.md` · `docs/reference/references/glossary.md` · `CHANGELOG.md` · `test/engine/tonal.mjs` (comment only) · `test/engine/even-dips-gate.mjs` (header comment only, rework) · `.sdlc/baseline.md` · `.sdlc/adapter.md` · `.sdlc/plans/floorref-hue-pr-body.md` · this handoff |
+| Engine | not touched (`git diff 04a36e9b -- src/` is empty); `figma/plugin/ui.html` and `describe-mcp-assets.js` did not regenerate, tree clean after `npm test` |
+| Ran | `npm test` 🟢 `✓ all 54 test files passed` (225 s wall on a loaded host, 1-minute load about 5.5, not a timing reading) · `node test/repo/em-dash.mjs` 🟢 · `node test/repo/branding.mjs` 🟢 |
+| Left out | C3.7 (needs the landed PR); the plan file's Revisions (Orchestrator's); the `even-dips-gate.mjs` and `tonal.js` `#766` mentions are already history or the citation (U2 pass 3), so no edit there |
+
+U2 verdict findings carried: F1 (stale `dip-gate-even` header) in C3.5; F2 (out-of-lane citations) in the PR draft; F3 (stale `gate:even-dips` range) in the baseline and adapter rows. F3 note: the 45 s ceiling is held by the median only, and the new baseline reading says so (one head run 53.51 s, one 44.89 s).
+
+| Id | Command | Evidence | Negative control | State |
+|---|---|---|---|---|
+| C3.1 | `grep -n "floorRef\|seed hue\|seedHue" .claude/skills/color-math/SKILL.md .claude/skills/color-math/references/foundations.md` | 9 hits (SKILL.md 84 to 87, foundations 87, 88, 143, 145, 146); each states three tones at the stop's own hue before edge rotation, `seedHue` only as the anchored-cam16 case; `grep -nE "rendered hue\|rotated hue\|at the seed hue"` over both skill files, knowledge-02 and the glossary prints 0 | `git show HEAD:<file> \| grep -c 'before edge rotation'` is `0` for SKILL.md and foundations.md (now 1 and 2), so the pre-change records fail the per-stop-rule check | 🟢 |
+| C3.2 | `grep -c "#766" docs/reference/references/decision-records.md`; `sed -n '/^| ADR-026/p'` | `3` (amendment paragraph after the #725 amendment, before ADR-027 and the Quick map; the Quick map ADR-026 row names `2026-10-03 (#766, R85 ...)`); amendment carries R85, the tolerance as a corpus measurement, 0 gate-path cells (72,124 / 94,900), rendered 3,870 and 9.11 C, the rotation reason in one sentence, the R87 trade | `git show HEAD:docs/reference/references/decision-records.md \| grep -c "#766"` is `0` | 🟢 |
+| C3.3 | `grep -n "#766" docs/reference/references/knowledge-02-tonal-scale.md docs/reference/references/glossary.md`; `grep -c 'before edge rotation'` on the glossary | knowledge-02 section 5 pseudocode: the per-ramp `ref = max(cm at stops 450, 500, 550)` line is gone and `ref` is computed inside `for each stop` at `h0`, "BEFORE edge rotation"; glossary `chromaFloor` row: 1 hit of `before edge rotation` with the solved CAM16 hue named | `git show HEAD:<file> \| grep -c '#766'` is `0` for both; HEAD knowledge-02 carried the per-ramp `ref` line above the loop | 🟢 |
+| C3.4 | `grep -n "#766\|9.11\|3,870\|0 gate-path" CHANGELOG.md` | one Unreleased entry under 2026-10-03 Changed: #766, pre-rotation rule, "0 gate-path cells", "3,870 of 71,820 `STOPS` cells", "9.11 CAM16 C", the rotation reason, the perceptual shipped corpus not moving; no PR number | `git show HEAD:CHANGELOG.md \| grep -c '#766'` is `0` | 🟢 |
+| C3.5 | `grep -n "#766" test/engine/tonal.mjs test/engine/even-dips-gate.mjs`; the C2.14 grep over `src/engine/tonal.js test/engine/tonal.mjs test/engine/even-dips-gate.mjs` | the five `#766` hits are history or citation (the grid block, "predates #766 (#784)", the `dip-gate-even` header); C2.14 grep prints nothing, `rc=1`; the `dip-gate-even` header (`test/engine/tonal.mjs`, the paragraph after "Even mode has NO named baseline") now says the floor does not rise where every stop reads one hue, can on the anchored OKLCH path, and no-dip is a measurement: gated at 0 in the rendered path and the grid lines (a) and (b1), (b2) bounded at the merge-base count; matches the `evenChroma` header (C2.15) | `git show HEAD:test/engine/tonal.mjs \| grep -c "gated at 0 here and by the hueShift"` is `1`, now `0` | 🟢 |
+| C3.6 | `node test/repo/em-dash.mjs && node test/repo/branding.mjs` | `em-dash: clean (1118 files scanned)`, `branding: clean (1111 files scanned)` with the PR draft, handoff, plan and baseline edits in the tree | appended a U+2014 line to a tracked file (`CHANGELOG.md`, restored from a scratch copy): `FAIL: 1 em dashes outside inline code spans in 1 files`, exit 1 | 🟢 |
+| C3.7 | `gh issue view 766` after landing | closing comment text drafted in `.sdlc/plans/floorref-hue-pr-body.md` (section "Issue closing comment") with the C2.1/C2.2 figures; the PR body carries `Closes #766` | n/a | ⚪ awaits landing |
+| F3 | `grep -n "36.48\|405 to 539\|36 to 54" .sdlc/baseline.md .sdlc/adapter.md` | baseline `gate:even-dips` row now leads with the verifier's five paired readings (head `53.51 · 36.35 · 36.31 · 36.48 · 44.89`, median 36.48 s, merge-base median 7.46 s), says "median of the five paired runs", the 2c240472 sha and the verdict path; the builder's 30.61 s reading kept as history. Adapter `even-dips` row: `~36 to 54 s`, with the grid block described; adapter `sweeps` composite re-derived 405 to 539 s (388 to 508 with 19 and 23 swapped for 36 and 54) | `git show HEAD:.sdlc/adapter.md \| grep -c "~19 to 23 s"` is `1`, now `0` | 🟢 |
+| PR draft | `.sdlc/plans/floorref-hue-pr-body.md` | names both out-of-lane citation repairs (`00-synthesis.md`, `04-context-and-messaging.md`, `tonal.js:1026` to `:1050`), the C2.1/C2.2 figures (0 gate-path cells, 3,870 / 4,441 rendered, 9.11 C), the R87 trade, the C2.8 pairs and the closing comment | `grep -c "00-synthesis\|04-context-and-messaging" ` over the file prints `2` or more lines; an omitted path would drop to 0 | 🟢 |
+
+Notes for the reviewer:
+
+- The ADR amendment sits at the end of ADR-026's own section, after the #701 and #725 amendments and before ADR-027 and the Quick map, which is where this file keeps ADR-026's amendments; no new ADR number.
+- The adapter row for `sweeps` is derived by summing the eight rows, so it moves with the `even-dips` row; the figure is still "not itself a timed composite run".
+- Baseline loads for the verifier's five pairs are not restated per run (the verdict says each started under 1-minute load 5); the row cites the verdict instead of inventing them.
+
+## Rework after review FAIL (comment edits only)
+
+| Finding | Fix | Evidence | Negative control |
+|---|---|---|---|
+| 1 stale "non-increasing, cannot open a dip" in two gate files | both qualified to the paths where every stop reads one hue (gate path, anchored cam16); the 1.6x zero is dated to #701 and the anchored OKLCH rendered zero is called a measurement | `test/engine/tonal.mjs` (negative-control rationale before the `realSrc` block) and `test/engine/even-dips-gate.mjs` header; `node --check` both ok; C2.14 grep prints nothing, `rc=1` | `git show HEAD:test/engine/even-dips-gate.mjs \| grep -c "cannot open a dip on"` is `1`, now `0` |
+| 2 glossary `chromaFloor` row lacked the anchored OKLCH caveat | clause added: each stop reads its own solved hue, so the floor can rise outward of 450/550, no-dip is a measurement of `npm run gate:even-dips` (#766) | `grep -c "can rise outward" docs/reference/references/glossary.md` prints `1` | `git show HEAD:docs/reference/references/glossary.md \| grep -c "can rise outward"` is `0` |
+| 3 ADR-026 cause chained from the random-set trade | reordered: anchored OKLCH solves per stop, so the floor can rise and no-dip is a measurement; then the measured R87 trade (16 removed, 4 opened) | amendment text in `decision-records.md`, the "On the anchored OKLCH path" sentence precedes "The measured trade" | HEAD text has "so on the anchored OKLCH" after the trade figures; `git show HEAD:docs/reference/references/decision-records.md \| grep -c "so on the anchored OKLCH"` is `1`, now `0` |
+
+Ran after rework: `npm test` 🟢 `✓ all 54 test files passed`, tree clean apart from these four files. Finding 4 is the Orchestrator's at pre-land.
+
+## Rework 2 (verdict finding 1 and 5)
+
+"and nothing rotates" added to the one-hue premise at `.claude/skills/color-math/SKILL.md` (the invariant 1 paragraph), `test/engine/tonal.mjs` (the `dip-gate-even` header and the negative-control rationale) and the `test/engine/even-dips-gate.mjs` header; `grep -c "and nothing rotates"` over the four files prints 1 / 2 / 1. Control: the same grep at the previous head (`12f6b353`) prints 0 for all. The Files row now lists `even-dips-gate.mjs`. Comments and records only.
+

@@ -317,7 +317,7 @@ Consequences that shape the design:
 
   | Q | Ruling |
   |---|---|
-  | (a) reference target | a1: raw palette primitives for all 12 steps, 1..8 the ratified stop `RADIX_RAW_STEPS` already reads (REQ-021's own table), 9..12 the driving role's own `lightRef`/`darkRef` (so role overrides, `accentRef`, and on-color policy travel with the link); `prime` links the `prime-prime` identity primitive. Alpha steps `a1..a12` stay computed (REQ-022), since no primitive exists for an alpha projection. |
+  | (a) reference target | a1: raw palette primitives for all 12 steps, 1..8 the ratified stop `RADIX_RAW_STEPS` already reads (REQ-021's own table), 9..12 the driving role's own `lightRef`/`darkRef` (so role overrides, `accentRef`, and on-color policy travel with the link); `prime` links the bare `--{pfx}-{n}-prime` identity primitive (the Panda key path for the centre stays nested: `prime.prime` and `prime.DEFAULT`). Alpha steps `a1..a12` stay computed (REQ-022), since no primitive exists for an alpha projection. |
   | (b) output shape | b2: ONE format, an engine flag; a "Values · References" sub-bar on the existing Radix tab (the Figma-tab mode-file pattern); both files ship in the `radix/` zip folder; Pro gating unchanged. |
   | (c) ladder mapping | c1: identity mapping to the stops the engine already reads, no re-derivation, no snapping to a different stop set. |
   | (d) reserved alias keys (#630) | d1: the group key stays `radixPaletteKey` (`<slug>-palette`); its references use the palette's RAW slug `p.n`, never the renamed key, because the primitive surfaces (`exportCSS`/`exportOKLCH`) only ever emit under the raw slug. |
