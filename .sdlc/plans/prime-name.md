@@ -71,7 +71,7 @@ Unchanged, by key shape (nested, no hyphen join): JSON `palettes[n].prime.prime`
 | # | Command | Expected | Today | Negative control |
 |---|---|---|---|---|
 | C2.1 | `git grep -l prime-prime -- docs plugin ':!docs/tickets' ':!docs/plan/archive' ':!docs/reference/data'` | no output | `docs/reference/references/knowledge-04-export-formats.md`, `docs/spec/spec-muted-base-key-spikes.md`, `docs/spec/spec-panda-park-ui-exports.md` (`docs/reference/data` is U1's, C1.1) | leave one: grep prints it |
-| C2.2 | `grep -cE -- "--\{n\}-prime-(brightest\|brighter\|bright\|dim\|dimmer\|dimmest)\b" plugin/ultimate-tokens/skills/color-tokens/SKILL.md` | 6 (all six suffixed steps named) | 2 (`brightest`, `dimmest`) | revert the skill edit: prints 2 |
+| C2.2 | `grep -oE -- "--\{n\}-prime-(brightest\|brighter\|bright\|dim\|dimmer\|dimmest)\b" plugin/ultimate-tokens/skills/color-tokens/SKILL.md \| sort -u \| wc -l` (distinct names, not lines) | 6 (all six suffixed steps named) | 2 (`brightest`, `dimmest`) | revert the skill edit: prints 2 |
 | C2.3 | `awk '/^## \[Unreleased\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md \| grep -c -e "prime-prime" -e "EXPORT_SCHEMA_VERSION"` | at least 2 | 0 | drop the entry: prints 0 |
 | C2.4 | `npm test`; `git status --porcelain` | exit 0, empty | n/a | adapter §1 control |
 
