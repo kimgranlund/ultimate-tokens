@@ -1,6 +1,6 @@
 ---
 status: approved
-ticket: none yet (the Orchestrator mints one kind:feature issue per adapter X3 once the owner approves the ADR draft)
+ticket: 788
 priority: P2
 lane: color-engine then editor-ui (`src/engine/` new `layers.mjs`, `controls.mjs`, `layers/<id>@<n>.mjs`, `src/engine/exports.js`, `src/engine/tonal.js` (U5), `src/ui/model.mjs`, `src/ui/persist.js`, `src/ui/sections/color.js` (U5), `test/engine/`, `docs/reference/references/decision-records.md` on approval, `CHANGELOG.md`; regenerated bundles `dist/`, `figma/plugin/ui.html`, `src/ui/describe-mcp-assets.js` on every unit that touches `src/`)
 size: S+S+M+L+M (U1 S = 1, U2 S = 1, U3 M = 2, U4 L = 4, U5 M = 2; 10 points)
