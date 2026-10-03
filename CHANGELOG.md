@@ -8,6 +8,19 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 
 ## [Unreleased]
 
+### 2026-10-03
+
+#### Changed
+- **A group's Base chroma slider now damps the whole ramp** (#785, R94 to R98). The `<group> base
+  chroma` value `g` (0 to 100) scales every stop's chroma to `g / 100` of the ramp the palette renders
+  at 100, in every tone mode, anchored or not, stop 500 included. Before this change an anchored
+  palette ignored any value above its anchor's own saturation and kept stop 500 on the anchor, so
+  Brand base chroma 4 still left Primary's middle stops fully vivid; now it mutes them to about 4%.
+  At 100 nothing moves. Material's default is now 100 (was 30), so a new kit renders exactly as
+  before in perceptual and peak; in even mode the default Neutral moves slightly (3 of 19 hexes).
+  Saved documents are not migrated: a kit saved with material 30, or any group below 100, now loads
+  muter than before. To get the at-100 look back, raise that group's Base chroma slider to 100.
+
 ### 2026-09-30
 
 #### Changed

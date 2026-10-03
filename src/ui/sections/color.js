@@ -1812,7 +1812,7 @@ export class ColorSectionImpl {
       this.slider("Hue", p.hue, 0, 360, 1, (v) => fmt(v) + "°", (v) => this.editDrag((d) => { this.detachSnapshot(d, i, p); d.palettes[i].hue = v; if (d.palettes[i].anchor) delete d.palettes[i].anchor; })),
       // Chroma (SPEC 0.3.0 REQ-002/032), feeds the KEY COLOUR and the prime system only now (the
       // gallery tile, deriveKeyColor, and the seven prime swatches); the ramp no longer reads it at
-      // all, a palette's group supplies the ramp's own absolute chroma target instead (the four
+      // all, a palette's group damps the whole at-100 ramp instead, by Base chroma / 100 (#785; the four
       // per-group rows on the Global tab). No "Intensity" slider exists any more, in any group.
       this.slider("Chroma", p.chroma, 0, 100, 1, (v) => fmt(v) + "%", (v) => this.editDrag((d) => { this.detachSnapshot(d, i, p); d.palettes[i].chroma = v; if (d.palettes[i].anchor) delete d.palettes[i].anchor; })),
       // Reset, re-attach a detached palette (Q6, U2's C12): restores `anchor = sourceAnchor` and

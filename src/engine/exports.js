@@ -214,7 +214,7 @@ function controlsOf(state) {
     dampCurve: state.dampCurve ?? DEFAULT_CONTROLS.dampCurve,
     dampAmp: state.dampAmp ?? DEFAULT_CONTROLS.dampAmp,
     dampBias: state.dampBias ?? DEFAULT_CONTROLS.dampBias,
-    // baseChroma (SPEC 0.3.0 REQ-002/004): the GLOBAL fallback ramp-chroma target, used only when a
+    // baseChroma (SPEC 0.3.0 REQ-002/004): the GLOBAL fallback group damper value (#785), used only when a
     // palette's group carries no value of its own. Named `state.baseChroma` here, a DIFFERENT name
     // than the field persist.js/model.mjs persist on the document (kept there for backward compat),
     // because a retired per-stop multiplier control once lived under that old name right in this file,

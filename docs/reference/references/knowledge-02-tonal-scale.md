@@ -11,7 +11,7 @@
 5. Chroma targeting and edge damping
 6. `paletteStops`: the per-stop pipeline
 7. Worked example
-8. Palette groups, base chroma, and the prime system (absolute per-group ramp chroma, seven prime swatches)
+8. Palette groups, base chroma, and the prime system (per-group whole-ramp damper, seven prime swatches)
 9. Anchored palettes (a stored source colour, exact at `prime.DEFAULT` and at stop 500)
 
 ---
@@ -212,12 +212,12 @@ lmin 5, lmax 100, damp 80:
 
 ## 8. Palette groups, base chroma, and the prime system
 
-> Spec: `docs/spec/spec-muted-base-key-spikes.md` 0.3.0 (REQ-001..011 palette groups + absolute
-> per-group base chroma, REQ-050..057 the prime system); design:
+> Spec: `docs/spec/spec-muted-base-key-spikes.md` 0.3.0 (REQ-001..011 palette groups + per-group
+> base chroma, absolute there, a damper since #785; REQ-050..057 the prime system); design:
 > `docs/lld/lld-muted-base-key-spikes.md` 0.3.0. Shipped in the engine (`tonal.js`, `prime.mjs`,
 > the new `src/engine/resolve.mjs`) and the UI (`src/ui/model.mjs`, `src/ui/persist.js`). Unlike
 > 0.2.0's shipped defaults, the 0.3.0 `GROUP_DEFAULTS` (§8.1) make a REAL visual change to the
-> default document: Neutral (material) renders visibly muted and the eight data palettes render
+> default document: Neutral (material) rendered muted until #785 (R96) and the eight data palettes render
 > at equal ramp chroma regardless of their own `chroma` field, see the CHANGELOG. The 0.1.0
 > "key-stop spike" on the ramp (identity stops, `keyIntensity`) was retired under #533; the ramp
 > is continuous and the vivid identity colours live in the prime system (§8.3) below.
@@ -237,12 +237,12 @@ group, default-filled from `GROUP_DEFAULTS` (declared in `src/ui/persist.js`, re
 
 | Group | `baseChroma` | `primeChroma` | `locked` |
 |---|---|---|---|
-| `material` | 30 | 60 | none |
+| `material` | 100 | 60 | none |
 | `brand` | 100 | 100 | none |
 | `system` | 100 | 100 | none |
 | `data` | 100 | 100 | yes |
 
-**Base chroma is now an ABSOLUTE ramp-chroma target, not a multiplier.** For a palette `p` in
+**Base chroma is the group's ramp damper (#785, R94 to R98).** For a palette `p` in
 group `g`, the pure resolver `rampChromaOf(palette, paletteGroups, controls)`
 (`src/engine/resolve.mjs`, imported identically by `src/ui/model.mjs`'s `projectView` and
 `src/engine/exports.js`'s `derivePalette` so the canvas and every export format can never
@@ -255,7 +255,12 @@ rampChromaOf(p, doc) = paletteGroups[paletteGroup(p)].baseChroma ?? controls.bas
 
 and the model hands the resolved number to `paletteStops`/`okhslStops` AS the palette's own
 `chroma` (`paletteStops({ ...p, chroma: rampChromaOf(p, doc) }, controls, stops)`), it REPLACES
-`palette.chroma` for ramp purposes; it never multiplies it. `palette.chroma` itself now feeds
+`palette.chroma` for ramp purposes. Inside `paletteStops` that value `g` is one damper on the whole
+ramp: every path renders its stops exactly as at `g = 100` (every floor, cap, tone hold and gamut
+step included), then `dampStops` multiplies each stop's emitted chroma coordinate by `r = g / 100`
+at the same lightness and hue, OKHSL `s` on perceptual and peak, CAM16 C on even, anchored and
+unanchored alike, stop 500 included. At 100 the multiply is the identity (byte-identical); the
+range is 0 to 100, damp only, and nothing raises a stop above its at-100 render. `palette.chroma` itself now feeds
 only `deriveKeyColor` (the gallery tile and the prime system, §8.3); the ramp ignores it
 entirely. There is no per-palette ramp override in any group any more: `palette.intensity` was
 retired at schema v4 (§8.4) and a stray stored value is ignored on read.
@@ -272,7 +277,9 @@ A palette's rendered ramp is byte-identical to the pre-groups engine IF AND ONLY
 Secondary and Warning (both sit at `chroma 100` inside a group whose `baseChroma` is 100) and for
 every data palette minted at the primary's chroma only when that chroma is 100; it does NOT hold
 for Neutral, Primary, Tertiary, Info, Success, Danger, or the default data palettes, which now
-render at a different chroma than their own `chroma` field states.
+render at a different chroma than their own `chroma` field states. Material's default moved from
+30 to 100 with the damper (R96) and no persist migration (R98): a saved doc that stored material 30
+renders its Neutral at 0.3 of the at-100 ramp.
 
 ### 8.2 Prime chroma resolution (feeds only the prime system, §8.3: never the ramp)
 
@@ -414,7 +421,7 @@ itself is stored and both of the places a user reads "the" colour reproduce it b
 | Guarantee | Scope | Where |
 |---|---|---|
 | `prime.DEFAULT` equals `anchor` byte for byte | every palette carrying an `anchor`, 3,380 on the regenerated corpus, unconditionally | `primeSwatches(...)[3]` returns the anchor's own rgb verbatim (§8.3) |
-| ramp stop 500 equals `anchor` byte for byte, in all three tone modes | the 3,370 anchored palettes whose source sits INSIDE the ramp window `[9.95, 95.05]` L\* | `paletteStopsAnchored` / `okhslStopsAnchored`, the `stop === 500 && !clamped` case |
+| ramp stop 500 equals `anchor` byte for byte, in all three tone modes, at group base chroma 100 (below it the group damper scales stop 500 too, §8.1) | the 3,370 anchored palettes whose source sits INSIDE the ramp window `[9.95, 95.05]` L\* | `paletteStopsAnchored` / `okhslStopsAnchored`, the `stop === 500 && !clamped` case |
 
 The two scopes differ on purpose. The TOKEN is exact for all 3,380: a source outside the ramp window
 still exports its own hex at `prime.DEFAULT`. The RAMP clamps: for the 10 named out-of-window sources
@@ -429,11 +436,12 @@ palette leaves stop 500 unchanged while the same edit on a non-anchored copy mov
 
 **Chroma at the pivot is a blend, not a pin.** The anchored branches call the same `chromaEnvelope`
 (§5) as everything else; what differs is the BASIS fed to it. `anchorChromaBasis` blends the anchor's
-own measured chroma exactly at the pivot toward the group's resolved ramp target at each side's
-endpoint, weighted by a smoothstep on the `liftStop` position, so the weight and its derivative are
-both 0 at the pivot. That is what keeps a near-grey anchor inside a vivid group from reading as a
-notch against its own neighbours, and it is why a group's Base chroma still moves an anchored ramp's
-ends while stop 500 stays byte-exact.
+own measured chroma exactly at the pivot toward `min(groupValue, anchorValue)` at each side's
+endpoint on perceptual and peak, and toward `groupValue` itself on even (`climb = true`), weighted by a smoothstep on the `liftStop` position, so the weight and its derivative are
+both 0 at the pivot. That is what keeps a near-grey anchor from reading as a notch against its own
+neighbours. The basis is always computed at group 100; a group's Base chroma below 100 then damps
+the whole anchored ramp by `g / 100` (§8.1), stop 500 included, so stop 500 is byte-exact to the
+anchor at group 100 only, and an achromatic anchor's ramp stays achromatic (`r * 0 = 0`).
 
 **Reset.** Editing `hue` or `chroma` on an anchored palette REMOVES `anchor`: the palette becomes an
 ordinary one and `prime.DEFAULT` reverts to the derived key colour. The generator-written

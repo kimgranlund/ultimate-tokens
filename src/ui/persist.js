@@ -37,10 +37,12 @@ export const PALETTE_GROUPS = ["material", "brand", "system", "data"];
 // import-back-and-re-export shape as PALETTE_GROUPS above: persist.js must never import model.mjs,
 // so this is the single canonical definition. model.mjs's rampChromaOf/primeChromaOf still own the
 // RESOLUTION rule that reads these numbers; this export is only the shape persist.js defaults an
-// absent/invalid stored group value against. baseChroma is an ABSOLUTE ramp-chroma target now
-// (REQ-002), not a multiplier, same `%`-of-peak units `palette.chroma` already used.
+// absent/invalid stored group value against. baseChroma is the group's chroma damper (#785, R94 to
+// R98): 0 to 100, the ramp's chroma at every stop is its at-100 render times baseChroma / 100
+// (tonal.js `dampStops`). Every group defaults to 100, the ramp as sampled; a stored value below 100
+// loads as is and damps.
 export const GROUP_DEFAULTS = {
-  material: { baseChroma: 30, primeChroma: 60 },
+  material: { baseChroma: 100, primeChroma: 60 },
   brand: { baseChroma: 100, primeChroma: 100 },
   system: { baseChroma: 100, primeChroma: 100 },
   data: { baseChroma: 100, primeChroma: 100, locked: true },
@@ -73,16 +75,16 @@ export const DOMAINS = {
   dampCurve: { kind: "number", min: 0.5, max: 4, default: 1.5 },
   dampAmp: { kind: "number", min: 0, max: 100, default: 0 },
   dampBias: { kind: "number", min: -100, max: 100, default: 0 },
-  // baseIntensity: the GLOBAL fallback ramp-chroma target (SPEC spec-muted-base-key-spikes 0.3.0
+  // baseIntensity: the GLOBAL fallback group damper value (SPEC spec-muted-base-key-spikes 0.3.0, #785
   // REQ-002/007), used only when a palette's group carries no baseChroma of its own. primeChroma:
   // the prime system's own global fallback chroma control (REQ-008/050..057). Both default 100, a
   // fresh/absent-field doc renders every Brand/System/Data palette exactly as before groups existed
-  // (Material is the one group whose default genuinely mutes the ramp, REQ-007). primeChroma was
+  // (Material defaults to 100/60 since #785 R96, so no group mutes the ramp by default). primeChroma was
   // named keyIntensity through schema v2; REQ-011/R4 renamed it at v3 (RENAME_MAPS below), DOMAINS
   // no longer lists keyIntensity at all, so a v3+ doc that still somehow carries it gets it loudly
   // dropped. The FIELD NAME `baseIntensity` is a deliberate legacy holdover (never renamed), REQ-010
   // keeps the document's own field name stable across the 0.3.0 re-ruling; only its MEANING (a
-  // fallback ramp-chroma target, not a per-stop multiplier) and the engine's own copy of the concept
+  // fallback for the whole-ramp damper, the at-100 ramp times g / 100) and the engine's own copy of the concept
   // (fully retired, AC-004) changed.
   baseIntensity: { kind: "number", min: 0, max: 100, default: 100 },
   primeChroma: { kind: "number", min: 0, max: 100, default: 100 },

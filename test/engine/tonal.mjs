@@ -10,6 +10,7 @@
 //   EXPORT_STOPS  (number[])   DEFAULT_CONTROLS ({curve,tension,lmin,lmax,damp,hueSpace})
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { DOMAINS, hydrate } from "../../src/ui/persist.js";
 import { defaultDocument, rampChromaOf } from "../../src/ui/model.mjs";
@@ -75,8 +76,9 @@ for (const p of DEFAULTS) {
   const at = (s) => rows.find((r) => r.stop === s);
   const c500 = at(500).chroma, c050 = at(50).chroma, c950 = at(950).chroma;
   if (!(c500 >= c050 - 0.5 && c500 >= c950 - 0.5)) FAIL("chroma-target", `${p.name} edge damping: c500 ${c500.toFixed(1)} not >= ends (${c050.toFixed(1)},${c950.toFixed(1)})`);
-  const target = (p.chroma / 100) * E.peakC(h).c, want = Math.min(target, at(500).maxc);
-  if (Math.abs(c500 - want) > 1.0) FAIL("chroma-target", `${p.name} c500 ${c500.toFixed(2)} != min(target,cm) ${want.toFixed(2)} (>1)`);
+  // #785 U2 (R94): the key stop renders min(peak, ceiling) at group 100 and `chroma` damps that by chroma / 100.
+  const target = E.peakC(h).c, want = (p.chroma / 100) * Math.min(target, at(500).maxc);
+  if (Math.abs(c500 - want) > 1.0) FAIL("chroma-target", `${p.name} c500 ${c500.toFixed(2)} != r*min(peak,cm) ${want.toFixed(2)} (>1)`);
   if (c500 < 0.5 * want) FAIL("chroma-target", `${p.name} c500 ${c500.toFixed(2)} below hard floor ${(0.5 * want).toFixed(2)}`);
 }
 
@@ -162,7 +164,10 @@ for (const p of DEFAULTS) {
   const pSat = SAT[0] || DEFAULTS[0];
   const ramp = (pal, extra) => T.paletteStops({ hue: pal.hue, chroma: pal.chroma, skew: pal.skew, lift: pal.lift }, { ...CTL, ...extra }, STOPS);
   const at = (rows, s) => rows.find((r) => r.stop === s);
-  const tgtOf = (p) => (p.chroma / 100) * E.peakC(T.effHue(p.hue, CTL.hueSpace)).c;
+  // The at-100 target: the hue's peak (#785 U2, R94: `chroma` damps the at-100 ramp, so every formula
+  // below reads its at-100 value and multiplies by rOf(p) = chroma / 100 at the end).
+  const tgtOf = (p) => E.peakC(T.effHue(p.hue, CTL.hueSpace)).c;
+  const rOf = (p) => p.chroma / 100;
 
   // (a) DEFAULTS REPRODUCE LEGACY EXACTLY, vs the INDEPENDENT legacy formula
   //     min(target·(1−damp·u^1.5), ceiling), over EVERY saturated hue, every stop, |dC|<=1e-6. `u` is
@@ -201,7 +206,7 @@ for (const p of DEFAULTS) {
       const tLeg = Math.min(1, uLeg / T.EVEN_NEIGHBOURHOOD_R);
       const plateauLeg = tLeg * tLeg * (3 - 2 * tLeg);
       const legacyWant = Math.min(tgt * Math.max(0, 1 - (evenDamp / 100) * uLeg ** evenDampCurve * plateauLeg), r.maxc);
-      const want = Math.min(legacyWant, anchorWant);
+      const want = rOf(p) * Math.min(legacyWant, anchorWant);
       if (Math.abs(r.chroma - want) > 1e-6) FAIL("damping-curve", `${p.name} default != legacy at stop ${r.stop}: ${r.chroma.toFixed(4)} vs ${want.toFixed(4)}`);
     }
   }
@@ -215,8 +220,8 @@ for (const p of DEFAULTS) {
   }
   // (c) AMPLIFY PUSHES THE MID TO THE CEILING, at dampAmp=100 the mid equals min(target·2,
   //     ceiling) within 0.5, AND the ceiling is genuinely the binding term (not target·2).
-  const tgtS = tgtOf(pSat), maxc500 = at(ramp(pSat, {}), 500).maxc, want100 = Math.min(tgtS * 2, maxc500);
-  if (want100 !== maxc500) FAIL("damping-curve", `(c) needs a hue where target·2 (${(tgtS * 2).toFixed(1)}) exceeds the ceiling (${maxc500.toFixed(1)}); ${pSat.name} does not bind`);
+  const tgtS = tgtOf(pSat), maxc500 = at(ramp(pSat, {}), 500).maxc, want100 = rOf(pSat) * Math.min(tgtS * 2, maxc500);
+  if (want100 !== rOf(pSat) * maxc500) FAIL("damping-curve", `(c) needs a hue where target·2 (${(tgtS * 2).toFixed(1)}) exceeds the ceiling (${maxc500.toFixed(1)}); ${pSat.name} does not bind`);
   if (Math.abs(at(ramp(pSat, { dampAmp: 100 }), 500).chroma - want100) > 0.5) FAIL("damping-curve", `amplify=100 mid != min(target·2, ceiling) ${want100.toFixed(2)}`);
   if (!(at(ramp(pSat, { dampAmp: 80 }), 500).chroma >= at(ramp(pSat, {}), 500).chroma - 1e-9)) FAIL("damping-curve", `amplify did not raise mid chroma`);
 
@@ -346,10 +351,15 @@ for (const mode of ["perceptual", "peak"]) {
 //    ramps (kills the near-white dead zone) WITHOUT muting saturated ramps or tinting true neutrals. ──
 {
   const ramp = (hue, chroma, floor) => T.paletteStops({ hue, chroma, skew: 0, lift: 0 }, { ...CTL, chromaFloor: floor }, STOPS);
-  // (a) MUTED: a light stop carries MORE chroma with the floor than without (the dead zone is lifted).
-  const c0 = ramp(165, 18, 0).find((r) => r.stop === 150).chroma;
-  const cF = ramp(165, 18, 40).find((r) => r.stop === 150).chroma;
-  if (!(cF > c0 + 2)) FAIL("chroma-floor", `muted light stop 150: floor didn't lift chroma (0%:${c0.toFixed(1)} 40%:${cF.toFixed(1)})`);
+  // (a) LIFTED: a light stop carries MORE chroma with the floor than without (the dead zone is lifted).
+  //     The floor works on the at-100 ramp and the group value damps the result (#785 U2, R94), so the
+  //     lift is measured at 100 and a muted 18 carries exactly 0.18 of it (the floor is not re-applied
+  //     after the damper).
+  const c0 = ramp(165, 100, 0).find((r) => r.stop === 150).chroma;
+  const cF = ramp(165, 100, 40).find((r) => r.stop === 150).chroma;
+  if (!(cF > c0 + 2)) FAIL("chroma-floor", `light stop 150 at 100: floor didn't lift chroma (0%:${c0.toFixed(1)} 40%:${cF.toFixed(1)})`);
+  const cF18 = ramp(165, 18, 40).find((r) => r.stop === 150).chroma;
+  if (Math.abs(cF18 - 0.18 * cF) > 0.5) FAIL("chroma-floor", `muted 18 stop 150 carries ${cF18.toFixed(2)}, not 0.18 x the at-100 floored ${cF.toFixed(2)}`);
   // (b) NEVER over-saturates: no floored stop exceeds the intended mid (stop 500, where env≈1 ≈ target).
   const muted = ramp(165, 18, 40);
   const cMid = muted.find((r) => r.stop === 500).chroma;
@@ -425,15 +435,31 @@ for (const mode of ["perceptual", "peak"]) {
       }
     }
   }
-  // (c) AC-005 (0.3.0): the anchor holds specifically at chroma in {20, 45, 100}, the values a group's
-  // resolved rampChroma (Material 30-ish, Brand/System/Data 100) actually feeds `paletteStops` as
-  // `palette.chroma` now that there is no separate baseIntensity multiplier (REQ-002/004/005).
+  // (c) AC-005 (0.3.0): the anchor holds at chroma in {20, 45, 100}, values the group's chroma damper
+  // (rampChromaOf, #785 U2: the at-100 ramp times chroma / 100) feeds `paletteStops` as `palette.chroma`.
+  // Budget: 1°, or the emitted pixel's own 8-bit rounding bound where that is wider. A float colour
+  // solved exactly onto the hue still rounds to a pixel up to half a step off in each channel, and at
+  // low chroma one step turns the hue a long way: `roundingBound` sums, per channel, half the larger
+  // hue turn of a +1 or -1 step (perceptual chroma 20: #737D96 reads 1.00° off with a 2.22° bound;
+  // chroma 45 and 100 read 0.25° and 0.07° under bounds of 0.88° and 0.23°). The old peak-anchored
+  // proxy drifted ~6° in the blues, past either budget.
+  const roundingBound = (rgb) => {
+    const h0 = rgbToOklchHue(rgb);
+    let sum = 0;
+    for (let c = 0; c < 3; c++) {
+      const up = [...rgb], dn = [...rgb];
+      up[c] = Math.min(255, up[c] + 1); dn[c] = Math.max(0, dn[c] - 1);
+      sum += 0.5 * Math.max(angDiff(rgbToOklchHue(up), h0), angDiff(rgbToOklchHue(dn), h0));
+    }
+    return sum;
+  };
   for (const toneMode of ["perceptual", "even"]) {
     const oc = { ...(T.DEFAULT_CONTROLS || {}), hueSpace: "oklch", toneMode, damp: 96, dampCurve: 1.2 };
     for (const chroma of [20, 45, 100]) {
       const s500 = T.paletteStops({ hue: 267, chroma, skew: 0, lift: 0 }, oc, T.EXPORT_STOPS).find((s) => s.stop === 500);
       const err = angDiff(rgbToOklchHue(s500.rgb), 267);
-      if (err > 1.0) FAIL("oklch-hue-anchor", `${toneMode} chroma ${chroma} (AC-005): stop 500 exports OKLCH hue off by ${err.toFixed(2)}° (>1°, anchor drift)`);
+      const budget = Math.max(1.0, roundingBound(s500.rgb));
+      if (err > budget) FAIL("oklch-hue-anchor", `${toneMode} chroma ${chroma} (AC-005): stop 500 exports OKLCH hue off by ${err.toFixed(2)}° (> ${budget.toFixed(3)}°, past 1° and the pixel's rounding bound, anchor drift)`);
     }
   }
 }
@@ -669,6 +695,13 @@ for (const mode of ["perceptual", "peak"]) {
 //   old floor rose with maxc. Perceptual: 0 cells. Patched cell by cell by a scratch script that
 //   rewrites only the differing even cells, not regenerated; the list is in
 //   .sdlc/handoffs/chroma-floor-U2.md.
+//   #785 U2 re-pin (R94 to R98, the group damper): REGENERATED wholesale, not patched, by
+//   `node scripts/gen-tonal-fixture.mjs "pc-U2 #785 group damper"` from the damper engine. A role-table
+//   default's `chroma` is now a ratio on the at-100 ramp (`groupDamper`, `dampStops`) instead of an
+//   absolute target, so every default below chroma 100 moved: 512 of 800 cells (16 palettes x 25 stops
+//   x 2 paths). Secondary and Warning (the only chroma-100 defaults) are byte-identical, and the U2
+//   review found 0 of 96 at-100 ramps (16 palettes x 3 modes x 2 hue spaces) differ, base vs head.
+//   The carve-out history above records the cells' earlier provenance; the cells themselves are #785's.
 {
   const FX = JSON.parse(readFileSync(new URL("./fixtures/tonal-legacy.json", import.meta.url), "utf8")).paths;
   const dc = T.DEFAULT_CONTROLS || {};
@@ -916,6 +949,8 @@ for (const mode of ["perceptual", "peak"]) {
   //     the undamped CIE L* (holdTone), which moves l off this distribution by design (up to 0.025 at the
   //     shipped damp); damp 0 is the hold's identity, so the distribution is read where nothing but skew
   //     and lift can move it, and (i b) below checks the hold carries it to the shipped damp.
+  //     Read at group 100 too (#785 U2, R94): below 100 the group damper scales s and re-solves l with
+  //     the same tone hold, so 100 is the damper's identity in the same way damp 0 is the hold's.
   const okl = (rgb) => rgbToOkhsl(rgb).l;
   const LQ = 3e-3;
   // CAP_L_EXCEPTIONS (#681 U3 pass 5): the peak-mode anchor cap (below, mode "peak" only) holds CIE L*
@@ -924,10 +959,14 @@ for (const mode of ["perceptual", "peak"]) {
   // Bidirectionally verified: every cited key must be observed AND every observed mismatch must be cited,
   // and each cited row must carry the cap's own `capped` flag. Re-measured at damp 0 (#725 U3): Data 1
   // and Data 2 stop 450 join (undamped, their 450 passes the anchor's chroma and the cap binds);
-  // cam16 Secondary 550 leaves (still capped, but its l now lands inside the 3e-3 budget).
+  // cam16 Secondary 550 leaves (still capped, but its l now lands inside the 3e-3 budget). Re-measured
+  // at group 100 (#785 U2): oklch Data 2 450 and oklch Data 6 600 join (at 100 the cap binds on them
+  // too); the same 6 rows read on the pre-damper engine at 100, so the set is the cap's, not the damper's.
   const CAP_L_EXCEPTIONS = new Set([
     "peak|oklch|Data 1|450",
+    "peak|oklch|Data 2|450",
     "peak|oklch|Data 6|550",
+    "peak|oklch|Data 6|600",
     "peak|cam16|Data 2|450",
     "peak|cam16|Data 6|550",
   ]);
@@ -938,7 +977,7 @@ for (const mode of ["perceptual", "peak"]) {
         const ctl = OK(mode, { hueSpace, vibrancy: 0, damp: 0 });
         const lLight = T.okhslLAt(ctl.lmax), lDark = T.okhslLAt(ctl.lmin);
         const cuspL = T.okhslLAt(E.peakC(T.effHue(p.hue, hueSpace, T.hueAnchorFrac(p, ctl))).tone);
-        const rows = T.paletteStops({ hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift }, ctl, STOPS);
+        const rows = T.paletteStops({ hue: p.hue, chroma: 100, skew: p.skew, lift: p.lift }, ctl, STOPS);
         for (const r of rows) {
           const want = mode === "peak"
             ? (r.stop <= 500 ? lLight + (cuspL - lLight) * ((r.stop - 50) / 450) : cuspL + (lDark - cuspL) * ((r.stop - 500) / 450))
@@ -967,6 +1006,10 @@ for (const mode of ["perceptual", "peak"]) {
   //       +/-1 makes on each emitted pixel). Measured 0 of 1600 rows outside; with the hold removed
   //       (holdTone returning l unchanged) 326 rows fall outside, worst perceptual/oklch Primary stop
   //       650, 2.53 L* against a 0.41 floor, the coupling the hold exists to cancel.
+  //       Read at group 100 like (i) (#785 U2): below 100 both rows are re-held by the group damper
+  //       from their own pixels, which stacks a second rounding on each side (peak/oklch Data 1 stop 450
+  //       at chroma 95: 0.394 L* against a 0.340 floor); the damper's own hold is gated in
+  //       group-chroma-damper (v).
   {
     const floorOf = (rgb) => {
       const b = E.lstarFromRgb(rgb);
@@ -979,7 +1022,7 @@ for (const mode of ["perceptual", "peak"]) {
     };
     let rows = 0;
     for (const mode of ["perceptual", "peak"]) for (const hueSpace of ["oklch", "cam16"]) for (const p of DEFAULTS) {
-      const pal = { hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift };
+      const pal = { hue: p.hue, chroma: 100, skew: p.skew, lift: p.lift };
       const shipped = T.paletteStops(pal, OK(mode, { hueSpace, vibrancy: 0 }), STOPS);
       const undamped = T.paletteStops(pal, OK(mode, { hueSpace, vibrancy: 0, damp: 0 }), STOPS);
       for (let i = 0; i < shipped.length; i++) {
@@ -1033,7 +1076,7 @@ for (const mode of ["perceptual", "peak"]) {
   //       which closes that class to exactly 0. #681 U3's R2 (chromaEnvelope re-centred on the anchor's
   //       OWN lifted reading, closing the exact-env(anchor)=1-at-every-lift gap and the two rendered-path
   //       duplicate-hex ramps R1 left  -  see chromaEnvelope's own comment) reopens 21 of these 10,080
-  //       SYNTHETIC cells (chroma pinned at 95, skew as extreme as ±100  -  within the user-settable
+  //       SYNTHETIC cells (chroma pinned at 95, at 100 since #785; skew as extreme as ±100, within the user-settable
   //       ranges, but unused by any shipped preset or role default), 20 near-white (tone 90.9-99.5) and
   //       one near-black (tone 7.55, hue 287 skew -100 lift -40), worst +0.1314 L*  -  about a sixth of
   //       the defect this unit repairs, and, measured on the corpus the product actually
@@ -1077,19 +1120,39 @@ for (const mode of ["perceptual", "peak"]) {
   // 97.5; each rise is +0.011 to +0.037 L*, under the row's own 8-bit rounding floor. The continuous held
   // L* descends there (97.629 to 97.395); the 8-bit pixel near the G = 255 wall rounds it back up. Damp 0
   // reads 0 upticks at U3's head and at the U2 base.
+  // Moved to chroma 100 at #785 U2 (R94 to R98; owner ruling on .sdlc/questions/pane-context-U2.md Q2,
+  // option B). Below 100 the group damper scales the at-100 ramp's s and re-solves each stop, so a grid
+  // at 95 measured the at-100 rises plus 8-bit re-quantization (47 beyond the 12 keys above, 0 of them
+  // seen). The grid now reads the at-100 ramp, the one construction the damper scales. The 12 keys
+  // described above are not reproduced there; the 25 below are, identically on the pre-#785 engine at 100 (they
+  // were never in reach while the grid read 95). All lift 40 or 5, hues 107/145/152/165, L* 90.66 to
+  // 99.50, each rise +0.0036 to +0.0915 L*. Damped-ramp monotonicity below 100 is not bounded here (Q2).
   const GRID_R2_EXCEPTIONS = new Set([
-    "perceptual|oklch|165|-50|40|100|250&300",
-    "perceptual|cam16|165|-50|40|100|250&300",
-    "perceptual|cam16|165|0|40|100|300&350",
-    "peak|oklch|165|-50|40|0|250&300",
-    "peak|oklch|165|-50|40|50|250&300",
-    "peak|oklch|165|-50|40|100|250&300",
-    "peak|cam16|165|-50|40|0|250&300",
-    "peak|cam16|165|0|40|0|300&350",
-    "peak|cam16|165|-50|40|50|250&300",
-    "peak|cam16|165|0|40|50|300&350",
-    "peak|cam16|165|-50|40|100|250&300",
-    "peak|cam16|165|0|40|100|300&350",
+    "perceptual|oklch|152|40|40|0|175&200", // +0.0036 at L* 98.04
+    "perceptual|oklch|152|-20|40|100|300&350", // +0.0103 at L* 96.30
+    "perceptual|oklch|152|0|40|100|150&175", // +0.0439 at L* 98.36
+    "perceptual|oklch|107|100|5|100|400&450", // +0.0915 at L* 99.50
+    "perceptual|cam16|165|-100|40|100|250&300", // +0.0216 at L* 90.66
+    "perceptual|cam16|145|-50|40|100|250&300", // +0.0201 at L* 94.47
+    "perceptual|cam16|152|0|40|100|175&200", // +0.0702 at L* 98.18
+    "peak|oklch|152|-20|40|0|300&350", // +0.0103 at L* 96.30
+    "peak|oklch|152|0|40|0|150&175", // +0.0439 at L* 98.36
+    "peak|oklch|107|100|5|0|400&450", // +0.0915 at L* 99.50
+    "peak|oklch|152|-20|40|50|300&350", // +0.0103 at L* 96.30
+    "peak|oklch|152|0|40|50|150&175", // +0.0439 at L* 98.36
+    "peak|oklch|107|100|5|50|400&450", // +0.0915 at L* 99.50
+    "peak|oklch|152|-20|40|100|300&350", // +0.0103 at L* 96.30
+    "peak|oklch|152|0|40|100|150&175", // +0.0439 at L* 98.36
+    "peak|oklch|107|100|5|100|400&450", // +0.0915 at L* 99.50
+    "peak|cam16|165|-100|40|0|250&300", // +0.0216 at L* 90.66
+    "peak|cam16|145|-50|40|0|250&300", // +0.0201 at L* 94.47
+    "peak|cam16|152|0|40|0|175&200", // +0.0702 at L* 98.18
+    "peak|cam16|165|-100|40|50|250&300", // +0.0216 at L* 90.66
+    "peak|cam16|145|-50|40|50|250&300", // +0.0201 at L* 94.47
+    "peak|cam16|152|0|40|50|175&200", // +0.0702 at L* 98.18
+    "peak|cam16|165|-100|40|100|250&300", // +0.0216 at L* 90.66
+    "peak|cam16|145|-50|40|100|250&300", // +0.0201 at L* 94.47
+    "peak|cam16|152|0|40|100|175&200", // +0.0702 at L* 98.18
   ]);
   // this grid is synthetic, not a corpus sweep, but at an estimated 16s quiet it decides whether the
   // 120s ceiling holds (#713 design section); SAMPLED thins it to every fifth hue, offset by
@@ -1100,7 +1163,7 @@ for (const mode of ["perceptual", "peak"]) {
   for (const mode of ["perceptual", "peak"]) for (const hueSpace of ["oklch", "cam16"]) for (const vibrancy of [0, 50, 100])
     for (const skew of SKEW_G) for (const lift of LIFT_G) for (const hue of GRID_HUES) {
       gridCells++;
-      const rows = T.paletteStops({ hue, chroma: 95, skew, lift }, OK(mode, { hueSpace, vibrancy }), STOPS);
+      const rows = T.paletteStops({ hue, chroma: 100, skew, lift }, OK(mode, { hueSpace, vibrancy }), STOPS);
       const ls = rows.map((r) => okl(r.rgb));
       for (let i = 1; i < ls.length; i++) if (ls[i] > ls[i - 1] + LQ) {
         FAIL("skew-lift-okhsl", `(iii b) ${mode}/${hueSpace} hue ${hue} skew ${skew} lift ${lift} vibrancy ${vibrancy}: OKHSL lightness ROSE at stop ${STOPS[i - 1]}->${STOPS[i]} (${ls[i - 1].toFixed(5)} -> ${ls[i].toFixed(5)})`);
@@ -1827,7 +1890,6 @@ for (const mode of ["perceptual", "peak"]) {
   {
     const unlistedRuns = [], unlistedExcess = [];
     for (const doc of docs) {
-      if (ADIA_CARVEOUT.has(doc.__presetName)) continue; // exempt by name, both clauses (as even/peak)
       for (const pal of doc.palettes) {
         const res = cuspRunFor(doc, pal);
         if (!res) continue;
@@ -1835,21 +1897,16 @@ for (const mode of ["perceptual", "peak"]) {
         if (res.worstRatio > CUSP_RUN_BOUND + 1e-6) unlistedExcess.push(`${doc.__presetName}/${pal.name} (${(res.worstRatio * 100).toFixed(2)}%)`);
       }
     }
-    if (unlistedRuns.length) FAIL("chroma-envelope", `(C6 iii-b) perceptual: ${unlistedRuns.length} palette(s) with a SECOND separate above-anchor run (not the named Adia carve-out), e.g. ${unlistedRuns[0]}`);
-    if (unlistedExcess.length) FAIL("chroma-envelope", `(C6 iii-b) perceptual: ${unlistedExcess.length} palette(s) with a stop past the frozen CUSP_RUN_BOUND ${(CUSP_RUN_BOUND * 100).toFixed(4)}% (not the named Adia carve-out), e.g. ${unlistedExcess[0]}`);
+    if (unlistedRuns.length) FAIL("chroma-envelope", `(C6 iii-b) perceptual: ${unlistedRuns.length} palette(s) with a SECOND separate above-anchor run, e.g. ${unlistedRuns[0]}`);
+    if (unlistedExcess.length) FAIL("chroma-envelope", `(C6 iii-b) perceptual: ${unlistedExcess.length} palette(s) with a stop past the frozen CUSP_RUN_BOUND ${(CUSP_RUN_BOUND * 100).toFixed(4)}%, e.g. ${unlistedExcess[0]}`);
 
-    // adiaHit: the named carve-out must actually be doing work here too (Adia's dampAmp:70 boost is
-    // what created the original need for a carve-out on even/peak; confirm it also produces a second
-    // run or a past-bound stop in perceptual mode, or the carve-out is stale here).
-    let adiaHit = false;
-    for (const doc of docs) {
-      if (!ADIA_CARVEOUT.has(doc.__presetName)) continue;
-      for (const pal of doc.palettes) {
-        const res = cuspRunFor(doc, pal);
-        if (res && (res.runs > 1 || res.worstRatio > CUSP_RUN_BOUND + 1e-6)) adiaHit = true;
-      }
-    }
-    if (!adiaHit) FAIL("chroma-envelope", "(C6 iii-b) perceptual: the named Adia carve-out produced no second-run or bound-excess instance  -  either stale or the corpus dropped it; re-diagnose before touching ADIA_CARVEOUT");
+    // No Adia exemption here since #785 U2 (R94): the group value now damps the at-100 ramp by one
+    // ratio, so every stop's chroma / c500 is the at-100 ramp's own. Adia's perceptual palettes rendered
+    // two runs on 13 of 16 and peaked at 156.2% (Data 5) under the old absolute target; under the damper
+    // they read one run on 15 of 16 (Data 2 none) and peak at 112.9% (Danger), inside the bound like
+    // every unlisted preset, so the carve-out was stale on this clause and is tightened away. Adia must
+    // still be in the measured corpus for that to mean anything.
+    if (!docs.some((doc) => ADIA_CARVEOUT.has(doc.__presetName))) FAIL("chroma-envelope", "(C6 iii-b) perceptual: the Adia preset was not in the measured corpus, so this clause no longer covers it");
 
     // Negative control 1: a SCRATCH ramp with two SEPARATE above-anchor runs must read runs > 1.
     {
@@ -1903,7 +1960,7 @@ for (const mode of ["perceptual", "peak"]) {
       const excluded = [];
       for (const doc of docsList) {
         if ((doc.dampAmp ?? 0) !== 0) continue; // generated palettes only, matching (iii)'s own scope
-        if (ADIA_CARVEOUT.has(doc.__presetName)) continue; // exempt by name, same carve-out as (iii)/(iii-b)
+        if (ADIA_CARVEOUT.has(doc.__presetName)) continue; // exempt by name, same carve-out as (iii); (iii-b) measures Adia since #785 U2
         const controls = { curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: mode };
         for (const pal of doc.palettes) {
           const chroma = rampChromaOf(pal, doc);
@@ -2087,6 +2144,84 @@ for (const mode of ["perceptual", "peak"]) {
     console.log("okl-order: okhslLAt is a function of its argument; 0/24 ramps shifted hex by call order");
 }
 
+// ── group-chroma-damper (#785 U2, owner rulings R94 to R98): the group's base chroma g is ONE damper
+//    on the whole ramp. Each path renders at 100, then scales its emitted chroma coordinate by
+//    r = g / 100 (OKHSL `s` on perceptual and peak, CAM16 C on even), anchored and unanchored alike,
+//    stop 500 included, damp only. Read on the default kit's Primary (anchored), the C2.4 rows.
+{
+  const doc = defaultDocument();
+  const P = doc.palettes.find((p) => p.name === "Primary");
+  const ctlOf = (toneMode) => ({ curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode });
+  const render = (chroma, toneMode) => T.paletteStops({ hue: P.hue, chroma, skew: P.skew, lift: P.lift, hueShift: P.hueShift ?? 0, hueSameDir: P.hueSameDir === true, cuspPull: P.cuspPull, anchor: P.anchor }, ctlOf(toneMode), T.STOPS);
+  const sOf = (row) => rgbToOkhsl(row.rgb).s;
+  const red = []; // every red row, reported in one FAIL so a negative control prints its exact counts
+  // (i) at 100 the kit's Primary is the render before the damper, byte for byte: these are the 19-stop
+  //     hex lists' sha256 prefixes captured from the pre-damper engine (306f9a9e's tonal.js).
+  const AT100 = { perceptual: "517576c558838c97", peak: "5b1905c4160c2a85", even: "4ba0da5e00260a71" };
+  for (const toneMode of ["perceptual", "peak", "even"]) {
+    const at100 = render(100, toneMode);
+    const got = createHash("sha256").update(at100.map((r) => r.hex).join(",")).digest("hex").slice(0, 16);
+    if (got !== AT100[toneMode]) red.push(`(i) ${toneMode} Primary at 100 hashes ${got}, not the pre-damper render ${AT100[toneMode]}`);
+    // (ii) at 50 and 10, every stop is r times its at-100 coordinate; perceptual and peak read OKHSL s
+    //      back from the hex (within 0.02), even reads the `chroma` field (within max(0.5, 3%): hex
+    //      quantization and the per-stop hue solve); stop 500 moves too (no stop-500 pin).
+    for (const g of [50, 10]) {
+      const r = g / 100, damped = render(g, toneMode);
+      const off = [];
+      for (let i = 0; i < at100.length; i++) {
+        const a = at100[i], b = damped[i];
+        if (toneMode === "even") {
+          if (Math.abs(b.chroma - r * a.chroma) > Math.max(0.5, 0.03 * a.chroma)) off.push(`${a.stop} C ${b.chroma.toFixed(2)} not ${r} x ${a.chroma.toFixed(2)}`);
+        } else if (Math.abs(sOf(b) - r * sOf(a)) > 0.02) off.push(`${a.stop} s ${sOf(b).toFixed(4)} not ${r} x ${sOf(a).toFixed(4)}`);
+      }
+      if (off.length) red.push(`(ii) ${toneMode} ${g}: ${off.length}/${at100.length} stops off, first ${off[0]}`);
+      if (g === 50 && damped.find((x) => x.stop === 500).hex === at100.find((x) => x.stop === 500).hex) red.push(`(ii) ${toneMode} 50: stop 500 did not move, the damper skipped the key stop`);
+    }
+    // (iii) at 0 the ramp is grey: s at most 0.02, or C at most 0.5 on even.
+    const cap = toneMode === "even" ? 0.5 : 0.02;
+    const kept = render(0, toneMode).filter((row) => (toneMode === "even" ? row.chroma : sOf(row)) > cap).map((row) => row.stop);
+    if (kept.length) red.push(`(iii) ${toneMode} 0: ${kept.length}/${T.STOPS.length} stops keep more than ${cap}, first stop ${kept[0]}`);
+  }
+  // (iv) damp only (R95): a value past 100 renders as 100, it never boosts.
+  for (const toneMode of ["perceptual", "even"]) {
+    if (render(150, toneMode).map((r) => r.hex).join() !== render(100, toneMode).map((r) => r.hex).join()) red.push(`(iv) ${toneMode}: chroma 150 renders differently from 100, the damper boosted`);
+  }
+  // (v) the damper holds tone: on every default palette, anchored, both OKHSL modes and hue spaces, 25
+  //     stops, at 50 and 10 the damped stop keeps its at-100 CIE L* within the two pixels' own rounding
+  //     floors (the largest L* step one channel +/-1 makes). Measured 0 rows outside; even renders at
+  //     the at-100 stop's own tone, so its rows are exact and not repeated here.
+  let rows = 0, outside = 0, firstOutside = "";
+  {
+    const floorOf = (rgb) => {
+      const b = E.lstarFromRgb(rgb);
+      let f = 0;
+      for (let c = 0; c < 3; c++) for (const d of [-1, 1]) {
+        const q = [...rgb]; q[c] = Math.max(0, Math.min(255, q[c] + d));
+        f = Math.max(f, Math.abs(E.lstarFromRgb(q) - b));
+      }
+      return f;
+    };
+    for (const toneMode of ["perceptual", "peak"]) for (const hueSpace of ["oklch", "cam16"]) for (const p of DEFAULTS) {
+      const ctl = { ...(T.DEFAULT_CONTROLS || {}), toneMode, hueSpace };
+      const pal = { hue: p.hue, skew: p.skew, lift: p.lift, anchor: p.anchor };
+      const at100 = T.paletteStops({ ...pal, chroma: 100 }, ctl, STOPS);
+      for (const g of [50, 10]) {
+        const damped = T.paletteStops({ ...pal, chroma: g }, ctl, STOPS);
+        for (let i = 0; i < at100.length; i++) {
+          rows++;
+          const a = at100[i], b = damped[i], floor = floorOf(a.rgb) + floorOf(b.rgb);
+          if (Math.abs(a.tone - b.tone) > floor && !outside++) firstOutside = `${toneMode}/${hueSpace} ${p.name} ${g} stop ${a.stop}: L* ${b.tone.toFixed(3)} against ${a.tone.toFixed(3)} at 100, past the rounding floor ${floor.toFixed(3)}`;
+        }
+      }
+    }
+    if (outside) red.push(`(v) ${outside}/${rows} rows off their at-100 L*, first ${firstOutside}`);
+    if (rows !== 2 * 2 * DEFAULTS.length * 2 * STOPS.length) red.push(`(v) covered ${rows} rows`);
+  }
+  if (red.length) FAIL("group-chroma-damper", `${red.length} red: ${red.join("; ")}`);
+  else
+    console.log(`group-chroma-damper: kit Primary at 100 matches the pre-damper render in 3 modes; 50, 10 and 0 scale every stop by g/100; tone held on ${rows} rows`);
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
 // The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
 // call (#695), so a gate missing from the list below still shows up, loudly, instead of a real
@@ -2098,7 +2233,7 @@ for (const mode of ["perceptual", "peak"]) {
 // keeps every doc citation into the gates above from drifting by a line (same convention as
 // test/ui/persist.mjs's mid-file gate-report.mjs import).
 import { gateReport } from "../gate-report.mjs";
-const DECLARED = ["ingamut", "monotonic", "white-endpoint", "chroma-target", "curve-fidelity", "hue-stability", "damping-curve", "edge-hue", "rel-chroma", "okhsl-modes", "chroma-floor", "cusp-pull", "lift-monotonic", "skew-lift-okhsl", "vibrancy", "oklch-hue-anchor", "hue-solver-best", "intensity-legacy", "ac004-greps", "chroma-envelope", "dip-gate-even", "okl-order", "report-static"];
+const DECLARED = ["ingamut", "monotonic", "white-endpoint", "chroma-target", "curve-fidelity", "hue-stability", "damping-curve", "edge-hue", "rel-chroma", "okhsl-modes", "chroma-floor", "cusp-pull", "lift-monotonic", "skew-lift-okhsl", "vibrancy", "oklch-hue-anchor", "hue-solver-best", "intensity-legacy", "ac004-greps", "chroma-envelope", "dip-gate-even", "okl-order", "group-chroma-damper", "report-static"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 console.log(`  (${FULL ? `FULL: ${CORPUS_DOC_COUNT} curated documents, ${CORPUS_PALETTE_COUNT} palettes` : `SAMPLED seed ${SAMPLE_SEED}: ${CORPUS_DOC_COUNT} curated documents, ${CORPUS_PALETTE_COUNT} palettes`})`);
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }

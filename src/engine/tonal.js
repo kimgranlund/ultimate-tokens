@@ -81,10 +81,10 @@ export const DEFAULT_CONTROLS = {
   // 500, one mode-agnostic accent token. Applied via applyAccentRef alongside applyOnColorContrast.
   accentRef: "mode",
   // (SPEC spec-muted-base-key-spikes 0.3.0, REQ-002/004, AC-004): the ramp's chroma multiplier that
-  // used to live here as a control field is fully retired, engine-side, a palette group's "Base
-  // chroma" is now an ABSOLUTE chroma target resolved entirely in src/ui/model.mjs and src/ui/persist.js
-  // (never in this engine module) and handed to paletteStops AS the palette's own `chroma`. No trace
-  // of that resolution survives on DEFAULT_CONTROLS: tonal.js stays fully group- and intensity-unaware.
+  // used to live here as a control field is fully retired. A palette group's "Base chroma" is resolved
+  // in src/ui/model.mjs and src/ui/persist.js and handed to paletteStops AS the palette's own `chroma`;
+  // since #785 (R94 to R98) paletteStops reads it as a ratio, the whole-ramp damper `groupDamper` /
+  // `dampStops` below. No trace of the group survives on DEFAULT_CONTROLS.
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -558,8 +558,8 @@ export function liftStop(stop, lift) {
 //
 // anchorChromaBasis(stop, anchorStop, lift, anchorValue, groupValue) -> the BASIS chromaEnvelope's
 // shoulder/damp multiplier gets applied to (Q-U2-5 ruling, addendum 2, u2-p2-brief.md, 2026-09-18):
-// the anchor's own measured chroma/saturation exactly AT the pivot (w=0), blending to the group's
-// resolved ramp target (`groupValue`, `rampChroma`-derived) at each side's true endpoint (w=1), BY
+// the anchor's own measured chroma/saturation exactly AT the pivot (w=0), blending to `groupValue` (the
+// palette's `chroma`, always 100 since #785: the group mutes the ramp afterwards, in `dampStops`) at each side's true endpoint (w=1), BY
 // THE LIFTSTOP POSITION - the SAME `sd` chromaEnvelope itself keys on, not `anchorWarp`'s skew-warped
 // `w` (a local construction this ruling retired: tying the chroma BLEND to skew was never asked for,
 // and it re-threaded `anchorLiftPos` back into the chroma path chromaEnvelope's own liftStop routing
@@ -579,8 +579,8 @@ export function liftStop(stop, lift) {
 // Capped at the anchor (#725 U2, owner ruling R69, reverses Q-U2-5 for perceptual and peak): the group
 // target the blend walks toward is `min(groupValue, anchorValue)`, so a muted sample in a vivid group no
 // longer climbs toward the group's chroma on either side of the pivot (the climb is what put perceptual
-// stop 300 at a 94% median of stop 500 and every anchored peak ramp above its own anchor). A vivid sample
-// in a muted group still falls toward the group, as before: only the climb is removed. `climb = true`
+// stop 300 at a 94% median of stop 500 and every anchored peak ramp above its own anchor). Since #785 the
+// group value here is always 100, so the target is the anchor's own value; a muted group damps after. `climb = true`
 // keeps the pre-R69 blend for the EVEN path (`paletteStopsAnchored`), which #701 owns and this ruling
 // does not move.
 export function anchorChromaBasis(stop, anchorStop, lift, anchorValue, groupValue, climb = false) {
@@ -713,8 +713,8 @@ function anchorLerp(pivot, edgeLight, edgeDark, stop, skew, lift, curve, tension
 // chromaEnvelope's shoulder/damp multiplier is applied to is a BLEND, not the anchor's own chroma read
 // unconditionally at every stop - exactly the anchor's own measured CAM16 chroma AT the pivot (liftStop
 // position 0, stop 500, byte-exact, matching the explicit stop-500 special case below), shading to the
-// group's resolved ramp target (`palette.chroma`, i.e. `rampChromaOf`'s output - REQ-002's own "Base
-// chroma moves every ramp in the group" contract) at each side's true endpoint (liftStop position 1).
+// palette's `chroma` (always 100 here since #785; REQ-002's "Base chroma moves every ramp in the group"
+// now holds through `dampStops`, after this render) at each side's true endpoint (liftStop position 1).
 // This is a SEPARATE position measure from the tone construction above (`anchorLerp`'s own toneAt-based
 // remap, R6) - the two are no longer tied to a single shared `w`, which is intentional: R4 retired the
 // skew-warped `w` from the chroma path specifically because tying the chroma blend to skew was never
@@ -785,6 +785,7 @@ function enforceMonotonePixelL(stopsOut) {
     cur.tone = lstarFromRgb(best);
     const cam = cam16FromRgb(best);
     cur.chroma = cam.chroma;
+    if (cur.hue !== undefined) cur.hue = cam.hue;
     cur.maxc = maxChromaInGamut(cam.hue, cur.tone);
     // cur.inGamut stays true - the search above only ever considers in-gamut [0,255]^3 candidates.
   }
@@ -825,8 +826,8 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
   // anchor stop of 500, is exactly 1 at stop 500 for any lift, so at the pivot `evenChroma` reduces to
   // the BASIS's own pivot value exactly - no notch, by construction. The basis itself is
   // `anchorChromaBasis`'s blend: the anchor's own measured CAM16 chroma at the pivot (`anchorIntended`,
-  // liftStop position 0), shading to the group's resolved ramp target (`groupIntended`,
-  // `palette.chroma`-derived, mirroring `paletteStops`'s own `target`/relChroma formulas exactly) at
+  // liftStop position 0), shading to `groupIntended` (`palette.chroma`-derived, always 100 here since
+  // #785, the group damps afterwards in `dampStops`; mirrors `paletteStops`'s `target`/relChroma) at
   // each side's endpoint (liftStop position 1) - never the anchor's value read unconditionally at
   // every stop, and never `palette.chroma` alone either.
   const maxc500 = maxChromaInGamut(seedHue, anchor.lstar);
@@ -848,7 +849,7 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
   const built = stops.map((stop) => {
     if (stop === 500 && !clamped) {
       return {
-        stop, tone: anchor.lstar, chroma: anchor.cam.chroma,
+        stop, tone: anchor.lstar, chroma: anchor.cam.chroma, hue: anchor.cam.hue,
         maxc: maxc500, rgb: anchor.rgb, hex: anchor.hex, inGamut: true,
       };
     }
@@ -883,7 +884,7 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
     const hex =
       "#" +
       out.rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
-    return { stop, tone, chroma, maxc, rgb: out.rgb, hex, inGamut: out.inGamut };
+    return { stop, tone, chroma, hue, maxc, rgb: out.rgb, hex, inGamut: out.inGamut };
   });
   enforceMonotonePixelL(built);
   return built;
@@ -891,7 +892,7 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
 
 // paletteStops, full per-stop pipeline for one palette.
 // palette: { hue, chroma, skew, lift }; controls: DEFAULT_CONTROLS-shaped.
-// Returns [{ stop, tone, chroma, maxc, rgb, hex, inGamut }] for each stop.
+// Returns [{ stop, tone, chroma, maxc, rgb, hex, inGamut }] for each stop (even adds its CAM16 `hue`, for `dampStops`).
 // Performance note (review pass 5, then a review-6 perf/memo-safety pass, both 2026-09-19):
 // `projectView` (model.mjs) used to re-derive every anchored palette's full ramp roughly 10x per
 // document - once for the live canvas, then again once per export format via `derivePalette`
@@ -920,6 +921,7 @@ export function paletteStops(palette, controls, stops) {
   // non-even branch): a caller cannot assume "missing or wrong toneMode" degrades the same way at every
   // call site in this file.
   const mode = controls.toneMode || "perceptual";
+  if (palette.chroma !== 100) return dampStops(paletteStops({ ...palette, chroma: 100 }, controls, stops), groupDamper(palette.chroma), mode, controls.hueSpace);
   if (mode === "perceptual" || mode === "peak") return okhslStops(palette, controls, stops, mode);
   const anchor = resolveAnchor(palette);
   if (anchor) return paletteStopsAnchored(palette, controls, stops, anchor);
@@ -1011,7 +1013,7 @@ export function paletteStops(palette, controls, stops) {
     const hex =
       "#" +
       out.rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
-    return { stop, tone, chroma, maxc, rgb: out.rgb, hex, inGamut: out.inGamut };
+    return { stop, tone, chroma, hue, maxc, rgb: out.rgb, hex, inGamut: out.inGamut };
   });
 }
 
@@ -1321,7 +1323,7 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
     // lift))/450` already IS that computation, parametrized so env(500)=1 exactly for any lift). The
     // BASIS multiplied by that envelope is `anchorChromaBasis` (see its own header comment, shared
     // verbatim with `paletteStopsAnchored`): the anchor's own OKHSL `s` at the pivot (liftStop position
-    // 0), shading to `palette.chroma/100` - the group's resolved ramp target, mirroring `okhslStops`'s
+    // 0), shading to `palette.chroma/100` (always 1 since #785, the group damps after), mirroring `okhslStops`'s
     // own `s = (palette.chroma/100)*m` formula exactly - at each side's endpoint (liftStop position 1),
     // by the SAME liftStop position the envelope itself keys on. No notch by construction: env(500)=1
     // and the basis's own liftStop position is 0 at the pivot, so `s` reduces to `anchor.okhsl.s`
@@ -1462,5 +1464,50 @@ function okhslStops(palette, controls, stops, mode) {
     // chroma/maxc reported (measured) for the analysis graphs; OKHSL is in-gamut by construction (the
     // HCT fallback above is validated in-gamut too, per its own engine contract).
     return { stop, tone, chroma, maxc: maxChromaInGamut(baseHue, tone), rgb, hex, inGamut: true, capped, toneTarget: hold.target, toneHeld: hold.held };
+  });
+}
+
+// ── Group chroma damper (#785 U2, owner rulings R94 to R98) ───────────────────────────────────────
+// The `<group> base chroma` value g (`rampChromaOf`, handed to `paletteStops` as `palette.chroma`) is
+// a magnitude damper on the whole ramp, stop 500 included. It enters `paletteStops` at one line, its
+// first branch, and nowhere else in the engine. `paletteStops` renders every stop exactly
+// as its path does with the group at 100 (every floor, cap, hold and gamut step included), then
+// `dampStops` scales each emitted stop's chroma coordinate by r = g / 100, holding the stop's tone and
+// its hue in the palette's own hue space. Perceptual and peak: OKHSL `s` read back from the emitted
+// pixel (the unit the stop is measured in), with `l` re-solved through `holdTone`, the same CIE L* hold
+// those paths run on their own envelope, so the damped stop keeps the emitted pixel's L*; the pixel's
+// OKHSL `h` (its OKLab, so OKLCH, hue) is held through the damped pixel's 8-bit staircase by
+// `solveOkhslHue`, the solve those paths run for their key stop. Even: the CAM16 C the
+// path reports, at the tone and CAM16 hue it rendered (`hue` on each even stop); under hueSpace "oklch"
+// the CAM16 hue is re-solved at the damped chroma so the stop keeps its at-100 OKLCH hue (the solve the
+// even paths run for their own chroma; held CAM16 hue drifts blues 7 to 10 degrees of OKLCH hue at g 30
+// to 50), and the chroma takes the path's own gamut ceiling at that hue. One law on every path,
+// anchored and unanchored alike, with no per-mode, per-palette or floor exception. Damp only (R95): r is
+// clamped to [0, 1], and r = 1 returns the at-100 ramp itself, so g = 100 is byte-identical to the
+// render before the damper.
+export function groupDamper(chroma) {
+  return Math.min(1, Math.max(0, (chroma ?? 0) / 100));
+}
+
+function dampStops(at100, r, mode, hueSpace) {
+  if (r >= 1) return at100;
+  const okhslPath = mode === "perceptual" || mode === "peak";
+  return at100.map((st) => {
+    const out = { ...st };
+    if (okhslPath) {
+      const { h, s, l } = rgbToOkhsl(st.rgb);
+      const hold = holdTone(h, s, l, r);
+      out.rgb = okhslToRgb(solveOkhslHue(h, hold.s, hold.l), hold.s, hold.l);
+      out.tone = lstarFromRgb(out.rgb);
+      out.chroma = cam16FromRgb(out.rgb).chroma;
+    } else {
+      const chromaAt = (h) => Math.min(st.chroma * r, maxChromaInGamut(h, st.tone));
+      if (hueSpace === "oklch") out.hue = solveCam16Hue(hctToOklch(st.hue, st.chroma, st.tone)[2], 0, st.tone, false, { chromaAt });
+      out.maxc = maxChromaInGamut(out.hue, st.tone);
+      out.chroma = chromaAt(out.hue);
+      ({ rgb: out.rgb, inGamut: out.inGamut } = hctToRgb(out.hue, out.chroma, st.tone));
+    }
+    out.hex = "#" + out.rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
+    return out;
   });
 }
