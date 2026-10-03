@@ -2127,41 +2127,43 @@ for (const mode of ["perceptual", "peak"]) {
   const ctlOf = (toneMode) => ({ curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp, dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma, chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode });
   const render = (chroma, toneMode) => T.paletteStops({ hue: P.hue, chroma, skew: P.skew, lift: P.lift, hueShift: P.hueShift ?? 0, hueSameDir: P.hueSameDir === true, cuspPull: P.cuspPull, anchor: P.anchor }, ctlOf(toneMode), T.STOPS);
   const sOf = (row) => rgbToOkhsl(row.rgb).s;
+  const red = []; // every red row, reported in one FAIL so a negative control prints its exact counts
   // (i) at 100 the kit's Primary is the render before the damper, byte for byte: these are the 19-stop
   //     hex lists' sha256 prefixes captured from the pre-damper engine (306f9a9e's tonal.js).
   const AT100 = { perceptual: "517576c558838c97", peak: "5b1905c4160c2a85", even: "4ba0da5e00260a71" };
   for (const toneMode of ["perceptual", "peak", "even"]) {
     const at100 = render(100, toneMode);
     const got = createHash("sha256").update(at100.map((r) => r.hex).join(",")).digest("hex").slice(0, 16);
-    if (got !== AT100[toneMode]) FAIL("group-chroma-damper", `(i) ${toneMode} Primary at 100 hashes ${got}, not the pre-damper render ${AT100[toneMode]}`);
+    if (got !== AT100[toneMode]) red.push(`(i) ${toneMode} Primary at 100 hashes ${got}, not the pre-damper render ${AT100[toneMode]}`);
     // (ii) at 50 and 10, every stop is r times its at-100 coordinate; perceptual and peak read OKHSL s
     //      back from the hex (within 0.02), even reads the `chroma` field (within max(0.5, 3%): hex
     //      quantization and the per-stop hue solve); stop 500 moves too (no stop-500 pin).
     for (const g of [50, 10]) {
       const r = g / 100, damped = render(g, toneMode);
+      const off = [];
       for (let i = 0; i < at100.length; i++) {
         const a = at100[i], b = damped[i];
         if (toneMode === "even") {
-          if (Math.abs(b.chroma - r * a.chroma) > Math.max(0.5, 0.03 * a.chroma)) { FAIL("group-chroma-damper", `(ii) even ${g}: stop ${a.stop} C ${b.chroma.toFixed(2)} is not ${r} x ${a.chroma.toFixed(2)}`); break; }
-        } else if (Math.abs(sOf(b) - r * sOf(a)) > 0.02) { FAIL("group-chroma-damper", `(ii) ${toneMode} ${g}: stop ${a.stop} s ${sOf(b).toFixed(4)} is not ${r} x ${sOf(a).toFixed(4)}`); break; }
+          if (Math.abs(b.chroma - r * a.chroma) > Math.max(0.5, 0.03 * a.chroma)) off.push(`${a.stop} C ${b.chroma.toFixed(2)} not ${r} x ${a.chroma.toFixed(2)}`);
+        } else if (Math.abs(sOf(b) - r * sOf(a)) > 0.02) off.push(`${a.stop} s ${sOf(b).toFixed(4)} not ${r} x ${sOf(a).toFixed(4)}`);
       }
-      if (g === 50 && damped.find((x) => x.stop === 500).hex === at100.find((x) => x.stop === 500).hex) FAIL("group-chroma-damper", `(ii) ${toneMode} 50: stop 500 did not move, the damper skipped the key stop`);
+      if (off.length) red.push(`(ii) ${toneMode} ${g}: ${off.length}/${at100.length} stops off, first ${off[0]}`);
+      if (g === 50 && damped.find((x) => x.stop === 500).hex === at100.find((x) => x.stop === 500).hex) red.push(`(ii) ${toneMode} 50: stop 500 did not move, the damper skipped the key stop`);
     }
     // (iii) at 0 the ramp is grey: s at most 0.02, or C at most 0.5 on even.
-    for (const row of render(0, toneMode)) {
-      const x = toneMode === "even" ? row.chroma : sOf(row), cap = toneMode === "even" ? 0.5 : 0.02;
-      if (x > cap) { FAIL("group-chroma-damper", `(iii) ${toneMode} 0: stop ${row.stop} keeps ${x.toFixed(4)} (> ${cap})`); break; }
-    }
+    const cap = toneMode === "even" ? 0.5 : 0.02;
+    const kept = render(0, toneMode).filter((row) => (toneMode === "even" ? row.chroma : sOf(row)) > cap).map((row) => row.stop);
+    if (kept.length) red.push(`(iii) ${toneMode} 0: ${kept.length}/${T.STOPS.length} stops keep more than ${cap}, first stop ${kept[0]}`);
   }
   // (iv) damp only (R95): a value past 100 renders as 100, it never boosts.
   for (const toneMode of ["perceptual", "even"]) {
-    if (render(150, toneMode).map((r) => r.hex).join() !== render(100, toneMode).map((r) => r.hex).join()) FAIL("group-chroma-damper", `(iv) ${toneMode}: chroma 150 renders differently from 100, the damper boosted`);
+    if (render(150, toneMode).map((r) => r.hex).join() !== render(100, toneMode).map((r) => r.hex).join()) red.push(`(iv) ${toneMode}: chroma 150 renders differently from 100, the damper boosted`);
   }
   // (v) the damper holds tone: on every default palette, anchored, both OKHSL modes and hue spaces, 25
   //     stops, at 50 and 10 the damped stop keeps its at-100 CIE L* within the two pixels' own rounding
   //     floors (the largest L* step one channel +/-1 makes). Measured 0 rows outside; even renders at
   //     the at-100 stop's own tone, so its rows are exact and not repeated here.
-  let rows = 0;
+  let rows = 0, outside = 0, firstOutside = "";
   {
     const floorOf = (rgb) => {
       const b = E.lstarFromRgb(rgb);
@@ -2181,13 +2183,15 @@ for (const mode of ["perceptual", "peak"]) {
         for (let i = 0; i < at100.length; i++) {
           rows++;
           const a = at100[i], b = damped[i], floor = floorOf(a.rgb) + floorOf(b.rgb);
-          if (Math.abs(a.tone - b.tone) > floor) { FAIL("group-chroma-damper", `(v) ${toneMode}/${hueSpace} ${p.name} ${g} stop ${a.stop}: L* ${b.tone.toFixed(3)} against ${a.tone.toFixed(3)} at 100, past the rounding floor ${floor.toFixed(3)}`); break; }
+          if (Math.abs(a.tone - b.tone) > floor && !outside++) firstOutside = `${toneMode}/${hueSpace} ${p.name} ${g} stop ${a.stop}: L* ${b.tone.toFixed(3)} against ${a.tone.toFixed(3)} at 100, past the rounding floor ${floor.toFixed(3)}`;
         }
       }
     }
-    if (rows !== 2 * 2 * DEFAULTS.length * 2 * STOPS.length) FAIL("group-chroma-damper", `(v) covered ${rows} rows`);
+    if (outside) red.push(`(v) ${outside}/${rows} rows off their at-100 L*, first ${firstOutside}`);
+    if (rows !== 2 * 2 * DEFAULTS.length * 2 * STOPS.length) red.push(`(v) covered ${rows} rows`);
   }
-  if (!fails.some((f) => f.startsWith("group-chroma-damper:")))
+  if (red.length) FAIL("group-chroma-damper", `${red.length} red: ${red.join("; ")}`);
+  else
     console.log(`group-chroma-damper: kit Primary at 100 matches the pre-damper render in 3 modes; 50, 10 and 0 scale every stop by g/100; tone held on ${rows} rows`);
 }
 
