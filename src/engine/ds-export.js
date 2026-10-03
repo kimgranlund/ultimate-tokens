@@ -763,7 +763,7 @@ function dsSpineBody(ds, state, ctx) {
     "- States suffix the fill: `-hover`, `-active`, `-disabled`.",
     `- App surfaces live in the neutral family: \`--${pfx}-${cn}-background\`, \`-surface\`, \`-surface-high\`; text on`,
     "  them: `-on-surface`, `-on-surface-variant`; hairlines: `-outline-variant`.",
-    `- **Prefix-adaptive**: under another prefix (\`--md-sys-*\`, \`--color-*\`), keep \`{family}-{slot}\` intact and swap only the prefix.`, "",
+    `- **Prefix-adaptive**: under another prefix (\`--md-*\`, \`--color-*\`), keep \`{family}-{slot}\` intact and swap only the prefix.`, "",
     `- **Surfaces**: the room, lowest to top: Background \`${ref(cn + "-background")}\` / Surface \`${ref(cn + "-surface")}\` /`,
     `  Surface-raised \`${ref(cn + "-surface-high")}\`; hover wash \`${ref(cn + "-surface-dim")}\` (darker in BOTH schemes, an`,
     `  interaction STATE, never \`-surface-high\`, which is a MIRRORED elevation stop). **Foreground \`${ref(cn + "-on-surface")}\`**: primary text; **Muted`,
@@ -1556,7 +1556,7 @@ function dsMakeButtonMd() {
 // (which stays the consumption mapping the guidelines teach). Color rides the kit's `.dark`-class
 // convention (`:root` light + `.dark` overrides, light-dark() would not flip with Make's toggle);
 // geometry + typescale are mode-independent `:root` custom properties. Non-color layers strip a trailing
-// `-color` from the kit prefix (`md-sys-color` → `md-sys-size-*` / `md-sys-typescale-*`) so the grammar
+// `-color` from the kit prefix (`md-color` → `md-size-*` / `md-typescale-*`) so the grammar
 // matches the standalone geometry/typography exports. APPEND-ONLY: everything lands after the
 // `@theme inline` block, so the D10 carrier parse (dsShadcnRuntimeMap: first `:root` → `.dark` →
 // `@theme inline`) is untouched.

@@ -139,16 +139,16 @@ if (cssChecked === 0) FAIL("css-resolves", "no --c-* light-dark(var,var) lines f
 // ── configurable colour prefix (--{prefix}-* naming; M3-flavoured export) ────────────────────────
 {
   if (X.cssPrefixOf(C(ALL)) !== "c") FAIL("prefix", "default state must resolve to the 'c' prefix");
-  const md = X.exportCSS({ ...C(ALL), export: { colorPrefix: "md-sys-color" } });
-  if (!md.includes("--md-sys-color-neutral-on-surface")) FAIL("prefix", "a Material prefix must emit --md-sys-color-{p}-{role}");
+  const md = X.exportCSS({ ...C(ALL), export: { colorPrefix: "md-color" } });
+  if (!md.includes("--md-color-neutral-on-surface")) FAIL("prefix", "a Material prefix must emit --md-color-{p}-{role}");
   if (md.includes("--c-neutral-on-surface")) FAIL("prefix", "no stray --c-* names must survive under a custom prefix");
   // the semantic refs must thread the same prefix (var() points at the prefixed raws) or the cascade breaks.
-  for (const m of md.matchAll(/--md-sys-color-[a-z0-9-]+\s*:\s*light-dark\(\s*var\((--[a-z0-9-]+)\)\s*,\s*var\((--[a-z0-9-]+)\)\s*\)/gi))
-    if (!m[1].startsWith("--md-sys-color-") || !m[2].startsWith("--md-sys-color-")) FAIL("prefix", `a semantic ref didn't thread the prefix: ${m[1]}/${m[2]}`);
+  for (const m of md.matchAll(/--md-color-[a-z0-9-]+\s*:\s*light-dark\(\s*var\((--[a-z0-9-]+)\)\s*,\s*var\((--[a-z0-9-]+)\)\s*\)/gi))
+    if (!m[1].startsWith("--md-color-") || !m[2].startsWith("--md-color-")) FAIL("prefix", `a semantic ref didn't thread the prefix: ${m[1]}/${m[2]}`);
   // IDENTITY: no export / default "c" ⇒ byte-identical to the historical output.
   if (X.exportCSS({ ...C(ALL), export: { colorPrefix: "c" } }) !== X.exportCSS(C(ALL))) FAIL("prefix", "the default prefix must be byte-identical to no-prefix (identity gate)");
   // sanitization: junk → legal ident core; leading digit repaired; empty → 'c'.
-  if (X.cssPrefixOf({ export: { colorPrefix: "MD Sys!!" } }) !== "md-sys") FAIL("prefix", "junk prefix must sanitize");
+  if (X.cssPrefixOf({ export: { colorPrefix: "MD Foo!!" } }) !== "md-foo") FAIL("prefix", "junk prefix must sanitize");
   if (X.cssPrefixOf({ export: { colorPrefix: "3x" } }) !== "c3x") FAIL("prefix", "leading-digit prefix must be repaired");
   if (X.cssPrefixOf({ export: { colorPrefix: "" } }) !== "c") FAIL("prefix", "empty prefix falls back to 'c'");
 }
@@ -236,8 +236,8 @@ if (!p0 || !p0.stops || !p0.scrims || !p0.semantic) FAIL("nonempty", "JSON palet
   if (!X.exportCSS(C(ALL)).includes(`--c-dialog-backdrop: ${WANT_HEX};`)) FAIL("dialog-backdrop", "exportCSS missing --c-dialog-backdrop (hex)");
   if (!X.exportOKLCH(C(ALL)).includes(`--c-dialog-backdrop: ${WANT_OKLCH};`)) FAIL("dialog-backdrop", "exportOKLCH missing --c-dialog-backdrop (oklch)");
   // the configurable prefix covers it too (same {pfx} as every other token).
-  const mdCss = X.exportCSS({ ...C(ALL), export: { colorPrefix: "md-sys-color" } });
-  if (!mdCss.includes(`--md-sys-color-dialog-backdrop: ${WANT_HEX};`)) FAIL("dialog-backdrop", "a custom prefix must cover --{prefix}-dialog-backdrop too");
+  const mdCss = X.exportCSS({ ...C(ALL), export: { colorPrefix: "md-color" } });
+  if (!mdCss.includes(`--md-color-dialog-backdrop: ${WANT_HEX};`)) FAIL("dialog-backdrop", "a custom prefix must cover --{prefix}-dialog-backdrop too");
   // JSON, a top-level `constants` sibling to the palette-name keys (never itself a palette).
   const jc = X.exportJSON(C(ALL));
   if (!jc.constants || jc.constants["dialog-backdrop"]?.hex !== WANT_HEX) FAIL("dialog-backdrop", `JSON constants.dialog-backdrop.hex = ${jc.constants && jc.constants["dialog-backdrop"] && jc.constants["dialog-backdrop"].hex}, want ${WANT_HEX}`);
@@ -288,8 +288,8 @@ if (!p0 || !p0.stops || !p0.scrims || !p0.semantic) FAIL("nonempty", "JSON palet
   if (!X.exportOKLCH(C(ALL)).includes(`--c-white: ${WHITE_OKLCH};`)) FAIL("white-black", "exportOKLCH missing --c-white (oklch)");
   if (!X.exportOKLCH(C(ALL)).includes(`--c-black: ${BLACK_OKLCH};`)) FAIL("white-black", "exportOKLCH missing --c-black (oklch)");
   // the configurable prefix covers both too (same {pfx} as every other token).
-  const mdCss = X.exportCSS({ ...C(ALL), export: { colorPrefix: "md-sys-color" } });
-  if (!mdCss.includes(`--md-sys-color-white: ${WHITE_HEX};`) || !mdCss.includes(`--md-sys-color-black: ${BLACK_HEX};`))
+  const mdCss = X.exportCSS({ ...C(ALL), export: { colorPrefix: "md-color" } });
+  if (!mdCss.includes(`--md-color-white: ${WHITE_HEX};`) || !mdCss.includes(`--md-color-black: ${BLACK_HEX};`))
     FAIL("white-black", "a custom prefix must cover --{prefix}-white/--{prefix}-black too");
   // JSON, top-level `constants` siblings to dialog-backdrop (never themselves a palette).
   const jc = X.exportJSON(C(ALL));
@@ -1129,13 +1129,13 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   //         lockstep, so the pair still resolves.
   {
     const G = "radix-refs-prefix";
-    const mdState = { ...state, export: { colorPrefix: "md-sys-color" } };
+    const mdState = { ...state, export: { colorPrefix: "md-color" } };
     const mdColors = X.exportRadix(mdState, { refs: true }).theme.extend.semanticTokens.colors;
-    const want = `var(--md-sys-color-${drivers.primary.n}-100)`;
+    const want = `var(--md-color-${drivers.primary.n}-100)`;
     const got = mdColors[drivers.primary.n]["1"].value.base;
     if (got !== want) FAIL(G, `prefixed link = ${JSON.stringify(got)}, want ${JSON.stringify(want)}`);
     const mdCss = X.exportCSS(mdState);
-    if (!mdCss.includes(`--md-sys-color-${drivers.primary.n}-100:`)) FAIL(G, `exportCSS on the same state never declares --md-sys-color-${drivers.primary.n}-100`);
+    if (!mdCss.includes(`--md-color-${drivers.primary.n}-100:`)) FAIL(G, `exportCSS on the same state never declares --md-color-${drivers.primary.n}-100`);
     if (mdCss.includes(`--c-${drivers.primary.n}-100:`)) FAIL(G, "exportCSS still declares the default-prefixed name under a custom prefix");
   }
 
@@ -1145,7 +1145,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     const refMod = X.exportRadixModule(refPreset);
     const valMod = X.exportRadixModule(valPreset);
     const lines = refMod.split("\n");
-    if (lines[0] !== `/* ultimate-tokens export schema ${4} */`) FAIL(G, `reference module first line = ${JSON.stringify(lines[0])}`);
+    if (lines[0] !== `/* ultimate-tokens export schema ${5} */`) FAIL(G, `reference module first line = ${JSON.stringify(lines[0])}`);
     if (!lines[1].startsWith("/* Radix preset")) FAIL(G, `reference module header does not open with the Radix preset comment: ${JSON.stringify(lines[1])}`);
     if (!lines[2].includes("LINKS")) FAIL(G, `the header's second comment line must name the link form, got ${JSON.stringify(lines[2])}`);
     if (!/css-hex|css-oklch/.test(refMod)) FAIL(G, "the reference header never tells the consumer which export to load first");
@@ -2385,7 +2385,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 // `v` is bumped alongside it in the same PR, that IS the bump-rule contract, not a bug in the gate.
 {
   const G = "hpg-export-schema-stamp";
-  const v = 4;
+  const v = 5;
   const doc = defaultDocument();
   const state = stateOf(doc);
   const tsc = typeScale({});

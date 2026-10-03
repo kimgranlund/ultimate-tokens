@@ -9,10 +9,10 @@
 // can't drift between the downloaded and hosted servers. Parity by construction (see test/mcp/core.mjs).
 
 export const PROTOCOL_VERSION = "2025-06-18";
-// version 0.4.0 (RP-8, ticket #577; bumped for #638, then #789): tracks EXPORT_SCHEMA_VERSION = 4's brand-kit
-// $schema bump (src/ui/model.mjs's brandKit(), "ultimate-tokens-brand-kit/4"), a hand-kept sibling literal,
+// version 0.5.0 (RP-8, ticket #577; bumped for #638, #789, then #791): tracks EXPORT_SCHEMA_VERSION = 5's brand-kit
+// $schema bump (src/ui/model.mjs's brandKit(), "ultimate-tokens-brand-kit/5"), a hand-kept sibling literal,
 // not an import: this module ships standalone (see header note above), no access to src/engine.
-export const SERVER = { name: "ultimate-tokens-brand-kit", version: "0.4.0" };
+export const SERVER = { name: "ultimate-tokens-brand-kit", version: "0.5.0" };
 
 const slugOf = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 // hexToRgb, expands a three-digit shorthand (#RGB) to six digits (#RRGGBB) before slicing, so
