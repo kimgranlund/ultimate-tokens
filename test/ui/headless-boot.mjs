@@ -314,8 +314,10 @@ const name0 = app.doc.palettes[0].name;
 const name1 = app.doc.palettes[1].name;
 const selName = app.doc.palettes[app.selectedIndex()].name;
 const histR = app.history.length;
+// the light column's stack: the drags below begin on its handles (every scene draws one stack per scheme column)
+const lightStack = () => app.querySelectorAll(".compare-col")[0].querySelector(".ramp-stack");
 // wire the stack rects so hit-testing maps pointer-y to a target row
-const stack = app._rampStack;
+const stack = lightStack();
 const rows = stack.querySelectorAll(".ramp-row[data-pi]");
 rows.forEach((r, idx) => { r._rect = { top: idx * 50, bottom: idx * 50 + 50, left: 0, right: 200, width: 200, height: 50 }; });
 // begin reorder on palettes[0]'s handle
@@ -330,10 +332,20 @@ ok(app.history.length - histR === 1, `reorder is ONE undo step (got ${app.histor
 ok(app.doc.palettes[app.selectedIndex()].name === selName, "selection stayed on the same palette after reorder");
 app.undo();
 ok(app.doc.palettes[0].name === name0 && app.doc.palettes[1].name === name1, "undo reverts the reorder");
+// (rr-col) a drag hit-tests ONLY the stack of the column it began in: begun on a light handle, every rect is a
+// light-column row; begun on a dark handle, every rect is a dark-column row (so the placeholder never crosses over)
+for (const [i, name] of [[0, "light"], [1, "dark"]]) {
+  const colI = app.querySelectorAll(".compare-col")[i];
+  const handleC = colI.querySelector(".ramp-stack").querySelectorAll(".ramp-row[data-pi]")[0].querySelector(".drag-handle");
+  app._beginReorder({ currentTarget: handleC, pointerId: 1, stopPropagation() {}, preventDefault() {} }, 0);
+  const rr = app._rowRects();
+  ok(rr.length > 1 && rr.every((r) => app._ancestorWithClass(r.el, "compare-col") === colI), `(rr-col) a drag begun in the ${name} column hit-tests only that column's rows (${rr.length} rects)`);
+  app._onReorderUp();
+}
 
 // reverse-direction reorder: drag a lower row UP above row 0
 flushRaf();
-const rows2 = app._rampStack.querySelectorAll(".ramp-row[data-pi]");
+const rows2 = lightStack().querySelectorAll(".ramp-row[data-pi]");
 rows2.forEach((r, idx) => { r._rect = { top: idx * 50, bottom: idx * 50 + 50, left: 0, right: 200, width: 200, height: 50 }; });
 const nm2 = app.doc.palettes[2].name;
 const handle2 = rows2[2].querySelector(".drag-handle");
@@ -3450,7 +3462,7 @@ app.canvasView = "palettes"; app.setSegment("palette"); app.render(); flushRaf()
 const cgWalk = (n) => (n._text || "") + (n.children || []).map(cgWalk).join("");
 
 {
-  const stack = app._rampStack;
+  const stack = lightStack();
   const groups = stack.querySelectorAll(".ramp-group");
   ok(groups.length === 4, `(cg1) all 4 groups render for the default doc (non-empty), got ${groups.length}`);
   ok(groups.map((g) => g.dataset.group).join(",") === "material,brand,system,data",
@@ -3486,7 +3498,7 @@ cgSelect.dispatch("change", { target: cgSelect });
 ok(app.doc.palettes[0].group === "system", `(cg6) picking "System" in the dropdown commits palettes[0].group (got ${JSON.stringify(app.doc.palettes[0].group)})`);
 app.render(); flushRaf();
 {
-  const groups2 = app._rampStack.querySelectorAll(".ramp-group");
+  const groups2 = lightStack().querySelectorAll(".ramp-group");
   const systemGroup = groups2.find((g) => g.dataset.group === "system");
   const systemPis = systemGroup.querySelectorAll(".ramp-row[data-pi]").map((r) => Number(r.getAttribute("data-pi")));
   ok(systemPis.includes(0), `(cg7) after the dropdown move, palette index 0 (Neutral) renders under System (got ${JSON.stringify(systemPis)})`);
@@ -3507,7 +3519,7 @@ flushRaf();
 {
   app.selectPalette(0);
   app.render(); flushRaf();
-  const rows = app._rampStack.querySelectorAll(".ramp-row[data-pi]");
+  const rows = lightStack().querySelectorAll(".ramp-row[data-pi]");
   rows.forEach((r, idx) => { r._rect = { top: idx * 50, bottom: idx * 50 + 50, left: 0, right: 200, width: 200, height: 50 }; });
   ok(rows[2].getAttribute("data-pi") === "2" && app.doc.palettes[2].name === "Secondary", "(cg10) row 2 is Secondary (Brand) before the drag");
   const secondaryHandle = rows[2].querySelector(".drag-handle");
@@ -3526,7 +3538,7 @@ flushRaf();
 // a within-group drag never touches `.group`, only CROSSING a header reassigns it.
 {
   app.render(); flushRaf();
-  const rows = app._rampStack.querySelectorAll(".ramp-row[data-pi]");
+  const rows = lightStack().querySelectorAll(".ramp-row[data-pi]");
   rows.forEach((r, idx) => { r._rect = { top: idx * 50, bottom: idx * 50 + 50, left: 0, right: 200, width: 200, height: 50 }; });
   ok(app.doc.palettes[4].name === "Info" && app.doc.palettes[4].group === undefined, "(cg16) Info (System) has no explicit group before this drag");
   const infoHandle = rows[4].querySelector(".drag-handle");
@@ -3783,7 +3795,7 @@ flushRaf();
     ok(!!colors6[key6] && !!colors6[key6]["12"], "(rx6b) the engine preset holds a 12-step ladder under the renamed key");
     // the painted ladder is the RENAMED group's, not the `accent` driver clone's (they differ in hue).
     const step9 = collisionRow.querySelectorAll(".radix-step")[8].getAttribute("style");
-    const want9 = colors6[key6]["9"].value.base // the first row is the light column's;
+    const want9 = colors6[key6]["9"].value.base; // the first row is the light column's
     ok(step9 === `background:${want9}`, `(rx6b) the colliding row's step 9 paints colors["${key6}"].9, got ${step9}`);
   }
 
@@ -3867,7 +3879,7 @@ flushRaf();
   app.selectPalette(0);
   app.render(); flushRaf(); // render "palettes" first, reorder machinery live (_wireReorder sets this._rampStack)
 
-  const rows = app._rampStack.querySelectorAll(".ramp-row[data-pi]");
+  const rows = lightStack().querySelectorAll(".ramp-row[data-pi]");
   rows.forEach((r, idx) => { r._rect = { top: idx * 50, bottom: idx * 50 + 50, left: 0, right: 200, width: 200, height: 50 }; });
   ok(app.doc.palettes[0].name === "Neutral" && paletteGroupRXG(app.doc.palettes[0]) === "material", "(rxg0) row 0 is Neutral (Material) before the drag");
   ok(app.doc.palettes[4].name === "Info" && paletteGroupRXG(app.doc.palettes[4]) === "system", "(rxg0) row 4 is Info (System), a different group, the drop target");
@@ -3890,7 +3902,7 @@ flushRaf();
   // negative control, produced by EXISTING code: the same drive under canvasView="palettes" DOES
   // reassign .group, already asserted today by (cg13)/(cg17); re-verify it stays green.
   app.setCanvasView("palettes"); flushRaf();
-  const rows2 = app._rampStack.querySelectorAll(".ramp-row[data-pi]");
+  const rows2 = lightStack().querySelectorAll(".ramp-row[data-pi]");
   rows2.forEach((r, idx) => { r._rect = { top: idx * 50, bottom: idx * 50 + 50, left: 0, right: 200, width: 200, height: 50 }; });
   const neutralHandle2 = rows2[0].querySelector(".drag-handle");
   app._beginReorder({ currentTarget: neutralHandle2, pointerId: 10, stopPropagation() {}, preventDefault() {} }, 0);

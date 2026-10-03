@@ -129,6 +129,9 @@ try {
     await evalJS(`(()=>{const h=${el}.querySelector(".drag-handle");h.dispatchEvent(new PointerEvent("pointerdown",{clientX:${dragPt.x},clientY:${dragPt.y},bubbles:true,cancelable:true}));document.dispatchEvent(new PointerEvent("pointermove",{clientX:${dragPt.x},clientY:${dragPt.y + 230},bubbles:true,cancelable:true}));})()`);
     await sleep(140);
     ok(await evalJS(`!!${el}.querySelector(".drag-ghost") && !!${el}.querySelector(".drop-ghost")`), "drag-to-reorder lifts a floating clone + opens a drop placeholder");
+    // the placeholder stays in the column the drag began in (the first handle is in the light column), the dark column gets none
+    const phInLight = () => evalJS(`(()=>{const cols=${el}.querySelectorAll(".compare-col");return cols[0].querySelectorAll(".drop-ghost").length===1 && cols[1].querySelectorAll(".drop-ghost").length===0})()`);
+    ok(await phInLight(), "the drop placeholder opens in the dragged row's own column and not in the other scheme's");
     const dragShot = await send("Page.captureScreenshot", { format: "png" });
     writeFileSync(resolve(OUT, "drag-reorder.png"), Buffer.from(dragShot.data, "base64"));
     console.log("  · screenshot → smoke-out/drag-reorder.png");
@@ -144,6 +147,7 @@ try {
       await dragTo(p0.bottom + 40); await sleep(70);
       const p2 = await phInfo();
       ok(p2 && p2.anchor !== p0.anchor, `moving >10px past the edge reslots the drop (anchor ${p0.anchor} → ${p2 && p2.anchor})`);
+      ok(await phInLight(), "after reslotting, the drop placeholder is still in the dragged row's own column");
     }
     await evalJS(`document.dispatchEvent(new PointerEvent("pointerup",{bubbles:true,cancelable:true}))`); await sleep(120);
     ok(await evalJS(`!${el}.querySelector(".drag-ghost") && !${el}.querySelector(".drop-ghost")`), "releasing the drag removes the clone + placeholder");

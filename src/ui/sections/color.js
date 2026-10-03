@@ -1037,9 +1037,7 @@ export class ColorSectionImpl {
       );
     }).filter(Boolean);
 
-    const stack = h("div", { class: "ramp-stack" }, ...sections);
-    this._wireReorder(stack); // pointer-drag the ⋮⋮ handle to reorder palettes
-    return stack;
+    return h("div", { class: "ramp-stack" }, ...sections); // the ⋮⋮ handle on each row drags to reorder palettes (_beginReorder)
   }
 
 
@@ -1183,9 +1181,7 @@ export class ColorSectionImpl {
         );
       });
     if (rows.length === 0) return h("div", { class: "empty-note" }, "No enabled palettes. Toggle one on to see its scrims");
-    const stack = h("div", { class: "ramp-stack" }, ...rows);
-    this._wireReorder(stack); // reorder works in the scrim view too
-    return stack;
+    return h("div", { class: "ramp-stack" }, ...rows); // reorder works in the scrim view too
   }
 
 
@@ -1359,19 +1355,21 @@ export class ColorSectionImpl {
   }
 
 
-  // _wireReorder, keep a handle on the live stack node for hit-testing during a
-  // drag. Rows carry data-pi (their real doc.palettes index); we read the rects
-  // at move-time so the target insertion index is always current.
-  _wireReorder(stack) {
-    this._rampStack = stack;
+  // _ancestorWithClass, the nearest ancestor of `el` carrying `cls` (parentNode walk, works in the browser
+  // AND the headless DOM shim, which has no Element.closest), or null.
+  _ancestorWithClass(el, cls) {
+    let n = el;
+    while (n && !(n.classList && n.classList.contains(cls))) n = n.parentNode;
+    return n || null;
   }
 
 
-  // _rowRects, current [{ pi, top, bottom, mid, el }] for every row in the stack,
-  // top-to-bottom. Recomputed per drag-move (cheap; few rows).
+  // _rowRects, current [{ pi, top, bottom, mid, el }] for every row in the dragged row's OWN stack,
+  // top-to-bottom. Every scene draws a stack per scheme column, so the hit-test reads the stack the
+  // drag began in (rows carry data-pi, their real doc.palettes index), never another column's.
+  // Recomputed per drag-move (cheap; few rows).
   _rowRects() {
-    const stack = this._rampStack;
-    if (!stack) return [];
+    const stack = this._reorder.stack;
     return Array.from(stack.querySelectorAll(".ramp-row[data-pi]")).map((el) => {
       const r = el.getBoundingClientRect();
       return { pi: Number(el.getAttribute("data-pi")), top: r.top, bottom: r.bottom, mid: (r.top + r.bottom) / 2, el };
@@ -1391,11 +1389,11 @@ export class ColorSectionImpl {
     if (handle && handle.setPointerCapture) {
       try { handle.setPointerCapture(e.pointerId); } catch {}
     }
-    // find the source ROW for the grabbed handle (parentNode walk, works in the browser AND the
-    // headless DOM shim, which has no Element.closest / attribute selectors).
-    let srcRow = handle;
-    while (srcRow && !(srcRow.classList && srcRow.classList.contains("ramp-row"))) srcRow = srcRow.parentNode;
-    this._reorder.srcRow = srcRow || null;
+    // find the source ROW for the grabbed handle, and the stack and scheme column it lives in.
+    const srcRow = this._ancestorWithClass(handle, "ramp-row");
+    this._reorder.srcRow = srcRow;
+    this._reorder.stack = this._ancestorWithClass(srcRow, "ramp-stack");
+    this._reorder.col = this._ancestorWithClass(srcRow, "compare-col");
     this._buildDragGhost(e, srcRow); // lift a floating clone + drop a placeholder (browser only; no-ops in the shim)
     this._reorderMove = (ev) => this._onReorderMove(ev);
     this._reorderUp = (ev) => this._onReorderUp(ev);
@@ -1426,7 +1424,7 @@ export class ColorSectionImpl {
     // column scheme on the ghost so its light-dark() tokens (--ink, --panel, …) resolve in the mode it
     // visually belongs to, not the host's (else a light-column row dragged while the chrome is dark
     // renders dark-mode text on the light row).
-    ghost.style.colorScheme = this._schemeOfColumn(srcRow.closest(".compare-col"));
+    ghost.style.colorScheme = this._schemeOfColumn(st.col);
     ghost.style.width = rect.width + "px";
     ghost.style.height = rect.height + "px";
     ghost.style.transform = `translate(${rect.left}px, ${rect.top}px)`;
