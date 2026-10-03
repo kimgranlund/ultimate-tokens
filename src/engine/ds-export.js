@@ -23,7 +23,7 @@ import { resolvedFontFor } from "./type.mjs"; // per-voice font resolution (TKT-
 import { googleSafeFontFor } from "./font-fallbacks.mjs"; // the google-fonts-safe substitute lookup, for dsFontStack's optional fontMode
 import { RAMP_LADDER, mdAnchor, sizeAnchor, orderedSizeNames } from "./geometry.mjs"; // the linear-ladder size-anchor helpers + explicit ordering (issue #483, the ladder's numeric step names trap a bare Object.keys/`.MD`/`.SM`/`.XS` access)
 import { derivedAll, roleOklch, hexOf, hex8, relLumExp, cssPrefixOf, dialogBackdropOklch, whiteOklch, blackOklch, exportShadcn, isDataPalette, oklchStr, EXPORT_SCHEMA_VERSION } from "./exports.js";
-import { PRIME_STEPS } from "./prime.mjs"; // the seven step names, brightest..dimmest (REQ-050/054)
+import { PRIME_STEPS, primeSlug } from "./prime.mjs"; // the seven step names, brightest..dimmest (REQ-050/054)
 
 // ══════════════════════════════════════════════════════════════════════════════
 // DESIGN SYSTEM export, design-system-for-{claude-code,google-stitch,figma-make}
@@ -799,6 +799,7 @@ function dsSpineBody(ds, state, ctx) {
         "seven-step `{hex, oklch}` value per family. Reach for `prime` as a family's own signature",
         "colour outside a fill/on-fill pair (a sparkline, a small identity mark, a legend swatch); it is",
         "never a button fill, buttons use the family's role tokens above.", "",
+        `The centre step is the bare \`--${pfx}-{family}-prime\`; the other six are \`--${pfx}-{family}-prime-{step}\`.`, "",
         primeFamilies.map((f) => `- \`--${pfx}-${f}-prime-{step}\` (\`${f}\`)`).join("\n"),
       ].join("\n")
     : "";
@@ -1333,6 +1334,7 @@ function dsMakePrimeSection(ds, pfx) {
     "family. Reach for `prime` as a family's own signature colour outside a fill/on-fill pair (a",
     "sparkline, a small identity mark, a legend swatch); it is never a button fill, buttons use",
     "the family classes above.", "",
+    `The centre step is the bare \`--${pfx}-{family}-prime\`; the other six are \`--${pfx}-{family}-prime-{step}\`.`, "",
     primeFamilies.map((f) => `- \`--${pfx}-${f}-prime-{step}\` (\`${f}\`)`).join("\n"),
   ];
 }
@@ -1575,14 +1577,14 @@ export function dsFullLayersCss(state, typeSc, geomSc) {
     L.push(`  --${pfx}-${p.n}${r.suffix}: ${roleOklch(r.light)};`);
     D.push(`  --${pfx}-${p.n}${r.suffix}: ${roleOklch(r.dark)};`);
   }
-  // PRIME RAW vars (REQ-054), mirrors exports.js's own --{pfx}-{family}-prime-{step} vars
+  // PRIME RAW vars (REQ-054), mirrors exports.js's own --{pfx}-{family}-prime[-{step}] vars
   // byte-for-byte (same pfx, same formula); mode-independent, so the SAME value lands in both
   // :root and .dark (unlike the role vars above, prime is never re-derived per mode).
   for (const p of derivedAll(state)) for (const step of PRIME_STEPS) {
     const sw = p.prime[step];
     const val = oklchStr({ L: sw.oklch[0], C: sw.oklch[1], H: sw.oklch[2] });
-    L.push(`  --${pfx}-${p.n}-prime-${step}: ${val};`);
-    D.push(`  --${pfx}-${p.n}-prime-${step}: ${val};`);
+    L.push(`  --${pfx}-${p.n}-${primeSlug(step)}: ${val};`);
+    D.push(`  --${pfx}-${p.n}-${primeSlug(step)}: ${val};`);
   }
   const dims = [];
   if (geomSc) {
