@@ -131,12 +131,14 @@ hue    = hueSpace=="oklch" ? solveCam16Hue(palette.hue, chroma@500, tone@500)  /
                         : palette.hue                        // cam16 hue passes straight through
 pk     = peakC(hue).c                     // hue's own max chroma in sRGB
 target = (palette.chroma / 100) * pk      // chroma control is % of the hue's peak
-ref    = max(cm at stops 450, 500, 550)   // the floor's gamut reference: the anchor stop or its first step, whichever is wider
 
 for each stop:
   tone  = toneAt(stop, skew, lift)
   cm    = maxChromaInGamut(hue, tone)     // gamut ceiling at this tone
   env   = chromaEnvelope(stop, 500, lift, controls)    // the shared multiplier, below
+  ref   = max(maxChromaInGamut(h0, t) for t in [tone@500, tone@450, tone@550])
+                                          // the floor's gamut reference, per stop (#766): the widest of the pivot and its first display steps, read at THIS
+                                          // stop's own hue h0 BEFORE edge rotation (the per-stop solved CAM16 hue on the anchored OKLCH path; hue above otherwise)
   C     = evenChroma(cm, target, env, chromaFloor, ref)   // min(cm, max(min(target*env, cm), floorC))
                                           // floorC = min((chromaFloor/100) * min(cm, ref), target)  (#701)
   rgb   = hctToRgb(hue, C, tone).rgb
