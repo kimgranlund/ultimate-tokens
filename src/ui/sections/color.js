@@ -1,7 +1,7 @@
 import { PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hasDataPalettes, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixCollisionBadge, radixExportKey, radixKeyCollision, rederiveDataHues, resolvePaletteGroups, seedFromKeyColor, slug } from "../model.mjs";
 import { RELATIONSHIPS, deriveNeutral, deriveRelative } from "../../engine/derive.mjs";
 import { icon } from "../icons.js";
-import { CURVES, DAMP_PRESETS, HUE_SPACE_ANCHOR_REASON, SCHEME_ICON, SCHEME_NEXT, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
+import { CURVES, DAMP_PRESETS, HUE_SPACE_ANCHOR_REASON, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
 
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
 // methods, copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
@@ -270,7 +270,7 @@ export class ColorSectionImpl {
 
 
   // setCanvasView, switch the canvas between the palette ramps, the scrim overlays, the
-  // semantic-mapping table, and the radix ladder view (ui-session state, like canvasTheme,
+  // semantic-mapping table, and the radix ladder view (ui-session state,
   // never persisted with the doc).
   setCanvasView(v) {
     this.canvasView = v;
@@ -837,7 +837,7 @@ export class ColorSectionImpl {
             { cls: "canvas-seg", ariaLabel: "Ramp stops", role: "group", idPrefix: "stops" },
           )
         : false,
-      // trailing tool group, right-aligned: fit · scheme · zoom · + Palette.
+      // trailing tool group, right-aligned: fit · zoom · + Palette.
       h("div", { class: "spacer" }),
       // fit/orient, reset the canvas view to centre at 100% (icon-only).
       btn(icon("crosshair"), {
@@ -848,10 +848,6 @@ export class ColorSectionImpl {
           this.render();
         },
       }),
-      // scheme cycle (system/light/dark, icon-only, matches Type/Geom's canvasThemeBtn) + a
-      // separate Compare toggle for the side-by-side Light+Dark view.
-      this.colorSchemeBtn(),
-      this.colorCompareBtn(),
       btn(icon("minus"), { ariaLabel: "Zoom out", onclick: () => this.zoomBy(-1) }),
       h("span", { class: "zoom-readout", role: "status", "aria-live": "polite", "aria-label": "Zoom level" }, Math.round(this.viewport.zoom * 100) + "%"),
       btn(icon("plus"), { ariaLabel: "Zoom in", onclick: () => this.zoomBy(1) }),
@@ -862,82 +858,28 @@ export class ColorSectionImpl {
   }
 
 
-  // The canvas IS the 2D pannable space; the ramp rows ARE the palette navigator. The Mapping
-  // view is a DATA TABLE, not a visual scene, it scrolls instead of pan/zoom (is-table).
+  // The canvas IS the 2D pannable space; the ramp rows ARE the palette navigator. Every scene renders
+  // Light AND Dark side by side (renderCompareArea). The Mapping view is a DATA TABLE, not a visual scene,
+  // it scrolls instead of pan/zoom (is-table), has no scheme (it already shows both modes' refs) and sits on
+  // the chrome ground.
   renderCanvasArea(view) {
-    const isTable = this.canvasView === "mapping";
-    // Color "Both" mode → the side-by-side Compare (Palettes/Scrims/Radix; the Mapping table already shows
-    // both modes' refs, so it renders normally).
-    if (this.section === "color" && this.colorMode === "both" && !isTable) return this.renderCompareArea(view);
-    const scene = this._canvasScene(view);
-    const area = h(
+    if (this.canvasView !== "mapping") return this.renderCompareArea(view);
+    return h(
       "div",
-      {
-        class: "canvas-area canvas-scheme-" + this.resolvedCanvasScheme() + (isTable ? " is-table" : ""),
-        style: "--canvas-bg:" + this.canvasBg(),
-        role: "group",
-        "aria-label": isTable ? "Semantic mapping table" : "Palette canvas: drag to pan, wheel to zoom, double-click to reset",
-      },
-      h("div", { class: "canvas-scene" }, scene),
+      { class: "canvas-area is-table", role: "group", "aria-label": "Semantic mapping table" },
+      h("div", { class: "canvas-scene" }, this._canvasScene(view)),
     );
-    if (!isTable) {
-      // shift-drag (or middle-drag) pans · wheel zooms about cursor · click selects.
-      this.wirePanZoom(area);
-      // Apply the live transform after layout so the readout + centering are correct.
-      requestAnimationFrame(() => this.applyTransform());
-    }
-    return area;
   }
 
 
-  // colorSchemeBtn, icon-only scheme cycle (system → light → dark), the Color-section analog of
-  // app.js's canvasThemeBtn, so all three sections use the same compact control for the same axis
-  // (space saved vs. the old Light/Dark/Both segmented pill). While Both/Compare is active it shows
-  // the currently-resolved concrete scheme (never blank); clicking always lands on a real scheme,
-  // exiting Compare if it was on, Compare itself lives in the separate colorCompareBtn.
-  colorSchemeBtn() {
-    const shown = this.colorMode === "both" ? this.resolvedCanvasScheme() : this.colorMode;
-    return btn(icon(SCHEME_ICON[shown] || "theme"), {
-      cls: "scheme-btn",
-      title: "Color value mode: " + shown + ", click to cycle system / light / dark",
-      ariaLabel: "Color value mode: " + shown + ", cycle system / light / dark",
-      onclick: () => this.setColorMode(SCHEME_NEXT[shown] || "system"),
-    });
-  }
-
-  // colorCompareBtn, toggles the side-by-side Light+Dark Compare view. Remembers the scheme it
-  // was on so turning Compare back off restores it, rather than always landing on "system".
-  colorCompareBtn() {
-    const on = this.colorMode === "both";
-    return btn(icon("sidebar"), {
-      cls: "scheme-btn" + (on ? " on" : ""),
-      title: on ? "Compare is on, click to return to a single scheme" : "Compare: Light & Dark side by side",
-      ariaLabel: on ? "Compare is on, click to return to a single scheme" : "Compare Light & Dark side by side",
-      ariaPressed: on ? "true" : "false",
-      onclick: () => this.toggleColorCompare(),
-    });
-  }
-
-  // an explicit pick (system/light/dark/both) overrides the default and PERSISTS (app prefs),
-  // matches canvasThemeBtn's contract; only Settings › Reset returns this to "system".
-  setColorMode(v) { this.colorMode = v; this._saveAppPrefs(); this.render(); }
-
-  toggleColorCompare() {
-    if (this.colorMode === "both") this.colorMode = this._colorModeBeforeCompare || "system";
-    else { this._colorModeBeforeCompare = this.colorMode; this.colorMode = "both"; }
-    this._saveAppPrefs();
-    this.render();
-  }
-
-
-  // renderCompareArea, the Color "Both" mode: the canvas scene rendered in Light AND Dark, side by side,
-  // inside ONE pannable .canvas-scene (so pan/zoom/fit move both columns together). Each column forces its
-  // own scheme via _schemeOverride, so canvasBg() + every resolvedCanvasScheme() read while the scene
-  // builds resolves per-column.
+  // renderCompareArea, the Color canvas: the scene rendered in Light AND Dark, side by side, inside ONE
+  // pannable .canvas-scene (so pan/zoom/fit move both columns together). Each column builds inside its own
+  // scheme (_schemeColumn), so canvasBg() + every resolvedCanvasScheme() read while the scene builds
+  // resolves per column. Light first.
   renderCompareArea(view) {
     const area = h(
       "div",
-      { class: "canvas-area canvas-compare", role: "group", "aria-label": "Compare: Light and Dark side by side · drag to pan, wheel to zoom" },
+      { class: "canvas-area canvas-compare", role: "group", "aria-label": "Palette canvas, Light and Dark side by side · drag to pan, wheel to zoom" },
       h("div", { class: "canvas-scene compare" },
         this._compareColumn(view, "light"),
         this._compareColumn(view, "dark")),
@@ -948,16 +890,7 @@ export class ColorSectionImpl {
   }
 
   _compareColumn(view, scheme) {
-    this._schemeOverride = scheme; // force resolvedCanvasScheme() while this column's scene + bg resolve
-    const bg = this.canvasBg();
-    const scene = this._canvasScene(view);
-    this._schemeOverride = null;
-    return h(
-      "div",
-      { class: "compare-col canvas-scheme-" + scheme, style: "--canvas-bg:" + bg },
-      h("div", { class: "compare-col-label" }, scheme === "dark" ? "Dark" : "Light"),
-      scene,
-    );
+    return this._schemeColumn(scheme, scheme === "dark" ? "Dark" : "Light", () => this._canvasScene(view));
   }
 
 
@@ -1489,11 +1422,11 @@ export class ColorSectionImpl {
     ghost.classList.add("drag-ghost");
     ghost.classList.remove("sel"); // the lifted clone isn't the selection ring
     // The ghost is re-parented to the HOST (for viewport-fixed positioning), but the row it clones
-    // lives in the CANVAS, whose color-scheme (the ◐ preview toggle) is independent of the app chrome.
-    // Pin the canvas's resolved scheme on the ghost so its light-dark() tokens (--ink, --panel, …)
-    // resolve in the mode it visually belongs to, not the host's (else a light-canvas row dragged while
-    // the chrome is dark renders dark-mode text on the light row).
-    ghost.style.colorScheme = this.resolvedCanvasScheme();
+    // lives in a scene COLUMN, whose color-scheme is independent of the app chrome. Pin the source row's
+    // column scheme on the ghost so its light-dark() tokens (--ink, --panel, …) resolve in the mode it
+    // visually belongs to, not the host's (else a light-column row dragged while the chrome is dark
+    // renders dark-mode text on the light row).
+    ghost.style.colorScheme = this._schemeOfColumn(srcRow.closest(".compare-col"));
     ghost.style.width = rect.width + "px";
     ghost.style.height = rect.height + "px";
     ghost.style.transform = `translate(${rect.left}px, ${rect.top}px)`;

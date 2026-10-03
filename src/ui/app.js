@@ -94,21 +94,19 @@ class HctApp extends HTMLElement {
     this.segment = "palette"; // right-pane segmented control: palette | global | roles
     this.panesLeft = true; // left analysis rail shown (ui-session state, like segment, never persisted)
     this.panesRight = true; // right inspector shown
-    this.canvasTheme = "system"; // canvas preview color-scheme: system (follow OS) | light | dark, INDEPENDENT of app chrome ◐
-    this.colorMode = "system"; // Color section value-mode control: system (follow OS, until an explicit pick) | light | dark | both (Compare), persisted (app prefs)
     this.canvasView = "palettes"; // canvas content: palettes (the ramps) | scrims | mapping (the role→raw table) | radix (the 12-step Park UI ladder)
     this.section = "color"; // editor section: color | typography | geometry, ui-session, routes the whole editor (never persisted)
     this.typeSpecMode = "specimen"; // typography canvas: specimen (live faces) | tokens (editable token matrix: Base + breakpoints), type-section sub-state
     this.typeMode = "base"; // active Typography breakpoint mode: "base" | a doc.type.modes[].id | "compare" (Phase 5/5.3), ui-session
-    this._schemeOverride = null; // a color Compare column forces its own canvas scheme while its scene builds (color.js), transient; declared here so a scan of this constructor finds every ui-session field, not just the two that claim to mirror it
-    this._typeModeOverride = null; // a Compare column forces its breakpoint mode ("base"|id) while its scene builds (mirrors _schemeOverride), transient
+    this._columnScheme = null; // the scheme ("light"|"dark") of the scene column or example wrapper being built (_inScheme), read only by resolvedCanvasScheme(); transient, null between builds
+    this._typeModeOverride = null; // a Compare column forces its breakpoint mode ("base"|id) while its scene builds (the breakpoint axis of the column grid), transient
     this.stopsMode = "core"; // palette ramp density: core (19 display stops) | extended (25 EXPORT_STOPS)
     this.mapTextMode = false; // Mapping table raw-token editor: false = select menu, true = free text input
     this.viewport = { panX: 0, panY: 0, zoom: 1 };
     this.theme = "system"; // app chrome color scheme: system (follows OS) | light | dark
     this.motion = "system"; // animation preference: system (respect prefers-reduced-motion) | reduced (always minimal), app pref
     this.fontMode = "premium"; // rendering-reliability pref: premium (as-designed families) | google (every family google-fonts-safe, per src/engine/font-fallbacks.mjs), app pref, NOT doc-bound
-    this._loadAppPrefs(); // persisted APP prefs (theme/canvasTheme/motion/fontMode), loaded before setColorScheme below
+    this._loadAppPrefs(); // persisted APP prefs (theme/motion/fontMode), loaded before setColorScheme below
     this.exportOpen = false;
     this.exportTab = "css";
     // which token SYSTEMS the Download-All .zip + the Brand-Kit MCP bundle (export-time opt-in, all on
@@ -141,7 +139,7 @@ class HctApp extends HTMLElement {
     this.settingsSection = "mapping"; // which Settings nav item is active (left-nav page layout)
     this.geomSpecMode = "controls"; // geometry canvas: controls (live mock controls on the ramp) | tokens (editable token matrix: Base + breakpoints), geom-section sub-state
     this.geomMode = "base"; // active Geometry breakpoint mode: "base" | a doc.geometry.modes[].id | "compare" (Phase 5/5.3), ui-session
-    this._geomModeOverride = null; // a Compare column forces its breakpoint mode ("base"|id) while its scene builds (mirrors _schemeOverride), transient
+    this._geomModeOverride = null; // a Compare column forces its breakpoint mode ("base"|id) while its scene builds (mirrors _typeModeOverride), transient
     this.geomSegment = "ramp"; // right-pane Geometry inspector tab: ramp | radius | space (ui-session)
     this.geomSize = null; // the selected size in the ramp tab (null = none expanded), drives per-size Height tuning (the geometry analog of typeVoice)
     this.typeSegment = "scale"; // right-pane Typography inspector tab: scale | fonts | specimen (ui-session)
@@ -165,11 +163,11 @@ class HctApp extends HTMLElement {
     setColorScheme(this.theme); // flip the chrome's light-dark() tokens to the initial theme
     this._installKeyboard(); // editor-scoped keyboard shortcuts (guarded vs text inputs)
     this._bindRangeDrag(); // delegated pointer-capture drag for EVERY range slider (the native drag is broken in Figma's iframe)
-    // when the OS scheme flips while we follow it ("system"), re-render so the canvas preview's
-    // computed light/dark hex tracks it live (the chrome's light-dark() tokens update on their own).
+    // when the OS scheme flips while the chrome follows it ("system"), re-render so the chrome state
+    // that reads the theme (the header cycle's icon) tracks it (the chrome's light-dark() tokens update on their own).
     if (typeof matchMedia !== "undefined") {
       this._mqlScheme = matchMedia("(prefers-color-scheme: dark)");
-      this._onSchemeChange = () => { if (this.theme === "system" || this.canvasTheme === "system" || this.colorMode === "system") this.render(); };
+      this._onSchemeChange = () => { if (this.theme === "system") this.render(); };
       this._mqlScheme.addEventListener("change", this._onSchemeChange);
     }
     this.render();
@@ -292,18 +290,26 @@ class HctApp extends HTMLElement {
 
   _liveRefreshNow() {
     if (this.section !== "color") return; // type/geom have no live color-drag; their panes refresh on full render()
-    if (this.colorMode === "both") { this.render(); return; } // Compare's two scheme columns rebuild on a full render
     const view = projectView(this.doc);
     this._view = view;
 
-    // canvas scene rows, keep the .canvas-scene element (transform lives on it),
-    // swap only its children so swatches reflect the new colors live.
-    const scene = this.querySelector(".canvas-scene");
-    if (scene) scene.replaceChildren(this._canvasScene(view));
-
-    // canvas backdrop, lmin/lmax drive it, so repaint it as those sliders drag.
-    const area = this.querySelector(".canvas-area");
-    if (area) area.style.setProperty("--canvas-bg", this.canvasBg());
+    // canvas scene rows, keep the .canvas-scene element (transform lives on it) and each scheme
+    // column, swap only a column's scene so swatches reflect the new colors live, and repaint the
+    // column's backdrop (lmin/lmax drive it) under that column's own scheme. The Mapping table has no
+    // columns (one scene, no scheme).
+    const cols = this.querySelectorAll(".compare-col");
+    if (cols.length) {
+      for (const col of cols) {
+        const scheme = this._schemeOfColumn(col);
+        this._inScheme(scheme, () => {
+          col.style.setProperty("--canvas-bg", this.canvasBg());
+          col.replaceChildren(col.querySelector(".compare-col-label"), this._canvasScene(view));
+        });
+      }
+    } else {
+      const scene = this.querySelector(".canvas-scene");
+      if (scene) scene.replaceChildren(this._canvasScene(view));
+    }
 
     // right-pane example card, repaint its role colors live (no inputs inside it,
     // so this never touches the dragged slider sitting in .seg-body above it).
@@ -1495,34 +1501,39 @@ class HctApp extends HTMLElement {
   }
 
 
-  // canvas-preview color scheme, icon-only (sun/moon/auto), cycles system → light → dark.
-  // "system" follows the OS; INDEPENDENT of the app-chrome theme.
-  canvasThemeBtn() {
-    return btn(icon(SCHEME_ICON[this.canvasTheme] || "theme"), {
-      cls: "scheme-btn",
-      title: "Canvas preview scheme: " + this.canvasTheme + ", click to cycle system / light / dark",
-      ariaLabel: "Canvas preview scheme: " + this.canvasTheme + ", cycle system / light / dark",
-      onclick: () => {
-        this.canvasTheme = SCHEME_NEXT[this.canvasTheme] || "system";
-        this._saveAppPrefs(); // the header cycle is the same pref as Settings › Appearance
-        this.render();
-      },
-    });
+  // _inScheme, run `build` with the canvas scheme set to `scheme`: the ONE way a canvas color is
+  // resolved. A scene column (_schemeColumn) or an example wrapper (exampleSchemes) builds inside it,
+  // so every resolvedCanvasScheme() read lands in a column or wrapper, light and dark side by side.
+  _inScheme(scheme, build) {
+    this._columnScheme = scheme;
+    try { return build(); } finally { this._columnScheme = null; }
   }
 
 
-  // resolvedCanvasScheme, the concrete light/dark the canvas paints in: "system" maps to the OS
-  // preference (prefers-color-scheme), everything else is itself.
+  // resolvedCanvasScheme, the light/dark of the column or wrapper being built (_inScheme). There is no
+  // other source: outside a column or wrapper nothing paints in a canvas scheme (the tables sit on the
+  // chrome ground), so this is a plain read.
   resolvedCanvasScheme() {
-    if (this._schemeOverride) return this._schemeOverride; // a Compare column forces its own scheme while it builds
-    const osScheme = () => (typeof matchMedia !== "undefined" && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-    // the Color section's scheme is driven by its Mode control (system/light/dark); "both" renders Compare, and
-    // any non-column use (e.g. the right-pane example) falls back to a concrete scheme below.
-    if (this.section === "color" && (this.colorMode === "light" || this.colorMode === "dark")) return this.colorMode;
-    if (this.section === "color" && this.colorMode === "system") return osScheme();
-    if (this.section === "color" && this.colorMode === "both") return "light"; // a sensible single-scheme fallback off-canvas
-    if (this.canvasTheme === "system") return osScheme();
-    return this.canvasTheme;
+    return this._columnScheme;
+  }
+
+
+  // _schemeOfColumn, the scheme an already-built column (or ghost source) carries, for the in-place patch
+  // (_liveRefreshNow) and the drag ghost: the class _schemeColumn / exampleSchemes wrote.
+  _schemeOfColumn(el) {
+    return el.classList.contains("canvas-scheme-dark") ? "dark" : "light";
+  }
+
+
+  // _schemeColumn, one .compare-col of a scene: the scene `build()` returns, painted in `scheme` on its own
+  // near-edge --canvas-bg ground, under a label. Scenes render one column per (scheme, shown breakpoint).
+  _schemeColumn(scheme, label, build) {
+    return this._inScheme(scheme, () => h(
+      "div",
+      { class: "compare-col canvas-scheme-" + scheme, style: "--canvas-bg:" + this.canvasBg() },
+      h("div", { class: "compare-col-label" }, label),
+      build(),
+    ));
   }
 
 
@@ -1706,8 +1717,9 @@ class HctApp extends HTMLElement {
   }
 
 
-  // canvasBg, the canvas backdrop. When a palette is EXPLICITLY selected it's that palette's
-  // NEAR-EDGE color: its 125 stop in light preview, its 875 stop in dark (a faintly-hued near-edge
+  // canvasBg, the backdrop of the column or wrapper being built (the scheme _inScheme set). When a palette
+  // is EXPLICITLY selected it's that palette's NEAR-EDGE color: its 125 stop in a light column, its 875
+  // stop in a dark one (a faintly-hued near-edge
   // tone, so the backdrop carries a touch of the palette's own hue rather than washing to pure
   // white/black). Read from fullRamp, 125/875 are EXPORT-only half-steps, absent from the 19-stop
   // display `ramp`. Follows selection (selectPalette → render) and lmin/lmax. With NO explicit
@@ -1725,9 +1737,9 @@ class HctApp extends HTMLElement {
 
 
   // containerBg, a palette ROW container is tinted with that palette's OWN faintly-hued tone, so
-  // each card carries a wash of its palette. It tracks the CANVAS preview scheme (75 in light, 925
+  // each card carries a wash of its palette. It tracks the COLUMN's scheme (75 in light, 925
   // in dark, symmetric, mirroring canvasBg's 125/875): the row's name text is var(--ink), which
-  // resolves per the canvas-area's color-scheme (= canvasTheme), so a fixed light 75 in dark preview
+  // resolves per the column's color-scheme, so a fixed light 75 in a dark column
   // would land light text on a light card. Read from fullRamp, 75/925 are EXPORT-only half-steps,
   // absent from the 19-stop display ramp. Returns "" if absent, so the theme-aware CSS default holds.
   containerBg(vp) {
@@ -1756,12 +1768,7 @@ class HctApp extends HTMLElement {
   _tokensTableArea(label, table) {
     return h(
       "div",
-      {
-        class: "canvas-area canvas-scheme-" + this.resolvedCanvasScheme() + " is-table",
-        role: "group",
-        "aria-label": label,
-        style: "--canvas-bg:" + this.canvasBg(), // match the Mapping table ground (renderCanvasArea sets the same)
-      },
+      { class: "canvas-area is-table", role: "group", "aria-label": label }, // a table has no scheme: it sits on the chrome ground (as does the Mapping table)
       h("div", { class: "canvas-scene" }, table),
     );
   }
@@ -2035,12 +2042,28 @@ class HctApp extends HTMLElement {
   }
 
 
-  // exampleArtifacts, the pinned preview gallery: the role card + the native slider + the native form set,
-  // each painted from the selected palette's roles. All input-free demos, so liveRefresh can replaceChildren.
-  // Collapsed to the FIRST artifact (the role card) until expanded, the slider + form are revealed by the
-  // toggle. examplesExpanded is ui-session view state (not doc-bound), so the toggle just flips it + refreshes.
+  // exampleSchemes, the pinned examples of every section, once per scheme: two .example-scheme wrappers,
+  // light then dark, each building `build()` inside its own scheme on its own --canvas-bg ground. The one
+  // place a pane example resolves a scheme (the same rule as a scene column, _schemeColumn).
+  exampleSchemes(build) {
+    return ["light", "dark"].map((scheme) => this._inScheme(scheme, () => h(
+      "div",
+      { class: "example-scheme canvas-scheme-" + scheme, style: "--canvas-bg:" + this.canvasBg() },
+      ...build(),
+    )));
+  }
+
+
+  // exampleArtifacts, the pinned preview gallery: per scheme (exampleSchemes) the role card + the native
+  // slider + the native form set, each painted from the selected palette's roles. All input-free demos,
+  // so liveRefresh can replaceChildren. Collapsed to the FIRST artifact (the role card) per wrapper until
+  // expanded, the slider + form are revealed by the single toggle below the wrappers. examplesExpanded is
+  // ui-session view state (not doc-bound), so the toggle just flips it + refreshes.
   exampleArtifacts(view) {
-    const rest = [this.exampleSlider(view), this.exampleForm(view)];
+    const schemes = this.exampleSchemes(() => [
+      this.exampleCard(view),
+      ...(this.examplesExpanded ? [this.exampleSlider(view), this.exampleForm(view)] : []),
+    ]);
     const toggle = h(
       "button",
       {
@@ -2049,9 +2072,9 @@ class HctApp extends HTMLElement {
         "aria-expanded": this.examplesExpanded ? "true" : "false",
         onclick: () => { this.examplesExpanded = !this.examplesExpanded; this.liveRefresh(); },
       },
-      this.examplesExpanded ? "Show less" : `Show ${rest.length} more example${rest.length === 1 ? "" : "s"}`,
+      this.examplesExpanded ? "Show less" : "Show 2 more examples",
     );
-    return [this.exampleCard(view), ...(this.examplesExpanded ? rest : []), toggle];
+    return [...schemes, toggle];
   }
 
 
@@ -2274,7 +2297,7 @@ class HctApp extends HTMLElement {
     this.render();
   }
 
-  // ── persisted APP prefs (theme · canvas preview · motion · font mode), per-USER, not doc-bound →
+  // ── persisted APP prefs (theme · motion · font mode), per-USER, not doc-bound →
   // localStorage, versioned like the apply consent. Absent/invalid keys keep the constructor
   // defaults, so a fresh profile (or Figma's session-scoped iframe storage) boots identically to
   // pre-prefs builds.
@@ -2287,21 +2310,17 @@ class HctApp extends HTMLElement {
       const p = JSON.parse(raw);
       const scheme = (v) => (v === "light" || v === "dark" || v === "system" ? v : null);
       if (scheme(p.theme)) this.theme = p.theme;
-      if (scheme(p.canvasTheme)) this.canvasTheme = p.canvasTheme;
-      if (scheme(p.colorMode) || p.colorMode === "both") this.colorMode = p.colorMode;
       if (p.motion === "reduced" || p.motion === "system") this.motion = p.motion;
       if (p.fontMode === "premium" || p.fontMode === "google") this.fontMode = p.fontMode;
     } catch { /* storage unavailable / corrupt record → defaults */ }
   }
 
   _saveAppPrefs() {
-    try { localStorage.setItem(this._appPrefsKey(), JSON.stringify({ theme: this.theme, canvasTheme: this.canvasTheme, colorMode: this.colorMode, motion: this.motion, fontMode: this.fontMode })); } catch { /* storage unavailable */ }
+    try { localStorage.setItem(this._appPrefsKey(), JSON.stringify({ theme: this.theme, motion: this.motion, fontMode: this.fontMode })); } catch { /* storage unavailable */ }
   }
 
   _resetAppPrefs() {
     this.theme = "system";
-    this.canvasTheme = "system";
-    this.colorMode = "system";
     this.motion = "system";
     this.fontMode = "premium";
     try { localStorage.removeItem(this._appPrefsKey()); } catch { /* storage unavailable */ }

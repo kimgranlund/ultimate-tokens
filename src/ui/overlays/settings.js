@@ -151,12 +151,10 @@ export class SettingsMixinImpl {
   _settingsPanelAppearance() {
     const schemes = [{ id: "system", label: "System" }, { id: "light", label: "Light" }, { id: "dark", label: "Dark" }];
     return {
-      title: "Appearance", desc: "How the editor chrome and the canvas preview render. These preferences are remembered on this device.",
+      title: "Appearance", desc: "How the editor chrome renders. These preferences are remembered on this device.",
       body: [this._settingsGroup(null, [
         this._settingRow("App theme", "The editor chrome. System follows your OS.", schemes, this.theme,
           (id) => { this.theme = id; this.dataset.theme = id; setColorScheme(id); this._saveAppPrefs(); this.render(); }, "setapptheme"),
-        this._settingRow("Canvas preview", "The scheme the canvas previews in, independent of the chrome.", schemes, this.canvasTheme,
-          (id) => { this.canvasTheme = id; this._saveAppPrefs(); this.render(); }, "setcanvastheme"),
         this._settingRow("Motion", "Editor animations and transitions. System respects your OS reduce-motion setting; Reduced keeps them minimal always.",
           [{ id: "system", label: "System" }, { id: "reduced", label: "Reduced" }], this.motion,
           (id) => { this.motion = id; this._saveAppPrefs(); this.render(); }, "setmotion"),
@@ -165,7 +163,7 @@ export class SettingsMixinImpl {
           (id) => { this.fontMode = id; this._saveAppPrefs(); this.render(); }, "setfontmode"),
         h("div", { class: "settings-row" },
           h("div", { class: "settings-row-text" }, h("b", {}, "Reset app preferences"),
-            h("small", {}, "Theme, canvas preview, motion, and font rendering return to their defaults; the saved record is cleared. Documents are untouched.")),
+            h("small", {}, "Theme, motion, and font rendering return to their defaults; the saved record is cleared. Documents are untouched.")),
           btn("Reset to defaults", { cls: "settings-reset", ariaLabel: "Reset app preferences to defaults", onclick: () => this._resetAppPrefs() })),
       ])],
     };
