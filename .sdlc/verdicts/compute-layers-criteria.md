@@ -2,18 +2,19 @@
 kind: criteria-review
 plan: compute-layers
 seat: verifier
-pass: 2
+pass: 3
 ticket: none yet
 written: 2026-10-03
 ---
 
-# compute-layers criteria review · pass 2 · 🔴 at `bc7d7597`
+# compute-layers criteria review · pass 3 · 🔴 at `2d86b64e`
 
-Current state: pass 2 🔴 at `bc7d7597` (revision 1, R100 to R102 folded in). Every pass 1 red is fixed, and Phase 1 (U1, U2, rows C1.1 to C2.4) is all 🟢. Five later rows are not checkable as written: C3.2's count has no printed source, C4.2 names no apply path and presets go through the same `hydrate` that C4.3 pins to version 1, C4.3's and C4.4's controls cannot run at U4 (every layer is still version 1 and nothing is frozen until U5), and C4.5's format list does not match its count and CSS carries no schema stamp to sit beside. Pass 1 follows as history.
+Current state: pass 3 🔴 at `2d86b64e` (revision 2). The five pass 2 reds (C3.2, C4.2 to C4.5) are fixed and checkable, and C5.1's count is now relative. One new red: C5.4 now says earlier migration steps stay untouched, yet still expects `baseIntensity` on exactly one line in `src/` outside the generated asset; the untouched `stampIntensity` step in `persist.js` keeps the name on at least two more lines, so a build that follows the row reds it. Pass 2 and pass 1 follow as history.
 
 verdict: 🔴
-sha: bc7d7597
+sha: 2d86b64e
 
+Pass 2 lines: `verdict: 🔴` at `bc7d7597`.
 Pass 1 lines: `verdict: 🔴` at `567de3a8`.
 
 ## Pass 1 · 🔴 at `567de3a8`: draft, three Phase 1 reds
@@ -90,3 +91,25 @@ Plan and ADR draft at `bc7d7597` (revision 1), all rows, graded by the seat dire
 4. 🔴 C4.3 and C4.4: give each a control that runs at U4, using the synthetic two-version layer, and hash it.
 5. 🔴 C4.5: name the exporter functions and count, and rule CSS's missing stamp.
 6. 🟡 C5.1's `6` is a prediction across two in-flight `tonal.js` units; C5.4 reaches into an older migration step.
+
+## Pass 3 · 🔴 at `2d86b64e`: pass 2 reds fixed; C5.4 now contradicts itself
+
+verdict: 🔴
+sha: 2d86b64e
+
+Revision 2 at `2d86b64e`, graded by the seat directly on `git diff bc7d7597 2d86b64e -- .sdlc/plans/compute-layers.md` (C3.2, C4.2 to C4.5, C5.1, C5.4, the head line and the revision row). Facts read with `git show 2d86b64e:<path>`. Rows not listed carry over 🟢 from pass 2.
+
+| # | State | Check I would run | Why / what to change, and the control |
+|---|---|---|---|
+| C3.2 | 🟢 | the test's `presets N` line | `N` is now stated: the sum of `PRESETS.length` (`343` at `bc7d7597`, my census) plus 1, so `344`. Control bites |
+| C4.2 | 🟢 | the engine test with `test-layer` registered; `grep -n "presetDoc(" src/ui/app.js` | `presetDoc` = `pinLatest(hydrate(preset))` resolves the pass 2 clash with C4.3, and the control (`hydrate` alone) reds on the synthetic `test-layer` reading `1`. `openConfigAsSet` serves four callers today (the preset tile, the saved file, the Figma read, the project load); the row correctly scopes `presetDoc` to the preset tile. Note: `presetDoc` in `src/engine/layers.mjs` imports `hydrate` from `src/ui/persist.js`. That file is DOM-free (its only `window.` and `localStorage` hits are in a comment, and it imports only `src/engine/` modules), so purity holds, but the engine gains its first import from `src/ui/`; worth one line in the ADR |
+| C4.3 | 🟢 | the engine test; control `hydrate` pins latest | the control now runs at U4 through `test-layer` |
+| C4.4 | 🟢 | the test; append a comment to `test-layer@1.mjs` | the hash half has a file to bite on at U4 |
+| C4.5 | 🟢 | the test, `10/10` | ten functions are named. `exportPandaModule(preset)` and `exportRadixModule(preset, opts)` take the preset objects `exportPanda` and `exportRadix` return, not a document, and `exportDesignSystemBundle` takes `(state, typeSc, geomSc, opts)`; "on `defaultDocument()`" means through those producers, which the test can do. The CSS stamp is now ruled |
+| C5.1 | 🟢 | the two greps | relative to the merge base, as pass 2 suggested |
+| C5.4 | 🔴 | `grep -rn "baseIntensity" src/ --exclude=describe-mcp-assets.js` | The new scope note says "earlier migration steps are untouched", but `persist.js` at `2d86b64e` carries `baseIntensity` in the `stampIntensity` step (the `typeof s.baseIntensity !== "number"` test and the `{ ...s, baseIntensity: 100 }` stamp) and its comment above, besides the live `DOMAINS` field, its comments and the `hydrate` clamp. Left untouched, that step alone keeps 2 code lines plus 1 comment, so the grep prints at least 4 lines, not 1. Either let the earlier steps change (the pass 2 note), or keep them and expect the `RENAME_MAPS` entry plus the named `stampIntensity` lines (for example, grep outside the migration table, or an exact line list) |
+
+### Findings
+
+1. 🔴 C5.4: "earlier steps untouched" and "1 line" cannot both hold; pick one and restate the Expected.
+2. 🟡 C4.2: the engine's first import from `src/ui/` (`hydrate`), DOM-free today; state it in the ADR so a later `persist.js` edit knows the engine depends on it staying pure.
