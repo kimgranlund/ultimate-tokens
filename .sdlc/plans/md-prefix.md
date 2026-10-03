@@ -45,7 +45,7 @@ Geometry families under the root (all follow): `size`, `radius`, `space`, `inset
 
 - [x] U1 (S) Preset, hydrate rewrite (a v7 RENAME_MAPS entry), schema bump, emitted prose, the stale `maintaining-brand-kit-mcp` references (`foundations.md`, `best-practices.md`: schema and server version lines), and `docs/reference/references/knowledge-02-tonal-scale.md` section 8.4 (the persisted schema number): settings.js triple, persist.js, `EXPORT_SCHEMA_VERSION`, `SERVER.version`, comments, ds-export prose, tests, regenerated assets (builder-l2)
 - [x] U2 (S) Records: consumer plugin, geometry-system skill, CHANGELOG, marketing corpus via `marketing-manager-agent` (builder-l1)
-- [ ] U3 (S) · trivial lane · Consumer plugin 0.2.2: `plugin/ultimate-tokens/.claude-plugin/plugin.json` (version, and the description's voice count: `fifteen-voice`, matching the README, the typography skill and `src/engine/type.mjs`) and the CHANGELOG 0.2.2 line (it names the first publish since 0.2.1 and the breaking #792 prime rename). Pass 2 after pre-land pass 2 (builder-l3)
+- [x] U3 (S) · trivial lane · Consumer plugin 0.2.2: `plugin/ultimate-tokens/.claude-plugin/plugin.json` (version, and the description's voice count: `fifteen-voice`, matching the README, the typography skill and `src/engine/type.mjs`) and the CHANGELOG 0.2.2 line (it names the first publish since 0.2.1 and the breaking #792 prime rename). Pass 2 after pre-land pass 2 (builder-l3)
 
 ### U1 criteria
 
