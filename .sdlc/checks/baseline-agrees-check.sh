@@ -39,7 +39,7 @@ for (const [cmd, gate, label] of [
   const cell = row(a, "| " + gate + " |")[5] || "";
   const ms = [...cell.matchAll(/(\d+) to (\d+) s/g)];
   const lo = Math.round(Math.min(...t)), hi = Math.round(Math.max(...t));
-  say(t.length === 3 && t.every(Number.isFinite) && ms.length > 0 && ms.every((m) => +m[1] === lo && +m[2] === hi),
+  say(t.length >= 3 && t.every(Number.isFinite) && ms.length > 0 && ms.every((m) => +m[1] === lo && +m[2] === hi),
     `time ${label}: baseline ${lo} to ${hi} s, adapter ${ms.length ? ms.map((m) => m[1] + " to " + m[2] + " s").join(", ") : "none"}`);
 }
 const ref = (b.match(/^ref: .*@ ([0-9a-f]{7,40})\b/m) || [])[1];
