@@ -2,18 +2,19 @@
 kind: criteria-review
 plan: compute-layers
 seat: verifier
-pass: 5
+pass: 6
 ticket: 788
 written: 2026-10-03
 ---
 
-# compute-layers criteria review · pass 5 · 🟢 at `9378c1bb`
+# compute-layers criteria review · pass 6 · 🔴 at `bc174a15`
 
-Current state: pass 5 🟢 at `9378c1bb` (revision 4, ticket #788). C4.5 now expects `EXPORT_SCHEMA_VERSION` at U4's merge-base value plus 1, which holds whichever of prime-name #789 and this plan lands first; every row C1.1 to C5.6 stays checkable. The plan is mobilizable on criteria; U3 to U5 keep their stated waits. Passes 4 to 1 follow as history.
+Current state: pass 6 🔴 at `bc174a15` (revision 5, ticket #788). C5.6's new control is live. C3.3's new control names a perturbation point the identity check never reads, so it can come out dead the same way C1.4's did. One-line fix in the Pass 6 section. U3 is not to be cut on this revision; U4 and U5 rows are unaffected. Passes 5 to 1 follow as history.
 
-verdict: 🟢
-sha: 9378c1bb
+verdict: 🔴
+sha: bc174a151c4aaa8883099e484d348d94581d0384
 
+Pass 5 lines: `verdict: 🟢` at `9378c1bb`.
 Pass 4 lines: `verdict: 🟢` at `14a9e3ce`.
 Pass 3 lines: `verdict: 🔴` at `2d86b64e`.
 Pass 2 lines: `verdict: 🔴` at `bc7d7597`.
@@ -141,3 +142,14 @@ Revision 3 at `14a9e3ce`, graded by the seat directly on `git diff 2d86b64e 14a9
 
 - 🟢 C4.5 agrees with prime-name C1.6 (merge-base plus 1), so the two plans cannot both claim 4.
 - 🟡 C4.5's first control says "exit non-zero", but an engine test inside `npm test` cannot read the merge-base; the red comes from the verifier's base-versus-HEAD comparison, not from the test's exit. The check still fails as it should; the wording should not lead a builder to put git calls in the test.
+
+## Pass 6 · 🔴 at `bc174a15`: C3.3 control aims at compute's output, which IDENT never reads
+
+Plan at `bc174a15` (revision 5, owner option A in `.sdlc/questions/compute-layers-ident-control.md`). The diff from `9378c1bb` changes only the C3.3 and C5.6 control columns, the U1 tick and the revision row; every other row stands as graded at pass 5. Graded by the Verifier seat directly. The seat read `identityRender` in `scripts/report-preset-fidelity.mjs:302` at `bc174a15`: its head side calls `engine.rampChromaOf(pal, doc)` from `src/ui/model.mjs` and `engine.paletteStops` from `src/engine/tonal.js`, never `compute(doc)`, `projectView` or `derivedAll`.
+
+| # | State | Check I would run | Why / what to change, and the control |
+|---|---|---|---|
+| C3.3 | 🔴 | `IDENT`, `npm test`, `npm run build`; control as written: scale "the chroma `compute(doc)` returns" by `1.05` | IDENT reads `model.rampChromaOf`, not `compute(doc)`. Whether scaling compute's returned chroma moves IDENT depends on wiring U3 is not required to build: if `compute` calls the `group-chroma` run itself and `model.rampChromaOf` stays a direct wrapper, the scaled output never reaches IDENT and it prints `0`, a dead control again. Fix: name the shared run, `rampChromaOf` in `src/engine/resolve.mjs` (the `group-chroma` layer's `run` per C2.1, which `model.rampChromaOf` calls as `rampChromaOfPure`), and expect a nonzero count. Seat's own run at the U1 head `48b7b5ff`: `src/engine/resolve.mjs:18` changed to `return 1.05 * (g.baseChroma ?? controls.baseChroma);`, `IDENT --only default-kit` printed `117 differing cells`; restored, porcelain 0. A note for the plan: IDENT cannot see a regression inside `compute` itself; that is C3.2's job, and C3.3 should not claim more |
+| C5.6 | 🟢 | `npm test`, `npm run build`, `IDENT`; control: scale `ramp@2`'s output chroma by `1.05`, nonzero count | By C5.1, `ramp@2` is `paletteStops` in `src/engine/tonal.js`, which IDENT's head side calls directly (`engine.paletteStops`, `report-preset-fidelity.mjs:310`), so the perturbation reaches it whatever U5 wires. The `117` is cited as the U1-head equivalent and the Expected is "a nonzero count", which is right |
+
+C1.4 itself keeps its written control (the owner chose not to rewrite it; C1.2 pins the default), as the U1 verdict `.sdlc/verdicts/compute-layers-U1.md` records.
