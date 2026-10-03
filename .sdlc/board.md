@@ -148,3 +148,5 @@ Orchestrator-only. Rows edited in place. The five loose `adopt-hygiene-*` fragme
 | compute-layers U5 R102 removals | #788 | M | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/compute-layers.md | after U4 |
 | prime-name U1 engine emitters, tests, generated assets | #789 | S | ⚪ | 0 | orchestrator | pn-U1-builder-l2-p1 (builder-l2; reviewer-l3; verifier-l2) | unit/pn-U1 | .worktrees/pn-U1 | .sdlc/plans/prime-name.md | 🔵 builder-l2 building; schema bump vs compute-layers U4 (C4.5 says 4) |
 | prime-name U2 records | #789 | S | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/prime-name.md | after U1 |
+| md-prefix U1 preset, hydrate rewrite, schema bump, assets | #791 | S | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/md-prefix.md | waits for prime-name #789 to land; then cut plan/md-prefix off origin/main; builder-l2, reviewer-l3, verifier-l2 |
+| md-prefix U2 records | #791 | S | ⚪ | 0 | orchestrator | none | none | none | .sdlc/plans/md-prefix.md | after U1; builder-l1 and marketing-manager-agent |

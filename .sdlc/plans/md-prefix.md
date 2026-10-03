@@ -1,6 +1,6 @@
 ---
-status: approved (revision 1)
-ticket: none yet (minted on approval)
+status: approved
+ticket: 791
 priority: P2
 lane: naming-scheme (`src/ui/overlays/settings.js`, `src/engine/ds-export.js` prose, comments in `src/engine/{exports.js,type.mjs,geometry.mjs}` and `src/ui/overlays/drawer.js`, `test/engine/{exports,type,geometry}.mjs`, `test/ui/{persist,headless-boot}.mjs`, `src/ui/persist.js` (Q1 A), `src/engine/exports.js` `EXPORT_SCHEMA_VERSION` and `mcp/brand-kit-core.mjs` `SERVER.version` (Q2 B), `plugin/ultimate-tokens/`, `.claude/skills/geometry-system/`, `CHANGELOG.md`, `docs/marketing/`; regenerated `figma/plugin/ui.html`, `src/ui/describe-mcp-assets.js`)
 size: S+S (2 points)
@@ -79,3 +79,9 @@ The existing naming-scheme note sits inside `## [Unreleased]`, so it is rewritte
 ## 5. Sequencing against prime-name #789
 
 File overlap: `src/engine/exports.js` (comment at `:415` only), `src/engine/ds-export.js` (prose at `:766`, `:1557`), `test/engine/exports.mjs`, `CHANGELOG.md`, regenerated `figma/plugin/ui.html` and `src/ui/describe-mcp-assets.js`. The hunks are disjoint but the generated assets always conflict. Land after #789: cut `plan/md-prefix` off `origin/main` once #789 merges, then regenerate. The merge-base rule (C1.9) stays correct in any order with #789 and compute-layers #788.
+
+## Revisions
+
+| # | Date | Change |
+|---|---|---|
+| 2 | 2026-10-03 | Orchestrator, mobilization: ticket 791 minted; frontmatter status normalized to `approved`; no criterion changed |
