@@ -1,0 +1,35 @@
+---
+kind: verdict
+plan: compute-layers
+unit: U1
+seat: verifier
+pass: 1
+ticket: "#788"
+written: 2026-10-03
+---
+
+# compute-layers U1 · pass 1 · 🟡 at `48b7b5ff`
+
+verdict: 🟡
+sha: 48b7b5fffaba9212fc6215dc1e8d5140a200569d
+
+`unit/cl-U1` at `48b7b5ff`, merge-base `d1862f91`, against `.sdlc/plans/compute-layers.md` C1.1 to C1.4 (criteria 🟢 at pass 5, `9378c1bb`) plus ADR-028, Build and Smoke. Evidence run: verifier-l2 (opus) in a throwaway clone with a merge-base worktree; `npm test`, `npm ci && npm run build` and `npm run smoke` once each (the reviewer ran no build). The builder was grade l3 (sonnet), so the checker sits outside its family. The seat ran its own IDENT control (row C1.4). Handoff and review passed `verdict.py check`; neither was used as evidence. Every criterion is met as written. The verdict is 🟡, not 🟢, for three gaps the Orchestrator owns, none in the code: C1.4's written control cannot fail (Findings 1), `.sdlc/baseline.md` is made stale by this unit (Findings 2), and the ADR draft record is stale (Findings 3).
+
+## Rows
+
+| # | State | Evidence | Negative control |
+|---|---|---|---|
+| C1.1 | 🟢 | `grep -n "function controlsOf" src/ui/model.mjs src/engine/exports.js` prints nothing (rc 1); `grep -n "export function resolveControls" src/engine/controls.mjs` prints 1 line (`:15`); `import { resolveControls } from "../engine/controls.mjs"` at `src/ui/model.mjs:40` and `from "./controls.mjs"` at `src/engine/exports.js:34`. `controlsOf` survives in src/scripts/test/mcp/figma/binder only as the new test's own regex. | Same grep in the base worktree printed 2 lines (`src/ui/model.mjs:593`, `src/engine/exports.js:207`); `src/engine/controls.mjs` absent there. |
+| C1.2 | 🟢 | `node test/engine/controls.mjs` rc 0, 6 pass lines (`defaults`, `explicit`, `a-canvas`, `a-export`, `b-bytes` 9160 bytes, `one-resolver`); registered in `test/run.mjs` TESTS. Cross-tree (b) by my own script: HEAD raw `7a51f292e1a683db`/9160 = HEAD oklch = base oklch; base raw `67203d462ef17cca`/9159 = cam16. | (1) Test plus `controls.mjs` copied into the base worktree: rc 1, `FAIL a-export`, `FAIL b-bytes`, `FAIL one-resolver` (`a-canvas` passes, canvas already defaulted oklch); files removed with `git clean`, porcelain 0. (2) Injected `out.hueSpace = "cam16"` into `resolveControls` at HEAD: rc 1, 5 FAILs incl. `defaults: not DEFAULT_CONTROLS: hueSpace` and `stateOf hueSpace cam16`. So C1.2 catches the wrong default. Restored, porcelain 0. |
+| C1.3 | 🟢 | `npm test` rc 0, `all 55 test files passed`, 242 s, `git status --porcelain` 0 lines after. Build half graded under the Build row. | Adapter §1 corruption `sed -i '' 's/"scrim/"scrimX/' docs/reference/data/role-table.json` then `node test/engine/semantic.mjs` (the file adapter §1 names; ran the file, not a second full `npm test`, per the one-run instruction): rc 1, `FAIL  refs-canonical, ordered key set != canonical`, `grep -c FAIL` = 2. Restored with `git checkout`, porcelain 0. |
+| C1.4 | 🟡 | `IDENT` as written (`--identity-control --base d1862f91 --authored`): `0 differing cells` (0/94500 per mode corpus, 0/400 kit), rc 0; with `--only default-kit`: `0 differing cells`, rc 0. Met as written, but IDENT cannot see the resolver default (Findings 1); C1.2 is what pins it. | Seat's own control, IDENT does bite on a head-side render change: `rampChromaOf` in `src/ui/model.mjs:459` scaled by `1.05`, `--only default-kit` printed `117 differing cells`; restored, `0 differing cells`, porcelain empty. Worker: the plan's written control (cam16 in `resolveControls` plus a hueSpace-stripped scratch copy) still prints `0 differing cells`, because base `persist.hydrate` re-stamps `"oklch"` (`persist.js:561`) and `identityRender` feeds that doc's `hueSpace` to both sides. A scratch whose head side takes `hueSpace` from `resolveControls({ ...doc, hueSpace: undefined })` printed `280 differing cells` under the cam16 injection, `0` honest |
+| ADR-028 | 🟢 | `## ADR-028: Compute layers...` at `decision-records.md:841`, `## Quick map` at :899, exactly one `\| ADR-028 \|` Quick map row (last row, :917). Decisions 1, 2, 3, 3a, 4, 5 and the 7-row alternatives table match the draft at 5d188fb8 (revision 4, decision 4 reads "one `EXPORT_SCHEMA_VERSION` bump ... 5 if prime-name #789 lands first"); survey table carried whole. Status `ACCEPTED 2026-10-03` backed by `.sdlc/questions/compute-layers-approval.md` "Chosen: Approve plan + ADR". | Checked the draft's earlier wording (`git diff d1862f91 HEAD -- .sdlc/plans/compute-layers-adr-draft.md`: base said "moves from 3 to 4"); the ADR carries the revision 4 text, not the stale one. Line-diffed draft body vs ADR section: only house-format differences (bullet labels, indented table) plus the Consequences additions. |
+| Build | 🟢 | `npm ci` rc 0; `npm run build` rc 0 (`wrote figma/plugin/ui.html 4157.0 KB`); `shasum -a 256 -c` on `figma/plugin/ui.html` `OK` (unchanged); porcelain 0. | Deleted the `["controls", "src/engine/controls.mjs"]` MODS line in `scripts/bundle.mjs`, `npm run bundle`: rc 1, `bundle.mjs preflight found 1 registry problem`. Restored, porcelain 0. |
+| Smoke | 🟢 | `npm run smoke` rc 0 (rebuilt first), 43 `✓`, 0 `✗`, `SMOKE PASS, gallery · category · editor · export dialog all render in a real browser`; ui.html hash OK, porcelain 0. | Inserted `if (globalThis.document) throw new Error("smoke-neg")` at the top of `resolveControls`, `npm run smoke`: rc 1, `✗ gallery boots`, `SMOKE FAIL (3)`. Restored, re-ran `npm run build` (rc 0), ui.html hash OK, porcelain 0. |
+
+## Findings
+
+1. 🟡 Dead control on C1.4, confirming review finding 1. IDENT renders both sides from the base-hydrated doc, so a wrong `resolveControls` default never reaches it, and the plan's own C1.4 control cannot go nonzero. C3.3 and C5.6 say "as C1.4" and inherit it. The default is pinned only by C1.2 (5 FAILs under the cam16 injection). This seat graded C1.4 🟢 checkable at criteria pass 5 and missed it; the miss is the Verifier's. The plan needs C1.4's control rewritten (the head-side scratch above, or a pointer to C1.2) before C3.3 and C5.6 lean on it.
+2. 🟡 `bash .sdlc/checks/baseline-agrees-check.sh` is red at `48b7b5ff` with `STALE tests: baseline 54, test/run.mjs TESTS 55` and `STALE ui.html: baseline 4160.0 KB, tree 4157.0 KB`; `stale total: 0` on the merge-base. This unit introduced both, which refutes the review's "green". `.sdlc/baseline.md` needs the 55 and 4157.0 KB figures with a Correction line before the plan's pre-land record, which will grade it red otherwise.
+3. 🟡 `.sdlc/plans/compute-layers-adr-draft.md` front matter still reads `status: proposed, revision 1` and its Owner rulings still list "Still open: approval", though ADR-028 is ACCEPTED and appended at `decision-records.md:841`. Stale record, to repair in the next change that touches the plan.
+4. No shim added: `resolveControls` is one loop over `DEFAULT_CONTROLS` plus three `??` defaults, and the old `hueSpace ?? "cam16"` is gone. `docControls` keeps the `baseIntensity` to `baseChroma` rename, which U5 owns.
