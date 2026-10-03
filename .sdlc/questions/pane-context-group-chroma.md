@@ -16,6 +16,7 @@
 
 | Field | Value |
 |---|---|
-| Ruled by | owner, via the Conductor's AskUserQuestion, 2026-10-01 (R88, R89, R90) |
+| Ruled by | owner, via the Conductor's AskUserQuestion, 2026-10-01 (R88, R89, R90); revised by the owner 2026-10-03 (R94, R95, R96), which supersede R88 and R89. R90 stands |
 | Source, verbatim | "A: scale each palette (Recommended)" · side question: "Accept the shift" · chrome theme: "Keep chrome theme (Recommended)" |
-| Chosen | A, the group value scales the anchor's own saturation. Side: material default stays 30 and the shift is accepted (no migration), so `(gid3)` is rewritten, not kept. Chrome theme stays; only the canvas and preview scheme toggles go |
+| Chosen | R94: the slider is a magnitude damper on the whole anchored ramp, stop 500 included: chroma at every stop is the value R69's anchored path renders at group 100 times `g / 100`; at 100 the ramp equals today's byte for byte. R95: range 0 to 100, damp only, never above the sample. R96: `GROUP_DEFAULTS.material.baseChroma` moves to 100, with a schema-7 persist migration that rewrites a stored material value of exactly 30 to 100 in docs saved before schema 7 (plan section 2). Chrome theme stays (R90); only the canvas and preview scheme toggles go |
+| Superseded | 2026-10-01 answer: A as a ratio at the ramp ends with stop 500 pinned, material staying 30, no migration (R88, R89) |
