@@ -9,3 +9,11 @@
 | Question 1 | May the plan take revision 12 for U4 pass 2 as above, including the (b2) pin 7 to 8? |
 | Options Q1 | A (recommended): yes. · B: yes, but keep the pin at 7 and treat any (b2) real line above 7 as red (it reads 6, so this is the same outcome today). · C: no, change the damper instead (rejected by R94 and R98: it needs a floor exception) |
 | Default if unanswered | none: a revision past the cap needs the owner |
+
+## Answer
+
+| Field | Value |
+|---|---|
+| Asked | 2026-10-03, via AskUserQuestion |
+| Chosen | A: "Yes, pin 7 to 8 (Recommended)" |
+| Ruling | revision 12: U4 pass 2 as in Fix, including the (b2) pin 7 to 8 |
