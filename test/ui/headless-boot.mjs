@@ -3725,7 +3725,7 @@ flushRaf();
   app.setCanvasView("radix"); flushRaf();
 
   // test 4b: structural call-site gate, extract renderRadixScene's own body and prove it calls
-  // neither dragHandle( nor _wireReorder(; the SAME grep, run over renderRampsScene's body, must
+  // no dragHandle( call; the SAME grep, run over renderRampsScene's body, must
   // fire (>= 1) as the proven-firing negative control (I7) so a typo'd pattern can't pass vacuously.
   {
     const colorSrc = readFileSyncRX(colorJsPathRX, "utf8");
@@ -3741,9 +3741,9 @@ flushRaf();
     const rampsBody = methodBody("renderRampsScene");
     ok(radixBody != null, "(rx4b) renderRadixScene's body was found for extraction");
     ok(rampsBody != null, "(rx4b) renderRampsScene's body was found for extraction");
-    const hits = (body) => (body ? (body.match(/dragHandle\(|_wireReorder\(/g) || []).length : -1);
-    ok(hits(radixBody) === 0, `(rx4b) renderRadixScene's body calls neither dragHandle( nor _wireReorder( (got ${hits(radixBody)})`);
-    ok(hits(rampsBody) >= 1, `(rx4b) control: renderRampsScene's body DOES call dragHandle(/_wireReorder( (got ${hits(rampsBody)})`);
+    const hits = (body) => (body ? (body.match(/dragHandle\(/g) || []).length : -1);
+    ok(hits(radixBody) === 0, `(rx4b) renderRadixScene's body makes no dragHandle( call (got ${hits(radixBody)})`);
+    ok(hits(rampsBody) >= 1, `(rx4b) control: renderRampsScene's body DOES call dragHandle( (got ${hits(rampsBody)})`);
   }
 
   // test 5: normal state, Route B "Maison" (8 palettes authored; openConfigAsSet here has no
@@ -3877,7 +3877,7 @@ flushRaf();
   app.doc = defaultDocumentRXG(); app.sel = { kind: "palette", id: 0 }; app.history = []; app.future = [];
   app.setSection("color");
   app.selectPalette(0);
-  app.render(); flushRaf(); // render "palettes" first, reorder machinery live (_wireReorder sets this._rampStack)
+  app.render(); flushRaf(); // render "palettes" first, reorder machinery live (each row's dragHandle( wires _beginReorder)
 
   const rows = lightStack().querySelectorAll(".ramp-row[data-pi]");
   rows.forEach((r, idx) => { r._rect = { top: idx * 50, bottom: idx * 50 + 50, left: 0, right: 200, width: 200, height: 50 }; });
