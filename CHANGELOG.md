@@ -24,8 +24,12 @@ they landed on `main` and reference the squash-merged PR that introduced them.
   old prefix beside a custom one stays as typed. Consumers whose stylesheets reference the old
   variable names must rename them. Export schema is now `ultimate-tokens-brand-kit/5` and the brand-kit
   MCP server is 0.5.0.
-- **The consumer plugin `@ultimate-tokens/claude` is 0.2.2** (#791). Its skill text now names the `--md-*`
-  Material variables, so an agent reading the plugin binds to the variables the preset emits.
+- **The consumer plugin `@ultimate-tokens/claude` is 0.2.2** (#791). This is the first publish since 0.2.1. Its
+  skill text now names the `--md-*` Material variables (#791), so an agent reading the plugin binds to the
+  variables the preset emits. It also carries the breaking prime rename (#792): the color skill names the centre
+  step `--{pfx}-{n}-prime`, not `--{pfx}-{n}-prime-prime`. Other plugin changes since 0.2.1 include the
+  fifteen-voice type scale (#310), the four geometry pads (#316) and the "Radix" export name with its
+  token-referencing variant (#615, #684).
 - **The even-mode chroma floor reads its gamut reference per stop, at the stop's own hue before edge
   rotation** (#766). The floor's reference was one ceiling per ramp, read at one hue; it is now the largest
   ceiling at the pivot, 450 and 550 tones read at each stop's own hue: the CAM16 hue the per-stop OKLCH solve
