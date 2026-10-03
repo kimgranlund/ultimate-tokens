@@ -15,7 +15,7 @@
 
 | Field | Value |
 |---|---|
-| Chosen | open, default A |
+| Chosen | A accept, recorded in the handoff. Owner via AskUserQuestion, 2026-10-03: "Accept, record it (Recommended)" |
 
 # Question 2 pane-context U2 · from builder
 
@@ -35,4 +35,4 @@
 
 | Field | Value |
 |---|---|
-| Chosen | open, recommended B |
+| Chosen | B, grid to chroma 100, cite the 25 at-100 rises. Owner via AskUserQuestion, 2026-10-03: "Grid at chroma 100 (Recommended)" |
