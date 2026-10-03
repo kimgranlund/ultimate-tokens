@@ -99,27 +99,28 @@ try {
 
   mkdirSync(OUT, { recursive: true }); // ensure the screenshot dir exists before the first capture
 
-  // cross-scheme regression: dragging a row while the canvas preview is LIGHT but the app chrome is
-  // DARK must render the floating clone in the CANVAS scheme (light), its light-dark() tokens resolve
-  // where it visually belongs, not the dark host it's re-parented into. Only meaningful cross-scheme.
-  await evalJS(`(()=>{${el}.theme="dark";${el}.colorMode="light";${el}.render();})()`); await sleep(150);
-  const xsPt = await evalJS(`(()=>{const h=${el}.querySelector(".drag-handle");if(!h)return null;const r=h.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}})()`);
-  if (xsPt) {
-    await evalJS(`(()=>{const h=${el}.querySelector(".drag-handle");h.dispatchEvent(new PointerEvent("pointerdown",{clientX:${xsPt.x},clientY:${xsPt.y},bubbles:true,cancelable:true}));document.dispatchEvent(new PointerEvent("pointermove",{clientX:${xsPt.x},clientY:${xsPt.y + 60},bubbles:true,cancelable:true}));})()`);
-    await sleep(120);
-    ok(await evalJS(`(()=>{const g=${el}.querySelector(".drag-ghost");return !!g && getComputedStyle(g).colorScheme.includes("light")})()`), "drag-ghost resolves in the canvas scheme (light), not the dark host");
-    await evalJS(`document.dispatchEvent(new PointerEvent("pointerup",{bubbles:true,cancelable:true}))`); await sleep(80);
-  }
-  await evalJS(`(()=>{${el}.theme="system";${el}.canvasTheme="system";${el}.colorMode="light";${el}.render();})()`); await sleep(150);
-
-  // Color "Both" / Compare mode, the Mode control's third option renders the scene in Light + Dark
-  // side by side (two .compare-col, each forcing its own color-scheme) in one pannable canvas.
-  await evalJS(`${el}.setColorMode("both")`); await sleep(200);
-  ok(await evalJS(`(()=>{const c=${el}.querySelectorAll(".canvas-compare .compare-col");return c.length===2 && getComputedStyle(c[0]).colorScheme.includes("light") && getComputedStyle(c[1]).colorScheme.includes("dark")})()`), "Color Both mode renders a Light + Dark Compare (two scheme-forced columns)");
+  // Color renders Light and Dark side by side: two .compare-col, each forcing its own color-scheme, light first.
+  await evalJS(`(()=>{${el}.theme="system";${el}.setCanvasView("palettes");${el}.render();})()`); await sleep(200);
+  ok(await evalJS(`(()=>{const c=${el}.querySelectorAll(".canvas-compare .compare-col");return c.length===2 && getComputedStyle(c[0]).colorScheme.includes("light") && getComputedStyle(c[1]).colorScheme.includes("dark")})()`), "Color renders Light + Dark side by side (two scheme-forced columns, light first)");
   const cmpShot = await send("Page.captureScreenshot", { format: "png" });
-  writeFileSync(resolve(OUT, "compare.png"), Buffer.from(cmpShot.data, "base64"));
-  console.log("  · screenshot → smoke-out/compare.png");
-  await evalJS(`${el}.setColorMode("light")`); await sleep(120);
+  writeFileSync(resolve(OUT, "scheme-color.png"), Buffer.from(cmpShot.data, "base64"));
+  console.log("  · screenshot → smoke-out/scheme-color.png");
+
+  // cross-scheme regression, both ways: a drag lifts the floating clone into the host, so the clone must carry
+  // the SOURCE ROW's column scheme, not the app chrome's. Chrome dark + a drag from the light column gives a
+  // light clone; chrome light + a drag from the dark column gives a dark clone.
+  for (const [chrome, col, want] of [["dark", "light", "light"], ["light", "dark", "dark"]]) {
+    await evalJS(`(()=>{${el}.theme="${chrome}";${el}.render();})()`); await sleep(150);
+    const xsPt = await evalJS(`(()=>{const h=${el}.querySelector(".compare-col.canvas-scheme-${col} .drag-handle");if(!h)return null;const r=h.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}})()`);
+    ok(!!xsPt, `the ${col} column carries a drag handle`);
+    if (xsPt) {
+      await evalJS(`(()=>{const h=${el}.querySelector(".compare-col.canvas-scheme-${col} .drag-handle");h.dispatchEvent(new PointerEvent("pointerdown",{clientX:${xsPt.x},clientY:${xsPt.y},bubbles:true,cancelable:true}));document.dispatchEvent(new PointerEvent("pointermove",{clientX:${xsPt.x},clientY:${xsPt.y + 60},bubbles:true,cancelable:true}));})()`);
+      await sleep(120);
+      ok(await evalJS(`(()=>{const g=${el}.querySelector(".drag-ghost");return !!g && getComputedStyle(g).colorScheme.includes("${want}")})()`), `drag-ghost from the ${col} column resolves in the ${want} scheme under a ${chrome} chrome`);
+      await evalJS(`document.dispatchEvent(new PointerEvent("pointerup",{bubbles:true,cancelable:true}))`); await sleep(80);
+    }
+  }
+  await evalJS(`(()=>{${el}.theme="system";${el}.render();})()`); await sleep(150);
 
   // drag-to-reorder: a real handle-drag lifts a floating clone (.drag-ghost) and opens a dashed drop
   // placeholder (.drop-ghost) at the landing slot; the source row collapses.
@@ -190,7 +191,11 @@ try {
 
   // Typography SECTION: the app-header switcher flips this.section → the full 51-step canvas specimen.
   await evalJS(`${el}.setSection("typography")`); await sleep(300);
-  ok(await evalJS(`(()=>{return ${el}.section==="typography" && ${el}.querySelectorAll(".type-spec-line").length===${TYPE_STEPS} && ${el}.querySelectorAll(".type-spec-group").length===${VOICES}})()`), `Typography section shows the full ${TYPE_STEPS}-step specimen (13×3 + 2×6) across the ${VOICES} named voices`);
+  ok(await evalJS(`(()=>{return ${el}.section==="typography" && ${el}.querySelectorAll(".compare-col")[0].querySelectorAll(".type-spec-line").length===${TYPE_STEPS} && ${el}.querySelectorAll(".compare-col")[0].querySelectorAll(".type-spec-group").length===${VOICES}})()`), `Typography section shows the full ${TYPE_STEPS}-step specimen (13×3 + 2×6) across the ${VOICES} named voices`);
+  ok(await evalJS(`(()=>{const c=${el}.querySelectorAll(".canvas-compare .compare-col");return c.length===2 && getComputedStyle(c[0]).colorScheme.includes("light") && getComputedStyle(c[1]).colorScheme.includes("dark")})()`), "Typography renders Light + Dark side by side (two scheme-forced columns, light first)");
+  const typSchemeShot = await send("Page.captureScreenshot", { format: "png" });
+  writeFileSync(resolve(OUT, "scheme-typography.png"), Buffer.from(typSchemeShot.data, "base64"));
+  console.log("  · screenshot → smoke-out/scheme-typography.png");
   ok(await evalJS(`(()=>{return !!${el}.querySelector(".tyi-voices") && ${el}.querySelectorAll(".an-card").length>=4})()`), "Typography section: right-pane inspector + left-rail analysis cards render");
   // entering the section injects the SELF-HOSTED base64 @font-face <style> (TIER 1), no CDN, so the 4 base
   // faces render offline + in the Figma plugin (networkAccess:none).
@@ -235,7 +240,11 @@ try {
   // Geometry SECTION: the app-header switcher flips this.section → the full dimensional dataset (the 6-step
   // control ramp on the centering law + the radius + space ladders), left analysis rail + right inspector.
   await evalJS(`${el}.setSection("geometry")`); await sleep(300);
-  ok(await evalJS(`(()=>{return ${el}.section==="geometry" && ${el}.querySelectorAll(".geom-spec-line").length===${GEOM_SIZES}})()`), `Geometry section shows the ${GEOM_SIZES}-step control ramp (XS..2XL) on the canvas`);
+  ok(await evalJS(`(()=>{return ${el}.section==="geometry" && ${el}.querySelectorAll(".compare-col")[0].querySelectorAll(".geom-spec-line").length===${GEOM_SIZES}})()`), `Geometry section shows the ${GEOM_SIZES}-step control ramp (XS..2XL) on the canvas`);
+  ok(await evalJS(`(()=>{const c=${el}.querySelectorAll(".canvas-compare .compare-col");return c.length===2 && getComputedStyle(c[0]).colorScheme.includes("light") && getComputedStyle(c[1]).colorScheme.includes("dark")})()`), "Geometry renders Light + Dark side by side (two scheme-forced columns, light first)");
+  const geoSchemeShot = await send("Page.captureScreenshot", { format: "png" });
+  writeFileSync(resolve(OUT, "scheme-geometry.png"), Buffer.from(geoSchemeShot.data, "base64"));
+  console.log("  · screenshot → smoke-out/scheme-geometry.png");
   ok(await evalJS(`(()=>{return !!${el}.querySelector(".geom-spec .geom-shared-note") && ${el}.querySelectorAll(".an-card").length>=4 && (!!${el}.querySelector(".tyi-voices") || !!${el}.querySelector(".insp-title"))})()`), "Geometry section: left-rail analysis cards + right-pane inspector + the type-composition note render");
   ok(await evalJS(`(()=>{const b=${el}.querySelector(".geom-ctl");if(!b)return false;const r=b.getBoundingClientRect();return r.height>=18 && r.height<=80})()`), "Geometry specimen renders a real mock control box on the ramp");
   const geoShot = await send("Page.captureScreenshot", { format: "png" });
