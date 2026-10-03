@@ -284,6 +284,11 @@ ok(!app.exportOpen, "Esc closes the open drawer");
 app.selectPalette(2);
 fireKey("Escape");
 ok(app.sel.kind === "none", "Esc with no drawer deselects");
+// (b2) pane-context U1: Esc lands on Global; the tabs still win while the selection is unchanged.
+ok(app.segment === "global", `(b2) Esc deselect lands the right pane on segment "global" (got ${app.segment})`);
+app.selectPalette(2);
+app.setSegment("roles"); app.render(); flushRaf();
+ok(app.sel.kind === "palette" && app.segment === "roles", `(b2) setSegment("roles") with a palette selected survives a second render (got ${app.segment})`);
 
 // (e) typing in an input must NOT trigger shortcuts
 app.selectPalette(0);
@@ -529,11 +534,13 @@ const _selBg = app.canvasBg();
 const _areaJ = app.querySelector(".canvas-area");
 _areaJ.dispatch("click", { target: _areaJ });            // target = the area itself = empty canvas
 ok(app.sel.kind === "none", "(j6) clicking empty canvas clears the palette selection (kind:none)");
+ok(app.segment === "global" && !!findIn(app.querySelector(".right-pane"), (e) => e.dataset && "group-row" in e.dataset), `(j6-seg) empty-canvas click lands on segment "global" and the right pane carries a [data-group-row] (got ${app.segment})`);
 const _deBg = app.canvasBg();
 ok(/^#([0-9A-F]{2})\1\1$/.test(_deBg) && _deBg !== _selBg, `(j6b) deselected → default neutral gray backdrop (got ${_deBg}, was ${_selBg})`);
 // (j7) selecting a palette again restores its near-edge backdrop.
 app.selectPalette(0); app.render(); flushRaf();
 ok(app.canvasBg() === edgeHex("light"), `(j7) re-selecting restores the palette near-edge backdrop (got ${app.canvasBg()})`);
+ok(app.segment === "palette" && !!findIn(app.querySelector(".right-pane"), (e) => e.dataset && e.dataset.fk === "slider:Chroma"), `(j7b) selectPalette(0) from deselected lands on segment "palette" with the Chroma slider (got ${app.segment})`);
 // (j8) each palette ROW container is tinted with that palette's OWN stop, 75 in light canvas
 //      preview, 925 in dark (symmetric, so the var(--ink) name text stays readable on it). 75/925
 //      are EXPORT-only half-steps → read from fullRamp, not the 19-stop display ramp.

@@ -1,9 +1,9 @@
 ---
-status: approved
+status: done
 ticket: to mint at activation (Q0: `adapter.py create --title docs-stale-batch --label kind:chore --label lane:docs --size S`; the five issues #774, #773, #771, #770, #768 are closed by the same PR, `Closes` lines in the body)
 priority: P3
-lane: docs (`figma/README.md`, `.claude/skills/building-editor-sections/references/best-practices.md`, `scripts/gen-figma-binder-code.mjs` header comment, `figma/binder/figma-semantic-binder/code.js` header comment, `src/ui/model.mjs` comments, `src/ui/sections/typography.js` comments, `src/ui/sections/geometry.js` comments, `.sdlc/adapter.md` §6, plus the regenerated `figma/plugin/ui.html` and `src/ui/figma-plugin-assets.js` those comment edits move; no `lanes.json` exists, so the globs are this list)
-size: S+S+S+S+S (U1 to U4 and U6, 1 point each; 5 points; U5 dropped to gates-batch U2 at revision 2, the id is not reused)
+lane: docs (`figma/README.md`, `.claude/skills/building-editor-sections/references/best-practices.md`, `scripts/gen-figma-binder-code.mjs` header comment, `figma/binder/figma-semantic-binder/code.js` header comment, `src/ui/model.mjs` comments, `src/ui/sections/typography.js` comments, `src/ui/sections/geometry.js` comments, `.sdlc/adapter.md` §6, plus the regenerated `figma/plugin/ui.html`, `src/ui/figma-plugin-assets.js` and `src/ui/describe-mcp-assets.js` those comment edits and the #725 main merge move; revision 5 (U7) adds `figma/binder/migrations.mjs` (line 3 comment), the `.sdlc/baseline.md` ui.html row and the U1, U4 and U7 handoffs; no `lanes.json` exists, so the globs are this list)
+size: S+S+S+S+S+S (U1 to U4, U6 and U7, 1 point each; 6 points; U5 dropped to gates-batch U2 at revision 2, the id is not reused)
 labels: kind:chore · lane:docs · size:S · P3
 written: 2026-09-30
 head: ef630848 (`main`, the root checkout; every figure below was read here)
@@ -59,7 +59,8 @@ Every negative control runs in a throwaway `git clone -q --shared . "$F/neg"` ma
 - [x] U2 (S) `best-practices.md` says non-color scenes reset to a top-left inset (#773) · trivial lane · grade l1
 - [x] U3 (S) the two generator headers name `gen:figma-assets` as the wiring point; regenerated assets committed (#771) · grade l1
 - [x] U4 (S) `model.mjs` CONTROL_FONT comments and the two dead `only when ≥1 mode` comments match the deciders (#770) · grade l2
-- [ ] U6 (S) `.sdlc/adapter.md` §6 names the `## Claims` ledger and the P8 ran-block pair as the doc-unit standard (#768) · trivial lane · grade l1 · after #725 or per Q1
+- [x] U6 (S) `.sdlc/adapter.md` §6 names the `## Claims` ledger and the P8 ran-block pair as the doc-unit standard (#768) · trivial lane · grade l1 · after #725 or per Q1
+- [x] U7 (S) pre-land records (revision 5): the baseline `ui.html` row and its Correction, the U1 handoff rewritten to the P3 shape, the U4 ran block re-captured without ANSI, and the `migrations.mjs:3` overclaim (U7-1 to U7-6) · trivial lane · grade l1 · reviewer-l1
 
 ### U1: `figma/README.md` (#774) · trivial lane · l1
 
@@ -68,7 +69,7 @@ Three sentences change; nothing else in the file moves. (1) The ROLE_TABLE sente
 | Id | Criterion | Command | Expected | Negative control |
 |---|---|---|---|---|
 | U1-1 | the SCRIM constants are named beside ROLE_TABLE | `for n in SCRIM_STRENGTH_STEPS SCRIM_SUFFIXES SCRIM_KEYS; do grep -c "$n" figma/README.md; done` | `1` `1` `1` | at the merge base all three print `0` |
-| U1-2 | the gate count the README states equals the `DECLARED` length, and the fourth module is named | `R=$(grep -o -E '[0-9]+ gates' figma/README.md \| head -1 \| cut -d' ' -f1); D=$(node -e 'const s=require("fs").readFileSync("test/figma/binder.mjs","utf8");const m=s.match(/const DECLARED = \[([^\]]*)\]/);process.stdout.write(String(m[1].split(",").filter(Boolean).length))'); echo "$R $D"; [ "$R" = "$D" ] && echo SAME; grep -c 'mode-apply-plan.mjs' figma/README.md` | `19 19`, `SAME`, `2` or more | in the control clone, `sed -i '' 's/19 gates/18 gates/' figma/README.md` prints `18 19` and no `SAME`; the base prints ` 19` (no README number) and `1` for the module count |
+| U1-2 | the gate count the README states equals the `DECLARED` length, and the fourth module is named | `R=$(grep -o -E '[0-9]+ gates' figma/README.md \| head -1 \| cut -d' ' -f1); D=$(node -e 'const s=require("fs").readFileSync("test/figma/binder.mjs","utf8");const m=s.match(/const DECLARED = \[([^\]]*)\]/);process.stdout.write(String(m[1].split(",").filter(Boolean).length))'); echo "$R $D"; [ "$R" = "$D" ] && echo SAME; grep -c 'mode-apply-plan.mjs' figma/README.md` | `20 20` (revision 5: gates-batch added `renameparity`, so `DECLARED` and the README both read 20), `SAME`, `2` or more | in the control clone, `sed -i '' 's/19 gates/18 gates/' figma/README.md` prints `18 19` and no `SAME`; the base prints ` 19` (no README number) and `1` for the module count |
 | U1-3 | the hand-mirrored voice map and its gate are named; the overclaim is gone | `grep -c 'libraryparity' figma/README.md; grep -c 'executor path' figma/README.md; grep -c 'libraryparity' test/figma/plugin.mjs` | `1` or more, `0`, `1` or more | the base prints `0`, `1` (the phrase wraps across two README lines at the base, so the needle is `executor path`, one line) |
 | U1-4 | P1, P2, P3, P4, P5 | as above | as above | as above |
 
@@ -129,6 +130,21 @@ One dated amendment paragraph under `## 6. Records`, in the shape of the three a
 
 Steps. (1) Merge `origin/main` into the unit branch first (Q1). (2) Write the paragraph. (3) P2, P5. (4) Handoff with the ledger row of U6-4 and the ran block.
 
+### U7: pre-land records (revision 5, pre-land pass 1 🔴 at 1875f256) · trivial lane · l1
+
+The pre-land record `.sdlc/verdicts/docs-stale-batch-prepr.md` pass 1 is 🔴 on two records and carries two 🟡 this unit also closes. Order matters: fix the comment first (step 1), regenerate, then measure the bundle (step 2), so the baseline figure is read after the last byte that moves it.
+
+| Id | Criterion | Command | Expected | Negative control |
+|---|---|---|---|---|
+| U7-1 | `figma/binder/migrations.mjs` line 3 no longer claims every executor path receives the same maps; it says what the README says (the flagship `code.js` keeps its own hand-mirrored `LIBRARY_TYPE_VOICE_MAP`) | `grep -c 'every executor path' figma/binder/migrations.mjs; grep -c 'hand-mirrored' figma/binder/migrations.mjs` | `0`, `1` or more | at `1875f256` the first grep prints `1` |
+| U7-2 | the baseline `ui.html` row equals what `gen:figma-ui` writes at the unit head, with a dated Correction naming U3, U4 and U7 comment edits as the cause | `sh .sdlc/checks/baseline-agrees-check.sh \| tail -1; grep -c 'Correction (2026-.*docs-stale-batch' .sdlc/baseline.md` | `stale total: 0`, `1` or more | at `1875f256` the check prints `STALE ui.html: baseline 4159.4 KB, tree 4160.0 KB` and `stale total: 1` |
+| U7-3 | the U1 handoff carries the P3 shape: a `## Claims` ledger (`Claim \| Needle \| Anchor \| Kind`, bare-path anchors, at least three `present` rows for the three README sentences and one `absent` row for the removed `executor path` claim) and the P8 `~~~sh ran` / `~~~out ran` pair; P3 and P4 pass on it at its named head | P3 and P4 with `HF=.sdlc/handoffs/docs-stale-batch-U1.md` | P3 rows `4` or more, every needle found or absent as its kind says, no `path:line` anchor; P4 `SAME` | at `1875f256` `grep -c '^## Claims'` and `grep -c '^~~~sh ran'` on that file print `0`, `0` |
+| U7-4 | the U4 handoff's `~~~out ran` block holds no ANSI escape, so a non-TTY P4 replay prints `SAME` | `grep -c $'\x1b\\[' .sdlc/handoffs/docs-stale-batch-U4.md`; P4 with `HF=.sdlc/handoffs/docs-stale-batch-U4.md` | `0`; `SAME` | at `1875f256` the grep prints `2` or more and P4 differs on two lines |
+| U7-5 | only records and the one comment moved: the diff names `figma/binder/migrations.mjs`, the generated files that comment moves (if any), `.sdlc/baseline.md`, and the U1, U4 and U7 handoffs; no code token moves in `migrations.mjs` | `git diff --name-only $(git merge-base plan/docs-stale-batch HEAD)..HEAD`; `git diff $(git merge-base plan/docs-stale-batch HEAD)..HEAD -- figma/binder/migrations.mjs \| grep '^[-+][^-+]' \| grep -vc '^[-+] *//'` | that list only; `0` | a planted code edit in `migrations.mjs` in a control clone prints `1` on the second command |
+| U7-6 | P1, P2, P3, P4 (the U7 handoff), P5 | as above | as above | as above |
+
+Steps. (1) Edit `migrations.mjs:3`. (2) `npm test` (regenerates `ui.html`), read the `wrote figma/plugin/ui.html` figure, set the baseline row and add the Correction. (3) Rewrite the U1 handoff to the shape; re-capture U4's ran block with `NO_COLOR=1` or through a pipe. (4) U7 handoff with its own ledger and ran block.
+
 ### Dropped: the #776 ramp comments belong to gates-batch U2
 
 `.sdlc/plans/gates-batch.md` U2 (#776) owns the three `src/engine/type.mjs` comment sites (its P9 and U2-9: `each a 3-step SM/MD/LG ramp`, `each voice's SM/MD/LG are literal px`, `[SM, MD, LG] literal px`), so this plan does not touch `type.mjs`. Four sites gates-batch U2 does not list carry the same stale fact in `src/ui/sections/typography.js`: `all 33 steps, 11 named voices × 3 steps each` and `every voice is now a 3-step SM/MD/LG ramp, no more XL` in `renderTypographyScene`, and `the eleven named voices` twice (once there, once in the tokens matrix above it). Measured at ef630848: `makeVoices()` has 15 keys, `typeScale({})` renders 15 groups and 51 steps, `UI-control` and `UI-widget` carry 6 steps each; `grep -c -E 'every voice is now a 3-step\|11 named voices\|the eleven named voices\|all 33 steps' src/ui/sections/typography.js` prints `4`. They are handed to gates-batch U2 as discovered scope (the team lead dedupes; that plan's Revisions row records the widening), and this plan's U4 builder, who edits the same file, leaves them alone and names them in the handoff's Decisions.
@@ -169,6 +185,8 @@ One PR from `plan/docs-stale-batch` to `main`, title `docs(stale): five stale-do
 
 | Date | Change | Why |
 |---|---|---|
+| 2026-09-30 | closed on landing of PR #780 (squash 74850019), pre-land pass 2 🟢 at 2ebef86a | the plan landed; U1 to U4, U6 and U7 verified or lane-reviewed, #774 #773 #771 #770 #768 closed by the PR |
+| 2026-09-30 | revision 5, orchestrator, at 1875f256: U7 (S, trivial lane) closes the pre-land pass 1 🔴 (baseline `ui.html` row, U1 handoff shape) and its 🟡 on `migrations.mjs:3` and U4 ANSI; U1-2 Expected re-pointed to `20 20`; the lane line names `describe-mcp-assets.js` and the U7 paths | `.sdlc/verdicts/docs-stale-batch-prepr.md` pass 1, findings 1 to 5; the fifth revision row, inside the cap |
 | 2026-09-30 | revision 1, the plan as written at ef630848, status draft | the team lead's ask: one plan for #774, #773, #771, #770, #768 plus the #776 `type.mjs` comment |
 | 2026-09-30 | revision 4: U6-3 gets a true awk complement of §6, U6-4 becomes a pipe-split awk over the ledger with its own control, U6-1 greps the two shapes separately, U4-5 drops whitespace-only lines so a rewrapped comment is free; cells write `${B}:` | `.sdlc/verdicts/docs-stale-batch-checkability.md` pass 2 🔴, findings 1 to 3 |
 | 2026-09-30 | revision 3: U6 section and criteria restored (lost in the revision 2 splice), P3 carries the `F`/`HF` definitions and the bare-path anchor rule, U3-4 and U4-2 gain reddening controls | `.sdlc/verdicts/docs-stale-batch-checkability.md` 🔴 on U6, 🟡 on P3, U3-4, U4-2 |
