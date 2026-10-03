@@ -1,0 +1,35 @@
+---
+kind: verdict
+plan: pane-context
+unit: U3
+seat: verifier
+pass: 1
+ticket: "#785"
+written: 2026-10-03
+---
+
+# pane-context U3 · pass 1 · 🟢 at `30c0dccb`
+
+verdict: 🟢
+sha: 30c0dccb055b27e6a1f31ddeddaa31d68c1fc5d3
+
+`unit/pc-U3` at `30c0dccb`, base `383d3b21`, against `.sdlc/plans/pane-context.md` C3.1 to C3.4. Evidence run: verifier-l2 (opus) in a throwaway clone; `npm test`, `npm ci && npm run build` once each. The builder was grade l2 (sonnet), so the checker sits outside its family. The seat ran `npm run smoke` itself in the same clone, with its own negative control. Handoff and review passed `verdict.py check`; neither was used as evidence. The reviewer's info note (the shim tests 15 enabled palettes, not C3.1's 16) is judged met: see Findings 1.
+
+## Rows
+
+| # | State | Evidence | Negative control |
+|---|---|---|---|
+| C3.1 | 🟢 | `FORCE_COLOR=0 node test/ui/headless-boot.mjs` exit 0, ends `HEADLESS BOOT PASS`, zero `(i-` lines in output (ok() prints failures only); 12 `(i-all)`/`(i-one)` labels exist in the test. The (i-all) count asserts are against live `enabledN` (`app.doc.palettes.filter((p) => p.on !== false).length`), not a literal: `.roles-table === enabledN`, role rows `=== 53 * enabledN`, `.rhead === enabledN`, `.rrow === 54 * enabledN`. Probe at (i-all): `PROBE pre-off palettes 16 enabled 16`, then after the test's own disable `PROBE all-mode tables 15 rrow 810 rhead 15`. Probe with palette 3 re-enabled: `PROBE16 tables 16 rolerows 848 rrow 864 rhead 16 pairs 864`. Existing one-palette (i) lines: shim exit 0. | Plan control, all-palettes branch renders only the selected palette (`: [view.palettes[this.selectedIndex()]]`): exit 1, `✗ (i-all) nothing selected: one .roles-table per enabled palette (got 1 of 15)`, `role rows ... (got 53)`, `(.rhead 1, .rrow 54)`, headings and pairs lines red. Extra control, drop the `p.on` filter (`: view.palettes`): exit 1, `(got 16 of 15)`, `(got 848)`, `(.rhead 16, .rrow 864)`, `✗ (i-all) the disabled palette "Tertiary" has no table`. |
+| C3.2 | 🟢 | Same run, exit 0; `(i-one)` asserts after `app.selectPalette(2)`: exactly one `.roles-table` and one `.roles-table-name`, `names()[0] === app.doc.palettes[2].name`, `.rrow === 54`. `.roles-table-name` is an `h4` added by `_rolesTable` in both modes (`src/ui/sections/color.js` diff). | Plan control, drop the sel.kind branch (`const one = false;`): exit 1, `✗ (i-one) a palette selected: exactly one table and one heading (got 15 and 15)`, `✗ (i-one) the heading is the selected palette's name (got "Azur")`, `(got 810 rows)`. 15 not 16 because the test disabled one palette (see Findings). |
+| C3.3 | 🟢 | Same run, exit 0; `(i-all) every .rrow, header included, carries one .sw-pair` asserts `allPairs.length === 54 * enabledN && every row has exactly 1` (live run: 810 pairs over 810 rows; 16-enabled probe: `pairs 864`), plus `(i-all) each role pair holds two swatches, light then dark` (titles `light ref `/`dark ref `). (i-one) asserts one pair per row in the one table. The literal `querySelectorAll(".rrow .sw-pair")` the plan names returns 0 in the shim (probe `pairs 0`; the shim's `querySelectorAll` only matches a single `.class`), so the test sums per-row `.sw-pair` matches instead; equivalent count, the right call. | Plan control, selected palette only in the all-palettes branch: pairs line red, `(54 pairs over 54 rows)` (plan's "prints 54" reproduced). Extra control, swap the light/dark swatch lines: exit 1, only `✗ (i-all) each role pair holds two swatches, light then dark` red. |
+| C3.4 | 🟢 | `bash -c 'set -o pipefail; npm test 2>&1 \| tail -3'` exit 0 in 3:35 (one run, no timeout), last line `✓ all 54 test files passed`; `TESTS` in `test/run.mjs` at 30c0dccb has 54 entries; `git status --short` empty after. | Adapter §1 control in throwaway clone `ctl` at 30c0dccb: `sed -i '' 's/"scrim/"scrimX/' docs/reference/data/role-table.json`, `npm test` exit 1, `▶ engine/semantic.mjs FAIL`, `FAIL  refs-canonical, ordered key set != canonical`, `✗ 1/54 test file(s) failed`; `grep -c FAIL` = 3 (matches the d34b4fb1 count). |
+| Build | 🟢 | `npm ci` exit 0, `npm run build` exit 0 (`wrote figma/plugin/ui.html 4160.8 KB`); `shasum -c` of the committed `figma/plugin/ui.html` taken before build: `OK`; `git status --porcelain` empty. `bash .sdlc/checks/baseline-agrees-check.sh` exits 1 on head with one line `STALE ui.html: baseline 4160.0 KB, tree 4160.8 KB`; on 383d3b21 it also exits 1 with one line `STALE ui.html: baseline 4160.0 KB, tree 4160.2 KB`. The unit adds +0.6 KB on a STALE line already present before it; nothing new goes stale. | Build reproducibility check: `shasum` of `figma/plugin/ui.html` taken before `npm run build`, then `shasum -c` after printed `OK`, so the build regenerates the committed bundle byte for byte (an uncommitted UI change would show `FAILED`). Base comparison run on 383d3b21: same single STALE row, so the STALE is inherited, not caused by the unit. |
+| Smoke | 🟢 | `npm run smoke` in the clone at `30c0dccb` (it builds first): exit 0, `SMOKE PASS, gallery · category · editor · export dialog all render in a real browser`; `git status --porcelain` empty after | `src/ui/sections/color.js:721` new-palette input `type: "color"` set to `type: "text"`: exit 1, `✗ Custom tab has a native color picker seeded from the proposed color`, `SMOKE FAIL (1):`. Restored with `git checkout -- .`, porcelain empty |
+
+## Findings
+
+1. 🟢 15 versus 16, judged met. `defaultDocument()` has 16 palettes, all on. The (i-all) block disables palette 3 ("Tertiary") itself with `app.commit((d) => (d.palettes[3].on = false))` so the enabled-only filter is exercised, and every count assert is against the live `enabledN`, never a literal. C3.1's clause "equal in count to the enabled palette count of `app.doc`" is met; its 16 / 848 / 864 is the default-kit figure, confirmed by a probe with palette 3 re-enabled (`tables 16 rolerows 848 rrow 864 pairs 864`). This is stronger than the literal: a 16-literal test would miss a dropped `p.on` filter, and this one reds on it (C3.1 extra control, `got 16 of 15`). The plan's C3.2 control text predicts `16` tables; the live run shows 15 for the same reason.
+2. 🟢 The plan's literal `querySelectorAll(".rrow .sw-pair")` returns 0 in the shim (its `querySelectorAll` matches a single `.class` only), so the test sums per-row `.sw-pair` matches. Same quantity, correct deviation.
+3. 🟡 `baseline-agrees-check.sh` is red on head (`STALE ui.html: baseline 4160.0 KB, tree 4160.8 KB`) and on base `383d3b21` (tree `4160.2 KB`): inherited, not caused by U3, so not a red on this unit. The plan branch needs the `.sdlc/baseline.md` figure corrected (with a Correction line) before its pre-land record, which will grade it.
+4. The code filters `p.on` (truthy) and the test filters `p.on !== false`; they agree because `persist.js:244` coerces `on: src.on === true`.
+5. The (i-all) block restores state with a second `commit` and direct `sel`/`segment` writes; the rest of the shim passes after it (exit 0), so nothing leaks.

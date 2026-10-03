@@ -2,20 +2,36 @@
 kind: criteria-review
 plan: prime-name
 seat: verifier
-pass: 3
-ticket: none yet
+pass: 4
+ticket: 789
 written: 2026-10-03
 ---
 
-# prime-name criteria review · pass 3 · 🟢 at `95b9f30a`
+# prime-name criteria review · pass 4 · 🟢 at `1869b4f9`
 
-Current state: pass 3 🟢 at `95b9f30a` (revision 2). C2.3 now counts the new bare name in the `## [Unreleased]` slice, which is 0 today and cannot be met by another plan's schema line, so every row C1.1 to C2.4 is checkable. The plan is mobilizable on criteria. Passes 2 and 1 follow as history.
+Current state: pass 4 🟢 at `1869b4f9` (revision 4, ticket #789). The new U2 row C2.5 is checkable; no other criterion changed since pass 3, so every row C1.1 to C2.5 is checkable. Passes 3 to 1 follow as history.
 
 verdict: 🟢
-sha: 95b9f30a
+sha: 1869b4f9
 
+Pass 3 lines: `verdict: 🟢` at `95b9f30a`.
 Pass 2 lines: `verdict: 🔴` at `9fcb2c45`.
 Pass 1 lines: `verdict: 🔴` at `63d0b409`.
+
+## Pass 4 · 🟢 at `1869b4f9`: C2.5 added
+
+`git diff 95b9f30a 1869b4f9 -- .sdlc/plans/prime-name.md` adds only the frontmatter (`approved`, ticket 789), C2.5, a `## Units` checklist and a `## Revisions` table. Rows 🟢 at pass 3 stand unchanged.
+
+### Rows
+
+| # | State | Evidence | Negative control |
+|---|---|---|---|
+| C2.5 | 🟢 | The command as written (`git grep -a -n` with the BRE `\|` alternation) runs on the root at `1869b4f9` and prints exactly the five Today lines: `foundations.md:13`, `:41`, `:43`, `best-practices.md:70`, `:73` under `.claude/skills/maintaining-brand-kit-mcp/references/`. They are stale on `unit/pn-U1` at `37e0fabb`, where `SERVER` reads `version: "0.4.0"` and `model.mjs` `brandKit()` stamps `ultimate-tokens-brand-kit/${EXPORT_SCHEMA_VERSION}` (4). | Leave one line: grep prints it. The unchanged root is that control today: five lines, exit 0. |
+
+### Findings
+
+- 🟢 Pass 2's 🟡 on `SERVER.version` is met in practice: `unit/pn-U1` moves it to `0.4.0`; C2.5 now names the records that move with it.
+- 🟡 C2.5 pins the literal `/3` and `0.3.0`. It shows the old values are gone, not that the new ones were written (deleting the lines also passes), and the next bump (compute-layers U4, md-prefix C1.9) makes the same two references stale with no gate. A needle for the new value (`brand-kit/4`, `0.4.0` present) or a parity test that reads them from the source would close both; not blocking for this plan.
 
 ## Pass 3 · 🟢 at `95b9f30a`: C2.3 repaired
 

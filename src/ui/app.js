@@ -536,6 +536,7 @@ class HctApp extends HTMLElement {
   // session as having no explicit pick (kind:"none") so nothing renders 'sel'.
   _deselect() {
     this.sel = { kind: "none", id: this.sel.id };
+    this.segment = "global"; // nothing selected: the right pane shows the Global inspector
     this.render();
   }
 

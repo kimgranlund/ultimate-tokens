@@ -1,6 +1,6 @@
 ---
-status: draft
-ticket: none yet (the Orchestrator mints one kind:feature issue per adapter X3 once the owner rules Q1 to Q3)
+status: approved
+ticket: 789
 priority: P2
 lane: color-engine (`src/engine/prime.mjs`, `src/engine/exports.js`, `src/engine/ds-export.js`, `test/engine/exports.mjs`, `mcp/brand-kit-core.mjs` on a schema bump, `plugin/ultimate-tokens/skills/color-tokens/SKILL.md`, `docs/reference/`, `docs/spec/`, `docs/lld/`, `CHANGELOG.md`; regenerated `figma/plugin/ui.html`, `src/ui/describe-mcp-assets.js`, `dist/`)
 size: S+S (U1 S = 1, U2 S = 1; 2 points)
@@ -74,10 +74,25 @@ Unchanged, by key shape (nested, no hyphen join): JSON `palettes[n].prime.prime`
 | C2.2 | `grep -oE -- "--\{n\}-prime-(brightest\|brighter\|bright\|dim\|dimmer\|dimmest)\b" plugin/ultimate-tokens/skills/color-tokens/SKILL.md \| sort -u \| wc -l` (distinct names, not lines) | 6 (all six suffixed steps named) | 2 (`brightest`, `dimmest`) | revert the skill edit: prints 2 |
 | C2.3 | `awk '/^## \[Unreleased\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md \| grep -cF -- '-{n}-prime\`'` (the entry spells the new bare name as `` `--{pfx}-{n}-prime` ``) | at least 1 | 0 | drop the entry: prints 0 |
 | C2.4 | `npm test`; `git status --porcelain` | exit 0, empty | n/a | adapter §1 control |
+| C2.5 | `git grep -a -n 'brand-kit/3\|version: "0.3.0"' -- .claude/skills` (the maintaining-brand-kit-mcp references that U1's schema 4 and `SERVER.version` 0.4.0 made stale) | no output, exit 1 | `foundations.md` lines 13, 41, 43 and `best-practices.md` lines 70, 73 | leave one line: grep prints it |
+
+## Units
+
+Grades per R92 (no Fable): every unit runs reviewer-l3 then verifier-l2, and the pre-land pair is reviewer-l3 plus verifier-l2. Order: U1, then U2. U1 bumps `EXPORT_SCHEMA_VERSION` and edits `src/engine/exports.js`, which compute-layers U1 and U4 also edit; sequencing is the Orchestrator's call per Q2 (see Revisions).
+
+- [x] U1 (S) engine emitters, tests, generated assets: the bare `prime` name, schema bump (C1.1 to C1.7) · grade l2 · reviewer-l3 · verifier-l2
+- [ ] U2 (S) records: docs, skill, CHANGELOG (C2.1 to C2.5) · grade l1 · reviewer-l3 · verifier-l2
 
 ## 6. Progress
 
 | Unit | Size | Status |
 |---|---|---|
-| U1 | S | not started |
+| U1 | S | merged, verified 🟢 at 37e0fabb |
 | U2 | S | not started |
+
+## Revisions
+
+| # | Date | Change |
+|---|---|---|
+| 3 | 2026-10-03 | Orchestrator, mobilization: ticket 789 minted; a `## Units` checklist added (board.py reads units from it), no criterion changed |
+| 4 | 2026-10-03 | Orchestrator, pn-U1 review finding (Medium): U2 gains C2.5 for the stale `brand-kit/3` and `0.3.0` lines in `.claude/skills/maintaining-brand-kit-mcp/references/`; U2 docs also say which Panda key path to use for the centre (Q1: nested `prime.prime` and `prime.DEFAULT` stay). No other criterion changed |

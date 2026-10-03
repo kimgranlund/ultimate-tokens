@@ -14959,6 +14959,7 @@ class ColorSectionImpl {
   selectPalette(id) {
     const max = this.doc.palettes.length - 1;
     this.sel = { kind: "palette", id: Math.max(0, Math.min(id, max)) };
+    this.segment = "palette"; // the right pane follows the selection (the tabs still move it afterwards)
     this.doc.selected = this.sel.id; // `selected` is a real serialized field (persist.js), persist it
     this.save(); // TKT-0455: without this, isDirty() falsely reports "unsaved" after a plain reselect
     this.render();
@@ -21106,6 +21107,7 @@ class HctApp extends HTMLElement {
   // session as having no explicit pick (kind:"none") so nothing renders 'sel'.
   _deselect() {
     this.sel = { kind: "none", id: this.sel.id };
+    this.segment = "global"; // nothing selected: the right pane shows the Global inspector
     this.render();
   }
 
