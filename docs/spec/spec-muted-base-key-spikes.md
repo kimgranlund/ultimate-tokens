@@ -297,9 +297,9 @@ ladder, their own chroma control, and their own token group; the editor strip re
   `vibrancy`, `cuspPull`, `toneMode` do NOT apply: they shape the ramp, and the prime system is not
   the ramp.
 - **REQ-054** Tokens: a `prime` group per palette, primitives tier, mode-independent, one value per
-  step. Naming (ratified 2026-09-11, R3): CSS `--{n}-prime-{step}` next to `--{n}-550`; DTCG, UI3, and
+  step. Naming (ratified 2026-09-11, R3): CSS `--{n}-prime-{step}` next to `--{n}-550` (the centre step is the bare `--{n}-prime`); DTCG, UI3, and
   JSON nest `{n}/prime/{step}` beside `{n}/scrim/*` and `{n}/key/*` (ADR-016 two-segment shape);
-  Tailwind `--color-{n}-prime-{step}` in `@theme`; Figma: a new collection `COLLECTIONS.colorPrime =
+  Tailwind `--color-{n}-prime-{step}` in `@theme` (centre: bare `--color-{n}-prime`); Figma: a new collection `COLLECTIONS.colorPrime =
   "Color Prime"` with the single mode `Base` and variables `{n}/{step}`; DS bundle: a `prime` block per
   family in `tokens.json` plus a "Prime swatches" section in DESIGN.md; MCP brand-kit:
   `palettes[i].prime = { brightest: { hex, oklch }, … }` and `get_prime(slug)` returns it. ShadCN
@@ -633,7 +633,7 @@ Ratified 2026-09-11 (R1, R3, R4, R5; team-lead relaying the owner). 0.2.0 is app
   rejected; U4 pass 2's widening search moves only the LADDER's pivot, and only for a stored anchor
   that would otherwise collapse the six non-prime rungs to duplicate hexes. See REQ-050..053a and
   EX-4/EX-4b/EX-5 for the construction and the regenerated numbers.
-- **R3** Naming: `prime` group, `--{n}-prime-{step}`, `{n}/prime/{step}`, new Figma collection
+- **R3** Naming: `prime` group, `--{n}-prime-{step}` (the centre step is the bare `--{n}-prime`), `{n}/prime/{step}`, new Figma collection
   `Color Prime` with `{n}/{step}` (REQ-054).
 - **R4** Rename `keyIntensity` to `primeChroma` with a schema-v3 rename (REQ-011).
 - **R5** (changed from the proposed default) `hueShift` applies AND `skew` applies as a gamma on

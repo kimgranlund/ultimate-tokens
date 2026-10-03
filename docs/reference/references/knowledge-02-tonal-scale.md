@@ -295,7 +295,7 @@ independent of `baseIntensity`.
 The **prime system** is a per-palette set of seven swatches, `brightest · brighter · bright · prime ·
 dim · dimmer · dimmest`, lightest first, computed from the palette's key colour (or, for an anchored
 palette, from its stored source colour) on their OWN **CIE L\*** ladder. They are primitives-tier tokens, mode-independent (one set, the same in Light and
-Dark, REQ-055), emitted as the `prime` group (`--{n}-prime-{step}`, `{n}/prime/{step}`, Figma
+Dark, REQ-055), emitted as the `prime` group (`--{n}-prime-{step}` with the centre as the bare `--{n}-prime`, `{n}/prime/{step}`, Figma
 collection "Color Prime"; knowledge-04). They are NOT ramp stops and NOT roles: the 53-role table is
 unchanged and roles never alias prime tokens (knowledge-03 §3).
 
