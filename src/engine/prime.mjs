@@ -59,6 +59,12 @@ import { effHue } from "./tonal.js";
 
 export const PRIME_STEPS = ["brightest", "brighter", "bright", "prime", "dim", "dimmer", "dimmest"];
 
+// primeSlug(step), the ONE name rule for every hyphen-flat emitter (CSS, OKLCH, Tailwind, the Radix
+// refs, the design-system bundle): the centre `prime` step is the bare `-prime`, the other six keep
+// `-prime-{step}`. Composing `prime-${step}` inline would double the centre step's name.
+// Nested emitters (JSON, DTCG, Panda) address the step as a path segment and never call this.
+export const primeSlug = (step) => (step === "prime" ? "prime" : `prime-${step}`);
+
 // The two OKHSL-domain grey bounds the ladder's window was ratified against pre-#681 (see the header
 // note); kept as the single typed source, converted below rather than retyped as L* literals.
 const GREY_L_LO = 0.14;

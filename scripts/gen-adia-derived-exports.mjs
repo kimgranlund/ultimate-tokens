@@ -70,8 +70,11 @@ export const ARTIFACTS = [
   // EXPORT_SCHEMA_VERSION 3, so `minor` again, since a consumer's byte-compare breaks while the shape
   // it compares does not: no key, name or ordering moved. SOURCE_TAG stays `adia-brand-document@1.0.0`
   // because `brands.json` is byte-identical to origin/main, so no document tag is cut (C9).
-  { name: "adia-oklch-export", file: "adia-oklch-export.css", key: "oklch", version: "1.2.0" },
-  { name: "adia-radix-export", file: "adia-radix-export.mjs", key: "radix", version: "1.2.0" },
+  // 2.0.0 / 1.3.0 (#789, prime-name): the centre prime step custom property was renamed in the CSS
+  // artifact (the doubled name became the bare one), a key renamed, so `major` for oklch; the Radix
+  // values artifact moved only its schema stamp (EXPORT_SCHEMA_VERSION 4) and this block, so `minor`.
+  { name: "adia-oklch-export", file: "adia-oklch-export.css", key: "oklch", version: "2.0.0" },
+  { name: "adia-radix-export", file: "adia-radix-export.mjs", key: "radix", version: "1.3.0" },
 ];
 
 // exportRadix's own reserved alias keys (I4, ticket #637): promoted into src/engine/exports.js as
