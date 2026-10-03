@@ -45,6 +45,7 @@ Geometry families under the root (all follow): `size`, `radius`, `space`, `inset
 
 - [x] U1 (S) Preset, hydrate rewrite (a v7 RENAME_MAPS entry), schema bump, emitted prose, the stale `maintaining-brand-kit-mcp` references (`foundations.md`, `best-practices.md`: schema and server version lines), and `docs/reference/references/knowledge-02-tonal-scale.md` section 8.4 (the persisted schema number): settings.js triple, persist.js, `EXPORT_SCHEMA_VERSION`, `SERVER.version`, comments, ds-export prose, tests, regenerated assets (builder-l2)
 - [x] U2 (S) Records: consumer plugin, geometry-system skill, CHANGELOG, marketing corpus via `marketing-manager-agent` (builder-l1)
+- [x] U3 (S) · trivial lane · Consumer plugin version bump to 0.2.2 (`plugin/ultimate-tokens/.claude-plugin/plugin.json` only; the npm pack takes its version from it) and one CHANGELOG line (builder-l1)
 
 ### U1 criteria
 
@@ -71,6 +72,15 @@ Geometry families under the root (all follow): `size`, `radius`, `space`, `inset
 
 The existing naming-scheme note sits inside `## [Unreleased]`, so it is rewritten to the new names (it would be false at release); C2.3 checks it. Left as history, never rewritten: `docs/plan/archive/*`, `docs/reference/reviews/2026-07-17-export-drift.md`, `.sdlc/records/*`, `.sdlc/plans/archive/*`.
 
+### U3 criteria
+
+| # | Check (command) | Expected | Today | Negative control |
+|---|---|---|---|---|
+| C3.1 | `grep -c '"version": "0.2.2"' plugin/ultimate-tokens/.claude-plugin/plugin.json` | `1` | `0` | put 0.2.1 back: reads `0` |
+| C3.2 | `node test/plugin/hosted-pack.mjs` then `npm test` | exit 0 each, tree clean after | exit 0 at 0.2.1 | set the version to a non-semver string: hosted-pack reds |
+| C3.3 | `awk '/^## \[Unreleased\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md \| grep -c '0\.2\.2'`, and the same slice `\| grep -c md-sys` | first at least `1`; second `0` | `0`; `0` | drop the CHANGELOG line: first reads `0` |
+| C3.4 | `git diff --name-only $(git merge-base HEAD plan/md-prefix) HEAD` on the unit branch | `plugin/ultimate-tokens/.claude-plugin/plugin.json`, `CHANGELOG.md`, `.sdlc/handoffs/md-prefix-U3.md` and the review record (`.sdlc/reviews/md-prefix-U3-review.md`) only | n/a | touch another file: the list grows |
+
 ## 4. Owner rulings (2026-10-03, relayed by the Conductor)
 
 - Q1 A (the recommendation). `hydrate` rewrites the exact old triple (all three of `md-sys-color`, `md-sys-typescale`, `md-sys`) to `md-color`/`md-typescale`/`md`, once, on load. Nothing emits the old names afterwards. A lone `md-sys-color` with any other type or geometry prefix stays as typed. C1.8.
@@ -89,3 +99,4 @@ File overlap: `src/engine/exports.js` (comment at `:415` only), `src/engine/ds-e
 | 4 | 2026-10-03 | Orchestrator, md-U1 review: C1.8 now requires the rewrite through the file's own versioned RENAME_MAPS channel (CURRENT_SCHEMA_VERSION 6 to 7, persist.js standing convention) so it runs once; C1.1 excludes the two legacy-name sites and checks them separately, ending the split-string evasion; the two `maintaining-brand-kit-mcp` references move from U2 to U1 (U1 invalidates them) |
 | 5 | 2026-10-03 | Orchestrator, md-U1 builder finding: the generated `ui.html` and `describe-mcp-assets.js` embed `persist.js`, so C1.2's `0` cannot hold once the RENAME_MAPS entry names the old root plainly; the counts are now pinned to the embedded copies (1 and 2), so any other hit still reds |
 | 6 | 2026-10-03 | Orchestrator, md-U1 re-review: C1.1's first command also excludes `src/ui/describe-mcp-assets.js` (the embedded persist.js copy C1.2 already pins at 1); knowledge-02 section 8.4 states the persisted schema number, so U1 repairs it. Cross-plan note: pane-context C2.8 and compute-layers C5.4 pin `CURRENT_SCHEMA_VERSION` absolutely; whichever plan lands second re-pins |
+| 7 | 2026-10-03 | Orchestrator, owner ruling at `.sdlc/questions/md-prefix-plugin-version.md` (8f4aef68, answer A): the consumer plugin bumps to 0.2.2 as one small trivial-lane unit U3 (the pre-land record takes pass 2 at the new head). This is the sixth revision row; the owner answer on that question is the authority for it |
