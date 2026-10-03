@@ -838,6 +838,64 @@ Format: Context → Decision → Rationale → Consequences → Status.
   ADR-026). Ratification is the owner's: the owner edits this line to DECIDED, or amends the text
   under the file's amendment shape; no plan seat does either.
 
+## ADR-028: Compute layers: versioned pure functions chained into a brand kit, pinned per document
+- **Context.** Today the pipeline is a set of pure engines plus two hand-built drivers that call them. Nothing names a stage, nothing carries a stage version, and the same resolution is written twice. Survey at add40292 (read-only):
+
+  | Stage | Inputs | Outputs | Implicit version knowledge | Hidden coupling | Overrides, special cases, shims |
+  |---|---|---|---|---|---|
+  | Controls resolve | a doc or export state | the tonal controls object | `DEFAULT_CONTROLS` in `src/engine/tonal.js` is the only defaults table | two copies: `controlsOf` in `src/ui/model.mjs` and `controlsOf` in `src/engine/exports.js`; the names differ (`baseIntensity` vs `baseChroma`, comment "AC-004 bars it") | `hueSpace` defaults differ: model.mjs uses `ENGINE_DEFAULT_CONTROLS.hueSpace`, exports.js hard-codes `"cam16"` ("a raw legacy state"); `src/ui/persist.js` `DOMAINS.hueSpace` defaults `"oklch"`; `src/ui/app.js` `hydrateStoredDoc` stamps pre-hueSpace stored sets to cam16 |
+  | Group chroma | palette, `paletteGroups`, controls | ramp chroma, prime chroma | `GROUP_DEFAULTS` in `src/ui/persist.js` (material 30, R96 moves it to 100) | `src/engine/resolve.mjs` `rampChromaOf` / `primeChromaOf` are shared, but `paletteGroup()` (the by-name default, Neutral to material) lives in `src/ui/model.mjs` and `paletteGroupOf` again in `src/engine/exports.js` | locked group (Data) ignores the per-palette `primeChroma` override (`primeChromaOf`) |
+  | Hue mapping | hue, `hueSpace` | CAM16 hue | `effHue` (`src/engine/tonal.js`), `oklchToCam16Hue` (`src/engine/hct.js`) | every tonal path branches on `controls.hueSpace === "oklch"` (5 sites in tonal.js) | the cam16 branch exists only for legacy docs |
+  | Tonal ramp | palette `{hue, chroma, skew, lift, hueShift, cuspPull, anchor}`, controls, stop list | 19 or 25 stops `{hex, rgb, chroma, maxc, tone}` | the R69, #701, #725 rulings live in comments; the ramp's "version" is the git sha | `paletteStops` dispatches on `toneMode` (11 references; an unset mode differs from `"even"` in `chromaEnvelope`, noted at `paletteStops`); `anchorChromaBasis` `climb` flag splits even from perceptual | `dampAmp > 0` "authored overrides (Adia, C6's named carve-out)" in `paletteStops` and the peak joint cap; anchored vs unanchored branches (`paletteStopsAnchored`, `okhslStops` anchored branch); `floorRef` deferrals to #766 |
+  | Prime ladder | palette, controls with resolved prime chroma | 7 swatches | `src/engine/prime.mjs` constants (`STEP_L`, `PRIME_L_MIN`) | independent of the ramp by design | none |
+  | Neutral and relative derive | key samples | hue, chroma seeds | `src/engine/derive.mjs` `RELATIONSHIPS` | called only from the UI | none |
+  | Roles | palette slug, 25-stop ramp, controls, `roleOverrides` | 53 roles, light and dark refs and hexes | `src/engine/semantic.js` `semanticRoles`, mirrored by the Figma `code.js` table and `docs/reference/data/role-table.json` (parity-gated) | the chain `semanticRoles` then `applyAccentRef` then `applyOnColorContrast` then `applyRoleOverrides` is written twice: `projectView` (`src/ui/model.mjs`) and `derivePalette` (`src/engine/exports.js`) | `roleOverrides` (per-doc per-role re-point) and `onColorMode` "fixed" opt-out |
+  | Type | `doc.type` (treatment, bodyBase, fonts, overrides, modes) | `typeScale` categories by step | `TYPE_TREATMENTS`, `DEFAULT_TYPE` in `src/engine/type.mjs` | per-mode scales assembled in `src/ui/model.mjs` (`typeScaleFor`, `typeModeScales`, `modeTierNudge`) | `tokenOverrides` per-cell size and height, `modeTierNudge` |
+  | Geometry | `doc.geometry`, plus a type scale | geometry steps | `GEOMETRY_TREATMENTS`, `RAMP_LADDER = "linear4"` in `src/engine/geometry.mjs` | composes from Type's `UI-control` voice (`geomScale` `opts.typeScale`); the caller (`geometryScale`, `geomScaleFor` in `src/ui/model.mjs`) must pass the matching mode's type scale | per-cell font override wins over the composed size (`geomScale`, `ovF`) |
+  | Exports | resolved state plus derived palettes | 10 formats plus the design-system bundle | `EXPORT_SCHEMA_VERSION = 3` (`src/engine/exports.js`), stamped in every format | `derivedAll` re-derives every palette instead of taking the view `projectView` already computed | none beyond the controls shim above |
+  | Persist | a stored snapshot | a hydrated doc | `CURRENT_SCHEMA_VERSION = 6`, `RENAME_MAPS`, `DROPPED_KEYS` (`src/ui/persist.js`) | `GROUP_DEFAULTS` and `DOMAINS` hold engine defaults in the UI layer | field name `baseIntensity` kept as "a deliberate legacy holdover"; v4 `intensity` drop reporting |
+
+  Reading: the algorithms are already pure and mostly DOM-free; what is missing is identity. A stage's behaviour is pinned only by the git sha, a behaviour change (R69, R94) silently changes every saved doc, and two drivers re-assemble the same chain with drifted defaults.
+- **Decision.** Layers are named, versioned, pure, and chained by one evaluator; a document pins the version of each.
+  1. A layer is a record `{ id, version, inputs, outputs, run }` in one registry, `src/engine/layers.mjs`. `run` is a pure function of its declared inputs (no DOM, no storage, no reads outside its arguments). `id` is a stable kebab name (`controls`, `group-chroma`, `ramp`, `prime`, `roles`, `type`, `geometry`), `version` an integer that bumps whenever any output changes for any input (byte-level, measured by the existing fixture and report gates). Inputs and outputs are named keys with a shape note, checked at registration by a test, not at runtime.
+  2. Chaining is a declared graph, not driver code: a layer names the outputs it consumes (`geometry` consumes `type.scale`; `roles` consumes `ramp.stops`; `ramp` consumes `controls` and `group-chroma`). One evaluator, `compute(doc, registry)`, walks the graph once and returns every output. `projectView` and `derivedAll` both become thin views over that one result, so the canvas and every export cannot diverge.
+  3. A document pins layers: `doc.layers = { ramp: 2, roles: 1, ... }` (R100). A pinned version runs exactly as it did when it was latest: when a layer's version bumps, the outgoing `run` is moved, unedited, into a frozen module `src/engine/layers/<id>@<n>.mjs` and the registry keeps it under that version. A content hash of every frozen module is committed and gated, so a frozen version can never be edited. A fresh doc and every preset (the default kit, every curated category doc) pin the latest of each layer. A doc stored before pins existed hydrates pinned to version 1 of every layer, which is byte-identical to today's render, so no saved kit moves silently; the editor offers "upgrade to latest", which re-pins and re-renders.
+  3a. Reconciling R100 with R98 and R102: a frozen version is not a legacy shim. A shim is a branch inside the latest algorithm that exists only to keep old input working (the cam16 `hueSpace` branch, `hueSpace ?? "cam16"` in `exports.js` `controlsOf`, the `baseIntensity` name). A frozen version has no branch: it is the whole old algorithm, reachable only through a doc's pin, with no code shared with the latest version that would let one constrain the other. So R102 removes the cam16 branch from the latest `ramp` (version 2 declares no `hueSpace` input and treats every hue as OKLCH). The branch survives only inside the frozen `ramp@1`, because that is the algorithm version 1 was; a doc reaches it only by pinning `ramp: 1`. Nothing in `ramp@2` or any later version may test `hueSpace`. `baseIntensity` is a document field name, not an algorithm, so it does not survive in a frozen layer: it is renamed by one `RENAME_MAPS` entry at `CURRENT_SCHEMA_VERSION` 7 (the existing hydrate rename, run once at load, not a branch in any layer).
+  4. Exports stamp the layer pins next to the schema stamp, and `EXPORT_SCHEMA_VERSION` moves from 3 to 4 (R101), so a kit says which algorithm versions produced it.
+  5. Overrides are not layers. Per R98 a per-cell or per-role override is user data applied by one named layer (`roles` applies `roleOverrides`; `type` and `geometry` apply `tokenOverrides`), never a branch inside an algorithm. Existing carve-outs inside algorithms (the `dampAmp > 0` Adia carve-out, the cam16 `hueSpace` branch) are listed as debt for later phases, each removed under its own ruling.
+- **Rationale.** A stage is identified today only by the git sha, so every ruled ramp change (R69, R94)
+  moves every saved kit silently, and two drivers re-assemble the same chain with drifted defaults.
+  Naming each stage, giving it an integer version and a declared input graph makes "which part of this
+  kit moved" answerable and lets one evaluator replace the duplicated driver code. Freezing a whole old
+  module, instead of branching inside the latest one, keeps R100 (old versions stay runnable) from
+  becoming the legacy support layer R98 forbids.
+- **Consequences.** In-flight work at 2026-10-03: #766 floorref-hue lands as written and becomes one
+  `ramp` version bump once the registry exists. #785 pane-context U2 (the R94 damper, `GROUP_DEFAULTS.material`
+  30 to 100) lands before pins exist, so it is part of `ramp@1`; its "one multiply after the at-100
+  render" is the first change that is cleanly a layer of its own (`group-chroma` scales `ramp`'s output),
+  and a later phase may lift it out of `tonal.js` into that layer without changing a byte. Any later ruled
+  ramp change is a `ramp` version bump with the previous version frozen. The work lands in five units under
+  plan `compute-layers` (#788): one controls resolver, the layer registry, one evaluator, pins with frozen
+  versions, then the R102 removals. U1 to U4 are byte-neutral for every stored doc and preset; the one
+  path U1 moves is a raw state with no `hueSpace` sent straight to an exporter, which now renders as
+  OKLCH (the engine default) instead of cam16.
+- **Alternatives rejected.**
+  | Alternative | Why rejected |
+  |---|---|
+  | Pins upgrade on load, only the latest version runs | ruled out by R100: old versions stay runnable |
+  | Keep old behaviour by branches inside the latest algorithm (a `version` argument tested in `paletteStops`) | that is the ad hoc shim R98 forbids; frozen whole modules keep each version independent |
+  | One global "engine version" instead of per-layer versions | Type and Geometry change on a different cadence from the ramp; one number cannot say which part of a kit moved |
+  | Semver strings per layer | nothing consumes minor or patch; an integer that bumps on any output change is checkable by the fixture gates |
+  | A plugin or dynamic-import layer system | zero-runtime-deps and the single-file bundle (`npm run build`, `figma/plugin/ui.html`) need a static registry |
+  | Runtime schema validation of layer inputs | cost on every render for a check a test can make once |
+  | Rewrite all engines into layers in one change | blast radius over the whole tree with #766 and #785 in flight; five phased units instead |
+- **Status.** ACCEPTED 2026-10-03 (owner approval, `.sdlc/questions/compute-layers-approval.md`).
+  Owner rulings it rests on: R98 (computation first, no overrides or legacy support layers), R99 (a
+  system of versioned algorithms chained in various ways), R100 (old versions stay runnable for docs
+  pinned to them; every preset pins the latest), R101 (exports stamp pins; `EXPORT_SCHEMA_VERSION` 4),
+  R102 (the cam16 branch and `baseIntensity` go; decision 3a says where each survives, if at all).
+  Plan `.sdlc/plans/compute-layers.md`.
+
 ## Quick map: decisions an enhancing agent is most likely to "fix" (don't)
 | ADR | Looks wrong because… | But it's intentional because… |
 |-----|----------------------|-------------------------------|
@@ -856,3 +914,4 @@ Format: Context → Decision → Rationale → Consequences → Status.
 | ADR-021 | the hosted MCP runs generation server-side though "the generator stays client-side" is a load-bearing constraint | deliberate, narrow amendment for describe-palette only (#379's Pro anchor); every other surface (app SPA, Figma plugin, hosted kit-sync) keeps the original rule verbatim |
 | ADR-022 | `scripts/migrate-type-registers.mjs` looks like dead one-off code to delete | kept deliberately as the executable record of the slots→registers rename, the squash-merge would erase an add-then-delete from history |
 | ADR-027 | rerunning a measurement another seat already recorded looks like waste | the recorded figure is a lead, not evidence; six defects in one plan came from trusting one (#721) |
+| ADR-028 | a frozen copy of an old algorithm sits beside the latest one, and a doc carries a `layers` pin map | R100 keeps old versions runnable for docs pinned to them; a frozen whole module has no branch, so it is not the legacy shim R98 forbids, and the latest version never tests `hueSpace` or takes a version argument |

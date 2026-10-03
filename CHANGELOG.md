@@ -8,6 +8,16 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 
 ## [Unreleased]
 
+### 2026-10-03
+
+#### Changed
+- **One controls resolver for the canvas and every export** (#788, compute-layers U1). The two private
+  `controlsOf` copies (`src/ui/model.mjs`, `src/engine/exports.js`) are replaced by `resolveControls` in
+  `src/engine/controls.mjs`. A raw state with no `hueSpace` sent straight to an exporter (the MCP server,
+  a hand-built state) now renders as OKLCH, the engine default, where it used to render as cam16; every
+  stored document and preset carries `hueSpace` already and renders byte-identically (ramp-identity gate,
+  0 differing cells). ADR-028 records the layered-compute direction this opens.
+
 ### 2026-09-30
 
 #### Changed

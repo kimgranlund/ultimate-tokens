@@ -68,8 +68,8 @@ function rgbToOklchIndep([r, g, b]) {
   return [L, C, H];
 }
 
-// a minimal single-palette exports.js state, the SAME shape controlsOf()/enabledPalettes() expect
-// (exports.js:207-241/245-247); `paletteGroups: {}` makes rampChromaOf fall back to `baseChroma`
+// a minimal single-palette exports.js state, the SAME shape resolveControls()/enabledPalettes() expect
+// (exports.js enabledPalettes, controls.mjs); `paletteGroups: {}` makes rampChromaOf fall back to `baseChroma`
 // (irrelevant to prime, which never reads the ramp chroma), and `roleOverrides: {}` so
 // applyRoleOverrides has a defined object to iterate.
 function stateFor(p) {
@@ -1073,6 +1073,7 @@ for (const n of loneSpikeSorted) FAIL("anchor-ramp", `lone-spike: unexpected mem
     ['"../engine/data-hues.mjs"', new URL("../../src/engine/data-hues.mjs", import.meta.url).href],
     ['"../engine/prime.mjs"', new URL("../../src/engine/prime.mjs", import.meta.url).href],
     ['"../engine/resolve.mjs"', new URL("../../src/engine/resolve.mjs", import.meta.url).href],
+    ['"../engine/controls.mjs"', new URL("../../src/engine/controls.mjs", import.meta.url).href],
     ['"../engine/semantic.js"', new URL("../../src/engine/semantic.js", import.meta.url).href],
     ['"../engine/type.mjs"', new URL("../../src/engine/type.mjs", import.meta.url).href],
     ['"../engine/geometry.mjs"', new URL("../../src/engine/geometry.mjs", import.meta.url).href],

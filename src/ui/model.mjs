@@ -37,6 +37,7 @@ import {
 import { deriveDataHues } from "../engine/data-hues.mjs";
 import { primeSwatches, PRIME_STEPS } from "../engine/prime.mjs";
 import { rampChromaOf as rampChromaOfPure, primeChromaOf as primeChromaOfPure } from "../engine/resolve.mjs";
+import { resolveControls } from "../engine/controls.mjs";
 import { semanticRoles, refKey, applyRoleOverrides, applyOnColorContrast, applyAccentRef, isAchromaticRef } from "../engine/semantic.js";
 import { typeScale, DEFAULT_TYPE } from "../engine/type.mjs";
 import { geomScale, DEFAULT_GEOMETRY, RAMP_LADDER } from "../engine/geometry.mjs";
@@ -454,12 +455,12 @@ export function resolvePaletteGroups(doc) {
 // to resolve `doc` down to the three plain values that pure module needs: the palette with its
 // group made definite, the default-filled paletteGroups map, and the two global-fallback controls.
 export function rampChromaOf(p, doc) {
-  const c = controlsOf(doc);
-  return rampChromaOfPure({ ...p, group: paletteGroup(p) }, resolvePaletteGroups(doc), { baseChroma: c.baseIntensity, primeChroma: c.primeChroma });
+  const c = docControls(doc);
+  return rampChromaOfPure({ ...p, group: paletteGroup(p) }, resolvePaletteGroups(doc), { baseChroma: c.baseChroma, primeChroma: c.primeChroma });
 }
 export function primeChromaOf(p, doc) {
-  const c = controlsOf(doc);
-  return primeChromaOfPure({ ...p, group: paletteGroup(p) }, resolvePaletteGroups(doc), { baseChroma: c.baseIntensity, primeChroma: c.primeChroma });
+  const c = docControls(doc);
+  return primeChromaOfPure({ ...p, group: paletteGroup(p) }, resolvePaletteGroups(doc), { baseChroma: c.baseChroma, primeChroma: c.primeChroma });
 }
 
 // camHueToOklch, convert a CAM16 hue to its OKLCH-hue EQUIVALENT by sampling the hue's vivid
@@ -589,27 +590,11 @@ export function rederiveDataHues(doc) {
   return { ...doc, palettes: palettes.map((p) => (isDataSlug(p.name) ? { ...p, hue: hues[i++] } : p)) };
 }
 
-// controlsOf, the tonal-controls slice of a document, defaulting any missing.
-function controlsOf(doc) {
-  return {
-    curve: doc.curve ?? ENGINE_DEFAULT_CONTROLS.curve,
-    tension: doc.tension ?? ENGINE_DEFAULT_CONTROLS.tension,
-    lmin: doc.lmin ?? ENGINE_DEFAULT_CONTROLS.lmin,
-    lmax: doc.lmax ?? ENGINE_DEFAULT_CONTROLS.lmax,
-    damp: doc.damp ?? ENGINE_DEFAULT_CONTROLS.damp,
-    dampCurve: doc.dampCurve ?? ENGINE_DEFAULT_CONTROLS.dampCurve,
-    dampAmp: doc.dampAmp ?? ENGINE_DEFAULT_CONTROLS.dampAmp,
-    dampBias: doc.dampBias ?? ENGINE_DEFAULT_CONTROLS.dampBias,
-    baseIntensity: doc.baseIntensity ?? 100,
-    primeChroma: doc.primeChroma ?? 100,
-    hueSpace: doc.hueSpace ?? ENGINE_DEFAULT_CONTROLS.hueSpace,
-    relChroma: doc.relChroma ?? ENGINE_DEFAULT_CONTROLS.relChroma,
-    chromaFloor: doc.chromaFloor ?? ENGINE_DEFAULT_CONTROLS.chromaFloor,
-    toneMode: doc.toneMode ?? ENGINE_DEFAULT_CONTROLS.toneMode,
-    vibrancy: doc.vibrancy ?? ENGINE_DEFAULT_CONTROLS.vibrancy,
-    onColorMode: doc.onColorMode ?? ENGINE_DEFAULT_CONTROLS.onColorMode,
-    accentRef: doc.accentRef ?? ENGINE_DEFAULT_CONTROLS.accentRef,
-  };
+// docControls, the tonal-controls slice of a document: engine/controls.mjs's resolveControls, fed the
+// document's own `baseIntensity` field under the exporter-facing name `baseChroma` (the ONE boundary
+// where the rename happens, never `baseIntensity` past this point, see stateOf below).
+function docControls(doc) {
+  return resolveControls({ ...doc, baseChroma: doc.baseIntensity });
 }
 
 // resolvedPalettes(doc) -> palette[], every palette with its GROUP resolved to a definite one of
@@ -628,7 +613,7 @@ export function resolvedPalettes(doc) {
 // controls). The one place the State shape is assembled; projectView, the exporters,
 // and figmaBundle all go through it so a new control is added in exactly one place.
 export function stateOf(doc) {
-  const c = controlsOf(doc);
+  const c = docControls(doc);
   return {
     // SPEC 0.3.0: each palette's `group` is resolved to a definite id here (resolvedPalettes) so
     // exports.js's derivePalette never re-derives the by-name default rule; `paletteGroups` (below)
@@ -652,7 +637,7 @@ export function stateOf(doc) {
     // renamed at this ONE boundary (never `baseIntensity` past this point) because a retired
     // per-stop multiplier control once lived under that name inside src/engine, and AC-004 bars its
     // reintroduction there in any form, including as a mere property name exports.js reads.
-    baseChroma: c.baseIntensity,
+    baseChroma: c.baseChroma,
     primeChroma: c.primeChroma,
     hueSpace: c.hueSpace,
     relChroma: c.relChroma,
@@ -712,13 +697,13 @@ export function brandKit(doc, systems) {
     // controls (SPEC 0.3.0 RP-2, ticket #573, plan PR #571 step E2): the same chroma-policy block
     // exportJSON's `meta.controls` carries, gated by sys.color like stops/palettes/roles below (it
     // states the policy behind the palette chroma this kit resolved, so it's meaningless without
-    // them), read through the SAME controlsOf/resolvePaletteGroups this file's stateOf() uses, so
+    // them), read through the SAME docControls/resolvePaletteGroups this file's stateOf() uses, so
     // the kit can never disagree with the JSON export's own resolved values. Key is `baseChroma`
     // (not `baseIntensity`, the doc-level field it's read off of) to keep byte-for-byte parity with
     // exportJSON's meta.controls, which is bound to that name by AC-004 (SPEC 0.3.0), src/engine
     // may never carry the literal string `baseIntensity`, even as a property name.
-    const c = controlsOf(doc);
-    kit.controls = { baseChroma: c.baseIntensity, primeChroma: c.primeChroma, paletteGroups: resolvePaletteGroups(doc) };
+    const c = docControls(doc);
+    kit.controls = { baseChroma: c.baseChroma, primeChroma: c.primeChroma, paletteGroups: resolvePaletteGroups(doc) };
     kit.stops = on[0] ? on[0].ramp.map((s) => s.stop) : [];
     kit.palettes = on.map((p) => ({
       name: p.name, slug: slug(p.name), key: p.key,
@@ -916,7 +901,7 @@ function deriveKeyColor(p, hueSpace) {
 // would only add invalidation risk (a stale key color after an edit) and something to leak, for no
 // measurable benefit, recompute fresh on every call.
 export function paletteKeyColors(doc) {
-  const hueSpace = controlsOf(doc).hueSpace;
+  const hueSpace = docControls(doc).hueSpace;
   return (doc.palettes ?? []).map((p) => ({
     name: p.name,
     on: p.on !== false,
@@ -929,7 +914,7 @@ export function paletteKeyColors(doc) {
 // Composes paletteStops + semanticRoles + the five exporters. The app renders
 // EVERYTHING on the right from this; nothing here is stored back on the doc.
 export function projectView(doc) {
-  const controls = controlsOf(doc);
+  const controls = docControls(doc);
   const allPalettes = doc.palettes ?? [];
 
   // Per-palette: the display ramp (19 STOPS), its 53 resolved roles, and the

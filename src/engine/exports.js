@@ -28,9 +28,10 @@
 // state is UI-only-aware: theme is NEVER read here, so output is identical for
 // theme light/dark/auto.
 
-import { paletteStops, EXPORT_STOPS, DEFAULT_CONTROLS } from "./tonal.js";
+import { paletteStops, EXPORT_STOPS } from "./tonal.js";
 import { semanticRoles, refKey, refPath, refSlug, roleLeaf, applyRoleOverrides, applyOnColorContrast, applyAccentRef, isAchromaticRef, DEFAULT_THEMES } from "./semantic.js";
 import { COLLECTIONS } from "./collections.js";
+import { resolveControls } from "./controls.mjs";
 import { primeSwatches, PRIME_STEPS } from "./prime.mjs";
 import { oklchToRgb } from "./okhsl.js";
 import { rampChromaOf, primeChromaOf } from "./resolve.mjs";
@@ -203,43 +204,6 @@ export function blackOklch() { return oklchStr(rgbToOklch(BLACK_RGB)); }
 
 // ── Core: per-palette derivation (shared by every emitter) ────────────────────
 
-// controlsOf, pull the tonal controls out of State, defaulting any missing.
-function controlsOf(state) {
-  return {
-    curve: state.curve ?? DEFAULT_CONTROLS.curve,
-    tension: state.tension ?? DEFAULT_CONTROLS.tension,
-    lmin: state.lmin ?? DEFAULT_CONTROLS.lmin,
-    lmax: state.lmax ?? DEFAULT_CONTROLS.lmax,
-    damp: state.damp ?? DEFAULT_CONTROLS.damp,
-    dampCurve: state.dampCurve ?? DEFAULT_CONTROLS.dampCurve,
-    dampAmp: state.dampAmp ?? DEFAULT_CONTROLS.dampAmp,
-    dampBias: state.dampBias ?? DEFAULT_CONTROLS.dampBias,
-    // baseChroma (SPEC 0.3.0 REQ-002/004): the GLOBAL fallback ramp-chroma target, used only when a
-    // palette's group carries no value of its own. Named `state.baseChroma` here, a DIFFERENT name
-    // than the field persist.js/model.mjs persist on the document (kept there for backward compat),
-    // because a retired per-stop multiplier control once lived under that old name right in this file,
-    // and AC-004 bars its reintroduction, in any form, under src/engine. model.mjs's stateOf() is the
-    // one place that renames the document's own field onto this one when building `state`.
-    baseChroma: state.baseChroma ?? 100,
-    // primeChroma (REQ-008/050..057): the prime system's own chroma control, a plain 100 default.
-    primeChroma: state.primeChroma ?? 100,
-    // paletteGroups (REQ-002/008): each group's own { baseChroma, primeChroma, locked? }, default-filled
-    // by model.mjs's resolvePaletteGroups() before this state ever reaches an exporter. derivePalette
-    // below reads controls.paletteGroups[palette.group], model.mjs also stamps `palette.group` onto
-    // every state-shaped palette object, so this file never re-derives the by-name default rule.
-    paletteGroups: state.paletteGroups ?? {},
-    hueSpace: state.hueSpace ?? "cam16", // a raw legacy state without the field was authored in cam16 (mirror the UI's legacy-preservation stamp); a live doc always carries it explicitly
-    // distribution mode + its shapers, previously dropped here, so exports always used the
-    // default mode regardless of the doc. Threaded now so exports match what the UI renders.
-    toneMode: state.toneMode ?? DEFAULT_CONTROLS.toneMode,
-    vibrancy: state.vibrancy ?? DEFAULT_CONTROLS.vibrancy,
-    onColorMode: state.onColorMode ?? DEFAULT_CONTROLS.onColorMode,
-    accentRef: state.accentRef ?? DEFAULT_CONTROLS.accentRef,
-    relChroma: state.relChroma ?? DEFAULT_CONTROLS.relChroma,
-    chromaFloor: state.chromaFloor ?? DEFAULT_CONTROLS.chromaFloor,
-  };
-}
-
 // enabledPalettes, the disabled-palette filter (AC-U2): a palette is included
 // iff on !== false. A disabled palette is therefore ABSENT from every export.
 function enabledPalettes(state) {
@@ -375,7 +339,7 @@ function derivePalette(palette, controls, overrides) {
 // derivedAll, every enabled palette derived, in State order. Exported: ds-export.js's DS-bundle
 // layer derives from the SAME resolved roles (dsColorRoles/dsSemanticLayer/dsFullLayersCss).
 export function derivedAll(state) {
-  const controls = controlsOf(state);
+  const controls = resolveControls(state);
   return enabledPalettes(state).map((p) => derivePalette(p, controls, state.roleOverrides));
 }
 

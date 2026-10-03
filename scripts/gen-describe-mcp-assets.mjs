@@ -38,6 +38,7 @@ const FILES = [
   "src/engine/data-hues.mjs",
   "src/engine/prime.mjs",
   "src/engine/resolve.mjs",
+  "src/engine/controls.mjs",
   "src/engine/semantic.js",
   "src/engine/font-fallbacks.mjs",
   "src/engine/type.mjs",
