@@ -1,5 +1,5 @@
 ---
-status: proposed, revision 1 (owner answers R100 to R102 folded in; not in docs/reference/references/decision-records.md until the owner approves)
+status: accepted as ADR-028 (appended to docs/reference/references/decision-records.md by U1; this draft is history)
 written: 2026-10-03
 head: add40292 (`main`)
 drivers: R99 (verbatim: "Ultimate Tokens ultimately should be a system of versioned algorithms and compute layers that are chained together in various ways"), R98 (computation first, no overrides or legacy support layers), R100 ("Old versions stay runnable, but all our presets use the upgraded latest versions"), R101 (exports stamp pins, schema v4), R102 (remove the cam16 branch and `baseIntensity`), all 2026-10-03
@@ -60,4 +60,4 @@ Reading: the algorithms are already pure and mostly DOM-free; what is missing is
 - R100 (Q1): old versions stay runnable for docs pinned to them; every preset pins the latest.
 - R101 (Q2): exports stamp pins with one `EXPORT_SCHEMA_VERSION` bump, relative to the value when U4 lands (4 or 5; first to land takes 4).
 - R102 (Q3): the cam16 branch and `baseIntensity` go (section 3a says where each survives, if at all).
-- Still open: approval of this draft before it is appended to `decision-records.md`.
+- Approved and appended as ADR-028 in `decision-records.md`.
