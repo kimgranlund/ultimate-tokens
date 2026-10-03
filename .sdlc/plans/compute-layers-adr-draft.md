@@ -1,8 +1,8 @@
 ---
-status: proposed (draft, not in docs/reference/references/decision-records.md until the owner approves)
+status: proposed, revision 1 (owner answers R100 to R102 folded in; not in docs/reference/references/decision-records.md until the owner approves)
 written: 2026-10-03
 head: add40292 (`main`)
-drivers: R99 (2026-10-03, owner, verbatim: "Ultimate Tokens ultimately should be a system of versioned algorithms and compute layers that are chained together in various ways"), R98 (computation first, no overrides or legacy support layers)
+drivers: R99 (verbatim: "Ultimate Tokens ultimately should be a system of versioned algorithms and compute layers that are chained together in various ways"), R98 (computation first, no overrides or legacy support layers), R100 ("Old versions stay runnable, but all our presets use the upgraded latest versions"), R101 (exports stamp pins, schema v4), R102 (remove the cam16 branch and `baseIntensity`), all 2026-10-03
 plan: .sdlc/plans/compute-layers.md
 ---
 
@@ -32,29 +32,32 @@ Reading: the algorithms are already pure and mostly DOM-free; what is missing is
 
 1. A layer is a record `{ id, version, inputs, outputs, run }` in one registry, `src/engine/layers.mjs`. `run` is a pure function of its declared inputs (no DOM, no storage, no reads outside its arguments). `id` is a stable kebab name (`controls`, `group-chroma`, `ramp`, `prime`, `roles`, `type`, `geometry`), `version` an integer that bumps whenever any output changes for any input (byte-level, measured by the existing fixture and report gates). Inputs and outputs are named keys with a shape note, checked at registration by a test, not at runtime.
 2. Chaining is a declared graph, not driver code: a layer names the outputs it consumes (`geometry` consumes `type.scale`; `roles` consumes `ramp.stops`; `ramp` consumes `controls` and `group-chroma`). One evaluator, `compute(doc, registry)`, walks the graph once and returns every output. `projectView` and `derivedAll` both become thin views over that one result, so the canvas and every export cannot diverge.
-3. A document pins layers: `doc.layers = { ramp: 3, roles: 1, ... }`. A fresh doc pins the latest of each. Per R98, the registry carries only the latest version of each layer: a doc pinned to an older version is upgraded on load to the latest and the upgrade is reported (the `DROPPED_KEYS` pattern), never rendered through an old code path. The pin is then a provenance record and a change detector, not a compatibility layer. Whether old versions should stay runnable is an owner decision (Q1 below).
-4. Exports stamp the layer pins next to `EXPORT_SCHEMA_VERSION`, so a kit says which algorithms produced it.
+3. A document pins layers: `doc.layers = { ramp: 2, roles: 1, ... }` (R100). A pinned version runs exactly as it did when it was latest: when a layer's version bumps, the outgoing `run` is moved, unedited, into a frozen module `src/engine/layers/<id>@<n>.mjs` and the registry keeps it under that version. A content hash of every frozen module is committed and gated, so a frozen version can never be edited. A fresh doc and every preset (the default kit, every curated category doc) pin the latest of each layer. A doc stored before pins existed hydrates pinned to version 1 of every layer, which is byte-identical to today's render, so no saved kit moves silently; the editor offers "upgrade to latest", which re-pins and re-renders.
+3a. Reconciling R100 with R98 and R102: a frozen version is not a legacy shim. A shim is a branch inside the latest algorithm that exists only to keep old input working (the cam16 `hueSpace` branch, `hueSpace ?? "cam16"` in `exports.js` `controlsOf`, the `baseIntensity` name). A frozen version has no branch: it is the whole old algorithm, reachable only through a doc's pin, with no code shared with the latest version that would let one constrain the other. So R102 removes the cam16 branch from the latest `ramp` (version 2 declares no `hueSpace` input and treats every hue as OKLCH). The branch survives only inside the frozen `ramp@1`, because that is the algorithm version 1 was; a doc reaches it only by pinning `ramp: 1`. Nothing in `ramp@2` or any later version may test `hueSpace`. `baseIntensity` is a document field name, not an algorithm, so it does not survive in a frozen layer: it is renamed by one `RENAME_MAPS` entry at `CURRENT_SCHEMA_VERSION` 7 (the existing hydrate rename, run once at load, not a branch in any layer).
+4. Exports stamp the layer pins next to the schema stamp, and `EXPORT_SCHEMA_VERSION` moves from 3 to 4 (R101), so a kit says which algorithm versions produced it.
 5. Overrides are not layers. Per R98 a per-cell or per-role override is user data applied by one named layer (`roles` applies `roleOverrides`; `type` and `geometry` apply `tokenOverrides`), never a branch inside an algorithm. Existing carve-outs inside algorithms (the `dampAmp > 0` Adia carve-out, the cam16 `hueSpace` branch) are listed as debt for later phases, each removed under its own ruling.
 
 ## How in-flight work fits
 
 - #766 floorref-hue (approved plan, U2 in re-diagnosis, owner question `.sdlc/questions/floorref-hue-U2-rule.md`): lands as written; when the registry exists, its change is one `ramp` version bump. No dependency either way.
 - #785 pane-context U2 (the R94 damper, `GROUP_DEFAULTS.material` 30 to 100): lands as written, before Phase 2. Its "one multiply after the at-100 render" is the first change that is cleanly a layer on its own (`group-chroma` scales `ramp`'s output); Phase 3 may lift it out of `tonal.js` into its own layer without changing a byte.
-- R98's "no migration" for U2 is consistent with this ADR: pins upgrade, they do not preserve.
+- #785 U2 under R98 shipped with no migration; under R100 its change lands before pins exist, so it is part of `ramp@1`. Any later ruled ramp change is a `ramp` version bump with the previous version frozen.
 
 ## Alternatives rejected
 
 | Alternative | Why rejected |
 |---|---|
-| Keep old layer versions runnable forever (true per-doc reproducibility) | contradicts R98 (no legacy support layers); every past ramp revision (R69, #701, #725, R94) would stay live code. Kept open as Q1 only because R99 says "versioned" |
+| Pins upgrade on load, only the latest version runs (the revision 0 recommendation) | ruled out by R100: old versions stay runnable |
+| Keep old behaviour by branches inside the latest algorithm (a `version` argument tested in `paletteStops`) | that is the ad hoc shim R98 forbids; frozen whole modules keep each version independent |
 | One global "engine version" instead of per-layer versions | Type and Geometry change on a different cadence from the ramp; one number cannot say which part of a kit moved |
 | Semver strings per layer | nothing consumes minor or patch; an integer that bumps on any output change is checkable by the fixture gates |
 | A plugin or dynamic-import layer system | zero-runtime-deps and the single-file bundle (`npm run build`, `figma/plugin/ui.html`) need a static registry |
 | Runtime schema validation of layer inputs | cost on every render for a check a test can make once |
 | Rewrite all engines into layers in one change | blast radius over the whole tree with #766 and #785 in flight; phased below |
 
-## Owner decisions
+## Owner rulings
 
-- Q1: pins upgrade on load (R98 reading, recommended) or old versions stay runnable (R99 "versioned" reading)?
-- Q2: does an export stamp layer pins (recommended), and is that an `EXPORT_SCHEMA_VERSION` bump to 4?
-- Q3: the cam16 `hueSpace` branch and the `baseIntensity` field name are legacy shims under R98; remove them in Phase 3 (recommended) or keep?
+- R100 (Q1): old versions stay runnable for docs pinned to them; every preset pins the latest.
+- R101 (Q2): exports stamp pins; `EXPORT_SCHEMA_VERSION` 4.
+- R102 (Q3): the cam16 branch and `baseIntensity` go (section 3a says where each survives, if at all).
+- Still open: approval of this draft before it is appended to `decision-records.md`.
