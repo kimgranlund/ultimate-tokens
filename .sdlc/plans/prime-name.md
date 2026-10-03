@@ -6,7 +6,7 @@ lane: color-engine (`src/engine/prime.mjs`, `src/engine/exports.js`, `src/engine
 size: S+S (U1 S = 1, U2 S = 1; 2 points)
 labels: kind:feature · status:backlog · size:small · P2 · lane:color-engine
 written: 2026-10-03
-head: 2d86b64e (`origin/main`, revision 0); revision 1 folds the owner's Q1 to Q3 answers and criteria pass 1 (`.sdlc/verdicts/prime-name-criteria.md`, 🔴 at 63d0b409)
+head: 2d86b64e (`origin/main`, revision 0); revision 2 repairs C2.3 (pass 2, 🔴 at 9fcb2c45); revision 1 folds the owner's Q1 to Q3 answers and criteria pass 1 (`.sdlc/verdicts/prime-name-criteria.md`, 🔴 at 63d0b409)
 depends: nothing; Q1 to Q3 are ruled (section 3). Q2 couples to `.sdlc/plans/compute-layers.md` (schema 4)
 inputs: owner ask "token naming convention change `*-prime-prime` -> `*-prime`" (2026-10-03), R98 (no overrides or legacy alias layers), `src/engine/prime.mjs` (`PRIME_STEPS`), `src/engine/exports.js` (`exportCSS` prime loop, `exportTailwind` prime loop, `radixRefLeaves` `primeStep`, `EXPORT_SCHEMA_VERSION`), `src/engine/ds-export.js` (prime raw vars, prime prose), `figma/binder/migrations.mjs` (`FIGMA_MIGRATIONS`)
 measurements: read-only greps at 2d86b64e
@@ -72,7 +72,7 @@ Unchanged, by key shape (nested, no hyphen join): JSON `palettes[n].prime.prime`
 |---|---|---|---|---|
 | C2.1 | `git grep -l prime-prime -- docs plugin ':!docs/tickets' ':!docs/plan/archive' ':!docs/reference/data'` | no output | `docs/reference/references/knowledge-04-export-formats.md`, `docs/spec/spec-muted-base-key-spikes.md`, `docs/spec/spec-panda-park-ui-exports.md` (`docs/reference/data` is U1's, C1.1) | leave one: grep prints it |
 | C2.2 | `grep -oE -- "--\{n\}-prime-(brightest\|brighter\|bright\|dim\|dimmer\|dimmest)\b" plugin/ultimate-tokens/skills/color-tokens/SKILL.md \| sort -u \| wc -l` (distinct names, not lines) | 6 (all six suffixed steps named) | 2 (`brightest`, `dimmest`) | revert the skill edit: prints 2 |
-| C2.3 | `awk '/^## \[Unreleased\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md \| grep -c -e "prime-prime" -e "EXPORT_SCHEMA_VERSION"` | at least 2 | 0 | drop the entry: prints 0 |
+| C2.3 | `awk '/^## \[Unreleased\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md \| grep -cF -- '-{n}-prime\`'` (the entry spells the new bare name as `` `--{pfx}-{n}-prime` ``) | at least 1 | 0 | drop the entry: prints 0 |
 | C2.4 | `npm test`; `git status --porcelain` | exit 0, empty | n/a | adapter §1 control |
 
 ## 6. Progress
