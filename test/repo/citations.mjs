@@ -58,7 +58,7 @@ if (report && Object.keys(report.docs).length !== discovered.length)
 for (const e of DOCS_EXEMPT) if (!e.path || !e.reason) FAIL("scripts/audit-citations.mjs", `DOCS_EXEMPT entry without a path + reason: ${JSON.stringify(e)}`);
 
 // (4) fact pins: the audit checks that a cited line still carries its anchor, not that a claim is
-// true, which is how `11 voices` and a three-state colorMode survived with STALE 0. Each pin is a
+// true, which is how `11 voices` and a three-state canvas toggle survived with STALE 0. Each pin is a
 // claim the docs make about the code. `needle` is the exact text the doc must carry (inside a line
 // matching `line`, when given); `source()` reads the code and returns what it holds (a count, a
 // boolean); a needle carrying a number must equal it, otherwise `source()` must be true. There is
