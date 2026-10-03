@@ -8,6 +8,16 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 
 ## [Unreleased]
 
+### 2026-10-03
+
+#### Changed
+- **Breaking: the prime centre step is the bare `--{pfx}-{n}-prime`** (#789). The CSS variable (and the
+  Tailwind `--color-{n}-prime`) for the centre swatch of each palette's `prime` group was the doubled
+  `--{pfx}-{n}-prime-prime`; it is now `--{pfx}-{n}-prime`. The other six steps keep their names
+  (`-prime-brightest` through `-prime-dimmest`). Consumers referencing the old name must rename it.
+  The Panda key path for the centre is unchanged (`prime.prime`, `prime.DEFAULT`). Export schema is
+  now `ultimate-tokens-brand-kit/4` and the brand-kit MCP server is 0.4.0.
+
 ### 2026-09-30
 
 #### Changed

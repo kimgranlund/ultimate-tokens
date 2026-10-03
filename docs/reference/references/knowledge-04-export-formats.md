@@ -346,7 +346,7 @@ palette. */` string sentinel (mirroring `exportShadcn`'s own no-driver sentinel)
   above (one format, not an eleventh) with every numbered step leaf's `base`/`_dark` a
   `var(--{pfx}-{n}-{frag})` LINK into this kit's own CSS custom-property layer instead of a baked
   `oklch(...)` value. Steps 1..8 link the ratified raw stop; 9..12 link the driving role's own
-  `lightRef`/`darkRef`; `prime` links the `prime-prime` primitive; alpha steps `a1..a12` stay
+  `lightRef`/`darkRef`; `prime` links the bare `--{pfx}-{n}-prime` primitive (the Panda key path stays nested, `prime.prime` and `prime.DEFAULT`); alpha steps `a1..a12` stay
   computed (no primitive exists for an alpha projection). The `#630` reserved-alias-key collision
   case links the palette's RAW slug, never the renamed `<slug>-palette` group key, because the
   primitive surfaces only ever emit under the raw slug. This file is NOT self-contained: its values

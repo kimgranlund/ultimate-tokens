@@ -389,7 +389,7 @@ ladder, their own chroma control, and their own token group; the editor strip re
   equals EX-4.
 - **EX-7 (NORMATIVE, naming).** For Primary the CSS export contains `--primary-prime-brightest` …
   `--primary-prime-dimmest` in the raw block; DTCG raw tree has `primary.prime.brightest`; UI3 has a
-  `Color Prime` collection with `primary/brightest`; Tailwind has `--color-primary-prime-prime`.
+  `Color Prime` collection with `primary/brightest`; Tailwind has the bare `--color-primary-prime` for the centre step (Panda keeps the nested `prime.prime` and `prime.DEFAULT` key paths; only the flat CSS-variable name is bare).
 - **EX-8 (NORMATIVE, key strip).** Default Primary, either scheme, either `accentRef`, either
   `stopsMode`: the strip reads the seven `prime` entries in order; each swatch's hex equals
   `view.palettes[i].prime[k].hex`. Nothing in the strip changes with the scheme toggle.
