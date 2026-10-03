@@ -386,7 +386,7 @@ span exactly 54. The SPEC's EX-4/EX-4b/EX-5 carry the full tables.
 
 ### 8.4 Migration (schema v7)
 
-`CURRENT_SCHEMA_VERSION` is 7 (`src/ui/persist.js`). Two bumps landed after v4, both adding
+`CURRENT_SCHEMA_VERSION` is 7 (`src/ui/persist.js`). Three bumps landed after v4: two added
 brand-new optional palette fields rather than renaming anything, so neither needs a `RENAME_MAPS`
 entry: v5 added `palette.anchor`/`sourceAnchor` (#681 U1) and v6 added
 `palette.preDetachHue`/`preDetachChroma`/`preDetachLift` (#681 U2). A document predating either

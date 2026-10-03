@@ -136,7 +136,7 @@ rest of the body to begin after it so the card truncates on a complete thought
 > ### One source, every export
 > Ship the whole kit without a hand-off: **CSS custom properties**, **W3C design tokens (DTCG)**,
 > **Tailwind**, **shadcn**, **Panda CSS**, and **Radix**, under your own naming, whether that's the
-> default, a Material 3-style `--md-sys-*` root, or a `--{brand}-*` prefix your codebase already uses.
+> default, a Material 3-style `--md-*` root, or a `--{brand}-*` prefix your codebase already uses.
 > Bind it to **Figma variables**,
 > Color Primitives and Color Roles, aliased so a raw-color edit cascades to every role, with **style
 > swatches** bound to those variables: a paint style per semantic role, a text style per type step, each
@@ -207,7 +207,7 @@ bullets + FAQ only.
 • 53 semantic roles per palette, light + dark
 • Three composing systems: Color · Typography · Geometry
 • Exports: CSS · DTCG · Tailwind · shadcn · Panda CSS · Radix
-• Your own naming: Ultimate, Material 3-style --md-sys-*, or a --{brand}-* root
+• Your own naming: Ultimate, Material 3-style --md-*, or a --{brand}-* root
 • Figma variables: semantic binding cascade + breakpoint modes, plus bound paint & text style swatches
 • Brand-Kit MCP: feed your exact tokens to Claude, Cursor, VS Code
 • Free Claude plugin: your coding agent applies your exact roles, not a guess
@@ -267,7 +267,7 @@ bullets + FAQ only.
 >
 > **Can I match my team's variable names?**
 > Yes. Pick a naming convention in **Settings → Export** and every export, colour, type, and geometry,
-> emits under it: the default names, a Material 3-style `--md-sys-*` root, or a custom `--{brand}-*` prefix.
+> emits under it: the default names, a Material 3-style `--md-*` root, or a custom `--{brand}-*` prefix.
 > The tokens drop into the convention your codebase already runs.
 >
 > **Can my AI coding agent use the kit?**
