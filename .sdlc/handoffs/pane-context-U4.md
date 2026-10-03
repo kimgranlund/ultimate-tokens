@@ -1,6 +1,6 @@
 # Handoff pane-context U4 (#785)
 
-Builder, grade l6, pass 2 (review `85d01a7f` findings 1 to 6 fixed; pass 1 text below stays true). Branch `unit/pc-U4`, worktree `.worktrees/pc-U4`, cut from `plan/pane-context`; main merged in first (`19ce51c4`). Code heads: `a2f01328` (source), `7a456243` (shim), `2aa99e80` (smoke), `e82df638` to `cdc1ee93` (pin, docs, CHANGELOG, bundle), `94d475ac`, `73672868`, `74f85381` (review pass 1 fixes). The `ran` block below names its head on its first line, `74f85381`.
+Builder, grade l6, pass 3 (review `85d01a7f` findings 1 to 6 fixed; re-review `b4c78d45` residue fixed; pass 1 text below stays true). Branch `unit/pc-U4`, worktree `.worktrees/pc-U4`, cut from `plan/pane-context`; main merged in first (`19ce51c4`). Code heads: `a2f01328` (source), `7a456243` (shim), `2aa99e80` (smoke), `e82df638` to `cdc1ee93` (pin, docs, CHANGELOG, bundle), `94d475ac`, `73672868`, `74f85381` (review pass 1 fixes), `76d72e49` (re-review residue). The `ran` block below names its head on its first line, `76d72e49`.
 
 ## Files
 
@@ -64,7 +64,7 @@ Marketing check: `grep -ril 'compare\|light/dark toggle' docs/marketing/` printe
 | 5 NIT: missing semicolon on `want9` | added | shim passes |
 | 6 NIT: toggle label hard-coded "Show 2 more examples" | the artifacts are a list; the label is `Show ${artifacts.length - 1} more examples` and the wrapper shows the first one until expanded | `grep -c 'Show 2 more' src/ui/app.js` is `0`; the shim `(k1b)` to `(k1e)` toggle rows still pass |
 
-Gates at `74f85381`: `npm test` 54 of 54 (tree dirty only by the regenerated `ui.html`, committed), citation audit exit `0`, `npm run build` exit `0`, `npm run smoke` `SMOKE PASS` with the two new rows.
+Re-review (`b4c78d45`) found the shim still naming the removed seam (a dead `_wireReorder\(` regex alternative, two row messages, two comments in `test/ui/headless-boot.mjs`); all five reworded to `dragHandle(` / `_beginReorder`, and the `ran` block's review grep now prints nothing before `review end` (the previous `out` block showed `headless-boot.mjs:5` there and I misread it). Gates at `76d72e49` (code unchanged since `74f85381`): `npm test` 54 of 54 (tree dirty only by the regenerated `ui.html`, committed), citation audit exit `0`, `npm run build` exit `0`, `npm run smoke` `SMOKE PASS` with the two new rows.
 
 ## Left out
 
@@ -127,7 +127,7 @@ H=.sdlc/handoffs/pane-context-U4.md; awk '/^## Claims/,0' $H | grep -E '^\| ' | 
 ~~~
 
 ~~~out ran
-74f85381
+76d72e49
 0
 0
 src/ui/app.js:0
@@ -155,7 +155,6 @@ docs/reference/references/ui-plan.md:0
 2
 0
        0
-test/ui/headless-boot.mjs:5
 review end
 0
 1
