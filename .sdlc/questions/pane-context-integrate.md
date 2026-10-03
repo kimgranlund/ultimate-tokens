@@ -18,11 +18,17 @@ Fixtures, `node test/engine/chroma-envelope-gate.mjs --compare <base>` (copies u
 |---|---|---|---|---|---|
 | main (0ef7b87b) | merge base (ba7a299e) | byte-identical | byte-identical | moved | 0 |
 | plan head pre-merge (1e3fe1eb, U2) | merge base | moved | moved | moved | 2 (even 300 p90 `101.1588` vs `100.3224`; even above100 `503` vs `502`), the pair owner-accepted in U2 Question 1 A |
-| merged tree re-captured (2f45a4bb) | main | moved | moved | moved | 2 (even 300 p90 `100.2196` vs `100.0000`; even above100 `500` vs `499`) |
+| merged tree re-captured (`19ce51c4`, the merge on `2f45a4bb`) | main | moved | moved | moved | 2 (even 300 p90 `100.2196` vs `100.0000`; even above100 `500` vs `499`) |
 
 So the two risen cells are the same two cells, the same direction, that U2 already carried against its own base (rise `+0.84` and `+1` on the old base; `+0.22` and `+1` against main, because #766 had lowered the base to `100.0000` and `499`). The merged `perceptual` and `peak` lines say `moved` against main because the damper moves corpus subjects stored below 100, as C2.6 allows.
 
 `npm test` on the merged tree: 53 of 54 files pass. The red one is `engine/tonal.mjs`, case `group-chroma-damper` row (i): `even Primary at 100 hashes 98d8a73594eb7383, not the pre-damper render 4ba0da5e00260a71`. Attribution: the pin is the 19-stop hex hash of the default kit's Primary at chroma 100 in `even`, captured from 306f9a9e's engine, which predates #766 (the per-stop floor reference). On a detached worktree of `origin/main` (0ef7b87b, no damper) the same hash script prints `perceptual 517576c558838c97`, `peak 5b1905c4160c2a85`, `even 98d8a73594eb7383`; on the merged tree it prints the identical three. So the damper at 100 is still the identity, and the stale value is the `even` pin: main's own at-100 even render moved with #766.
+
+A sweep gate the merge also moved (found at the U4 pass 1 verdict, not at the merge):
+
+| Gate | Result on the merged tree | Cause and fix |
+|---|---|---|
+| `npm run gate:even-dips` (CI `sweeps`) | `rc=1`, control (a) `0 dips (want > 0)`, where main reads `32` | #766's grid sits on the chroma axis 30/45/60, which since #785 never reaches `evenChroma` (the damper scales a chroma-100 render). The damper is correct (R94, R98); the gate's controls were derived before it. U4 pass 2 re-derives the gate (axis gains 100, (b2) renders at 100, pin 7 to 8 by R87's rule), no `src/` change. Record: `.sdlc/plans/pane-context-U4-rediagnosis.md`, `.sdlc/questions/pane-context-even-dips.md` (owner ruling A) |
 
 ## Options
 

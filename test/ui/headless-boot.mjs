@@ -4301,6 +4301,21 @@ flushRaf();
   app.setSection("color"); app.setCanvasView("palettes"); app.render(); flushRaf();
 }
 
+// ── (tok-scheme) the Typography and Geometry tokens tables carry no scheme (C4.3): no column and no element with a
+// canvas-scheme- class anywhere in the canvas area, same as the Color Mapping table in (cm). ──
+{
+  const noScheme = (area) => walk(area, (e) => (e.className || "").includes("canvas-scheme-")).length === 0 && !(area.className || "").includes("canvas-scheme-");
+  app.setSection("typography"); flushRaf();
+  app.typeSpecMode = "tokens"; app.typeMode = "base"; app.render(); flushRaf();
+  ok(app.querySelectorAll(".compare-col").length === 0 && !!app.querySelector(".is-table") && noScheme(app.querySelector(".canvas-area")), "(tok-scheme) the Typography tokens table holds no column and no canvas-scheme- class");
+  app.typeSpecMode = "specimen"; app.render(); flushRaf();
+  app.setSection("geometry"); flushRaf();
+  app.geomSpecMode = "tokens"; app.geomMode = "base"; app.render(); flushRaf();
+  ok(app.querySelectorAll(".compare-col").length === 0 && !!app.querySelector(".is-table") && noScheme(app.querySelector(".canvas-area")), "(tok-scheme) the Geometry tokens table holds no column and no canvas-scheme- class");
+  app.geomSpecMode = "controls"; app.render(); flushRaf();
+  app.setSection("color"); app.setCanvasView("palettes"); app.render(); flushRaf();
+}
+
 // ── (lr-cols) a live drag patches each .compare-col IN PLACE: the same scene and column nodes survive, and each
 // column's --canvas-bg tracks its own scheme. ──
 {

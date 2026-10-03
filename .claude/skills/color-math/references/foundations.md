@@ -161,8 +161,11 @@ chromaEnvelope(stop, anchorStop, lift, controls):        # src/engine/tonal.js, 
   outward (constant `intended`) no off-anchor dip can form; with `relChroma` or the anchored basis blend that
   is a measurement, not a guarantee, gated at 0 by `test/engine/tonal.mjs` (`dip-gate-even`, rendered path)
   and `npm run gate:even-dips` (gate path and the `hueShift` grid lines (a) and (b1)) with no list; grid
-  line (b2), 1,000 pinned-seed random anchored palettes, is bounded at the merge-base's count (7 dip cells),
-  not at 0, because the per-stop OKLCH solve trades dips on random anchored input under rotation. Capping at the anchor stop alone drains the far half
+  line (b2), 1,000 pinned-seed random anchored palettes, is bounded at the merge-base's count (8 dip cells,
+  rendered at chroma 100), not at 0, because the per-stop OKLCH solve trades dips on random anchored input
+  under rotation. Since #785 `palette.chroma` reaches `evenChroma` only at 100 (every other value renders at
+  100 and is scaled by g/100), so grid lines (a) and (b2) render the chroma-100 cell, the only undamped one:
+  a dip at g needs a chroma-100 depth of at least 300/g, so it bounds every g. Capping at the anchor stop alone drains the far half
   of a near-white or near-black ramp; the first-step reference is continuous across the tone window.
 
 ### 6. The OKHSL-path pipeline (`okhslStops`, perceptual/peak)

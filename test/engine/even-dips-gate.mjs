@@ -35,19 +35,27 @@
 // read the reference at each stop's rotated hue: 0 corpus dips, 64 at hueShift 60 on this grid), so the
 // corpus sweep alone cannot see that class. Three lines, same predicate, each held to its bound:
 //   (a) gate path: default-kit controls (curve, tension, lmin, lmax, damp, dampCurve, dampBias,
-//       relChroma, chromaFloor, vibrancy), dampAmp 0, no anchor, hue 0 to 345 step 15, chroma 30/45/60,
+//       relChroma, chromaFloor, vibrancy), dampAmp 0, no anchor, hue 0 to 345 step 15, chroma 30/45/60/100,
 //       hueShift +/-30/45/60, hueSameDir false and true, hueSpace oklch and cam16, both stop sets
-//       (1,728 palettes), bound 0;
+//       (2,304 palettes), bound 0. Why 100 (#785, #766): since #785 `palette.chroma` reaches `evenChroma`,
+//       the one place #766's floor reference acts, only at 100; every other value renders at 100 and is
+//       then scaled by g/100 (the damper), which shrinks each dip's depth by that ratio. The predicate is
+//       absolute (3 C below both neighbours), so a dip at g needs a chroma-100 depth of at least 300/g, and
+//       the chroma-100 cell is the only undamped render, so it bounds every g. 30/45/60 stay as the damper's
+//       composition cells but cannot see the rotation-following reference on their own (c161f252 read 0
+//       dips from control (a) there);
 //   (b1) rendered path: the default kit's 16 palettes WITH their anchors, hueShift +/-60, hueSameDir
 //       false and true, both hue spaces, both stop sets (128 palettes), stop 500 excluded (the owner's Q3
 //       notch class, as tonal.mjs `dip-gate-even`), bound 0. Only +/-60: at -30/-45 the kit's #774902
 //       palette carries an anchored stop-200 notch that predates #766 (#784); this line gates #766's rule;
 //   (b2) rendered path, random: RANDOM_PALETTES anchored palettes drawn from mulberry32(RANDOM_SEED) over
 //       the persisted control domain (randomPalette below, draw order fixed), the kit's curve, tension,
-//       lmin, lmax, damp, dampCurve, dampBias and vibrancy, both stop sets, stop 500 excluded. Not 0: the
-//       per-stop OKLCH solve trades dips on random anchored input under rotation (#766 review p2 F1, owner
-//       R87, measured and accepted), so the bound is RANDOM_PIN, this same block's count on the merge-base
-//       engine, and the line fails if the head count exceeds it.
+//       lmin, lmax, damp, dampCurve, dampBias and vibrancy, both stop sets, stop 500 excluded. The chroma
+//       draw is still consumed in its slot (so every later draw keeps its value) but the palette renders at
+//       chroma 100, the same reason as (a): a drawn chroma below 100 never reaches `evenChroma` since #785.
+//       Not 0: the per-stop OKLCH solve trades dips on random anchored input under rotation (#766 review p2
+//       F1, owner R87, measured and accepted), so the bound is RANDOM_PIN, this same block's count on the
+//       merge-base engine, and the line fails if the head count exceeds it.
 // Each line has a data-URL control that puts back the rotation-following reading: (a) swaps GRID_TARGET's
 // `baseHue` for the rotated `hue` (paletteStops); (b1) and (b2) share one engine that drops
 // CHROMA_AT_TARGET's `resolvedHue`, so the final chroma line reads the reference at the rotated hue
@@ -67,8 +75,10 @@ const CHROMA_AT_TARGET = "chromaAt(hue, resolvedHue)";
 const RANDOM_SEED = 766;
 const RANDOM_PALETTES = 1000;
 // (b2)'s bound: this block's dip count on the merge-base engine, 8428280e (floorref-hue U2 pass 3, read
-// by importing that tree's src/engine/tonal.js as REAL): 7 dip cells in 4 palettes.
-const RANDOM_PIN = 7;
+// by importing that tree's src/engine/tonal.js as REAL, the block at chroma 100): 8 dip cells in 5
+// palettes. R87's rule is unchanged; the population moved (the block rendered the drawn chroma until
+// #785, which read 7 dip cells in 4 palettes on the same tree, the earlier pin), so the count did too.
+const RANDOM_PIN = 8;
 
 const argScale = (() => {
   const i = process.argv.indexOf("--floor-scale");
@@ -149,7 +159,7 @@ function gridGatePath(engine) {
   let palettes = 0;
   for (const hueSpace of ["oklch", "cam16"]) {
     const controls = gridControls(hueSpace);
-    for (let hue = 0; hue < 360; hue += 15) for (const chroma of [30, 45, 60]) for (const s of [30, 45, 60]) for (const hueShift of [s, -s]) for (const hueSameDir of [false, true]) {
+    for (let hue = 0; hue < 360; hue += 15) for (const chroma of [30, 45, 60, 100]) for (const s of [30, 45, 60]) for (const hueShift of [s, -s]) for (const hueSameDir of [false, true]) {
       palettes++;
       for (const stops of [engine.STOPS, engine.EXPORT_STOPS]) {
         const ramp = engine.paletteStops({ hue, chroma, skew: 0, lift: 0, hueShift, hueSameDir }, controls, stops);
@@ -176,10 +186,11 @@ function gridRendered(engine) {
   return { dips: out, palettes };
 }
 // (b2): mulberry32, and per palette, in this order: hueSpace, hue, chroma, skew, lift, hueShift,
-// hueSameDir, the anchor's three channels, chromaFloor, relChroma. Re-ordering a draw changes the set.
+// hueSameDir, the anchor's three channels, chromaFloor, relChroma. Re-ordering a draw changes the set. The
+// chroma draw is consumed and discarded (`(rnd(), 100)`): the palette renders at 100 (header).
 function randomPalette(rnd) {
   const hueSpace = rnd() < 0.5 ? "oklch" : "cam16";
-  const pal = { hue: rnd() * 360, chroma: rnd() * 100, skew: rnd() * 200 - 100, lift: rnd() * 80 - 40, hueShift: Math.round(rnd() * 120 - 60), hueSameDir: rnd() < 0.5 };
+  const pal = { hue: rnd() * 360, chroma: (rnd(), 100), skew: rnd() * 200 - 100, lift: rnd() * 80 - 40, hueShift: Math.round(rnd() * 120 - 60), hueSameDir: rnd() < 0.5 };
   pal.anchor = "#" + [0, 0, 0].map(() => Math.floor(rnd() * 256).toString(16).padStart(2, "0")).join("").toUpperCase();
   const chromaFloor = Math.round(rnd() * 100), relChroma = rnd() < 0.5;
   return { pal, controls: { ...gridControls(hueSpace), chromaFloor, relChroma } };
