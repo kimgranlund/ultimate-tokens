@@ -97,7 +97,7 @@ Decisions:
 Grades per R92 (no Fable): every unit runs reviewer-l3 then verifier-l2; the pre-land pair is reviewer-l3 plus verifier-l2. Builder grades: U1 l3, U2 l3, U3 l5, U4 l6, U5 l5.
 
 - [x] U1 (S) one `resolveControls` in `src/engine/controls.mjs`, default `"oklch"`, both drivers import it (C1.1 to C1.4)
-- [ ] U2 (S) `LAYERS` registry at version 1 with named engine `run`s and its graph test (C2.1 to C2.4)
+- [x] U2 (S) `LAYERS` registry at version 1 with named engine `run`s and its graph test (C2.1 to C2.4)
 - [ ] U3 (M) `compute(doc)`; `projectView` and `derivedAll` become views over it (C3.1 to C3.3); after #785 U2 and #766 U2 land
 - [ ] U4 (L) doc pins, pre-pin docs at version 1, presets at latest, frozen-module mechanism and hash gate, export stamps at the merge-base schema plus 1 (C4.1 to C4.6)
 - [ ] U5 (M) freeze `ramp@1`, `ramp@2` without the cam16 branch, `baseIntensity` renamed at schema 7 (C5.1 to C5.6)
