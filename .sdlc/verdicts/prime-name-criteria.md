@@ -2,23 +2,47 @@
 kind: criteria-review
 plan: prime-name
 seat: verifier
-pass: 1
+pass: 2
 ticket: none yet
 written: 2026-10-03
 ---
 
-# prime-name criteria review · pass 1 · 🔴 at `63d0b409`
+# prime-name criteria review · pass 2 · 🔴 at `9fcb2c45`
 
-Current state: pass 1 🔴 at `63d0b409`. Seven of eleven rows are not checkable as written (C1.1, C1.2, C1.5, C1.6, C2.1, C2.2, C2.3); the plan is not mobilizable until they are repaired. Q1 to Q3 were graded against their recommended answers (A, A, A).
+Current state: pass 2 🔴 at `9fcb2c45` (revision 1, rulings Q1 to Q3 recorded). Six of the seven pass 1 reds are repaired and 🟢. One row stays 🔴: C2.3's Today is 1, not 0, and its count can pass without the unit. Pass 1 follows as history.
 
 verdict: 🔴
-sha: 63d0b409
+sha: 9fcb2c45
+
+Pass 1 lines: `verdict: 🔴` at `63d0b409`.
+
+## Pass 2 · 🔴 at `9fcb2c45`: one red, C2.3
+
+Plan `.sdlc/plans/prime-name.md` at `9fcb2c45`, graded by the Verifier seat directly. Every Today value was rerun on the root (no tracked change under `src figma plugin docs test` since `9fcb2c45`). Rows unchanged from pass 1 and still 🟢 (C1.3, C1.4, C1.7, C2.4) are not repeated.
+
+### Rows
+
+| # | State | Evidence | Negative control |
+|---|---|---|---|
+| C1.1 | 🟢 | Pathspec now `figma`. `git grep -l prime-prime -- src mcp plugin figma test docs/reference/data` prints exactly the 5 listed files, `figma/plugin/ui.html` included. Constraint 4 makes the test needle built, so the grep can reach empty. | Revert `primeSlug`, run `npm test` (regenerates the css and bundle): grep lists files. Runnable. |
+| C1.2 | 🟢 | Scratch script on `stateOf(defaultDocument())` today: old forms CSS 1, Tailwind 1, `exportRadix(st, {refs:true})` `var(--c-primary-prime-prime)` 2; new bare forms 0, 0, 0 (`var(--c-primary-prime)` with its closing paren does not match the doubled form). Matches the plan's Today. | As C1.1: new counts back to 0. Runnable. |
+| C1.5 | 🟢 | `git diff --stat <base> -- figma/binder/migrations.mjs` empty is observable. | Append a comment line in the unit tree: `--stat` prints one file. An action now. |
+| C1.6 | 🟢 | `EXPORT_SCHEMA_VERSION = 3` today; merge-base plus 1 holds in both landing orders (Q2). | Leave the constant unchanged: equal values, check reds. |
+| C2.1 | 🟢 | Grep prints exactly the 3 listed files; `docs/reference/data` excluded and owned by U1 C1.1, so one owner. | Leave one: grep prints it. |
+| C2.2 | 🟢 | Run with each `\|` read as the table escape for a bare pipe: prints 2 today (`--{n}-prime-brightest`, `--{n}-prime-dimmest`), Expected 6. Fails without the unit. Note: copied literally with the backslashes, BSD grep prints 0; the builder and verifier must unescape. | Revert the skill edit: prints 2. |
+| C2.3 | 🔴 | The `## [Unreleased]` slice already has one hit today: line 83 of the slice, `` `EXPORT_SCHEMA_VERSION` moves 2 → 3 ``. Today is 1, not 0. With Expected "at least 2", any second `EXPORT_SCHEMA_VERSION` line passes it, e.g. compute-layers' own entry for its bump landing first, with no prime entry at all. `grep -c` counts lines, so one line naming both terms also counts once. | Gap: check the two facts separately, e.g. `prime-prime` count in the slice at least 1 (today 0) and a line naming the move from the merge-base value to the new one (today absent). Control as stated (drop the entry) then reds both. |
+
+### Findings
+
+- 🔴 C2.3 not checkable as written (above). Repair and resubmit for pass 3.
+- 🟢 Pass 1 finding on Q1's Panda premise is closed: the ruling drops the `prime.DEFAULT` reasoning.
+- 🟢 Pass 1 finding on the `adia-oklch-export.css` owner is closed: U1 owns it, C2.1 excludes it.
 
 ## Pass 1 · 🔴 at `63d0b409`: draft
 
 Plan `.sdlc/plans/prime-name.md` at `63d0b409`, rows C1.1 to C2.4, graded by the Verifier seat directly. Every Today value was rerun on the root at `63d0b409`; emitter counts come from a scratch script importing `src/engine/exports.js` and `src/ui/model.mjs` (`stateOf(defaultDocument())`). 🟢 means I can name now the command that fails if the unit is missing or wrong. 🔴 means the row as written cannot be graded: its Today or Expected is false, its control is n/a or not an action, or its value depends on an unruled choice.
 
-## Rows
+### Rows
 
 | # | State | Evidence | Negative control |
 |---|---|---|---|
@@ -34,7 +58,7 @@ Plan `.sdlc/plans/prime-name.md` at `63d0b409`, rows C1.1 to C2.4, graded by the
 | C2.3 | 🔴 | `grep -n prime CHANGELOG.md \| head -3` "an Unreleased entry naming the rename and the schema move" is a reading, not a fixed needle; control n/a. | Gap: a needle under `## Unreleased` (e.g. `prime-prime` and `EXPORT_SCHEMA_VERSION` in that section), with control: drop the entry, the check reds. |
 | C2.4 | 🟢 | `npm test`, `git status --porcelain`: observable. | Adapter §1 control. Runnable. |
 
-## Findings
+### Findings
 
 - 🔴 Seven rows not checkable (above). Repair and resubmit for pass 2.
 - 🟡 Q1 A's reason says "Panda already exposes `prime.DEFAULT`", but `exportPanda(stateOf(defaultDocument()))` contains no `prime` substring. If the claim refers to `exportPandaModule`, say so; otherwise Q1's recommendation rests on a false premise.
