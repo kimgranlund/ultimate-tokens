@@ -11,6 +11,8 @@ audience: builder, reviewer, planner
 ---
 # SPEC: Muted base ramps, a per-palette prime system, and 8 brand-derived data palettes
 
+> Superseded in part by R94 to R98 (#785): a group's Base chroma is now a whole-ramp damper (the at-100 ramp times g/100, damp only), not REQ-002's absolute target, and Material defaults to 100/60, not 30/60 (EX-2's `chroma 30` Neutral ramp no longer holds).
+
 Intent records: GitHub issue #503 (`kind:feature`, `size:big`, `lane:color-engine`) and #533 (the
 prime-system re-ruling, Findings 2026-09-11). Companion design: `docs/lld/lld-muted-base-key-spikes.md`.
 

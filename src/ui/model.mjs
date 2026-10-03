@@ -419,8 +419,8 @@ export function paletteGroup(p) {
 
 // ── Per-group base chroma (SPEC spec-muted-base-key-spikes 0.3.0, #556/#559 re-ruling) ───────────
 // GROUP_DEFAULTS (imported above, from persist.js, the canonical source, model.mjs re-exports it):
-// the four groups' own baseChroma/primeChroma defaults (ratified 2026-09-11): Material renders
-// muted by default (30/60); Brand/System stay at the legacy 100/100 (no visible change); Data is
+// the four groups' own baseChroma/primeChroma defaults: Material is 100/60 since #785 (R96; the
+// slider damps the whole ramp, 30/60 before); Brand/System stay at 100/100 (no visible change); Data is
 // LOCKED, its `locked:true` marks that a Data-group palette's per-palette primeChroma override is
 // IGNORED (not deleted, just unused) by primeChromaOf below. Data's ramp chroma is NEVER
 // overridable at all, in any group (REQ-002), that half of the old per-palette override is gone

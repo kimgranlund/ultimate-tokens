@@ -62,9 +62,12 @@ A palette carrying a valid 6-hex `anchor` (a STORED source colour, never fitted)
   it makes curve, tension and hue space inert and renders peak and perceptual byte-identical for
   every anchored palette, which is exactly the tripwire `anchor-f4` watches.
 - Chroma at the pivot comes from `anchorChromaBasis`, a smoothstep blend from the anchor's own
-  measured chroma at stop 500 to the group's resolved ramp target at each end. Do not "simplify" it
-  to the anchor's value read unconditionally: that makes a group's Base chroma a no-op for every
-  anchored ramp and reds `(gid3)`/`(gid8)`/`(gid8b)` in the headless shim.
+  measured chroma at stop 500 toward `min(groupValue, anchorValue)` at each end. Since #785 (R94 to
+  R98) `groupValue` is always 100 there: `paletteStops` renders every ramp at 100 and a group's Base
+  chroma acts afterwards as one whole-ramp ratio, `groupDamper(g) = g/100` applied by `dampStops`
+  (tone held, damp only, so 150 renders as 100). Change group muting in `dampStops`, never inside
+  the anchored or even builders; `(gid3)`/`(gid8)`/`(gid8b)` and `test/ui/model.mjs`'s Material-50
+  pair red if the damper stops reaching a surface.
 - Gates: `test/engine/anchor.mjs` (`anchor-identity`, `anchor-ramp`, the window and ladder
   allow-lists, `anchor-f4`). knowledge-02 §9 is the reference description; ADR-026 is the ruling.
 

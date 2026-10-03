@@ -695,6 +695,13 @@ for (const mode of ["perceptual", "peak"]) {
 //   old floor rose with maxc. Perceptual: 0 cells. Patched cell by cell by a scratch script that
 //   rewrites only the differing even cells, not regenerated; the list is in
 //   .sdlc/handoffs/chroma-floor-U2.md.
+//   #785 U2 re-pin (R94 to R98, the group damper): REGENERATED wholesale, not patched, by
+//   `node scripts/gen-tonal-fixture.mjs "pc-U2 #785 group damper"` from the damper engine. A role-table
+//   default's `chroma` is now a ratio on the at-100 ramp (`groupDamper`, `dampStops`) instead of an
+//   absolute target, so every default below chroma 100 moved: 512 of 800 cells (16 palettes x 25 stops
+//   x 2 paths). Secondary and Warning (the only chroma-100 defaults) are byte-identical, and the U2
+//   review found 0 of 96 at-100 ramps (16 palettes x 3 modes x 2 hue spaces) differ, base vs head.
+//   The carve-out history above records the cells' earlier provenance; the cells themselves are #785's.
 {
   const FX = JSON.parse(readFileSync(new URL("./fixtures/tonal-legacy.json", import.meta.url), "utf8")).paths;
   const dc = T.DEFAULT_CONTROLS || {};

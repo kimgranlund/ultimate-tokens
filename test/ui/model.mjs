@@ -302,7 +302,9 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   damped.paletteGroups = { ...damped.paletteGroups, material: { ...damped.paletteGroups.material, baseChroma: 50 } };
   ok(baseExports.css !== projectView(damped).exports.css, "Material base chroma 50 must change the CSS export bytes (#785 damper)");
   ok(JSON.stringify(baseDs) !== JSON.stringify(exportDesignSystemBundle(dsDocOf(damped), typeScaleFor(damped, "base"), geomScaleFor(damped, "base"), dsOpts)), "Material base chroma 50 must change the DS bundle bytes (#785 damper)");
-  ok(JSON.stringify(brandKit(base)) !== JSON.stringify(brandKit(damped)), "Material base chroma 50 must change the MCP brandKit() payload (#785 damper)");
+  // Net of `controls`, which carries the stored 50 whether or not the ramps moved: the colors must move.
+  const kitColors = (kit) => JSON.stringify({ palettes: kit.palettes, roles: kit.roles });
+  ok(kitColors(brandKit(base)) !== kitColors(brandKit(damped)), "Material base chroma 50 must change the MCP brandKit() palettes and roles (#785 damper)");
 }
 
 // ── U2 (#637): radixKeyCollision(name) + RADIX_COLLISION_BADGE (I4/I5/OQ-3) ────────────────

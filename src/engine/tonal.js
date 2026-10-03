@@ -81,10 +81,10 @@ export const DEFAULT_CONTROLS = {
   // 500, one mode-agnostic accent token. Applied via applyAccentRef alongside applyOnColorContrast.
   accentRef: "mode",
   // (SPEC spec-muted-base-key-spikes 0.3.0, REQ-002/004, AC-004): the ramp's chroma multiplier that
-  // used to live here as a control field is fully retired, engine-side, a palette group's "Base
-  // chroma" is now an ABSOLUTE chroma target resolved entirely in src/ui/model.mjs and src/ui/persist.js
-  // (never in this engine module) and handed to paletteStops AS the palette's own `chroma`. No trace
-  // of that resolution survives on DEFAULT_CONTROLS: tonal.js stays fully group- and intensity-unaware.
+  // used to live here as a control field is fully retired. A palette group's "Base chroma" is resolved
+  // in src/ui/model.mjs and src/ui/persist.js and handed to paletteStops AS the palette's own `chroma`;
+  // since #785 (R94 to R98) paletteStops reads it as a ratio, the whole-ramp damper `groupDamper` /
+  // `dampStops` below. No trace of the group survives on DEFAULT_CONTROLS.
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -558,8 +558,8 @@ export function liftStop(stop, lift) {
 //
 // anchorChromaBasis(stop, anchorStop, lift, anchorValue, groupValue) -> the BASIS chromaEnvelope's
 // shoulder/damp multiplier gets applied to (Q-U2-5 ruling, addendum 2, u2-p2-brief.md, 2026-09-18):
-// the anchor's own measured chroma/saturation exactly AT the pivot (w=0), blending to the group's
-// resolved ramp target (`groupValue`, `rampChroma`-derived) at each side's true endpoint (w=1), BY
+// the anchor's own measured chroma/saturation exactly AT the pivot (w=0), blending to `groupValue` (the
+// palette's `chroma`, always 100 since #785: the group mutes the ramp afterwards, in `dampStops`) at each side's true endpoint (w=1), BY
 // THE LIFTSTOP POSITION - the SAME `sd` chromaEnvelope itself keys on, not `anchorWarp`'s skew-warped
 // `w` (a local construction this ruling retired: tying the chroma BLEND to skew was never asked for,
 // and it re-threaded `anchorLiftPos` back into the chroma path chromaEnvelope's own liftStop routing
@@ -579,8 +579,8 @@ export function liftStop(stop, lift) {
 // Capped at the anchor (#725 U2, owner ruling R69, reverses Q-U2-5 for perceptual and peak): the group
 // target the blend walks toward is `min(groupValue, anchorValue)`, so a muted sample in a vivid group no
 // longer climbs toward the group's chroma on either side of the pivot (the climb is what put perceptual
-// stop 300 at a 94% median of stop 500 and every anchored peak ramp above its own anchor). A vivid sample
-// in a muted group still falls toward the group, as before: only the climb is removed. `climb = true`
+// stop 300 at a 94% median of stop 500 and every anchored peak ramp above its own anchor). Since #785 the
+// group value here is always 100, so the target is the anchor's own value; a muted group damps after. `climb = true`
 // keeps the pre-R69 blend for the EVEN path (`paletteStopsAnchored`), which #701 owns and this ruling
 // does not move.
 export function anchorChromaBasis(stop, anchorStop, lift, anchorValue, groupValue, climb = false) {
@@ -713,8 +713,8 @@ function anchorLerp(pivot, edgeLight, edgeDark, stop, skew, lift, curve, tension
 // chromaEnvelope's shoulder/damp multiplier is applied to is a BLEND, not the anchor's own chroma read
 // unconditionally at every stop - exactly the anchor's own measured CAM16 chroma AT the pivot (liftStop
 // position 0, stop 500, byte-exact, matching the explicit stop-500 special case below), shading to the
-// group's resolved ramp target (`palette.chroma`, i.e. `rampChromaOf`'s output - REQ-002's own "Base
-// chroma moves every ramp in the group" contract) at each side's true endpoint (liftStop position 1).
+// palette's `chroma` (always 100 here since #785; REQ-002's "Base chroma moves every ramp in the group"
+// now holds through `dampStops`, after this render) at each side's true endpoint (liftStop position 1).
 // This is a SEPARATE position measure from the tone construction above (`anchorLerp`'s own toneAt-based
 // remap, R6) - the two are no longer tied to a single shared `w`, which is intentional: R4 retired the
 // skew-warped `w` from the chroma path specifically because tying the chroma blend to skew was never
@@ -826,8 +826,8 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
   // anchor stop of 500, is exactly 1 at stop 500 for any lift, so at the pivot `evenChroma` reduces to
   // the BASIS's own pivot value exactly - no notch, by construction. The basis itself is
   // `anchorChromaBasis`'s blend: the anchor's own measured CAM16 chroma at the pivot (`anchorIntended`,
-  // liftStop position 0), shading to the group's resolved ramp target (`groupIntended`,
-  // `palette.chroma`-derived, mirroring `paletteStops`'s own `target`/relChroma formulas exactly) at
+  // liftStop position 0), shading to `groupIntended` (`palette.chroma`-derived, always 100 here since
+  // #785, the group damps afterwards in `dampStops`; mirrors `paletteStops`'s `target`/relChroma) at
   // each side's endpoint (liftStop position 1) - never the anchor's value read unconditionally at
   // every stop, and never `palette.chroma` alone either.
   const maxc500 = maxChromaInGamut(seedHue, anchor.lstar);
@@ -1323,7 +1323,7 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
     // lift))/450` already IS that computation, parametrized so env(500)=1 exactly for any lift). The
     // BASIS multiplied by that envelope is `anchorChromaBasis` (see its own header comment, shared
     // verbatim with `paletteStopsAnchored`): the anchor's own OKHSL `s` at the pivot (liftStop position
-    // 0), shading to `palette.chroma/100` - the group's resolved ramp target, mirroring `okhslStops`'s
+    // 0), shading to `palette.chroma/100` (always 1 since #785, the group damps after), mirroring `okhslStops`'s
     // own `s = (palette.chroma/100)*m` formula exactly - at each side's endpoint (liftStop position 1),
     // by the SAME liftStop position the envelope itself keys on. No notch by construction: env(500)=1
     // and the basis's own liftStop position is 0 at the pivot, so `s` reduces to `anchor.okhsl.s`
