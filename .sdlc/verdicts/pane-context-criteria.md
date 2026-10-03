@@ -2,18 +2,19 @@
 kind: criteria-review
 plan: pane-context
 seat: verifier
-pass: 6
+pass: 7
 ticket: none yet
 written: 2026-10-01
 ---
 
-# pane-context criteria review · pass 6 · 🔴 at `2d5263b6`
+# pane-context criteria review · pass 7 · 🟢 at `df398b5f`
 
-Current state: pass 6 🔴 at `2d5263b6` (plan revision 8, the new C2.11 only). C2.11's `min(group, anchor)` grep on `decision-records.md` expects `0`, but the one hit is the dated R69 amendment to ADR-026, which the row itself says a new amendment supersedes; a faithful build appends and keeps that history, so it prints `1`. Every other U2 row stays 🟢 from pass 5; U1, U3 and U4 stay 🟢 from pass 2. Passes 5 to 1 follow as history.
+Current state: pass 7 🟢 at `df398b5f` (plan revision 9). C2.11 now pins the ADR-026 repair with two positive needles and leaves the dated R69 amendment's text alone. Every U2 row C2.1 to C2.11 is checkable; U1, U3 and U4 stay 🟢 from pass 2. The plan is mobilizable. Passes 6 to 1 follow as history.
 
-verdict: 🔴
-sha: 2d5263b6
+verdict: 🟢
+sha: df398b5f
 
+Pass 6 lines: `verdict: 🔴` at `2d5263b6`.
 Pass 5 lines: `verdict: 🟢` at `600751b0`.
 Pass 4 lines: `verdict: 🔴` at `744e7dd1`.
 Pass 3 lines: `verdict: 🔴` at `b59139a0`.
@@ -178,3 +179,14 @@ Revision 8 at `2d5263b6`, graded by the seat directly on `git diff 600751b0 2d52
 ### Findings
 
 1. 🔴 C2.11: the `decision-records.md` leg of the `min(group, anchor)` grep reds a correct, history-keeping amendment; replace it with a positive needle on the new amendment and one on its Quick map row.
+
+## Pass 7 · 🟢 at `df398b5f`: C2.11's ADR needles are positive
+
+verdict: 🟢
+sha: df398b5f
+
+Revision 9 at `df398b5f`, graded by the seat directly on `git diff 2d5263b6 df398b5f -- .sdlc/plans/pane-context.md` (C2.11 and the revision row only). Today's counts read with `git show df398b5f:<path>`.
+
+| # | State | Check I would run | What changed, and the control |
+|---|---|---|---|
+| C2.11 | 🟢 | the four greps as written; `npm test` for ac003b | Today prints `4`, `1`, `0`, `0`, matching the row's control. `decision-records.md` is out of the `min(group, anchor)` grep, so the R69 amendment keeps its text. The amendment needle matches the file's own form (`- **Amendment (2026-09-29, #725, R69).**`), and the Quick map has exactly one `^| ADR-026 ` row (line 846 today), so `1` is the right count. The partial-repair controls bite: code only prints `0` and `0` on the two ADR needles; amendment without the map row prints `0` on the last |
