@@ -825,7 +825,7 @@ Format: Context → Decision → Rationale → Consequences → Status.
   not closed (R87, option A, `.sdlc/questions/floorref-hue-U2-p2.md`): on 5,000 random anchored palettes the
   kept per-stop solve removes 16 merge-base dip cells and opens 4 (2 palettes, oklch, `hueShift` 39 and 49). `evenChroma`'s body and signature are
   unchanged. Gated by `test/engine/even-dips-gate.mjs` (the grid block and its controls) and
-  `test/engine/chroma-envelope-gate.mjs` (the even row falls, 502 to 499 cells above 100% of stop 500).
+  `test/engine/chroma-envelope-gate.mjs` (the even row falls, 502 to 499 cells above 100% of stop 500 under #766 alone; with the damper merged under it the committed fixture holds 500).
 
 ## ADR-027: A seat cites only what it measured, at the ref it is writing about
 - **Context.** Over one review round of #681 U5, four defects arose from three seats through one
