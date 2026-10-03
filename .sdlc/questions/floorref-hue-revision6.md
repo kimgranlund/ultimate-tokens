@@ -8,3 +8,11 @@
 | Question | The plan has five revision rows already, so a sixth needs the owner. May it add U4 (S, trivial lane, builder-l1, reviewer-l1): change the check to accept three or more readings (`t.length >= 3`), nothing else? |
 | Options | A (recommended): yes, revision 6 with U4 as above. · B: no plan change; cut each of the two rows to three readings (loses the five-pair record the verifier timed). · C: no; a separate issue and PR for the check, landed before this plan. |
 | Default if unanswered | none: a sixth revision row needs the owner |
+
+## Answer
+
+| Field | Value |
+|---|---|
+| Asked | 2026-10-03, via AskUserQuestion |
+| Chosen | A: "Yes, add U4 (Recommended)" |
+| Ruling | revision 6 adds U4 (S, trivial lane, builder-l1, reviewer-l1): the check accepts three or more readings, nothing else |
