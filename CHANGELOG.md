@@ -11,6 +11,12 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 ### 2026-10-03
 
 #### Changed
+- **Light and Dark now render side by side everywhere; the canvas scheme toggle is gone** (#785). Each
+  section's canvas shows one column per scheme and per shown breakpoint, Light first, inside the one
+  pannable scene, and the Settings "Canvas preview" row and the Light/Dark/Both control are removed.
+  Typography and Geometry example pages render in both schemes too. Token tables carry no scheme. A
+  drag ghost takes the scheme of the column it was lifted from. The app's own chrome theme is
+  unchanged. A stored canvas preference is ignored on load.
 - **A group's Base chroma slider now damps the whole ramp** (#785, R94 to R98). The `<group> base
   chroma` value `g` (0 to 100) scales every stop's chroma to `g / 100` of the ramp the palette renders
   at 100, in every tone mode, anchored or not, stop 500 included. Before this change an anchored
