@@ -1,5 +1,7 @@
 # Handoff pane-context U4 (#785)
 
+Pass 2 (builder-l3, the `gate:even-dips` re-derivation after verdict pass 1) is the `## Pass 2` section; its code head is `204704fb`. The text below is builder-l6's pass 3 and stays true except the `ran` block's head line, which names `76d72e49`.
+
 Builder, grade l6, pass 3 (review `85d01a7f` findings 1 to 6 fixed; re-review `b4c78d45` residue fixed; pass 1 text below stays true). Branch `unit/pc-U4`, worktree `.worktrees/pc-U4`, cut from `plan/pane-context`; main merged in first (`19ce51c4`). Code heads: `a2f01328` (source), `7a456243` (shim), `2aa99e80` (smoke), `e82df638` to `cdc1ee93` (pin, docs, CHANGELOG, bundle), `94d475ac`, `73672868`, `74f85381` (review pass 1 fixes), `76d72e49` (re-review residue). The `ran` block below names its head on its first line, `76d72e49`.
 
 ## Files
@@ -72,6 +74,106 @@ Re-review (`b4c78d45`) found the shim still naming the removed seam (a dead `_wi
 - `.sdlc/board.md` and the plan file are untouched.
 - 30 app-shell citations are NEAR (mostly one line off, predating U4); the audit tolerates NEAR and I left them.
 - The citation negative control for a 1-line shift passes by design (NEAR), so the control uses a 30-line shift.
+
+## Pass 2 (verdict pass 1 red at `c161f252`: `gate:even-dips`; builder, grade l3)
+
+Fix is option C of `.sdlc/plans/pane-context-U4-rediagnosis.md` (owner ruling A, `.sdlc/questions/pane-context-even-dips.md`). No `src/` change: the damper in `src/engine/tonal.js` is as ruled (R94, R98). Code head `204704fb`. Controls below ran on `git archive` copies under `$CLAUDE_JOB_DIR/tmp/pc-U4-b2/` (`head/`, `main/` = `origin/main` `5344711c`, `nc-a/`, `nc-b/`, `nr-axis/`), load 2 to 3 before each run.
+
+| File | Change |
+|---|---|
+| `test/engine/even-dips-gate.mjs` | (a) chroma axis `[30, 45, 60, 100]` (2,304 palettes); (b2) renders at chroma 100 with the chroma draw consumed in its slot (`chroma: (rnd(), 100)`); `RANDOM_PIN` 7 to 8 (`8428280e`); header states the axis, why 100, the draw and the pin |
+| `.claude/skills/color-math/references/foundations.md` | the `(7 dip cells)` pin text now says 8, chroma 100, with why |
+| `docs/reference/references/decision-records.md` | ADR-026 gains an appended `Amendment (2026-10-03, #785, #766)`; the #766 amendment's "pinned count of 7" stays as history; the Quick map row lists the new amendment |
+| `.sdlc/questions/pane-context-integrate.md` | an even-dips row (gate result and cause); the Numbers table row for the merged re-capture is labelled `19ce51c4` (was `2f45a4bb`, the pre-merge base) |
+| `docs/reference/references/spec-draft.md` | line 176: app-chrome follows system / light / dark; the canvas always draws Light and Dark |
+| `test/ui/headless-boot.mjs` | new `(tok-scheme)`: the Typography and Geometry tokens tables hold 0 `.compare-col` and no `canvas-scheme-` class (the C4.3 half the verdict found uncovered) |
+
+| Id | Evidence | Negative control | State |
+|---|---|---|---|
+| C4.14 | head archive, `FORCE_COLOR=0 node test/engine/even-dips-gate.mjs --full`: `rc=0`, lines in the order: control (a) `8 dips (want > 0)`, (a) `0 dips (... 2304 palettes ...)`, (b1) `8` / `0`, (b2) control `16 dips (want > 8 ...)`, (b2) `6 dips in 4 palettes (... bound 8 ...)`, pre-#701 `124`, corpus `0`, `PASS` (full output below) | NC-a (head `tonal.js` with `floorRefAt(hue, ...)` put back): `rc=1`, (a) real `8 dips`, `FAIL`. NC-b (`chromaAt(hue)` put back): `rc=1`, (b1) real `8 dips`, (b2) real `16 dips in 9 palettes`, `FAIL`. NC-axis (c161f252's unedited gate on the head engine): `rc=1`, `negative control DID NOT bite ... 0 grid dips on (a)` | 🟢 |
+| C4.15 | `grep -c` for the `[30, 45, 60, 100]` axis, for `chroma: rnd() * 100`, for `const RANDOM_PIN = 8;`: `1`, `0`, `1` | draw order: `gate-nodraw.mjs` (the consumed draw dropped, `chroma: 100`): (b2) control `13 dips`, real `3 dips in 2 palettes` naming `#102` (2 cells) and `#324` (1), not `#317`, `#346`, `#781`, `#934` | 🟢 |
+| C4.16 | the `8428280e` recipe below: `8 dips in 5 palettes` at chroma 100 | the same recipe with the drawn chroma prints `7 dips in 4 palettes`, the old pin, so the recipe is the R87 recipe | 🟢 |
+| C4.17 | the re-derived gate on `git archive` of `origin/main` (`5344711c`, no damper): `rc=0`, control (a) `40 dips`, (a) `0`, (b1) `8` / `0`, (b2) control `16` / real `6 dips in 4 palettes`, pre-#701 `120`, corpus `0`, `PASS` | the same gate on the head (damper present) is C4.14: both trees pass, the re-derivation does not depend on the damper | 🟢 |
+| C4.18 | gate header names the axis 30/45/60/100 and why 100, (b2) at chroma 100 with the draw kept, pin 8 with `8428280e`; `grep -c '(7 dip cells)'` on foundations: `0`; `grep -c 'Amendment (2026-10-03, #785, #766)'` on decision-records: `1`; the integrate question has the even-dips row | `grep -rn 'RANDOM_PIN = 7\|count of 7\|(7 dip cells)' test docs/reference .claude/skills` prints only `decision-records.md:824` (the #766 amendment) and `:836` (the new amendment quoting it): history lines, no live pin | 🟢 |
+| C4.19 | `npm test`: `all 54 test files passed`, rc 0 (3:35 wall); `node test/repo/em-dash.mjs`: `em-dash: clean (1132 files scanned)`; `git status --porcelain` empty | the C4.13 control `sed -i '' 's/"scrim/"scrimX/' docs/reference/data/role-table.json` then `npm test`: `rc=1`, `engine/semantic.mjs FAIL`, `refs-canonical, ordered key set != canonical`, `1/54 test file(s) failed`; restored (the run also touches `src/ui/describe-mcp-assets.js`, restored), porcelain empty | 🟢 |
+| verdict row: C4.3 tokens tables | shim rc `0`, `HEADLESS BOOT PASS`, both `(tok-scheme)` rows pass | planting `canvas-scheme-light` in `_tokensTableArea`'s class: shim `rc=1`, `(tok-scheme) the Typography tokens table holds no column and no canvas-scheme- class` and the Geometry row both red; restored | 🟢 |
+| verdict row: `spec-draft.md:176` | `grep -c 'canvas-preview color-scheme' docs/reference/references/spec-draft.md` prints `0` | the line read `app-chrome **and** canvas-preview color-scheme each follow` at `c161f252` | 🟢 |
+| verdict row: integrate question | the Numbers row reads `19ce51c4`; even-dips row present | the old label `merged tree re-captured (2f45a4bb)` | 🟢 |
+
+The head gate, full output (dip names omitted, ms dropped):
+
+~~~text
+  negative control (a) gate path (no anchor) (reference at the rotated hue): 8 dips (want > 0)
+  dip-gate even hueShift grid (a) gate path (no anchor): 0 dips (19 + 25 stops, 2304 palettes, stop 500 included, bound 0)
+  negative control (b1) rendered (kit anchors, hueShift +/-60) (reference at the rotated hue): 8 dips (want > 0)
+  dip-gate even hueShift grid (b1) rendered (kit anchors, hueShift +/-60): 0 dips (19 + 25 stops, 128 palettes, stop 500 excluded, bound 0)
+  negative control (b2) rendered (random anchored, seed 766) (reference at the rotated hue): 16 dips (want > 8, the pinned merge-base count)
+  dip-gate even hueShift grid (b2) rendered (random anchored, seed 766): 6 dips in 4 palettes (19 + 25 stops, 1000 palettes, stop 500 excluded, bound 8, the pinned merge-base count)
+  negative control (pre-#701 floor, 1.6x): 124 dips (want > 0)
+  dip-gate even gate-path (no anchor): 0 dips (19 + 25 stops, 3764 palettes + default kit 16, no baseline)
+PASS
+rc=0
+~~~
+
+NC-a (`nc-a/`), NC-b (`nc-b/`) and NC-axis (`nr-axis/`) outputs (dip names omitted, ms dropped):
+
+~~~text
+## NC-a
+  negative control (a) gate path (no anchor) (reference at the rotated hue): 8 dips (want > 0)
+  dip-gate even hueShift grid (a) gate path (no anchor): 8 dips (19 + 25 stops, 2304 palettes, stop 500 included, bound 0)
+  negative control (b1) rendered (kit anchors, hueShift +/-60) (reference at the rotated hue): 8 dips (want > 0)
+  dip-gate even hueShift grid (b1) rendered (kit anchors, hueShift +/-60): 0 dips (19 + 25 stops, 128 palettes, stop 500 excluded, bound 0)
+  negative control (b2) rendered (random anchored, seed 766) (reference at the rotated hue): 16 dips (want > 8, the pinned merge-base count)
+  dip-gate even hueShift grid (b2) rendered (random anchored, seed 766): 6 dips in 4 palettes (19 + 25 stops, 1000 palettes, stop 500 excluded, bound 8, the pinned merge-base count)
+  negative control (pre-#701 floor, 1.6x): 124 dips (want > 0)
+  dip-gate even gate-path (no anchor): 0 dips (19 + 25 stops, 3764 palettes + default kit 16, no baseline)
+FAIL
+rc=1
+## NC-b
+  negative control (a) gate path (no anchor) (reference at the rotated hue): 8 dips (want > 0)
+  dip-gate even hueShift grid (a) gate path (no anchor): 0 dips (19 + 25 stops, 2304 palettes, stop 500 included, bound 0)
+  negative control (b1) rendered (kit anchors, hueShift +/-60) (reference at the rotated hue): 8 dips (want > 0)
+  dip-gate even hueShift grid (b1) rendered (kit anchors, hueShift +/-60): 8 dips (19 + 25 stops, 128 palettes, stop 500 excluded, bound 0)
+  negative control (b2) rendered (random anchored, seed 766) (reference at the rotated hue): 16 dips (want > 8, the pinned merge-base count)
+  dip-gate even hueShift grid (b2) rendered (random anchored, seed 766): 16 dips in 9 palettes (19 + 25 stops, 1000 palettes, stop 500 excluded, bound 8, the pinned merge-base count)
+  negative control (pre-#701 floor, 1.6x): 124 dips (want > 0)
+  dip-gate even gate-path (no anchor): 0 dips (19 + 25 stops, 3764 palettes + default kit 16, no baseline)
+FAIL
+rc=1
+## NC-axis
+  negative control (a) gate path (no anchor) (reference at the rotated hue): 0 dips (want > 0)
+FAIL: negative control DID NOT bite  -  the rotation-following reference produced 0 grid dips on (a) gate path (no anchor), not more than 0
+rc=1
+~~~
+
+`origin/main` (`5344711c`) with the re-derived gate:
+
+~~~text
+  negative control (a) gate path (no anchor) (reference at the rotated hue): 40 dips (want > 0)
+  dip-gate even hueShift grid (a) gate path (no anchor): 0 dips (19 + 25 stops, 2304 palettes, stop 500 included, bound 0)
+  negative control (b1) rendered (kit anchors, hueShift +/-60) (reference at the rotated hue): 8 dips (want > 0)
+  dip-gate even hueShift grid (b1) rendered (kit anchors, hueShift +/-60): 0 dips (19 + 25 stops, 128 palettes, stop 500 excluded, bound 0)
+  negative control (b2) rendered (random anchored, seed 766) (reference at the rotated hue): 16 dips (want > 8, the pinned merge-base count)
+  dip-gate even hueShift grid (b2) rendered (random anchored, seed 766): 6 dips in 4 palettes (19 + 25 stops, 1000 palettes, stop 500 excluded, bound 8, the pinned merge-base count)
+  negative control (pre-#701 floor, 1.6x): 120 dips (want > 0)
+  dip-gate even gate-path (no anchor): 0 dips (19 + 25 stops, 3764 palettes + default kit 16, no baseline)
+PASS
+rc=0
+~~~
+
+Draw-order control (`gate-nodraw.mjs`, head tree): b2 control and real lines, dip palettes #102, #324:
+
+~~~text
+  negative control (b2) rendered (random anchored, seed 766) (reference at the rotated hue): 13 dips (want > 8, the pinned merge-base count)
+  dip-gate even hueShift grid (b2) rendered (random anchored, seed 766): 3 dips in 2 palettes (19 + 25 stops, 1000 palettes, stop 500 excluded, bound 8, the pinned merge-base count)
+~~~
+
+C4.16 recipe: import the `8428280e` tree's `src/engine/tonal.js` as REAL and its `src/ui/model.mjs` kit, run the (b2) block (mulberry32 seed 766, 1,000 anchored palettes, both stop sets, stop 500 excluded, bound the dip count), once with the drawn chroma (`draw`) and once with the chroma forced to 100 after the draw (`force100`). The script is `$CLAUDE_JOB_DIR/tmp/pc-U4-b2/recipe-8428280e.mjs`, run as `node recipe-8428280e.mjs <8428280e tree> draw|force100 noctl`:
+
+~~~text
+mb draw: control n/a | real 7 dips in 4 palettes
+mb force100: control n/a | real 8 dips in 5 palettes
+~~~
 
 ## Claims
 
@@ -178,4 +280,4 @@ OK absent .claude/skills/building-editor-sections/references/best-practices.md
 
 ## State
 
-🟢 U4 done on `unit/pc-U4`, head is the commit that adds this file. `.sdlc/board.md` and the plan untouched. For the Verifier: run `npm ci` before build and smoke; `npm test` regenerates `figma/plugin/ui.html` and leaves the tree clean.
+🟢 U4 pass 2 done on `unit/pc-U4`: `gate:even-dips` rc 0 on the head and on `origin/main`, every C4.14 to C4.19 control bit, `npm test` 54 of 54. Head is the commit that adds this file. `.sdlc/board.md` and the plan untouched. For the Verifier: run `npm ci` before build and smoke; `npm test` regenerates `figma/plugin/ui.html` and leaves the tree clean.
