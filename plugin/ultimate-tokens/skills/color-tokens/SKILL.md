@@ -17,10 +17,12 @@ description: >
 An Ultimate Tokens export gives every palette the same **53 semantic roles** as CSS custom
 properties. Your job is never to invent a color, it is to pick the right **role** from the right
 **palette**. Raw stops exist only as the substrate the roles reference.
-Each palette also carries a `prime` group: seven raw swatches, `--{n}-prime-brightest` through
-`--{n}-prime-dimmest` (centered on bare `--{n}-prime`). These are primitives, not roles: one
-mode-independent set, the same in light and dark, computed on the key colour's own lightness ladder
-rather than the ramp. No role aliases a prime swatch and none ever will. Reach for one
+Each palette also carries a `prime` group: seven raw swatches, `--{n}-prime-brightest`,
+`--{n}-prime-brighter`, `--{n}-prime-bright`, the bare centre `--{n}-prime`, `--{n}-prime-dim`,
+`--{n}-prime-dimmer`, and `--{n}-prime-dimmest`. In Panda the centre keeps its nested key path,
+`prime.prime` (also `prime.DEFAULT`); only the flat CSS-variable name is bare. These are primitives,
+not roles: one mode-independent set, the same in light and dark, computed on the key colour's own
+lightness ladder rather than the ramp. No role aliases a prime swatch and none ever will. Reach for one
 only where the design itself steps outside role territory: a hero or brand moment that wants the
 identity colour at full intensity, or a data-viz series that needs several shades of one hue (a
 heatmap, an intensity bar). Every ordinary surface, text, control, and state still binds to a role; a
@@ -40,7 +42,7 @@ library's series-color source, and the data palettes' own roles for everything e
    colour variables via `light-dark(...)` (often `palette.css` / `tokens.css`; a DTCG
    `*.tokens.json` may sit beside it). If none exists, stop and ask, do not fabricate tokens.
    **The prefix is configurable:** the default is `--c-*`, but a kit may export a Material-flavoured
-   `--md-sys-color-*` or a custom `--{brand}-*` prefix, **read the actual prefix from the file** and
+   `--md-color-*` or a custom `--{brand}-*` prefix, **read the actual prefix from the file** and
    use it throughout; the examples below use `--c-` as the default, but the role grammar after the
    prefix (`-{palette}-{role}`) is identical. *This guide is for the CSS export;* the Tailwind
    (`--color-*`), shadcn, Panda CSS, and Radix exports use different grammars, the role SEMANTICS

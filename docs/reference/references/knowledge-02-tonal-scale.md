@@ -131,12 +131,14 @@ hue    = hueSpace=="oklch" ? solveCam16Hue(palette.hue, chroma@500, tone@500)  /
                         : palette.hue                        // cam16 hue passes straight through
 pk     = peakC(hue).c                     // hue's own max chroma in sRGB
 target = (palette.chroma / 100) * pk      // chroma control is % of the hue's peak
-ref    = max(cm at stops 450, 500, 550)   // the floor's gamut reference: the anchor stop or its first step, whichever is wider
 
 for each stop:
   tone  = toneAt(stop, skew, lift)
   cm    = maxChromaInGamut(hue, tone)     // gamut ceiling at this tone
   env   = chromaEnvelope(stop, 500, lift, controls)    // the shared multiplier, below
+  ref   = max(maxChromaInGamut(h0, t) for t in [tone@500, tone@450, tone@550])
+                                          // the floor's gamut reference, per stop (#766): the widest of the pivot and its first display steps, read at THIS
+                                          // stop's own hue h0 BEFORE edge rotation (the per-stop solved CAM16 hue on the anchored OKLCH path; hue above otherwise)
   C     = evenChroma(cm, target, env, chromaFloor, ref)   // min(cm, max(min(target*env, cm), floorC))
                                           // floorC = min((chromaFloor/100) * min(cm, ref), target)  (#701)
   rgb   = hctToRgb(hue, C, tone).rgb
@@ -295,7 +297,7 @@ independent of `baseIntensity`.
 The **prime system** is a per-palette set of seven swatches, `brightest · brighter · bright · prime ·
 dim · dimmer · dimmest`, lightest first, computed from the palette's key colour (or, for an anchored
 palette, from its stored source colour) on their OWN **CIE L\*** ladder. They are primitives-tier tokens, mode-independent (one set, the same in Light and
-Dark, REQ-055), emitted as the `prime` group (`--{n}-prime-{step}`, `{n}/prime/{step}`, Figma
+Dark, REQ-055), emitted as the `prime` group (`--{n}-prime-{step}` with the centre as the bare `--{n}-prime`, `{n}/prime/{step}`, Figma
 collection "Color Prime"; knowledge-04). They are NOT ramp stops and NOT roles: the 53-role table is
 unchanged and roles never alias prime tokens (knowledge-03 §3).
 
@@ -384,15 +386,17 @@ than 54. Anchored, the shipped default-kit Primary (`anchor #0C5DCC`, `skew -20`
 57.9296 #4D88F8 · 48.5072 #2E6FDE · [prime] · 30.4587 #00439B · 22.1378 #003276 · 14.6366 #002256`,
 span exactly 54. The SPEC's EX-4/EX-4b/EX-5 carry the full tables.
 
-### 8.4 Migration (schema v6)
+### 8.4 Migration (schema v7)
 
-`CURRENT_SCHEMA_VERSION` is 6 (`src/ui/persist.js`). Two bumps landed after v4, both adding
+`CURRENT_SCHEMA_VERSION` is 7 (`src/ui/persist.js`). Three bumps landed after v4: two added
 brand-new optional palette fields rather than renaming anything, so neither needs a `RENAME_MAPS`
 entry: v5 added `palette.anchor`/`sourceAnchor` (#681 U1) and v6 added
 `palette.preDetachHue`/`preDetachChroma`/`preDetachLift` (#681 U2). A document predating either
 simply carries none of those fields, which is `clampPalette`'s correct absent-stays-absent
-behaviour with no version gate. The v4 migration below still runs, unconditionally, on every
-hydrate.
+behaviour with no version gate. v7 is the first `RENAME_MAPS` entry since v3: a kit saved on the
+Material preset's old export prefix triple has it rewritten to `md-color` / `md-typescale` / `md`
+once, on a document stamped below v7 (#791); a lone old prefix, or a doc already at v7, stays as
+typed. The v4 migration below still runs, unconditionally, on every hydrate.
 
 Hydrating below v4 deletes `palette.intensity`
 from every palette, there is no per-palette ramp override in any group any more, and reports it

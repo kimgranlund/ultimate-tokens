@@ -513,7 +513,7 @@ export class DrawerMixinImpl {
         "| `dtcg/` | W3C-DTCG design tokens |",
         "| `tailwind/` · `shadcn/` | Framework presets |",
         // same reason as the sub-bar note: `--c-*` is only the DEFAULT prefix, so the row names the
-        // one this kit really emits (Settings › Token mapping can move it to --md-sys-color-*).
+        // one this kit really emits (Settings › Token mapping can move it to --md-color-*).
         "| `panda/` · `radix/` | Panda CSS + Park UI/Radix presets. `radix/` ships BOTH `" + s + ".preset.mjs` (self-contained baked values) and `" + s + ".refs.preset.mjs` (the same steps as `var(--" + cssPrefixOf(this.doc) + "-*)` links into the CSS files above, so load one of those first) |",
       );
       const collNames = figmaCollectionNames(this.doc);

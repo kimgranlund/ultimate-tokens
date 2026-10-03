@@ -1,5 +1,5 @@
 ---
-status: approved
+status: done
 ticket: 789
 priority: P2
 lane: color-engine (`src/engine/prime.mjs`, `src/engine/exports.js`, `src/engine/ds-export.js`, `test/engine/exports.mjs`, `mcp/brand-kit-core.mjs` on a schema bump, `plugin/ultimate-tokens/skills/color-tokens/SKILL.md`, `docs/reference/`, `docs/spec/`, `docs/lld/`, `CHANGELOG.md`; regenerated `figma/plugin/ui.html`, `src/ui/describe-mcp-assets.js`, `dist/`)
@@ -88,7 +88,7 @@ Grades per R92 (no Fable): every unit runs reviewer-l3 then verifier-l2, and the
 | Unit | Size | Status |
 |---|---|---|
 | U1 | S | merged, verified 🟢 at 37e0fabb |
-| U2 | S | not started |
+| U2 | S | merged, verified 🟢 (pass 2) at ef699c2f |
 
 ## Revisions
 
@@ -96,3 +96,4 @@ Grades per R92 (no Fable): every unit runs reviewer-l3 then verifier-l2, and the
 |---|---|---|
 | 3 | 2026-10-03 | Orchestrator, mobilization: ticket 789 minted; a `## Units` checklist added (board.py reads units from it), no criterion changed |
 | 4 | 2026-10-03 | Orchestrator, pn-U1 review finding (Medium): U2 gains C2.5 for the stale `brand-kit/3` and `0.3.0` lines in `.claude/skills/maintaining-brand-kit-mcp/references/`; U2 docs also say which Panda key path to use for the centre (Q1: nested `prime.prime` and `prime.DEFAULT` stay). No other criterion changed |
+| 5 | 2026-10-03 | Orchestrator, close-out: landed as PR #792, squash 8e7157cd; Adia tags `adia-oklch-export@2.0.0` and `adia-radix-export@1.3.0` cut at the squash; status done, archived |

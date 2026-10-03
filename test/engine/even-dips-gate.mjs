@@ -23,10 +23,37 @@
 // `floorRef` dropped) and scaled 1.6x must produce more than 0 dips, or the script fails with
 // `negative control DID NOT bite`. `--floor-scale <k>` runs the MAIN sweep on that patched engine at
 // scale k instead (the verifier's by-hand control: `--floor-scale 1.6` prints a non-zero count and
-// FAIL). Why not the shipped floor scaled alone: the shipped floor is non-increasing away from the
-// anchor for ANY scale (min(maxc, floorRef) does not depend on it), so scaling it cannot open a dip on
-// either path (measured: 0 off-anchor dips at 1.6x, gate path and rendered). The control therefore
+// FAIL). Why not the shipped floor scaled alone: where every stop reads one hue and nothing rotates
+// (the gate path at hueShift 0) the shipped floor is non-increasing away from the anchor for ANY scale (min(maxc, floorRef) does not depend
+// on it), so scaling it cannot open a dip there (measured at #701: 0 off-anchor dips at 1.6x, gate path and
+// rendered); on the anchored OKLCH path each stop reads its own solved hue (#766), so the rendered zero is
+// a measurement, not a structural property. The control therefore
 // removes the one thing the redesign added, which is what a regression would have to remove.
+//
+// The hueShift grid (#766), printed before the corpus lines. The curated corpus's largest |hueShift| is
+// 10, and edge rotation is where a floor reference that moves along the ramp opens dips (#766 U2 pass 1
+// read the reference at each stop's rotated hue: 0 corpus dips, 64 at hueShift 60 on this grid), so the
+// corpus sweep alone cannot see that class. Three lines, same predicate, each held to its bound:
+//   (a) gate path: default-kit controls (curve, tension, lmin, lmax, damp, dampCurve, dampBias,
+//       relChroma, chromaFloor, vibrancy), dampAmp 0, no anchor, hue 0 to 345 step 15, chroma 30/45/60,
+//       hueShift +/-30/45/60, hueSameDir false and true, hueSpace oklch and cam16, both stop sets
+//       (1,728 palettes), bound 0;
+//   (b1) rendered path: the default kit's 16 palettes WITH their anchors, hueShift +/-60, hueSameDir
+//       false and true, both hue spaces, both stop sets (128 palettes), stop 500 excluded (the owner's Q3
+//       notch class, as tonal.mjs `dip-gate-even`), bound 0. Only +/-60: at -30/-45 the kit's #774902
+//       palette carries an anchored stop-200 notch that predates #766 (#784); this line gates #766's rule;
+//   (b2) rendered path, random: RANDOM_PALETTES anchored palettes drawn from mulberry32(RANDOM_SEED) over
+//       the persisted control domain (randomPalette below, draw order fixed), the kit's curve, tension,
+//       lmin, lmax, damp, dampCurve, dampBias and vibrancy, both stop sets, stop 500 excluded. Not 0: the
+//       per-stop OKLCH solve trades dips on random anchored input under rotation (#766 review p2 F1, owner
+//       R87, measured and accepted), so the bound is RANDOM_PIN, this same block's count on the merge-base
+//       engine, and the line fails if the head count exceeds it.
+// Each line has a data-URL control that puts back the rotation-following reading: (a) swaps GRID_TARGET's
+// `baseHue` for the rotated `hue` (paletteStops); (b1) and (b2) share one engine that drops
+// CHROMA_AT_TARGET's `resolvedHue`, so the final chroma line reads the reference at the rotated hue
+// (paletteStopsAnchored). Each control must print more dips than its line's bound or the script fails
+// `negative control DID NOT bite`; a patch target that is not in src/engine/tonal.js exactly once fails the
+// script too. Each control and line prints its own ms. `--floor-scale` skips the grid.
 import { readFileSync } from "node:fs";
 import { hydrate } from "../../src/ui/persist.js";
 import { defaultDocument, rampChromaOf } from "../../src/ui/model.mjs";
@@ -35,6 +62,13 @@ import * as REAL from "../../src/engine/tonal.js";
 const CATS = ["architecture", "brands", "cuisine", "film", "literature", "music", "nature", "travel"];
 const FLOOR_TARGET = "const floorC = Math.min(((chromaFloor ?? 0) / 100) * Math.min(maxc, floorRef), intended);";
 const CONTROL_SCALE = 1.6;
+const GRID_TARGET = "floorRefAt(baseHue, maxc, tone500, tone450, tone550)";
+const CHROMA_AT_TARGET = "chromaAt(hue, resolvedHue)";
+const RANDOM_SEED = 766;
+const RANDOM_PALETTES = 1000;
+// (b2)'s bound: this block's dip count on the merge-base engine, 8428280e (floorref-hue U2 pass 3, read
+// by importing that tree's src/engine/tonal.js as REAL): 7 dip cells in 4 palettes.
+const RANDOM_PIN = 7;
 
 const argScale = (() => {
   const i = process.argv.indexOf("--floor-scale");
@@ -44,19 +78,22 @@ const argScale = (() => {
   return k;
 })();
 
-// the pre-#701 floor (floorRef dropped), scaled k
-async function scaledEngine(k) {
+// a data-URL copy of src/engine/tonal.js with `target` (which must occur exactly once) replaced
+async function patchedEngine(target, replacement, name) {
   const src = readFileSync(new URL("../../src/engine/tonal.js", import.meta.url), "utf8");
-  if (!src.includes(FLOOR_TARGET)) {
-    console.log("FAIL: the patch target string was not found  -  evenChroma's floor line moved, update FLOOR_TARGET");
+  if (src.split(target).length !== 2) {
+    console.log(`FAIL: the patch target string was not found exactly once  -  the engine line moved, update ${name}`);
     process.exit(1);
   }
   const patched = src
     .replace('from "./hct.js"', `from "${new URL("../../src/engine/hct.js", import.meta.url).href}"`)
     .replace('from "./okhsl.js"', `from "${new URL("../../src/engine/okhsl.js", import.meta.url).href}"`)
-    .replace(FLOOR_TARGET, `const floorC = Math.min((((chromaFloor ?? 0) * ${k}) / 100) * maxc, intended);`);
+    .replace(target, replacement);
   return import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
 }
+
+// the pre-#701 floor (floorRef dropped), scaled k
+const scaledEngine = (k) => patchedEngine(FLOOR_TARGET, `const floorC = Math.min((((chromaFloor ?? 0) * ${k}) / 100) * maxc, intended);`, "FLOOR_TARGET");
 
 const docs = [];
 for (const slug of CATS) {
@@ -96,6 +133,97 @@ function sweep(engine) {
   return { dips: [...found].sort(), corpusPalettes };
 }
 
+// the hueShift grid (header). Each sweep returns its dip names; the predicate is findDips's.
+function gridDips(ramp, key, skip500) {
+  const out = [];
+  for (let i = 1; i < ramp.length - 1; i++) {
+    if (skip500 && ramp[i].stop === 500) continue;
+    const a = ramp[i - 1].chroma, b = ramp[i].chroma, c = ramp[i + 1].chroma;
+    if (b <= a - 3 && b <= c - 3) out.push(`${key}|${ramp[i].stop}`);
+  }
+  return out;
+}
+const gridControls = (hueSpace) => ({ curve: kit.curve, tension: kit.tension, lmin: kit.lmin, lmax: kit.lmax, damp: kit.damp, dampCurve: kit.dampCurve, dampAmp: 0, dampBias: kit.dampBias, hueSpace, relChroma: kit.relChroma, chromaFloor: kit.chromaFloor, vibrancy: kit.vibrancy, toneMode: "even" });
+function gridGatePath(engine) {
+  const out = [];
+  let palettes = 0;
+  for (const hueSpace of ["oklch", "cam16"]) {
+    const controls = gridControls(hueSpace);
+    for (let hue = 0; hue < 360; hue += 15) for (const chroma of [30, 45, 60]) for (const s of [30, 45, 60]) for (const hueShift of [s, -s]) for (const hueSameDir of [false, true]) {
+      palettes++;
+      for (const stops of [engine.STOPS, engine.EXPORT_STOPS]) {
+        const ramp = engine.paletteStops({ hue, chroma, skew: 0, lift: 0, hueShift, hueSameDir }, controls, stops);
+        out.push(...gridDips(ramp, `${hueSpace}|hue ${hue}|chroma ${chroma}|hueShift ${hueShift}|sameDir ${hueSameDir}|${stops.length} stops`, false));
+      }
+    }
+  }
+  return { dips: out, palettes };
+}
+function gridRendered(engine) {
+  const out = [];
+  let palettes = 0;
+  for (const hueSpace of ["oklch", "cam16"]) {
+    const controls = gridControls(hueSpace);
+    for (const pal of kit.palettes) for (const hueShift of [60, -60]) for (const hueSameDir of [false, true]) {
+      palettes++;
+      const chroma = rampChromaOf(pal, kit);
+      for (const stops of [engine.STOPS, engine.EXPORT_STOPS]) {
+        const ramp = engine.paletteStops({ hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift, hueSameDir, cuspPull: pal.cuspPull, anchor: pal.anchor }, controls, stops);
+        out.push(...gridDips(ramp, `${hueSpace}|${pal.name}|hueShift ${hueShift}|sameDir ${hueSameDir}|${stops.length} stops`, true));
+      }
+    }
+  }
+  return { dips: out, palettes };
+}
+// (b2): mulberry32, and per palette, in this order: hueSpace, hue, chroma, skew, lift, hueShift,
+// hueSameDir, the anchor's three channels, chromaFloor, relChroma. Re-ordering a draw changes the set.
+function randomPalette(rnd) {
+  const hueSpace = rnd() < 0.5 ? "oklch" : "cam16";
+  const pal = { hue: rnd() * 360, chroma: rnd() * 100, skew: rnd() * 200 - 100, lift: rnd() * 80 - 40, hueShift: Math.round(rnd() * 120 - 60), hueSameDir: rnd() < 0.5 };
+  pal.anchor = "#" + [0, 0, 0].map(() => Math.floor(rnd() * 256).toString(16).padStart(2, "0")).join("").toUpperCase();
+  const chromaFloor = Math.round(rnd() * 100), relChroma = rnd() < 0.5;
+  return { pal, controls: { ...gridControls(hueSpace), chromaFloor, relChroma } };
+}
+function gridRandom(engine) {
+  let a = RANDOM_SEED >>> 0;
+  const rnd = () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const out = [];
+  for (let i = 0; i < RANDOM_PALETTES; i++) {
+    const { pal, controls } = randomPalette(rnd);
+    for (const stops of [engine.STOPS, engine.EXPORT_STOPS]) {
+      const ramp = engine.paletteStops(pal, controls, stops);
+      out.push(...gridDips(ramp, `#${i}|${controls.hueSpace}|anchor ${pal.anchor}|hueShift ${pal.hueShift}|sameDir ${pal.hueSameDir}|chromaFloor ${controls.chromaFloor}|relChroma ${controls.relChroma}|${stops.length} stops`, true));
+    }
+  }
+  return { dips: out, palettes: RANDOM_PALETTES, dipPalettes: new Set(out.map((n) => n.split("|")[0])).size };
+}
+let gridFailed = false;
+if (argScale === null) {
+  const engines = new Map();
+  const engineFor = async (target, replacement, name) => {
+    if (!engines.has(target)) engines.set(target, await patchedEngine(target, replacement, name));
+    return engines.get(target);
+  };
+  const lines = [
+    ["(a) gate path (no anchor)", gridGatePath, GRID_TARGET, "floorRefAt(hue, maxc, tone500, tone450, tone550)", "GRID_TARGET", "stop 500 included", 0],
+    ["(b1) rendered (kit anchors, hueShift +/-60)", gridRendered, CHROMA_AT_TARGET, "chromaAt(hue)", "CHROMA_AT_TARGET", "stop 500 excluded", 0],
+    [`(b2) rendered (random anchored, seed ${RANDOM_SEED})`, gridRandom, CHROMA_AT_TARGET, "chromaAt(hue)", "CHROMA_AT_TARGET", "stop 500 excluded", RANDOM_PIN],
+  ];
+  for (const [label, sweepFn, target, replacement, name, note, bound] of lines) {
+    let t0 = performance.now();
+    const ctl = sweepFn(await engineFor(target, replacement, name));
+    const pinNote = bound > 0 ? ", the pinned merge-base count" : "";
+    console.log(`  negative control ${label} (reference at the rotated hue): ${ctl.dips.length} dips (want > ${bound}${pinNote}) ${Math.round(performance.now() - t0)} ms`);
+    if (ctl.dips.length <= bound) { console.log(`FAIL: negative control DID NOT bite  -  the rotation-following reference produced ${ctl.dips.length} grid dips on ${label}, not more than ${bound}`); process.exit(1); }
+    t0 = performance.now();
+    const real = sweepFn(REAL);
+    for (const n of real.dips) console.log(`    dip ${n}`);
+    const inPalettes = real.dipPalettes === undefined ? "" : ` in ${real.dipPalettes} palettes`;
+    console.log(`  dip-gate even hueShift grid ${label}: ${real.dips.length} dips${inPalettes} (19 + 25 stops, ${real.palettes} palettes, ${note}, bound ${bound}${pinNote}) ${Math.round(performance.now() - t0)} ms`);
+    if (real.dips.length > bound) gridFailed = true;
+  }
+}
+
 // the in-script negative control runs first, so the last two lines of a green run are the gate line and
 // PASS: the same sweep on the pre-#701 floor at 1.6x must see dips, or this gate is blind.
 if (argScale === null) {
@@ -108,6 +236,6 @@ const main = sweep(argScale === null ? REAL : await scaledEngine(argScale));
 const scaleNote = argScale === null ? "" : `, pre-#701 floor scaled ${argScale}x`;
 for (const n of main.dips) console.log(`    dip ${n}`);
 console.log(`  dip-gate even gate-path (no anchor): ${main.dips.length} dips (19 + 25 stops, ${main.corpusPalettes} palettes + default kit ${kit.palettes.length}, no baseline${scaleNote})`);
-const failed = main.dips.length > 0;
+const failed = gridFailed || main.dips.length > 0;
 console.log(failed ? "FAIL" : "PASS");
 process.exit(failed ? 1 : 0);

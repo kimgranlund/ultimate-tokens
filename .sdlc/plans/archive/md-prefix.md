@@ -1,5 +1,5 @@
 ---
-status: approved
+status: done
 ticket: 791
 priority: P2
 lane: naming-scheme (`src/ui/overlays/settings.js`, `src/engine/ds-export.js` prose, comments in `src/engine/{exports.js,type.mjs,geometry.mjs}` and `src/ui/overlays/drawer.js`, `test/engine/{exports,type,geometry}.mjs`, `test/ui/{persist,headless-boot}.mjs`, `src/ui/persist.js` (Q1 A), `src/engine/exports.js` `EXPORT_SCHEMA_VERSION` and `mcp/brand-kit-core.mjs` `SERVER.version` (Q2 B), `plugin/ultimate-tokens/`, `.claude/skills/geometry-system/`, `CHANGELOG.md`, `docs/marketing/`; regenerated `figma/plugin/ui.html`, `src/ui/describe-mcp-assets.js`)
@@ -43,21 +43,22 @@ Geometry families under the root (all follow): `size`, `radius`, `space`, `inset
 
 ## 3. Units
 
-- [ ] U1 (S) Preset, hydrate rewrite, schema bump, emitted prose: settings.js triple, persist.js, `EXPORT_SCHEMA_VERSION`, `SERVER.version`, comments, ds-export prose, tests, regenerated assets (builder-l2)
-- [ ] U2 (S) Records: consumer plugin, geometry-system skill, CHANGELOG, marketing corpus via `marketing-manager-agent` (builder-l1)
+- [x] U1 (S) Preset, hydrate rewrite (a v7 RENAME_MAPS entry), schema bump, emitted prose, the stale `maintaining-brand-kit-mcp` references (`foundations.md`, `best-practices.md`: schema and server version lines), and `docs/reference/references/knowledge-02-tonal-scale.md` section 8.4 (the persisted schema number): settings.js triple, persist.js, `EXPORT_SCHEMA_VERSION`, `SERVER.version`, comments, ds-export prose, tests, regenerated assets (builder-l2)
+- [x] U2 (S) Records: consumer plugin, geometry-system skill, CHANGELOG, marketing corpus via `marketing-manager-agent` (builder-l1)
+- [x] U3 (S) · trivial lane · Consumer plugin 0.2.2: `plugin/ultimate-tokens/.claude-plugin/plugin.json` (version, and the description's voice count: `fifteen-voice`, matching the README, the typography skill and `src/engine/type.mjs`) and the CHANGELOG 0.2.2 line (it names the first publish since 0.2.1 and the breaking #792 prime rename). Pass 2 after pre-land pass 2 (builder-l3)
 
 ### U1 criteria
 
 | # | Check (command) | Expected | Today | Negative control |
 |---|---|---|---|---|
-| C1.1 | `git grep -n "md-sys" -- src test mcp figma/binder figma/plugin/code.js scripts` | no output, exit 1 | 40+ hits (settings.js 8, exports/type/geometry/drawer/ds-export comments, tests) | leave settings.js `:119` unchanged: hits return |
-| C1.2 | `grep -c "md-sys" figma/plugin/ui.html src/ui/describe-mcp-assets.js` after `npm test` | `0` each | `19`, `4` | skip regeneration: counts nonzero |
+| C1.1 | `git grep -n "md-sys" -- src test mcp figma/binder figma/plugin/code.js scripts ':!src/ui/persist.js' ':!test/ui/persist.mjs' ':!src/ui/describe-mcp-assets.js'` and `git grep -c "md-sys" -- src/ui/persist.js` | first: no output, exit 1; second: every hit sits inside the RENAME_MAPS entry for the old export root (the literal is written plainly there, never split to evade the grep) | 40+ hits (settings.js 8, exports/type/geometry/drawer/ds-export comments, tests) | leave settings.js `:119` unchanged: hits return |
+| C1.2 | `grep -c "md-sys" figma/plugin/ui.html src/ui/describe-mcp-assets.js` after `npm test`, and `git grep -c "md-sys" -- src/ui/persist.js` | `describe-mcp-assets.js` 1 (persist.js embedded as text) and `ui.html` 2 (the app bundle plus that same asset inside it); every hit is the RENAME_MAPS entry embedded verbatim, nothing else | `19`, `4` | skip regeneration: counts nonzero |
 | C1.3 | headless group rxr4 (`test/ui/headless-boot.mjs`) applies the Material preset through the Settings path (`_setNamingScheme("material")`), then exports: CSS contains `--md-color-` and no `--md-sys-`; type CSS contains `--md-typescale-display-weight-medium:`; geometry CSS contains `--md-size-md-height:` and `.md-control-md {`. Run: `npm test` | exit 0 | the preset path emits `--md-sys-*`, so the new assertions red | put the old triple back at the settings.js apply line (`idOrBrand === "material"`): the new forms vanish, rxr4 reds |
 | C1.4 | headless group rxr4 (`test/ui/headless-boot.mjs`) selects the Material preset and asserts the note and zip README name `--md-color-*`; settings `_namingScheme()` returns `"material"` for `md-color`/`md-typescale`/`md` | `npm test` exit 0 | asserts `--md-sys-color-*` | put the old triple back in the `_namingScheme()` detector only: it returns `"custom"`, rxr4 reds |
 | C1.5 | `exportUI3(defaultDocument())` and the same with the Material preset applied: variable and collection names equal byte-for-byte; `git diff $(git merge-base origin/main HEAD) -- figma/binder/migrations.mjs` | names identical; empty diff | identical (prefix never reaches UI3) | inject the prefix into a UI3 name: names differ, and the migrations rule then requires an entry |
-| C1.6 | `exportCSS(defaultDocument())` sha256 at HEAD versus merge-base | equal | n/a | change the default `colorPrefix`: hashes differ |
+| C1.6 | `exportCSS(defaultDocument())` sha256 at HEAD versus merge-base, from line 2 on (`tail -n +2`; line 1 is the schema stamp that C1.9 moves) | equal | n/a | change the default `colorPrefix`: hashes differ |
 | C1.7 | `npm test` then `git status --porcelain` | exit 0, empty | exit 0 | leave a generated asset stale: tree dirty |
-| C1.8 | `hydrate(serialize(kit with colorPrefix "md-sys-color", typePrefix "md-sys-typescale", geomPrefix "md-sys"))` returns `md-color`/`md-typescale`/`md`; a lone `colorPrefix:"md-sys-color"` with a non-Material type prefix stays as typed | both true | first returns `md-sys-*` | drop the rewrite: first assertion reds |
+| C1.8 | the rewrite is a `RENAME_MAPS` entry (version 7) and `CURRENT_SCHEMA_VERSION` is 7: `hydrate` of a doc below schema 7 carrying colorPrefix "md-sys-color", typePrefix "md-sys-typescale", geomPrefix "md-sys" returns `md-color`/`md-typescale`/`md`; a lone `colorPrefix:"md-sys-color"` with a non-Material type prefix stays as typed; the same old triple on a doc stamped schemaVersion 7 stays as typed (the once proof) | all three true | first returns `md-sys-*` | drop the RENAME_MAPS entry: first assertion reds; apply the rewrite in `clampExport` again: the v7 case reds |
 | C1.9 | `git show $(git merge-base origin/main HEAD):src/engine/exports.js \| grep -o "EXPORT_SCHEMA_VERSION = [0-9]*"` versus the same on HEAD; `SERVER.version` in `mcp/brand-kit-core.mjs` versus merge-base | HEAD constant equals merge-base value plus 1; `SERVER.version` minor moves by one; `npm test` exit 0 (`test/mcp/brand-kit.mjs` pins the package version to `SERVER.version`) | `3` on both, `0.3.0` on both (4 and 0.4.0 after #789) | leave the constant at the merge-base value: values equal, check reds |
 
 ### U2 criteria
@@ -70,6 +71,18 @@ Geometry families under the root (all follow): `size`, `radius`, `space`, `inset
 | C2.4 | `node test/repo/em-dash.mjs` and `test/repo/branding.mjs` | exit 0 | exit 0 | add a U+2014 to a touched file: reds |
 
 The existing naming-scheme note sits inside `## [Unreleased]`, so it is rewritten to the new names (it would be false at release); C2.3 checks it. Left as history, never rewritten: `docs/plan/archive/*`, `docs/reference/reviews/2026-07-17-export-drift.md`, `.sdlc/records/*`, `.sdlc/plans/archive/*`.
+
+### U3 criteria
+
+| # | Check (command) | Expected | Today | Negative control |
+|---|---|---|---|---|
+| C3.1 | `grep -c '"version": "0.2.2"' plugin/ultimate-tokens/.claude-plugin/plugin.json` | `1` | `0` | put 0.2.1 back: reads `0` |
+| C3.2 | `node test/plugin/hosted-pack.mjs` then `npm test` | exit 0 each, tree clean after | exit 0 at 0.2.1 | set the version to a non-semver string: hosted-pack reds |
+| C3.3 | `awk '/^## \[Unreleased\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md \| grep -c '0\.2\.2'`, and the same slice `\| grep -c md-sys` | first at least `1`; second `0` | `0`; `0` | drop the CHANGELOG line: first reads `0` |
+| C3.4 | `git diff --name-only $(git merge-base HEAD plan/md-prefix) HEAD` on the unit branch | `plugin/ultimate-tokens/.claude-plugin/plugin.json`, `CHANGELOG.md`, `.claude-plugin/marketplace.json` (its plugin description carries the same stale count), `.sdlc/handoffs/md-prefix-U3.md` and the review records (`.sdlc/reviews/md-prefix-U3-review.md`, `-review-p2.md`) only | n/a | touch another file: the list grows |
+| C3.5 | `grep -c 'eleven-voice' plugin/ultimate-tokens/.claude-plugin/plugin.json` and `grep -c 'fifteen-voice' plugin/ultimate-tokens/.claude-plugin/plugin.json`; the README's count word: `grep -c 'fifteen-voice' plugin/ultimate-tokens/README.md` | `0`, `1`, `1` | `1`, `0`, `1` | put `eleven-voice` back: first reads `1` |
+| C3.5b | `grep -c 'eleven-voice' .claude-plugin/marketplace.json` | `0` | `1` | put it back: reads `1` |
+| C3.6 | `awk '/^## \[Unreleased\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md \| grep -F -A6 '@ultimate-tokens/claude' \| grep -c '#792'`, and the same block `\| grep -c 'since 0\.2\.1'` | each at least `1` | `0`, `0` | drop the added sentence: both read `0` |
 
 ## 4. Owner rulings (2026-10-03, relayed by the Conductor)
 
@@ -85,3 +98,10 @@ File overlap: `src/engine/exports.js` (comment at `:415` only), `src/engine/ds-e
 | # | Date | Change |
 |---|---|---|
 | 2 | 2026-10-03 | Orchestrator, mobilization: ticket 791 minted; frontmatter status normalized to `approved`; no criterion changed |
+| 3 | 2026-10-03 | Orchestrator, md-U1 builder finding: C1.6 as written (whole-file sha256) cannot hold with C1.9, since line 1 of the CSS export is the schema stamp; the hash now excludes line 1, the control is unchanged |
+| 4 | 2026-10-03 | Orchestrator, md-U1 review: C1.8 now requires the rewrite through the file's own versioned RENAME_MAPS channel (CURRENT_SCHEMA_VERSION 6 to 7, persist.js standing convention) so it runs once; C1.1 excludes the two legacy-name sites and checks them separately, ending the split-string evasion; the two `maintaining-brand-kit-mcp` references move from U2 to U1 (U1 invalidates them) |
+| 5 | 2026-10-03 | Orchestrator, md-U1 builder finding: the generated `ui.html` and `describe-mcp-assets.js` embed `persist.js`, so C1.2's `0` cannot hold once the RENAME_MAPS entry names the old root plainly; the counts are now pinned to the embedded copies (1 and 2), so any other hit still reds |
+| 6 | 2026-10-03 | Orchestrator, md-U1 re-review: C1.1's first command also excludes `src/ui/describe-mcp-assets.js` (the embedded persist.js copy C1.2 already pins at 1); knowledge-02 section 8.4 states the persisted schema number, so U1 repairs it. Cross-plan note: pane-context C2.8 and compute-layers C5.4 pin `CURRENT_SCHEMA_VERSION` absolutely; whichever plan lands second re-pins |
+| 7 | 2026-10-03 | Orchestrator, owner ruling at `.sdlc/questions/md-prefix-plugin-version.md` (8f4aef68, answer A): the consumer plugin bumps to 0.2.2 as one small trivial-lane unit U3 (the pre-land record takes pass 2 at the new head). This is the sixth revision row; the owner answer on that question is the authority for it |
+| 8 | 2026-10-03 | Orchestrator, pre-land pass 2 (`.sdlc/verdicts/md-prefix-prepr.md`, 🔴 at e8a8be11) and owner ruling A at `.sdlc/questions/md-prefix-revision8.md`: U3 pass 2 fixes the manifest description count (`eleven-voice` to `fifteen-voice`, C3.5) and the CHANGELOG 0.2.2 line (first publish since 0.2.1, the #792 prime rename, C3.6); C3.4 allows the pass-2 review record; the builder found the repo-root `.claude-plugin/marketplace.json` description carries the same count, so C3.5b and C3.4 take that one file too (stale-record rule) |
+| 9 | 2026-10-03 | Close-out: landed as PR #795, squash 620d0323 on main; pre-land record `.sdlc/verdicts/md-prefix-prepr.md` 🟢 at 66dddf50 (pass 3; pass 2 was 🔴 on the stale `eleven-voice` plugin description, fixed in U3 pass 2). Stale `eleven-voice` wording outside the publish surface filed as #796. Status done, plan archived. |

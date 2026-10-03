@@ -32,7 +32,7 @@ import { paletteStops, EXPORT_STOPS } from "./tonal.js";
 import { semanticRoles, refKey, refPath, refSlug, roleLeaf, applyRoleOverrides, applyOnColorContrast, applyAccentRef, isAchromaticRef, DEFAULT_THEMES } from "./semantic.js";
 import { COLLECTIONS } from "./collections.js";
 import { resolveControls } from "./controls.mjs";
-import { primeSwatches, PRIME_STEPS } from "./prime.mjs";
+import { primeSwatches, PRIME_STEPS, primeSlug } from "./prime.mjs";
 import { oklchToRgb } from "./okhsl.js";
 import { rampChromaOf, primeChromaOf } from "./resolve.mjs";
 import { cssFontStack } from "./type.mjs";
@@ -53,7 +53,7 @@ export const relLumExp = (rgb) => {
 // Bump rule (adding-export-formats/SKILL.md carries the same note): any additive or shape change
 // to an emitted format bumps this ONE constant, once, across every surface, in the same PR; a
 // value-only change (e.g. a chroma default) never bumps it.
-export const EXPORT_SCHEMA_VERSION = 3;
+export const EXPORT_SCHEMA_VERSION = 5;
 
 // ── Constants (from data/role-table.json) ─────────────────────────────────────
 // Scrims are a 500-based translucency ramp: a scrim primitive "{n}/500-{step}" is the
@@ -376,7 +376,7 @@ export function exportCSS(state, derived) {
 }
 
 // cssPrefixOf, the configurable CSS custom-property prefix (the `c` in `--c-*`). Lets a kit emit
-// Material-flavoured names (`--md-sys-color-*`) or any custom namespace, extended with our roles.
+// Material-flavoured names (`--md-color-*`) or any custom namespace, extended with our roles.
 // Sanitized to a legal CSS ident core: lowercased, non-[a-z0-9-] stripped, edge/leading-digit hyphens
 // trimmed. Empty / default "c" ⇒ the historical `--c-*` (identity, existing kits byte-identical).
 export function cssPrefixOf(state) {
@@ -417,12 +417,13 @@ function cssFrom(palettes, oklch, pfx = "c") {
       const val = oklch ? oklchStr(rgbToOklch(rgb)) : hexOf(rgb);
       lines.push(`  --${pfx}-${p.n}-${key}: ${val};`);
     }
-    // PRIME RAW vars: --{pfx}-{n}-prime-{step} (REQ-054), the seven identity swatches, next to the
-    // solid stops above; flat and mode-independent (R2), so no light-dark() wrapper.
+    // PRIME RAW vars: --{pfx}-{n}-prime (the centre) and --{pfx}-{n}-prime-{step} for the other six
+    // (REQ-054, primeSlug), the seven identity swatches, next to the solid stops above; flat and
+    // mode-independent (R2), so no light-dark() wrapper.
     for (const step of PRIME_STEPS) {
       const sw = p.prime[step];
       const val = oklch ? oklchStr({ L: sw.oklch[0], C: sw.oklch[1], H: sw.oklch[2] }) : sw.hex;
-      lines.push(`  --${pfx}-${p.n}-prime-${step}: ${val};`);
+      lines.push(`  --${pfx}-${p.n}-${primeSlug(step)}: ${val};`);
     }
     // scrim RAW vars: --{pfx}-{n}-scrim-{step} (ADR-016 nesting, hyphen surface; the canonical 500
     // base is omitted while SCRIM_BASES is single, refSlug re-adds it if a second base ever ships)
@@ -747,11 +748,11 @@ export function exportTailwind(state, derived) {
       // pad3 "050" -> Tailwind key "50"; finer stops (150/250/…) stay as-is (valid in v4).
       lines.push(`  --color-${p.n}-${String(Number(key))}: ${oklchStr(rgbToOklch(p.stops[key].rgb))};`);
     }
-    // PRIME: --color-{n}-prime-{step} (REQ-054), next to the scale above; the seven identity
-    // swatches, flat and mode-independent (R2).
+    // PRIME: --color-{n}-prime (the centre) and --color-{n}-prime-{step} for the other six (REQ-054,
+    // primeSlug), next to the scale above; the seven identity swatches, flat and mode-independent (R2).
     for (const step of PRIME_STEPS) {
       const sw = p.prime[step];
-      lines.push(`  --color-${p.n}-prime-${step}: ${oklchStr({ L: sw.oklch[0], C: sw.oklch[1], H: sw.oklch[2] })};`);
+      lines.push(`  --color-${p.n}-${primeSlug(step)}: ${oklchStr({ L: sw.oklch[0], C: sw.oklch[1], H: sw.oklch[2] })};`);
     }
   }
   for (const p of palettes) {
@@ -1155,7 +1156,7 @@ function rewriteRefs(node, fromN, toN) {
 //         property exportCSS/exportOKLCH emit for that primitive, prefix from cssPrefixOf(state).
 //         Steps 1..8 link the ratified raw stop; 9..12 link the driving role's own lightRef/darkRef
 //         (so role overrides, accentRef and the on-color policy travel with the link); prime links
-//         the `prime-prime` identity primitive. Alpha steps a1..a12 are NOT built here, no
+//         the bare `-prime` identity primitive. Alpha steps a1..a12 are NOT built here, no
 //         primitive exists for an alpha projection, so both forms compute them identically.
 //
 // Reference leaves use the palette's RAW slug `p.n`, never the group key (#630 ruling d1): the
@@ -1179,7 +1180,7 @@ function radixRefLeaves(pfx) {
   return {
     rawStep: (p, lightStop, darkStop) => ({ base: link(p.n, pad3(lightStop)), _dark: link(p.n, pad3(darkStop)) }),
     roleStep: (p, r) => ({ base: roleVar(p, r.lightRef), _dark: roleVar(p, r.darkRef) }),
-    primeStep: (p) => ({ base: link(p.n, "prime-prime") }),
+    primeStep: (p) => ({ base: link(p.n, primeSlug("prime")) }),
   };
 }
 

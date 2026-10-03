@@ -2,18 +2,19 @@
 kind: criteria-review
 plan: pane-context
 seat: verifier
-pass: 7
-ticket: none yet
-written: 2026-10-01
+pass: 8
+ticket: "#785"
+written: 2026-10-03
 ---
 
-# pane-context criteria review · pass 7 · 🟢 at `df398b5f`
+# pane-context criteria review · pass 8 · 🟢 at `2be8287a`
 
-Current state: pass 7 🟢 at `df398b5f` (plan revision 9). C2.11 now pins the ADR-026 repair with two positive needles and leaves the dated R69 amendment's text alone. Every U2 row C2.1 to C2.11 is checkable; U1, U3 and U4 stay 🟢 from pass 2. The plan is mobilizable. Passes 6 to 1 follow as history.
+Current state: pass 8 🟢 at `2be8287a` (plan revision 11, ticket #785). U4's rewritten rows C4.1 to C4.13 are checkable, and every "Today" figure reproduces on `plan/pane-context` at `c7470c53`. U2's rows stand from pass 7; U1 and U3 are landed or merged. U4 can be cut on criteria once U2 merges, per the plan's order. Passes 7 to 1 follow as history.
 
 verdict: 🟢
-sha: df398b5f
+sha: 2be8287a36767ae5fc69bb3bc64d1d8c766bafdb
 
+Pass 7 lines: `verdict: 🟢` at `df398b5f`.
 Pass 6 lines: `verdict: 🔴` at `2d5263b6`.
 Pass 5 lines: `verdict: 🟢` at `600751b0`.
 Pass 4 lines: `verdict: 🔴` at `744e7dd1`.
@@ -190,3 +191,25 @@ Revision 9 at `df398b5f`, graded by the seat directly on `git diff 2d5263b6 df39
 | # | State | Check I would run | What changed, and the control |
 |---|---|---|---|
 | C2.11 | 🟢 | the four greps as written; `npm test` for ac003b | Today prints `4`, `1`, `0`, `0`, matching the row's control. `decision-records.md` is out of the `min(group, anchor)` grep, so the R69 amendment keeps its text. The amendment needle matches the file's own form (`- **Amendment (2026-09-29, #725, R69).**`), and the Quick map has exactly one `^| ADR-026 ` row (line 846 today), so `1` is the right count. The partial-repair controls bite: code only prints `0` and `0` on the two ADR needles; amendment without the map row prints `0` on the last |
+
+## Pass 8 · 🟢 at `2be8287a`: U4 rewritten for R98 and re-based
+
+Revision 11 at `2be8287a`. The diff from `df398b5f` rewrites U4 (C4.1 to C4.13, lane, blast radius, risks) and records U1's landing and U3's merge; U2's rows are unchanged. Graded by the seat directly. Every grep row was run on a `git archive` of `origin/plan/pane-context` at `c7470c53` (U1 and U3 in, U2 and U4 not); `node scripts/audit-citations.mjs` was run in a clone at the same commit.
+
+| # | State | Check I would run | What I saw, and the control |
+|---|---|---|---|
+| C4.1 | 🟢 | the four greps as written | Today prints `2`, `7`, `1`/`1`/`1`, `2`, as the row says; the control is today's tree, and any surviving builder keeps a count above `0` |
+| C4.2 | 🟢 | `grep -rcE ... \| grep -v ':0$'` as written | Today prints `app.js:25`, `color.js:16`, `geometry.js:2`, `settings.js:2`, `typography.js:2`, `citations.mjs:3`, `headless-boot.mjs:47`, `smoke.mjs:4`, `ui.html:47`, matching Today; `src/ui/persist.js` prints `0`, so dropping it from U4's lane is right |
+| C4.3 | 🟢 | the shim's `(cm)`, `(ty-cmp)`, `(geo-cmp)` lines | Concrete counts and classes per section and view; control (one column, or breakpoint Compare in one scheme) reds a named row |
+| C4.4 | 🟢 | the new `(scheme-ctx)` probe plus `grep -c '_columnScheme' src/ui/app.js` | Today the grep prints `0`, and `resolvedCanvasScheme()` at `app.js:1516` is read from shell helpers (`:1719`, `:1721`, `:1736`), so a reader outside a column is real today; restoring `_tokensTableArea`'s scheme class reds the outside count |
+| C4.5 | 🟢 | the `(k)` lines, `(ty-ex2)`, `(geo-ex2)` | `grep -rc example-scheme src/ui test/ui/headless-boot.mjs` prints `0` everywhere today, as Today says; per-wrapper and per-pane counts named; both controls red a named row |
+| C4.6 | 🟢 | `(lr-cols)` identity row | Today `_liveRefreshNow` has `if (this.colorMode === "both") { this.render(); return; }` (`app.js:295`); keeping a full-render bail breaks object identity |
+| C4.7 | 🟢 | `(set)`, `(pref)`, `(pst)` | Deep-equal on the saved key set is exact; leaving `colorMode` in `_saveAppPrefs` reds it |
+| C4.8 | 🟢 | whole shim report plus `git diff <cut>..HEAD` on the named rows | Unchanged expected numbers per counting row, scoped to the light column; counting over the whole canvas gives the doubled values |
+| C4.9 | 🟢 | the three `styles.css` greps | Today `4`, `2`, `3`, matching; `.compare-col.canvas-scheme-*` already sets `color-scheme` (`styles.css:556-557`), so the `2` unqualified rules C4.9 wants also feed C4.10's computed `color-scheme` |
+| C4.10 | 🟢 | `npm run smoke` after `npm ci` | The column and ghost assertions name computed `color-scheme` values that the CSS above provides; the ghost-takes-chrome control reds the second drag |
+| C4.11 | 🟢 | `node scripts/audit-citations.mjs; echo $?`, `grep -c 'colorMode states' test/repo/citations.mjs` | At `c7470c53`: rc `0` and pin `1`, matching Today; the simulated deletions are the control |
+| C4.12 | 🟡 | the two doc greps as written | Today `6`, `0`, `1`, `2`, `0`, `3`, `1` and `canvas preview` `1`, `1`, matching. Concern: `component-inventory.md` and `README.md` print `0` today on the first grep, so today's tree is no control for those two entries; README is covered by the `canvas preview` grep and the inventory by C4.11's citation re-homes, so the row still bites where it matters |
+| C4.13 | 🟢 | `npm test`, `npm run build`, the `ui.html` grep, `git status --short` | `grep -c 'colorMode\|canvasTheme' figma/plugin/ui.html` prints `35` today, matching; N read at the head avoids a stale count; adapter §1 controls apply |
+
+Owner calls the plan names for the preview (breakpoint Compare ordering, the table views' lost selection tint) are not criteria and do not block.

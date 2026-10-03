@@ -2,18 +2,19 @@
 kind: criteria-review
 plan: compute-layers
 seat: verifier
-pass: 6
+pass: 7
 ticket: 788
 written: 2026-10-03
 ---
 
-# compute-layers criteria review · pass 6 · 🔴 at `bc174a15`
+# compute-layers criteria review · pass 7 · 🟢 at `8353f1e6`
 
-Current state: pass 6 🔴 at `bc174a15` (revision 5, ticket #788). C5.6's new control is live. C3.3's new control names a perturbation point the identity check never reads, so it can come out dead the same way C1.4's did. One-line fix in the Pass 6 section. U3 is not to be cut on this revision; U4 and U5 rows are unaffected. Passes 5 to 1 follow as history.
+Current state: pass 7 🟢 at `8353f1e6` (revision 5 as amended, ticket #788). C3.3's control now names `rampChromaOf` in `src/engine/resolve.mjs`, the shared `group-chroma` run that IDENT's head side reaches, so it is live. Every row C1.1 to C5.6 is checkable; U3 can be cut on criteria. Passes 6 to 1 follow as history.
 
-verdict: 🔴
-sha: bc174a151c4aaa8883099e484d348d94581d0384
+verdict: 🟢
+sha: 8353f1e6951f0636ac1218a518b7d1fd70a08292
 
+Pass 6 lines: `verdict: 🔴` at `bc174a15`.
 Pass 5 lines: `verdict: 🟢` at `9378c1bb`.
 Pass 4 lines: `verdict: 🟢` at `14a9e3ce`.
 Pass 3 lines: `verdict: 🔴` at `2d86b64e`.
@@ -153,3 +154,13 @@ Plan at `bc174a15` (revision 5, owner option A in `.sdlc/questions/compute-layer
 | C5.6 | 🟢 | `npm test`, `npm run build`, `IDENT`; control: scale `ramp@2`'s output chroma by `1.05`, nonzero count | By C5.1, `ramp@2` is `paletteStops` in `src/engine/tonal.js`, which IDENT's head side calls directly (`engine.paletteStops`, `report-preset-fidelity.mjs:310`), so the perturbation reaches it whatever U5 wires. The `117` is cited as the U1-head equivalent and the Expected is "a nonzero count", which is right |
 
 C1.4 itself keeps its written control (the owner chose not to rewrite it; C1.2 pins the default), as the U1 verdict `.sdlc/verdicts/compute-layers-U1.md` records.
+
+## Pass 7 · 🟢 at `8353f1e6`: C3.3 control aimed at the shared run
+
+`git diff bc174a15 8353f1e6 -- .sdlc/plans/compute-layers.md` changes only C3.3's control column and the revision 5 row's wording. Graded by the seat directly.
+
+| # | State | Check I would run | What changed, and the control |
+|---|---|---|---|
+| C3.3 | 🟢 | `IDENT`, `npm test`, `npm run build`; control: `rampChromaOf` in `src/engine/resolve.mjs` returns `1.05 *` its value | This is the perturbation the seat ran at pass 6 on the U1 head `48b7b5ff` (`resolve.mjs:18`, `IDENT --only default-kit` printed `117 differing cells`, restored `0`). `model.rampChromaOf` calls it as `rampChromaOfPure`, and C2.1 pins the `group-chroma` run strict-equal to it, so `compute(doc)` reaches the same function whatever U3 wires. Live control |
+
+The pass 6 note stands: IDENT cannot see a regression inside `compute` itself; C3.2 owns that.

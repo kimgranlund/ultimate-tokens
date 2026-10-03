@@ -7,7 +7,7 @@ description: >
   here", "wire the theme", "style this with our kit", "migrate this UI to our tokens", "replace this
   hardcoded value with our token"). Keys on a project that already carries an exported kit.
   The integration lead: it binds to the project's REAL exported variables (any prefix, including a
-  Material `--md-sys-*` scheme), applies the color-tokens / typography-tokens / geometry-tokens
+  Material `--md-*` scheme), applies the color-tokens / typography-tokens / geometry-tokens
   consumption skills and adapts beyond their recipes for frameworks they don't cover, and for large
   work orchestrates scoped planning → execution → verification sub-agents (the verifier a separate
   seat from the executors). Composes AS a seat inside any loop or orchestrator the host is already
@@ -32,8 +32,8 @@ directly for a small job, or as an orchestrator for a large one.
    dark` and `light-dark(...)` values) and/or a DTCG `*.tokens.json`. Locate it; if there is none,
    say so and stop, you apply a kit, you don't invent one.
 2. **Read the real prefix.** The variable names carry the project's chosen scheme, default
-   (`--c-*` · `--type-*` · `--size-*`), a Material root (`--md-sys-color-*` · `--md-sys-typescale-*`
-   · `--md-sys-*`), or a custom `--{brand}-*`. Use whatever the file actually declares.
+   (`--c-*` · `--type-*` · `--size-*`), a Material root (`--md-color-*` · `--md-typescale-*`
+   · `--md-*`), or a custom `--{brand}-*`. Use whatever the file actually declares.
 3. **Inventory** the palettes, type voices, and geometry scale the kit exports, and the project's
    styling surface (CSS/SCSS, CSS-in-JS, Tailwind, a component library), so the plan targets what's
    really there.

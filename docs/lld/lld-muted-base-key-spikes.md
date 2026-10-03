@@ -125,11 +125,11 @@ brandKit(doc).palettes[i].prime     -> { [step]: { hex, oklch: "oklch(L C H)" } 
 tokenCount(doc)                     -> enabled * (25 + 11 + 53 + 7)
 
 // exports.js (P4), emitted names per REQ-054
-// CSS/OKLCH raw block:   --{n}-prime-{step}: #hex | oklch(L C H)
+// CSS/OKLCH raw block:   --{n}-prime-{step}: #hex | oklch(L C H)   (centre step: bare --{n}-prime)
 // JSON:                  palettes[n].prime[step] = { hex, oklch }
 // DTCG raw tree:         {n}.prime.{step} = colorLeaf(rgb, 1)
 // UI3:                   collections["Color Prime"] = { modes: ["Base"], variables: { "{n}/{step}": ... } }
-// Tailwind @theme:       --color-{n}-prime-{step}: oklch(...)
+// Tailwind @theme:       --color-{n}-prime-{step}: oklch(...)   (centre step: bare --color-{n}-prime)
 
 // mcp (P6)
 get_prime({ palette }) -> { palette, steps: [{ step, hex, oklch }] }   // seven, in PRIME_STEPS order

@@ -38,7 +38,7 @@ Teach your coding agent to build with your exact tokens, which role goes where, 
 > executors so no agent blesses its own edits.
 >
 > It binds to *your* export first: it reads the real variable names your kit declares, the default
-> `--c-*` scheme, a Material 3-style `--md-sys-*` root, or your own `--{brand}-*`, and names the
+> `--c-*` scheme, a Material 3-style `--md-*` root, or your own `--{brand}-*`, and names the
 > token for the job, or stops and asks. And because every skill is parity-gated against the product
 > engines, the roles it teaches are the roles the generator ships, checked, not remembered.
 
