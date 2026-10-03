@@ -1,5 +1,5 @@
 ---
-status: draft
+status: approved
 ticket: none yet (the Orchestrator mints one kind:feature issue per adapter X3 once the owner rules Q1 to Q3)
 priority: P2
 lane: color-engine (`src/engine/prime.mjs`, `src/engine/exports.js`, `src/engine/ds-export.js`, `test/engine/exports.mjs`, `mcp/brand-kit-core.mjs` on a schema bump, `plugin/ultimate-tokens/skills/color-tokens/SKILL.md`, `docs/reference/`, `docs/spec/`, `docs/lld/`, `CHANGELOG.md`; regenerated `figma/plugin/ui.html`, `src/ui/describe-mcp-assets.js`, `dist/`)
