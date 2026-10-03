@@ -2,19 +2,35 @@
 kind: criteria-review
 plan: prime-name
 seat: verifier
-pass: 2
+pass: 3
 ticket: none yet
 written: 2026-10-03
 ---
 
-# prime-name criteria review · pass 2 · 🔴 at `9fcb2c45`
+# prime-name criteria review · pass 3 · 🟢 at `95b9f30a`
 
-Current state: pass 2 🔴 at `9fcb2c45` (revision 1, rulings Q1 to Q3 recorded). Six of the seven pass 1 reds are repaired and 🟢. One row stays 🔴: C2.3's Today is 1, not 0, and its count can pass without the unit. Pass 1 follows as history.
+Current state: pass 3 🟢 at `95b9f30a` (revision 2). C2.3 now counts the new bare name in the `## [Unreleased]` slice, which is 0 today and cannot be met by another plan's schema line, so every row C1.1 to C2.4 is checkable. The plan is mobilizable on criteria. Passes 2 and 1 follow as history.
 
-verdict: 🔴
-sha: 9fcb2c45
+verdict: 🟢
+sha: 95b9f30a
 
+Pass 2 lines: `verdict: 🔴` at `9fcb2c45`.
 Pass 1 lines: `verdict: 🔴` at `63d0b409`.
+
+## Pass 3 · 🟢 at `95b9f30a`: C2.3 repaired
+
+Plan `.sdlc/plans/prime-name.md` at `95b9f30a`; `git diff 9fcb2c45 95b9f30a` touches only the head line and C2.3 in the plan. Rows 🟢 at pass 2 stand unchanged.
+
+### Rows
+
+| # | State | Evidence | Negative control |
+|---|---|---|---|
+| C2.3 | 🟢 | Needle read with the table escape removed: fixed string `-{n}-prime` plus a closing backtick, in the awk `## [Unreleased]` slice. Today it prints 0 (also 0 over the whole file), matching the plan. A scratch copy of `CHANGELOG.md` with one Unreleased line naming `` `--{pfx}-{n}-prime` `` prints 1. | A scratch copy whose added line names only the old `` `--{pfx}-{n}-prime-prime` `` prints 0, and the unchanged file prints 0, so dropping the entry reds the check. |
+
+### Findings
+
+- 🟢 Pass 2 red closed.
+- 🟡 The changelog no longer has to name the schema move; the move itself is still gated in code by C1.6. If the owner wants it in the entry too, that needs its own row.
 
 ## Pass 2 · 🔴 at `9fcb2c45`: one red, C2.3
 
