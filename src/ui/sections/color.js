@@ -2243,7 +2243,7 @@ export class ColorSectionImpl {
   // key · suffix · the light ref swatch + the dark ref swatch.
   renderRolesInspector(view) {
     const one = this.sel.kind === "palette";
-    const shown = one ? [view.palettes[this.selectedIndex()] || view.palettes[0]] : view.palettes.filter((p) => p.on);
+    const shown = one ? [view.palettes[this.selectedIndex()]] : view.palettes.filter((p) => p.on);
     const tables = shown.filter(Boolean).map((p) => this._rolesTable(p));
     return h(
       "div",
