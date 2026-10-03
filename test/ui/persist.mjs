@@ -159,11 +159,11 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   for (const g of ["brand", "system", "data"]) if (!deepEq(hydMutG.paletteGroups[g], base.paletteGroups[g])) FAIL("clamp", `clamping paletteGroups.material.baseChroma disturbed paletteGroups.${g}`);
 
   // a doc predating this feature (no `paletteGroups` at all) hydrates straight to the ratified
-  // defaults, Material 30/60, Brand/System 100/100, Data 100/100 locked, no migration step, just
+  // defaults, Material 100/60 (#785 R96), Brand/System 100/100, Data 100/100 locked, no migration step, just
   // the same absent-field-hydrates-to-a-sensible-default shape lmin/lmax/damp already use.
   const noGroupsAtAll = { palettes: base.palettes };
   const hydNoGroupsAtAll = U.hydrate(U.serialize(noGroupsAtAll));
-  const wantDefaults = { material: { baseChroma: 30, primeChroma: 60 }, brand: { baseChroma: 100, primeChroma: 100 }, system: { baseChroma: 100, primeChroma: 100 }, data: { baseChroma: 100, primeChroma: 100, locked: true } };
+  const wantDefaults = { material: { baseChroma: 100, primeChroma: 60 }, brand: { baseChroma: 100, primeChroma: 100 }, system: { baseChroma: 100, primeChroma: 100 }, data: { baseChroma: 100, primeChroma: 100, locked: true } };
   if (!deepEq(hydNoGroupsAtAll.paletteGroups, wantDefaults)) FAIL("field-default", `a doc with no \`paletteGroups\` at all must hydrate to the ratified per-group defaults, got ${JSON.stringify(hydNoGroupsAtAll.paletteGroups)}`);
 
   // one group present, the other three absent: only the present group's explicit numbers survive;
@@ -220,7 +220,7 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   const hydWI = U.hydrate(withIntensity);
   if ("intensity" in hydWI.palettes[0]) FAIL("schema-rename", "EX-9 v4: a v3 snapshot's palette.intensity must not survive onto the hydrated state");
   if (!hydWI[U.DROPPED_KEYS].some((d) => d.facet === "palette" && d.key === "Primary.intensity")) FAIL("schema-rename", `EX-9 v4: palette.intensity must be reported in DROPPED_KEYS, named by palette (got ${JSON.stringify(hydWI[U.DROPPED_KEYS])})`);
-  const wantDefaults4 = { material: { baseChroma: 30, primeChroma: 60 }, brand: { baseChroma: 100, primeChroma: 100 }, system: { baseChroma: 100, primeChroma: 100 }, data: { baseChroma: 100, primeChroma: 100, locked: true } };
+  const wantDefaults4 = { material: { baseChroma: 100, primeChroma: 60 }, brand: { baseChroma: 100, primeChroma: 100 }, system: { baseChroma: 100, primeChroma: 100 }, data: { baseChroma: 100, primeChroma: 100, locked: true } };
   if (!deepEq(hydWI.paletteGroups, wantDefaults4)) FAIL("schema-rename", `EX-9 v4: paletteGroups must default-fill to the REQ-001 ratified defaults, got ${JSON.stringify(hydWI.paletteGroups)}`);
   if ("group" in hydWI.palettes[0]) FAIL("schema-rename", "EX-9 v4: palette.group must NOT be written by migration, it stays absent (derive-on-read)");
 }
