@@ -101,7 +101,9 @@ ladder, their own chroma control, and their own token group; the editor strip re
   `src/engine/exports.js` `derivePalette` (both call one shared resolver); `tonal.js` and `prime.mjs`
   stay pure and group-unaware.
 - **REQ-005** The OKLCH hue anchor at stop 500 uses the resolved ramp chroma, so the
-  `oklch-hue-anchor` guarantee holds for every group target.
+  `oklch-hue-anchor` guarantee holds for every group target. (Since #785 the anchor reads the chroma
+  the ramp is rendered at, always 100 below `paletteStops`'s re-entry; the group value is applied
+  afterwards by `dampStops`, which holds hue, so the guarantee still holds for every group value.)
 - **REQ-006** Every existing tonal gate stays green with no pin change (the engine contract is the
   0.2.0 one). Chroma targets never perturb tone.
 - **REQ-007** Product defaults: `paletteGroups` as in REQ-001; global `baseIntensity 100`,
