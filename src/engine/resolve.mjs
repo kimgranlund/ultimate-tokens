@@ -9,8 +9,9 @@
 // `primeChroma` (never the document's own field name for that fallback, AC-004 bars it, in any
 // form, under src/engine; model.mjs renames it at that one boundary before calling in here).
 
-// rampChromaOf(palette, paletteGroups, controls), REQ-002: the ABSOLUTE chroma target paletteStops
-// shapes and damps for `palette`. There is no per-palette ramp override in any group any more, a
+// rampChromaOf(palette, paletteGroups, controls), REQ-002: the group chroma damper paletteStops
+// applies to `palette`'s at-100 ramp (#785, R94: every stop's chroma times this / 100, tonal.js
+// `dampStops`). There is no per-palette ramp override in any group any more, a
 // palette's own chroma value, or any retired per-palette field it might still carry, never reaches
 // this function's return.
 export function rampChromaOf(palette, paletteGroups, controls) {

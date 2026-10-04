@@ -461,7 +461,8 @@ const DUPE_ALLOW = [
 
 // ── anchor-ramp (U2, ticket #681): C3 ramp pass-through + C5 monotone/distinct ─────────────────────
 // C3: for every anchored palette, paletteStops(...) stop 500 equals `anchor` in each of perceptual,
-// peak, even, EXCEPT the named, counted window-clamp population (Q3 (b), same shape as U1's
+// peak, even, at group base chroma 100 (a group value below 100 damps the whole ramp, stop 500
+// included, R94), EXCEPT the named, counted window-clamp population (Q3 (b), same shape as U1's
 // anchor-ladder allow-lists): the RAMP itself clamps for a source whose CIE L* falls outside
 // [RAMP_L_MIN, RAMP_L_MAX], landing stop 500 at the pivot the OTHER stops are shaped around instead
 // of the verbatim anchor pixel (see tonal.js's own comment on why: forcing the verbatim anchor there
@@ -503,6 +504,7 @@ const RAMP_WINDOW_ALLOW = [
 // - compared by name, not count (N1's own lesson, applied here too). Q-U2-5's own REQ-002 chroma-basis
 // tension is RULED (the anchor's own value at the pivot, blending to `rampChroma` at the ends by
 // liftStop - see `anchorChromaBasis`'s own header comment in tonal.js), not an open question any more.
+// #725 R69 later held perceptual and peak at the anchor's own value; only the even path keeps the blend.
 // Gap growth attribution, corrected (review pass 3, Finding 6): from `0849f67`'s own 69, each of the
 // three review-pass-2 changes measured ALONE (not combined) moves the count: R6 alone 69 -> 76 (+7,
 // the single largest factor), the R3 hue solve alone +2, the smoothstep chroma-basis easing (R2) alone
@@ -799,7 +801,9 @@ function distinctOk25(stops) {
 
 // C3's own named negative control (per the plan): lift 40 on an anchored palette leaves stop 500
 // unchanged; a non-anchored copy of the SAME palette moves. Run against a real in-window corpus
-// subject before the positive count is trusted.
+// subject before the positive count is trusted. The anchored side renders at group value 100, where
+// stop 500 is the anchor; below 100 the group damper scales stop 500 too (#785 U2, R94), so the raw
+// palette's own stored `chroma` would test the damper, not the anchor.
 {
   const sample = anchored.find((c) => {
     const l = lstarFromRgb(hexToRgb(c.palette.anchor));
@@ -808,7 +812,7 @@ function distinctOk25(stops) {
   if (!sample) FAIL("anchor-ramp", "no in-window anchored palette found to run C3's own negative control against");
   else {
     const ctlA = { ...DEFAULT_CONTROLS, toneMode: "perceptual", hueSpace: sample.hueSpace ?? "oklch" };
-    const liftedAnchored = { ...sample.palette, lift: 40 };
+    const liftedAnchored = { ...sample.palette, chroma: 100, lift: 40 };
     const stopsA = paletteStops(liftedAnchored, ctlA, [500]);
     if (stopsA[0].hex !== sample.palette.anchor)
       FAIL("anchor-ramp", `C3 negative control: lift 40 on an anchored palette moved stop 500 (${stopsA[0].hex} !== ${sample.palette.anchor}), the anchor is not fixed`);
@@ -1499,7 +1503,9 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
 // persist.js), since an imported kit reaches paletteStops with any 6-hex anchor. Every stop must be a
 // real 6-hex with a finite tone; stop 500 equals the anchor exactly when its L* sits inside the ramp
 // window (the #808080 row), and is clamped otherwise. The predicate is first proven to catch a planted
-// NaN stop, so a check that could never fail cannot pass here.
+// NaN stop, so a check that could never fail cannot pass here. The ramps render at chroma 50, so the
+// group damper's path is the one checked for real hexes (#785 U2); the stop-500 identity reads a
+// chroma-100 render, where stop 500 is the anchor (below 100 the damper scales it, R94).
 {
   const HEX6 = /^#[0-9A-F]{6}$/;
   const badStops = (ramp) => ramp.filter((s) => !HEX6.test(s.hex) || !Number.isFinite(s.tone)).map((s) => `${s.stop}:${s.hex}`);
@@ -1513,7 +1519,7 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
       seen++;
       const b = badStops(ramp);
       if (b.length) { bad++; FAIL("anchor-achromatic", `${anchor} ${toneMode}/${hueSpace}: ${b.length} stops not a real hex (${b.slice(0, 3).join(" ")})`); }
-      const s500 = ramp.find((s) => s.stop === 500)?.hex;
+      const s500 = paletteStops({ hue: 30, chroma: 100, skew: 0, lift: 0, anchor }, { ...DEFAULT_CONTROLS, toneMode, hueSpace }, [500])[0]?.hex;
       if (inWindow && s500 !== anchor) { bad++; FAIL("anchor-achromatic", `${anchor} ${toneMode}/${hueSpace}: stop 500 ${s500} !== in-window anchor`); }
     }
   }
@@ -1529,11 +1535,16 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
   // every stop, not just the pivot) passes vacuously ("0 of 0"). skippedOk is the predicate both the
   // real run and the planted control below call, so the control exercises the SAME check the real
   // assertion uses, not a second copy that could disagree with it.
-  // #725 U2 pass 2 (R69, R74): the anchored perceptual and peak paths blend toward min(group, anchor),
-  // so an achromatic anchor's ramp is achromatic by construction there and its CAM16 hue is noise. The
-  // hue bound is scoped to even (10 cells, at most 1 skipped: #FFFFFF's own stop 300 reads C 4.41), and
-  // perceptual and peak assert the R69 property itself, CAM16 C < 5 on all 20 cells.
-  const skippedOk = (skipped) => skipped <= 1;
+  // #785 U2 (R94, R98): the group value is a damper on the at-100 ramp. At 100 the anchored perceptual
+  // and peak paths take the anchor's own OKHSL s, 0 for an achromatic anchor, and the damper multiplies
+  // that by r = g / 100, and r * 0 = 0: the ramp stays achromatic at any group value and its CAM16 hue
+  // is noise. Perceptual and peak assert that property, CAM16 C < 5 on all 20 cells. The hue bound is
+  // scoped to even (10 cells, at most 3 skipped): the damper halves the at-100 C at chroma 50, so
+  // #FFFFFF's stop 300 reads C 3.6 and #000000's and #010101's stop 700 read C 4.5 (before the damper
+  // only #FFFFFF's stop 300 fell under, at C 4.41). Read at 100 instead, #FFFFFF's stop 300 (C 7.2)
+  // sits 16.6deg from its twin on the engine before the damper too, a pre-damper render this gate has
+  // never bounded.
+  const skippedOk = (skipped) => skipped <= 3;
   if (skippedOk(10)) FAIL("achromatic-anchor", "negative control: a planted 10-of-10-skipped run did not fail skippedOk - the floor cannot bite");
   const HUE = 250, CHROMA = 50, ACHROMATIC_CELL_C = 5;
   let bound = 0, skipped = 0, greyCells = 0, greyOk = 0;
@@ -1562,7 +1573,7 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
     }
   }
   if (greyCells !== 20) FAIL("achromatic-anchor", `${greyCells} perceptual/peak cells checked, want 20`);
-  if (!skippedOk(skipped)) FAIL("achromatic-anchor", `${skipped} of 10 even cells skipped under CAM16 C 5, want at most 1 - too many stops rendered achromatic to trust the ${bound}-cell bound below it`);
+  if (!skippedOk(skipped)) FAIL("achromatic-anchor", `${skipped} of 10 even cells skipped under CAM16 C 5, want at most 3 - too many stops rendered achromatic to trust the ${bound}-cell bound below it`);
   // Negative control: the predicate must actually bite. Two codes off grey (#808082, OKLab C ~0.0030,
   // above the 0.002 constant) is chromatic, so this file first proves the achromatic branch would
   // fail this exact assertion if the constant swallowed it - by asserting #808082's own OKLab C sits

@@ -1,7 +1,7 @@
 import { PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hasDataPalettes, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixCollisionBadge, radixExportKey, radixKeyCollision, rederiveDataHues, resolvePaletteGroups, seedFromKeyColor, slug } from "../model.mjs";
 import { RELATIONSHIPS, deriveNeutral, deriveRelative } from "../../engine/derive.mjs";
 import { icon } from "../icons.js";
-import { CURVES, DAMP_PRESETS, HUE_SPACE_ANCHOR_REASON, SCHEME_ICON, SCHEME_NEXT, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
+import { CURVES, DAMP_PRESETS, HUE_SPACE_ANCHOR_REASON, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
 
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
 // methods, copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
@@ -270,7 +270,7 @@ export class ColorSectionImpl {
 
 
   // setCanvasView, switch the canvas between the palette ramps, the scrim overlays, the
-  // semantic-mapping table, and the radix ladder view (ui-session state, like canvasTheme,
+  // semantic-mapping table, and the radix ladder view (ui-session state,
   // never persisted with the doc).
   setCanvasView(v) {
     this.canvasView = v;
@@ -837,7 +837,7 @@ export class ColorSectionImpl {
             { cls: "canvas-seg", ariaLabel: "Ramp stops", role: "group", idPrefix: "stops" },
           )
         : false,
-      // trailing tool group, right-aligned: fit · scheme · zoom · + Palette.
+      // trailing tool group, right-aligned: fit · zoom · + Palette.
       h("div", { class: "spacer" }),
       // fit/orient, reset the canvas view to centre at 100% (icon-only).
       btn(icon("crosshair"), {
@@ -848,10 +848,6 @@ export class ColorSectionImpl {
           this.render();
         },
       }),
-      // scheme cycle (system/light/dark, icon-only, matches Type/Geom's canvasThemeBtn) + a
-      // separate Compare toggle for the side-by-side Light+Dark view.
-      this.colorSchemeBtn(),
-      this.colorCompareBtn(),
       btn(icon("minus"), { ariaLabel: "Zoom out", onclick: () => this.zoomBy(-1) }),
       h("span", { class: "zoom-readout", role: "status", "aria-live": "polite", "aria-label": "Zoom level" }, Math.round(this.viewport.zoom * 100) + "%"),
       btn(icon("plus"), { ariaLabel: "Zoom in", onclick: () => this.zoomBy(1) }),
@@ -862,82 +858,28 @@ export class ColorSectionImpl {
   }
 
 
-  // The canvas IS the 2D pannable space; the ramp rows ARE the palette navigator. The Mapping
-  // view is a DATA TABLE, not a visual scene, it scrolls instead of pan/zoom (is-table).
+  // The canvas IS the 2D pannable space; the ramp rows ARE the palette navigator. Every scene renders
+  // Light AND Dark side by side (renderCompareArea). The Mapping view is a DATA TABLE, not a visual scene,
+  // it scrolls instead of pan/zoom (is-table), has no scheme (it already shows both modes' refs) and sits on
+  // the chrome ground.
   renderCanvasArea(view) {
-    const isTable = this.canvasView === "mapping";
-    // Color "Both" mode → the side-by-side Compare (Palettes/Scrims/Radix; the Mapping table already shows
-    // both modes' refs, so it renders normally).
-    if (this.section === "color" && this.colorMode === "both" && !isTable) return this.renderCompareArea(view);
-    const scene = this._canvasScene(view);
-    const area = h(
+    if (this.canvasView !== "mapping") return this.renderCompareArea(view);
+    return h(
       "div",
-      {
-        class: "canvas-area canvas-scheme-" + this.resolvedCanvasScheme() + (isTable ? " is-table" : ""),
-        style: "--canvas-bg:" + this.canvasBg(),
-        role: "group",
-        "aria-label": isTable ? "Semantic mapping table" : "Palette canvas: drag to pan, wheel to zoom, double-click to reset",
-      },
-      h("div", { class: "canvas-scene" }, scene),
+      { class: "canvas-area is-table", role: "group", "aria-label": "Semantic mapping table" },
+      h("div", { class: "canvas-scene" }, this._canvasScene(view)),
     );
-    if (!isTable) {
-      // shift-drag (or middle-drag) pans · wheel zooms about cursor · click selects.
-      this.wirePanZoom(area);
-      // Apply the live transform after layout so the readout + centering are correct.
-      requestAnimationFrame(() => this.applyTransform());
-    }
-    return area;
   }
 
 
-  // colorSchemeBtn, icon-only scheme cycle (system → light → dark), the Color-section analog of
-  // app.js's canvasThemeBtn, so all three sections use the same compact control for the same axis
-  // (space saved vs. the old Light/Dark/Both segmented pill). While Both/Compare is active it shows
-  // the currently-resolved concrete scheme (never blank); clicking always lands on a real scheme,
-  // exiting Compare if it was on, Compare itself lives in the separate colorCompareBtn.
-  colorSchemeBtn() {
-    const shown = this.colorMode === "both" ? this.resolvedCanvasScheme() : this.colorMode;
-    return btn(icon(SCHEME_ICON[shown] || "theme"), {
-      cls: "scheme-btn",
-      title: "Color value mode: " + shown + ", click to cycle system / light / dark",
-      ariaLabel: "Color value mode: " + shown + ", cycle system / light / dark",
-      onclick: () => this.setColorMode(SCHEME_NEXT[shown] || "system"),
-    });
-  }
-
-  // colorCompareBtn, toggles the side-by-side Light+Dark Compare view. Remembers the scheme it
-  // was on so turning Compare back off restores it, rather than always landing on "system".
-  colorCompareBtn() {
-    const on = this.colorMode === "both";
-    return btn(icon("sidebar"), {
-      cls: "scheme-btn" + (on ? " on" : ""),
-      title: on ? "Compare is on, click to return to a single scheme" : "Compare: Light & Dark side by side",
-      ariaLabel: on ? "Compare is on, click to return to a single scheme" : "Compare Light & Dark side by side",
-      ariaPressed: on ? "true" : "false",
-      onclick: () => this.toggleColorCompare(),
-    });
-  }
-
-  // an explicit pick (system/light/dark/both) overrides the default and PERSISTS (app prefs),
-  // matches canvasThemeBtn's contract; only Settings › Reset returns this to "system".
-  setColorMode(v) { this.colorMode = v; this._saveAppPrefs(); this.render(); }
-
-  toggleColorCompare() {
-    if (this.colorMode === "both") this.colorMode = this._colorModeBeforeCompare || "system";
-    else { this._colorModeBeforeCompare = this.colorMode; this.colorMode = "both"; }
-    this._saveAppPrefs();
-    this.render();
-  }
-
-
-  // renderCompareArea, the Color "Both" mode: the canvas scene rendered in Light AND Dark, side by side,
-  // inside ONE pannable .canvas-scene (so pan/zoom/fit move both columns together). Each column forces its
-  // own scheme via _schemeOverride, so canvasBg() + every resolvedCanvasScheme() read while the scene
-  // builds resolves per-column.
+  // renderCompareArea, the Color canvas (palettes, scrims, radix): the scene in Light AND Dark, side by side, inside ONE
+  // pannable .canvas-scene (so pan/zoom/fit move both columns together). Each column builds inside its own
+  // scheme (_schemeColumn), so canvasBg() + every resolvedCanvasScheme() read while the scene builds
+  // resolves per column. Light first.
   renderCompareArea(view) {
     const area = h(
       "div",
-      { class: "canvas-area canvas-compare", role: "group", "aria-label": "Compare: Light and Dark side by side · drag to pan, wheel to zoom" },
+      { class: "canvas-area canvas-compare", role: "group", "aria-label": "Palette canvas, Light and Dark side by side · drag to pan, wheel to zoom" },
       h("div", { class: "canvas-scene compare" },
         this._compareColumn(view, "light"),
         this._compareColumn(view, "dark")),
@@ -948,16 +890,7 @@ export class ColorSectionImpl {
   }
 
   _compareColumn(view, scheme) {
-    this._schemeOverride = scheme; // force resolvedCanvasScheme() while this column's scene + bg resolve
-    const bg = this.canvasBg();
-    const scene = this._canvasScene(view);
-    this._schemeOverride = null;
-    return h(
-      "div",
-      { class: "compare-col canvas-scheme-" + scheme, style: "--canvas-bg:" + bg },
-      h("div", { class: "compare-col-label" }, scheme === "dark" ? "Dark" : "Light"),
-      scene,
-    );
+    return this._schemeColumn(scheme, scheme === "dark" ? "Dark" : "Light", () => this._canvasScene(view));
   }
 
 
@@ -1104,9 +1037,7 @@ export class ColorSectionImpl {
       );
     }).filter(Boolean);
 
-    const stack = h("div", { class: "ramp-stack" }, ...sections);
-    this._wireReorder(stack); // pointer-drag the ⋮⋮ handle to reorder palettes
-    return stack;
+    return h("div", { class: "ramp-stack" }, ...sections); // the ⋮⋮ handle on each row drags to reorder palettes (_beginReorder)
   }
 
 
@@ -1250,9 +1181,7 @@ export class ColorSectionImpl {
         );
       });
     if (rows.length === 0) return h("div", { class: "empty-note" }, "No enabled palettes. Toggle one on to see its scrims");
-    const stack = h("div", { class: "ramp-stack" }, ...rows);
-    this._wireReorder(stack); // reorder works in the scrim view too
-    return stack;
+    return h("div", { class: "ramp-stack" }, ...rows); // reorder works in the scrim view too
   }
 
 
@@ -1426,19 +1355,21 @@ export class ColorSectionImpl {
   }
 
 
-  // _wireReorder, keep a handle on the live stack node for hit-testing during a
-  // drag. Rows carry data-pi (their real doc.palettes index); we read the rects
-  // at move-time so the target insertion index is always current.
-  _wireReorder(stack) {
-    this._rampStack = stack;
+  // _ancestorWithClass, the nearest ancestor of `el` carrying `cls` (parentNode walk, works in the browser
+  // AND the headless DOM shim, which has no Element.closest), or null.
+  _ancestorWithClass(el, cls) {
+    let n = el;
+    while (n && !(n.classList && n.classList.contains(cls))) n = n.parentNode;
+    return n || null;
   }
 
 
-  // _rowRects, current [{ pi, top, bottom, mid, el }] for every row in the stack,
-  // top-to-bottom. Recomputed per drag-move (cheap; few rows).
+  // _rowRects, current [{ pi, top, bottom, mid, el }] for every row in the dragged row's OWN stack,
+  // top-to-bottom. Every scene draws a stack per scheme column, so the hit-test reads the stack the
+  // drag began in (rows carry data-pi, their real doc.palettes index), never another column's.
+  // Recomputed per drag-move (cheap; few rows).
   _rowRects() {
-    const stack = this._rampStack;
-    if (!stack) return [];
+    const stack = this._reorder.stack;
     return Array.from(stack.querySelectorAll(".ramp-row[data-pi]")).map((el) => {
       const r = el.getBoundingClientRect();
       return { pi: Number(el.getAttribute("data-pi")), top: r.top, bottom: r.bottom, mid: (r.top + r.bottom) / 2, el };
@@ -1458,11 +1389,11 @@ export class ColorSectionImpl {
     if (handle && handle.setPointerCapture) {
       try { handle.setPointerCapture(e.pointerId); } catch {}
     }
-    // find the source ROW for the grabbed handle (parentNode walk, works in the browser AND the
-    // headless DOM shim, which has no Element.closest / attribute selectors).
-    let srcRow = handle;
-    while (srcRow && !(srcRow.classList && srcRow.classList.contains("ramp-row"))) srcRow = srcRow.parentNode;
-    this._reorder.srcRow = srcRow || null;
+    // find the source ROW for the grabbed handle, and the stack and scheme column it lives in.
+    const srcRow = this._ancestorWithClass(handle, "ramp-row");
+    this._reorder.srcRow = srcRow;
+    this._reorder.stack = this._ancestorWithClass(srcRow, "ramp-stack");
+    this._reorder.col = this._ancestorWithClass(srcRow, "compare-col");
     this._buildDragGhost(e, srcRow); // lift a floating clone + drop a placeholder (browser only; no-ops in the shim)
     this._reorderMove = (ev) => this._onReorderMove(ev);
     this._reorderUp = (ev) => this._onReorderUp(ev);
@@ -1489,11 +1420,11 @@ export class ColorSectionImpl {
     ghost.classList.add("drag-ghost");
     ghost.classList.remove("sel"); // the lifted clone isn't the selection ring
     // The ghost is re-parented to the HOST (for viewport-fixed positioning), but the row it clones
-    // lives in the CANVAS, whose color-scheme (the ◐ preview toggle) is independent of the app chrome.
-    // Pin the canvas's resolved scheme on the ghost so its light-dark() tokens (--ink, --panel, …)
-    // resolve in the mode it visually belongs to, not the host's (else a light-canvas row dragged while
-    // the chrome is dark renders dark-mode text on the light row).
-    ghost.style.colorScheme = this.resolvedCanvasScheme();
+    // lives in a scene COLUMN, whose color-scheme is independent of the app chrome. Pin the source row's
+    // column scheme on the ghost so its light-dark() tokens (--ink, --panel, …) resolve in the mode it
+    // visually belongs to, not the host's (else a light-column row dragged while the chrome is dark
+    // renders dark-mode text on the light row).
+    ghost.style.colorScheme = this._schemeOfColumn(st.col);
     ghost.style.width = rect.width + "px";
     ghost.style.height = rect.height + "px";
     ghost.style.transform = `translate(${rect.left}px, ${rect.top}px)`;
@@ -1812,7 +1743,7 @@ export class ColorSectionImpl {
       this.slider("Hue", p.hue, 0, 360, 1, (v) => fmt(v) + "°", (v) => this.editDrag((d) => { this.detachSnapshot(d, i, p); d.palettes[i].hue = v; if (d.palettes[i].anchor) delete d.palettes[i].anchor; })),
       // Chroma (SPEC 0.3.0 REQ-002/032), feeds the KEY COLOUR and the prime system only now (the
       // gallery tile, deriveKeyColor, and the seven prime swatches); the ramp no longer reads it at
-      // all, a palette's group supplies the ramp's own absolute chroma target instead (the four
+      // all, a palette's group damps the whole at-100 ramp instead, by Base chroma / 100 (#785; the four
       // per-group rows on the Global tab). No "Intensity" slider exists any more, in any group.
       this.slider("Chroma", p.chroma, 0, 100, 1, (v) => fmt(v) + "%", (v) => this.editDrag((d) => { this.detachSnapshot(d, i, p); d.palettes[i].chroma = v; if (d.palettes[i].anchor) delete d.palettes[i].anchor; })),
       // Reset, re-attach a detached palette (Q6, U2's C12): restores `anchor = sourceAnchor` and
@@ -2238,20 +2169,32 @@ export class ColorSectionImpl {
   }
 
 
-  // Roles panel, the 53-role table for the selected palette: key · suffix · the
-  // light ref swatch + the dark ref swatch · plus a small live semantic preview.
+  // Roles panel: with a palette selected, that palette's 53-role table; with nothing selected, one
+  // table per enabled palette in canvas order. Each table sits under its palette name; every row is
+  // key · suffix · the light ref swatch + the dark ref swatch.
   renderRolesInspector(view) {
-    const idx = this.selectedIndex();
-    const p = view.palettes[idx] || view.palettes[0];
-    const ns = p ? slug(p.name) : "";
+    const one = this.sel.kind === "palette";
+    const shown = one ? [view.palettes[this.selectedIndex()]] : view.palettes.filter((p) => p.on);
+    const tables = shown.filter(Boolean).map((p) => this._rolesTable(p));
     return h(
       "div",
       {},
       h("h3", { class: "insp-title" }, icon("roles"), "Roles"),
-      h("div", { class: "insp-sub" }, `${p ? p.name : ""}: 53 semantic roles · light / dark refs`),
+      h("div", { class: "insp-sub" }, one ? "53 semantic roles · light / dark refs" : `${tables.length} palettes · 53 semantic roles each · light / dark refs`),
       // (the live component preview is pinned at the bottom of the pane on every
       // tab, see .seg-example / exampleCard, so the Roles panel no longer repeats
       // it here at the top.)
+      ...tables,
+    );
+  }
+
+  // _rolesTable, one palette's heading + 53-role table (the unit renderRolesInspector repeats).
+  _rolesTable(p) {
+    const ns = slug(p.name);
+    return h(
+      "div",
+      { class: "roles-group" },
+      h("h4", { class: "roles-table-name" }, p.name),
       h(
         "div",
         { class: "roles-table" },
@@ -2262,22 +2205,20 @@ export class ColorSectionImpl {
           h("span", { class: "suf" }, "suffix"),
           h("span", { class: "sw-pair" }, h("span", {}, "L"), h("span", {}, "D")),
         ),
-        ...(p
-          ? p.roles.map((r) =>
-              h(
-                "div",
-                { class: "rrow" },
-                h("span", { class: "k", title: "--c-" + ns + r.suffix }, r.key),
-                h("span", { class: "suf" }, r.suffix || "n/a"),
-                h(
-                  "span",
-                  { class: "sw-pair" },
-                  swatch(r.lightHex, { size: 16, title: "light ref " + r.lightHex, onClick: () => this.copy(r.lightHex, "Copied " + r.lightHex) }),
-                  swatch(r.darkHex, { size: 16, title: "dark ref " + r.darkHex, onClick: () => this.copy(r.darkHex, "Copied " + r.darkHex) }),
-                ),
-              ),
-            )
-          : []),
+        ...p.roles.map((r) =>
+          h(
+            "div",
+            { class: "rrow" },
+            h("span", { class: "k", title: "--c-" + ns + r.suffix }, r.key),
+            h("span", { class: "suf" }, r.suffix || "n/a"),
+            h(
+              "span",
+              { class: "sw-pair" },
+              swatch(r.lightHex, { size: 16, title: "light ref " + r.lightHex, onClick: () => this.copy(r.lightHex, "Copied " + r.lightHex) }),
+              swatch(r.darkHex, { size: 16, title: "dark ref " + r.darkHex, onClick: () => this.copy(r.darkHex, "Copied " + r.darkHex) }),
+            ),
+          ),
+        ),
       ),
     );
   }

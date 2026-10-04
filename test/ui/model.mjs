@@ -190,8 +190,8 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
 // ── byte-identity export check (ticket #556 non-goal guard, SUPERSEDED for intensity/primeChroma
 // by ticket #559, and again for the GROUP METADATA ITSELF by ticket #572/RP-1) ────────────────────
 // #556 shipped `group` as purely editor/organizational metadata with zero export effect. #559 makes
-// a palette's GROUP drive its resolved baseIntensity/primeChroma (Material 30/60 vs Brand/System/Data
-// all 100/100 by default), so reassigning a palette's group no longer guarantees byte-identical
+// a palette's GROUP drive its resolved baseIntensity/primeChroma (Material 100/60 vs Brand/System/Data
+// all 100/100 by default since #785 R96), so reassigning a palette's group no longer guarantees byte-identical
 // exports in general; that is the whole point of the ticket. #572/RP-1 then makes the group ITSELF
 // exported metadata (JSON `group`, DTCG raw `$extensions`, a CSS/OKLCH/Tailwind comment line,
 // brandKit `group`), so even a brand<->system swap (same 100/100 chroma defaults) now legitimately
@@ -285,16 +285,26 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   ok(JSON.stringify(baseDs) === JSON.stringify(sameDefaultsDs), "the DS bundle (ds-export.js) must stay byte-identical for a brand <-> system group swap");
   ok(stripBrandKitGroup(brandKit(base)) === stripBrandKitGroup(brandKit(sameDefaults)), "the MCP brandKit() payload must stay byte-identical (net of the RP-1 `group` field) for a brand <-> system group swap");
 
-  // moving Neutral out of Material (default 30/60) into Brand (default 100/100) MUST move the
-  // export bytes on EVERY surface, proves ticket #559's group layer actually reaches every
-  // export/DS-bundle/MCP output, not just the UI.
+  // moving Neutral out of Material (default 100/60) into Brand (default 100/100) MUST move the
+  // export bytes on EVERY surface. Since #785 R96 both defaults render Neutral at 100, so this
+  // pair now moves through the RP-1 group metadata; the damped pair below keeps proving the
+  // group's chroma layer reaches every export/DS-bundle/MCP output, not just the UI.
   const neutralToBrand = defaultDocument();
   neutralToBrand.palettes = neutralToBrand.palettes.map((p) => (p.name === "Neutral" ? { ...p, group: "brand" } : p));
   const neutralToBrandExports = projectView(neutralToBrand).exports;
-  ok(baseExports.css !== neutralToBrandExports.css, "moving Neutral out of Material (30/60) into Brand (100/100) must change the CSS export bytes (ticket #559)");
+  ok(baseExports.css !== neutralToBrandExports.css, "moving Neutral out of Material (100/60) into Brand (100/100) must change the CSS export bytes (ticket #559)");
   const neutralToBrandDs = exportDesignSystemBundle(dsDocOf(neutralToBrand), typeScaleFor(neutralToBrand, "base"), geomScaleFor(neutralToBrand, "base"), dsOpts);
   ok(JSON.stringify(baseDs) !== JSON.stringify(neutralToBrandDs), "moving Neutral out of Material into Brand must also change the DS bundle bytes");
   ok(JSON.stringify(brandKit(base)) !== JSON.stringify(brandKit(neutralToBrand)), "moving Neutral out of Material into Brand must also change the MCP brandKit() payload");
+
+  // #785 R94: Material's base chroma at 50 damps Neutral's ramp, and that reaches every surface.
+  const damped = defaultDocument();
+  damped.paletteGroups = { ...damped.paletteGroups, material: { ...damped.paletteGroups.material, baseChroma: 50 } };
+  ok(baseExports.css !== projectView(damped).exports.css, "Material base chroma 50 must change the CSS export bytes (#785 damper)");
+  ok(JSON.stringify(baseDs) !== JSON.stringify(exportDesignSystemBundle(dsDocOf(damped), typeScaleFor(damped, "base"), geomScaleFor(damped, "base"), dsOpts)), "Material base chroma 50 must change the DS bundle bytes (#785 damper)");
+  // Net of `controls`, which carries the stored 50 whether or not the ramps moved: the colors must move.
+  const kitColors = (kit) => JSON.stringify({ palettes: kit.palettes, roles: kit.roles });
+  ok(kitColors(brandKit(base)) !== kitColors(brandKit(damped)), "Material base chroma 50 must change the MCP brandKit() palettes and roles (#785 damper)");
 }
 
 // ── U2 (#637): radixKeyCollision(name) + RADIX_COLLISION_BADGE (I4/I5/OQ-3) ────────────────

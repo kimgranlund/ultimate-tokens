@@ -30,9 +30,9 @@ The non-obvious do/don'ts (each one cost a real bug or review cycle), then a con
   `_fitTopLeftInset`, not centered and not at the color pan); lazy-init section assets
   (`ensureTypeFonts()` for typography). Keep Color byte-identical, the viewport round-trip is the one
   crossover.
-- **Guard the live refresh.** `_liveRefreshNow()` early-returns for non-color. If a Color sub-mode replaces
-  the single `.canvas-scene` with multiple columns (Compare), the partial `scene.replaceChildren(...)` would
-  clobber them, full-render that mode instead (`if (this.colorMode === "both") { this.render(); return; }`).
+- **Guard the live refresh.** `_liveRefreshNow()` early-returns for non-color. Color's `.canvas-scene` holds
+  one `.compare-col` per scheme, so a partial `scene.replaceChildren(...)` would clobber them: patch each
+  column in place under its own `_inScheme` (set its `--canvas-bg`, replace its scene), as `_liveRefreshNow` does.
 
 ## Retiring a modal cleanly
 

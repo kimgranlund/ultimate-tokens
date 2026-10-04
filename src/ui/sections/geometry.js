@@ -171,7 +171,7 @@ export class GeomSectionImpl {
   // ── Geometry breakpoint modes (Phase 5), named baseHeight variants over doc.geometry. Mirrors the
   // Typography mode helpers; the ACTIVE mode drives the canvas preview + the inspector. Export stays on Base.
   // _effGeomMode, the mode the ACTIVE resolvers paint in: a Compare column's _geomModeOverride wins (so its
-  // scene + scale build at THAT breakpoint while it renders, like _schemeOverride), else this.geomMode.
+  // scene + scale build at THAT breakpoint while it renders, like the column scheme _inScheme sets), else this.geomMode.
   _effGeomMode() { return this._geomModeOverride != null ? this._geomModeOverride : this.geomMode; }
 
   _activeGeometry() {
@@ -395,7 +395,6 @@ export class GeomSectionImpl {
         ariaLabel: "Fit: reset the canvas view to centre at 100%",
         onclick: () => { this.fit(); this.render(); },
       }),
-      this.canvasThemeBtn(),
       btn(icon("minus"), { ariaLabel: "Zoom out", onclick: () => this.zoomBy(-1) }),
       h("span", { class: "zoom-readout", role: "status", "aria-live": "polite", "aria-label": "Zoom level" }, Math.round(this.viewport.zoom * 100) + "%"),
       btn(icon("plus"), { ariaLabel: "Zoom in", onclick: () => this.zoomBy(1) }),
@@ -409,52 +408,44 @@ export class GeomSectionImpl {
   // renders an EDITABLE token MATRIX (Phase 3, per-cell size/height overrides + ↺) (rows = sizes, cols = Base + each breakpoint) in the scrolling
   // .is-table shell instead, mirrors renderTypeCanvas / Color's Mapping flip.
   renderGeomCanvas(view) {
-    // Compare (Phase 5.3), all breakpoints side by side. A Controls view, so it wins over the tokens table.
-    if (this.geomMode === "compare") return this.renderGeomCompareArea(view);
-    if (this.geomSpecMode === "tokens") return this._tokensTableArea("Geometry tokens: Base + breakpoints", this.renderGeomTokensTable());
-    const area = h(
-      "div",
-      {
-        class: "canvas-area geom-canvas canvas-scheme-" + this.resolvedCanvasScheme(),
-        role: "group",
-        "aria-label": "Geometry specimen: drag to pan, wheel to zoom, double-click to reset",
-      },
-      h("div", { class: "canvas-scene" }, this.renderGeometryScene(view)),
-    );
-    this.wirePanZoom(area);
-    requestAnimationFrame(() => this.applyTransform());
-    return area;
+    // Breakpoint Compare is a Specimen/Controls view, so it wins over the tokens table (which has no scheme: it
+    // sits on the chrome ground, as Color's Mapping table does).
+    if (this.geomSpecMode === "tokens" && this.geomMode !== "compare") return this._tokensTableArea("Geometry tokens: Base + breakpoints", this.renderGeomTokensTable());
+    return this.renderGeomCompareArea(view);
   }
 
 
-  // renderGeomCompareArea, the Geometry "Compare" mode: the control ramp rendered at Base AND each breakpoint
-  // mode, side by side, in ONE pannable .canvas-scene. Mirrors renderTypeCompareArea / Color's renderCompareArea;
-  // each column forces its breakpoint via _geomModeOverride while it builds.
+  // renderGeomCompareArea, the Geometry canvas: the control ramp rendered in Light AND Dark, side by side, for every SHOWN
+  // breakpoint, inside ONE pannable .canvas-scene (so pan/zoom/fit move all columns together). One column per
+  // (scheme, shown breakpoint), light columns first: at one breakpoint that is 2 columns, in breakpoint Compare
+  // (mode "compare") 2 x (1 + modes.length), each column forcing its breakpoint via _geomModeOverride while it builds.
   renderGeomCompareArea(view) {
-    const modes = this._geomEffectiveModes();
+    const modes = this.geomMode === "compare" ? this._geomEffectiveModes() : null;
+    const breakpoints = modes ? [["base", "Base"], ...modes.map((m) => [m.id, m.name || "Mode"])] : [[null, null]];
     const area = h(
       "div",
-      { class: "canvas-area canvas-compare geom-canvas canvas-scheme-" + this.resolvedCanvasScheme(),
-        role: "group", "aria-label": "Compare: every geometry breakpoint side by side · drag to pan, wheel to zoom" },
+      { class: "canvas-area canvas-compare geom-canvas",
+        role: "group", "aria-label": "Geometry specimen, Light and Dark side by side · drag to pan, wheel to zoom" },
       h("div", { class: "canvas-scene compare" },
-        this._geomCompareColumn(view, "base", "Base"),
-        ...modes.map((m) => this._geomCompareColumn(view, m.id, m.name || "Mode"))),
+        ...["light", "dark"].flatMap((scheme) =>
+          breakpoints.map(([modeId, name]) => this._geomCompareColumn(view, scheme, modeId, name)))),
     );
     this.wirePanZoom(area);
     requestAnimationFrame(() => this.applyTransform());
     return area;
   }
 
-  _geomCompareColumn(view, modeId, label) {
-    this._geomModeOverride = modeId; // force _activeGeometry()/_activeGeomScale() while this column's scene builds
-    const scene = this.renderGeometryScene(view);
-    this._geomModeOverride = null;
-    return h(
-      "div",
-      { class: "compare-col canvas-scheme-" + this.resolvedCanvasScheme(), style: "--canvas-bg:" + this.canvasBg() },
-      h("div", { class: "compare-col-label" }, label),
-      scene,
-    );
+  // _geomCompareColumn, one (scheme, breakpoint) column. `modeId` null = the active breakpoint (one-breakpoint view);
+  // otherwise it forces that breakpoint while the column's scene builds. The label names the scheme, and
+  // the breakpoint when Compare shows several.
+  _geomCompareColumn(view, scheme, modeId, name) {
+    const schemeLabel = scheme === "dark" ? "Dark" : "Light";
+    this._geomModeOverride = modeId; // force the active geometry resolvers to THAT breakpoint while this column's scene builds (null = the active one)
+    try {
+      return this._schemeColumn(scheme, name ? name + " · " + schemeLabel : schemeLabel, () => this.renderGeometryScene(view));
+    } finally {
+      this._geomModeOverride = null;
+    }
   }
 
 
@@ -462,7 +453,7 @@ export class GeomSectionImpl {
   // step a live mock control (leading glyph · label · caret) at its real height/icon/font/pad/radius with a
   // metrics readout; (2) the RADIUS ladder; (3) the SPACE scale. Tokens mode drops the live boxes for
   // metrics only. The control text size (font) comes from the type UI scale (the composition), so
-  // ensureTypeFonts() makes that font real; paints in the canvas preview scheme (var(--ink*) flips).
+  // ensureTypeFonts() makes that font real; paints in its column's scheme (var(--ink*) flips).
   renderGeometryScene(view) {
     ensureTypeFonts();
     const cfg = this.doc.geometry || DEFAULT_GEOMETRY;
@@ -716,7 +707,7 @@ export class GeomSectionImpl {
         this.panesRight ? this.paneToggle("right") : false,
         this.segmented(tabs, seg, (id) => { this.geomSegment = id; this.render(); }, { ariaLabel: "Geometry inspector", idPrefix: "gtab", controls: "gi-panel" })),
       h("div", { class: "seg-body", role: "tabpanel", id: "gi-panel", "aria-labelledby": "gtab-" + seg }, body),
-      h("div", { class: "seg-example" }, this.geomExampleCard(view)),
+      h("div", { class: "seg-example" }, ...this.exampleSchemes(() => [this.geomExampleCard(view)])),
     );
   }
 

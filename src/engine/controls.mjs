@@ -15,7 +15,7 @@ import { DEFAULT_CONTROLS } from "./tonal.js";
 export function resolveControls(src) {
   const out = {};
   for (const k of Object.keys(DEFAULT_CONTROLS)) out[k] = src[k] ?? DEFAULT_CONTROLS[k];
-  // baseChroma (SPEC 0.3.0 REQ-002/004): the GLOBAL fallback ramp-chroma target, used only when a
+  // baseChroma (SPEC 0.3.0 REQ-002/004): the GLOBAL fallback group damper value (#785), used only when a
   // palette's group carries no value of its own. primeChroma (REQ-008/050..057): the prime system's
   // own chroma control. Both default 100, tonal.js stays group- and intensity-unaware.
   out.baseChroma = src.baseChroma ?? 100;

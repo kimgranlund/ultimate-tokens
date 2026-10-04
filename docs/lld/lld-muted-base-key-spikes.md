@@ -11,6 +11,8 @@ audience: builder, reviewer
 ---
 # LLD: Palette groups with an absolute base chroma, a per-palette prime system, data hue derivation
 
+> Superseded in part by R94 to R98 (#785): Base chroma is now a whole-ramp damper applied in `tonal.js` (`groupDamper`, `dampStops`), not an absolute target, and `GROUP_DEFAULTS.material` is 100/60, not 30/60 (the schema-4 sample, Risk 0 and the `chroma == rampChroma` byte-identity sentence under Fixtures describe the old model).
+
 Spec: `docs/spec/spec-muted-base-key-spikes.md` 0.4.0 (REQ/AC ids below refer to it). Intent: issues
 #503 and #533. Substrate this design leans on and does not restate: `color-math` skill (two ramp
 paths, damping multiplier `m`, hue anchors, OKHSL bijection), `adding-export-formats` skill (the
@@ -57,7 +59,7 @@ export function hueAnchorFrac(palette, controls);
 
 // model.mjs (0.3.0, #556/#559)
 export const PALETTE_GROUPS = ["material", "brand", "system", "data"];
-export const GROUP_DEFAULTS = { material: { baseChroma: 30, primeChroma: 60 }, brand: { baseChroma: 100, primeChroma: 100 },
+export const GROUP_DEFAULTS = { material: { baseChroma: 100, primeChroma: 60 }, brand: { baseChroma: 100, primeChroma: 100 },
                                 system: { baseChroma: 100, primeChroma: 100 }, data: { baseChroma: 100, primeChroma: 100, locked: true } };
 export function paletteGroup(p) -> "material"|"brand"|"system"|"data"   // p.group ?? default by slug(p.name)
 export function resolvePaletteGroups(doc) -> { [g]: { baseChroma, primeChroma, locked } }  // doc.paletteGroups default-filled
@@ -144,7 +146,7 @@ Document shape (all optional on read, always written by `serialize`):
 
 ```js
 { schemaVersion: 4, baseIntensity: 100, primeChroma: 100,
-  paletteGroups: { material: { baseChroma: 30, primeChroma: 60 }, brand: { baseChroma: 100, primeChroma: 100 },
+  paletteGroups: { material: { baseChroma: 100, primeChroma: 60 }, brand: { baseChroma: 100, primeChroma: 100 },
                    system: { baseChroma: 100, primeChroma: 100 }, data: { baseChroma: 100, primeChroma: 100, locked: true } },
   palettes: [ { ..., group?: "material"|"brand"|"system"|"data", primeChroma?: 0..100 }, ..., { name: "Data 1", ... } ] }
 ```
@@ -164,8 +166,9 @@ Fixtures (REQ-003, AC-003): `test/engine/fixtures/tonal-legacy.json` (engine, re
 only) and `test/ui/fixtures/default-doc-ramps.json` (document: 16 palettes x 25 stops hex from
 `projectView(defaultDocument())` at the ratified `paletteGroups` defaults; regenerated only by
 `node scripts/gen-ramp-fixture.mjs`, which the #559 builder adds and runs once; `npm test` compares,
-never writes). Which default palettes stay byte-identical to 0.2.0 is derived live in the same
-gate from the `chroma == rampChroma` rule, not hard-coded.
+never writes). Which default palettes stay byte-identical to 0.2.0 was derived live in the same
+gate from the `chroma == rampChroma` rule, not hard-coded (since #785 that identity holds only for a palette
+whose group is at 100, a group below 100 damps the whole ramp).
 
 Token counts, default document: 16 palettes x 96 = 1,536 tokens. Figma: Color Primitives 576, Color
 Roles 848 x 2 modes, Color Prime 112 x 1 mode.
