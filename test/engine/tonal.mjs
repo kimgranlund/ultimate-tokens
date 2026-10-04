@@ -1651,14 +1651,14 @@ for (const mode of ["perceptual", "peak"]) {
   // The #739 name, retired at #725 U2 (see DIP_BASELINE): "67° N · January · 03:00 · The Helsinki–Rovaniemi night train, somewhere past Oulu|secondary-muted|500"
   // Ticket #739: #ACADAE (this preset's own anchor, one of the two corpus anchors under
   // ACHROMATIC_ANCHOR_C) now renders its ramp at the palette's own hue instead of its rounding-
-  // residue one. That shifts `anchorChromaBasis`'s per-stop blend against `maxChromaInGamut` enough
+  // residue one. That shifted the per-stop chroma blend (then `anchorChromaBasis`) against `maxChromaInGamut` enough
   // for stop 500 to dip below both 450 and 550 - the same pivot-notch mechanism the retired even baseline's
   // own header describes (32 of its 90 instances), on both the peak and perceptual paths this time
   // (okhslStopsAnchored shares the same blend for both modes; only their curve/damping fitting
   // differs). Root-caused, not reintroducing the retired peak population above; PERCEPTUAL_DIP_BASELINE
   // below is the same single name because perceptual had no baseline (0 dips) before this ticket.
   // #725 U2: retired to empty. The #739 dip was the group target climbing on both sides of a grey pivot;
-  // anchorChromaBasis now blends toward min(group, anchor), so the grey pivot no longer sits in a valley
+  // the okhsl basis now holds the anchor's own s (no climb), so the grey pivot no longer sits in a valley
   // (measured on FULL at ec496bd0: 0 dips in peak and perceptual, TICKET_739_DIP not observed).
   const DIP_BASELINE = new Set();
   const PERCEPTUAL_DIP_BASELINE = new Set();
@@ -1768,20 +1768,22 @@ for (const mode of ["perceptual", "peak"]) {
   // `okhslStops`'s NON-anchored branch. On the corrected, anchor-aware measurement that branch is dead
   // for this control's purpose: `okhslStops` dispatches to `okhslStopsAnchored` whenever the palette
   // carries an anchor (nearly all of the generated corpus, see `above100Violators`' own comment above),
-  // and `okhslStopsAnchored` has no bisection at all - its saturation is `anchorChromaBasis(...) * env`,
+  // and `okhslStopsAnchored` has no bisection at all - its saturation is a closed-form basis times `env`,
   // a closed-form blend, never solved iteratively - so the old patch text still matches (the FAIL-if-
   // missing check still passes) but produces 0 buggy dips, not "far more": checked directly, confirmed
-  // dead. The control now patches `anchorChromaBasis` (src/engine/tonal.js, shared verbatim by both
-  // `paletteStopsAnchored` and `okhslStopsAnchored`) instead: forcing its smoothstep weight negative for
-  // any stop within the inner 15% of the pivot's own liftStop window drives that stop's blended value
-  // BELOW the anchor's own pivot value whenever the group target exceeds it, reproducing the same
-  // "interior stop >= 3 CAM16 C below both neighbours" shape the real F1 regression had, on the
-  // construction the real corpus actually renders through. Measured: 3,987 buggy peak dips (vs. 0 real).
+  // dead. The control now patches the basis instead: it routes `okhslStopsAnchored`'s saturation back
+  // through `anchorChromaBasis` (src/engine/tonal.js, the even path's blend) toward a group target of 1,
+  // the climb #725 U2 (R69) removed, and forces that blend's smoothstep weight negative for any stop
+  // within the inner 15% of the pivot's own liftStop window. That drives the stop's blended value BELOW
+  // the anchor's own pivot value whenever the target exceeds it, reproducing the same "interior stop >= 3
+  // CAM16 C below both neighbours" shape the real F1 regression had, on the construction the real corpus
+  // actually renders through. Measured: 3,987 buggy peak dips at #681 (vs. 0 real); 3,806 FULL and 318
+  // SAMPLED at #785 U5, the same counts the pre-U5 patch (`target = groupValue`) reads at f68f1368.
   {
     const realSrc = readFileSync(new URL("../../src/engine/tonal.js", import.meta.url), "utf8");
     const hctUrl = new URL("../../src/engine/hct.js", import.meta.url).href;
     const okhslUrl = new URL("../../src/engine/okhsl.js", import.meta.url).href;
-    const CLIMB_TARGET = "const target = climb ? groupValue : Math.min(groupValue, anchorValue);";
+    const OKHSL_BASIS = "const intendedS = anchor.okhsl.s;";
     const patched = realSrc
       .replace('from "./hct.js"', `from "${hctUrl}"`)
       .replace('from "./okhsl.js"', `from "${okhslUrl}"`)
@@ -1789,10 +1791,10 @@ for (const mode of ["perceptual", "peak"]) {
         "const w = t * t * (3 - 2 * t); // smoothstep: w(0)=0, w(1)=1, w'(0)=w'(1)=0",
         "const w = t < 0.15 ? -0.6 : t * t * (3 - 2 * t); // smoothstep: w(0)=0, w(1)=1, w'(0)=w'(1)=0"
       )
-      // #725 U2: the blend target is min(group, anchor), so a negative weight now lifts the stop above the
-      // pivot instead of below it; the control restores the climb (the pre-U2 target) so the weight digs.
-      .replace(CLIMB_TARGET, "const target = groupValue;");
-    if (!realSrc.includes(CLIMB_TARGET) || !realSrc.includes("const w = t * t * (3 - 2 * t);")) FAIL("chroma-envelope", "(iv dip gate negative control, peak) a patch target string was not found  -  the anchorChromaBasis weight text moved, update this control");
+      // #725 U2: the okhsl basis is the anchor's own s, so a negative weight has nothing to dig with; the
+      // control restores the climb toward 1 (the pre-U2 target) so the weight digs below the pivot.
+      .replace(OKHSL_BASIS, "const intendedS = anchorChromaBasis(stop, 500, palette.lift ?? 0, anchor.okhsl.s, 1);");
+    if (!realSrc.includes(OKHSL_BASIS) || !realSrc.includes("const w = t * t * (3 - 2 * t);")) FAIL("chroma-envelope", "(iv dip gate negative control, peak) a patch target string was not found  -  the okhsl basis line or the anchorChromaBasis weight text moved, update this control");
     const BuggyT = await import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
     // #681 U3 review 4, R3/R4: calls the real findDips against the patched engine, over both stop sets,
     // instead of reimplementing the loop inline.

@@ -211,9 +211,10 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
 //    ramp's ends, just reached through chromaEnvelope's own shape now).
 //
 //    Re-measured a SIXTH time (addendum 2, u2-p2-brief.md): the blend's own weight now keys on
-//    `liftStop` (`anchorChromaBasis`), never `anchorWarp`'s skew-warped `w` (a local construction the
-//    ruling retired). Only the skewed default families (Neutral/Primary/Tertiary/Info/Success/Danger
-//    skew -20, Warning skew 40) moved, and only slightly; every family still stayed >= AA 4.5.
+//    `liftStop` (`anchorChromaBasis`, the even path's blend only since #725 R69), never `anchorWarp`'s
+//    skew-warped `w` (a local construction the ruling retired). Only the skewed default families
+//    (Neutral/Primary/Tertiary/Info/Success/Danger skew -20, Warning skew 40) moved, and only slightly;
+//    every family still stayed >= AA 4.5.
 //
 //    Re-measured a SEVENTH time (review pass 2, fix-first-2, R7, 2026-09-18) after R6 (toneAt
 //    piecewise-affine remap replacing anchorLerp's per-side double-S) and R2 (chroma-basis blend

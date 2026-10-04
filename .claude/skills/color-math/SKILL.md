@@ -61,9 +61,9 @@ A palette carrying a valid 6-hex `anchor` (a STORED source colour, never fitted)
   `lmin`/`lmax`. If you ever find yourself writing that straight lerp, it is the known regression:
   it makes curve, tension and hue space inert and renders peak and perceptual byte-identical for
   every anchored palette, which is exactly the tripwire `anchor-f4` watches.
-- Chroma at the pivot comes from `anchorChromaBasis`, a smoothstep blend from the anchor's own
-  measured chroma at stop 500 toward `min(groupValue, anchorValue)` at each end on perceptual and
-  peak; the even path (`paletteStopsAnchored`, `climb = true`) walks toward `groupValue`. Since #785 (R94 to
+- On perceptual and peak the anchored basis is the anchor's own OKHSL `s` at every stop (R69, no
+  climb); on even (`paletteStopsAnchored`) it is `anchorChromaBasis`, a smoothstep blend from the
+  anchor's own measured chroma at stop 500 toward `groupValue` at each end. Since #785 (R94 to
   R98) `groupValue` is always 100 there: `paletteStops` renders every ramp at 100 and a group's Base
   chroma acts afterwards as one whole-ramp ratio, `groupDamper(g) = g/100` applied by `dampStops`
   (tone held, damp only, so 150 renders as 100). Change group muting in `dampStops`, never inside
