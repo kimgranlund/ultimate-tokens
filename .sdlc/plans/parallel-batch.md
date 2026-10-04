@@ -1,5 +1,5 @@
 ---
-status: draft
+status: approved
 ticket: "#786 (anchor; the plan also closes #787, #796, #783, #748, #784)"
 priority: P2
 lane: batch of six, two waves. Wave A (now): `docs/marketing/**` (U1); `src/ui/overlays/drawer.js`, `src/ui/sections/typography.js` (U5, hunk-level per Q1 B); `test/repo/citations.mjs` (U7, hunk-level per Q1 B); `figma/binder/mode-apply-plan.mjs`, `test/repo/em-dash.mjs` and its fixtures, `src/engine/ds-export.js` (one prose line), `.sdlc/adapter.md` §1 (U2); new `src/engine/names.mjs`, new `test/engine/names.mjs`, the `TESTS` line of `test/run.mjs` (U3). Wave B (after #785 lands on `main`): `src/ui/sections/color.js`, `test/ui/headless-boot.mjs`, `.sdlc/questions/pane-context-U1-f1.md` (U4, then U6 on top of it, U6 adding `scripts/bundle.mjs` MODS/KEY and `src/ui/styles.css`); `src/engine/tonal.js`, `test/engine/tonal.mjs`, `test/engine/even-dips-gate.mjs`, `test/engine/fixtures/*.json`, `CHANGELOG.md` (U8). Regenerated bundles (`dist/`, `figma/plugin/ui.html`, `src/ui/describe-mcp-assets.js`) on every unit that touches `src/`
