@@ -22,6 +22,8 @@ Branch unit/cl-U4, two commits (code, then gate repairs, regenerated assets and 
 
 Size: `figma/plugin/ui.html` 4297615 bytes at `1a99d5ad`, 4315393 at HEAD, +17778 (+0.41%): the pin rule, the two synthetic layers are not bundled (test-only), the stamp code, and the regenerated describe assets carrying the new engine text. `dist/ultimate-tokens.html` 4312287 bytes at HEAD.
 
+ramp@1 freeze: not done in U4, by design and by the ordering rule. No `ramp@1.mjs` exists under `src/engine/layers/`; `FROZEN.json` holds only `test-layer@1.mjs` and `test-layer@2.mjs`. C4.4 scopes `ramp@1.mjs` to U5, and the team lead ruled that the freeze waits until pb-U8's tonal.js fix is on main. When U5 freezes it, the C4.4 hash gate picks the file up with no code change (it hashes every file under `src/engine/layers/` except FROZEN.json).
+
 ## Notes for the reviewer
 
 - Pins: `doc.layers = { [id]: version }`, one rule (`pinsOf`, `src/engine/layer-pins.mjs`) for `hydrate`, `compute`'s `docPins` and every export stamp. It lives outside `layers.mjs` because `layers.mjs` imports `hydrate` for `presetDoc` and `scripts/bundle.mjs` cannot inline an import cycle. `LATEST` there is gated equal to `latestOf(REGISTRY)`.
