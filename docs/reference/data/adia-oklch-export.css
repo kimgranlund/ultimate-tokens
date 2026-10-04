@@ -1,8 +1,9 @@
-/* ultimate-tokens export schema 5 */
-/* adia-oklch-export 2.1.0
+/* ultimate-tokens export schema 6 */
+/* adia-oklch-export 2.2.0
    source: docs/reference/colors/categories/brands.json (adia-brand-document@1.0.0, 770297b)
    generator: scripts/gen-adia-derived-exports.mjs (projectView(hydrate(preset)).exports.oklch)
    DO NOT EDIT: regenerate with `npm run gen:adia-exports`. */
+/* ultimate-tokens layers controls@1 group-chroma@1 ramp@1 prime@1 roles@1 type@1 geometry@1 */
 :root {
   color-scheme: light dark;
   --c-dialog-backdrop: oklch(0 0 0 / 80%);
