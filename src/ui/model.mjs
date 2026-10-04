@@ -276,8 +276,9 @@ export { SCRIM_BASES, SCRIM_STEPS, exportDesignSystemTokens, exportDesignSystemS
 //
 // `anchor` (ticket #681 U1, Q2 (b) ruled): each default family's own TODAY's stop-550 hex, measured
 // against this file's own `chroma`/`skew`/`lift` in "perceptual" mode (the shipped default toneMode),
-// with the ramp chroma resolved through each family's CANVAS GROUP (rampChromaOf: Neutral is
-// "material" baseChroma 30, every other default is "brand"/"system"/"data" baseChroma 100, never
+// with the ramp chroma resolved through each family's CANVAS GROUP (rampChromaOf: Neutral was
+// "material" baseChroma 30 then, every other default "brand"/"system"/"data" baseChroma 100; every
+// group defaults to 100 since #785, which renders Neutral's perceptual ramp the same; never
 // the raw `chroma` field above, which only feeds the prime/key-colour construction, REQ-002). Minted
 // so no default family's prime ladder collapses under U6's equal-compress wall rule (mechanism (3));
 // re-verified against this branch's own base before being typed in here (a stale value would fail
@@ -418,8 +419,8 @@ export function paletteGroup(p) {
 
 // ── Per-group base chroma (SPEC spec-muted-base-key-spikes 0.3.0, #556/#559 re-ruling) ───────────
 // GROUP_DEFAULTS (imported above, from persist.js, the canonical source, model.mjs re-exports it):
-// the four groups' own baseChroma/primeChroma defaults (ratified 2026-09-11): Material renders
-// muted by default (30/60); Brand/System stay at the legacy 100/100 (no visible change); Data is
+// the four groups' own baseChroma/primeChroma defaults: Material is 100/60 since #785 (R96; the
+// slider damps the whole ramp, 30/60 before); Brand/System stay at 100/100 (no visible change); Data is
 // LOCKED, its `locked:true` marks that a Data-group palette's per-palette primeChroma override is
 // IGNORED (not deleted, just unused) by primeChromaOf below. Data's ramp chroma is NEVER
 // overridable at all, in any group (REQ-002), that half of the old per-palette override is gone
@@ -633,7 +634,7 @@ export function stateOf(doc) {
     // SPEC 0.3.0: each palette's `group` is resolved to a definite id here (resolvedPalettes) so
     // exports.js's derivePalette never re-derives the by-name default rule; `paletteGroups` (below)
     // carries the four groups' own baseChroma/primeChroma/locked. Neither `chroma` nor `primeChroma`
-    // is touched on the palette itself, derivePalette resolves the ramp's absolute chroma target
+    // is touched on the palette itself, derivePalette resolves the ramp's group damper value (#785)
     // AND the prime system's resolved primeChroma through engine/resolve.mjs's rampChromaOf/
     // primeChromaOf, the SAME pure functions projectView calls (via this file's own doc-shaped
     // wrappers below), so the two paths can never resolve a palette's group differently (Risk 0b).
@@ -943,9 +944,9 @@ export function projectView(doc) {
     // accent-ref-resolved roles ("single" → prime accent 500/500), computed before the ramp, reused below
     // for the on-color-contrast step so it's derived once per palette.
     const accentRoles = applyAccentRef(semanticRoles(n), controls.accentRef);
-    // SPEC 0.3.0 REQ-002/008: rampChromaOf is the ABSOLUTE chroma target the ramp is built from,
-    // it REPLACES p.chroma below, never multiplies it (there is no more per-palette ramp override in
-    // any group). primeChromaOf feeds the prime system alone, via primeSwatches' own `controls`
+    // SPEC 0.3.0 REQ-002/008: rampChromaOf is the group's chroma damper (#785, R94: tonal.js
+    // `dampStops` scales the at-100 ramp by it / 100); it REPLACES p.chroma below, never multiplies
+    // it (there is no more per-palette ramp override in any group). primeChromaOf feeds the prime system alone, via primeSwatches' own `controls`
     // param below; p.chroma itself stays untouched and still feeds deriveKeyColor (REQ-002/052).
     const rampChroma = rampChromaOf(p, doc);
     const primeChromaResolved = primeChromaOf(p, doc);

@@ -30,7 +30,8 @@
 - **AC-T6** For an **anchored palette** (one carrying a stored `palette.anchor`, ADR-026) the
   predicate is EQUALITY, not a tolerance: `primeSwatches(palette, controls)[3].hex === anchor`
   for every anchored palette, and `paletteStops(...)` stop 500's hex `=== anchor` in each of
-  `perceptual`, `peak` and `even` for every anchored palette whose source sits inside the ramp
+  `perceptual`, `peak` and `even`, at group base chroma 100 (a group value below 100 damps the
+  whole ramp, stop 500 included, R94), for every anchored palette whose source sits inside the ramp
   window `[9.95, 95.05]` L\*. Sources outside that window keep the exact token and clamp only the
   ramp's pivot to the nearest window edge; they are named and counted in the gate's own allow-list,
   never absorbed into a tolerance. `skew` and `lift` do not move either value at any magnitude:

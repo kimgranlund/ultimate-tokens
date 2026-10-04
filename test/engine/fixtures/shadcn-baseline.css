@@ -68,7 +68,8 @@
    stamp-only edit; no color, name, block or ordering changed.
    #725 CARVE-OUT (chroma-envelope U2, R69 reverses Q-U2-5, re-captured 2026-09-29 by script from
    the engine, never typed): the anchored saturation basis is capped at the anchor's own OKHSL s
-   (anchorChromaBasis's group target became min(group, anchor)) and the anchored peak path shares
+   (the group target became min(group, anchor); #785 U5 removed that target, so the okhsl path now
+   reads the anchor's own s directly, byte-identical here) and the anchored peak path shares
    the non-anchored joint (s, l) cap. Only anchored perceptual and peak ramps move: 31 lines per
    section (93 in all), every one on an anchored default family; the same fixtures rendered with
    anchors stripped, or in even mode, are byte-identical to the prior capture. No token NAME, block,

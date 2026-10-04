@@ -52,7 +52,8 @@ A palette carrying a valid 6-hex `anchor` (a STORED source colour, never fitted)
 `paletteStopsAnchored` or `okhslStopsAnchored`. The anchor rule, which no gate will let you break:
 
 - `primeSwatches(palette, controls)[3].hex === palette.anchor`, byte for byte, for EVERY anchored
-  palette. Ramp stop 500's hex `=== palette.anchor` too, in all three tone modes, for every anchored
+  palette. Ramp stop 500's hex `=== palette.anchor` too, in all three tone modes, at group base
+  chroma 100 (a group value below 100 damps the whole ramp, stop 500 included, R94), for every anchored
   palette whose source sits inside `[RAMP_L_MIN, RAMP_L_MAX] = [9.95, 95.05]` L\*. The 10 sources
   outside that window keep the exact token and clamp only the ramp pivot; they are an allow-list BY
   NAME with an expected count, never a tolerance.
@@ -61,10 +62,14 @@ A palette carrying a valid 6-hex `anchor` (a STORED source colour, never fitted)
   `lmin`/`lmax`. If you ever find yourself writing that straight lerp, it is the known regression:
   it makes curve, tension and hue space inert and renders peak and perceptual byte-identical for
   every anchored palette, which is exactly the tripwire `anchor-f4` watches.
-- Chroma at the pivot comes from `anchorChromaBasis`, a smoothstep blend from the anchor's own
-  measured chroma at stop 500 to the group's resolved ramp target at each end. Do not "simplify" it
-  to the anchor's value read unconditionally: that makes a group's Base chroma a no-op for every
-  anchored ramp and reds `(gid3)`/`(gid8)`/`(gid8b)` in the headless shim.
+- On perceptual and peak the anchored basis is the anchor's own OKHSL `s` at every stop (R69, no
+  climb); on even (`paletteStopsAnchored`) it is `anchorChromaBasis`, a smoothstep blend from the
+  anchor's own measured chroma at stop 500 toward `groupValue` at each end. Since #785 (R94 to
+  R98) `groupValue` is always 100 there: `paletteStops` renders every ramp at 100 and a group's Base
+  chroma acts afterwards as one whole-ramp ratio, `groupDamper(g) = g/100` applied by `dampStops`
+  (tone held, damp only, so 150 renders as 100). Change group muting in `dampStops`, never inside
+  the anchored or even builders; `(gid3)`/`(gid8)`/`(gid8b)` and `test/ui/model.mjs`'s Material-50
+  pair red if the damper stops reaching a surface.
 - Gates: `test/engine/anchor.mjs` (`anchor-identity`, `anchor-ramp`, the window and ladder
   allow-lists, `anchor-f4`). knowledge-02 §9 is the reference description; ADR-026 is the ruling.
 

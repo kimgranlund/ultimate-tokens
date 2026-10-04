@@ -70,8 +70,8 @@ collections.
   **Claude Code / Cursor / any MCP agent** at it (`node brand-kit-server.mjs`) and it serves the
   **systems you opted in** (palettes, ramps + the 53-role semantic layer in light + dark; the typography
   scale; the geometry scale) so the agent builds with your exact tokens. See `mcp/`.
-- **System / light / dark.** The app chrome and the canvas preview each follow the OS by default
-  (sun · moon · system toggles); the chrome dogfoods the very tokens the tool generates.
+- **System / light / dark.** The app chrome follows the OS by default (sun · moon · system toggle) and
+  dogfoods the very tokens the tool generates. The canvas always shows Light and Dark side by side.
 
 ## Quick start
 
@@ -152,8 +152,8 @@ category, and clicking a preset opens an editable copy in your own sets. **Proje
 config), **Import** (a config `.json`) and **+ New** sit in the header. Detail: `docs/lld/app-shell.md`.
 
 **Color.** The canvas shows Palettes (the ramps), Scrims, Mapping (the semantic-role table) or Radix
-(the 12-step ladder), in a system, light or dark scheme. **Compare** renders the scene in Light and Dark
-side by side, except in Mapping, whose table already shows both. The left pane holds palette analysis
+(the 12-step ladder). Every canvas draws Light and Dark side by side, except Mapping, whose table already
+shows both; Typography and Geometry do the same, and **Compare** adds a pair per breakpoint. The left pane holds palette analysis
 cards; the right pane is the inspector. Detail: `docs/reference/references/ui-plan.md` (Revision B).
 
 **Typography.** The canvas is a Specimen (each step in its real face) or a Tokens matrix (Base plus each

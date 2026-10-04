@@ -36,6 +36,29 @@
 // below without `anchor` too (the construction the since-retired `EVEN_DIP_BASELINE`'s `findDips` and
 // this same file's pre-fa0264fa reading both used). #701's C5 extraction reads its even block.
 //
+// `--group-chroma` (#785 U2) is a SEPARATE mode: the movement a group's Base chroma slider makes. It
+// renders the HEAD tree's `defaultDocument()` (so the head's `GROUP_DEFAULTS` and `persist.js` feed both
+// sides) through `projectView` twice: the reference side with `paletteGroups[<group>].baseChroma` at the
+// first value, on the base tree's `projectView` (`--base <rev>` or `--base-dir <dir>`; this file's own
+// tree when neither is given), and the subject side at the second value on this file's own tree. It
+// keeps the group's palettes and prints, per palette, the display-ramp hexes moved, the signed CAM16 C
+// move at stop 500 (`dC@500`, the ramp row's own `chroma`) and the largest |dC| over the ramp, once
+// with each palette's `anchor` kept (what the kit renders) and once with it stripped (the unanchored
+// path). `--values A,A` with no base is its own negative control: every column prints 0.
+// `--defaults` instead renders each tree's OWN `defaultDocument()` (the base tree's model and persist
+// against this tree's, every group at its own default, anchors kept), once per toneMode, one row per
+// palette: what a fresh document moves between the two trees. `--saved-material N` (with `--defaults`)
+// compares this tree's default render against a saved document storing material N, hydrated through
+// this tree's `persist.js` as a load would (no migration, R98), so it reads how an old save renders.
+//
+//   node scripts/report-preset-fidelity.mjs --group-chroma --group <material|brand|system|data>
+//     --values A,B [--tone-mode perceptual|peak|even] [--base <rev> | --base-dir <dir>]
+//   node scripts/report-preset-fidelity.mjs --group-chroma --defaults [--saved-material N]
+//     [--base <rev> | --base-dir <dir>]
+//
+// It reports and exits 0 (1 when the group holds no palette, nothing was compared); the bounds (#785
+// C2.1, C2.2, C2.7) are read off its output by the verifier, not enforced here.
+//
 // `--identity-control` (#715 U2, closing C4's other yellow row) is a SEPARATE mode: it renders the
 // base tree's 8 category files plus its default kit on TWO engine copies (the base tree named by
 // `--base <rev>` or `--base-dir <dir>`, and this file's own working tree) and diffs every emitted
@@ -98,6 +121,7 @@ const floorBand = (dC) => (dC < 0.5 ? "<0.5" : dC < 1 ? "<1" : dC < 2 ? "<2" : d
 const args = process.argv.slice(2);
 const mode_envelope = args.includes("--envelope");
 const mode_identity = args.includes("--identity-control");
+const mode_groupChroma = args.includes("--group-chroma");
 const mode_floorRef = args.includes("--floor-ref");
 const dampAmpIdx = args.indexOf("--damp-amp");
 const dampAmpOverride = dampAmpIdx >= 0 ? Number(args[dampAmpIdx + 1]) : null;
@@ -110,9 +134,11 @@ const gatePath = args.includes("--gate-path");
 const USAGE =
   "usage: node scripts/report-preset-fidelity.mjs --envelope [--damp-amp N] [--damp N] [--damp-curve N] [--gate-path]\n" +
   "       node scripts/report-preset-fidelity.mjs --identity-control (--base <rev> | --base-dir <dir>) [--authored] [--only <category>|default-kit] [--perturb]\n" +
+  "       node scripts/report-preset-fidelity.mjs --group-chroma --group <material|brand|system|data> --values A,B [--tone-mode perceptual|peak|even] [--base <rev> | --base-dir <dir>]\n" +
+  "       node scripts/report-preset-fidelity.mjs --group-chroma --defaults [--saved-material N] [--base <rev> | --base-dir <dir>]\n" +
   "       node scripts/report-preset-fidelity.mjs --floor-ref (--base <rev> | --base-dir <dir>) [--only <category>|default-kit]";
 
-if (!mode_envelope && !mode_identity && !mode_floorRef) {
+if (!mode_envelope && !mode_identity && !mode_groupChroma && !mode_floorRef) {
   console.error(USAGE);
   process.exit(2);
 }
@@ -120,6 +146,10 @@ if (!mode_envelope && !mode_identity && !mode_floorRef) {
 if (mode_identity) {
   await runIdentityControl(args);
   // runIdentityControl always exits the process itself; nothing below this line runs for this mode.
+}
+if (mode_groupChroma) {
+  await runGroupChroma(args);
+  // runGroupChroma always exits the process itself; nothing below this line runs for this mode.
 }
 if (mode_floorRef) {
   await runFloorRef(args);
@@ -323,6 +353,130 @@ console.log(`READING (b) (envelope multiplier): ${envAnyFail ? "FAIL" : "PASS"}`
 console.log("");
 console.log((anyFail || envAnyFail) ? "FAIL: the envelope table does not clear the plan's ruled targets under at least one reading" : "PASS: envelope table clears the plan's ruled targets under both readings");
 process.exit((anyFail || envAnyFail) ? 1 : 0);
+
+// ── --group-chroma ──────────────────────────────────────────────────────────────────────────────
+// #785 U2: the group Base chroma movement report (see the header). The reference side may run on a
+// base tree's `projectView`; the document is always the head's own `defaultDocument()`.
+
+async function runGroupChroma(args) {
+  // local, not module-level: the dispatch near the top calls this before any later top-level `const` runs
+  const GROUP_CHROMA_GROUPS = ["material", "brand", "system", "data"];
+  const flag = (name) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : null; };
+  const group = flag("--group");
+  const values = (flag("--values") ?? "").split(",").map(Number);
+  const toneMode = flag("--tone-mode") ?? "perceptual";
+  const baseRev = flag("--base");
+  const baseDirArg = flag("--base-dir");
+  const defaults = args.includes("--defaults");
+  const savedMaterial = args.includes("--saved-material") ? Number(flag("--saved-material")) : null;
+  const badGroupArgs = !GROUP_CHROMA_GROUPS.includes(group) || values.length !== 2 || values.some((v) => !Number.isFinite(v)) || !IDENTITY_MODES.includes(toneMode);
+  if ((defaults ? (savedMaterial !== null && !Number.isFinite(savedMaterial)) : (badGroupArgs || savedMaterial !== null)) ||
+      (args.includes("--base") && !baseRev) || (baseRev && baseDirArg)) {
+    console.error(USAGE);
+    process.exit(2);
+  }
+
+  const { defaultDocument, projectView, paletteGroup } = await import("../src/ui/model.mjs");
+  let baseProjectView = projectView, baseDefaultDocument = defaultDocument;
+  let baseLabel = "this tree";
+  if (baseRev || baseDirArg) {
+    let baseDir;
+    if (baseDirArg) {
+      baseDir = pathResolve(process.cwd(), baseDirArg);
+    } else {
+      const scratch = mkdtempSync(pathJoin(tmpdir(), "group-chroma-"));
+      process.on("exit", () => { try { rmSync(scratch, { recursive: true, force: true }); } catch { /* best effort */ } });
+      try {
+        const archive = execFileSync("git", ["archive", baseRev, "src"], { cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 256 });
+        execFileSync("tar", ["-x", "-C", scratch], { input: archive });
+      } catch (e) {
+        console.error(`usage: --base ${baseRev} could not be archived: ${e.message}`);
+        process.exit(2);
+      }
+      baseDir = scratch;
+    }
+    try {
+      ({ projectView: baseProjectView, defaultDocument: baseDefaultDocument } = await import(pathToFileURL(pathJoin(baseDir, "src/ui/model.mjs")).href));
+    } catch (e) {
+      console.error(`usage: base tree at ${baseDir} failed to load: ${e.message}`);
+      process.exit(2);
+    }
+    if (typeof baseProjectView !== "function") {
+      console.error(`usage: base tree at ${baseDir} is missing the export projectView`);
+      process.exit(2);
+    }
+    baseLabel = baseRev ?? baseDir;
+  }
+
+  const render = (pv, value, keepAnchors) => {
+    const doc = defaultDocument();
+    doc.toneMode = toneMode;
+    doc.paletteGroups[group].baseChroma = value;
+    if (!keepAnchors) doc.palettes = doc.palettes.map(({ anchor, sourceAnchor, ...rest }) => rest);
+    const view = pv(doc);
+    return doc.palettes.map((p, i) => ({ name: p.name, group: paletteGroup(p), ramp: view.palettes[i].ramp })).filter((r) => r.group === group);
+  };
+  const fmt = (n) => (Math.abs(n) < 0.005 ? "0.00" : n.toFixed(2));
+  const row = (name, r, s) => {
+    const moved = s.filter((c, k) => c.hex !== r[k].hex).length;
+    const dC = s.map((c, k) => c.chroma - r[k].chroma);
+    const k500 = s.findIndex((c) => c.stop === 500);
+    return `  ${name.padEnd(12)} hex moved ${moved}/${s.length}  dC@500 ${fmt(dC[k500])}  max dC ${fmt(Math.max(...dC.map(Math.abs)))}`;
+  };
+
+  if (defaults) {
+    // The reference side: the base tree's own fresh document (or, with --saved-material, this tree's);
+    // the subject side: this tree's fresh document (or the saved one, hydrated here).
+    const savedDoc = () => {
+      const doc = hydrate(JSON.parse(JSON.stringify(defaultDocument())));
+      doc.paletteGroups = { ...doc.paletteGroups, material: { ...doc.paletteGroups.material, baseChroma: savedMaterial } };
+      return hydrate(JSON.parse(JSON.stringify(doc)));
+    };
+    const refLabel = savedMaterial !== null ? "this tree's defaults" : `${baseLabel} defaults`;
+    const subLabel = savedMaterial !== null ? `a saved doc with material ${savedMaterial}, hydrated on this tree` : "this tree's defaults";
+    console.log(`group-chroma --defaults: ${refLabel} to ${subLabel}, anchors kept`);
+    let rows = 0;
+    for (const mode of IDENTITY_MODES) {
+      const refDoc = savedMaterial !== null ? defaultDocument() : baseDefaultDocument();
+      const subDoc = savedMaterial !== null ? savedDoc() : defaultDocument();
+      refDoc.toneMode = mode;
+      subDoc.toneMode = mode;
+      const ref = (savedMaterial !== null ? projectView : baseProjectView)(refDoc).palettes;
+      const sub = projectView(subDoc).palettes;
+      console.log(`toneMode ${mode}`);
+      for (const s of sub) {
+        const r = ref.find((x) => x.name === s.name);
+        if (!r || r.ramp.length !== s.ramp.length) { console.log(`  ${s.name.padEnd(12)} no matching reference ramp`); continue; }
+        console.log(row(s.name, r.ramp, s.ramp));
+        rows++;
+      }
+    }
+    if (rows === 0) {
+      console.log("FAIL: vacuity, no palette compared");
+      process.exit(1);
+    }
+    process.exit(0);
+  }
+
+  console.log(`group-chroma: group ${group}, ${values[0]} (${baseLabel}) to ${values[1]} (this tree), toneMode ${toneMode}`);
+  let rows = 0;
+  for (const [label, keep] of [["anchors kept", true], ["anchors stripped", false]]) {
+    const ref = render(baseProjectView, values[0], keep);
+    const sub = render(projectView, values[1], keep);
+    console.log(label);
+    for (const s of sub) {
+      const r = ref.find((x) => x.name === s.name);
+      if (!r || r.ramp.length !== s.ramp.length) continue;
+      console.log(row(s.name, r.ramp, s.ramp));
+      rows++;
+    }
+  }
+  if (rows === 0) {
+    console.log(`FAIL: vacuity, the ${group} group holds no palette in the default kit`);
+    process.exit(1);
+  }
+  process.exit(0);
+}
 
 // ── --identity-control ──────────────────────────────────────────────────────────────────────────
 // C4's ramp half (the plan's own named command, #715 U2): loads a BASE tree (a git revision unpacked

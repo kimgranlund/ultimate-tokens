@@ -172,8 +172,8 @@ lazy-loaded) opens a set into the **editor**: a live canvas of palette rows + a 
 left analysis rail (L\*×C plot, tone + chroma curves, contrast readout, hue wheel). **Compose a new
 palette** via the New-Palette modal (`knowledge-06`: Relative / Environmental / Custom + live preview).
 **Reorder** palette rows by dragging the ⋮⋮ handle, a lifted clone + a dashed drop placeholder (10px
-deadzone). Native-`<dialog>` export drawer (top layer; grouped format `<select>`); app-chrome **and**
-canvas-preview color-scheme each follow `system / light / dark`. Persistence chain
+deadzone). Native-`<dialog>` export drawer (top layer; grouped format `<select>`); app-chrome color-scheme
+follows `system / light / dark`, and the canvas always draws Light and Dark side by side. Persistence chain
 `window.storage → localStorage → in-memory` (`hct-palette-state-v1`), or `figma.clientStorage` in the
 plugin; `prefers-reduced-motion`.
 

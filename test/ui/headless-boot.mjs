@@ -314,8 +314,10 @@ const name0 = app.doc.palettes[0].name;
 const name1 = app.doc.palettes[1].name;
 const selName = app.doc.palettes[app.selectedIndex()].name;
 const histR = app.history.length;
+// the light column's stack: the drags below begin on its handles (every scene draws one stack per scheme column)
+const lightStack = () => app.querySelectorAll(".compare-col")[0].querySelector(".ramp-stack");
 // wire the stack rects so hit-testing maps pointer-y to a target row
-const stack = app._rampStack;
+const stack = lightStack();
 const rows = stack.querySelectorAll(".ramp-row[data-pi]");
 rows.forEach((r, idx) => { r._rect = { top: idx * 50, bottom: idx * 50 + 50, left: 0, right: 200, width: 200, height: 50 }; });
 // begin reorder on palettes[0]'s handle
@@ -330,10 +332,20 @@ ok(app.history.length - histR === 1, `reorder is ONE undo step (got ${app.histor
 ok(app.doc.palettes[app.selectedIndex()].name === selName, "selection stayed on the same palette after reorder");
 app.undo();
 ok(app.doc.palettes[0].name === name0 && app.doc.palettes[1].name === name1, "undo reverts the reorder");
+// (rr-col) a drag hit-tests ONLY the stack of the column it began in: begun on a light handle, every rect is a
+// light-column row; begun on a dark handle, every rect is a dark-column row (so the placeholder never crosses over)
+for (const [i, name] of [[0, "light"], [1, "dark"]]) {
+  const colI = app.querySelectorAll(".compare-col")[i];
+  const handleC = colI.querySelector(".ramp-stack").querySelectorAll(".ramp-row[data-pi]")[0].querySelector(".drag-handle");
+  app._beginReorder({ currentTarget: handleC, pointerId: 1, stopPropagation() {}, preventDefault() {} }, 0);
+  const rr = app._rowRects();
+  ok(rr.length > 1 && rr.every((r) => app._ancestorWithClass(r.el, "compare-col") === colI), `(rr-col) a drag begun in the ${name} column hit-tests only that column's rows (${rr.length} rects)`);
+  app._onReorderUp();
+}
 
 // reverse-direction reorder: drag a lower row UP above row 0
 flushRaf();
-const rows2 = app._rampStack.querySelectorAll(".ramp-row[data-pi]");
+const rows2 = lightStack().querySelectorAll(".ramp-row[data-pi]");
 rows2.forEach((r, idx) => { r._rect = { top: idx * 50, bottom: idx * 50 + 50, left: 0, right: 200, width: 200, height: 50 }; });
 const nm2 = app.doc.palettes[2].name;
 const handle2 = rows2[2].querySelector(".drag-handle");
@@ -486,6 +498,36 @@ ok(app.history.length - nHistPre === 1, `(h) the whole rename is ONE undo step (
 // ── (i) NON-drag edits + UI still do a FULL render (regression guard) ─────────────────
 app.openSet(app.sets[0].id);
 flushRaf();
+// (i-all) / (i-one) pane-context U3: Roles shows every enabled palette with nothing selected, one with a palette selected.
+{
+  const keepSel = app.sel, keepSeg = app.segment, keepDocSel = app.doc.selected;
+  const offIdx = 3, offName = app.doc.palettes[offIdx].name;
+  app.commit((d) => (d.palettes[offIdx].on = false)); // one palette off: the all-palettes list is the ENABLED ones only
+  const enabled = app.doc.palettes.filter((p) => p.on !== false);
+  const enabledN = enabled.length;
+  ok(enabledN === app.doc.palettes.length - 1, `(i-all) setup: exactly one palette is off (${enabledN} of ${app.doc.palettes.length} enabled)`);
+  const textOf = (n) => (n.children || []).reduce((t, c) => t + textOf(c), n._text || "");
+  const names = () => app.querySelectorAll(".roles-table-name").map(textOf);
+  const roleRows = () => app.querySelectorAll(".rrow").filter((e) => !e.classList.contains("rhead"));
+  const pairsIn = (rows) => rows.map((e) => e.querySelectorAll(".sw-pair"));
+  app._deselect(); app.setSegment("roles"); flushRaf();
+  ok(app.querySelectorAll(".roles-table").length === enabledN && enabledN > 1, `(i-all) nothing selected: one .roles-table per enabled palette (got ${app.querySelectorAll(".roles-table").length} of ${enabledN})`);
+  ok(roleRows().length === 53 * enabledN, `(i-all) role rows are 53 per palette (got ${roleRows().length})`);
+  ok(app.querySelectorAll(".rhead").length === enabledN && app.querySelectorAll(".rrow").length === 54 * enabledN, `(i-all) each table keeps its header row (.rhead ${app.querySelectorAll(".rhead").length}, .rrow ${app.querySelectorAll(".rrow").length})`);
+  ok(JSON.stringify(names()) === JSON.stringify(enabled.map((p) => p.name)), `(i-all) headings are the enabled palette names in canvas order (got ${names().length})`);
+  const allPairs = pairsIn(app.querySelectorAll(".rrow"));
+  ok(allPairs.length === 54 * enabledN && allPairs.every((q) => q.length === 1), `(i-all) every .rrow, header included, carries one .sw-pair (${allPairs.reduce((n, q) => n + q.length, 0)} pairs over ${allPairs.length} rows)`);
+  const swTitles = (q) => q[0].children.map((c) => c.getAttribute("title") || "");
+  ok(pairsIn(roleRows()).every((q) => q[0].children.length === 2 && swTitles(q)[0].startsWith("light ref ") && swTitles(q)[1].startsWith("dark ref ")), "(i-all) each role pair holds two swatches, light then dark");
+  ok(!names().includes(offName), `(i-all) the disabled palette "${offName}" has no table`);
+  app.selectPalette(2); app.setSegment("roles"); flushRaf();
+  ok(app.querySelectorAll(".roles-table").length === 1 && app.querySelectorAll(".roles-table-name").length === 1, `(i-one) a palette selected: exactly one table and one heading (got ${app.querySelectorAll(".roles-table").length} and ${app.querySelectorAll(".roles-table-name").length})`);
+  ok(names()[0] === app.doc.palettes[2].name, `(i-one) the heading is the selected palette's name (got "${names()[0]}")`);
+  const onePairs = pairsIn(app.querySelectorAll(".rrow"));
+  ok(app.querySelectorAll(".rrow").length === 54 && onePairs.every((q) => q.length === 1), `(i-one) the one table keeps 53 role rows plus the header, each with one pair (got ${app.querySelectorAll(".rrow").length} rows)`);
+  app.commit((d) => (d.palettes[offIdx].on = true));
+  app.sel = keepSel; app.segment = keepSeg; app.doc.selected = keepDocSel; app.render(); flushRaf();
+}
 const palCount0 = app.doc.palettes.length;
 app.addPalette(); // commit() path → full render
 ok(app.doc.palettes.length === palCount0 + 1, "add palette (full-render path) still works");
@@ -504,110 +546,108 @@ app.copy = rlOrigCopy;
 ok(/^#?[0-9A-Fa-f]{3,8}$/.test(rlCopied || ""), `(rl) clicking a role swatch copies its hex (got ${rlCopied})`);
 app.setSegment("palette");
 
-// ── (j) canvas backdrop = the SELECTED palette's NEAR-EDGE color (125 light / 875 dark) + the ◐ ───
+// ── (j) canvas backdrop = the SELECTED palette's NEAR-EDGE color (125 light / 875 dark), one per scheme column ───
 const { projectView: _pvJ } = await import("../../src/ui/model.mjs");
 // the selected palette's near-edge stop hex for the current canvas scheme. 125/875 are EXPORT-only
 // half-steps, so they live in fullRamp (the 19-stop display `ramp` does not carry them).
 const edgeHex = (theme) => { const p = _pvJ(app.doc).palettes[app.selectedIndex()]; return p.fullRamp.find((s) => s.stop === (theme === "dark" ? 875 : 125)).hex; };
-const bgAttr = () => (app.querySelector(".canvas-area").getAttribute("style") || "");
-app.colorMode = "light"; app.doc.lmax = 100; app.selectPalette(0); app.render(); flushRaf();
-ok(app.canvasBg() === edgeHex("light"), `(j1) light canvas bg = the selected palette's 125 near-edge (got ${app.canvasBg()})`);
+// the canvas scheme exists only inside a column or wrapper, so a backdrop is read under _inScheme, and
+// the rendered scene holds one .compare-col per scheme (light first): colCol(0) is light, colCol(1) dark.
+const bgIn = (scheme) => app._inScheme(scheme, () => app.canvasBg());
+const colCol = (i) => app.querySelectorAll(".compare-col")[i];
+const colBg = (i) => (colCol(i).getAttribute("style") || "");
+// counting rows read the first (light) column: each column holds the whole dataset, so the counts stay the old numbers.
+const inLight = (cls) => colCol(0).querySelectorAll(cls);
+app.canvasView = "palettes"; app.doc.lmax = 100; app.selectPalette(0); app.render(); flushRaf();
+ok(bgIn("light") === edgeHex("light"), `(j1) light canvas bg = the selected palette's 125 near-edge (got ${bgIn("light")})`);
 // the point of a near-edge stop over 050: even at lmax=100 (where 050 is pure white) the backdrop keeps the tint.
-ok(app.canvasBg() !== "#FFFFFF", `(j1b) at lmax=100 the 125-stop backdrop is NOT pure white (got ${app.canvasBg()})`);
-ok(bgAttr().includes(app.canvasBg()), "(j2) rendered .canvas-area carries inline --canvas-bg = the near-edge color");
+ok(bgIn("light") !== "#FFFFFF", `(j1b) at lmax=100 the 125-stop backdrop is NOT pure white (got ${bgIn("light")})`);
+ok(colBg(0).includes(bgIn("light")) && colBg(1).includes(bgIn("dark")) && bgIn("light") !== bgIn("dark"), "(j2) each rendered .compare-col carries inline --canvas-bg = its scheme's near-edge color, the two differing");
 // lowering lmax still tracks the palette's 125 stop (stays off pure white).
 app.doc.lmax = 90; app.render(); flushRaf();
-ok(app.canvasBg() === edgeHex("light") && app.canvasBg() !== "#FFFFFF", `(j3) light backdrop follows lmax at the palette's tinted 125 (got ${app.canvasBg()})`);
+ok(bgIn("light") === edgeHex("light") && bgIn("light") !== "#FFFFFF", `(j3) light backdrop follows lmax at the palette's tinted 125 (got ${bgIn("light")})`);
 // the backdrop FOLLOWS palette selection (not just the global range): two differently-hued palettes differ.
-app.selectPalette(2); app.render(); const _bgA = app.canvasBg();
-app.selectPalette(7); app.render(); const _bgB = app.canvasBg();
+app.selectPalette(2); app.render(); const _bgA = bgIn("light");
+app.selectPalette(7); app.render(); const _bgB = bgIn("light");
 ok(_bgA !== _bgB, `(j3b) the backdrop follows palette selection (p2 ${_bgA} vs p7 ${_bgB})`);
-// dark preview = the selected palette's 875 dark near-edge.
-app.colorMode = "dark"; app.doc.lmin = 5; app.selectPalette(0); app.render(); flushRaf();
-ok(app.canvasBg() === edgeHex("dark"), `(j4) dark canvas bg = the selected palette's 875 near-edge (got ${app.canvasBg()})`);
-// a LIVE drag of lmin repaints the backdrop via liveRefresh (no full render), still from the palette's 875.
-app.doc.lmin = 20; app.liveRefresh(); flushRaf();
-ok(app.querySelector(".canvas-area").style.getPropertyValue("--canvas-bg") === edgeHex("dark"), `(j5) liveRefresh repaints --canvas-bg from the palette's 875 stop (got ${app.querySelector(".canvas-area").style.getPropertyValue("--canvas-bg")})`);
+// the dark column = the selected palette's 875 dark near-edge.
+app.doc.lmin = 5; app.selectPalette(0); app.render(); flushRaf();
+ok(bgIn("dark") === edgeHex("dark") && colBg(1).includes(edgeHex("dark")), `(j4) the dark column's canvas bg = the selected palette's 875 near-edge (got ${bgIn("dark")})`);
 // (j6) a click on EMPTY canvas (not a ramp-row) clears the selection → backdrop reverts to neutral gray.
-app.colorMode = "light"; app.doc.lmax = 90; app.canvasView = "palettes"; app.selectPalette(0); app.render(); flushRaf();
-const _selBg = app.canvasBg();
+app.doc.lmax = 90; app.canvasView = "palettes"; app.selectPalette(0); app.render(); flushRaf();
+const _selBg = bgIn("light");
 const _areaJ = app.querySelector(".canvas-area");
 _areaJ.dispatch("click", { target: _areaJ });            // target = the area itself = empty canvas
 ok(app.sel.kind === "none", "(j6) clicking empty canvas clears the palette selection (kind:none)");
 ok(app.segment === "global" && !!findIn(app.querySelector(".right-pane"), (e) => e.dataset && "group-row" in e.dataset), `(j6-seg) empty-canvas click lands on segment "global" and the right pane carries a [data-group-row] (got ${app.segment})`);
-const _deBg = app.canvasBg();
+const _deBg = bgIn("light");
 ok(/^#([0-9A-F]{2})\1\1$/.test(_deBg) && _deBg !== _selBg, `(j6b) deselected → default neutral gray backdrop (got ${_deBg}, was ${_selBg})`);
 // (j7) selecting a palette again restores its near-edge backdrop.
 app.selectPalette(0); app.render(); flushRaf();
-ok(app.canvasBg() === edgeHex("light"), `(j7) re-selecting restores the palette near-edge backdrop (got ${app.canvasBg()})`);
+ok(bgIn("light") === edgeHex("light"), `(j7) re-selecting restores the palette near-edge backdrop (got ${bgIn("light")})`);
 ok(app.segment === "palette" && !!findIn(app.querySelector(".right-pane"), (e) => e.dataset && e.dataset.fk === "slider:Chroma"), `(j7b) selectPalette(0) from deselected lands on segment "palette" with the Chroma slider (got ${app.segment})`);
-// (j8) each palette ROW container is tinted with that palette's OWN stop, 75 in light canvas
-//      preview, 925 in dark (symmetric, so the var(--ink) name text stays readable on it). 75/925
+// (j8) each palette ROW container is tinted with that palette's OWN stop, 75 in the light column,
+//      925 in the dark one (symmetric, so the var(--ink) name text stays readable on it). 75/925
 //      are EXPORT-only half-steps → read from fullRamp, not the 19-stop display ramp.
-app.colorMode = "light"; app.render(); flushRaf();
+app.render(); flushRaf();
 const _stopHex = (pi, stop) => _pvJ(app.doc).palettes[pi].fullRamp.find((s) => s.stop === stop).hex;
-const _row0 = app.querySelectorAll(".ramp-row[data-pi]")[0];
+const _row0 = colCol(0).querySelectorAll(".ramp-row[data-pi]")[0];
 const _c75 = _stopHex(Number(_row0.dataset.pi), 75);
-ok((_row0.getAttribute("style") || "").includes(_c75), `(j8) light preview: container row painted with the palette's 75 stop (${_c75}; got "${_row0.getAttribute("style")}")`);
-app.colorMode = "dark"; app.render(); flushRaf();
-const _row0d = app.querySelectorAll(".ramp-row[data-pi]")[0];
+ok((_row0.getAttribute("style") || "").includes(_c75), `(j8) light column: container row painted with the palette's 75 stop (${_c75}; got "${_row0.getAttribute("style")}")`);
+const _row0d = colCol(1).querySelectorAll(".ramp-row[data-pi]")[0];
 const _c925 = _stopHex(Number(_row0d.dataset.pi), 925);
-ok((_row0d.getAttribute("style") || "").includes(_c925), `(j8b) dark preview: container row painted with the palette's 925 stop, not 75 (${_c925}; got "${_row0d.getAttribute("style")}")`);
-app.colorMode = "light"; app.render(); flushRaf();
+ok((_row0d.getAttribute("style") || "").includes(_c925), `(j8b) dark column: container row painted with the palette's 925 stop, not 75 (${_c925}; got "${_row0d.getAttribute("style")}")`);
 
-// ── (k) live example card present on ALL 3 tabs, painted from selected roles ──────────
+// ── (k) live example card present on ALL 3 tabs, painted from selected roles, once per scheme ──────────
 const { projectView: _pv } = await import("../../src/ui/model.mjs");
 const styleOf = (el) => (el ? el.getAttribute("style") || "" : "");
 const surfaceOf = (pal, d) => { const r = pal.roles.find((x) => x.key === "surface"); return d ? r.darkHex : r.lightHex; };
-app.colorMode = "light"; app.render(); flushRaf();
+app.render(); flushRaf();
+const exW = (i) => app.querySelectorAll(".example-scheme")[i];
 for (const seg of ["palette", "global", "roles"]) {
   app.setSegment(seg); flushRaf();
   ok(!!app.querySelector(".seg-example") && !!app.querySelector(".example-card"), `(k1:${seg}) example card present on the ${seg} tab`);
-  // the pinned preview is COLLAPSED to the first artifact (the role card) by default, the native slider +
-  // form (.ex-artifact, the .ex-range) are hidden behind the .ex-collapse-toggle until expanded.
-  ok(app.querySelectorAll(".example-card").length === 1 && app.querySelectorAll(".ex-artifact").length === 0 && !app.querySelector(".ex-range") && !!app.querySelector(".ex-collapse-toggle"), `(k1b:${seg}) the preview is collapsed to the first artifact + an expand toggle on the ${seg} tab (got ${app.querySelectorAll(".example-card").length})`);
+  // the pinned preview is COLLAPSED to the first artifact (the role card) per scheme wrapper by default, the native slider +
+  // form (.ex-artifact, the .ex-range) are hidden behind the ONE .ex-collapse-toggle until expanded.
+  const wr = app.querySelectorAll(".example-scheme");
+  ok(wr.length === 2 && wr[0].classList.contains("canvas-scheme-light") && wr[1].classList.contains("canvas-scheme-dark") && wr.every((w) => (w.getAttribute("style") || "").includes("--canvas-bg")) && (wr[0].getAttribute("style") || "") !== (wr[1].getAttribute("style") || ""), `(k1b:${seg}) the .seg-example holds 2 .example-scheme wrappers, light then dark, each on its own --canvas-bg (got ${wr.length}) on the ${seg} tab`);
+  ok(wr.every((w) => w.querySelectorAll(".example-card").length === 1 && w.querySelectorAll(".ex-artifact").length === 0) && app.querySelectorAll(".example-card").length === 2 && !app.querySelector(".ex-range") && app.querySelectorAll(".ex-collapse-toggle").length === 1, `(k1b:${seg}) each wrapper is collapsed to the first artifact, with one expand toggle in the pane, on the ${seg} tab (got ${app.querySelectorAll(".example-card").length})`);
 }
-// the toggle EXPANDS the gallery to all 3 artifacts (card + native slider + form), then collapses back.
+// the toggle EXPANDS each wrapper to all 3 artifacts (card + native slider + form), then collapses back.
 app.querySelector(".ex-collapse-toggle").click(); flushRaf();
-ok(app.querySelectorAll(".example-card").length === 3 && app.querySelectorAll(".ex-artifact").length === 2 && !!app.querySelector(".ex-range"), `(k1d) expand toggle reveals all 3 artifacts (got ${app.querySelectorAll(".example-card").length})`);
+ok([0, 1].every((i) => exW(i).querySelectorAll(".example-card").length === 3 && exW(i).querySelectorAll(".ex-artifact").length === 2 && exW(i).querySelectorAll(".ex-range").length === 1) && app.querySelectorAll(".example-card").length === 6 && app.querySelectorAll(".ex-artifact").length === 4 && app.querySelectorAll(".ex-range").length === 2, `(k1d) expand toggle reveals all 3 artifacts in each wrapper (got ${app.querySelectorAll(".example-card").length} cards)`);
 app.querySelector(".ex-collapse-toggle").click(); flushRaf();
-ok(app.querySelectorAll(".example-card").length === 1, "(k1e) the toggle collapses back to the first artifact");
+ok(app.querySelectorAll(".example-card").length === 2 && [0, 1].every((i) => exW(i).querySelectorAll(".example-card").length === 1), "(k1e) the toggle collapses back to the first artifact per wrapper");
 ok(app.querySelectorAll(".sem-mini").length === 0, "(k1c) the old top-of-Roles preview (.sem-mini) is gone");
 const kp = _pv(app.doc).palettes[app.selectedIndex()];
 const kMain = kp.roles.find((r) => r.suffix === "").lightHex;
-ok(styleOf(app.querySelector(".example-card")).includes(surfaceOf(kp, false)), `(k2) card surface = palette surface role (${surfaceOf(kp, false)})`);
-ok(styleOf(app.querySelector(".ex-btn")).includes(kMain), `(k3) primary button = palette main role (${kMain})`);
-// flipping the canvas ◐ swaps the card to the dark refs (different from light).
-app.colorMode = "dark"; app.render(); flushRaf();
-ok(styleOf(app.querySelector(".example-card")).includes(surfaceOf(kp, true)) && surfaceOf(kp, true) !== surfaceOf(kp, false), `(k4) canvas ◐ flips the card to the dark ref (${surfaceOf(kp, true)})`);
-// a live control drag repaints the card with new role colors, no full render.
-app.colorMode = "light"; app.render(); flushRaf();
+ok(styleOf(exW(0).querySelector(".example-card")).includes(surfaceOf(kp, false)), `(k2) the light wrapper's card surface = palette surface role (${surfaceOf(kp, false)})`);
+ok(styleOf(exW(0).querySelector(".ex-btn")).includes(kMain), `(k3) the light wrapper's primary button = palette main role (${kMain})`);
+// the dark wrapper paints the dark refs (different from light), with no state written.
+ok(styleOf(exW(1).querySelector(".example-card")).includes(surfaceOf(kp, true)) && surfaceOf(kp, true) !== surfaceOf(kp, false), `(k4) the dark wrapper's card is painted in the dark ref (${surfaceOf(kp, true)})`);
+// a live control drag repaints both cards with new role colors, no full render.
 app.doc.palettes[app.selectedIndex()].chroma = 8; app.liveRefresh(); flushRaf();
-const kSurface3 = surfaceOf(_pv(app.doc).palettes[app.selectedIndex()], false);
-ok(styleOf(app.querySelector(".example-card")).includes(kSurface3), `(k5) liveRefresh repaints the card from new role colors (${kSurface3})`);
+const kpNew = _pv(app.doc).palettes[app.selectedIndex()];
+const kSurface3 = surfaceOf(kpNew, false), kSurface3d = surfaceOf(kpNew, true);
+ok(styleOf(exW(0).querySelector(".example-card")).includes(kSurface3) && styleOf(exW(1).querySelector(".example-card")).includes(kSurface3d), `(k5) liveRefresh repaints both wrappers from new role colors (${kSurface3} / ${kSurface3d})`);
 
-// ── (cm) scheme cycle (system/light/dark) + a separate Compare toggle; Both renders the
-// side-by-side Compare, replaces the old Light·Dark·Both segmented control (icon-only, saves space).
-app.colorMode = "light"; app.canvasView = "palettes"; app.render(); flushRaf();
-ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && (e.getAttribute("aria-label") || "").startsWith("Color value mode:")).length === 1, "(cm) the Color canvas header shows the scheme-cycle button (system/light/dark)");
-ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && (e.getAttribute("aria-label") || "").includes("Compare")).length === 1, "(cm) the Color canvas header shows a separate Compare toggle");
-app.setColorMode("both"); flushRaf();
-{
-  const cols = (app.querySelectorAll ? app.querySelectorAll(".compare-col") : []);
-  ok(cols.length === 2, `(cm) Both mode renders two Compare columns (got ${cols.length})`);
-  ok(cols.length === 2 && (cols[0].className || "").includes("canvas-scheme-light") && (cols[1].className || "").includes("canvas-scheme-dark"), "(cm) the Compare columns force Light then Dark schemes");
+// ── (cm) Color renders Light and Dark side by side everywhere, with no scheme or Compare control ──
+app.canvasView = "palettes"; app.render(); flushRaf();
+ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && (e.getAttribute("aria-label") || "").startsWith("Color value mode:")).length === 0, "(cm) the Color canvas header holds no scheme-cycle button");
+ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && (e.getAttribute("aria-label") || "").includes("Compare")).length === 0, "(cm) the Color canvas header holds no Compare toggle");
+for (const view of ["palettes", "scrims", "radix"]) {
+  app.canvasView = view; app.render(); flushRaf();
+  const cols = app.querySelectorAll(".compare-col");
+  ok(cols.length === 2, `(cm) the ${view} scene renders two columns (got ${cols.length})`);
+  ok(cols.length === 2 && (cols[0].className || "").includes("canvas-scheme-light") && (cols[1].className || "").includes("canvas-scheme-dark"), `(cm) the ${view} columns force Light then Dark schemes`);
   // each column carries its own near-edge --canvas-bg (light vs dark differ)
   const bg = (c) => ((c.getAttribute && c.getAttribute("style")) || "");
-  ok(cols.length === 2 && bg(cols[0]).includes("--canvas-bg") && bg(cols[1]).includes("--canvas-bg") && bg(cols[0]) !== bg(cols[1]), "(cm) each Compare column paints its own light/dark near-edge ground");
+  ok(cols.length === 2 && bg(cols[0]).includes("--canvas-bg") && bg(cols[1]).includes("--canvas-bg") && bg(cols[0]) !== bg(cols[1]), `(cm) each ${view} column paints its own light/dark near-edge ground`);
 }
-app.setColorMode("light"); flushRaf();
-ok(!app.querySelector(".compare-col") && !!app.querySelector(".canvas-scene"), "(cm) leaving Both restores the single canvas scene");
-// (cm-toggle) toggleColorCompare (the new Compare button's handler) remembers the scheme it was on
-// and restores it on toggle-off, rather than always landing back on "system".
-app.colorMode = "dark"; app.toggleColorCompare(); flushRaf();
-ok(app.colorMode === "both", "(cm-toggle) toggling Compare on sets colorMode to \"both\"");
-app.toggleColorCompare(); flushRaf();
-ok(app.colorMode === "dark", "(cm-toggle) toggling Compare back off restores the scheme it was on (dark), not a fresh \"system\"");
+// the Mapping table has no scheme: no column, no canvas-scheme class anywhere, on the chrome ground.
+app.canvasView = "mapping"; app.render(); flushRaf();
+ok(app.querySelectorAll(".compare-col").length === 0 && !!app.querySelector(".map-table") && !(app.querySelector(".canvas-area").className || "").includes("canvas-scheme-") && walk(app.querySelector(".canvas-area"), (e) => (e.className || "").includes("canvas-scheme-")).length === 0, "(cm) the Mapping table holds no column and no canvas-scheme- class");
+app.canvasView = "palettes"; app.render(); flushRaf();
 
 // ── (fit) fit() insets the scene's TOP-LEFT corner by CANVAS_INSET, not dead-center ──
 {
@@ -1464,7 +1504,7 @@ for (const c of SI) {
 // the "colors look really wrong" fix, originally a lift fit to stop 550; ticket #681 U2 retired that
 // fit (stop 550 was never the ruled anchor token) in favor of pinning the ramp's stop 500 to the
 // palette's own stored `anchor` exactly (Q1 ruled), so the assertion now reads stop 500 directly,
-// the stop the anchor guarantees byte-exact, rather than 550's own approximate neighbourhood.
+// the stop the anchor guarantees byte-exact at group 100 (R94), rather than 550's own approximate neighbourhood.
 // Keyed on any preset whose primary source is light.
 const { projectView: _pvHH } = await import("../../src/ui/model.mjs");
 const { hydrate: _hydHH } = await import("../../src/ui/persist.js");
@@ -2321,14 +2361,16 @@ const txtOfSet = (n) => (n._text || "") + (n.children || []).map(txtOfSet).join(
 ok(app.querySelectorAll(".settings-nav-item").length >= 3, `(set) Settings has the left section-nav (Mapping/Appearance/About) (got ${app.querySelectorAll(".settings-nav-item").length})`);
 ok((txtOfSet(app.querySelector(".settings-pagehead")) || "").includes("Token mapping"), "(set) the page header reflects the active section (Token mapping)");
 app.settingsSection = "appearance"; app.render(); flushRaf();
-ok((txtOfSet(app.querySelector(".settings-pagehead")) || "").includes("Appearance") && app.querySelectorAll(".settings-row").length >= 2, "(set) switching nav to Appearance swaps the panel (theme + canvas rows)");
-// (pref) persisted app prefs: theme/canvasTheme/motion save to localStorage, load at boot, reset clears.
+ok((txtOfSet(app.querySelector(".settings-pagehead")) || "").includes("Appearance") && app.querySelectorAll(".settings-row").length >= 2, "(set) switching nav to Appearance swaps the panel (the theme row)");
+// (pref) persisted app prefs: theme/motion/fontMode save to localStorage, load at boot, reset clears.
 {
   const PREFS_KEY = "ultimate-tokens-app-prefs-v1";
   try { localStorage.removeItem(PREFS_KEY); } catch {}
-  ok(app.querySelectorAll(".settings-row").length >= 4, `(pref) Appearance carries theme + canvas + Motion + Reset rows (got ${app.querySelectorAll(".settings-row").length})`);
+  ok(app.querySelectorAll(".settings-row").length >= 4, `(pref) Appearance carries theme + Motion + Font + Reset rows (got ${app.querySelectorAll(".settings-row").length})`);
   const appearTxt = txtOfSet(app.querySelector(".settings")) || "";
   ok(/Motion/.test(appearTxt) && /Reset app preferences/.test(appearTxt), "(pref) the Motion and Reset rows render");
+  const grp = (label) => walk(app.querySelector(".settings"), (e) => e.getAttribute && e.getAttribute("aria-label") === label).length;
+  ok(grp("App theme") === 1 && grp("Canvas preview") === 0 && !/Canvas preview/.test(appearTxt), "(pref) Settings renders the App theme row and no canvas-scheme row");
   app.motion = "reduced"; app._saveAppPrefs(); app.render(); flushRaf();
   ok(app.getAttribute("data-motion") === "reduced" || app.dataset.motion === "reduced", "(pref) the motion pref lands as [data-motion] on the element (the CSS gate)");
   const savedPrefs = JSON.parse(localStorage.getItem(PREFS_KEY));
@@ -2342,17 +2384,12 @@ ok((txtOfSet(app.querySelector(".settings-pagehead")) || "").includes("Appearanc
   try { localStorage.setItem(PREFS_KEY, JSON.stringify({ theme: "neon", motion: "off" })); } catch {}
   app.theme = "system"; app.motion = "system"; app._loadAppPrefs();
   ok(app.theme === "system" && app.motion === "system", "(pref) invalid pref values are rejected (defaults kept)");
-  // (pref-cm) colorMode: defaults to "system", persists an explicit pick, round-trips through
-  // _saveAppPrefs/_loadAppPrefs exactly like theme/canvasTheme, and Reset returns it to "system" too.
-  app.colorMode = "dark"; app._saveAppPrefs();
-  ok(JSON.parse(localStorage.getItem(PREFS_KEY)).colorMode === "dark", "(pref-cm) the colorMode pref persists");
-  app.colorMode = "system"; app._loadAppPrefs();
-  ok(app.colorMode === "dark", "(pref-cm) _loadAppPrefs restores the saved colorMode");
-  app.colorMode = "both"; app._saveAppPrefs(); app.colorMode = "system"; app._loadAppPrefs();
-  ok(app.colorMode === "both", "(pref-cm) colorMode=\"both\" (Compare) round-trips too, persisting whatever was explicitly picked");
+  // the saved record holds exactly the three chrome/app prefs: no canvas scheme is persisted.
+  app.theme = "dark"; app.motion = "reduced"; app.fontMode = "google"; app._saveAppPrefs();
+  ok(JSON.stringify(Object.keys(JSON.parse(localStorage.getItem(PREFS_KEY))).sort()) === JSON.stringify(["fontMode", "motion", "theme"]), "(pref) _saveAppPrefs writes exactly theme, motion and fontMode");
   app._resetAppPrefs(); flushRaf();
-  ok(app.theme === "system" && app.canvasTheme === "system" && app.colorMode === "system" && app.motion === "system" && localStorage.getItem(PREFS_KEY) === null,
-    "(pref) Reset returns every pref, including colorMode, to System and clears the record");
+  ok(app.theme === "system" && app.motion === "system" && app.fontMode === "premium" && localStorage.getItem(PREFS_KEY) === null,
+    "(pref) Reset returns every pref to its default and clears the record");
 }
 // (ico) Settings › Icons, the library grid (9 tiles), default Phosphor·regular, variant control,
 // the Custom escape hatch, and the geometry fence (sizes are NOT redefined here).
@@ -2397,7 +2434,7 @@ ok(app.settingsOpen === false, "(set) closeSettings dismisses the modal");
 // ── (ty) Typography SECTION: the switcher flips this.section → full TYPE_STEPS-step canvas specimen (51) + inspector ──
 app.setSection("typography"); flushRaf();
 ok(app.section === "typography" && !!app.querySelector(".type-spec"), "(ty) the section switcher enters Typography (the canvas specimen renders)");
-ok(app.querySelectorAll(".type-spec-line").length === TYPE_STEPS && app.querySelectorAll(".type-spec-group").length === VOICES, `(ty) the canvas shows the FULL specimen, ${TYPE_STEPS} steps (13 voices × 3 + the 2 interactive voices × 6) across the ${VOICES} named voices (Display·Headline·Sub-heading·Title·Sub-title·Lead·Body·Body-mono·Label·Label-mono·Kicker·Tiny·Tiny-mono·UI-control·UI-widget) (got ${app.querySelectorAll(".type-spec-line").length} lines / ${app.querySelectorAll(".type-spec-group").length} groups)`);
+ok(inLight(".type-spec-line").length === TYPE_STEPS && inLight(".type-spec-group").length === VOICES, `(ty) the light column shows the FULL specimen, ${TYPE_STEPS} steps (13 voices × 3 + the 2 interactive voices × 6) across the ${VOICES} named voices (Display·Headline·Sub-heading·Title·Sub-title·Lead·Body·Body-mono·Label·Label-mono·Kicker·Tiny·Tiny-mono·UI-control·UI-widget) (got ${inLight(".type-spec-line").length} lines / ${inLight(".type-spec-group").length} groups)`);
 ok(app.querySelectorAll(".an-card").length >= 4, `(ty) the left rail shows the type analysis cards (got ${app.querySelectorAll(".an-card").length})`);
 // specimen order: each group lists LARGEST → smallest (the first token in the document is Display's LG step)
 ok(txtOf(app.querySelectorAll(".type-spec-token")[0] || {}) === "type-display-lg", `(ty) the specimen lists each group largest→smallest (first token is type-display-lg, got ${txtOf(app.querySelectorAll(".type-spec-token")[0] || {})})`);
@@ -2625,9 +2662,11 @@ ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && e.getAttribute("
 app.typeMode = "compare"; app.render(); flushRaf();
 {
   const cols = app.querySelectorAll(".compare-col");
-  ok(cols.length === 1 + app.doc.type.modes.length, `(ty-cmp) Compare renders one column per mode, Base + ${app.doc.type.modes.length} breakpoint(s) = ${1 + app.doc.type.modes.length} (got ${cols.length})`);
+  const nT = 1 + app.doc.type.modes.length;
+  ok(cols.length === 2 * nT, `(ty-cmp) Compare renders a column per scheme x mode, 2 x (Base + ${app.doc.type.modes.length} breakpoint(s)) = ${2 * nT} (got ${cols.length})`);
+  ok(cols.slice(0, nT).every((c) => app._schemeOfColumn(c) === "light") && cols.slice(nT).every((c) => app._schemeOfColumn(c) === "dark"), "(ty-cmp) the light columns come first, then the dark ones");
   ok(!!app.querySelector(".canvas-compare") && !!app.querySelector(".compare"), "(ty-cmp) Compare uses the shared .canvas-compare / .canvas-scene.compare shell");
-  ok(txtOf(app.querySelectorAll(".compare-col-label")[0] || {}) === "Base", "(ty-cmp) the first column is labelled Base");
+  ok(/^Base/.test(txtOf(app.querySelectorAll(".compare-col-label")[0] || {})) && /Light/.test(txtOf(app.querySelectorAll(".compare-col-label")[0] || {})), "(ty-cmp) the first column is labelled Base, Light");
   // each column carries a full TYPE_STEPS-line specimen (51) (the override forced its mode while the scene built).
   ok(app.querySelectorAll(".type-spec-line").length === TYPE_STEPS * cols.length, `(ty-cmp) every column renders the full ${TYPE_STEPS}-step specimen (got ${app.querySelectorAll(".type-spec-line").length} lines across ${cols.length} cols)`);
   ok(app._typeModeOverride === null, "(ty-cmp) the transient _typeModeOverride is cleared after each column builds (never leaks)");
@@ -2636,7 +2675,7 @@ app.typeMode = "compare"; app.render(); flushRaf();
   ok(app.doc.type.bodyBase === 19, `(ty-cmp) the body-size slider edits doc.type.bodyBase while in Compare (got ${app.doc.type.bodyBase})`);
 }
 app.typeMode = "base"; app.render(); flushRaf();
-ok(!app.querySelector(".compare-col") && !!app.querySelector(".type-spec") && app.querySelectorAll(".type-spec-line").length === TYPE_STEPS, "(ty-cmp) leaving Compare restores the single specimen scene");
+ok(app.querySelectorAll(".compare-col").length === 2 && inLight(".type-spec-line").length === TYPE_STEPS, "(ty-cmp) leaving Compare restores the Light and Dark pair, one specimen each");
 // Compare/All stays present after the last real mode is deleted below, the Standard-set fallback keeps
 // Tablet/Mobile (and All) visible even pre-materialization, asserted in (ty-cmp-present).
 // (ty-tok-orphan) MAJOR 5, deleting a mode STRIPS that mode's per-cell overrides (no "...|<id>" orphans
@@ -2656,7 +2695,7 @@ ok(app.section === "color" && !app.querySelector(".type-spec") && !!app.querySel
 // control ramp + radius + space) on the canvas + left analysis rail + right inspector + token download ──
 app.setSection("geometry"); flushRaf();
 ok(app.section === "geometry" && !!app.querySelector(".geom-spec"), "(geo) the section switcher enters Geometry (the canvas dataset renders)");
-ok(app.querySelectorAll(".geom-spec-line").length === GEOM_SIZES, `(geo) the canvas shows the ${GEOM_SIZES}-step control ramp (XS..2XL) (got ${app.querySelectorAll(".geom-spec-line").length})`);
+ok(inLight(".geom-spec-line").length === GEOM_SIZES, `(geo) the canvas shows the ${GEOM_SIZES}-step control ramp (XS..2XL) (got ${inLight(".geom-spec-line").length})`);
 // control ramp order: LARGEST → smallest (the first token in the document is the 2XL control)
 ok(txtOf(app.querySelectorAll(".geom-spec-token")[0] || {}) === "--size-2xl", `(geo) the control ramp lists largest→smallest (first token is --size-2xl, got ${txtOf(app.querySelectorAll(".geom-spec-token")[0] || {})})`);
 ok(app.querySelectorAll(".an-card").length >= 4, `(geo) the left rail shows the geometry analysis cards (got ${app.querySelectorAll(".an-card").length})`);
@@ -2670,7 +2709,7 @@ ok(!!app.querySelector(".tyi-voices") || !!app.querySelector(".insp-title"), "(g
   const roles = pal.roles;
   const byKeyGeo = {};
   for (const r of roles) byKeyGeo[r.key] = r;
-  const dark = app.resolvedCanvasScheme() === "dark";
+  const dark = app._schemeOfColumn(colCol(0)) === "dark"; // the first .geom-ctl sits in the light column
   const hexOfGeo = (role) => (role ? (dark ? role.darkHex : role.lightHex) : null);
   const mainHex = hexOfGeo(roles.find((r) => r.suffix === ""));
   const containerHighHex = hexOfGeo(byKeyGeo.containerHigh);
@@ -2683,7 +2722,7 @@ ok(!!app.querySelector(".tyi-voices") || !!app.querySelector(".insp-title"), "(g
   ok(!!app.querySelector(".geom-ex-input"), "(geo-palette) the pinned example now shows Button + Chip + Input, not just Button");
   // (geo-row) every size row renders Button + Select + Switch side by side; the switch's thumb is
   // the glyph cell (diameter = icon, right-inset = paddingNarrow, the centering law, literally).
-  ok(app.querySelectorAll(".geom-select").length === GEOM_SIZES && app.querySelectorAll(".geom-switch").length === GEOM_SIZES, `(geo-row) each of the ${GEOM_SIZES} size rows carries a Select + Switch alongside the Button (got ${app.querySelectorAll(".geom-select").length}/${app.querySelectorAll(".geom-switch").length})`);
+  ok(inLight(".geom-select").length === GEOM_SIZES && inLight(".geom-switch").length === GEOM_SIZES, `(geo-row) each of the ${GEOM_SIZES} size rows carries a Select + Switch alongside the Button (got ${inLight(".geom-select").length}/${inLight(".geom-switch").length})`);
   const swEl = app.querySelector(".geom-switch");
   ok(!!swEl && (swEl.getAttribute("style") || "").includes(`background:${mainHex}`), "(geo-row) the switch track is painted with the palette's own resolved color");
   const gsMD = app._activeGeomScale().sizes["2XL"];
@@ -2732,7 +2771,7 @@ ok(bkGeo(app.doc).geometry && bkGeo(app.doc).geometry.sizes && bkGeo(app.doc).ge
   // Controls scene must render all ten numbered rows, not the default ramp's six t-shirt-named ones.
   ok(Object.keys(afterScale.sizes).length === 10 && "0" in afterScale.sizes && "9" in afterScale.sizes && !("MD" in afterScale.sizes), `(geo-ramp) the resolved ladder scale carries the full 10 numbered steps, no t-shirt names (got ${Object.keys(afterScale.sizes)})`);
   app.render(); flushRaf();
-  ok(app.querySelectorAll(".geom-spec-line").length === 10, `(geo-ramp) the canvas shows the 10-step ladder ramp with the checkbox on (got ${app.querySelectorAll(".geom-spec-line").length})`);
+  ok(inLight(".geom-spec-line").length === 10, `(geo-ramp) the canvas shows the 10-step ladder ramp with the checkbox on (got ${inLight(".geom-spec-line").length})`);
   ok(txtOf(app.querySelectorAll(".geom-spec-token")[0] || {}) === "--size-9" && txtOf(app.querySelectorAll(".geom-spec-token")[9] || {}) === "--size-0", `(geo-ramp) the ladder canvas still lists largest→smallest, --size-9 (56px) through --size-0 (20px) (first ${txtOf(app.querySelectorAll(".geom-spec-token")[0] || {})}, last ${txtOf(app.querySelectorAll(".geom-spec-token")[9] || {})})`);
   ok(bkGeo(app.doc).geometry.ramp === RL, "(geo-ramp) brandKit carries the ladder too (the MCP serves it)");
   ok(Object.keys(bkGeo(app.doc).geometry.sizes).length === 10, "(geo-ramp) brandKit's geometry also carries all 10 ladder steps");
@@ -2741,7 +2780,7 @@ ok(bkGeo(app.doc).geometry && bkGeo(app.doc).geometry.sizes && bkGeo(app.doc).ge
   ok(!("ramp" in app.doc.geometry), "(geo-ramp) unchecking clears doc.geometry.ramp entirely (back to the default ramp)");
   ok(app._activeGeomScale().sizes.MD.font === beforeMD, "(geo-ramp) the resolved scale reverts to the original composed default");
   app.render(); flushRaf();
-  ok(app.querySelectorAll(".geom-spec-line").length === GEOM_SIZES, `(geo-ramp) the canvas reverts to the default ramp's ${GEOM_SIZES}-step ramp with the checkbox off (got ${app.querySelectorAll(".geom-spec-line").length})`);
+  ok(inLight(".geom-spec-line").length === GEOM_SIZES, `(geo-ramp) the canvas reverts to the default ramp's ${GEOM_SIZES}-step ramp with the checkbox off (got ${inLight(".geom-spec-line").length})`);
 }
 // (gsz) ramp-tab per-size HEIGHT tuning, the geometry analog of (tyv): select a size → its Height slider
 // expands; _setGeomSize writes the per-size override (the SAME store the token matrix uses) + persists; reset clears.
@@ -2851,9 +2890,11 @@ ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && e.getAttribute("
 app.geomMode = "compare"; app.render(); flushRaf();
 {
   const cols = app.querySelectorAll(".compare-col");
-  ok(cols.length === 1 + app.doc.geometry.modes.length, `(geo-cmp) Compare renders one column per mode, Base + ${app.doc.geometry.modes.length} breakpoint(s) = ${1 + app.doc.geometry.modes.length} (got ${cols.length})`);
+  const nG = 1 + app.doc.geometry.modes.length;
+  ok(cols.length === 2 * nG, `(geo-cmp) Compare renders a column per scheme x mode, 2 x (Base + ${app.doc.geometry.modes.length} breakpoint(s)) = ${2 * nG} (got ${cols.length})`);
+  ok(cols.slice(0, nG).every((c) => app._schemeOfColumn(c) === "light") && cols.slice(nG).every((c) => app._schemeOfColumn(c) === "dark"), "(geo-cmp) the light columns come first, then the dark ones");
   ok(!!app.querySelector(".canvas-compare") && !!app.querySelector(".compare"), "(geo-cmp) Compare uses the shared .canvas-compare / .canvas-scene.compare shell");
-  ok(txtOf(app.querySelectorAll(".compare-col-label")[0] || {}) === "Base", "(geo-cmp) the first column is labelled Base");
+  ok(/^Base/.test(txtOf(app.querySelectorAll(".compare-col-label")[0] || {})) && /Light/.test(txtOf(app.querySelectorAll(".compare-col-label")[0] || {})), "(geo-cmp) the first column is labelled Base, Light");
   ok(app.querySelectorAll(".geom-spec-line").length === GEOM_SIZES * cols.length, `(geo-cmp) every column renders the full ${GEOM_SIZES}-step control ramp (got ${app.querySelectorAll(".geom-spec-line").length} lines across ${cols.length} cols)`);
   ok(app._geomModeOverride === null, "(geo-cmp) the transient _geomModeOverride is cleared after each column builds (never leaks)");
   // MAJOR: the inspector base-height slider edits the BASE scale in Compare (it shows Base), not a no-op.
@@ -2861,7 +2902,7 @@ app.geomMode = "compare"; app.render(); flushRaf();
   ok(app.doc.geometry.baseHeight === 40, `(geo-cmp) the base-height slider edits doc.geometry.baseHeight while in Compare (got ${app.doc.geometry.baseHeight})`);
 }
 app.geomMode = "base"; app.render(); flushRaf();
-ok(!app.querySelector(".compare-col") && !!app.querySelector(".geom-spec") && app.querySelectorAll(".geom-spec-line").length === GEOM_SIZES, "(geo-cmp) leaving Compare restores the single controls scene");
+ok(app.querySelectorAll(".compare-col").length === 2 && inLight(".geom-spec-line").length === GEOM_SIZES, "(geo-cmp) leaving Compare restores the Light and Dark pair, one controls ramp each");
 // (geo-tok-orphan) MAJOR 5, deleting a mode STRIPS that mode's per-cell overrides (no orphaned "...|<id>"
 // keys survive serialize→hydrate forever). Set a per-mode override, delete the mode, assert the key is gone.
 app.setGeomTokenOverride("MD", _gbpId, 40); flushRaf();
@@ -3130,7 +3171,7 @@ app.addStandardGeomModes(); flushRaf();
 // ── (bpc) Base chroma / Prime chroma sliders + per-palette Prime chroma (SPEC
 // spec-muted-base-key-spikes 0.3.0 AC-032, slider portion, "Add data palettes"/"Re-derive" are
 // U8's own scope). There is NO "Intensity" slider any more, in any group (REQ-032), the ramp's
-// chroma target now comes entirely from the palette's group. ───────────────────────────────
+// chroma damper (#785) now comes entirely from the palette's group. ─────────────────────
 app.openSet(app.sets[0].id); flushRaf();
 app.setSegment("global"); app.render(); flushRaf();
 const baseChromaInput = findFk("slider:Base chroma");
@@ -3189,7 +3230,7 @@ const { projectView: projectViewPST } = await import("../../src/ui/model.mjs");
 const { PRIME_STEPS: PRIME_STEPS_PST } = await import("../../src/engine/prime.mjs");
 app.openSet(app.sets[0].id); flushRaf();
 app.commit((d) => { d.accentRef = "mode"; }); flushRaf();
-app.setCanvasView("palettes"); app.colorMode = "light"; app.setStopsMode("core"); app.render(); flushRaf();
+app.setCanvasView("palettes"); app.setStopsMode("core"); app.render(); flushRaf();
 const pstScene0 = app.querySelector(".canvas-scene");
 const pstStrips0 = walk(pstScene0, (e) => e.classList && e.classList.contains("prime-strip"));
 ok(pstStrips0.length > 0, `(pst1) every enabled ramp row has a prime strip (got ${pstStrips0.length})`);
@@ -3205,14 +3246,11 @@ ok(
   "(pst4) each swatch's color equals view.palettes[i].prime[k].hex, read directly, not resolved via roles",
 );
 
-// toggling the scheme must NOT change the strip's colors (REQ-034: mode-independent).
-app.colorMode = "dark"; app.render(); flushRaf();
-const pstScene1 = app.querySelector(".canvas-scene");
-const pstStrips1 = walk(pstScene1, (e) => e.classList && e.classList.contains("prime-strip"));
+// the scheme must NOT change the strip's colors (REQ-034: mode-independent): the dark column's strip matches the light one.
+const pstStrips1 = walk(colCol(1), (e) => e.classList && e.classList.contains("prime-strip"));
 const pstSw1 = walk(pstStrips1[0], (e) => e.classList && e.classList.contains("prime-swatch"));
 ok(pstSw0.every((e, k) => pstSwHex(e) === pstSwHex(pstSw1[k])),
-  `(pst5) toggling the scheme leaves the strip's hexes unchanged (light ${JSON.stringify(pstSw0.map(pstSwHex))} vs dark ${JSON.stringify(pstSw1.map(pstSwHex))})`);
-app.colorMode = "light"; app.render(); flushRaf();
+  `(pst5) the dark column's strip carries the light column's hexes (light ${JSON.stringify(pstSw0.map(pstSwHex))} vs dark ${JSON.stringify(pstSw1.map(pstSwHex))})`);
 
 // toggling accentRef must NOT change the strip either (0.1.0's strip changed here; the 0.2.0
 // strip reads vp.prime, which does not depend on accentRef at all).
@@ -3433,7 +3471,7 @@ app.canvasView = "palettes"; app.setSegment("palette"); app.render(); flushRaf()
 const cgWalk = (n) => (n._text || "") + (n.children || []).map(cgWalk).join("");
 
 {
-  const stack = app._rampStack;
+  const stack = lightStack();
   const groups = stack.querySelectorAll(".ramp-group");
   ok(groups.length === 4, `(cg1) all 4 groups render for the default doc (non-empty), got ${groups.length}`);
   ok(groups.map((g) => g.dataset.group).join(",") === "material,brand,system,data",
@@ -3469,7 +3507,7 @@ cgSelect.dispatch("change", { target: cgSelect });
 ok(app.doc.palettes[0].group === "system", `(cg6) picking "System" in the dropdown commits palettes[0].group (got ${JSON.stringify(app.doc.palettes[0].group)})`);
 app.render(); flushRaf();
 {
-  const groups2 = app._rampStack.querySelectorAll(".ramp-group");
+  const groups2 = lightStack().querySelectorAll(".ramp-group");
   const systemGroup = groups2.find((g) => g.dataset.group === "system");
   const systemPis = systemGroup.querySelectorAll(".ramp-row[data-pi]").map((r) => Number(r.getAttribute("data-pi")));
   ok(systemPis.includes(0), `(cg7) after the dropdown move, palette index 0 (Neutral) renders under System (got ${JSON.stringify(systemPis)})`);
@@ -3490,7 +3528,7 @@ flushRaf();
 {
   app.selectPalette(0);
   app.render(); flushRaf();
-  const rows = app._rampStack.querySelectorAll(".ramp-row[data-pi]");
+  const rows = lightStack().querySelectorAll(".ramp-row[data-pi]");
   rows.forEach((r, idx) => { r._rect = { top: idx * 50, bottom: idx * 50 + 50, left: 0, right: 200, width: 200, height: 50 }; });
   ok(rows[2].getAttribute("data-pi") === "2" && app.doc.palettes[2].name === "Secondary", "(cg10) row 2 is Secondary (Brand) before the drag");
   const secondaryHandle = rows[2].querySelector(".drag-handle");
@@ -3509,7 +3547,7 @@ flushRaf();
 // a within-group drag never touches `.group`, only CROSSING a header reassigns it.
 {
   app.render(); flushRaf();
-  const rows = app._rampStack.querySelectorAll(".ramp-row[data-pi]");
+  const rows = lightStack().querySelectorAll(".ramp-row[data-pi]");
   rows.forEach((r, idx) => { r._rect = { top: idx * 50, bottom: idx * 50 + 50, left: 0, right: 200, width: 200, height: 50 }; });
   ok(app.doc.palettes[4].name === "Info" && app.doc.palettes[4].group === undefined, "(cg16) Info (System) has no explicit group before this drag");
   const infoHandle = rows[4].querySelector(".drag-handle");
@@ -3521,39 +3559,43 @@ flushRaf();
   app.undo();
 }
 
-// ── (gid) Per-group base chroma (SPEC spec-muted-base-key-spikes 0.3.0, #556/#559 re-ruling): the
-// group's Base chroma is an ABSOLUTE ramp-chroma target, Material 30/60 by default, Brand/System/
-// Data 100/100, Data LOCKED (no per-palette Prime chroma override). There is NO per-palette ramp
-// override in ANY group any more, REQ-002 retires it entirely, not just for Data. ───────────────
+// ── (gid) Per-group base chroma (SPEC spec-muted-base-key-spikes 0.3.0, #556/#559 re-ruling; #785 U2,
+// R94 to R98): the group's Base chroma is a damper on the whole ramp, each stop's chroma coordinate
+// at r = value / 100 of its group-100 render, stop 500 included. Defaults Material 100/60, Brand/
+// System/Data 100/100, Data LOCKED (no per-palette Prime chroma override). There is NO per-palette
+// ramp override in ANY group any more, REQ-002 retires it entirely, not just for Data. ───────────
 {
   const { defaultDocument: ddGID, paletteGroup: pgGID, projectView: pvGID, rampChromaOf: rcGID, GROUP_DEFAULTS: GIDDEF } = await import("../../src/ui/model.mjs");
   const { paletteStops: psGID, EXPORT_STOPS: esGID } = await import("../../src/engine/tonal.js");
 
-  // (gid1) a FRESH default document already resolves Neutral (Material) to rampChroma 30, matching
-  // a DIRECT engine call at chroma:30 byte for byte (never a document-level "pin", since there is no
-  // more palette.intensity field at all), and the legacy chroma:100 call produces a DIFFERENT ramp
-  // (the mute is real, not a no-op).
+  // (gid1) a FRESH default document already resolves Neutral (Material) to rampChroma 100, matching
+  // a DIRECT engine call at chroma:100 byte for byte (never a document-level "pin", since there is no
+  // more palette.intensity field at all); (gid3) proves a lower value is a real mute, not a no-op.
   const freshDoc = ddGID();
   const freshView = pvGID(freshDoc);
   const nIdx = freshDoc.palettes.findIndex((p) => p.name === "Neutral");
   const neutral = freshDoc.palettes[nIdx];
   ok(pgGID(neutral) === "material", "(gid1) Neutral defaults to the Material group");
-  ok(rcGID(neutral, freshDoc) === 30, `(gid1b) rampChromaOf(Neutral) resolves to Material's default 30 (got ${rcGID(neutral, freshDoc)})`);
+  ok(rcGID(neutral, freshDoc) === 100, `(gid1b) rampChromaOf(Neutral) resolves to Material's default 100 (got ${rcGID(neutral, freshDoc)})`);
   const ctlGID = { toneMode: freshDoc.toneMode, hueSpace: freshDoc.hueSpace, lmin: freshDoc.lmin, lmax: freshDoc.lmax, damp: freshDoc.damp, dampCurve: freshDoc.dampCurve, dampAmp: freshDoc.dampAmp, dampBias: freshDoc.dampBias, curve: freshDoc.curve, tension: freshDoc.tension, relChroma: freshDoc.relChroma, chromaFloor: freshDoc.chromaFloor, vibrancy: freshDoc.vibrancy };
   const direct30 = psGID({ hue: neutral.hue, chroma: 30, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir, anchor: neutral.anchor }, ctlGID, esGID);
   const direct100 = psGID({ hue: neutral.hue, chroma: 100, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir, anchor: neutral.anchor }, ctlGID, esGID);
-  ok(JSON.stringify(freshView.palettes[nIdx].fullRamp.map((s) => s.hex)) === JSON.stringify(direct30.map((s) => s.hex)), "(gid2) a fresh doc's Neutral ramp equals a direct engine call at chroma 30 (Material's default)");
-  // (gid3) #725 R69 (reverses Q-U2-5): an anchored ramp's saturation basis is capped at the anchor's
-  // OWN OKHSL s (anchorChromaBasis's group target is min(group, anchor)), so Neutral (anchored) ignores
-  // any group chroma above that s, and still follows one below it. The anchor's s is measured here,
-  // never typed, and must sit strictly between the two probes for the arms to mean anything.
+  ok(JSON.stringify(freshView.palettes[nIdx].fullRamp.map((s) => s.hex)) === JSON.stringify(direct100.map((s) => s.hex)), "(gid2) a fresh doc's Neutral ramp equals a direct engine call at chroma 100 (Material's default)");
+  // (gid3) #785 U2 (R94, reverses #725 R69's cap): the group value damps the anchored ramp's whole
+  // group-100 render, so Neutral at 50 differs from its fresh (100) ramp and each stop's OKHSL s is
+  // half its chroma-100 value, stop 500 included (within 0.02, 8-bit hex). Under R69's cap an anchor
+  // s in (0.10, 0.30] made 50 render the same as 100; the precondition keeps that witness measured,
+  // never typed.
   const { rgbToOkhsl: okGID } = await import("../../src/engine/okhsl.js");
   const anchorS = okGID([1, 3, 5].map((i) => parseInt(neutral.anchor.slice(i, i + 2), 16))).s;
   const direct10 = psGID({ hue: neutral.hue, chroma: 10, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir, anchor: neutral.anchor }, ctlGID, esGID);
   const hexesGID = (r) => JSON.stringify(r.map((s) => s.hex));
   ok(anchorS > 0.10 && anchorS <= 0.30, `(gid3 precondition) Neutral's anchor ${neutral.anchor} OKHSL s ${anchorS.toFixed(4)} sits in (0.10, 0.30]`);
-  ok(hexesGID(freshView.palettes[nIdx].fullRamp) === hexesGID(direct100), "(gid3) a fresh doc's Neutral ramp equals the chroma-100 ramp: R69 caps an anchored ramp at the anchor's own s, so group chroma above it is ignored");
-  ok(hexesGID(direct10) !== hexesGID(direct30), "(gid3b) Neutral still follows a group chroma BELOW its anchor's s: the chroma-10 ramp differs from the chroma-30 ramp (the mute direction is kept)");
+  const direct50 = psGID({ hue: neutral.hue, chroma: 50, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir, anchor: neutral.anchor }, ctlGID, esGID);
+  const sGID = (hex) => okGID([1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))).s;
+  const halfOff = direct50.filter((s, i) => Math.abs(sGID(s.hex) - 0.5 * sGID(direct100[i].hex)) > 0.02).map((s) => s.stop);
+  ok(hexesGID(freshView.palettes[nIdx].fullRamp) !== hexesGID(direct50) && halfOff.length === 0 && direct50.some((s) => s.stop === 500), `(gid3) a fresh doc's Neutral ramp differs from the chroma-50 ramp, and the chroma-50 ramp's OKHSL s is 0.5 x the chroma-100 ramp's at every stop, stop 500 included (off at: ${halfOff.join(" ") || "none"})`);
+  ok(hexesGID(direct10) !== hexesGID(direct30), "(gid3b) the damper keeps biting low: Neutral's chroma-10 ramp differs from its chroma-30 ramp");
 
   // (gid4) the Global tab renders all four group rows, each with its own base+prime chroma
   // sliders, seeded from GROUP_DEFAULTS.
@@ -3591,6 +3633,35 @@ flushRaf();
   ok(JSON.stringify(beforeRamps.palettes[brandIdx2].ramp) !== JSON.stringify(afterRamps.palettes[brandIdx2].ramp), "(gid8b) ...and the second Brand palette's ramp too, every ramp in the group is a chroma peer");
   app.doc.paletteGroups.brand.baseChroma = 100; // restore for later assertions
   app.render(); flushRaf();
+
+  // (gid-damp500) #785 U2 (R94): the damper reaches stop 500 of an anchored ramp. Material at 60
+  // through the Global slider moves Neutral's stop 500 hex (R69's cap held it on the anchor).
+  {
+    const nI = app.doc.palettes.findIndex((p) => p.name === "Neutral");
+    const s500Before = pvGID(app.doc).palettes[nI].fullRamp.find((s) => s.stop === 500).hex;
+    app.setSegment("global"); app.render(); flushRaf();
+    const materialBaseInput = findFk("slider:Material base chroma");
+    materialBaseInput.value = "60"; materialBaseInput.dispatch("input", {});
+    app.commitDrag(); app.render(); flushRaf();
+    const s500After = pvGID(app.doc).palettes[nI].fullRamp.find((s) => s.stop === 500).hex;
+    ok(app.doc.paletteGroups.material.baseChroma === 60 && s500After !== s500Before, `(gid-damp500) Material base chroma 60 through the Global slider moves Neutral's stop 500 (${s500Before} to ${s500After})`);
+    app.doc.paletteGroups.material.baseChroma = GIDDEF.material.baseChroma; // restore for later assertions
+    app.render(); flushRaf();
+  }
+
+  // (gid-owner4) #785 U2, the owner's screenshot (2026-10-03): Brand base chroma 4 must mute Primary's
+  // whole ramp to about 4% of its group-100 saturation, its vivid middle (stops 400 to 600) included.
+  // Read as OKHSL s over owner4-span: stops 200 to 800 whose at-100 s exceeds 0.05 (outside it 8-bit
+  // hex quantization dominates). Prime chroma never reaches the ramp: the base-4 ramp is the same
+  // with Brand prime chroma 100 and 0.
+  {
+    const brandAt = (base, prime) => { const d = ddGID(); d.paletteGroups.brand = { ...d.paletteGroups.brand, baseChroma: base, primeChroma: prime }; return pvGID(d).palettes.find((p) => p.name === "Primary").fullRamp; };
+    const at100 = brandAt(100, 100), at4 = brandAt(4, 100), at4p0 = brandAt(4, 0);
+    const span = at100.map((s, i) => ({ stop: s.stop, s100: sGID(s.hex), s4: sGID(at4[i].hex) })).filter((x) => x.stop >= 200 && x.stop <= 800 && x.s100 > 0.05);
+    const outside = span.filter((x) => !(x.s4 / x.s100 >= 0.025 && x.s4 / x.s100 <= 0.055));
+    const covers = [400, 500, 600].every((st) => span.some((x) => x.stop === st));
+    ok(span.length > 0 && covers && outside.length === 0 && hexesGID(at4) === hexesGID(at4p0), `(gid-owner4) Brand base 4 holds Primary's owner4-span (${span.length} stops, 400/500/600 in: ${covers}) at s(4)/s(100) in [0.025, 0.055] (outside: ${outside.map((x) => `${x.stop}:${(x.s4 / x.s100).toFixed(3)}`).join(" ") || "none"}; 500 reads ${((span.find((x) => x.stop === 500) || {}).s4 / (span.find((x) => x.stop === 500) || {}).s100).toFixed(3)}), and prime 100 and 0 render it the same: ${hexesGID(at4) === hexesGID(at4p0)}`);
+  }
 
   // (gid9) moving a palette OUT of Data restores its stored per-palette PRIME override (ratified
   // Open Question 1, the ramp itself has no per-palette override to restore any more, REQ-002): a
@@ -3631,9 +3702,8 @@ flushRaf();
   // node:path/node:url instead of `new URL(...)`.
   const colorJsPathRX = resolveRX(dirnameRX(fileURLToPathRX(import.meta.url)), "../../src/ui/sections/color.js");
 
-  const rxView0 = app.canvasView, rxMode0 = app.colorMode;
+  const rxView0 = app.canvasView;
   app.setSection("color");
-  app.colorMode = "light";
 
   const routeA = () => { app.doc = defaultDocumentRX(); app.sel = { kind: "palette", id: 0 }; app.history = []; app.future = []; app.render(); flushRaf(); };
 
@@ -3664,7 +3734,7 @@ flushRaf();
   app.setCanvasView("radix"); flushRaf();
 
   // test 4b: structural call-site gate, extract renderRadixScene's own body and prove it calls
-  // neither dragHandle( nor _wireReorder(; the SAME grep, run over renderRampsScene's body, must
+  // no dragHandle( call; the SAME grep, run over renderRampsScene's body, must
   // fire (>= 1) as the proven-firing negative control (I7) so a typo'd pattern can't pass vacuously.
   {
     const colorSrc = readFileSyncRX(colorJsPathRX, "utf8");
@@ -3680,9 +3750,9 @@ flushRaf();
     const rampsBody = methodBody("renderRampsScene");
     ok(radixBody != null, "(rx4b) renderRadixScene's body was found for extraction");
     ok(rampsBody != null, "(rx4b) renderRampsScene's body was found for extraction");
-    const hits = (body) => (body ? (body.match(/dragHandle\(|_wireReorder\(/g) || []).length : -1);
-    ok(hits(radixBody) === 0, `(rx4b) renderRadixScene's body calls neither dragHandle( nor _wireReorder( (got ${hits(radixBody)})`);
-    ok(hits(rampsBody) >= 1, `(rx4b) control: renderRampsScene's body DOES call dragHandle(/_wireReorder( (got ${hits(rampsBody)})`);
+    const hits = (body) => (body ? (body.match(/dragHandle\(/g) || []).length : -1);
+    ok(hits(radixBody) === 0, `(rx4b) renderRadixScene's body makes no dragHandle( call (got ${hits(radixBody)})`);
+    ok(hits(rampsBody) >= 1, `(rx4b) control: renderRampsScene's body DOES call dragHandle( (got ${hits(rampsBody)})`);
   }
 
   // test 5: normal state, Route B "Maison" (8 palettes authored; openConfigAsSet here has no
@@ -3694,12 +3764,12 @@ flushRaf();
     app.openConfigAsSet(maison, "Radix"); flushRaf();
     app.setCanvasView("radix"); flushRaf();
     const E = app.doc.palettes.filter((p) => p.on !== false).length;
-    ok(app.querySelectorAll(".radix-row").length === E, `(rx5) .radix-row === E (${E})`);
-    ok(app.querySelectorAll(".radix-ladder").length === E, `(rx5) .radix-ladder === E (${E})`);
-    ok(app.querySelectorAll(".radix-step").length === 12 * E, `(rx5) .radix-step === 12*E (${12 * E})`);
-    ok(app.querySelectorAll(".radix-collision").length === 0, "(rx5) .radix-collision === 0 (control: test 6)");
-    ok(app.querySelectorAll(".radix-badge").length === 0, "(rx5) .radix-badge === 0 (control: test 6)");
-    ok(app.querySelectorAll(".radix-empty").length === 0, "(rx5) .radix-empty === 0 (control: test 7)");
+    ok(inLight(".radix-row").length === E, `(rx5) .radix-row === E (${E})`);
+    ok(inLight(".radix-ladder").length === E, `(rx5) .radix-ladder === E (${E})`);
+    ok(inLight(".radix-step").length === 12 * E, `(rx5) .radix-step === 12*E (${12 * E})`);
+    ok(inLight(".radix-collision").length === 0, "(rx5) .radix-collision === 0 (control: test 6)");
+    ok(inLight(".radix-badge").length === 0, "(rx5) .radix-badge === 0 (control: test 6)");
+    ok(inLight(".radix-empty").length === 0, "(rx5) .radix-empty === 0 (control: test 7)");
   }
 
   // test 6: collision state, Route B "Modal jazz" (11 palettes authored; no mintData flag here
@@ -3713,15 +3783,15 @@ flushRaf();
     const E6 = app.doc.palettes.filter((p) => p.on !== false).length;
     const C6 = app.doc.palettes.filter((p) => p.on !== false && radixKeyCollisionRX(p.name)).length;
     ok(C6 === 1, `(rx6) fixture still carries exactly 1 collision (got ${C6})`);
-    ok(app.querySelectorAll(".radix-collision").length === C6, "(rx6) .radix-collision === C");
-    ok(walk(app, (e) => e.classList && e.classList.contains("radix-badge")).length === C6, "(rx6) .radix-badge === C, scoped via walk");
+    ok(inLight(".radix-collision").length === C6, "(rx6) .radix-collision === C");
+    ok(walk(colCol(0), (e) => e.classList && e.classList.contains("radix-badge")).length === C6, "(rx6) .radix-badge === C, scoped via walk");
     // #630 option (a): the colliding row now renders its FULL ladder (read from the renamed key)
     // plus the note, so ladders and steps count EVERY enabled palette, collision included.
-    ok(app.querySelectorAll(".radix-ladder").length === E6, `(rx6) .radix-ladder === E (${E6}): the colliding row renders a ladder too (#630)`);
-    ok(app.querySelectorAll(".radix-step").length === 12 * E6, `(rx6) .radix-step === 12*E (${12 * E6}): the colliding palette's ladder is present (#630)`);
+    ok(inLight(".radix-ladder").length === E6, `(rx6) .radix-ladder === E (${E6}): the colliding row renders a ladder too (#630)`);
+    ok(inLight(".radix-step").length === 12 * E6, `(rx6) .radix-step === 12*E (${12 * E6}): the colliding palette's ladder is present (#630)`);
     const collisionRow = app.querySelectorAll(".radix-collision")[0];
     ok(!!collisionRow && collisionRow.querySelectorAll(".radix-step").length === 12, "(rx6) the .radix-collision row itself holds 12 .radix-step nodes");
-    ok(app.querySelectorAll(".radix-empty").length === 0, "(rx6) .radix-empty === 0 (I9 must not appear here, control: test 7)");
+    ok(inLight(".radix-empty").length === 0, "(rx6) .radix-empty === 0 (I9 must not appear here, control: test 7)");
     // 6b, the note names the key the engine actually exported the palette under (radixExportKey,
     // the engine's own radixPaletteKey), never a re-typed literal; and that key holds a ladder.
     const enabled6 = app.doc.palettes.filter((p) => p.on !== false);
@@ -3734,7 +3804,7 @@ flushRaf();
     ok(!!colors6[key6] && !!colors6[key6]["12"], "(rx6b) the engine preset holds a 12-step ladder under the renamed key");
     // the painted ladder is the RENAMED group's, not the `accent` driver clone's (they differ in hue).
     const step9 = collisionRow.querySelectorAll(".radix-step")[8].getAttribute("style");
-    const want9 = colors6[key6]["9"].value[app.resolvedCanvasScheme() === "dark" ? "_dark" : "base"];
+    const want9 = colors6[key6]["9"].value.base; // the first row is the light column's
     ok(step9 === `background:${want9}`, `(rx6b) the colliding row's step 9 paints colors["${key6}"].9, got ${step9}`);
   }
 
@@ -3744,19 +3814,19 @@ flushRaf();
     app.commit((d) => { for (const p of d.palettes) if (!isDataPaletteRX(p)) p.on = false; });
     flushRaf();
     app.setCanvasView("radix"); flushRaf(); // must not throw
-    ok(app.querySelectorAll(".radix-scene").length === 1, "(rx7) .radix-scene === 1");
-    ok(app.querySelectorAll(".radix-empty").length === 1, "(rx7) .radix-empty === 1");
-    ok(app.querySelectorAll(".radix-row").length === 0, "(rx7) .radix-row === 0");
-    ok(app.querySelectorAll(".radix-ladder").length === 0, "(rx7) .radix-ladder === 0");
-    ok(app.querySelectorAll(".radix-step").length === 0, "(rx7) .radix-step === 0");
-    ok(app.querySelectorAll(".radix-collision").length === 0, "(rx7) .radix-collision === 0 (control: test 6)");
-    ok(app.querySelectorAll(".radix-badge").length === 0, "(rx7) .radix-badge === 0 (control: test 6)");
+    ok(inLight(".radix-scene").length === 1, "(rx7) .radix-scene === 1");
+    ok(inLight(".radix-empty").length === 1, "(rx7) .radix-empty === 1");
+    ok(inLight(".radix-row").length === 0, "(rx7) .radix-row === 0");
+    ok(inLight(".radix-ladder").length === 0, "(rx7) .radix-ladder === 0");
+    ok(inLight(".radix-step").length === 0, "(rx7) .radix-step === 0");
+    ok(inLight(".radix-collision").length === 0, "(rx7) .radix-collision === 0 (control: test 6)");
+    ok(inLight(".radix-badge").length === 0, "(rx7) .radix-badge === 0 (control: test 6)");
   }
 
   // test 8: A1/Compare gate, its OWN fresh Route A document WITH drivers.
   {
     routeA();
-    app.colorMode = "both"; app.canvasView = "radix"; app.render(); flushRaf();
+    app.canvasView = "radix"; app.render(); flushRaf();
     ok(app.querySelectorAll(".radix-scene").length === 2, "(rx8) .radix-scene === 2 (one per compare column)");
     const cols = app.querySelectorAll(".compare-col");
     ok(cols.length === 2, "(rx8) two .compare-col nodes");
@@ -3772,27 +3842,26 @@ flushRaf();
       ok(s0 === `background:${leaf.base}`, `(rx8) the light column's first step matches value.base (got ${s0})`);
       ok(s1 === `background:${leaf._dark}`, `(rx8) the dark column's first step matches value._dark (got ${s1})`);
     }
-    app.colorMode = "light"; app.render(); flushRaf();
   }
 
   // test 9: the records gate for I8 place 5 (folded per OQ-4), both greps verified green.
   {
     const colorSrc9 = readFileSyncRX(colorJsPathRX, "utf8");
     const lines9 = colorSrc9.split("\n");
-    const sxsLine = lines9.find((l) => l.includes("side-by-side Compare"));
-    ok(!!sxsLine && /radix/i.test(sxsLine), "(rx9a) the side-by-side Compare comment now names radix");
+    const sxsLine = lines9.find((l) => l.includes("side by side, inside ONE"));
+    ok(!!sxsLine && /radix/i.test(sxsLine), "(rx9a) the side-by-side canvas comment names radix");
     ok(!colorSrc9.includes("Palettes/Scrims only"), "(rx9b) the stale 'Palettes/Scrims only' phrase is gone");
   }
 
-  app.canvasView = rxView0; app.colorMode = rxMode0; app.render(); flushRaf();
+  app.canvasView = rxView0; app.render(); flushRaf();
 }
 
 // ── (rxs) stops-density deny-list to allow-list (I3, ticket #637) ───────────────────────────
 {
   const { defaultDocument: defaultDocumentRXS } = await import("../../src/ui/model.mjs");
-  const rxsView0 = app.canvasView, rxsMode0 = app.colorMode;
+  const rxsView0 = app.canvasView;
   app.doc = defaultDocumentRXS(); app.sel = { kind: "palette", id: 0 }; app.history = []; app.future = [];
-  app.setSection("color"); app.colorMode = "light"; app.render(); flushRaf();
+  app.setSection("color"); app.render(); flushRaf();
 
   const stopsCoreCount = () => walk(app, (e) => e.getAttribute && e.getAttribute("data-fk") === "stops:core").length;
 
@@ -3807,19 +3876,19 @@ flushRaf();
   app.setCanvasView("mapping"); flushRaf();
   ok(stopsCoreCount() === 0, "(rxs3) stops:core absent under mapping (pre-existing behavior)");
 
-  app.canvasView = rxsView0; app.colorMode = rxsMode0; app.render(); flushRaf();
+  app.canvasView = rxsView0; app.render(); flushRaf();
 }
 
 // ── (rxg) isGroupedView deny-list to allow-list (I3, ticket #637) ───────────────────────────
 {
   const { defaultDocument: defaultDocumentRXG, paletteGroup: paletteGroupRXG } = await import("../../src/ui/model.mjs");
-  const rxgView0 = app.canvasView, rxgMode0 = app.colorMode;
+  const rxgView0 = app.canvasView;
   app.doc = defaultDocumentRXG(); app.sel = { kind: "palette", id: 0 }; app.history = []; app.future = [];
-  app.setSection("color"); app.colorMode = "light";
+  app.setSection("color");
   app.selectPalette(0);
-  app.render(); flushRaf(); // render "palettes" first, reorder machinery live (_wireReorder sets this._rampStack)
+  app.render(); flushRaf(); // render "palettes" first, reorder machinery live (each row's dragHandle( wires _beginReorder)
 
-  const rows = app._rampStack.querySelectorAll(".ramp-row[data-pi]");
+  const rows = lightStack().querySelectorAll(".ramp-row[data-pi]");
   rows.forEach((r, idx) => { r._rect = { top: idx * 50, bottom: idx * 50 + 50, left: 0, right: 200, width: 200, height: 50 }; });
   ok(app.doc.palettes[0].name === "Neutral" && paletteGroupRXG(app.doc.palettes[0]) === "material", "(rxg0) row 0 is Neutral (Material) before the drag");
   ok(app.doc.palettes[4].name === "Info" && paletteGroupRXG(app.doc.palettes[4]) === "system", "(rxg0) row 4 is Info (System), a different group, the drop target");
@@ -3842,7 +3911,7 @@ flushRaf();
   // negative control, produced by EXISTING code: the same drive under canvasView="palettes" DOES
   // reassign .group, already asserted today by (cg13)/(cg17); re-verify it stays green.
   app.setCanvasView("palettes"); flushRaf();
-  const rows2 = app._rampStack.querySelectorAll(".ramp-row[data-pi]");
+  const rows2 = lightStack().querySelectorAll(".ramp-row[data-pi]");
   rows2.forEach((r, idx) => { r._rect = { top: idx * 50, bottom: idx * 50 + 50, left: 0, right: 200, width: 200, height: 50 }; });
   const neutralHandle2 = rows2[0].querySelector(".drag-handle");
   app._beginReorder({ currentTarget: neutralHandle2, pointerId: 10, stopPropagation() {}, preventDefault() {} }, 0);
@@ -3852,16 +3921,16 @@ flushRaf();
   ok(app.doc.palettes[4].name === "Neutral" && app.doc.palettes[4].group === "system", `(rxg2) control: the SAME drive under canvasView=palettes DOES reassign .group to "system" (got name=${app.doc.palettes[4] && app.doc.palettes[4].name}, group=${JSON.stringify(app.doc.palettes[4] && app.doc.palettes[4].group)})`);
 
   app.undo(); flushRaf();
-  app.canvasView = rxgView0; app.colorMode = rxgMode0; app.render(); flushRaf();
+  app.canvasView = rxgView0; app.render(); flushRaf();
 }
 
 // ── (rxp) confirm the free-view / gated-export split (I6, ticket #637) ──────────────────────
 {
   const { defaultDocument: defaultDocumentRXP } = await import("../../src/ui/model.mjs");
   const { PRO_EXPORT_FORMATS: PRO_EXPORT_FORMATS_RXP } = await import("../../src/ui/app-helpers.mjs");
-  const rxpView0 = app.canvasView, rxpMode0 = app.colorMode;
+  const rxpView0 = app.canvasView;
   app.doc = defaultDocumentRXP(); app.sel = { kind: "palette", id: 0 }; app.history = []; app.future = [];
-  app.setSection("color"); app.colorMode = "light"; app.render(); flushRaf();
+  app.setSection("color"); app.render(); flushRaf();
   app.selectPalette(0); flushRaf();
 
   // test 1: proExport unlocked (default), the radix scene renders.
@@ -3888,7 +3957,7 @@ flushRaf();
   ok(mappingButtons >= 1, `(rxp5) control: renderMappingScene DOES emit >= 1 <button> in the same wrapper (got ${mappingButtons})`);
   app.setCanvasView("radix"); flushRaf();
 
-  app.canvasView = rxpView0; app.colorMode = rxpMode0; app.render(); flushRaf();
+  app.canvasView = rxpView0; app.render(); flushRaf();
 }
 
 // ── (na) the empty-value placeholder reads "n/a", not the glyph (U6, owner ruling Q3) ────────
@@ -3933,7 +4002,7 @@ flushRaf();
   const { projectView: pvRST, seedFromKeyColor, hexToOklch } = await import("../../src/ui/model.mjs");
   const rstPreset = TP[1]; // a different preset than (hh)'s TP[0], independent of that group's state
   app.openConfigAsSet(rstPreset, null, { mintData: false });
-  app.setSection("color"); app.colorMode = "light";
+  app.setSection("color");
   app.selectPalette(1); app.render(); flushRaf(); // palettes[1] = "primary" (palettes[0] = "neutral")
 
   const idx = 1;
@@ -4053,7 +4122,7 @@ flushRaf();
 {
   const { projectView: pvSFK } = await import("../../src/ui/model.mjs");
   app.openConfigAsSet(TP[1], null, { mintData: false });
-  app.setSection("color"); app.colorMode = "light";
+  app.setSection("color");
   const sfkIdx = 1;
   app.selectPalette(sfkIdx); app.render(); flushRaf();
   ok(!!app.doc.palettes[sfkIdx].anchor && !!app.doc.palettes[sfkIdx].sourceAnchor,
@@ -4173,7 +4242,7 @@ flushRaf();
       // Reference ramp: rendered from `pBeforeDetach` itself, the EXACT state `detachSnapshot` stamps
       // and `resetAnchor` must restore -- NOT from the original, undetuned `pal` (hue does not even
       // reach the render for an anchored palette, since the anchored branches read the ANCHOR's own
-      // hue, not `palette.hue` -- but chroma and lift do, via `groupTarget`/`chromaEnvelope`, so a
+      // hue, not `palette.hue` -- but chroma and lift do, via `dampStops`/`chromaEnvelope`, so a
       // reference rendered from `pal` would legitimately differ from the correctly-restored ramp,
       // which is what a first pass at this comparison got wrong). Hydrated first (raw category
       // PRESETS entries lack some resolved default fields projectView expects, e.g. dampCurve/
@@ -4207,6 +4276,79 @@ flushRaf();
   const paletteCount = corpusDocs.reduce((n, p) => n + p.palettes.length, 0);
   console.log(`  (${FULL ? `FULL: ${docCount} curated documents, ${paletteCount} palettes` : `SAMPLED seed ${SAMPLE_SEED}: ${docCount} curated documents, ${paletteCount} palettes`})`);
 }
+
+// ── (scheme-ctx) the canvas scheme exists ONLY inside a column or wrapper (R98): every read of the scheme happens
+// while a column/wrapper is building, never in the open. Count reads outside (must be 0) and inside (must be > 0). ──
+{
+  const realRes = app.resolvedCanvasScheme.bind(app);
+  let outside = 0, inside = 0;
+  app.resolvedCanvasScheme = () => { if (app._columnScheme == null) outside++; else inside++; return realRes(); };
+  app.setSection("color");
+  for (const v of ["palettes", "scrims", "radix", "mapping"]) {
+    app.setCanvasView(v); app.render(); flushRaf();
+    for (const seg of ["palette", "global", "roles"]) { app.setSegment(seg); flushRaf(); }
+  }
+  app.setCanvasView("palettes");
+  app.setSection("typography"); flushRaf();
+  for (const sm of ["specimen", "tokens"]) {
+    app.typeSpecMode = sm; app.typeMode = "base"; app.render(); flushRaf();
+    for (const tab of ["scale", "fonts", "specimen"]) { app.typeSegment = tab; app.render(); flushRaf(); }
+  }
+  app.typeSpecMode = "specimen"; app.typeMode = "compare"; app.render(); flushRaf();
+  app.typeMode = "base"; app.typeSegment = "scale";
+  app.setSection("geometry"); flushRaf();
+  for (const sm of ["controls", "tokens"]) {
+    app.geomSpecMode = sm; app.geomMode = "base"; app.render(); flushRaf();
+    for (const tab of ["ramp", "radius", "space"]) { app.geomSegment = tab; app.render(); flushRaf(); }
+  }
+  app.geomSpecMode = "controls"; app.geomMode = "compare"; app.render(); flushRaf();
+  app.geomMode = "base"; app.geomSegment = "ramp";
+  app.resolvedCanvasScheme = realRes;
+  ok(outside === 0, `(scheme-ctx) no canvas-scheme read happens outside a column or wrapper (got ${outside})`);
+  ok(inside > 0, `(scheme-ctx) the scheme is read inside columns and wrappers (got ${inside})`);
+  ok(app._columnScheme === null, "(scheme-ctx) _columnScheme is cleared after every render");
+  app.setSection("color"); app.setCanvasView("palettes"); app.render(); flushRaf();
+}
+
+// ── (tok-scheme) the Typography and Geometry tokens tables carry no scheme (C4.3): no column and no element with a
+// canvas-scheme- class anywhere in the canvas area, same as the Color Mapping table in (cm). ──
+{
+  const noScheme = (area) => walk(area, (e) => (e.className || "").includes("canvas-scheme-")).length === 0 && !(area.className || "").includes("canvas-scheme-");
+  app.setSection("typography"); flushRaf();
+  app.typeSpecMode = "tokens"; app.typeMode = "base"; app.render(); flushRaf();
+  ok(app.querySelectorAll(".compare-col").length === 0 && !!app.querySelector(".is-table") && noScheme(app.querySelector(".canvas-area")), "(tok-scheme) the Typography tokens table holds no column and no canvas-scheme- class");
+  app.typeSpecMode = "specimen"; app.render(); flushRaf();
+  app.setSection("geometry"); flushRaf();
+  app.geomSpecMode = "tokens"; app.geomMode = "base"; app.render(); flushRaf();
+  ok(app.querySelectorAll(".compare-col").length === 0 && !!app.querySelector(".is-table") && noScheme(app.querySelector(".canvas-area")), "(tok-scheme) the Geometry tokens table holds no column and no canvas-scheme- class");
+  app.geomSpecMode = "controls"; app.render(); flushRaf();
+  app.setSection("color"); app.setCanvasView("palettes"); app.render(); flushRaf();
+}
+
+// ── (lr-cols) a live drag patches each .compare-col IN PLACE: the same scene and column nodes survive, and each
+// column's --canvas-bg tracks its own scheme. ──
+{
+  app.setSection("color"); app.canvasView = "palettes"; app.doc.lmax = 100; app.doc.lmin = 5; app.selectPalette(0); app.render(); flushRaf();
+  const sceneBefore = app.querySelector(".canvas-scene");
+  const colsBefore = app.querySelectorAll(".compare-col");
+  app.doc.palettes[app.selectedIndex()].chroma = 12; app.doc.lmin = 20; app.liveRefresh(); flushRaf();
+  const colsAfter = app.querySelectorAll(".compare-col");
+  ok(app.querySelector(".canvas-scene") === sceneBefore && colsAfter.length === 2 && colsAfter[0] === colsBefore[0] && colsAfter[1] === colsBefore[1], "(lr-cols) liveRefresh keeps the same .canvas-scene and both .compare-col nodes");
+  const liveBg = (i) => colCol(i).style.getPropertyValue("--canvas-bg");
+  ok(liveBg(0) === bgIn("light") && liveBg(1) === bgIn("dark"), `(lr-cols) each column's --canvas-bg tracks its own scheme (${liveBg(0)} / ${liveBg(1)} vs ${bgIn("light")} / ${bgIn("dark")})`);
+  ok(liveBg(1) === edgeHex("dark"), `(lr-cols) a live lmin drag repaints the dark column from the 875 stop (got ${bgIn("dark")})`);
+  ok(app.querySelectorAll(".compare-col-label").length === 2, "(lr-cols) each column keeps its label through the patch");
+}
+
+// ── (ty-ex2) / (geo-ex2) the pinned example is a Light and a Dark wrapper in Typography and Geometry too ──
+for (const [sec, setup] of [["typography", () => { app.typeSegment = "scale"; }], ["geometry", () => { app.geomSegment = "ramp"; }]]) {
+  app.setSection(sec); setup(); app.render(); flushRaf();
+  const wr = app.querySelectorAll(".example-scheme");
+  const tag = sec === "typography" ? "ty-ex2" : "geo-ex2";
+  ok(wr.length === 2 && wr[0].classList.contains("canvas-scheme-light") && wr[1].classList.contains("canvas-scheme-dark"), `(${tag}) the ${sec} .seg-example holds 2 .example-scheme wrappers, light then dark (got ${wr.length})`);
+  ok(wr.every((w) => (w.getAttribute("style") || "").includes("--canvas-bg")), `(${tag}) each ${sec} wrapper carries its own --canvas-bg`);
+}
+app.setSection("color"); app.render(); flushRaf();
 
 // ── report ──────────────────────────────────────────────────────────────────────────
 if (fails.length) {

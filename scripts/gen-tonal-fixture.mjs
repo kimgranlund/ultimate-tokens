@@ -2,8 +2,10 @@
 // gen-tonal-fixture.mjs, regenerates test/engine/fixtures/tonal-legacy.json, the AC-003 byte-diff fixture
 // (SPEC spec-muted-base-key-spikes): every role-table default palette x EXPORT_STOPS x both ramp paths
 // (perceptual + even) at DEFAULT_CONTROLS, as hex. Run ONLY by hand, from the engine you want to pin
-// (it was first generated from the pre-intensity engine at commit 83756bb); `npm test` never runs it.
-//   node scripts/gen-tonal-fixture.mjs
+// (it was first generated from the pre-intensity engine at commit 83756bb, and recaptured wholesale at
+// #785 from the group-damper engine, `generatedFrom: "pc-U2 #785 group damper"`, see test/engine/tonal.mjs's
+// re-pin history); `npm test` never runs it.
+//   node scripts/gen-tonal-fixture.mjs "<label>"
 import { readFileSync, writeFileSync } from "node:fs";
 import * as T from "../src/engine/tonal.js";
 
@@ -14,8 +16,8 @@ for (const toneMode of ["perceptual", "even"]) {
   out.paths[toneMode] = {};
   for (const p of RT.defaults) {
     // `anchor` is deliberately OMITTED from this narrowed literal (#681 U2, re-diagnosis Finding 8):
-    // this fixture pins the LEGACY, pre-anchor ramp construction (first captured at 83756bb, before
-    // ticket #681 added the field) as a byte-diff regression check, so it must keep calling the
+    // this fixture pins the un-anchored ramp construction (first captured at 83756bb, before ticket
+    // #681 added the field; recaptured at #785) as a byte-diff regression check, so it must keep calling the
     // un-anchored `paletteStops` path on purpose. This is NOT the same "subset-object gap" #681 U2
     // fixed in model.mjs/exports.js, which silently dropped `anchor` from a call that SHOULD have
     // forwarded it, this call never should.

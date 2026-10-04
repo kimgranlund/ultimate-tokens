@@ -425,7 +425,7 @@ export const btn = (children, { variant = "ghost", cls = "", title, ariaLabel, a
     ...(Array.isArray(children) ? children : [children]),
   );
 
-// color-scheme toggles (app chrome + canvas preview): a 3-state cycle rendered icon-only.
+// color-scheme toggle (the app chrome): a 3-state cycle rendered icon-only.
 // sun = light, moon = dark, the split-circle "theme" glyph = system (follow the OS).
 export const SCHEME_ICON = { system: "theme", light: "sun", dark: "moon" };
 export const SCHEME_NEXT = { system: "light", light: "dark", dark: "system" };

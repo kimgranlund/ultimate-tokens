@@ -134,7 +134,7 @@ export class TypeSectionImpl {
   // mode drives the canvas preview + the inspector; "base" is doc.type itself. (Per-mode Compare + export
   // are the follow-up slices.) Modes persist on doc.type.modes = [{ id, name, bodyBase }].
   // _effTypeMode, the mode the ACTIVE resolvers paint in: a Compare column's _typeModeOverride wins (so its
-  // scene + scale build at THAT breakpoint while it renders, exactly like _schemeOverride), else this.typeMode.
+  // scene + scale build at THAT breakpoint while it renders, like the column scheme _inScheme sets), else this.typeMode.
   // "compare" is not a real mode id, so off-override it falls through _typeScaleFor's unknown-mode → base.
   _effTypeMode() { return this._typeModeOverride != null ? this._typeModeOverride : this.typeMode; }
 
@@ -322,7 +322,6 @@ export class TypeSectionImpl {
         ariaLabel: "Fit: reset the canvas view to centre at 100%",
         onclick: () => { this.fit(); this.render(); },
       }),
-      this.canvasThemeBtn(),
       btn(icon("minus"), { ariaLabel: "Zoom out", onclick: () => this.zoomBy(-1) }),
       h("span", { class: "zoom-readout", role: "status", "aria-live": "polite", "aria-label": "Zoom level" }, Math.round(this.viewport.zoom * 100) + "%"),
       btn(icon("plus"), { ariaLabel: "Zoom in", onclick: () => this.zoomBy(1) }),
@@ -336,54 +335,46 @@ export class TypeSectionImpl {
   // Tokens mode renders an EDITABLE token MATRIX (Phase 3, per-cell size/height overrides + ↺) (rows = steps, cols = Base + each breakpoint) in the
   // scrolling .is-table shell instead, exactly how Color's Mapping view flips (see renderCanvasArea).
   renderTypeCanvas(view) {
-    // Compare (Phase 5.3), all breakpoints side by side. A Specimen/Controls view, so it wins over the tokens
-    // table (mirrors how Color's "Both" wins over a non-table view in renderCanvasArea).
-    if (this.typeMode === "compare") return this.renderTypeCompareArea(view);
-    if (this.typeSpecMode === "tokens") return this._tokensTableArea("Typography tokens: Base + breakpoints", this.renderTypeTokensTable());
-    const area = h(
-      "div",
-      {
-        class: "canvas-area type-canvas canvas-scheme-" + this.resolvedCanvasScheme(),
-        role: "group",
-        "aria-label": "Typography specimen: drag to pan, wheel to zoom, double-click to reset",
-      },
-      h("div", { class: "canvas-scene" }, this.renderTypographyScene(view)),
-    );
-    this.wirePanZoom(area);
-    requestAnimationFrame(() => this.applyTransform());
-    return area;
+    // Breakpoint Compare is a Specimen/Controls view, so it wins over the tokens table (which has no scheme: it
+    // sits on the chrome ground, as Color's Mapping table does).
+    if (this.typeSpecMode === "tokens" && this.typeMode !== "compare") return this._tokensTableArea("Typography tokens: Base + breakpoints", this.renderTypeTokensTable());
+    return this.renderTypeCompareArea(view);
   }
 
 
-  // renderTypeCompareArea, the Typography "Compare" mode: the specimen rendered at Base AND each breakpoint
-  // mode, side by side, inside ONE pannable .canvas-scene (so pan/zoom/fit move all columns together).
-  // Mirrors Color's renderCompareArea; each column forces its breakpoint via _typeModeOverride while it builds.
+  // renderTypeCompareArea, the Typography canvas: the specimen rendered in Light AND Dark, side by side, for every SHOWN
+  // breakpoint, inside ONE pannable .canvas-scene (so pan/zoom/fit move all columns together). One column per
+  // (scheme, shown breakpoint), light columns first: at one breakpoint that is 2 columns, in breakpoint Compare
+  // (mode "compare") 2 x (1 + modes.length), each column forcing its breakpoint via _typeModeOverride while it builds.
   renderTypeCompareArea(view) {
-    const modes = this._typeEffectiveModes();
+    const modes = this.typeMode === "compare" ? this._typeEffectiveModes() : null;
+    const breakpoints = modes ? [["base", "Base"], ...modes.map((m) => [m.id, m.name || "Mode"])] : [[null, null]];
     const area = h(
       "div",
-      { class: "canvas-area canvas-compare type-canvas canvas-scheme-" + this.resolvedCanvasScheme(),
-        role: "group", "aria-label": "Compare: every typography breakpoint side by side · drag to pan, wheel to zoom" },
+      { class: "canvas-area canvas-compare type-canvas",
+        role: "group", "aria-label": "Typography specimen, Light and Dark side by side · drag to pan, wheel to zoom" },
       h("div", { class: "canvas-scene compare" },
-        this._typeCompareColumn(view, "base", "Base"),
-        ...modes.map((m) => this._typeCompareColumn(view, m.id, m.name || "Mode"))),
+        ...["light", "dark"].flatMap((scheme) =>
+          breakpoints.map(([modeId, name]) => this._typeCompareColumn(view, scheme, modeId, name)))),
     );
     this.wirePanZoom(area);
     requestAnimationFrame(() => this.applyTransform());
     return area;
   }
 
-  _typeCompareColumn(view, modeId, label) {
-    this._typeModeOverride = modeId; // force _activeType()/_activeTypeScale() while this column's scene builds
-    const scene = this.renderTypographyScene(view);
-    this._typeModeOverride = null;
-    return h(
-      "div",
-      { class: "compare-col canvas-scheme-" + this.resolvedCanvasScheme(), style: "--canvas-bg:" + this.canvasBg() },
-      h("div", { class: "compare-col-label" }, label),
-      scene,
-    );
+  // _typeCompareColumn, one (scheme, breakpoint) column. `modeId` null = the active breakpoint (one-breakpoint view);
+  // otherwise it forces that breakpoint while the column's scene builds. The label names the scheme, and
+  // the breakpoint when Compare shows several.
+  _typeCompareColumn(view, scheme, modeId, name) {
+    const schemeLabel = scheme === "dark" ? "Dark" : "Light";
+    this._typeModeOverride = modeId; // force the active type resolvers to THAT breakpoint while this column's scene builds (null = the active one)
+    try {
+      return this._schemeColumn(scheme, name ? name + " · " + schemeLabel : schemeLabel, () => this.renderTypographyScene(view));
+    } finally {
+      this._typeModeOverride = null;
+    }
   }
+
 
   // _typeOverridesFor / _typeEffectiveModes / _typeScaleFor / _typeModeScales / _modeTierNudge are now
   // PURE `doc -> ...` functions lifted into model.mjs (A1, #456), thin delegates here so the section's
@@ -613,7 +604,7 @@ export class TypeSectionImpl {
         this.panesRight ? this.paneToggle("right") : false,
         this.segmented(tabs, seg, (id) => { this.typeSegment = id; this.render(); }, { ariaLabel: "Typography inspector", idPrefix: "tytab", controls: "tyi-panel" })),
       h("div", { class: "seg-body", role: "tabpanel", id: "tyi-panel", "aria-labelledby": "tytab-" + seg }, body),
-      h("div", { class: "seg-example" }, this.typeExampleCard(view)),
+      h("div", { class: "seg-example" }, ...this.exampleSchemes(() => [this.typeExampleCard(view)])),
     );
   }
 

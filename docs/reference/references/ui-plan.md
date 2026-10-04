@@ -15,9 +15,8 @@ the arrangement moved). Supersedes the "3 lenses on one canvas" decision:
 - **canvas → the ramps as the 2D pannable NAVIGATOR** (was 3 lenses), each palette is a clickable row
   (name + `●/○` enable); the ramps *are* the palette list (the old left list moved here). Analysis went
   to the left rail; Semantic moved into the Roles panel.
-- **canvas-header → `◐ canvas color-scheme`** (preview the palette light↔dark, *independent* of the
-  app-chrome `◐`) · Fit · zoom% · + Palette (replaced the lens toggle). **Two `◐` toggles** now: app
-  chrome theme (header, dogfooded) vs canvas preview (canvas-header).
+- **canvas-header → Fit · zoom% · + Palette** (replaced the lens toggle). The canvas has no scheme
+  toggle: it draws Light and Dark side by side, so the app-chrome `◐` is the only one.
 - **right-pane → segmented `[ Palette │ Global │ Roles ]`** (was a single inspector), Palette = selected
   palette's controls; Global = global controls; Roles = the 53-role table + a small semantic preview.
 - **Bugs fixed:** gallery search no longer steals focus on type (the `<input>` is stable; only the tile
@@ -46,7 +45,7 @@ right inspector.
 
 | Section | Canvas | Inspector tabs | Notes |
 |---|---|---|---|
-| Color | `canvasView` of Palettes, Scrims, Mapping (the semantic-mapping table, the only table view) or Radix; `colorMode` of `system`, `light`, `dark` or `both`, where `both` renders the scene twice side by side through `renderCompareArea`, except in the Mapping view, whose table already shows both modes and renders once | palette, global and roles, plus a story tab when the document carries a curated story | the original surface of Revision A |
+| Color | `canvasView` of Palettes, Scrims, Mapping (the semantic-mapping table, the only table view) or Radix; the scene always renders twice side by side, a Light and a Dark column, through `renderCompareArea`, except in the Mapping view, whose table has no scheme and renders once | palette, global and roles, plus a story tab when the document carries a curated story | the original surface of Revision A |
 | Typography | a `typeSpecMode` segment of `specimen` or `tokens`, and `typeMode` breakpoint modes (base plus each mode, `compare` labeled All; Tablet and Mobile are live from `typeEffectiveModes` until a mode is materialized) | `typeSegment` of scale, fonts and specimen, in `renderTypeInspector` | the Specimen view renders each step in the real face |
 | Geometry | a `geomSpecMode` segment of `controls` or `tokens`, and `geomMode` breakpoint modes (base plus each mode, `compare` labeled All; Tablet and Mobile are live from `geomEffectiveModes` until a mode is materialized) | `renderGeomInspector` with ramp, `radius` and space tabs | per-step text size composes from the Type scale, except in the ladder prototype ramp, which derives its own text size from each step height |
 
@@ -64,7 +63,7 @@ them the curated color categories (`CATEGORY_INDEX`). Opening one enters the cat
 state: `this.category` is a category slug or `null` (the hub), and that category's volumes of curated
 presets load lazily on entry. A preset opens as an editable copy in your own sets. Import, project load and New sit in the gallery header.
 
-**Persistence.** The document persists per set; `colorMode` and the other app preferences persist per
+**Persistence.** The document persists per set; the app preferences (`theme`, `motion`, `fontMode`) persist per
 app and never with the document (see the state table in `docs/lld/app-shell.md`).
 
 ## 1. Why it exists (the reasoning the shell traces to)
@@ -90,7 +89,7 @@ tasks:
   T10 tune-type:       the Typography section: scale, fonts, specimen
   T11 tune-geometry:   the Geometry section: ramp, radius, space
   T12 manage-modes:    add or edit breakpoint modes for Typography and Geometry
-  T13 compare:         all breakpoints (Typography, Geometry) or Light and Dark (Color) side by side
+  T13 compare:         all breakpoints (Typography, Geometry), each in Light and Dark; Color always shows Light and Dark
 
 decisions:                                        # what makes it operational, not a metric wall
   D1 is-this-palette-good?:    [adjust controls, accept]
