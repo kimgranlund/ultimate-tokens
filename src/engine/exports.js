@@ -28,21 +28,16 @@
 // state is UI-only-aware: theme is NEVER read here, so output is identical for
 // theme light/dark/auto.
 
-import { paletteStops, EXPORT_STOPS } from "./tonal.js";
-import { semanticRoles, refKey, refPath, refSlug, roleLeaf, applyRoleOverrides, applyOnColorContrast, applyAccentRef, isAchromaticRef, DEFAULT_THEMES } from "./semantic.js";
+import { refKey, refPath, refSlug, roleLeaf, isAchromaticRef, DEFAULT_THEMES } from "./semantic.js";
 import { COLLECTIONS } from "./collections.js";
-import { resolveControls } from "./controls.mjs";
-import { primeSwatches, PRIME_STEPS, primeSlug } from "./prime.mjs";
+import { compute, slug, relLum } from "./layers.mjs"; // slug: the palette-name token prefix the roles are keyed on
+import { PRIME_STEPS, primeSlug } from "./prime.mjs";
 import { oklchToRgb } from "./okhsl.js";
-import { rampChromaOf, primeChromaOf } from "./resolve.mjs";
 import { cssFontStack } from "./type.mjs";
 
-// WCAG relative luminance of an [r,g,b] (0..255) triple, for the opt-in contrast on-color pick.
-// Exported: ds-export.js's dsContrast also needs it (kept as one source, not a duplicate).
-export const relLumExp = (rgb) => {
-  const c = rgb.map((v) => { const s = v / 255; return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; });
-  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
-};
+// WCAG relative luminance of an [r,g,b] (0..255) triple: layers.mjs's relLum (the role chain's
+// on-color input), re-exported under this name for ds-export.js's dsContrast (one source).
+export const relLumExp = relLum;
 
 // ── Export schema version (SPEC 0.3.0 RP-8, ticket #577, plan PR #571 step E6) ────────────────
 // One constant stamped on every surface that can carry it: JSON meta.schemaVersion; DTCG
@@ -68,15 +63,6 @@ export const SCRIM_BASES = [500];
 export const SCRIM_STEPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
 
 // ── Small hand-rolled helpers ─────────────────────────────────────────────────
-
-// slug, palette name -> token namespace: lowercase, non-alphanumeric -> '-',
-// trimmed of leading/trailing '-'. "Neutral" -> "neutral", "On Surface" -> "on-surface".
-function slug(name) {
-  return String(name)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 // isDataPalette, true for a data-family palette by its SLUG ("data-1".."data-8" convention; #503
 // REQ-020..024). The public/exported twin of model.mjs's local isDataSlug helper (mintDataPalettes /
@@ -210,43 +196,12 @@ function enabledPalettes(state) {
   return (state.palettes ?? []).filter((p) => p.on !== false);
 }
 
-// derivePalette, everything an emitter needs for one palette, computed once:
-//   slug, the 25 solid stops keyed by pad3, a stop->rgb lookup, the 11 scrims,
-//   the 53 resolved semantic roles, and a ref->rgb resolver shared by all formats.
-function derivePalette(palette, controls, overrides) {
-  const n = slug(palette.name);
-  const ctl = {
-    curve: controls.curve,
-    tension: controls.tension,
-    lmin: controls.lmin,
-    lmax: controls.lmax,
-    damp: controls.damp,
-    dampCurve: controls.dampCurve,
-    dampAmp: controls.dampAmp,
-    dampBias: controls.dampBias,
-    hueSpace: controls.hueSpace,
-    toneMode: controls.toneMode,
-    vibrancy: controls.vibrancy,
-    relChroma: controls.relChroma,
-    chromaFloor: controls.chromaFloor,
-  };
-  // accent-ref-resolved roles ("single" → prime accent 500/500), computed before the ramp, reused below
-  // for the on-color-contrast step so it's derived once per palette.
-  const accentRoles = applyAccentRef(semanticRoles(n), controls.accentRef);
-  // rampChroma/primeChromaResolved (SPEC 0.3.0 REQ-002/004/008, Risk 0b: "one shared resolver
-  // imported by both, never two copies"), engine/resolve.mjs's OWN pure functions, the SAME ones
-  // model.mjs's projectView calls, so the CSS/JSON/DTCG/… exports and the canvas agree byte for
-  // byte by construction, not by two hand-kept-in-sync formulas. `palette.group` arrives ALREADY
-  // resolved (a definite one of the four ids, never absent), model.mjs's stateOf() stamps it
-  // before this file ever sees the palette, so no by-name default rule is duplicated here either.
-  const rampChroma = rampChromaOf(palette, controls.paletteGroups, controls);
-  const primeChromaResolved = primeChromaOf(palette, controls.paletteGroups, controls);
-  const stopList = paletteStops(
-    { hue: palette.hue, chroma: rampChroma, skew: palette.skew, lift: palette.lift, hueShift: palette.hueShift, hueSameDir: palette.hueSameDir, cuspPull: palette.cuspPull, anchor: palette.anchor },
-    ctl,
-    EXPORT_STOPS,
-  );
-
+// derivePalette, everything an emitter needs for one palette, read off its compute(doc) entry
+// (layers.mjs: the 25-stop ramp, the prime swatches, the resolved role refs): the slug, the 25
+// solid stops keyed by pad3, a stop->rgb lookup, the 11 scrims, the 53 roles with each ref resolved
+// to a color, and the prime swatches by step. The canvas (model.mjs projectView) reads the SAME
+// compute entry, so the two can never resolve a chroma, a ramp or a role differently.
+function derivePalette({ palette, n, stops: stopList, prime: primeList, roles: roleRefs }) {
   // stop (number) -> rgb int triple, for ref resolution.
   const byStop = new Map();
   const stops = {}; // { [pad3]: {rgb, hex, tone, chroma} }
@@ -282,13 +237,9 @@ function derivePalette(palette, controls, overrides) {
     return { rgb: byStop.get(base), frac: step / 1000 };
   };
 
-  // The 53 semantic roles, with each ref pre-resolved to a concrete color for
-  // BOTH modes. semanticRoles is keyed on the slug (so keys are name-prefixed).
-  // on-color policy: "contrast" mode flips the accent on-colors to the better-contrasting end
-  // BEFORE per-doc overrides (so an explicit override still wins). No-op in the default "fixed" mode.
-  const lumOf = (ref) => { const rgb = byStop.get(Number(ref)); return rgb ? relLumExp(rgb) : 0; };
-  const onAdjusted = applyOnColorContrast(accentRoles, n, lumOf, controls.onColorMode);
-  const roles = applyRoleOverrides(onAdjusted, overrides).map((r) => {
+  // The 53 semantic roles (compute's role chain, keyed on the slug), each ref pre-resolved to a
+  // concrete color for BOTH modes.
+  const roles = roleRefs.map((r) => {
     const L = resolveRef(r.light);
     const D = resolveRef(r.dark);
     return {
@@ -309,23 +260,7 @@ function derivePalette(palette, controls, overrides) {
   const keyColors = keyColorsRaw.map((kc) => ({ ...kc, rgb: oklchToRgb(kc.oklch[0], kc.oklch[1], kc.oklch[2]) }));
 
   // prime, the seven per-palette identity swatches (REQ-050..057), on their OWN OKHSL ladder,
-  // independent of the ramp above; mode-independent (R2), one set per palette. Built from
-  // prime.mjs's own primeSwatches(), never reimplemented here (same call shape model.mjs's
-  // projectView uses: the full `controls` object, not the ramp-only `ctl` slice, since
-  // primeSwatches reads controls.hueSpace/primeChroma, neither of which `ctl` needs). `chroma` is
-  // the palette's OWN unresolved value (REQ-002: the ramp target above never feeds this); `primeChroma`
-  // is cleared on the palette so prime.mjs's own `palette.primeChroma ?? controls.primeChroma` falls
-  // straight through to the value already resolved above (REQ-008), prime.mjs itself never changes.
-  // `anchor` (ticket #681, U1) forwards straight through: prime.mjs's own branch is a no-op when it
-  // is absent (byte-identical to the pre-#681 call below), and this is the ONLY site that resolves a
-  // palette down into the primeSwatches() call for every emitted export format, omitting it here
-  // would leave `prime.DEFAULT` cusp-derived in every real export while `primeSwatches()` called
-  // directly (as the anchor-identity test does) rendered the anchor, a silent split between the two
-  // that C2/C4 (test/engine/anchor.mjs) exist specifically to catch.
-  const primeList = primeSwatches(
-    { hue: palette.hue, chroma: palette.chroma, skew: palette.skew, hueShift: palette.hueShift, hueSameDir: palette.hueSameDir, anchor: palette.anchor, primeChroma: undefined },
-    { ...controls, primeChroma: primeChromaResolved },
-  );
+  // independent of the ramp above; mode-independent (R2), one set per palette, by step.
   const prime = {}; // { [step]: {step, l, s, hue, rgb, hex, oklch, inGamut} }
   for (const sw of primeList) prime[sw.step] = sw;
 
@@ -338,9 +273,10 @@ function derivePalette(palette, controls, overrides) {
 
 // derivedAll, every enabled palette derived, in State order. Exported: ds-export.js's DS-bundle
 // layer derives from the SAME resolved roles (dsColorRoles/dsSemanticLayer/dsFullLayersCss).
-export function derivedAll(state) {
-  const controls = resolveControls(state);
-  return enabledPalettes(state).map((p) => derivePalette(p, controls, state.roleOverrides));
+// `computed` (optional): a compute(state) result the caller already holds (projectView passes its
+// own, every palette); absent, only the enabled palettes are computed.
+export function derivedAll(state, computed = compute({ ...state, palettes: enabledPalettes(state) })) {
+  return computed.palettes.filter(({ palette }) => palette.on !== false).map(derivePalette);
 }
 
 // ── colorLeaf, the DTCG color leaf (ADR + knowledge-04 §4) ────────────────────

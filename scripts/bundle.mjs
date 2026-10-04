@@ -29,7 +29,7 @@ const MODS = [
   ["controls", "src/engine/controls.mjs"], // pure, imports tonal only (above); BEFORE exports (derivedAll) AND model (docControls)
   ["prime", "src/engine/prime.mjs"], // pure, imports hct/okhsl/tonal only (all above); BEFORE exports/ds-export
   // (which import it for the prime-emitter block, #550) AND model (which imports it, #533 P3)
-  ["layers", "src/engine/layers.mjs"], // pure registry, imports the engines above (controls/resolve/tonal/prime/semantic/type/geometry); nothing imports it yet
+  ["layers", "src/engine/layers.mjs"], // pure registry, imports the engines above (controls/resolve/tonal/prime/semantic/type/geometry); exports.js and model.mjs import its compute (U3)
   ["exports", "src/engine/exports.js"],
   ["dsExport", "src/engine/ds-export.js"], // the DS-bundle subsystem (TKT-0015); imports from `exports`, so after it
   ["figmaPlugin", "src/ui/figma-plugin-assets.js"], ["mcpAssets", "src/ui/mcp-assets.js"], ["describeMcpAssets", "src/ui/describe-mcp-assets.js"], ["typeFonts", "src/ui/type-fonts.js"],
