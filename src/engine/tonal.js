@@ -577,9 +577,9 @@ export function liftStop(stop, lift) {
 // formula this copy computed). U2's anchored branches (okhslStopsAnchored/paletteStopsAnchored, below
 // and in the anchored branch of okhslStops) call the single export above; this second copy is deleted.
 //
-// anchorChromaBasis(stop, anchorStop, lift, anchorValue, groupValue) -> the BASIS chromaEnvelope's
-// shoulder/damp multiplier gets applied to (Q-U2-5 ruling, addendum 2, u2-p2-brief.md, 2026-09-18):
-// the anchor's own measured chroma/saturation exactly AT the pivot (w=0), blending to `groupValue` (the
+// anchorChromaBasis(stop, anchorStop, lift, anchorValue, groupValue) -> the EVEN path's BASIS
+// chromaEnvelope's shoulder/damp multiplier gets applied to (Q-U2-5 ruling, addendum 2, u2-p2-brief.md,
+// 2026-09-18): the anchor's own measured chroma exactly AT the pivot (w=0), blending to `groupValue` (the
 // palette's `chroma`, always 100 since #785: the group mutes the ramp afterwards, in `dampStops`) at each side's true endpoint (w=1), BY
 // THE LIFTSTOP POSITION - the SAME `sd` chromaEnvelope itself keys on, not `anchorWarp`'s skew-warped
 // `w` (a local construction this ruling retired: tying the chroma BLEND to skew was never asked for,
@@ -597,19 +597,16 @@ export function liftStop(stop, lift) {
 // with a kink. `chromaEnvelope` itself stays verbatim (untouched) - only the BASIS this weight blends
 // is different; the envelope's own shoulder/damp shaping is unaffected.
 //
-// Capped at the anchor (#725 U2, owner ruling R69, reverses Q-U2-5 for perceptual and peak): the group
-// target the blend walks toward is `min(groupValue, anchorValue)`, so a muted sample in a vivid group no
-// longer climbs toward the group's chroma on either side of the pivot (the climb is what put perceptual
-// stop 300 at a 94% median of stop 500 and every anchored peak ramp above its own anchor). Since #785 the
-// group value here is always 100, so the target is the anchor's own value; a muted group damps after. `climb = true`
-// keeps the pre-R69 blend for the EVEN path (`paletteStopsAnchored`), which #701 owns and this ruling
-// does not move.
-export function anchorChromaBasis(stop, anchorStop, lift, anchorValue, groupValue, climb = false) {
+// Even only (#725 U2, owner ruling R69, reverses Q-U2-5 for perceptual and peak): the OKHSL anchored
+// path (`okhslStopsAnchored`) holds the anchor's own `s` as its basis at every stop and does not call
+// this, so a muted sample no longer climbs toward the group on either side of the pivot (the climb is
+// what put perceptual stop 300 at a 94% median of stop 500 and every anchored peak ramp above its own
+// anchor). The EVEN path (`paletteStopsAnchored`), which #701 owns and R69 does not move, keeps the climb.
+export function anchorChromaBasis(stop, anchorStop, lift, anchorValue, groupValue) {
   const sd = Math.abs(liftStop(stop, lift) - liftStop(anchorStop, lift)) / 450;
   const t = Math.min(1, sd);
   const w = t * t * (3 - 2 * t); // smoothstep: w(0)=0, w(1)=1, w'(0)=w'(1)=0
-  const target = climb ? groupValue : Math.min(groupValue, anchorValue);
-  return anchorValue + (target - anchorValue) * w;
+  return anchorValue + (groupValue - anchorValue) * w;
 }
 
 // toneAt, L* for a stop given per-palette skew/lift and the tone controls.
@@ -647,8 +644,9 @@ function hexToRgbLocal(hex) {
 // ACHROMATIC_ANCHOR_C (Ticket #739, Q2 ruled 0.002) - an anchor's OKLab chroma below this is
 // achromatic: a grey, white, or black source whose stored hue is rounding residue, not a color
 // anyone chose. An achromatic anchor still contributes its own lightness and (near-zero) chroma
-// at the pivot - see anchorChromaBasis - but no hue: the ramp takes the palette's own stored hue
-// instead (Q1 (a)), on both anchored branches below. OKLab chroma is the test, not CAM16 chroma:
+// at the pivot (on perceptual and peak, the anchor's own okhsl s read directly in
+// okhslStopsAnchored, not routed through anchorChromaBasis) but no hue: the ramp takes the
+// palette's own stored hue instead (Q1 (a)), on both anchored branches below. OKLab chroma is the test, not CAM16 chroma:
 // CAM16 chroma of a neutral is not 0 in this implementation (see rgbToOklabChroma's own comment).
 // One 8-bit code off exact grey reads ~0.0012-0.0018; the constant sits just above that noise
 // floor, below the two-codes-off reading (~0.003), so only rounding residue crosses it.
@@ -889,7 +887,7 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
       const mc = maxChromaInGamut(h, tone);
       const anchorIntendedH = controls.relChroma ? anchorRelFrac * mc : anchor.cam.chroma;
       const groupIntendedH = controls.relChroma ? (palette.chroma / 100) * mc : groupTarget;
-      const intendedH = anchorChromaBasis(stop, 500, lift, anchorIntendedH, groupIntendedH, true); // even keeps the climb (#725 R69 scope)
+      const intendedH = anchorChromaBasis(stop, 500, lift, anchorIntendedH, groupIntendedH);
       return evenChroma(mc, intendedH, env, controls.chromaFloor, floorRefAt(hRef, mc, pivotTone, tone450, tone550));
     };
     let resolvedHue = seedHue;
@@ -1341,22 +1339,16 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
     const l = lerp(evenL, peakL, t);
     const sp = (stop - 500) / 450;
     const dir = sameDir ? -Math.abs(sp) : sp;
-    // Saturation basis (re-diagnosis Finding 1, Q-U2-5 ruled): routed through the shared
+    // Saturation basis (re-diagnosis Finding 1, Q-U2-5 ruled, then #725 R69): routed through the shared
     // `chromaEnvelope`, keyed on `liftStop` (dropping `anchorLiftPos`'s own separate lift-position/
     // damping math entirely - the envelope's own `sd = (liftStop(stop,lift) - liftStop(anchorStop,
     // lift))/450` already IS that computation, parametrized so env(500)=1 exactly for any lift). The
-    // BASIS multiplied by that envelope is `anchorChromaBasis` (see its own header comment, shared
-    // verbatim with `paletteStopsAnchored`): the anchor's own OKHSL `s` at the pivot (liftStop position
-    // 0), shading to `palette.chroma/100` (always 1 since #785, the group damps after), mirroring `okhslStops`'s
-    // own `s = (palette.chroma/100)*m` formula exactly - at each side's endpoint (liftStop position 1),
-    // by the SAME liftStop position the envelope itself keys on. No notch by construction: env(500)=1
-    // and the basis's own liftStop position is 0 at the pivot, so `s` reduces to `anchor.okhsl.s`
-    // exactly as a stop approaches 500. Unlike the CIE-L* path, `s` never reads the resolved hue; the
-    // damped `s` itself is holdTone's (below).
+    // BASIS multiplied by that envelope is the anchor's own OKHSL `s` at every stop (R69: no climb
+    // toward the group, see `anchorChromaBasis`'s header comment; the group damps after, in `dampStops`).
+    // No notch by construction: env(500)=1, so `s` reads `anchor.okhsl.s` exactly at the pivot. Unlike
+    // the CIE-L* path, `s` never reads the resolved hue; the damped `s` itself is holdTone's (below).
     const env = chromaEnvelope(stop, 500, palette.lift ?? 0, controls);
-    const anchorIntendedS = anchor.okhsl.s;
-    const groupIntendedS = Math.min(1, Math.max(0, palette.chroma / 100));
-    const intendedS = anchorChromaBasis(stop, 500, palette.lift ?? 0, anchorIntendedS, groupIntendedS);
+    const intendedS = anchor.okhsl.s;
     // hueSpace: "oklch" emits the anchor's own OKLCH hue, no per-stop solveOkhslHue (#725 revision 8:
     // OKHSL hue is OKLab hue, so the solve was the identity reading the 8-bit staircase; see this
     // function's header comment). "cam16" keeps hOkSeed, the same number.

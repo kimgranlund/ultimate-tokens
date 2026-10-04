@@ -503,6 +503,7 @@ const RAMP_WINDOW_ALLOW = [
 // - compared by name, not count (N1's own lesson, applied here too). Q-U2-5's own REQ-002 chroma-basis
 // tension is RULED (the anchor's own value at the pivot, blending to `rampChroma` at the ends by
 // liftStop - see `anchorChromaBasis`'s own header comment in tonal.js), not an open question any more.
+// #725 R69 later held perceptual and peak at the anchor's own value; only the even path keeps the blend.
 // Gap growth attribution, corrected (review pass 3, Finding 6): from `0849f67`'s own 69, each of the
 // three review-pass-2 changes measured ALONE (not combined) moves the count: R6 alone 69 -> 76 (+7,
 // the single largest factor), the R3 hue solve alone +2, the smoothstep chroma-basis easing (R2) alone

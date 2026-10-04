@@ -125,10 +125,10 @@ chromaEnvelope(stop, anchorStop, lift, controls):        # src/engine/tonal.js, 
   printed and not gated.
 - **Anchored palettes take a different branch of this same pipeline.** `paletteStopsAnchored` and
   `okhslStopsAnchored` call the SAME `chromaEnvelope`; what differs is the tone construction
-  (`anchorLerp`, `toneAt` re-mapped per side through the pivot) and the chroma BASIS
-  (`anchorChromaBasis`, a smoothstep blend from the anchor's own measured chroma at the pivot toward
-  `min(groupValue, anchorValue)` at each end on perceptual and peak, toward `groupValue` itself on even
-  (`climb = true`); `groupValue` is always 100 since #785, and a group's Base
+  (`anchorLerp`, `toneAt` re-mapped per side through the pivot) and the chroma BASIS (the anchor's
+  own OKHSL `s` at every stop on perceptual and peak; on even, `anchorChromaBasis`, a smoothstep blend
+  from the anchor's own measured chroma at the pivot toward `groupValue` at each end;
+  `groupValue` is always 100 since #785, and a group's Base
   chroma damps the whole ramp afterwards in `dampStops`). Stop 500 returns the stored `anchor` verbatim unless the
   source sits outside `[9.95, 95.05]` L\*. See SKILL.md's anchored-branch rule and knowledge-02 §9.
 - **Defaults `dampCurve 1.5, dampAmp 0, dampBias 0` reproduce the legacy `1 − (damp/100)·u^1.5` edge damp

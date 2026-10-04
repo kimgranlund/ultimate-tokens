@@ -26,6 +26,12 @@ they landed on `main` and reference the squash-merged PR that introduced them.
   before in perceptual and peak; in even mode the default Neutral moves slightly (3 of 19 hexes).
   Saved documents are not migrated: a kit saved with material 30, or any group below 100, now loads
   muter than before. To get the at-100 look back, raise that group's Base chroma slider to 100.
+  Curated presets that carry a group base chroma below 100 render differently too: Adia (material 25,
+  brand 41, system 32, data 27) is one, and its committed exports moved (368 of the 514 opaque OKLCH
+  variables in `adia-oklch-export.css`, mean chroma 0.0586 to 0.0495).
+  Perceptual and peak now hold an anchored palette at its anchor's own OKHSL saturation at every
+  stop. No curated preset or default palette moves, but an anchor at the sRGB gamut edge (OKHSL
+  saturation above 1, such as `#550088`) can move by up to about 1.4 CAM16 chroma off stop 500.
 - **Breaking: the prime centre step is the bare `--{pfx}-{n}-prime`** (#789). The CSS variable (and the
   Tailwind `--color-{n}-prime`) for the centre swatch of each palette's `prime` group was the doubled
   `--{pfx}-{n}-prime-prime`; it is now `--{pfx}-{n}-prime`. The other six steps keep their names
