@@ -2,21 +2,39 @@
 kind: criteria-review
 plan: parallel-batch
 seat: verifier
-pass: 1
+pass: 2
 ticket: 786
 written: 2026-10-04
 ---
 
-# parallel-batch criteria review · pass 1 · 🔴 at `2d19f63e`
+# parallel-batch criteria review · pass 2 · 🔴 at `580df2dd`
+
+Current state: pass 2 🔴 at `580df2dd` (revision 1, ticket #786). Four of pass 1's six reds are closed: C2.4, C3.3, C4.2 and C4.3. Two remain, both in the rewording. (1) C4.4 counts `^✗` lines, but the shim prints each failure as `"  ✗ " + f` (`test/ui/headless-boot.mjs:4214`, two leading spaces), so the count is `0` whether `(b2)` passes or fails and the planted control cannot raise it. (2) C7.2's `echo "exit $?"` follows a pipe into `grep -c`, so it prints grep's status, not `citations.mjs`'s: a correct build (count 1 or more) prints `exit 0`, the opposite of the row's Expected `exits 1`. The rest of the revision (Q1 B moving U5 and U7 to wave A, Q2 A, Q3 B) changes no row's checkability. Pass 1 follows as history.
+
+verdict: 🔴
+sha: 580df2dddfbdba2d840aaf0f968d7be67680dfaa
+
+## Rows
+
+| # | State | Check I would run | Why / what to change, and the control |
+|---|---|---|---|
+| C2.4 | 🟢 | `awk '/^## 1/,/^## 2/' .sdlc/adapter.md \| grep -c ...`; `baseline-agrees \| grep -c "ok    head:"` equal to the base | the paragraph placed after `## 2.` drops the slice count to `0` |
+| C3.3 | 🟢 | the purity grep on `names.mjs` | `document.title;` planted prints one line |
+| C4.2 | 🟢 | shim `tail -1` = `HEADLESS BOOT PASS`; `grep -c "(b3)"` in the source, 2 or more | the C4.1 clone prints `  ✗ (b3) ArrowDown on Roles ...` (an unanchored grep finds it) |
+| C4.3 | 🟢 | shim `tail -1`; `grep -c "(b3) .*keeps roles"` = `3` | the C4.1 clone prints three `✗ (b3) ... keeps roles` lines |
+| C4.4 | 🔴 | `node test/ui/headless-boot.mjs 2>&1 \| grep -c "^✗.*(b2)\|..."` | Dead count: failures print as `"  ✗ " + f` (`:4214`), so `^✗` never matches and the `_deselect` control still reads `0`. Drop the `^` anchor (or anchor on `^  ✗`); the `tail -1` and smoke parts of the row are fine |
+| C7.2 | 🔴 | the `sed` on `noun: "roles?"`, then the run | The `sed` and the base control work: run at `580df2dd`, the run exits `0` and `grep -c 'roles per palette'` prints `0`, which is the gap. But `echo "exit $?"` after the pipe prints grep's status (`exit 1` on that base run, where the count was `0`), so on a correct build it prints `exit 0` and cannot show the Expected `exits 1`. Capture the run's own status: `node test/repo/citations.mjs > out 2>&1; echo "exit $?"; grep -c 'roles per palette' out` |
+
+Rows C1 to C6, C1.1 to C3.4 other than those above, C4.1, C4.5, C5.1 to C6.5, C7.1, C7.3 and C8.1 to C8.8 are unchanged in revision 1 and stay 🟢 as in pass 1. U5 and U7 moving to wave A changes no check: their criteria read their own files at the unit base.
+
+## Pass 1 · 🔴 at `2d19f63e`: six rows whose command or control could not work
 
 Current state: pass 1 🔴 at `2d19f63e` (revision 0, draft, ticket #786 and five more). 38 of 44 rows are checkable. Six are not, because their command or control cannot fail or pass the way the row says: C2.4, C3.3, C4.2, C4.3, C4.4 and C7.2. The main cause: `test/ui/headless-boot.mjs` `ok()` (`:17`) only pushes failures and never prints a passing line, so every row that greps for `ok` lines reads nothing whether the unit is built or not. Each fix is a wording change in the plan; no unit design moves.
 
-verdict: 🔴
-sha: 2d19f63e
 
 Facts read at `2d19f63e` (root `main`, read-only): `ok = (cond, msg) => { if (!cond) fails.push(msg); }` at `headless-boot.mjs:17`; `baseline-agrees-check.sh` prints `ok    head:` once today (`grep -c` = `1`); `test/engine/flags.mjs` verifies the feature-flag substrate (`flags.js`), not DOM use; `bundle.mjs` preflight (c) at `:100` reds an import that has no KEY entry; `even-dips-gate.mjs` has `--floor-scale` (`:74`) and `DID NOT bite` (`:24`); `type.mjs` carries `2026-07-16` 4 times; `claude-plugin.md` has 3 `fix-old-names: keep` markers; the citations pin `roles per palette` (`:91`) has noun `roles?` and needle `a 53-role`.
 
-## Rows
+### Pass 1 rows
 
 | # | State | Check I would run | Why / what to change, and the control |
 |---|---|---|---|
