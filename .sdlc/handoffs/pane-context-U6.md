@@ -55,3 +55,15 @@ Sweep (`in all three tone modes`, `byte for byte`, `byte-identical`, plus an anc
 | `bash .sdlc/checks/baseline-agrees-check.sh` | `stale total: 0` (ui.html KB did not move, no Correction line) |
 | `node test/repo/em-dash.mjs` | clean (1152 files) |
 | `sh .sdlc/checks/card-amendment-check.sh` | `stale total: 0` |
+
+## Pass 2 continuation (rework note `pane-context-U6-rework.md`, reviewer p2 PASS sweep notes)
+
+| # | Change |
+|---|---|
+| 1 | `docs/reference/rubrics/acceptance-criteria.md` AC-T6: stop 500 `=== anchor` now "at group base chroma 100 (a group value below 100 damps the whole ramp, stop 500 included, R94)", wording copied from `quality-rubric.md` |
+| 2 | `test/engine/anchor.mjs` C3 header (`// ── anchor-ramp` block): same qualifier, comment lines only, non-comment changed lines `0` |
+| 3 | SPEC banner `:14`: "The byte identity ..." capitalised |
+| 4 | Chose to NAME, not correct: the banner now lists REQ-001's shipped defaults (`:73`), REQ-003's "Neutral (29 vs 30)" (`:95`), AC-007's `chroma 30` Neutral ramp (`:443`), G2 (`:659`) and the Open follow-up (`:665`) as the pre-#785 record that stays as written (EX-2 was already named). Reason: these are ratified-history rows of a superseded-in-part SPEC, and the banner is the SPEC's own mechanism for that |
+| 5 | Multi-line re-sweep (whitespace-collapsed, `stop 500` near `anchor` plus an equality word, over `docs/`, `.claude/skills`, `plugin/`, `mcp/`, `src/`, `test/`, `.sdlc/records`): one more live hit fixed, `glossary.md` Lift entry ("stop 500 stays byte-exact to the anchor at any lift") now carries "(at group base chroma 100, R94)". Already qualified or about the pre-damper construction, left: ADR-026 body and amendments, `knowledge-02` `:264` `:428` and the rows below, `anchor.mjs:1503-1507`, `tonal.mjs` construction comments |
+
+Not touched, out of lane (src comments, editing them moves the bundles): `src/engine/tonal.js:633` ("renders stop 500 as that anchor's OWN color VERBATIM, in every tone mode", the anchored builder's own contract, true before `dampStops` runs) and `src/ui/persist.js:150` ("the ramp's stop 500 renders verbatim"). The Orchestrator can widen the lane if wanted.

@@ -461,7 +461,8 @@ const DUPE_ALLOW = [
 
 // ── anchor-ramp (U2, ticket #681): C3 ramp pass-through + C5 monotone/distinct ─────────────────────
 // C3: for every anchored palette, paletteStops(...) stop 500 equals `anchor` in each of perceptual,
-// peak, even, EXCEPT the named, counted window-clamp population (Q3 (b), same shape as U1's
+// peak, even, at group base chroma 100 (a group value below 100 damps the whole ramp, stop 500
+// included, R94), EXCEPT the named, counted window-clamp population (Q3 (b), same shape as U1's
 // anchor-ladder allow-lists): the RAMP itself clamps for a source whose CIE L* falls outside
 // [RAMP_L_MIN, RAMP_L_MAX], landing stop 500 at the pivot the OTHER stops are shaped around instead
 // of the verbatim anchor pixel (see tonal.js's own comment on why: forcing the verbatim anchor there
