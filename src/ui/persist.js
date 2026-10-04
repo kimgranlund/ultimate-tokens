@@ -146,8 +146,8 @@ export const DOMAINS = {
     // emit/accept (case-folding fixed per the U1 review's F3, 2026-09-18), never a number to clamp
     // toward a bound, so "kind: hex" is its own domain: a well-formed value normalizes, anything else
     // is DROPPED (like an unknown enum member). Both OPTIONAL, same absent-stays-absent shape as
-    // `group` above. `anchor` is the
-    // LIVE anchor prime.mjs's `prime` step (and, from U2, the ramp's stop 500) renders verbatim;
+    // `group` above. `anchor` is the LIVE anchor prime.mjs's `prime` step (and, from U2, the ramp's stop 500
+    // at group 100, R94 damps it below) renders verbatim;
     // `sourceAnchor` is the GENERATOR's own copy, written only by scripts/gen-categories.mjs and by
     // defaultDocument(), never by the UI, so a Reset action (Q6, U2's C12) has something to
     // re-derive `anchor` from after a hue/chroma edit detaches it (U2 wires that detach/reset; this

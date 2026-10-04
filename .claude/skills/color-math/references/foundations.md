@@ -129,8 +129,9 @@ chromaEnvelope(stop, anchorStop, lift, controls):        # src/engine/tonal.js, 
   own OKHSL `s` at every stop on perceptual and peak; on even, `anchorChromaBasis`, a smoothstep blend
   from the anchor's own measured chroma at the pivot toward `groupValue` at each end;
   `groupValue` is always 100 since #785, and a group's Base
-  chroma damps the whole ramp afterwards in `dampStops`). Stop 500 returns the stored `anchor` verbatim unless the
-  source sits outside `[9.95, 95.05]` L\*. See SKILL.md's anchored-branch rule and knowledge-02 §9.
+  chroma damps the whole ramp afterwards in `dampStops`). Stop 500 returns the stored `anchor` verbatim at group base
+  chroma 100 only (a group value below 100 damps the whole ramp, stop 500 included, R94), and only when the
+  source sits inside `[9.95, 95.05]` L\*. See SKILL.md's anchored-branch rule and knowledge-02 §9.
 - **Defaults `dampCurve 1.5, dampAmp 0, dampBias 0` reproduce the legacy `1 − (damp/100)·u^1.5` edge damp
   EXACTLY**, the `damping-curve (a)` gate compares against the independent legacy formula
   `min(target·(1−(damp/100)·u^1.5), ceiling)`, `|Δ| ≤ 1e-6`, over EVERY saturated hue × stop.

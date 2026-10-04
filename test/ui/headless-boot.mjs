@@ -1504,7 +1504,7 @@ for (const c of SI) {
 // the "colors look really wrong" fix, originally a lift fit to stop 550; ticket #681 U2 retired that
 // fit (stop 550 was never the ruled anchor token) in favor of pinning the ramp's stop 500 to the
 // palette's own stored `anchor` exactly (Q1 ruled), so the assertion now reads stop 500 directly,
-// the stop the anchor guarantees byte-exact, rather than 550's own approximate neighbourhood.
+// the stop the anchor guarantees byte-exact at group 100 (R94), rather than 550's own approximate neighbourhood.
 // Keyed on any preset whose primary source is light.
 const { projectView: _pvHH } = await import("../../src/ui/model.mjs");
 const { hydrate: _hydHH } = await import("../../src/ui/persist.js");

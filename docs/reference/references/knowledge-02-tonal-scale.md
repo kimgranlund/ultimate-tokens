@@ -12,7 +12,7 @@
 6. `paletteStops`: the per-stop pipeline
 7. Worked example
 8. Palette groups, base chroma, and the prime system (per-group whole-ramp damper, seven prime swatches)
-9. Anchored palettes (a stored source colour, exact at `prime.DEFAULT` and at stop 500)
+9. Anchored palettes (a stored source colour, exact at `prime.DEFAULT`, and at stop 500 at group base chroma 100)
 
 ---
 

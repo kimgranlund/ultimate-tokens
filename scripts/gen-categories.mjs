@@ -128,7 +128,7 @@ const palette = (name, hex, oklch, sw, fallbackHue) => {
     // re-derived through the hue/chroma rounding two lines up): `hex` here is ALREADY the sampled or
     // status swatch's own uppercase "#RRGGBB" (mapColors uppercases it; STATUS's literals are
     // authored uppercase), so it round-trips through persist.js's hex domain unchanged. `anchor` is
-    // the LIVE anchor prime.mjs's `prime` step and (U2) the ramp's stop 500 render verbatim;
+    // the LIVE anchor prime.mjs's `prime` step and (U2) the ramp's stop 500 (group 100 only, R94) render verbatim;
     // `sourceAnchor` is this generator's OWN never-user-written copy, read back by the Reset action
     // (Q6, U2's C12) after a hue/chroma edit detaches `anchor`. `direct` palettes (the brands.json
     // pass-through) are untouched here, they opt in only if their own JSON authors `anchor` (Q5).

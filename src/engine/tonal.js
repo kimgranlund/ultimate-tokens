@@ -629,13 +629,13 @@ export function toneAt(stop, skew, lift, { curve, lmin, lmax, tension }) {
 }
 
 // ── Anchored ramp (ticket #681, U2) ────────────────────────────────────────────────────────────
-// A palette carrying a valid, stored `anchor` (see persist.js DOMAINS.palette.anchor - a source hex,
-// never fitted) renders stop 500 as that anchor's OWN color VERBATIM, in every tone mode, and builds
-// the OTHER eighteen (plus six EXTRA_STOPS) stops as a two-sided ladder pivoting on (500, the
-// anchor's own lightness) - the ramp's analog of prime.mjs's anchor branch (U1), continuous in
-// `stop` where prime.mjs is seven discrete rungs. A palette with no (or malformed) `anchor` takes
-// the ORIGINAL, byte-identical path below (C4's non-anchored identity control): `resolveAnchor`
-// returns null and every other line executes exactly as it did before this ticket.
+// A palette carrying a valid, stored `anchor` (see persist.js DOMAINS.palette.anchor - a source hex, never
+// fitted) renders stop 500 as that anchor's OWN color VERBATIM, in every tone mode (this function;
+// `paletteStops` damps it below group 100, R94), and builds the OTHER eighteen (plus six EXTRA_STOPS) stops
+// as a two-sided ladder pivoting on (500, the anchor's own lightness) - the ramp's analog of prime.mjs's
+// anchor branch (U1), continuous in `stop` where prime.mjs is seven discrete rungs. A palette with no (or
+// malformed) `anchor` takes the ORIGINAL, byte-identical path below (C4's non-anchored identity control):
+// `resolveAnchor` returns null and every other line executes exactly as it did before this ticket.
 const ANCHOR_HEX = /^#[0-9A-Fa-f]{6}$/;
 function hexToRgbLocal(hex) {
   const s = hex.slice(1);
@@ -752,7 +752,7 @@ function anchorLerp(pivot, edgeLight, edgeDark, stop, skew, lift, curve, tension
 // above the immediately preceding (already-finalized) stop's pixel L*, replace it with the nearest
 // in-gamut integer-RGB neighbour that keeps pixel L* non-increasing, a small integer search around the
 // ROUNDED rgb (not the continuous one), adapted from U3's `refineNearestRgb` pattern. Never touches stop
-// 500, the anchor pivot, which stays byte-exact by contract; a dark-side neighbour may still use its
+// 500, the anchor pivot: byte-exact by contract at group 100 (R94 damps after); a dark-side neighbour may use its
 // exact L* as its bound. If no in-gamut neighbour within the search radius satisfies the bound, the stop
 // is left unchanged so a genuinely larger defect surfaces as a real gate failure instead of being forced.
 // STOP-SET DEPENDENT (review pass 3, Finding 5, 2026-09-18, documented not fixed): unlike `liftStop`/
