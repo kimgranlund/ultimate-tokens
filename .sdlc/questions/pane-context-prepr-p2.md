@@ -19,3 +19,13 @@
 | Question | May U6 take a pass 3 (one builder-l4 pass, wording and comments only, lane widened to the five lines, a class-level sweep attached), then review, verdict and pre-land pass 3? |
 | Options | A (recommended): yes, pass 3 as above. · B: yes, but the skill reference and the LLD line only; the three code comments go to a follow-up issue (they move the bundles). · C: no, land with the five lines recorded as known stale |
 | Default if unanswered | none: pass 3 is never dispatched without the owner |
+
+## Answers
+
+| Field | Value |
+|---|---|
+| Asked | via AskUserQuestion, 2026-10-04 |
+| Question 1 options | Yes, add U6 (Recommended) · Only the two red docs · Land as is |
+| Question 1 chosen | A: Yes, add U6 (Recommended) |
+| Question 2 options | Yes, pass 3 (Recommended) · Docs only · Land as is |
+| Question 2 chosen | A: Yes, pass 3 (Recommended) |
