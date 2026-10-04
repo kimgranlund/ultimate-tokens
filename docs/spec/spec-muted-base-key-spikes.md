@@ -11,7 +11,7 @@ audience: builder, reviewer, planner
 ---
 # SPEC: Muted base ramps, a per-palette prime system, and 8 brand-derived data palettes
 
-> Superseded in part by R94 to R98 (#785): a group's Base chroma is now a whole-ramp damper (the at-100 ramp times g/100, damp only), not REQ-002's absolute target, and Material defaults to 100/60, not 30/60 (EX-2's `chroma 30` Neutral ramp no longer holds). EX-1's byte identity holds for chroma-100 subjects only, and AC-003(a)'s fixture pins the damped construction (see EX-1 and AC-003).
+> Superseded in part by R94 to R98 (#785): a group's Base chroma is now a whole-ramp damper (the at-100 ramp times g/100, damp only), not REQ-002's absolute target, and Material defaults to 100/60, not 30/60 (EX-2's `chroma 30` Neutral ramp no longer holds). the byte identity of EX-1 and REQ-003 holds for chroma-100 subjects only, and the fixtures of AC-003(a) and AC-006 pin the damped construction (see EX-1, REQ-003, AC-003 and AC-006).
 
 Intent records: GitHub issue #503 (`kind:feature`, `size:big`, `lane:color-engine`) and #533 (the
 prime-system re-ruling, Findings 2026-09-11). Companion design: `docs/lld/lld-muted-base-key-spikes.md`.
@@ -83,10 +83,14 @@ ladder, their own chroma control, and their own token group; the editor strip re
   stored value is ignored on read (ratified 2026-09-11, #559 re-ruling; supersedes 0.2.0's
   `I(stop) = b` multiplier). `palette.chroma` feeds only `deriveKeyColor` and the prime system.
 - **REQ-003** Byte identity, stated at two levels. Engine level: `paletteStops(palette, controls,
-  stops)` is byte-identical to 0.2.0 for every input (the engine no longer reads `baseIntensity`,
-  and at `baseIntensity 100` the 0.2.0 multiplier was 1); the `intensity-legacy` fixture stays as the
-  proof. Document level: a palette's rendered ramp is byte-identical to 0.2.0 IF AND ONLY IF its
-  `chroma` control equals its resolved `rampChroma`. In the default document that holds for
+  stops)` was byte-identical to 0.2.0 for every input (the engine no longer reads `baseIntensity`,
+  and at `baseIntensity 100` the 0.2.0 multiplier was 1); the `intensity-legacy` fixture was the
+  proof. Since #785 (R94) this holds for chroma-100 subjects only: a `chroma` below 100 is a damper on
+  the at-100 ramp, and the fixture was regenerated (see EX-1 and AC-003(a)). Document level: a
+  palette's rendered ramp was byte-identical to 0.2.0 IF AND ONLY IF its `chroma` control equals its
+  resolved `rampChroma`; since #785 that clause holds only for a palette at chroma 100 in a group at
+  100 (a chroma-95 palette in a group at 95 renders the damped at-100 ramp, not the 0.2.0 chroma-95
+  ramp). In the default document that holds for
   Secondary (100, brand 100), Warning (100, system 100), and every data palette minted at the
   primary's chroma only when that chroma is 100; Neutral (29 vs 30), Primary (95), Tertiary (33),
   Info (40), Success (55), Danger (55), and the default data palettes (95) CHANGE by design. Exports,
@@ -339,7 +343,7 @@ ladder, their own chroma control, and their own token group; the editor strip re
   DEFAULT_CONTROLS, EXPORT_STOPS)` equals the 0.2.0 output byte for byte, and neither `baseIntensity`
   nor `primeChroma` nor any group value has any effect on it. Since #785 (R94) this byte identity holds
   for chroma-100 subjects only: `paletteStops({chroma: 95, ...})` moves against the 0.2.0 output on 20/25
-  perceptual and 13/25 even cells, because the ramp is the at-100 ramp times 95/100.
+  perceptual, 22/25 peak and 13/25 even cells, because the ramp is the at-100 ramp times 95/100.
 - **EX-2 (NORMATIVE, group target).** Default document, brand `baseChroma 100`: Primary's ramp equals
   `paletteStops({hue: 267, chroma: 100, skew: -20, lift: 0}, ...)`, not the `chroma 95` ramp; its
   prime system and gallery tile are still computed at `chroma 95`. Secondary (`chroma 100`) is
@@ -432,8 +436,9 @@ ladder, their own chroma control, and their own token group; the editor strip re
   (`git grep -n "intensityAt\|baseIntensity\|\.intensity\b" src/engine` returns nothing); `git grep
   -n "identityStops\|keyIntensity" src test` returns nothing outside `RENAME_MAPS` and its test.
 - **AC-005** `oklch-hue-anchor` gate passes with `rampChroma` in `{20, 45, 100}` passed as chroma.
-- **AC-006** The full tonal verifier passes with its 0.2.0 pin unchanged; tones equal within 1e-9
-  across group targets.
+- **AC-006** The full tonal verifier passes; tones equal within 1e-9 across group targets. Its
+  0.2.0 pin is no longer unchanged: #785 regenerated the `tonal-legacy` fixture (512 of 800 cells
+  moved), and it pins the damped construction for 14 of the 16 defaults (see AC-003(a)).
 - **AC-007** `DEFAULT_CONTROLS.baseIntensity === 100 && primeChroma === 100`; in
   `projectView(defaultDocument())` Neutral's ramp equals its `chroma 30` ramp and the eight data
   palettes' ramps all equal their `chroma 100` ramps.

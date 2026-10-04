@@ -596,7 +596,8 @@ for (const mode of ["perceptual", "peak"]) {
 
 // Since #785 (R94 to R98) this fixture pins the damped construction for 14 of the 16 defaults (only Secondary
 // and Warning, the chroma-100 subjects, are unchanged by the damper), not pre-0.2.0 identity; see the re-pin note below.
-// ── hpg-tonal-intensity-legacy: paletteStops is byte-identical to the pre-0.2.0 engine (AC-003a/006,
+// ── hpg-tonal-intensity-legacy: HISTORICAL framing (superseded for the 14 sub-100 defaults by #785, see the
+// two lines above and the re-pin note below): paletteStops was byte-identical to the pre-0.2.0 engine (AC-003a/006,
 // EX-1), 0.3.0 (#556/#559 re-ruling) removes the baseIntensity multiplier entirely, so this fixture
 // (generated from the pre-0.2.0 engine, commit 83756bb, by scripts/gen-tonal-fixture.mjs; regenerated
 // only by hand, never by npm test) is the direct, unconditional engine contract again, no controls

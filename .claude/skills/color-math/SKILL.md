@@ -52,7 +52,8 @@ A palette carrying a valid 6-hex `anchor` (a STORED source colour, never fitted)
 `paletteStopsAnchored` or `okhslStopsAnchored`. The anchor rule, which no gate will let you break:
 
 - `primeSwatches(palette, controls)[3].hex === palette.anchor`, byte for byte, for EVERY anchored
-  palette. Ramp stop 500's hex `=== palette.anchor` too, in all three tone modes, for every anchored
+  palette. Ramp stop 500's hex `=== palette.anchor` too, in all three tone modes, at group base
+  chroma 100 (a group value below 100 damps the whole ramp, stop 500 included, R94), for every anchored
   palette whose source sits inside `[RAMP_L_MIN, RAMP_L_MAX] = [9.95, 95.05]` L\*. The 10 sources
   outside that window keep the exact token and clamp only the ramp pivot; they are an allow-list BY
   NAME with an expected count, never a tolerance.

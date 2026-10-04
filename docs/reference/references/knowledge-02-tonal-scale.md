@@ -274,8 +274,11 @@ document/UI-side control now, not an engine one: `tonal.js`'s `DEFAULT_CONTROLS`
 defines or reads `baseIntensity` at all, and `intensityAt` is deleted
 (`git grep -n "intensityAt\|baseIntensity\|\.intensity\b" src/engine` returns nothing).
 
-A palette's rendered ramp is byte-identical to the pre-groups engine IF AND ONLY IF its own
-`chroma` control equals its resolved `rampChroma`. In the default document that holds for
+A palette's rendered ramp is byte-identical to the pre-groups engine only for a chroma-100 subject in
+a group at 100 (since #785 a `chroma` below 100 is a damper on the at-100 ramp, not the pre-groups
+absolute target, so a chroma-95 palette in a group at 95 renders the damped at-100 ramp). Before #785
+the rule read IF AND ONLY IF its own `chroma` control equals its resolved `rampChroma`. In the default
+document the byte identity holds for
 Secondary and Warning (both sit at `chroma 100` inside a group whose `baseChroma` is 100) and for
 every data palette minted at the primary's chroma only when that chroma is 100; it does NOT hold
 for Neutral, Primary, Tertiary, Info, Success, Danger, or the default data palettes, which now

@@ -47,7 +47,7 @@ Mark each. **Any FAIL blocks delivery.**
   `liftStop`, not as two per-path copies of a `^1.5` multiplier.
 - [ ] An **anchored palette** is described by an EQUALITY predicate, never a tolerance: its stored
   `anchor` hex is what `prime.DEFAULT` emits byte for byte, and what ramp stop 500 emits byte for
-  byte in all three tone modes while the source sits inside the ramp window; `skew` and `lift` are
+  byte in all three tone modes at group base chroma 100 (a group value below 100 damps the whole ramp, stop 500 included, R94) while the source sits inside the ramp window; `skew` and `lift` are
   stated as not moving either value. A document that states an anchor "within N L\*" is wrong, not
   merely imprecise: the out-of-window sources are an allow-list by NAME, not a tolerance band.
 - [ ] Display vs export stop sets are both enumerated.

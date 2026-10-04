@@ -33,3 +33,25 @@ No asset regenerated: `npm test` left the tree clean. `.sdlc/baseline.md` untouc
 | C6.3 | `git diff -U0 test/engine/tonal.mjs \| grep '^+[^+]' \| grep -vc '^+//'` reads `0`; the header says 14 of 16 defaults, not pre-0.2.0 identity; SPEC AC-003(a) says the same; `tonal.mjs` exits 0 |
 | C6.4 | not this builder's lane (Orchestrator, plan file) |
 | C6.5 | the Ran rows above; `git status --porcelain` empty after commit |
+
+## Pass 2 (review pass 1 FAIL, findings 1 to 3; widened lane C6.1, C6.2)
+
+| File | Change |
+|---|---|
+| `docs/spec/spec-muted-base-key-spikes.md` | banner names REQ-003 and AC-006; REQ-003 engine level and its IF AND ONLY IF clause say the identity holds for chroma-100 subjects only since #785; AC-006 says the 0.2.0 pin changed (#785 regenerated the fixture, 512 of 800 cells); EX-1 sentence adds 22/25 peak |
+| `.claude/skills/color-math/SKILL.md` | stop 500 equals the anchor "at group base chroma 100 (a group value below 100 damps the whole ramp, stop 500 included, R94)" |
+| `docs/reference/references/glossary.md` | same qualifier in the Anchor entry |
+| `docs/reference/rubrics/quality-rubric.md` | same qualifier in the anchored-palette checklist line |
+| `docs/reference/references/knowledge-02-tonal-scale.md` | sweep hit (section 8.1, `:277`): the same IF AND ONLY IF byte-identity claim as REQ-003, now chroma-100 subjects only; outside the named lane, same stale fact |
+| `test/engine/tonal.mjs` | the `hpg-tonal-intensity-legacy` header line now opens "HISTORICAL framing (superseded ... by #785 ...)"; comment lines only, non-comment changed lines `0` |
+
+Sweep (`in all three tone modes`, `byte for byte`, `byte-identical`, plus an anchor/stop-500 regex, over `docs/`, `.claude/skills/`, `.sdlc/records`, `src/`, `test/`, `plugin/`, `mcp/`): the only live paletteStops or stop-500 identity claims left were the three Finding 2 files and `knowledge-02:277`. Left alone on purpose: `decision-records.md:742` (ADR body, amended at `:792`), `knowledge-02:264` and `:428` (already qualified), SPEC EX-2 "Secondary (chroma 100) is byte-identical" (true, chroma 100), `lld-muted-base-key-spikes.md:169` (derived-live rule, gated by `shell.mjs` ac003b, which already handles #785), `tonal.mjs:679` (carve-out history), CHANGELOG, archives, handoffs, questions.
+
+| Command | Result |
+|---|---|
+| heavy-process count before `npm test` | `0` |
+| `npm test` (NODE_OPTIONS unset), after the last edit | all 54 test files passed, exit 0, tree shows only the intended edits, no regenerated asset |
+| `npm run build` | exit 0, `figma/plugin/ui.html` 4170.7 KB, tracked tree unchanged by it |
+| `bash .sdlc/checks/baseline-agrees-check.sh` | `stale total: 0` (ui.html KB did not move, no Correction line) |
+| `node test/repo/em-dash.mjs` | clean (1152 files) |
+| `sh .sdlc/checks/card-amendment-check.sh` | `stale total: 0` |
