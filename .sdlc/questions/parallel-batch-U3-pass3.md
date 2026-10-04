@@ -13,3 +13,11 @@
 | Question 3 | May the plan take revisions 6 and 7 (writing criterion text only) and ratify revision 5 as applied? |
 | Options Q3 | Yes (recommended) · No, return to the planner |
 | Default if unanswered | none: a third builder pass and a sixth to eighth revision row both need the owner. U2 meanwhile goes to the Verifier, graded with the `-P` form. |
+
+## Owner answer (2026-10-04, via conductor AskUserQuestion)
+
+| Question | Chosen |
+|---|---|
+| Q1 contract | A: 10 formats plus the 3 design-system bundles, position-independent; edge cases reported, not refused |
+| Q2 grade | A: builder-l5 with reviewer-l3 and verifier-l2 |
+| Q3 revisions | Yes: revision 5 ratified as applied; revisions 6 and 7 approved (criterion text only) |
