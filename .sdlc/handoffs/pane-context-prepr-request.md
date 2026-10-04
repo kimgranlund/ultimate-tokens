@@ -1,12 +1,13 @@
-# Pre-land request: pane-context (#785), pass 2
+# Pre-land request: pane-context (#785), pass 3
 
 | Field | Value |
 |---|---|
-| Branch | plan/pane-context @ 1cfefe261c61651859cab986c71208c770279a59 (U1 to U5 merged; main merged in at 620d0323; U5 repaired the pass 1 reds: dead R69 group target, DD27, card-source-range, CHANGELOG Adia, C2.6 control) |
-| Ticket | #785 (draft PR #797 open) |
-| Scope | the whole diff `origin/main...plan/pane-context`; pass 1 findings in `.sdlc/verdicts/pane-context-prepr.md` (history, overwritten by pass 2) |
-| Criteria | C1.* to C5.* in `git show plan/pane-context:.sdlc/plans/pane-context.md` (revision 14); unit verdicts `.sdlc/verdicts/pane-context-U1.md` to `pane-context-U5.md` (U4 pass 2 and U5 pass 1 are 🟡, records-only, fixed and checked) |
-| Record to write | `.sdlc/verdicts/pane-context-prepr.md` with `sha: 1cfefe261c61651859cab986c71208c770279a59` |
+| Branch | plan/pane-context @ 94bcd8aa04067b17cf561cbddf9cc0b2b2aa5347 (U1 to U6 merged; U6 merge 45a6e83d, verdict 🟢 at ec81e7ea after owner Q3 A) |
+| Ticket | #785 (draft PR #797 open, body refreshed) |
+| Scope | the whole diff `origin/main...plan/pane-context`; main is 28 commits ahead, all `.sdlc/` only, and merges clean (`git merge-tree`), so main was not merged in again; pass 2 findings in `.sdlc/verdicts/pane-context-prepr.md` (history, overwritten by pass 3) |
+| Criteria | C1.* to C6.* in `git show plan/pane-context:.sdlc/plans/pane-context.md` (revision 15); unit verdicts `.sdlc/verdicts/pane-context-U1.md` to `pane-context-U6.md` |
+| Record to write | `.sdlc/verdicts/pane-context-prepr.md` with `sha: 94bcd8aa04067b17cf561cbddf9cc0b2b2aa5347` |
 | Pair | reviewer-l3 plus verifier-l2 (R86/R92, no Fable); name the substitution in the record header |
-| Baseline gates | npm test, npm ci and npm run build on this head; `baseline-agrees-check.sh` must print `stale total: 0` (NODE_OPTIONS unset; ui.html 4170.7 KB); smoke; also run the ceiling-counts and panda-smoke controls pass 1 reported as not run; CI legs are the Conductor's |
-| Reminder | R98: none found line; R97 accepted; revision 13 (`pane-context-schema7.md`) and revision 14 (`pane-context-prepr-p1.md`) both owner answer A; the integrate question authority is the lead's ruling, no owner answer recorded (report, not a bar); compute-layers U3 waits on this landing |
+| Baseline gates | npm test, npm ci and npm run build on this head; `baseline-agrees-check.sh` printed `stale total: 0` here (ui.html 4170.9 KB); smoke; ceiling-counts and panda-smoke controls; CI legs are the Conductor's |
+| Pass 2 follow-ups | A1 (ADR-026 card) and A2 (SPEC EX-1) were U6's: re-verify closed; A3, A4 closed in U6. Re-run C4.16 (pass 2 finding 7). The headless-boot `fails` dump (finding 5) is a follow-up issue, not a bar. The integrate question has no owner Answer (report, not a bar); `decision-records.md` has 2 in-place line edits (report) |
+| Reminder | R98: none found line; R97 accepted; owner answers: revision 13, 14, 15 and U6 pass 3 and 4, all A; compute-layers U3 waits on this landing |
