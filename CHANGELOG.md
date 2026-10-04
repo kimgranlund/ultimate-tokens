@@ -8,6 +8,21 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 
 ## [Unreleased]
 
+### 2026-10-04
+
+#### Changed
+- **Every export records the algorithm versions that produced it; export schema 6** (#788,
+  compute-layers U4, ADR-028). A document now carries a `layers` map, the version of each compute
+  layer (`controls`, `group-chroma`, `ramp`, `prime`, `roles`, `type`, `geometry`) it renders with,
+  and every export stamps it: line 2 of the CSS, OKLCH, Tailwind, ShadCN, Panda and Radix outputs
+  reads `/* ultimate-tokens layers controls@1 group-chroma@1 ... */` under the unchanged schema
+  line; JSON carries `meta.layers`, DTCG `$extensions["com.ultimate-tokens"].layers`, UI3 and the
+  design-system `tokens.json` `$layers`. `EXPORT_SCHEMA_VERSION` 5 to 6, so the brand kit is
+  `ultimate-tokens-brand-kit/6` and the brand-kit MCP server 0.6.0. A kit saved before this change
+  loads pinned to version 1 of every layer, a new kit and an opened preset pin the latest; every
+  layer is at version 1 today, so no token value moves. The committed Adia artifacts are re-exported
+  (oklch 2.2.0, radix 1.5.0) for the new stamp only.
+
 ### 2026-10-03
 
 #### Changed

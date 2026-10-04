@@ -30,7 +30,7 @@
 
 import { refKey, refPath, refSlug, roleLeaf, isAchromaticRef, DEFAULT_THEMES } from "./semantic.js";
 import { COLLECTIONS } from "./collections.js";
-import { compute, slug, relLum } from "./layers.mjs"; // slug: the palette-name token prefix the roles are keyed on
+import { compute, docPins, slug, relLum } from "./layers.mjs"; // slug: the palette-name token prefix the roles are keyed on
 import { PRIME_STEPS, primeSlug } from "./prime.mjs";
 import { oklchToRgb } from "./okhsl.js";
 import { cssFontStack } from "./type.mjs";
@@ -48,7 +48,21 @@ export const relLumExp = relLum;
 // Bump rule (adding-export-formats/SKILL.md carries the same note): any additive or shape change
 // to an emitted format bumps this ONE constant, once, across every surface, in the same PR; a
 // value-only change (e.g. a chroma default) never bumps it.
-export const EXPORT_SCHEMA_VERSION = 5;
+// 6 (compute-layers U4, #788): every format also records the compute-layer pins the kit was made
+// with (layerPinsLine / the `layers` field below), so a reader can tell which layer versions
+// produced the values.
+export const EXPORT_SCHEMA_VERSION = 6;
+
+// ── Layer pins (compute-layers U4, ADR-028) ─────────────────────────────────────
+// Every export records `docPins(state)`, the version of each compute layer the values came from
+// (the same pins compute ran). Comment-stamped formats (CSS/OKLCH/Tailwind/ShadCN/Panda/Radix)
+// carry layerPinsLine as their second line, right under the schema stamp; JSON formats carry the
+// pins map: JSON meta.layers, DTCG $extensions["com.ultimate-tokens"].layers, UI3 and the DS
+// tokens.json $layers. The two module exporters take a preset object (byte-pinned, #638) and so
+// read the pins from `opts.layers`, which every caller passes from the same state.
+export function layerPinsLine(pins) {
+  return `/* ultimate-tokens layers ${Object.entries(pins).map(([id, v]) => `${id}@${v}`).join(" ")} */`;
+}
 
 // ── Constants (from data/role-table.json) ─────────────────────────────────────
 // Scrims are a 500-based translucency ramp: a scrim primitive "{n}/500-{step}" is the
@@ -308,7 +322,7 @@ function colorLeaf(rgb, frac, alias) {
 // palette's ramp again. Omitted -> derives it here, exactly as before (every existing caller works
 // unchanged; this is additive only).
 export function exportCSS(state, derived) {
-  return cssFrom(derived || derivedAll(state), false, cssPrefixOf(state));
+  return cssFrom(derived || derivedAll(state), false, cssPrefixOf(state), docPins(state));
 }
 
 // cssPrefixOf, the configurable CSS custom-property prefix (the `c` in `--c-*`). Lets a kit emit
@@ -327,14 +341,16 @@ export function cssPrefixOf(state) {
 // Identical structure; raw values are oklch(L C H) / oklch(L C H / a%). The
 // semantic --c-* layer is unchanged (var() refs), so the two-layer flip holds.
 export function exportOKLCH(state, derived) {
-  return cssFrom(derived || derivedAll(state), true, cssPrefixOf(state));
+  return cssFrom(derived || derivedAll(state), true, cssPrefixOf(state), docPins(state));
 }
 
 // cssFrom, shared CSS body for both variants. oklch=false -> hex raw values. `pfx` is the
 // custom-property prefix core (the `c` in `--c-*`); defaults to "c" for the historical output.
-function cssFrom(palettes, oklch, pfx = "c") {
+// `pins`: the state's layer pins, stamped on line 2.
+function cssFrom(palettes, oklch, pfx, pins) {
   const lines = [];
   lines.push(`/* ultimate-tokens export schema ${EXPORT_SCHEMA_VERSION} */`);
+  lines.push(layerPinsLine(pins));
   lines.push(":root {");
   lines.push("  color-scheme: light dark;");
   // fixed system constants, NOT palette-derived, emitted ONCE (never per palette, never mode-flipped).
@@ -415,6 +431,7 @@ export function exportJSON(state, derived) {
     meta: {
       generator: "Ultimate Tokens",
       schemaVersion: EXPORT_SCHEMA_VERSION,
+      layers: docPins(state),
       controls: {
         baseChroma: state.baseChroma,
         primeChroma: state.primeChroma,
@@ -573,7 +590,7 @@ export function exportDTCG(state, opts, derived) {
   // plugin's own childKeys() already skips any "$"-prefixed root key, so this is inert to it.
   const figmaMode = (tree, modeName) => ({
     ...tree,
-    $extensions: { "com.figma.modeName": modeName, "com.ultimate-tokens": { schemaVersion: EXPORT_SCHEMA_VERSION } },
+    $extensions: { "com.figma.modeName": modeName, "com.ultimate-tokens": { schemaVersion: EXPORT_SCHEMA_VERSION, layers: docPins(state) } },
   });
 
   // one semantic file per theme, in `themes` order, with the default DEFAULT_THEMES this produces
@@ -640,6 +657,7 @@ export function exportUI3(state, derived) {
 
   return {
     $schema: `figma-ui3-variables.color.schema.v${EXPORT_SCHEMA_VERSION}`,
+    $layers: docPins(state),
     collections: {
       [COLLECTIONS.colorRaw]: { modes: ["Base"], variables: primVars },
       [COLLECTIONS.colorSemantic]: { modes: ["Light", "Dark"], variables: semVars },
@@ -666,6 +684,7 @@ export function exportTailwind(state, derived) {
   const palettes = derived || derivedAll(state);
   const lines = [];
   lines.push(`/* ultimate-tokens export schema ${EXPORT_SCHEMA_VERSION} */`);
+  lines.push(layerPinsLine(docPins(state)));
   lines.push("/* Tailwind v4 theme, generated by Ultimate Tokens.");
   lines.push("   Paste after `@import \"tailwindcss\";`. Ramps -> bg-{name}-{stop};");
   lines.push("   semantic roles flip via light-dark() (set `color-scheme: light dark`). */");
@@ -814,6 +833,7 @@ export function exportShadcn(state, opts = {}, derived) {
 
   return [
     `/* ultimate-tokens export schema ${EXPORT_SCHEMA_VERSION} */`,
+    layerPinsLine(docPins(state)),
     "/* ShadCN theme, generated by Ultimate Tokens. Replace the token blocks in",
     `   your globals.css. Mapped from: neutral=${neutral.name}, primary=${primary.name}, destructive=${danger.name}.${aliasPfx ? `\n   Values are LINKS (var()) into the --${aliasPfx}-* design-token layer below, one source of truth.` : ""} */`,
     ":root {",
@@ -951,11 +971,13 @@ export function exportPanda(state, opts = {}, derived) {
 }
 
 // exportPandaModule, the ESM preset-module STRING the drawer shows and the zip ships (REQ-001):
-// a fixed two-line header comment, then `export default <preset JSON>;`. No import of
-// `@pandacss/dev`, `definePreset` is a no-op typing helper a consumer may wrap this in.
-export function exportPandaModule(preset) {
+// the schema stamp, the layer pins (`opts.layers`), a fixed two-line header comment, then
+// `export default <preset JSON>;`. No import of `@pandacss/dev`, `definePreset` is a no-op typing
+// helper a consumer may wrap this in.
+export function exportPandaModule(preset, opts = {}) {
   return [
     `/* ultimate-tokens export schema ${EXPORT_SCHEMA_VERSION} */`,
+    layerPinsLine(docPins(opts)),
     "/* Panda CSS preset, generated by Ultimate Tokens.",
     "   presets: ['@pandacss/preset-panda', preset]; dark mode = the .dark class (_dark). */",
     "export default " + JSON.stringify(preset, null, 2) + ";",
@@ -1268,6 +1290,7 @@ export function exportRadixModule(preset, opts = {}) {
     : ["/* Radix preset, generated by Ultimate Tokens."];
   return [
     `/* ultimate-tokens export schema ${EXPORT_SCHEMA_VERSION} */`,
+    layerPinsLine(docPins(opts)),
     ...head,
     "   accent = primary, gray = neutral, error = danger.",
     "   presets: [parkPreset, utRadixPreset] (ours last). */",

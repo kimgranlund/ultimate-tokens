@@ -76,8 +76,11 @@ export const ARTIFACTS = [
   // 2.1.0 / 1.4.0 (#791, md-prefix): the same document re-exported under EXPORT_SCHEMA_VERSION 5 (the
   // Material preset's root rename; these artifacts use the default prefix, so only the schema stamp
   // and this block moved), `minor` for both.
-  { name: "adia-oklch-export", file: "adia-oklch-export.css", key: "oklch", version: "2.1.0" },
-  { name: "adia-radix-export", file: "adia-radix-export.mjs", key: "radix", version: "1.4.0" },
+  // 2.2.0 / 1.5.0 (#788, compute-layers U4): the same document re-exported under EXPORT_SCHEMA_VERSION 6,
+  // whose exporters add a layer-pins comment line after the schema stamp; no token value, name or
+  // ordering moved, `minor` for both.
+  { name: "adia-oklch-export", file: "adia-oklch-export.css", key: "oklch", version: "2.2.0" },
+  { name: "adia-radix-export", file: "adia-radix-export.mjs", key: "radix", version: "1.5.0" },
 ];
 
 // exportRadix's own reserved alias keys (I4, ticket #637): promoted into src/engine/exports.js as

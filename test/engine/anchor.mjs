@@ -1068,10 +1068,13 @@ for (const n of loneSpikeSorted) FAIL("anchor-ramp", `lone-spike: unexpected mem
   // and model.mjs's layers import points at it below.
   const layersSrc = readFileSync(new URL("../../src/engine/layers.mjs", import.meta.url), "utf8");
   let patchedLayers = layersSrc;
-  for (const f of ["controls.mjs", "resolve.mjs", "tonal.js", "prime.mjs", "semantic.js", "type.mjs", "geometry.mjs"]) {
+  for (const f of ["controls.mjs", "resolve.mjs", "tonal.js", "prime.mjs", "semantic.js", "type.mjs", "geometry.mjs", "layer-pins.mjs"]) {
     if (!layersSrc.includes(`from "./${f}"`)) FAIL("anchor-ramp", `lone-spike negative control: layers.mjs import target not found - ./${f} moved, update this control`);
     patchedLayers = patchedLayers.replace(`from "./${f}"`, `from "${f === "tonal.js" ? buggyTonalUrl : new URL(`../../src/engine/${f}`, import.meta.url).href}"`);
   }
+  // compute-layers U4: layers.mjs also imports persist.js (presetDoc's hydrate)
+  if (!layersSrc.includes('from "../ui/persist.js"')) FAIL("anchor-ramp", "lone-spike negative control: layers.mjs import target not found - ../ui/persist.js moved, update this control");
+  patchedLayers = patchedLayers.replace('from "../ui/persist.js"', `from "${new URL("../../src/ui/persist.js", import.meta.url).href}"`);
   const buggyLayersUrl = `data:text/javascript;base64,${Buffer.from(patchedLayers).toString("base64")}`;
   // model.mjs's own relative imports, rewritten to absolute file URLs so it can load standalone from a
   // data: URL - every one EXCEPT tonal.js and layers.mjs, which point at the plateau-neutralised modules above.
@@ -1089,6 +1092,7 @@ for (const n of loneSpikeSorted) FAIL("anchor-ramp", `lone-spike: unexpected mem
     ['"../engine/resolve.mjs"', new URL("../../src/engine/resolve.mjs", import.meta.url).href],
     ['"../engine/controls.mjs"', new URL("../../src/engine/controls.mjs", import.meta.url).href],
     ['"../engine/layers.mjs"', buggyLayersUrl],
+    ['"../engine/layer-pins.mjs"', new URL("../../src/engine/layer-pins.mjs", import.meta.url).href],
     ['"../engine/semantic.js"', new URL("../../src/engine/semantic.js", import.meta.url).href],
     ['"../engine/type.mjs"', new URL("../../src/engine/type.mjs", import.meta.url).href],
     ['"../engine/geometry.mjs"', new URL("../../src/engine/geometry.mjs", import.meta.url).href],

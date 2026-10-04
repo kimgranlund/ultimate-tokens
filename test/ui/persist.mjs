@@ -4,6 +4,7 @@ import * as U from "../../src/ui/persist.js";
 import * as X from "../../src/engine/exports.js";   // theme-invariance tests the exporters against state.theme
 import * as Ty from "../../src/engine/type.mjs";     // allowlist-parity: canonical TYPE_TREATMENTS ids + voice set
 import * as Ge from "../../src/engine/geometry.mjs"; // allowlist-parity: canonical GEOMETRY_TREATMENTS ids
+import { LATEST } from "../../src/engine/layer-pins.mjs"; // the compute-layer pins, a REQUIRED field (compute-layers U4)
 
 let _s = 0x1234abcd >>> 0;
 const rnd = () => { _s = (Math.imul(_s, 1103515245) + 12345) >>> 0; return _s / 0x100000000; };
@@ -45,7 +46,7 @@ const inDomainState = () => {
   );
   return { curve: pick(["linear", "sine", "cubic", "logistic", "exp"]), tension: rnd() * 100, lmin: rnd() * 40, lmax: 60 + rnd() * 40,
     damp: rnd() * 100, dampCurve: 0.5 + rnd() * 3.5, dampAmp: rnd() * 100, dampBias: -100 + rnd() * 200,
-    baseIntensity: rnd() * 100, primeChroma: rnd() * 100, paletteGroups,
+    baseIntensity: rnd() * 100, primeChroma: rnd() * 100, paletteGroups, layers: { ...LATEST },
     hueSpace: pick(["cam16", "oklch"]), relChroma: rnd() > 0.5, chromaFloor: rnd() * 100, toneMode: pick(["even", "perceptual", "peak"]), vibrancy: rnd() * 100, onColorMode: pick(["fixed", "contrast"]), accentRef: pick(["mode", "single"]), type: { treatment: pick(["product", "luxury", "editorial", "technical", "statement"]), bodyBase: 10 + Math.floor(rnd() * 22), ...(rnd() > 0.5 ? { modes: [{ id: "tm-" + Math.floor(rnd() * 1e6).toString(36), name: pick(["Mobile", "Desktop", "Mode 2"]), bodyBase: 10 + Math.floor(rnd() * 22), ...(rnd() > 0.5 ? { minWidth: 320 + Math.floor(rnd() * 1200) } : {}) }] } : {}), ...(Object.keys(tyTok).length ? { tokenOverrides: tyTok } : {}) }, geometry: { treatment: pick(["comfortable", "compact", "spacious", "touch", "pill"]), baseHeight: 20 + Math.floor(rnd() * 29), ...(rnd() > 0.5 ? { ramp: "linear4" } : {}), ...(rnd() > 0.5 ? { rampContrast: Math.round(rnd() * 95) / 100 } : {}), ...(rnd() > 0.5 ? { modes: [{ id: "gm-" + Math.floor(rnd() * 1e6).toString(36), name: pick(["Mobile", "Desktop", "Mode 2"]), baseHeight: 20 + Math.floor(rnd() * 29), ...(rnd() > 0.5 ? { minWidth: 320 + Math.floor(rnd() * 1200) } : {}), ...(rnd() > 0.5 ? { rampContrast: Math.round(rnd() * 95) / 100 } : {}) }] } : {}), ...(Object.keys(geTok).length ? { tokenOverrides: geTok } : {}) }, theme: pick(["auto", "light", "dark"]), selected: Math.floor(rnd() * n), roleOverrides, palettes };
 };
 

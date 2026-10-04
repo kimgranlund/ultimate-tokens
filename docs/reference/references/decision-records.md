@@ -925,6 +925,29 @@ Format: Context → Decision → Rationale → Consequences → Status.
   versions, then the R102 removals. U1 to U4 are byte-neutral for every stored doc and preset; the one
   path U1 moves is a raw state with no `hueSpace` sent straight to an exporter, which now renders as
   OKLCH (the engine default) instead of cam16.
+- **Amendment, U4 (2026-10-04, #788).** How decisions 3 and 4 landed.
+  - Pins live on the document as `layers: { [id]: version }`. The pin rule (absent is 1, a number is
+    rounded and clamped to `[1, latest]`, an unknown id is dropped and reported on `DROPPED_KEYS`) is
+    one function, `pinsOf` in `src/engine/layer-pins.mjs`, used by `hydrate`, `compute` and every
+    export stamp. It sits outside `layers.mjs` because `layers.mjs` imports `hydrate` for `presetDoc`
+    and the single-file bundler cannot inline an import cycle; its `LATEST` table is gated equal to
+    `latestOf(REGISTRY)` by `test/engine/layer-pins.mjs`.
+  - `presetDoc(preset)` in `layers.mjs` is `pinLatest(hydrate(preset))`; the preset tile in
+    `src/ui/app.js` opens a preset through it. Every other open path keeps the stored pins.
+  - `group-chroma` outputs both group-resolved chromas, `rampChroma` and `primeChroma`, so the prime
+    ladder's chroma comes from a registered layer and a pinned `group-chroma` moves both.
+  - `type` and `geometry` are mode layers: their scales are indexed by breakpoint mode, so
+    `src/ui/model.mjs` (`typeScaleFor`, `geomScaleFor`, `geometryScale`) stays their evaluator and
+    calls the pinned version through `runOf(doc, id)`. `compute` walks the document and palette layers.
+  - Frozen versions are `src/engine/layers/<id>@<n>.mjs`, hash-gated by `src/engine/layers/FROZEN.json`
+    in `test/engine/layers.mjs`. U4 ships only the synthetic `test-layer@1`/`@2`, registered by the
+    test alone, so every shipped layer is still at version 1 and every render is byte-identical.
+  - `EXPORT_SCHEMA_VERSION` is 6 (U4's merge-base 5 plus 1). Comment-stamped formats (CSS, OKLCH,
+    Tailwind, ShadCN, the Panda and Radix modules) carry `/* ultimate-tokens layers controls@1 ... */`
+    as line 2, under the unchanged line-1 schema stamp; JSON carries `meta.layers`, DTCG
+    `$extensions["com.ultimate-tokens"].layers`, UI3 and the design-system `tokens.json` `$layers`.
+    The DESIGN.md frontmatter takes no new key (its linter rejects unknown keys).
+  - The editor's "upgrade to latest" action is not in U4; it is a UI unit of its own.
 - **Alternatives rejected.**
   | Alternative | Why rejected |
   |---|---|

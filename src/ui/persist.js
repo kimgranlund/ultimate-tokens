@@ -19,10 +19,12 @@
 // (CURRENT_SCHEMA_VERSION); hydrate() runs any still-relevant RENAME_MAPS entry before the
 // domain clamp, so a doc saved before a canon rename (a voice, a treatment id, ...) survives
 // as its current name, never dropped by a current-names allowlist (TKT-0016, RENAME_MAPS below).
-// Its three imports are engine constants (icon systems, the default type, the collections); nothing from the DOM.
+// Its imports are engine constants (icon systems, the default type, the collections) and the
+// zero-dep layer-pin rule (layer-pins.mjs); nothing from the DOM.
 import { ICON_SYSTEMS, DEFAULT_ICON_SYSTEM } from "../engine/icon-systems.mjs";
 import { DEFAULT_TYPE } from "../engine/type.mjs";
 import { COLLECTIONS } from "../engine/collections.js";
+import { LATEST, pinsOf } from "../engine/layer-pins.mjs";
 
 // PALETTE_GROUPS (ticket #556), the four canvas group ids. Declared HERE, not in model.mjs: this
 // codebase's normal dependency direction is model.mjs importing FROM persist.js (never the
@@ -515,7 +517,10 @@ export function serialize(state) {
 // DOMAIN. Identity-preserving: an already-in-domain field is copied through untouched;
 // only a violated field is moved to its nearest valid bound. NOT a clamp-to-default and
 // NOT a reset, those discard user state and fail the sealed roundtrip/per-field gates.
-export function hydrate(snapshot) {
+// `latest` (optional, compute-layers U4): the registry's { [id]: latest version }, the domain of the
+// `layers` pins; presetDoc passes its registry's (a test registry in test/engine/layer-pins.mjs), every
+// other caller takes the shipped LATEST.
+export function hydrate(snapshot, { latest = LATEST } = {}) {
   const raw = (snapshot && typeof snapshot === "object") ? snapshot : {};
   // TKT-0016, translate an older doc forward through any still-relevant rename maps BEFORE the
   // allowlist clamp below runs, so a renamed voice survives onto its current name instead of being
@@ -568,6 +573,13 @@ export function hydrate(snapshot) {
     }
   }
 
+  // layers (compute-layers U4, ADR-028): one pin per registered layer, layer-pins.mjs's rule (absent
+  // is version 1, the version a document saved before pins was made with; clamped to [1, latest]).
+  // An id the registry does not name is dropped, loudly.
+  if (s.layers && typeof s.layers === "object") {
+    for (const id of Object.keys(s.layers)) if (!(id in latest)) drop("layers", id, "not a registered compute layer");
+  }
+
   const result = {
     curve: clampEnum(s.curve, DOMAINS.curve.values, DOMAINS.curve.default),
     tension: clampNumber(s.tension, DOMAINS.tension.min, DOMAINS.tension.max),
@@ -590,6 +602,7 @@ export function hydrate(snapshot) {
     theme: clampEnum(s.theme, DOMAINS.theme.values, DOMAINS.theme.default),
     selected,
     roleOverrides: clampOverrides(s.roleOverrides),
+    layers: pinsOf(s.layers, latest),
     type: clampType(s.type, drop),
     geometry: clampGeometry(s.geometry, drop),
     palettes,

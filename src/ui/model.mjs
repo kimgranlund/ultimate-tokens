@@ -37,10 +37,11 @@ import { deriveDataHues } from "../engine/data-hues.mjs";
 import { PRIME_STEPS } from "../engine/prime.mjs";
 import { rampChromaOf as rampChromaOfPure, primeChromaOf as primeChromaOfPure } from "../engine/resolve.mjs";
 import { resolveControls } from "../engine/controls.mjs";
-import { compute } from "../engine/layers.mjs";
+import { compute, runOf, docPins } from "../engine/layers.mjs";
+import { LATEST } from "../engine/layer-pins.mjs";
 import { semanticRoles, refKey, isAchromaticRef } from "../engine/semantic.js";
-import { typeScale, DEFAULT_TYPE } from "../engine/type.mjs";
-import { geomScale, DEFAULT_GEOMETRY, RAMP_LADDER } from "../engine/geometry.mjs";
+import { DEFAULT_TYPE } from "../engine/type.mjs";
+import { DEFAULT_GEOMETRY, RAMP_LADDER } from "../engine/geometry.mjs";
 
 // geometryScale, the resolved geometry for a doc, COMPOSED with its type scale so a control's text
 // size (the per-step `font`) comes from the brand's UI-CONTROL voice at every step of the XS..2XL ramp
@@ -56,7 +57,7 @@ export function geometryScale(doc, opts = {}) {
   if (!opts.overrides && !opts.typeOverrides) return geomScaleFor(doc, "base");
   const tcfg = { ...(doc.type || DEFAULT_TYPE) };
   if (opts.typeOverrides) tcfg.overrides = opts.typeOverrides;
-  return geomScale(doc.geometry || DEFAULT_GEOMETRY, { typeScale: typeScale(tcfg), overrides: opts.overrides });
+  return runOf(doc, "geometry")(doc.geometry || DEFAULT_GEOMETRY, { typeScale: runOf(doc, "type")(tcfg), overrides: opts.overrides });
 }
 
 // ── The mode-aware resolution layer (A1, #456) ──────────────────────────────────────────────────
@@ -161,7 +162,7 @@ export function typeScaleFor(doc, modeKey) {
   const t = doc.type || DEFAULT_TYPE;
   const base = modeKey === "base" ? t : (() => { const m = typeEffectiveModes(doc).find((x) => x.id === modeKey); return m ? { ...t, bodyBase: m.bodyBase ?? t.bodyBase, modeFactor: m.factor ?? 1 } : t; })();
   const overrides = { ...modeTierNudge(base.modeFactor), ...typeOverridesFor(doc, modeKey) };
-  return typeScale({ ...base, overrides });
+  return runOf(doc, "type")({ ...base, overrides });
 }
 
 // geomScaleFor(doc, modeKey), the resolved geometry scale for a mode WITH that mode's per-cell
@@ -175,7 +176,7 @@ export function geomScaleFor(doc, modeKey) {
   // explicit per-mode values, so they resolve identically; a legacy compressed base (contrast 0) with a
   // silent mode keeps the old full-ramp default via the ?? 1 tail.
   const cfg = modeKey === "base" ? g : (() => { const m = geomEffectiveModes(doc).find((x) => x.id === modeKey); return m ? { ...g, baseHeight: m.baseHeight, rampContrast: m.rampContrast ?? ((g.baseName || "Base") === "Desktop" ? g.rampContrast : undefined) ?? 1 } : g; })();
-  return geomScale(cfg, { typeScale: typeScaleFor(doc, modeKey), overrides: geomOverridesFor(doc, modeKey) });
+  return runOf(doc, "geometry")(cfg, { typeScale: typeScaleFor(doc, modeKey), overrides: geomOverridesFor(doc, modeKey) });
 }
 
 // typeTierScale(doc, mult, mf), the byte-identical tier closure that used to be reimplemented
@@ -185,7 +186,7 @@ export function geomScaleFor(doc, modeKey) {
 function typeTierScale(doc, mult, mf) {
   const t = doc.type || DEFAULT_TYPE;
   const bb = Number(t.bodyBase) || DEFAULT_TYPE.bodyBase;
-  return typeScale({ ...t, bodyBase: bb * mult, modeFactor: mf, overrides: { ...(t.overrides || {}), ...modeTierNudge(mf) } });
+  return runOf(doc, "type")({ ...t, bodyBase: bb * mult, modeFactor: mf, overrides: { ...(t.overrides || {}), ...modeTierNudge(mf) } });
 }
 
 // typeModeScales(doc), the breakpoint-mode scales for the Figma exports, [{ name, minWidth, scale }].
@@ -225,7 +226,7 @@ export function geomModeScales(doc) {
   // delta, just without the fine hand nudge, correct numbers over a false-precision wrong one.
   const ladderActive = g.ramp === RAMP_LADDER;
   const ramp = (arr) => { if (ladderActive) return undefined; const f = bh / 28; const out = {}; ["XS", "SM", "MD", "LG", "XL", "2XL"].forEach((k, i) => { if (arr[i] != null) out[k] = arr[i] * f; }); return out; };
-  const synth = (delta, mult, mf, overrides, gaps) => geomScale({ ...g, baseHeight: Math.max(20, bh + delta) }, { typeScale: typeTierScale(doc, mult, mf), overrides, gapOverrides: gaps });
+  const synth = (delta, mult, mf, overrides, gaps) => runOf(doc, "geometry")({ ...g, baseHeight: Math.max(20, bh + delta) }, { typeScale: typeTierScale(doc, mult, mf), overrides, gapOverrides: gaps });
   return [
     { name: "Desktop Lg", minWidth: 1728, scale: synth(4, 1.125, 0.89, ramp([24, 28, 32, 40, 56, 72]), ramp([4, 4, 5, 7, 7, 9])) },
     { name: "Desktop Xl", minWidth: 2560, scale: synth(28, 1.375, 0.80, ramp([40, 48, 56, 64, 72, 80]), ramp([4, 5, 6, 8, 8, 10])) },
@@ -525,6 +526,9 @@ export function defaultDocument() {
     roleOverrides: {}, // per-doc semantic-mapping re-points (empty = canonical role table)
     type: { ...DEFAULT_TYPE }, // typography config (treatment + body base), see engine/type.mjs
     geometry: { ...DEFAULT_GEOMETRY }, // dimensional config (treatment + base height), see engine/geometry.mjs
+    // layers (compute-layers U4, ADR-028): a new document pins every compute layer's latest version;
+    // a stored one keeps its own pins through hydrate (R100).
+    layers: { ...LATEST },
   };
 }
 
@@ -626,6 +630,7 @@ export function stateOf(doc) {
     palettes: resolvedPalettes(doc),
     paletteGroups: resolvePaletteGroups(doc),
     roleOverrides: doc.roleOverrides ?? {}, // threaded to the exporters so re-points reach the output
+    layers: docPins(doc), // the compute-layer pins (U4): compute runs them, every export stamps them
     curve: c.curve,
     tension: c.tension,
     lmin: c.lmin,
@@ -1045,9 +1050,10 @@ export function projectView(doc) {
     ui3: JSON.stringify(exportUI3(state, derived), null, 2),
     tailwind: exportTailwind(state, derived),
     shadcn: exportShadcn(state, { fonts: shadType.fonts, radii: shadGeom.radii }, derived),
-    panda: exportPandaModule(exportPanda(state, { type: shadType, geometry: shadGeom }, derived)),
-    radix: exportRadixModule(radixPreset),
-    radixRef: exportRadixModule(radixRefPreset),
+    // The module exporters take a preset object, so the state's layer pins travel as `layers` (U4).
+    panda: exportPandaModule(exportPanda(state, { type: shadType, geometry: shadGeom }, derived), { layers: state.layers }),
+    radix: exportRadixModule(radixPreset, { layers: state.layers }),
+    radixRef: exportRadixModule(radixRefPreset, { layers: state.layers }),
     figma: {
       light: JSON.stringify(dtcgObj["Light_tokens.json"], null, 2),
       dark: JSON.stringify(dtcgObj["Dark_tokens.json"], null, 2),

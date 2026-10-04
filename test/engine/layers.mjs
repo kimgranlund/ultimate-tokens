@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-// layers.mjs, the compute-layer registry (compute-layers U2, ADR-028).
+// layers.mjs, the compute-layer registry (compute-layers U2 to U4, ADR-028).
 //
 // src/engine/layers.mjs's LAYERS names the seven pipeline stages, and compute(doc) walks them (U3).
+// Pins, presetDoc and the export stamps (U4) are checked in test/engine/layer-pins.mjs.
 // (C2.1) exactly the seven ids, each { id, version: 1, inputs, outputs, run }, and `run` is
 //        strict-equal to the engine export that stage already is;
 // (C2.2) every declared input is another layer's output or a key of defaultDocument(), the graph is
@@ -9,13 +10,15 @@
 // (C2.3) no document/window/localStorage access in layers.mjs or controls.mjs;
 // (C3.1) the role-override pass is called once, from layers.mjs, and from neither view;
 // (C3.2) projectView and a standalone derivedAll agree, per enabled palette, on every stop hex and
-//        every role ref + hex, over defaultDocument() and every curated preset.
+//        every role ref + hex, over defaultDocument() and every curated preset;
+// (C4.4) every file under src/engine/layers/ (the frozen layer versions) matches its SHA-256 in
+//        src/engine/layers/FROZEN.json, and every FROZEN.json entry is a file there.
 // Each check is a function over a registry (or a source string), so it also runs on a corrupted copy
 // and must report a failure there: the negative controls live in this file, not in a one-off edit.
 import { readFileSync, readdirSync } from "node:fs";
-import { LAYERS, resolveRoles } from "../../src/engine/layers.mjs";
+import { createHash } from "node:crypto";
+import { LAYERS, resolveRoles, groupChroma } from "../../src/engine/layers.mjs";
 import { resolveControls } from "../../src/engine/controls.mjs";
-import { rampChromaOf } from "../../src/engine/resolve.mjs";
 import { paletteStops, DEFAULT_CONTROLS } from "../../src/engine/tonal.js";
 import { primeSwatches } from "../../src/engine/prime.mjs";
 import { typeScale } from "../../src/engine/type.mjs";
@@ -30,7 +33,7 @@ const ok = (name, msg) => console.log(`  pass  ${name}: ${msg}`);
 
 const IDS = ["controls", "group-chroma", "ramp", "prime", "roles", "type", "geometry"];
 const RUNS = {
-  controls: resolveControls, "group-chroma": rampChromaOf, ramp: paletteStops, prime: primeSwatches,
+  controls: resolveControls, "group-chroma": groupChroma, ramp: paletteStops, prime: primeSwatches,
   roles: resolveRoles, type: typeScale, geometry: geomScale,
 };
 const DOC_KEYS = new Set(Object.keys(defaultDocument()));
@@ -207,6 +210,34 @@ function viewProblems(view, derived) {
   const moved = derived.map((d, i) => (i ? d : { ...d, roles: [{ ...r0, lightRef: String(r0.lightRef) === "50" ? "100" : "50" }, ...d.roles.slice(1)] }));
   if (!viewProblems(view, moved).length) FAIL("c3.2-control", `${derived[0].name} ${r0.key} lightRef re-pointed and the parity check stayed quiet`);
   else ok("c3.2-control", `${derived[0].name} ${r0.key} lightRef re-pointed is caught`);
+}
+
+// ---- C4.4: the frozen layer versions are hash-gated
+// frozenProblems(files, frozen): `files` maps each file name under src/engine/layers/ (but FROZEN.json)
+// to its bytes, `frozen` is FROZEN.json; a frozen version is never edited once landed, so any byte
+// change, an unlisted file or a listed file gone is a problem, named by file.
+const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
+function frozenProblems(files, frozen) {
+  const out = [];
+  for (const [f, bytes] of Object.entries(files)) {
+    if (!(f in frozen)) out.push(`${f}: not in FROZEN.json`);
+    else if (sha256(bytes) !== frozen[f]) out.push(`${f}: SHA-256 ${sha256(bytes).slice(0, 12)} differs from FROZEN.json ${frozen[f].slice(0, 12)}`);
+  }
+  for (const f of Object.keys(frozen)) if (!(f in files)) out.push(`${f}: in FROZEN.json, no such file`);
+  return out;
+}
+{
+  const dir = new URL("../../src/engine/layers/", import.meta.url);
+  const frozen = JSON.parse(readFileSync(new URL("FROZEN.json", dir), "utf8"));
+  const files = Object.fromEntries(readdirSync(dir).filter((f) => f !== "FROZEN.json").sort().map((f) => [f, readFileSync(new URL(f, dir))]));
+  const p = frozenProblems(files, frozen);
+  if (p.length) FAIL("c4.4-frozen", p.join("; "));
+  else ok("c4.4-frozen", `${Object.keys(files).length} frozen file(s) match FROZEN.json: ${Object.keys(files).join(", ")}`);
+  // control: a comment appended to test-layer@1.mjs must be named
+  const edited = { ...files, "test-layer@1.mjs": Buffer.concat([files["test-layer@1.mjs"], Buffer.from("// edited\n")]) };
+  const c = frozenProblems(edited, frozen);
+  if (!(c.length === 1 && c[0].startsWith("test-layer@1.mjs:"))) FAIL("c4.4-control", `a comment appended to test-layer@1.mjs gave [${c.join("; ")}]`);
+  else ok("c4.4-control", `a comment appended to test-layer@1.mjs is caught: ${c[0]}`);
 }
 
 if (fails.length) { console.error(`FAIL: ${fails.length} check(s)`); process.exit(1); }

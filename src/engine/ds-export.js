@@ -23,6 +23,7 @@ import { resolvedFontFor } from "./type.mjs"; // per-voice font resolution (TKT-
 import { googleSafeFontFor } from "./font-fallbacks.mjs"; // the google-fonts-safe substitute lookup, for dsFontStack's optional fontMode
 import { RAMP_LADDER, mdAnchor, sizeAnchor, orderedSizeNames } from "./geometry.mjs"; // the linear-ladder size-anchor helpers + explicit ordering (issue #483, the ladder's numeric step names trap a bare Object.keys/`.MD`/`.SM`/`.XS` access)
 import { derivedAll, roleOklch, hexOf, hex8, relLumExp, cssPrefixOf, dialogBackdropOklch, whiteOklch, blackOklch, exportShadcn, isDataPalette, oklchStr, EXPORT_SCHEMA_VERSION } from "./exports.js";
+import { docPins } from "./layers.mjs"; // the state's compute-layer pins, stamped as tokens.json $layers (ADR-028, compute-layers U4)
 import { PRIME_STEPS, primeSlug } from "./prime.mjs"; // the seven step names, brightest..dimmest (REQ-050/054)
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -276,6 +277,7 @@ export function exportDesignSystemTokens(state, typeSc, geomSc) {
   return JSON.stringify({
     $generator: "Ultimate Tokens",
     $schemaVersion: EXPORT_SCHEMA_VERSION,
+    $layers: docPins(state),
     $note: note,
     colors, colorsDark,
     prime: ds.prime,
