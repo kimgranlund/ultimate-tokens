@@ -29,3 +29,14 @@
 | Question 1 chosen | A: Yes, add U6 (Recommended) |
 | Question 2 options | Yes, pass 3 (Recommended) · Docs only · Land as is |
 | Question 2 chosen | A: Yes, pass 3 (Recommended) |
+
+## Question 3 (added 2026-10-04, after U6 verdict pass 2 🔴 at a282dd2b)
+
+| Field | Value |
+|---|---|
+| Blocks | U6 and pre-land pass 3 |
+| Evidence | `.sdlc/verdicts/pane-context-U6.md` 🔴 at `a282dd2b` (builder pass 3 closed the pass 1 red; one new red) |
+| Finding | The pass 3 fixes are verified true, the class sweep finds no other live claim, the code diff is comment only, every gate is green. The one 🔴 is a clause U6 itself wrote: LLD `docs/lld/lld-muted-base-key-spikes.md:170-172` says "14 of the 16 defaults moved" next to the doc-gate fixture, which moved 0 of 16 (every default group is 100); the 14 of 16 belongs to the engine fixture and has a different cause. A fix is builder pass 4. |
+| Question | May U6 take a pass 4: one builder-l4 pass, one sentence in one LLD file, then review and verdict? |
+| Options | A (recommended): yes, pass 4, and the builder DELETES the 14-of-16 clause (the qualifier "identity holds only for a palette whose group is at 100" stays), so no new count is added to be wrong. · B: yes, pass 4, but rewrite the clause to name the engine fixture and its cause. · C: no, land with the clause recorded as a known defect |
+| Default if unanswered | none: pass 4 is never dispatched without the owner |
