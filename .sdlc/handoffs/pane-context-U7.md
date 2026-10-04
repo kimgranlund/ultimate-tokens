@@ -85,3 +85,92 @@ Check: fixed 1, true as written 4+1+1+2 = 8, history 1+2+2+1 = 6, superseded by 
 ## Open
 
 - The vestigial `palette.chroma / 100` reads in `paletteStops` stay a follow-up issue per the brief.
+
+# pane-context U7 · builder pass 2 · 🟢 ready for review (npm test status in Gates)
+
+Rework of review pass 1 (FAIL: F1, F2, F3, nit 1a), on `unit/pc-U7` off `99565566`. Comments and records only; R98: none found (no override, shim or fallback; no code line, test logic or pixel moved).
+
+## Changes
+
+| Finding | File | Change |
+|---|---|---|
+| F1 | `docs/spec/spec-muted-base-key-spikes.md` AC-006 (`:441`) | "tones equal within 1e-9 across group targets" replaced by what `group-chroma-damper` (v) asserts: the damped stop keeps its at-100 L* within the two pixels' rounding floors on perceptual and peak, exact on even. Own probe first (below) |
+| F2 | `docs/reference/references/knowledge-02-tonal-scale.md:259` | `paletteStops`/`okhslStops` to `paletteStops` (`okhslStops` is module-private and sits below the `:946` re-entry) |
+| F3 | `test/ui/headless-boot.mjs:4245` | comment only: chroma and lift reach the anchored render via `dampStops`/`chromaEnvelope`, not `groupTarget` (`detunedChroma` is below 100, `groupTarget` only ever sees 100) |
+| 1a | `src/engine/tonal.js:111` | the clause now reads "`dampStops` applies the group value after, so the re-entry hides it; a direct call uses its own chroma"; still 3 comment lines, no line number moves |
+| assets | `figma/plugin/ui.html`, `src/ui/describe-mcp-assets.js` | regenerated (the tonal.js comment is embedded in both); ui.html stays 4170.9 KB |
+
+F1 probe (`paletteStops({hue:267, skew:-20, chroma:g})` against g = 100, largest stop tone delta, `/Users/kimba/.claude/jobs/8c58a81c/tmp/pc-U7/probe.mjs`): perceptual 0.177 (g 30), 0.177 (60), 0.179 (95); peak 0.185, 0.200, 0.182; even 0.000 in all three. The spec now cites 0.177 to 0.200 and 0. This matches the reviewer's probe.
+
+## What went wrong in pass 1
+
+Pass 1 classed a hit "true" because the identifier or function it names still exists. The test that matters is whether the claim holds against the code: does the group value reach that point at `:946` and below, and is the named tolerance a real gate. Pass 2 re-opened every hit in both tables below and read the code, the gate or the surrounding paragraph for each. Re-read: `tonal.js` `:105-120`, `:578-610`, `:842-895`, `:931-950`, `:1486-1496`; `src/engine/resolve.mjs`; `exports.js` `:268-282`; `model.mjs` `:276-283`, `:423-428`, `:945-960`; `persist.js:36-46`; `test/ui/shell.mjs` `:200-300`, `:346-356` (AC-002 and AC-003b compare hex arrays byte for byte, so they are real gates); `test/engine/tonal.mjs` every cited block; `anchor.mjs`, `exports.mjs`, `semantic.mjs`, `even-dips-gate.mjs`, `headless-boot.mjs` at each cited line; all of `spec` (every hit and the `:14` banner), `lld`, `knowledge-02` `:219-322`, `:440-455`, `color-math` SKILL and foundations, `glossary:26`, the four `.sdlc/records/cards`. One claim was checked by measurement, not by reading: `model.mjs:279` says every group defaulting to 100 "renders Neutral's perceptual ramp the same"; the pre-#785 engine (`1e3fe1eb^`) at chroma 30 and the head engine at chroma 100 give identical 25-stop hex arrays for Neutral on perceptual and peak (even differs, which the sentence does not claim).
+
+## Sweep A (the C7.1 grep, 17 hits at `94bcd8aa`), re-judged
+
+| Hit | Count | Verdict | Reason |
+|---|---|---|---|
+| `tonal.js:110` | 1 | fixed (pass 1) | false since the `:946` re-entry |
+| `tonal.js:848, 855, 889, 890` | 4 | true | `paletteStopsAnchored` is reachable only from `:949`, after the re-entry, so `palette.chroma` is 100 and `groupTarget`/`groupIntended` are 100-based |
+| `test/ui/headless-boot.mjs:4245` | 1 | RECLASSIFIED false, fixed (F3) | `detunedChroma` is below 100, so chroma reaches the render through `dampStops` |
+| `test/engine/tonal.mjs:1663` | 1 | history | dated "#725 U2: retired" |
+| `test/engine/tonal.mjs:1778` | 1 | true | the patch at `:1799` rewrites `intendedS` to `anchorChromaBasis(..., 1)`, a hypothetical target of 1 in a control |
+| `test/engine/exports.mjs:480, 490` | 2 | history | dated "#681 re-capture" log entries |
+| `test/engine/fixtures/shadcn-baseline.css:37, 71` | 2 | history | dated carve-out log; `:71` itself records the #785 U5 removal |
+| `spec:104` | 1 | true | the REQ-005 sentence plus its #785 parenthetical; AC-005 passes `rampChroma` in `{20, 45, 100}` through `paletteStops`, gate green |
+| `spec:439` (AC-006) | 1 | RECLASSIFIED false, fixed (F1) | no 1e-9 tone gate exists; see Changes |
+| `spec:347` (EX-2) | 1 | superseded by banner | the `:14` banner names EX-2's `chroma 30` Neutral ramp |
+| `decision-records.md:779` | 1 | history | append-only R69 amendment; the `:792` and `:829` amendments carry #785 |
+| `describe-mcp-assets.js:65` | 1 | generated | a copy of `tonal.js`, regenerated |
+| Total | 17 | | fixed pass 1 1, reclassified and fixed 2, true 6, history 6, banner 1, generated 1 = 17 |
+
+At head after this pass the same grep returns 14 (the three fixed hits gone).
+
+## Sweep B (wider spellings, 170 hits at base `96409def`, 30 files)
+
+170 is the pass 1 figure of 169 plus `src/ui/sections/color.js:2033` (a resolver comment, true), which pass 1's glob did not reach. Excluded as before: `decision-records.md`, `describe-mcp-assets.js`, `fixtures/`.
+
+| File | Hits | Verdict after re-reading |
+|---|---|---|
+| `test/ui/shell.mjs` | 18 | 18 true: resolver-entry calls and byte-for-byte gates (AC-002 direct chroma-60 compare, AC-003b row compare with witness and control) |
+| `test/engine/tonal.mjs` | 18 | 16 true (every `rampChromaOf` call hands the value to `paletteStops` at its entry; `:355` and `:439` describe the damper correctly, the floor test at `:361` asserts 0.18 x at-100 within 0.5); 2 history (`:1663`, `:1784`) |
+| `docs/spec/spec-muted-base-key-spikes.md` | 18 | 7 true (`:102, 104, 109, 329, 421, 432, 438`); 2 amended in text (`:91, 344`); 7 superseded by banner (`:23, 51, 77, 78, 80, 347, 657`); 1 fixed pass 1 (`:103`); 1 RECLASSIFIED false, fixed (`:439`, F1) |
+| `scripts/report-preset-fidelity.mjs` | 17 | 17 true: identifiers and `rampChromaOf` to `paletteStops` call sites, no claim about the interior |
+| `src/ui/model.mjs` | 13 | 13 true (`:279` verified by measurement, above; `:947` already says damper) |
+| `src/engine/tonal.js` | 13 | 11 true (`:580-609` basis comment says always 100, `:848-890`, `:1486-1487`); 1 history (`:392`, a dated measurement); 1 fixed pass 1 (`:110`) |
+| `test/engine/anchor.mjs` | 10 | 9 true (`:464, 804, 1537, 1539` state the damper or the 100 render); 1 RECLASSIFIED stale tail, out of lane (`:505`, below) |
+| `docs/reference/references/knowledge-02-tonal-scale.md` | 8 | 6 true; 1 history (`:280`, marked "Before #785"); 1 RECLASSIFIED false, fixed (`:259`, F2) |
+| `docs/lld/lld-muted-base-key-spikes.md` | 8 | 7 true (`:14` banner, `:36, 41, 66, 69, 170, 202`); 1 banner-covered (`:191`) |
+| `test/engine/categories.mjs` | 7 | 7 true (`:357` asserts the with and without override ramp chroma differ) |
+| `test/ui/headless-boot.mjs` | 5 | 4 true (`:3568-3584`, a measured precondition at `:3584`); 1 RECLASSIFIED false, fixed (`:4245`, F3) |
+| `src/engine/exports.js` | 4 | 4 true |
+| `test/engine/exports.mjs` | 3 | 1 true (`:440`); 2 history (`:487, 490`, dated re-capture entries) |
+| `test/engine/even-dips-gate.mjs`, `scripts/lib/envelope-measure.mjs` | 3 + 3 | 6 true: resolver-entry calls |
+| `.claude/skills/color-math/SKILL.md`, `references/foundations.md` | 3 + 3 | 6 true: both say `groupValue` is 100 and the damper acts after |
+| `test/engine/semantic.mjs` | 2 | 2 history (`:207, 210`, a dated re-measurement log) |
+| `src/ui/persist.js`, `src/engine/resolve.mjs` | 2 + 2 | 4 true |
+| `.sdlc/records/cards/SPEC-muted-base.md` | 2 | 1 true (rejected-alternatives row); 1 RECLASSIFIED stale, out of lane (line 4, below) |
+| `.sdlc/records/cards/{PLAN-export-schema, LLD-muted-base, ADR-026}.md` | 1 + 1 + 1 | 3 true (not the class; "group-unaware" is true of `tonal.js`; ADR-026 carries R94) |
+| `test/ui/model.mjs`, `scripts/gen-categories.mjs`, `scripts/bundle.mjs`, `glossary.md`, `src/ui/sections/color.js` | 1 each | 5 true or not the class |
+| Total | 170 | rows sum 18+18+18+17+13+13+10+8+8+7+5+4+3+6+6+2+4+2+3+5 = 170 |
+
+Verdict sum over the 170 hits: true 147 (incl. 2 amended in text) + history 8 + banner 8 + fixed in pass 1 2 + reclassified false and fixed in pass 2 3 + reclassified stale, out of lane 2 = 170.
+
+## New finds, out of the U7 lane (Orchestrator decision)
+
+| Where | What | Suggested |
+|---|---|---|
+| `test/engine/anchor.mjs:505` | "the anchor's own value at the pivot, blending to `rampChroma` at the ends ... only the even path keeps the blend": for the even path the blend target is `palette.chroma`, 100 since #785, not the group value. The sentence sits in a dated measurement narrative, so it is a stale tail, not a live gate; the line after it already updates for R69 | add a clause "blends to 100 since #785, the group damps afterwards" |
+| `.sdlc/records/cards/SPEC-muted-base.md` line 4 | the v0.3.0 card states `baseChroma` as the ABSOLUTE ramp target and "material 30/60"; the card has no #785 mention and its "Supersedes / amended by" row does not carry it (pass 1 said the amended-by rows carry #785; that was wrong for this card, `grep -c 785` is 0) | add the R94 to R98 amendment to the card, or regenerate cards at the next ingest |
+| `spec:110` REQ-007 | "ramp at 30" for Neutral is the Material 30 default; the `:14` banner covers it by its first sentence but does not name REQ-007 | optional: name REQ-007 in the banner list |
+
+## Gates
+
+| Gate | Result |
+|---|---|
+| `gen:figma-assets`, `gen:mcp-assets`, `gen:categories`, `gen:adia-exports`, `bundle`, `gen:figma-ui` | rc 0, `wrote figma/plugin/ui.html 4170.9 KB` |
+| `npm test` (`NODE_OPTIONS` unset, load 17 to 18, so no timing claim) | rc 0, `all 54 test files passed`; `git status --porcelain` afterwards holds only the seven intended files; an earlier wait for load 3 or less timed out (load 4 to 5 for 10 minutes, then 18), so the run is under heavy load |
+| `node test/repo/em-dash.mjs` | `clean (1157 files scanned)`; zero U+2014 bytes in the diff |
+| `node test/repo/branding.mjs` | `clean (1149 files scanned)` |
+| diff scope | `git diff -U0 -- src test scripts` minus `describe-mcp-assets.js`, minus comment-marker lines and whitespace-only lines, prints 0 lines |
+| `git status --porcelain` after the commit | empty |

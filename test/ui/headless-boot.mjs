@@ -4242,7 +4242,7 @@ flushRaf();
       // Reference ramp: rendered from `pBeforeDetach` itself, the EXACT state `detachSnapshot` stamps
       // and `resetAnchor` must restore -- NOT from the original, undetuned `pal` (hue does not even
       // reach the render for an anchored palette, since the anchored branches read the ANCHOR's own
-      // hue, not `palette.hue` -- but chroma and lift do, via `groupTarget`/`chromaEnvelope`, so a
+      // hue, not `palette.hue` -- but chroma and lift do, via `dampStops`/`chromaEnvelope`, so a
       // reference rendered from `pal` would legitimately differ from the correctly-restored ramp,
       // which is what a first pass at this comparison got wrong). Hydrated first (raw category
       // PRESETS entries lack some resolved default fields projectView expects, e.g. dampCurve/
