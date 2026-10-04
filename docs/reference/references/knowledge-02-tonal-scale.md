@@ -475,7 +475,7 @@ regression that widens the hole is caught while a silent improvement still passe
 anchor whose OKLab chroma sits under `ACHROMATIC_ANCHOR_C` (0.002) is a grey, white, or black source:
 its own MEASURED hue (the anchor's OKLCH hue on the CIE branch, its OKHSL hue on the OKHSL branch) is
 rounding residue, not a colour anyone chose, so the anchor still contributes its own lightness and
-(near-zero) chroma at the pivot the way any anchor does (`anchorChromaBasis`, above), but the ramp's
+(near-zero) chroma at the pivot (on perceptual and peak, the anchor's own `s` read directly in `okhslStopsAnchored`), but the ramp's
 hue comes from the palette's own stored `hue` instead, on both anchored branches, in all three tone
 modes. The two branches seed that hue differently, as they always have: the OKHSL branch
 (`okhslStopsAnchored`, perceptual and peak) uses `palette.hue` directly, since OKHSL hue IS OKLab hue;

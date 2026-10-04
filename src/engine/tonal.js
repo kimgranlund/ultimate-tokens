@@ -644,8 +644,9 @@ function hexToRgbLocal(hex) {
 // ACHROMATIC_ANCHOR_C (Ticket #739, Q2 ruled 0.002) - an anchor's OKLab chroma below this is
 // achromatic: a grey, white, or black source whose stored hue is rounding residue, not a color
 // anyone chose. An achromatic anchor still contributes its own lightness and (near-zero) chroma
-// at the pivot - see anchorChromaBasis - but no hue: the ramp takes the palette's own stored hue
-// instead (Q1 (a)), on both anchored branches below. OKLab chroma is the test, not CAM16 chroma:
+// at the pivot (on perceptual and peak, the anchor's own okhsl s read directly in
+// okhslStopsAnchored, not routed through anchorChromaBasis) but no hue: the ramp takes the
+// palette's own stored hue instead (Q1 (a)), on both anchored branches below. OKLab chroma is the test, not CAM16 chroma:
 // CAM16 chroma of a neutral is not 0 in this implementation (see rgbToOklabChroma's own comment).
 // One 8-bit code off exact grey reads ~0.0012-0.0018; the constant sits just above that noise
 // floor, below the two-codes-off reading (~0.003), so only rounding residue crosses it.

@@ -43,3 +43,7 @@
 - `test/engine/exports.mjs:494`, `:892`: R69 history notes outside the lane that still read true as history. Left.
 - `CHANGELOG.md:73` and the ADR-026 amendment in `decision-records.md`: history, append-only. Left.
 - The plan's C2.6 and C5.1 wording (`climb = true`, `r = g / 90`) is the Orchestrator's to edit.
+
+## Pass 2
+
+Comment-only fix for two stale pointers from pass 1. `src/engine/tonal.js` (the `ACHROMATIC_ANCHOR_C` comment) and `docs/reference/references/knowledge-02-tonal-scale.md` no longer say the achromatic pivot chroma routes through `anchorChromaBasis`; both now say that on perceptual and peak the anchor's own okhsl `s` is read directly in `okhslStopsAnchored`. No code changed. `npm test` regenerated `figma/plugin/ui.html` and `src/ui/describe-mcp-assets.js` (the comment text is embedded); both are committed. `baseline-agrees-check.sh` read `STALE ui.html: baseline 4170.5 KB, tree 4170.7 KB`; `.sdlc/baseline.md` carries the new KB cell and a Correction line, `stale total: 0` after.
