@@ -11,7 +11,7 @@ audience: builder, reviewer, planner
 ---
 # SPEC: Muted base ramps, a per-palette prime system, and 8 brand-derived data palettes
 
-> Superseded in part by R94 to R98 (#785): a group's Base chroma is now a whole-ramp damper (the at-100 ramp times g/100, damp only), not REQ-002's absolute target, and Material defaults to 100/60, not 30/60 (EX-2's `chroma 30` Neutral ramp no longer holds).
+> Superseded in part by R94 to R98 (#785): a group's Base chroma is now a whole-ramp damper (the at-100 ramp times g/100, damp only), not REQ-002's absolute target, and Material defaults to 100/60, not 30/60 (EX-2's `chroma 30` Neutral ramp no longer holds). EX-1's byte identity holds for chroma-100 subjects only, and AC-003(a)'s fixture pins the damped construction (see EX-1 and AC-003).
 
 Intent records: GitHub issue #503 (`kind:feature`, `size:big`, `lane:color-engine`) and #533 (the
 prime-system re-ruling, Findings 2026-09-11). Companion design: `docs/lld/lld-muted-base-key-spikes.md`.
@@ -337,7 +337,9 @@ ladder, their own chroma control, and their own token group; the editor strip re
 
 - **EX-1 (NORMATIVE, engine identity).** `paletteStops({hue: 267, chroma: 95, skew: -20, lift: 0},
   DEFAULT_CONTROLS, EXPORT_STOPS)` equals the 0.2.0 output byte for byte, and neither `baseIntensity`
-  nor `primeChroma` nor any group value has any effect on it.
+  nor `primeChroma` nor any group value has any effect on it. Since #785 (R94) this byte identity holds
+  for chroma-100 subjects only: `paletteStops({chroma: 95, ...})` moves against the 0.2.0 output on 20/25
+  perceptual and 13/25 even cells, because the ramp is the at-100 ramp times 95/100.
 - **EX-2 (NORMATIVE, group target).** Default document, brand `baseChroma 100`: Primary's ramp equals
   `paletteStops({hue: 267, chroma: 100, skew: -20, lift: 0}, ...)`, not the `chroma 95` ramp; its
   prime system and gallery tile are still computed at `chroma 95`. Secondary (`chroma 100`) is
@@ -416,7 +418,9 @@ ladder, their own chroma control, and their own token group; the editor strip re
   `controls.baseIntensity`; it ignores `palette.chroma` and `palette.intensity` (a probe with
   `chroma 10, intensity 100` in a group at 60 renders the `chroma 60` ramp on both ramp paths).
 - **AC-003** Two fixtures. (a) Engine: `test/engine/fixtures/tonal-legacy.json` retained, compared
-  byte for byte by `test/engine/tonal.mjs` (`intensity-legacy`), regenerated only by hand. (b)
+  byte for byte by `test/engine/tonal.mjs` (`intensity-legacy`), regenerated only by hand. Since #785 the
+  fixture pins the damped construction for 14 of the 16 defaults (Secondary and Warning, the chroma-100
+  subjects, are unchanged by the damper), not pre-0.2.0 identity. (b)
   Document: a new `test/ui/fixtures/default-doc-ramps.json` holding `projectView(defaultDocument())`'s
   25-stop hex per palette at the ratified `paletteGroups` defaults, compared byte for byte by
   `test/ui/shell.mjs`, regenerated only by `node scripts/gen-ramp-fixture.mjs` (never by `npm test`;

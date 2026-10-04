@@ -594,6 +594,8 @@ for (const mode of ["perceptual", "peak"]) {
   if (checked < 6) FAIL("hue-solver-best", `(iii) only ${checked} of ${CONVERGED.length} cells still converge early`);
 }
 
+// Since #785 (R94 to R98) this fixture pins the damped construction for 14 of the 16 defaults (only Secondary
+// and Warning, the chroma-100 subjects, are unchanged by the damper), not pre-0.2.0 identity; see the re-pin note below.
 // ── hpg-tonal-intensity-legacy: paletteStops is byte-identical to the pre-0.2.0 engine (AC-003a/006,
 // EX-1), 0.3.0 (#556/#559 re-ruling) removes the baseIntensity multiplier entirely, so this fixture
 // (generated from the pre-0.2.0 engine, commit 83756bb, by scripts/gen-tonal-fixture.mjs; regenerated
