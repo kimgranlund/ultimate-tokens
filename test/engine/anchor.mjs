@@ -1063,8 +1063,18 @@ for (const n of loneSpikeSorted) FAIL("anchor-ramp", `lone-spike: unexpected mem
       .replace('from "./okhsl.js"', `from "${okhslUrl}"`)
       .replace(PLATEAU_TARGET, "uG *= 1;"),
   ).toString("base64")}`;
+  // compute-layers U3: projectView's ramp now comes from layers.mjs's compute, so layers.mjs is loaded
+  // the same way (its tonal.js import -> the plateau-neutralised module, the rest -> absolute file URLs)
+  // and model.mjs's layers import points at it below.
+  const layersSrc = readFileSync(new URL("../../src/engine/layers.mjs", import.meta.url), "utf8");
+  let patchedLayers = layersSrc;
+  for (const f of ["controls.mjs", "resolve.mjs", "tonal.js", "prime.mjs", "semantic.js", "type.mjs", "geometry.mjs"]) {
+    if (!layersSrc.includes(`from "./${f}"`)) FAIL("anchor-ramp", `lone-spike negative control: layers.mjs import target not found - ./${f} moved, update this control`);
+    patchedLayers = patchedLayers.replace(`from "./${f}"`, `from "${f === "tonal.js" ? buggyTonalUrl : new URL(`../../src/engine/${f}`, import.meta.url).href}"`);
+  }
+  const buggyLayersUrl = `data:text/javascript;base64,${Buffer.from(patchedLayers).toString("base64")}`;
   // model.mjs's own relative imports, rewritten to absolute file URLs so it can load standalone from a
-  // data: URL - every one EXCEPT tonal.js, which points at the plateau-neutralised module above.
+  // data: URL - every one EXCEPT tonal.js and layers.mjs, which point at the plateau-neutralised modules above.
   const modelSrc = readFileSync(new URL("../../src/ui/model.mjs", import.meta.url), "utf8");
   const modelRewrites = [
     ['"../engine/collections.js"', new URL("../../src/engine/collections.js", import.meta.url).href],
@@ -1078,6 +1088,7 @@ for (const n of loneSpikeSorted) FAIL("anchor-ramp", `lone-spike: unexpected mem
     ['"../engine/prime.mjs"', new URL("../../src/engine/prime.mjs", import.meta.url).href],
     ['"../engine/resolve.mjs"', new URL("../../src/engine/resolve.mjs", import.meta.url).href],
     ['"../engine/controls.mjs"', new URL("../../src/engine/controls.mjs", import.meta.url).href],
+    ['"../engine/layers.mjs"', buggyLayersUrl],
     ['"../engine/semantic.js"', new URL("../../src/engine/semantic.js", import.meta.url).href],
     ['"../engine/type.mjs"', new URL("../../src/engine/type.mjs", import.meta.url).href],
     ['"../engine/geometry.mjs"', new URL("../../src/engine/geometry.mjs", import.meta.url).href],

@@ -73,6 +73,11 @@ they landed on `main` and reference the squash-merged PR that introduced them.
   `src/engine/layers.mjs` lists `controls`, `group-chroma`, `ramp`, `prime`, `roles`, `type` and `geometry`
   at version 1, each with its declared inputs, outputs and the engine function it runs. Nothing calls it
   yet and no output moves; `test/engine/layers.mjs` checks the shape and the input graph.
+- **The canvas and every export read one evaluator** (#788, compute-layers U3). `compute(doc)` in
+  `src/engine/layers.mjs` walks the controls, group-chroma, ramp, prime and roles layers once per
+  palette; `projectView` and `derivedAll` are now views over its result, so the role chain (accent ref,
+  on-color contrast, role overrides) runs in one place. No output moves: `projectView` is byte-identical
+  to `main` over the default kit and all 343 presets.
 
 ### 2026-09-30
 

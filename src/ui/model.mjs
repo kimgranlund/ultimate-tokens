@@ -28,17 +28,17 @@ import { oklchToRgb } from "../engine/okhsl.js";
 import { iconSystem } from "../engine/icon-systems.mjs";
 import { motionTokens } from "../engine/motion.mjs";
 import {
-  paletteStops,
   effHue,
   STOPS,
   EXPORT_STOPS,
   DEFAULT_CONTROLS as ENGINE_DEFAULT_CONTROLS,
 } from "../engine/tonal.js";
 import { deriveDataHues } from "../engine/data-hues.mjs";
-import { primeSwatches, PRIME_STEPS } from "../engine/prime.mjs";
+import { PRIME_STEPS } from "../engine/prime.mjs";
 import { rampChromaOf as rampChromaOfPure, primeChromaOf as primeChromaOfPure } from "../engine/resolve.mjs";
 import { resolveControls } from "../engine/controls.mjs";
-import { semanticRoles, refKey, applyRoleOverrides, applyOnColorContrast, applyAccentRef, isAchromaticRef } from "../engine/semantic.js";
+import { compute } from "../engine/layers.mjs";
+import { semanticRoles, refKey, isAchromaticRef } from "../engine/semantic.js";
 import { typeScale, DEFAULT_TYPE } from "../engine/type.mjs";
 import { geomScale, DEFAULT_GEOMETRY, RAMP_LADDER } from "../engine/geometry.mjs";
 
@@ -912,10 +912,16 @@ export function paletteKeyColors(doc) {
 }
 
 // projectView, the document -> view projection. Pure: same doc, same view.
-// Composes paletteStops + semanticRoles + the five exporters. The app renders
+// Reads compute(state) (the ramp, prime and role layers) + the exporters. The app renders
 // EVERYTHING on the right from this; nothing here is stored back on the doc.
 export function projectView(doc) {
-  const controls = docControls(doc);
+  // compute(state) (engine/layers.mjs) is the ONE evaluation of the colour layers: every palette's
+  // group-resolved ramp chroma, its 25-stop ramp, its prime swatches and its role chain (accent ref,
+  // on-color policy, per-doc overrides). This view and every export below (derivedAll) read that
+  // same result, so the canvas and the exports cannot resolve a palette differently.
+  const state = stateOf(doc);
+  const computed = compute(state);
+  const controls = computed.controls;
   const allPalettes = doc.palettes ?? [];
 
   // Per-palette: the display ramp (19 STOPS), its 53 resolved roles, and the
@@ -924,25 +930,12 @@ export function projectView(doc) {
   const plot = [];
   const contrast = [];
 
-  for (const p of allPalettes) {
-    const n = slug(p.name);
-    // accent-ref-resolved roles ("single" → prime accent 500/500), computed before the ramp, reused below
-    // for the on-color-contrast step so it's derived once per palette.
-    const accentRoles = applyAccentRef(semanticRoles(n), controls.accentRef);
-    // SPEC 0.3.0 REQ-002/008: rampChromaOf is the group's chroma damper (#785, R94: tonal.js
-    // `dampStops` scales the at-100 ramp by it / 100); it REPLACES p.chroma below, never multiplies
-    // it (there is no more per-palette ramp override in any group). primeChromaOf feeds the prime system alone, via primeSwatches' own `controls`
-    // param below; p.chroma itself stays untouched and still feeds deriveKeyColor (REQ-002/052).
-    const rampChroma = rampChromaOf(p, doc);
-    const primeChromaResolved = primeChromaOf(p, doc);
-    // Resolve roles against the FULL EXPORT_STOPS ramp (25) so refs to the export-only
-    // half-steps (75/125/175/825/875/925) resolve, they are absent from the 19 display STOPS,
-    // and a miss used to fall back to #000000 (the black swatches in the Roles panel).
-    const fullStops = paletteStops(
-      { hue: p.hue, chroma: rampChroma, skew: p.skew, lift: p.lift, hueShift: p.hueShift, hueSameDir: p.hueSameDir, cuspPull: p.cuspPull, anchor: p.anchor },
-      controls,
-      EXPORT_STOPS,
-    ).map((s) => ({
+  for (const [i, p] of allPalettes.entries()) {
+    const { n, stops, prime: primeTokens, roles: roleRefs } = computed.palettes[i];
+    // The FULL EXPORT_STOPS ramp (25) so role refs to the export-only half-steps
+    // (75/125/175/825/875/925) resolve: they are absent from the 19 display STOPS, and a miss used
+    // to fall back to #000000 (the black swatches in the Roles panel).
+    const fullStops = stops.map((s) => ({
       stop: s.stop,
       hex: s.hex,
       rgb: s.rgb,
@@ -955,12 +948,7 @@ export function projectView(doc) {
 
     const byStop = rampByStop(fullStops);                          // 25 stops, every role ref resolves
     const ramp = fullStops.filter((s) => STOPS.includes(s.stop));  // 19 display stops for the canvas
-    // on-color policy: in "contrast" mode flip the accent on-colors to the better-contrasting end
-    // (vs the resolved accent fill) BEFORE per-doc overrides, so an explicit override still wins.
-    const lumOf = (ref) => { const hit = byStop.get(Number(ref)); return hit ? relLum(hit.rgb) : 0; };
-    // on-color policy is resolution-layer, BEFORE per-doc overrides so an explicit override still wins.
-    const baseRoles = applyOnColorContrast(accentRoles, n, lumOf, controls.onColorMode);
-    const roles = applyRoleOverrides(baseRoles, doc.roleOverrides).map((r) => ({
+    const roles = roleRefs.map((r) => ({
       key: r.key,
       suffix: r.suffix,
       name: n + r.suffix, // the semantic token name (e.g. "neutral", "neutral-dim")
@@ -982,18 +970,10 @@ export function projectView(doc) {
     // keyColors = retained brand colors placed on the ramp through the perceptual lens.
     const keyColors = placeKeyColors(p.keyColors, fullStops);
 
-    // prime = the seven per-palette identity swatches (REQ-050..057), on their own OKHSL ladder,
-    // independent of the ramp above, the key strip (REQ-034) and brandKit()/tokenCount() (REQ-057)
-    // read this. Built from prime.mjs's own primeSwatches(), never reimplemented here. `anchor`
-    // (ticket #681, U1) forwards through the same way exports.js's derivePalette does, a no-op when
-    // absent, so the canvas and every export format render the SAME prime.DEFAULT for an anchored
-    // palette rather than the live UI staying cusp-derived while exports alone pick up the anchor.
-    const primeTokens = primeSwatches(
-      { hue: p.hue, chroma: p.chroma, skew: p.skew, hueShift: p.hueShift, hueSameDir: p.hueSameDir, anchor: p.anchor, primeChroma: undefined },
-      { ...controls, primeChroma: primeChromaResolved },
-    );
-
-    // ramp = 19 core display stops; fullRamp = all 25 EXPORT_STOPS (the extended view).
+    // ramp = 19 core display stops; fullRamp = all 25 EXPORT_STOPS (the extended view). prime = the
+    // seven per-palette identity swatches (REQ-050..057) on their own OKHSL ladder, read by the key
+    // strip (REQ-034) and brandKit()/tokenCount() (REQ-057): compute's `prime` layer, the same
+    // swatches every export format emits.
     palettes.push({
       name: p.name, on: p.on !== false, key: keyHex, keyOklch, ramp, fullRamp: fullStops, roles, keyColors, prime: primeTokens,
       // group (SPEC 0.3.0 RP-1, ticket #572): the palette's resolved canvas group, metadata only,
@@ -1031,16 +1011,14 @@ export function projectView(doc) {
 
   // The five export formats, all over the SAME doc (enabled palettes only,
   // the exporters filter on !== false). theme is never read here (AC-U3).
-  const state = stateOf(doc);
-  // derived (performance, review pass 5 then a review-6 perf/memo-safety pass, 2026-09-19):
-  // `derivedAll(state)` re-derives every enabled palette's full ramp + roles + prime; each of the 9
-  // export calls below used to call it independently, re-solving the SAME anchored ramps ~9x over for
-  // byte-identical output. Computed ONCE here (a local value, no global/module-level cache - the
-  // #686-class defect a first attempt at this fix had) and threaded through as each exporter's
-  // optional trailing `derived` argument; every exporter still derives its own copy when called
-  // WITHOUT it (every other caller - tests, the MCP server, figmaBundle/brandKit's own state - is
-  // unaffected).
-  const derived = derivedAll(state);
+  // derived (performance, review pass 5 then a review-6 perf/memo-safety pass, 2026-09-19): each of
+  // the 9 export calls below used to derive every enabled palette independently, re-solving the SAME
+  // anchored ramps ~9x over for byte-identical output. Read ONCE here off the view's own `computed`
+  // (a local value, no global/module-level cache - the #686-class defect a first attempt at this fix
+  // had) and threaded through as each exporter's optional trailing `derived` argument; every exporter
+  // still derives its own copy when called WITHOUT it (every other caller - tests, the MCP server,
+  // figmaBundle/brandKit's own state - is unaffected).
+  const derived = derivedAll(state, computed);
   // exportDTCG already splits the tokens into the three Figma mode files; compute it
   // once and surface those files INDIVIDUALLY so the UI can download Light_tokens.json
   // and Dark_tokens.json as separate files (one per Figma variable-collection mode).
