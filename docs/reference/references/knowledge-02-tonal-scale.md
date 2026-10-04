@@ -255,7 +255,7 @@ palette's group and the document's `paletteGroups`/global fallbacks first) compu
 rampChromaOf(p, doc) = paletteGroups[paletteGroup(p)].baseChroma ?? controls.baseIntensity
 ```
 
-and the model hands the resolved number to `paletteStops`/`okhslStops` AS the palette's own
+and the model hands the resolved number to `paletteStops` AS the palette's own
 `chroma` (`paletteStops({ ...p, chroma: rampChromaOf(p, doc) }, controls, stops)`), it REPLACES
 `palette.chroma` for ramp purposes. Inside `paletteStops` that value `g` is one damper on the whole
 ramp: every path renders its stops exactly as at `g = 100` (every floor, cap, tone hold and gamut

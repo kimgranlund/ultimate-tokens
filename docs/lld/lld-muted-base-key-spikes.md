@@ -59,7 +59,7 @@ export function hueAnchorFrac(palette, controls);
 
 // model.mjs (0.3.0, #556/#559)
 export const PALETTE_GROUPS = ["material", "brand", "system", "data"];
-export const GROUP_DEFAULTS = { material: { baseChroma: 30, primeChroma: 60 }, brand: { baseChroma: 100, primeChroma: 100 },
+export const GROUP_DEFAULTS = { material: { baseChroma: 100, primeChroma: 60 }, brand: { baseChroma: 100, primeChroma: 100 },
                                 system: { baseChroma: 100, primeChroma: 100 }, data: { baseChroma: 100, primeChroma: 100, locked: true } };
 export function paletteGroup(p) -> "material"|"brand"|"system"|"data"   // p.group ?? default by slug(p.name)
 export function resolvePaletteGroups(doc) -> { [g]: { baseChroma, primeChroma, locked } }  // doc.paletteGroups default-filled
@@ -146,7 +146,7 @@ Document shape (all optional on read, always written by `serialize`):
 
 ```js
 { schemaVersion: 4, baseIntensity: 100, primeChroma: 100,
-  paletteGroups: { material: { baseChroma: 30, primeChroma: 60 }, brand: { baseChroma: 100, primeChroma: 100 },
+  paletteGroups: { material: { baseChroma: 100, primeChroma: 60 }, brand: { baseChroma: 100, primeChroma: 100 },
                    system: { baseChroma: 100, primeChroma: 100 }, data: { baseChroma: 100, primeChroma: 100, locked: true } },
   palettes: [ { ..., group?: "material"|"brand"|"system"|"data", primeChroma?: 0..100 }, ..., { name: "Data 1", ... } ] }
 ```

@@ -101,7 +101,9 @@ ladder, their own chroma control, and their own token group; the editor strip re
   `src/engine/exports.js` `derivePalette` (both call one shared resolver); `tonal.js` and `prime.mjs`
   stay pure and group-unaware.
 - **REQ-005** The OKLCH hue anchor at stop 500 uses the resolved ramp chroma, so the
-  `oklch-hue-anchor` guarantee holds for every group target.
+  `oklch-hue-anchor` guarantee holds for every group target. (Since #785 the anchor reads the chroma
+  the ramp is rendered at, always 100 below `paletteStops`'s re-entry; the group value is applied
+  afterwards by `dampStops`, which holds hue, so the guarantee still holds for every group value.)
 - **REQ-006** Every existing tonal gate stays green with no pin change (the engine contract is the
   0.2.0 one). Chroma targets never perturb tone.
 - **REQ-007** Product defaults: `paletteGroups` as in REQ-001; global `baseIntensity 100`,
@@ -436,7 +438,10 @@ ladder, their own chroma control, and their own token group; the editor strip re
   (`git grep -n "intensityAt\|baseIntensity\|\.intensity\b" src/engine` returns nothing); `git grep
   -n "identityStops\|keyIntensity" src test` returns nothing outside `RENAME_MAPS` and its test.
 - **AC-005** `oklch-hue-anchor` gate passes with `rampChroma` in `{20, 45, 100}` passed as chroma.
-- **AC-006** The full tonal verifier passes; tones equal within 1e-9 across group targets. Its
+- **AC-006** The full tonal verifier passes; the damped stop keeps its at-100 L* within the two
+  pixels' rounding floors on perceptual and peak, and exactly on even (`group-chroma-damper` (v);
+  probe on a hue 267, skew -20 palette at group values 30, 60 and 95: largest stop tone delta
+  0.177 to 0.200 on perceptual and peak, 0 on even). Its
   0.2.0 pin is no longer unchanged: #785 regenerated the `tonal-legacy` fixture (512 of 800 cells
   moved), and it pins the damped construction for 14 of the 16 defaults (see AC-003(a)).
 - **AC-007** `DEFAULT_CONTROLS.baseIntensity === 100 && primeChroma === 100`; in

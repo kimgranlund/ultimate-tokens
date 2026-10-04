@@ -106,9 +106,9 @@ export function effHue(hue, hueSpace, chromaFrac = 1) {
 // hueAnchorFrac  -  the chroma fraction the ramp's VIVID CENTER stop (500) actually reaches: the palette's
 // own nominal chroma, capped at the gamut peak. Anchoring effHue here  -  not at the raw un-anchored hue  - 
 // puts the OKLCH-hue calibration on the saturated swatches the user reads, so they land on the SET hue.
-// REQ-005 (0.3.0): `palette.chroma` is the resolved value paletteStops was called with, the absolute
-// group target on the group-resolution callers, the palette's own chroma on a direct engine call, so
-// the anchor always follows the SAME chroma the ramp itself is built from; no separate factor needed.
+// REQ-005 (0.3.0): `palette.chroma` is the chroma the ramp is rendered at, so the anchor follows the SAME
+// chroma the ramp is built from. Since #785 that is always 100 here: `paletteStops` re-enters at 100 and
+// `dampStops` applies the group value after, so the re-entry hides it; a direct call uses its own chroma.
 //
 // No longer amplified by dampAmp (#681 U3, Q7): chromaEnvelope is exactly 1 at the anchor stop for EVERY
 // dampAmp value when lift is 0 (the anchor's own rendered chroma no longer moves with dampAmp  -  that
