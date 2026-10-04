@@ -8,3 +8,14 @@
 | Question | May the plan take revision 15 (a sixteenth revision row, past the cap of 5): one new unit U6 (S, builder-l3, reviewer-l3, verifier-l2), records only, fixing those four lines, no engine or test logic change, then pre-land pass 3? |
 | Options | A (recommended): yes, revision 15 with U6 as above. · B: the two red records only, the wording to a follow-up issue. · C: no, land with the two reds recorded |
 | Default if unanswered | A (stale records are repaired in the change that invalidates them; no code moves) |
+
+## Question 2 (added 2026-10-04, after U6 verdict pass 1 🔴)
+
+| Field | Value |
+|---|---|
+| Blocks | U6 and pre-land pass 3 |
+| Evidence | `.sdlc/verdicts/pane-context-U6.md` 🔴 at `edeeb8d9`; `.sdlc/plans/pane-context-U6-rediagnosis.md` |
+| Finding | U6's criteria, builder, reviewer and Verifier all agree every named line is fixed and every gate is green. The 🔴 is five more live lines of the same stale stop-500 claim, found by the Verifier's tree sweep (one skill reference, three code comments, one LLD line), all outside U6's lane. U6 has had 2 builder passes, so a fix is pass 3. |
+| Question | May U6 take a pass 3 (one builder-l4 pass, wording and comments only, lane widened to the five lines, a class-level sweep attached), then review, verdict and pre-land pass 3? |
+| Options | A (recommended): yes, pass 3 as above. · B: yes, but the skill reference and the LLD line only; the three code comments go to a follow-up issue (they move the bundles). · C: no, land with the five lines recorded as known stale |
+| Default if unanswered | none: pass 3 is never dispatched without the owner |
