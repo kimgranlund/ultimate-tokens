@@ -1,13 +1,13 @@
-# Pre-land request: pane-context (#785), pass 3
+# Pre-land request: pane-context (#785), pass 4
 
 | Field | Value |
 |---|---|
-| Branch | plan/pane-context @ 94bcd8aa04067b17cf561cbddf9cc0b2b2aa5347 (U1 to U6 merged; U6 merge 45a6e83d, verdict 🟢 at ec81e7ea after owner Q3 A) |
-| Ticket | #785 (draft PR #797 open, body refreshed) |
-| Scope | the whole diff `origin/main...plan/pane-context`; main is 28 commits ahead, all `.sdlc/` only, and merges clean (`git merge-tree`), so main was not merged in again; pass 2 findings in `.sdlc/verdicts/pane-context-prepr.md` (history, overwritten by pass 3) |
-| Criteria | C1.* to C6.* in `git show plan/pane-context:.sdlc/plans/pane-context.md` (revision 15); unit verdicts `.sdlc/verdicts/pane-context-U1.md` to `pane-context-U6.md` |
-| Record to write | `.sdlc/verdicts/pane-context-prepr.md` with `sha: 94bcd8aa04067b17cf561cbddf9cc0b2b2aa5347` |
+| Branch | plan/pane-context @ 06f7f553bba9aaea1570648bf1d0abfcf2ac6422 (U1 to U7 merged; U7 verdict 🟢 at 9f43f3fe, merge 8d4529a7; main merged in at 06f7f553 with `.sdlc/board.md` resolved to main's, the pane-context rows identical) |
+| Ticket | #785 (draft PR #797 open, body refreshed with U7) |
+| Scope | the whole diff `origin/main...plan/pane-context`; it now merges clean into main (`git merge-tree`); 56 non-`.sdlc/` paths |
+| Criteria | C1.* to C7.* in `git show plan/pane-context:.sdlc/plans/pane-context.md` (revision 16); unit verdicts `.sdlc/verdicts/pane-context-U1.md` to `pane-context-U7.md` |
+| Record to write | `.sdlc/verdicts/pane-context-prepr.md` with `sha: 06f7f553bba9aaea1570648bf1d0abfcf2ac6422` (pass 3 stays in git history) |
 | Pair | reviewer-l3 plus verifier-l2 (R86/R92, no Fable); name the substitution in the record header |
-| Baseline gates | npm test, npm ci and npm run build on this head; `baseline-agrees-check.sh` printed `stale total: 0` here (ui.html 4170.9 KB); smoke; ceiling-counts and panda-smoke controls; CI legs are the Conductor's |
-| Pass 2 follow-ups | A1 (ADR-026 card) and A2 (SPEC EX-1) were U6's: re-verify closed; A3, A4 closed in U6. Re-run C4.16 (pass 2 finding 7). The headless-boot `fails` dump (finding 5) is a follow-up issue, not a bar. The integrate question has no owner Answer (report, not a bar); `decision-records.md` has 2 in-place line edits (report) |
-| Reminder | R98: none found line; R97 accepted; owner answers: revision 13, 14, 15 and U6 pass 3 and 4, all A; compute-layers U3 waits on this landing |
+| Baseline gates | npm test, npm ci and npm run build on this head; `baseline-agrees-check.sh` printed `stale total: 0` (ui.html 4170.9 KB); smoke; ceiling-counts and panda-smoke controls; CI legs are the Conductor's |
+| Pass 3 finding | the one 🔴 (a false `tonal.js:109-110` comment and the same class in comments and records) was U7; re-verify it closed on this head, and re-run the "group target" sweep yourself |
+| Reminders | R98: none found line; R97 accepted; owner answers: revisions 13 to 16 and U6 pass 3 and 4, all A. Not bars, report only: the vestigial `palette.chroma / 100` reads below `tonal.js:946` (follow-up issue), the headless-boot `fails` dump, the integrate-question authority, the `decision-records.md:828` in-place edit, and the three U7 out-of-lane finds (`anchor.mjs:505`, the SPEC-muted-base card line 4, spec REQ-007 banner). Compute-layers U3 waits on this landing |
