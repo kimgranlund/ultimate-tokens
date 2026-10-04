@@ -97,7 +97,7 @@ A measurement unit first, a fix second. The builder reproduces the three reading
 
 Grades per R92: every unit reviewer-l3 then verifier-l2; the pre-land pair reviewer-l3 plus verifier-l2. Builder grades below.
 
-- [ ] U1 (S) #748 voice reread of the swept store copy and landing page, plus #796's four marketing voice counts · wave A · `marketing-manager-agent` with `ultimate-tokens-brand-voice` as the builder seat · grade l2 · lane `docs/marketing/**` only · C1.1 to C1.5
+- [x] U1 (S) #748 voice reread of the swept store copy and landing page, plus #796's four marketing voice counts · wave A · `marketing-manager-agent` with `ultimate-tokens-brand-voice` as the builder seat · grade l2 · lane `docs/marketing/**` only · C1.1 to C1.5
 - [ ] U2 (S) #783 outside citations: delete the fourth rename-map copy, pin E1 on single-quoted headings, hand-repair `ds-export.js:770`, record the four checkability pitfalls in adapter §1 · wave A · grade l2 · lane `figma/binder/mode-apply-plan.mjs`, `test/repo/em-dash.mjs`, `test/repo/fixtures/`, `src/engine/ds-export.js` (one prose line), `.sdlc/adapter.md` · C2.1 to C2.5
 - [ ] U3 (S) #787 predicate: `src/engine/names.mjs` with `emittedNames` and `nameCollisions`, `test/engine/names.mjs`, `TESTS` entry · wave A · grade l3 · lane those two new files plus the `TESTS` line · C3.1 to C3.4
 - [ ] U4 (S) #786 the segment write moves from `selectPalette` into the row click handlers; `(b3)` added; the U1-f1 question amended · wave B · grade l3 · lane `src/ui/sections/color.js`, `test/ui/headless-boot.mjs`, `.sdlc/questions/pane-context-U1-f1.md`, `docs/lld/app-shell.md` if it states the rule · C4.1 to C4.5
