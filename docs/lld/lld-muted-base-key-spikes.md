@@ -168,8 +168,7 @@ only) and `test/ui/fixtures/default-doc-ramps.json` (document: 16 palettes x 25 
 `node scripts/gen-ramp-fixture.mjs`, which the #559 builder adds and runs once; `npm test` compares,
 never writes). Which default palettes stay byte-identical to 0.2.0 was derived live in the same
 gate from the `chroma == rampChroma` rule, not hard-coded (since #785 that identity holds only for a palette
-whose group is at 100, a group below 100 damps the whole ramp, R94: 14 of the 16 defaults moved, Secondary
-and Warning did not).
+whose group is at 100, a group below 100 damps the whole ramp).
 
 Token counts, default document: 16 palettes x 96 = 1,536 tokens. Figma: Color Primitives 576, Color
 Roles 848 x 2 modes, Color Prime 112 x 1 mode.

@@ -96,7 +96,7 @@ These three are outside the lane line as written (knowledge-02 is in it for sect
 
 ### Class sweep (C6.1)
 
-Method: every tracked file under `docs`, `.claude`, `plugin`, `mcp`, `src`, `scripts`, `test`, line breaks collapsed (a 4-line window with comment, list and table markers stripped), matching `stop 500`, `verbatim`, `rampChroma`, `byte for byte`, `0.2.0 output`, case-insensitive. Excluded as history: archives, `docs/tickets`, `reviews/`, CHANGELOG, amendments, verdicts, handoffs, questions, generated `*-assets.js` and `type-fonts.js`, fixtures and JSON. The script is `/Users/kimba/.claude/jobs/8c58a81c/tmp/pc-U6-p3/triage.py` (scratch only, not committed). Result: 546 hits (537 from the script plus 9 in the LLD, swept by hand because the LLD is in the lane): 433 true as written, 74 already qualified, 27 history, 12 fixed (the hit lines of the eight edits above).
+Method: every tracked file under `docs`, `.claude`, `plugin`, `mcp`, `src`, `scripts`, `test`, line breaks collapsed (a 4-line window with comment, list and table markers stripped), matching `stop 500`, `verbatim`, `rampChroma`, `byte for byte`, `0.2.0 output`, case-insensitive. Excluded as history: archives, `docs/tickets`, `reviews/`, CHANGELOG, amendments, verdicts, handoffs, questions, generated `*-assets.js` and `type-fonts.js`, fixtures and JSON. The script is `/Users/kimba/.claude/jobs/8c58a81c/tmp/pc-U6-p3/triage.py` (scratch only, not committed). Result (corrected in pass 4, see Pass 4): the table below lists 532 hit lines: 427 true as written, 70 already qualified, 26 history, 9 fixed. The first draft of this line said 546 (433 / 74 / 27 / 12), which the table never summed to.
 
 Dispositions, with the reason class for each:
 
@@ -175,9 +175,9 @@ Dispositions, with the reason class for each:
 | `src/engine/okhsl.js` | true as written | 3 |
 | `src/engine/prime.mjs` | true as written | 133, 169, 246 |
 | `src/engine/resolve.mjs` | true as written | 12, 17 |
-| `src/engine/tonal.js` | already qualified | 570, 597, 729, 734, 845, 1188, 1362 |
+| `src/engine/tonal.js` | already qualified | 570, 597, 729, 734, 754, 845, 1188, 1362 |
 | `src/engine/tonal.js` | fixed | 633 |
-| `src/engine/tonal.js` | true as written | 63, 392, 450, 603, 670, 671, 674, 675, 698, 754, 832, 834, 835, 836, 839, 861, 983, 1006, 1044, 1162, 1190, 1274, 1309, 1311, 1314, 1331, 1332, 1454, 1487, 1488 |
+| `src/engine/tonal.js` | true as written | 63, 392, 450, 603, 670, 671, 674, 675, 698, 832, 834, 835, 836, 839, 861, 983, 1006, 1044, 1162, 1190, 1274, 1309, 1311, 1314, 1331, 1332, 1454, 1487, 1488 |
 | `src/engine/type.mjs` | true as written | 43, 757 |
 | `src/ui/app-helpers.mjs` | true as written | 1, 847 |
 | `src/ui/model.mjs` | true as written | 39, 221, 279, 451, 453, 457, 459, 638, 884, 947, 951, 957, 1141 |
@@ -239,3 +239,41 @@ Dispositions, with the reason class for each:
 | `card-amendment-check.sh` | `stale total: 0` |
 | `node test/repo/em-dash.mjs` | clean |
 | `node test/repo/branding.mjs` | clean |
+
+## Pass 4 (owner Q3 ruled A, `.sdlc/questions/pane-context-prepr-p2.md @ 87750a9f`; verdict pass 2 🔴 at `a282dd2b`)
+
+Grade l4. One clause cut, two handoff corrections, the C6.5 build control. Base `a282dd2b`. No code line changed.
+
+### The 🔴 line
+
+Verdict finding 1: LLD `docs/lld/lld-muted-base-key-spikes.md:170-172` attached "R94: 14 of the 16 defaults moved, Secondary and Warning did not" to the doc gate, whose fixture moved 0 of 16. The clause is deleted, the qualifier kept, no count or new claim added. The sentence now reads (new LLD text, `:169-171`):
+
+> gate from the `chroma == rampChroma` rule, not hard-coded (since #785 that identity holds only for a palette whose group is at 100, a group below 100 damps the whole ramp).
+
+The sentence parses after the cut (parenthesis closes, full stop after it).
+
+### `grep -rn '14 of the 16' docs src test .sdlc/records`, every hit
+
+| Hit | Reading |
+|---|---|
+| `docs/spec/spec-muted-base-key-spikes.md:426` (AC-003 (a)) | about the ENGINE fixture `tonal-legacy.json` ("Engine: ... Since #785 the fixture pins the damped construction for 14 of the 16 defaults"). True, left |
+| `docs/spec/spec-muted-base-key-spikes.md:441` (AC-006) | "regenerated the `tonal-legacy` fixture ... pins the damped construction for 14 of the 16 defaults (see AC-003(a))". Engine fixture, true, left |
+| `test/engine/tonal.mjs:597` | the `intensity-legacy` header over `tonal-legacy.json`. Engine fixture, true (verdict C6.3 🟢), left |
+
+No live false hit. The LLD hit at `:171` is gone.
+
+### Handoff corrections (records only)
+
+1. Pass 3 class sweep total. The table lists 532 hit lines, not the stated 546 (433 / 74 / 27 / 12). Re-counted by script over the table cells: 427 true as written, 70 already qualified, 26 history, 9 fixed (= 532; a first pass of the count read 531 because a regex ate the `327` in the LLD row). Corrected in place, marked "corrected in pass 4".
+2. The `src/engine/tonal.js:754` row. Line 754 is "ROUNDED rgb ... Never touches stop" and the qualifier "byte-exact by contract at group 100 (R94 damps after)" sits on `:755`, one line away, so 754 is already qualified, not true as written. Moved in the table (already qualified 70 includes it).
+3. Matcher gap. The pass 3 matcher was `stop 500`, `verbatim`, `rampChroma`, `byte for byte`, `0.2.0 output`: it missed the hyphen and no-space spellings (`stop-500`, `stop500`, `byte-for-byte`). Re-run of those spellings over the same scope (same exclusions): 9 files not already in the table (the brief said 7): `.claude/skills/type-scale/references/best-practices.md:22`, `mcp/brand-kit-merged-core.mjs:39`, `mcp/png-swatch-board.mjs:279,281`, `src/engine/hct.js:334`, `test/engine/fixtures/prime-pre-681.mjs:3`, `test/engine/fixtures/shadcn-baseline.css`, `test/figma/migrations.mjs:38`, `test/mcp/brand-kit-merged-core.mjs:78-80`, `test/mcp/png-swatch-board.mjs:161`. Each read: a copy statement, a variable named `stop500`, or an anchored-ramp hue note unrelated to the group damper. None is a live stop-500-at-any-group claim, no edit.
+
+### Gates
+
+| Check | Result |
+|---|---|
+| `npm test` (NODE_OPTIONS unset, 0 competing heavy node/vite/tsc/chrome processes) | all 54 test files passed, exit 0, 223 s; tree clean after apart from the two edited files |
+| `npm ci` in the worktree | exit 0 (node_modules was absent) |
+| `npm run build` (C6.5 build control) | exit 0, `wrote figma/plugin/ui.html 4170.9 KB`, tree unchanged |
+| negative control | `export const = ;` appended to `src/ui/app-helpers.mjs`: `npm run build` exit 1 (`Build failed with 1 error`), file reverted with `git checkout`, tree clean again |
+| U+2014 | none added |
