@@ -2,19 +2,33 @@
 kind: criteria-review
 plan: parallel-batch
 seat: verifier
-pass: 2
+pass: 3
 ticket: 786
 written: 2026-10-04
 ---
 
-# parallel-batch criteria review · pass 2 · 🔴 at `580df2dd`
+# parallel-batch criteria review · pass 3 · 🟢 at `c85544a6`
+
+Current state: pass 3 🟢 at `c85544a6` (revision 2, ticket #786). Pass 2's two reds are closed, and all 44 rows are checkable, so the plan can be mobilized on criteria. Only C4.4 and C7.2 changed since pass 2 (`git diff 580df2dd c85544a6 -- .sdlc/plans/parallel-batch.md`). Passes 2 and 1 follow as history.
+
+verdict: 🟢
+sha: c85544a6
+
+## Rows
+
+| # | State | Check I would run | Why / what to change, and the control |
+|---|---|---|---|
+| C4.4 | 🟢 | the revised `grep -c "^  ✗ .*(b2)\|..."`, shim `tail -1`, smoke | Fed the shim's real failure shape (`"  ✗ " + f`, `:4214`): a `  ✗ (b2) ...` line counts `1`, a `HEADLESS BOOT PASS`-only output counts `0`, so the `_deselect` control can raise it |
+| C7.2 | 🟢 | the `sed`, then `node test/repo/citations.mjs > "$out" 2>&1; echo "exit $?"; grep -c 'roles per palette' "$out"` | The shape now reports the run's own status: a stand-in that prints the pin and returns 1 gives `exit 1` then `1`. The base side was measured at `580df2dd` in pass 2: `rc=0`, count `0`. The verifier will point `out` under its job dir, not `mktemp`'s `/tmp` |
+
+Every other row is unchanged since pass 2 and stays 🟢.
+
+## Pass 2 · 🔴 at `580df2dd`: C4.4 and C7.2 reworded but still dead
 
 Current state: pass 2 🔴 at `580df2dd` (revision 1, ticket #786). Four of pass 1's six reds are closed: C2.4, C3.3, C4.2 and C4.3. Two remain, both in the rewording. (1) C4.4 counts `^✗` lines, but the shim prints each failure as `"  ✗ " + f` (`test/ui/headless-boot.mjs:4214`, two leading spaces), so the count is `0` whether `(b2)` passes or fails and the planted control cannot raise it. (2) C7.2's `echo "exit $?"` follows a pipe into `grep -c`, so it prints grep's status, not `citations.mjs`'s: a correct build (count 1 or more) prints `exit 0`, the opposite of the row's Expected `exits 1`. The rest of the revision (Q1 B moving U5 and U7 to wave A, Q2 A, Q3 B) changes no row's checkability. Pass 1 follows as history.
 
-verdict: 🔴
-sha: 580df2dddfbdba2d840aaf0f968d7be67680dfaa
 
-## Rows
+### Pass 2 rows
 
 | # | State | Check I would run | Why / what to change, and the control |
 |---|---|---|---|
