@@ -10,3 +10,11 @@
 | Options | A (recommended): yes, U7 as above, plus the LLD `:62` snippet and the reactivity line `:27`; the vestigial `/100` reads become a follow-up issue (code change, no pixel). · B: yes, U7 also removes the vestigial `/100` reads (a code change, bigger gates, needs a code reviewer and the full sweeps again). · C: no, land with the stale comment recorded as a known defect. |
 | Builder | A: builder-l3, reviewer-l3, verifier-l2 (R86), Pass 1. Not Fable. |
 | Default if unanswered | none: a revision past the cap needs the owner |
+
+## Answer
+
+| Field | Value |
+|---|---|
+| Asked | via AskUserQuestion, 2026-10-04 |
+| Options | Yes, docs only (Recommended) · Yes, plus code cleanup · Land as is |
+| Chosen | A: Yes, docs only (Recommended); vestigial /100 reads go to a follow-up issue |
