@@ -45,7 +45,7 @@
 | `dampCurve` | 0.5–4 | 1.5 | falloff exponent γ, where damping bites (low = broad into mids, high = confined to the ends) |
 | `dampAmp` | 0–100 | 0 | mid-tone chroma amplify, boosts the mids toward the gamut ceiling (multiplier > 1) |
 | `dampBias` | -100..100 | 0 | light(−)↔dark(+) asymmetry of the damping |
-| `hueSpace` | cam16 / oklch | oklch | how input hues are read (default flipped to OKLCH; cam16 stays selectable, and legacy cam16 docs carry `hueSpace:"cam16"` explicitly) |
+| `hueSpace` | cam16 / oklch | oklch | how input hues are read (default flipped to OKLCH; cam16 stays selectable, and legacy cam16 docs carry `hueSpace:"cam16"` explicitly); on an anchored palette it holds the measured hue of the anchor constant in the chosen hue space (anchor verbatim at stop 500, rung 3 and the k-100 key; §9, ADR-031) |
 | `theme` | auto / light / dark | auto | UI appearance only (not exported) |
 
 Per-palette: `{ name, hue 0–360, chroma 0–100, skew -100..100, lift -40..40, hueShift -60..60, hueSameDir:bool, on:bool, anchor?, sourceAnchor? }`.
@@ -331,7 +331,7 @@ and `primeSwatches(palette, controls)` (REQ-050..053a, REQ-056; #537 ruling) rea
 if palette.anchor is a 6-hex string:
   lPrime  = lstarFromRgb(anchor.rgb)        // the STORED source's own CIE L*, exact, no OKHSL round trip
   cKey    = cam16FromRgb(anchor.rgb).chroma //   its own CAM16 chroma
-  hue     = cam16FromRgb(anchor.rgb).hue    //   its own CAM16 hue
+  hue     = cam16FromRgb(anchor.rgb).hue    //   its own CAM16 hue (hueSpace cam16; under oklch each rung solves its own, §9)
 else:
   pk      = peakC(effHue(hue, hueSpace, chroma/100))   // the SAME call deriveKeyColor makes
   lPrime  = pk.tone                         // the key colour's own CIE L* by construction
@@ -454,6 +454,20 @@ neighbours. The basis is always computed at 100; a Base chroma product below 100
 value times the global k) then damps the whole anchored ramp by `g / 100` (§8.1), stop 500 included,
 so stop 500 is byte-exact to the anchor at a product of 100 only, and an achromatic anchor's ramp
 stays achromatic (`r * 0 = 0`).
+
+**The hue space picks the line of constant hue through the anchor (T-0015, ADR-031).** An anchored
+palette holds the measured hue of the anchor constant in the chosen hue space: `oklch` holds the
+anchor's OKLCH hue, `cam16` its CAM16 hue, and the anchor pixel is verbatim in both, because every
+constancy line passes through it. The even ramp (`paletteStopsAnchored`) holds `anchor.cam.hue` under
+`cam16` and solves each stop's CAM16 hue to the anchor's OKLCH hue under `oklch`. The perceptual and
+peak ramps (`okhslStopsAnchored`) keep the anchor's OKLCH hue under `oklch` and, under `cam16`, solve
+each stop's OKHSL hue whose float render carries the anchor's CAM16 hue (`solveOkhslHueForCam16`,
+joint with the tone hold), keeping the OKLCH hue where the solve finds no bracketed root or the
+candidate is achromatic; the peak cap and `dampStops` keep each stop's own OKLCH hue. The prime ladder
+and the key tile below Prime chroma k 100 hold the anchor's CAM16 hue under `cam16` and solve each
+rung's CAM16 hue to the anchor's OKLCH hue under `oklch`. On the OKHSL ramps the two lines differ by
+at most 0.02 OKLab dE (measured 0.0164 perceptual, 0.0169 peak), so the toggle moves them within
+rounding; the ladder and the even ramp move visibly.
 
 **Reset.** Editing `hue` or `chroma` on an anchored palette REMOVES `anchor`: the palette becomes an
 ordinary one and `prime.DEFAULT` reverts to the derived key colour. The generator-written

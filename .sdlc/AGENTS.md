@@ -1,4 +1,4 @@
-<!-- sdlc-lite:managed:start v1 sha256:4220b6b3ea2a -->
+<!-- sdlc-lite:managed:start v1 sha256:af1e8d3a03fb -->
 # Work records
 
 This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and `config`. `tickets.py roadmap` (also run by `new` and `close`) generates this block: do not edit inside it; change a ticket's `handoff.md` front matter and rerun `roadmap`. `roadmap.md` lists every ticket in dependency order. Closed `.NNNN-*` folders are history: open one only when asked.
@@ -9,10 +9,11 @@ This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and
 
 ## Stages
 
-- proposed: 0
+- proposed: 1
+  - T-0017 Geometry system adopts the Maison ui-kit ladder (tier x scale x size, --g-* and --r-* roles) (geometry-maison-ladder)
 - ready: 0
 - blocked: 0
-- done: 14
+- done: 16
 - dropped: 0
 
 ## Procedures

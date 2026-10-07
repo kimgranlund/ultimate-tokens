@@ -2,7 +2,7 @@ import { DEFAULT_CONTROLS, PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hasD
 import { RELATIONSHIPS, deriveNeutral, deriveRelative } from "../../engine/derive.mjs";
 import { chromaEnvelope, envelopePresetOf } from "../../engine/tonal.js";
 import { icon } from "../icons.js";
-import { CURVES, DAMP_PRESETS, HUE_SPACE_ANCHOR_REASON, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
+import { CURVES, DAMP_PRESETS, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
 
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
 // methods, copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
@@ -1724,14 +1724,6 @@ export class ColorSectionImpl {
         ),
         { labelTitle: "Which canvas group this palette is organized under: Material, Brand, System, or Data." },
       ),
-      // Q-D (ticket #681, U2, ruled + verified): this palette's own hueSpace applicability note - the
-      // doc-level Hue space control (renderGlobalInspector) only moves THIS palette in "even" mode;
-      // in perceptual/peak an anchored palette's hue comes straight from its anchor, so the control
-      // has no effect on it here even when it stays enabled for other, non-anchored palettes in the
-      // same doc. Informational only - this is not a second control, it explains the one control.
-      p.anchor && this.doc.toneMode !== "even"
-        ? h("div", { class: "field" }, h("small", { class: "insp-sub", "data-fk": "huespace-palette-reason" }, "Hue space: " + HUE_SPACE_ANCHOR_REASON))
-        : false,
       // Hue/Chroma edits DETACH an anchored palette (ticket #681, U2/Q6): they drop the live `anchor`
       // (the generator-written `sourceAnchor` copy stays, so Reset below can restore it), a hue or
       // chroma slider drag makes an anchor-carrying palette ordinary again, since the ramp's stop 500
@@ -2077,23 +2069,25 @@ export class ColorSectionImpl {
       // options visible, vs a toggle that hid the OFF label). On-colors: "fixed" = the light tint in both
       // modes (ADR-003); "contrast" flips on{N}/on{N}Variant to the better-contrasting end vs the accent fill.
       //
-      // Q-D (ticket #681, U2, ruled + verified): hueSpace only moves an anchored palette's rendered
-      // hue in "even" mode (the per-stop even-mode hue solve) - in perceptual/peak, an anchored
-      // palette's hue is read straight from its anchor (hOk), so the control is structurally dead
-      // for it there. Disabling this DOC-level control outright would also hide it from any
-      // NON-anchored palette in the same doc, where it still works - so it is only disabled when
-      // EVERY palette is anchored (nothing in the doc could possibly move), and only in
-      // perceptual/peak. The per-palette inspector (renderPaletteInspector) carries the matching
-      // note for one anchored palette at a time regardless of the other palettes in the doc.
+      // Hue space is one live control on every document (ticket #805): an anchored palette keeps its
+      // anchor colour and holds the anchor's hue in the chosen space, so the toggle moves anchored
+      // palettes too (the prime ladder and even ramp visibly, the perceptual and peak ramps only
+      // within rounding), and nothing here disables it.
       (() => {
-        const hueSpaceForced = d.toneMode !== "even" && d.palettes.length > 0 && d.palettes.every((p) => p.anchor);
         return h(
           "div",
           { class: "global-seg-row" },
           h(
             "div",
             { class: "field" },
-            h("label", { title: hueSpaceForced ? HUE_SPACE_ANCHOR_REASON : "OKLCH: perceptual hue (the default). CAM16: the legacy hue model." }, "Hue space"),
+            h(
+              "label",
+              {
+                title:
+                  "OKLCH: perceptual hue (the default). CAM16: the legacy hue model. An anchored palette keeps its anchor colour and holds the hue of its anchor in the chosen space: its prime ladder and even ramp move, its perceptual and peak ramps move only within rounding (at most 0.02 OKLab dE).",
+              },
+              "Hue space",
+            ),
             this.segmented(
               [{ id: "oklch", label: "OKLCH" }, { id: "cam16", label: "CAM16" }],
               d.hueSpace === "oklch" ? "oklch" : "cam16",
@@ -2103,11 +2097,8 @@ export class ColorSectionImpl {
                 role: "group",
                 idPrefix: "huespace",
                 cls: "seg-sm",
-                disabled: hueSpaceForced,
-                disabledReason: HUE_SPACE_ANCHOR_REASON,
               },
             ),
-            hueSpaceForced ? h("small", { class: "insp-sub", "data-fk": "huespace-doc-reason" }, HUE_SPACE_ANCHOR_REASON) : false,
           ),
           h(
             "div",

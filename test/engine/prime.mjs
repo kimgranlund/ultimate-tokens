@@ -1189,7 +1189,7 @@ let LADDER_WINDOW_ALLOWLIST;
   // ── span report (C11) ────────────────────────────────────────────────────────────────────────────
   // Expected counts are exact, tolerance 0: both producers are deterministic functions of committed
   // data, so a tolerance band here would only hide a real move.
-  const SPAN_PX_EXPECTED = 364, SPAN_CONSTRUCTED_EXPECTED = 363;
+  const SPAN_PX_EXPECTED = 365, SPAN_CONSTRUCTED_EXPECTED = 363; // T-0015 re-pin (oklch holds the anchor's OKLCH hue on the ladder), SPAN_PX_EXPECTED was 364; SPAN_CONSTRUCTED_EXPECTED held
   let dkUnder = 0;
   for (const p of DEFAULTS) {
     const sw = primeSwatches(p, CTL);

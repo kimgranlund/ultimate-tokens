@@ -6,7 +6,7 @@
 // this makes real network calls with real cost and real model nondeterminism; the ticket's own acceptance
 // keeps it scheduled/manual, never per-PR gating.
 //
-// Usage: ANTHROPIC_API_KEY=... node mcp/describe-eval-runner.mjs [--model=claude-haiku-4-5-20251001]
+// Usage: ANTHROPIC_API_KEY=... node mcp/describe-eval-runner.mjs [--model=claude-haiku-5-5]
 // No API key -> prints a clear "skipped" message and exits 0 (never a hard failure on a missing key,
 // CI secret custody is this ticket's own stated open item; the workflow that invokes this is safe to wire
 // up before that decision is made, since it degrades to a no-op report instead of a red build).
@@ -17,7 +17,7 @@ import { GOLDEN_EVALS, scoreRun } from "./describe-eval.mjs";
 // DEFAULT_MODEL, matches ADR-021's own "Haiku-class" framing for the hosted flavor's demoted
 // interpreter: a cheaper/faster tier, not the caller's own (agent) model. Override with --model= for a
 // different provider tier without editing this file.
-const DEFAULT_MODEL = "claude-haiku-4-5-20251001";
+const DEFAULT_MODEL = "claude-haiku-5-5";
 const ANTHROPIC_VERSION = "2023-06-01";
 
 function modelFromArgv(argv) {
@@ -37,7 +37,7 @@ export async function interpretOne(apiKey, model, description, briefing) {
     headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": ANTHROPIC_VERSION },
     body: JSON.stringify({
       model,
-      max_tokens: 4096,
+      max_tokens: 8192,
       system: `${briefing.rubric}\n\nNo web search is available in this session; work only from the description given.`,
       messages: [{ role: "user", content: `Description: ${description}\n\nConstruct a PaletteBrief for this theme.` }],
       tools: [{ name: "submit_brief", description: "Submit the constructed PaletteBrief.", input_schema: briefing.schema }],
@@ -47,9 +47,14 @@ export async function interpretOne(apiKey, model, description, briefing) {
   if (!res.ok) throw new Error(`provider error ${res.status}: ${await res.text()}`);
   const json = await res.json();
   if (json.stop_reason === "max_tokens") throw new Error(`the response hit max_tokens before completing (stop_reason: max_tokens): ${JSON.stringify(json)}`);
+  if (json.stop_reason === "refusal") throw new Error(`the model refused (stop_reason: refusal): ${JSON.stringify(json)}`);
   const toolUse = (json.content || []).find((b) => b.type === "tool_use" && b.name === "submit_brief");
   if (!toolUse) throw new Error(`no tool_use block in the provider response: ${JSON.stringify(json)}`);
-  return toolUse.input;
+  // Haiku 5.5 can return an object-typed field (here \`families\`) as a JSON string; parse it back so the
+  // scorer sees an object. A string that is not valid JSON is left as is and scores as a miss.
+  const input = toolUse.input;
+  if (input && typeof input.families === "string") { try { input.families = JSON.parse(input.families); } catch { /* left as is */ } }
+  return input;
 }
 
 // runEval(apiKey, model) → { summary, elapsedMs }. Exported so a future caller (e.g. a hosted-flavor

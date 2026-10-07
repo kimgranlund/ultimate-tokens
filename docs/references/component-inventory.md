@@ -133,8 +133,8 @@ incrementally.
 ### 2 · Toggle / switch  (was the worst card; now `switchControl()`)
 
 - **Surface** S1. **Sites** 2: palette Enabled/Disabled (`switchControl`, `sections/color.js:1709`) and
-  Chroma basis peak/gamut (`switchControl`, `sections/color.js:2129`). Hue space OKLCH/CAM16 is **not** a toggle any more:
-  it is a `segmented()` `role=group` (`sections/color.js:2076`, card 3), as is its On-colors sibling
+  Chroma basis peak/gamut (`switchControl`, `sections/color.js:2120`). Hue space OKLCH/CAM16 is **not** a toggle any more:
+  it is a `segmented()` `role=group` (`sections/color.js:2068`, card 3), as is its On-colors sibling
   (`sections/color.js:2103`).
 - **Anatomy** `[ track (with ::after thumb) · label-span ]`. CSS `styles.css:951-967`; the `.track`
   is 34×19 with a 15px ::after thumb that translates on `.on`.
@@ -161,7 +161,7 @@ incrementally.
 - **Surface** S1. **Sites** 15 static `segmented()` calls: section switcher `app.js:1418`; inspector
   tabs `app.js:1941`, `sections/typography.js:604`, `sections/geometry.js:707`; new-palette mode
   `sections/color.js:529`; canvas view `sections/color.js:806`; canvas stops `sections/color.js:821`;
-  hue space `sections/color.js:2076`; on-colors `sections/color.js:2095`; breakpoint mode
+  hue space `sections/color.js:2068`; on-colors `sections/color.js:2107`; breakpoint mode
   `sections/typography.js:177`, `sections/geometry.js:230`; specimen mode `sections/typography.js:308`,
   `sections/geometry.js:381`; Figma files `overlays/drawer.js:214`; and one settings-row call
   `overlays/settings.js:30` inside the settingRow helper, one live instance per settings row, called
@@ -220,12 +220,12 @@ incrementally.
 
 ### 5 · Select (native)
 
-- **Surface** S1. **Sites** 3: Distribution (`field()`, `sections/color.js:2017`), Curve (`sections/color.js:2041`),
+- **Surface** S1. **Sites** 3: Distribution (`field()`, `sections/color.js:2009`), Curve (`sections/color.js:2033`),
   `.map-raw-select` raw token (`sections/color.js:1279`, with `.ov` override state).
 - **Anatomy** native `<select>` + `<option>[]`; `.map-raw-select` is a compact mono variant
   (`styles.css:719-725`).
 - **a11y** ✓ native keyboard/picker; ✓ `aria-label` on `.map-raw-select` (`sections/color.js:1279-1281`);
-  ✓ Distribution/Curve are built through `field()` (`sections/color.js:2018/2043`), which stamps an `id`
+  ✓ Distribution/Curve are built through `field()` (`sections/color.js:2010/2035`), which stamps an `id`
   on the `<select>`, associates the `<label for>` with it and adds a fallback `aria-label`
   (`app-helpers.mjs:552-560`) → the visible label is the accessible name.
 - **Flag** none; the two naming paths (`field()` vs inline `aria-label`) both yield a name.
@@ -270,7 +270,7 @@ incrementally.
 
 ### 8 · Checkbox
 
-- **Surface** S1. **Sites** 1, "ends bend same way" (`sections/color.js:1803-1811`, native `type=checkbox`).
+- **Surface** S1. **Sites** 1, "ends bend same way" (`sections/color.js:1795-1803`, native `type=checkbox`).
 - **Anatomy** `.mini-check` `<label>` **wrapping** the native input + text (`styles.css:809-810`) →
   label *is* associated (the correct pattern, unlike the sliders/Name input).
 - **a11y** ✓ associated label, ✓ `accent-color: var(--accent)`, native keyboard (Space).

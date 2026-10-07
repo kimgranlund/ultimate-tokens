@@ -478,7 +478,7 @@ Neutral at full chroma, the emitters must be fed the resolved state, as the draw
   30). `tokens.colors.primary.scrim["300"].value === "oklch(0.504 0.1867 258.99 / 30%)"`.
   `tokens.colors.primary.prime.prime.value === "oklch(0.504 0.1867 258.99)"` (Primary's stored
   `anchor` `#0C5DCC`, rendered verbatim, #681 U1),
-  `.brightest === "oklch(0.733 0.1374 264.49)"`, `.dimmest === "oklch(0.2669 0.1023 258.76)"`,
+  `.brightest === "oklch(0.7307 0.1399 259.24)"`, `.dimmest === "oklch(0.2678 0.1038 258.99)"`,
   `.DEFAULT` equals `.prime`. `tokens.colors.constant.backdrop.value === "oklch(0 0 0 / 80%)"`.
   The three `prime` literals were regenerated 2026-09-20 (#681 U6 rebuilt the ladder in CIE L* with
   equal-compress and held CAM16 chroma; U4 integrated it onto U1's anchor branch and re-pinned

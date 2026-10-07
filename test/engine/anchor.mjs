@@ -67,6 +67,16 @@ function rgbToOklchIndep([r, g, b]) {
   if (H < 0) H += 360;
   return [L, C, H];
 }
+// OKLab delta-E (Euclidean) between two hexes, through the independent conversion above. Read by the
+// F4 hueSpace magnitude floor and the prime-huespace gate (T-0015), one copy for both.
+const deltaEOk = (hexA, hexB) => {
+  const [la, ca, ha] = rgbToOklchIndep(hexToRgb(hexA));
+  const [lb, cb, hb] = rgbToOklchIndep(hexToRgb(hexB));
+  const rad = Math.PI / 180;
+  const ax = ca * Math.cos(ha * rad), ay = ca * Math.sin(ha * rad);
+  const bx = cb * Math.cos(hb * rad), by = cb * Math.sin(hb * rad);
+  return Math.hypot(la - lb, ax - bx, ay - by);
+};
 
 // a minimal single-palette exports.js state, the SAME shape controlsOf()/enabledPalettes() expect
 // (exports.js:207-241/245-247); `baseChroma: 100` is the global k rampChromaOf multiplies each
@@ -189,6 +199,11 @@ if (FULL) {
 }
 
 const anchored = corpus.filter((c) => typeof c.palette.anchor === "string");
+// T-0015: the hue space names the space the anchor's own hue is held constant in, and the anchor
+// stays verbatim in both, so the identity gates below (anchor-identity, key-anchor's corpus leg,
+// anchor-k and its scale control) run every anchored palette under both values rather than the
+// preset's own (the whole corpus is stamped oklch, so the cam16 branch would otherwise go unread).
+const BOTH_HUE_SPACES = ["oklch", "cam16"];
 
 // ── C2's negative control (runs BEFORE the real count, never skipped) ──────────────────────────────
 {
@@ -212,21 +227,21 @@ const anchored = corpus.filter((c) => typeof c.palette.anchor === "string");
 
 // ── C2 positive count ────────────────────────────────────────────────────────────────────────────
 let exact = 0, off = 0;
-for (const { slug, presetName, hueSpace, palette: p } of anchored) {
-  const ctl = { hueSpace: hueSpace ?? "oklch", primeChroma: 100 };
+for (const { slug, presetName, palette: p } of anchored) for (const hueSpace of BOTH_HUE_SPACES) {
+  const ctl = { hueSpace, primeChroma: 100 };
   const sw = primeSwatches(p, ctl);
   const prime = sw[3];
   if (prime.hex !== p.anchor) {
     off++;
-    FAIL("anchor-identity", `${slug} "${presetName}" ${p.name}: primeSwatches(...)[3].hex ${prime.hex} !== anchor ${p.anchor}`);
+    FAIL("anchor-identity", `${slug} "${presetName}" ${p.name} (${hueSpace}): primeSwatches(...)[3].hex ${prime.hex} !== anchor ${p.anchor}`);
     continue;
   }
-  const derived = derivedAll(stateFor(p))[0];
+  const derived = derivedAll({ ...stateFor(p), hueSpace })[0];
   const gotOklch = oklchStr({ L: derived.prime.prime.oklch[0], C: derived.prime.prime.oklch[1], H: derived.prime.prime.oklch[2] });
   const wantOklch = oklchStr({ L: rgbToOklchIndep(hexToRgb(p.anchor))[0], C: rgbToOklchIndep(hexToRgb(p.anchor))[1], H: rgbToOklchIndep(hexToRgb(p.anchor))[2] });
   if (gotOklch !== wantOklch) {
     off++;
-    FAIL("anchor-identity", `${slug} "${presetName}" ${p.name}: exports.js prime.DEFAULT ${gotOklch} !== independent anchor oklch ${wantOklch}`);
+    FAIL("anchor-identity", `${slug} "${presetName}" ${p.name} (${hueSpace}): exports.js prime.DEFAULT ${gotOklch} !== independent anchor oklch ${wantOklch}`);
     continue;
   }
   exact++;
@@ -236,7 +251,7 @@ if (FULL) {
 } else if (anchored.length === 0) {
   FAIL("anchor-identity", "SAMPLED counted 0 anchored palettes - the sample lost every anchor, C2 measured nothing");
 }
-console.log(`  ${fails.some((f) => f.startsWith("anchor-identity:")) ? "FAIL" : "pass"}  anchor-identity: ${exact} exact, ${off} off`);
+console.log(`  ${fails.some((f) => f.startsWith("anchor-identity:")) ? "FAIL" : "pass"}  anchor-identity: ${exact} exact, ${off} off (hueSpace oklch and cam16)`);
 
 // ── C4 (prime half): non-anchored identity control, negative control first ─────────────────────────
 const controlSubjects = [
@@ -1246,45 +1261,62 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
   const baseDoc = hydrate({ ...dkBase, toneMode: "perceptual" });
   const vibrantCurveDoc = hydrate({ ...dkBase, toneMode: "perceptual", vibrancy: 60, curve: "cubic", tension: 0 });
   const vibrantTensionDoc = hydrate({ ...dkBase, toneMode: "perceptual", vibrancy: 60, curve: "logistic", tension: 0 });
-  // hueSpace (review pass 3, Finding 1, 2026-09-18): moved from perceptual to EVEN mode. Review 3 proved
-  // the perceptual/peak (OKHSL) per-stop hue solve moves a ramp only by 8-bit re-picking (0 of 3,393/
-  // 3,390 anchored ramps clear ΔE_OK > 0.01), because OKHSL already holds the anchor's own OKLCH hue
-  // constant under "cam16" - "moved >= 1 hex" alone passes on a single-code rounding flip there, not a
-  // real hueSpace effect. In EVEN mode the two hueSpace settings ARE a real Abney correction (1,060 of
-  // 3,396 anchored ramps clear ΔE_OK > 0.01).
-  //
-  // Q-D (ruled + verified, superseding the "open question" this comment used to record): the OKHSL
-  // (perceptual/peak) construction stays UNCHANGED - `okhslStopsAnchored`'s own per-stop OKHSL hue
-  // solve is untouched by this pass, same as review pass 3 left it. Instead the UI now disables the
-  // doc-level Hue space control for an anchored palette in perceptual/peak (src/ui/sections/color.js's
-  // renderGlobalInspector + renderPaletteInspector, gated in test/ui/headless-boot.mjs's (hs) block),
-  // on the strength of this file's OWN bound below: flipping hueSpace on an anchored perceptual/peak
-  // ramp never moves any channel by more than 2 (8-bit). This is the engine-side half of that ruling -
-  // it does not just re-assert Finding 1's magnitude-floor miss, it bounds the miss.
+  // hueSpace (T-0015, ADR-031): the hue space names the space an anchored palette holds its anchor's
+  // own measured hue constant in, so flipping it moves the anchored ramp in EVERY mode, with stop 500
+  // (the anchor) exact in both spaces. One case per mode. Even mode carries a real Abney correction
+  // and keeps the magnitude floor (review pass 3, Finding 1: "moved >= 1 hex" alone passes on a 1-code
+  // rounding flip; 1,060 of 3,396 anchored even ramps clear 0.01). Perceptual and peak move within
+  // rounding: the OKLCH and CAM16 constancy lines through the anchor part by at most about 0.02 OKLab
+  // dE anywhere (plan-time 0.0164 perceptual, 0.0169 peak over the full corpus plus default kit), so
+  // those two modes carry an upper bound instead, `HUE_SPACE_MODE_BOUND` (decision 1): max OKLab dE
+  // over every stop, capped or not, of every anchored ramp across the run's corpus plus the default
+  // kit. The bound is read first, so each mode prints one line.
   const evenBaseDoc = hydrate({ ...dkBase, toneMode: "even" });
+  const peakBaseDoc = hydrate({ ...dkBase, toneMode: "peak" });
+  const flipHueSpace = (doc) => ({ hueSpace: doc.hueSpace === "cam16" ? "oklch" : "cam16" });
+  const HUE_SPACE_MODE_BOUND = 0.02;
+  const hueSpaceBoundSubjects = [...presetsByCat, { slug: "default kit", preset: dkBase }];
+  // rampMaxDeltaE: the one dE predicate the bound and its control read, max OKLab dE (deltaEOk's
+  // independent conversion) over a ramp's stops, with the stop it peaks at.
+  const rampMaxDeltaE = (a, b) => {
+    let de = 0, stop = null;
+    for (let i = 0; i < a.length; i++) {
+      const d = deltaEOk(a[i].hex, b[i].hex);
+      if (d > de) { de = d; stop = a[i].stop; }
+    }
+    return { de, stop };
+  };
+  const hueSpaceBound = {};
+  for (const modeName of ["perceptual", "peak"]) {
+    let max = 0, worst = "n/a";
+    for (const { slug, preset } of hueSpaceBoundSubjects) {
+      const base = hydrate({ ...preset, toneMode: modeName });
+      const baseV = projectView(base), altV = projectView(hydrate({ ...base, ...flipHueSpace(base) }));
+      for (const p of base.palettes) {
+        if (typeof p.anchor !== "string") continue;
+        const r = rampMaxDeltaE(baseV.palettes.find((v) => v.name === p.name).fullRamp, altV.palettes.find((v) => v.name === p.name).fullRamp);
+        if (r.de > max) { max = r.de; worst = `${slug} "${preset.name}" ${p.name} stop ${r.stop}`; }
+      }
+    }
+    hueSpaceBound[modeName] = { max, worst };
+  }
   const F4_CASES = {
     curve: { base: vibrantCurveDoc, altPatch: { curve: "sine" } },
     tension: { base: vibrantTensionDoc, altPatch: { tension: 80 } },
     vibrancy: { base: baseDoc, altPatch: { vibrancy: 60 } },
-    hueSpace: {
-      base: evenBaseDoc, altPatch: { hueSpace: evenBaseDoc.hueSpace === "cam16" ? "oklch" : "cam16" },
+    "hueSpace-even": {
+      base: evenBaseDoc, altPatch: flipHueSpace(evenBaseDoc),
       // magnitude floor (Finding 1's fix): "moved >= 1 hex" alone cannot tell a real hue effect from a
       // 1-code rounding flip. Require at least one anchored ramp with a stop whose OKLab ΔE (Euclidean,
       // independent conversion, never the engine's own) between the two hueSpace settings exceeds 0.01 -
       // a magnitude no single 8-bit rounding step reaches in practice (review 3's own measured floor).
       magnitudeFloor: 0.01,
     },
-  };
-  const deltaEOk = (hexA, hexB) => {
-    const [la, ca, ha] = rgbToOklchIndep(hexToRgb(hexA));
-    const [lb, cb, hb] = rgbToOklchIndep(hexToRgb(hexB));
-    const rad = Math.PI / 180;
-    const ax = ca * Math.cos(ha * rad), ay = ca * Math.sin(ha * rad);
-    const bx = cb * Math.cos(hb * rad), by = cb * Math.sin(hb * rad);
-    return Math.hypot(la - lb, ax - bx, ay - by);
+    "hueSpace-perceptual": { base: baseDoc, altPatch: flipHueSpace(baseDoc), bound: hueSpaceBound.perceptual },
+    "hueSpace-peak": { base: peakBaseDoc, altPatch: flipHueSpace(peakBaseDoc), bound: hueSpaceBound.peak },
   };
   for (const key in F4_CASES) {
-    const { base, altPatch, magnitudeFloor } = F4_CASES[key];
+    const { base, altPatch, magnitudeFloor, bound } = F4_CASES[key];
     const baseV = projectView(base);
     const altDoc = hydrate({ ...base, ...altPatch });
     const altView = projectView(altDoc);
@@ -1304,107 +1336,27 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
     }
     if (moved === 0) FAIL("anchor-f4", `${key}: moved 0 of the default kit's anchored ramps, this control is dead for anchored palettes`);
     if (magnitudeFloor !== undefined && maxDeltaE <= magnitudeFloor) FAIL("anchor-f4", `${key}: max OKLab delta-E ${maxDeltaE.toFixed(4)} does not clear the ${magnitudeFloor} magnitude floor - a rounding-only move would also report "moved >= 1"`);
+    const corpusName = `${FULL ? "full" : "SAMPLED"} corpus + default kit`;
+    if (bound !== undefined && bound.max > HUE_SPACE_MODE_BOUND) FAIL("anchor-f4", `${key}: max OKLab dE ${bound.max.toFixed(4)} over ${corpusName} exceeds ${HUE_SPACE_MODE_BOUND} (worst ${bound.worst}), the two hue spaces part visibly on an anchored ramp`);
     const floorNote = magnitudeFloor !== undefined ? `, max OKLab dE ${maxDeltaE.toFixed(4)} (want > ${magnitudeFloor}, a magnitude floor - below the commonly used OKLab JND of about 0.02, not itself a JND), asserted in even only` : "";
-    console.log(`  ${moved > 0 && s500moved === 0 && (magnitudeFloor === undefined || maxDeltaE > magnitudeFloor) ? "pass" : "FAIL"}  anchor-f4 ${key}: moved ${moved} default-kit anchored ramps, stop 500 moved ${s500moved} (want >=1, 0)${floorNote}`);
+    const boundNote = bound !== undefined ? `, max OKLab dE ${bound.max.toFixed(4)} over ${corpusName} (want <= ${HUE_SPACE_MODE_BOUND}, worst ${bound.worst})` : "";
+    const ok = moved > 0 && s500moved === 0 && (magnitudeFloor === undefined || maxDeltaE > magnitudeFloor) && (bound === undefined || bound.max <= HUE_SPACE_MODE_BOUND);
+    console.log(`  ${ok ? "pass" : "FAIL"}  anchor-f4 ${key}: moved ${moved} default-kit anchored ramps, stop 500 moved ${s500moved} (want >=1, 0)${floorNote}${boundNote}`);
   }
 
-  // Q-D (ruled + verified, 2026-09-18; scope corrected + re-ruled, review pass 4 Finding 1, plan rev
-  // 23, 2026-09-19): the engine-side half of the ruling - flipping hueSpace on an ANCHORED palette in
-  // perceptual or peak has NO VISIBLE effect. Review 3's own in-suite sample (the 16-palette default
-  // kit only) measured a max 8-bit per-channel diff of 1 and stated a "<= 2 codes" bound as if it held
-  // for every anchored palette; review 4 measured the full 3,396-ramp curated corpus and found 39
-  // perceptual / 17 peak ramps exceed 2 codes (max 10 / 12) - the default-kit sample was too small to
-  // see this. The perceptual magnitude stays invisible throughout: 0 of 3,396 ramps in either mode
-  // clear a 0.01 OKLab delta-E (max 0.0047 perceptual, 0.0053 peak). RULED: the gate is max OKLab
-  // delta-E <= 0.01 over the full anchored corpus, per mode - the corpus data supports that bound, not
-  // a codes bound. "<= 2 codes" STAYS as its own gate, scoped to the DEFAULT KIT ONLY (tracked below as
-  // `dkMaxDiff`, separately from the corpus-wide `maxDiff`, which is reported for visibility only and
-  // is not, and will not be, gated). This is a final ruling, not an open question any more.
-  // This is the bound the UI's "disabled,
-  // rounding only" claim rests on (src/ui/sections/color.js's renderGlobalInspector/
-  // renderPaletteInspector; gated in test/ui/headless-boot.mjs's (hs) block). Unlike F4_CASES's
-  // hueSpace entry (which asserts a REAL effect exists, in even mode), this asserts the OPPOSITE
-  // direction for perceptual/peak - that whatever effect exists stays invisible - so it is a separate
-  // block, not folded into that loop's shared "moved === 0 -> FAIL" liveness check.
-  //
-  // Negative control (run by the review-4 reviewer, recorded here since it needs a source patch this
-  // file does not carry): substituting the anchor's own CAM16 hue for the OKHSL hue candidate at every
-  // iteration (i.e. solving nothing - always rendering at the "cam16" hue while hueSpace claims
-  // "oklch") reds this exact gate at a max per-channel diff of 33 (perceptual) / 34 (peak) - proving
-  // the predicate below can tell a real hue divergence from the actual rounding-only behavior.
-  const maxChannelDiff = (hexA, hexB) => {
-    const a = hexToRgb(hexA), b = hexToRgb(hexB);
-    return Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]), Math.abs(a[2] - b[2]));
-  };
-  const HUE_SPACE_DELTA_E_BOUND = 0.01;
-  // #725 U2 pass 2 (R74): a peak stop the anchored cap moved is re-solved by `capChromaAtHeldTone`'s
-  // `hctToRgb` at a per-hueSpace polish hue, then polished hue-blind, so its hueSpace flip carries more
-  // than rounding (measured worst 0.0184, Jekyll and Hyde tertiary stop 400). The bound there is 0.02;
-  // every other stop keeps 0.01. "The cap moved it" is the row's own `capped` flag (#725 U3), set by
-  // `capChromaAtHeldTone` when it changed the pixel, on either side of the flip. U2 derived the same
-  // set by rendering a scratch engine with the cap lifted and diffing hexes (about 10 s of `--full`);
-  // the flag was measured against that diff at U3's own head (revision 8) before the diff was removed,
-  // since U2's engine has no flag: 84900 anchored peak stops, flag 7364, diff 7364, 0 disagreements
-  // each way (.sdlc/handoffs/chroma-envelope-U3.md D9). U2's 7841 was a different engine's diff count.
-  const HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED = 0.02;
-  const HUE_SPACE_CODES_BOUND = 2;
-  const hueSpaceBoundSubjects = [...presetsByCat, { slug: "default kit", preset: dkBase }];
-  let cappedStops = 0, cappedMaxDeltaE = 0, cappedWorst = "n/a";
-  for (const modeName of ["perceptual", "peak"]) {
-    let maxDiff = 0, worstCodes = "n/a", maxDeltaE = 0, worstDeltaE = "n/a", overBoundRamps = 0;
-    let dkMaxDiff = 0, dkWorstCodes = "n/a";
-    const overBoundNames = new Set();
-    for (const { slug, preset } of hueSpaceBoundSubjects) {
-      const base = hydrate({ ...preset, toneMode: modeName });
-      const alt = hydrate({ ...base, hueSpace: base.hueSpace === "cam16" ? "oklch" : "cam16" });
-      const baseV = projectView(base), altV = projectView(alt);
-      const readCap = modeName === "peak";
-      for (const p of base.palettes) {
-        if (typeof p.anchor !== "string") continue;
-        const a = baseV.palettes.find((v) => v.name === p.name).fullRamp;
-        const b = altV.palettes.find((v) => v.name === p.name).fullRamp;
-        let rampOverBound = false;
-        for (let i = 0; i < a.length; i++) {
-          const d = maxChannelDiff(a[i].hex, b[i].hex);
-          if (d > maxDiff) { maxDiff = d; worstCodes = `${slug} "${preset.name}" ${p.name} stop ${a[i].stop}`; }
-          if (slug === "default kit" && d > dkMaxDiff) { dkMaxDiff = d; dkWorstCodes = `${preset.name} ${p.name} stop ${a[i].stop}`; }
-          const de = deltaEOk(a[i].hex, b[i].hex);
-          const capped = readCap && (a[i].capped === true || b[i].capped === true);
-          const where = `${slug} "${preset.name}" ${p.name} stop ${a[i].stop}`;
-          if (capped) {
-            cappedStops++;
-            if (de > cappedMaxDeltaE) { cappedMaxDeltaE = de; cappedWorst = `${where} (${base.hueSpace} ${a[i].hex} / ${alt.hueSpace} ${b[i].hex})`; }
-            if (de > HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED) rampOverBound = true;
-            continue;
-          }
-          if (de > maxDeltaE) { maxDeltaE = de; worstDeltaE = where; }
-          if (de > HUE_SPACE_DELTA_E_BOUND) rampOverBound = true;
-        }
-        if (rampOverBound) { overBoundRamps++; overBoundNames.add(`${slug}|${preset.name}|${p.name}`); }
-      }
-    }
-    if (maxDeltaE > HUE_SPACE_DELTA_E_BOUND) {
-      FAIL(
-        "anchor-f4",
-        `hueSpace ${modeName}: ${overBoundRamps} anchored ramp(s) clear a ${HUE_SPACE_DELTA_E_BOUND} OKLab delta-E when hueSpace flips (max ${maxDeltaE.toFixed(4)}, worst ${worstDeltaE}) - the UI's "disabled, rounding only" claim for anchored ${modeName} palettes is now false`,
-      );
-    }
-    if (modeName === "peak" && cappedStops === 0) {
-      FAIL("anchor-f4", "hueSpace peak: 0 cap-moved stops read - no peak row carries the cap's `capped` flag, so the 0.02 scope is dead");
-    }
-    if (modeName === "peak" && cappedMaxDeltaE > HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED) {
-      FAIL("anchor-f4", `hueSpace peak, capped stops: max OKLab dE ${cappedMaxDeltaE.toFixed(4)} over ${cappedStops} cap-moved stop(s), want <= ${HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED} (worst ${cappedWorst})`);
-    }
-    if (dkMaxDiff > HUE_SPACE_CODES_BOUND) {
-      FAIL(
-        "anchor-f4",
-        `hueSpace ${modeName}: default-kit codes bound broken, ${dkMaxDiff} > ${HUE_SPACE_CODES_BOUND} (worst ${dkWorstCodes})`,
-      );
-    }
-    const codesNote = maxDiff > HUE_SPACE_CODES_BOUND ? `${FULL ? "full-corpus" : "SAMPLED-corpus"} codes reach ${maxDiff} (worst ${worstCodes}) - reported only, not gated; default kit's own codes bound held (max ${dkMaxDiff}, want <= ${HUE_SPACE_CODES_BOUND})` : `codes bound held everywhere (max ${maxDiff})`;
-    const cappedNote = modeName === "peak" ? `; cap-moved stops ${cappedStops}, max OKLab dE ${cappedMaxDeltaE.toFixed(4)} (want <= ${HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED}, worst ${cappedWorst})` : "";
-    const cappedOk = modeName !== "peak" || cappedMaxDeltaE <= HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED;
-    console.log(`  ${maxDeltaE <= HUE_SPACE_DELTA_E_BOUND && dkMaxDiff <= HUE_SPACE_CODES_BOUND && cappedOk ? "pass" : "FAIL"}  anchor-f4 hueSpace-${modeName}-bound: ${FULL ? "full" : "SAMPLED"} corpus + default kit, max OKLab dE ${maxDeltaE.toFixed(4)} over uncapped stops (want <= ${HUE_SPACE_DELTA_E_BOUND}, worst ${worstDeltaE})${cappedNote}; ${codesNote}`);
+  // Bound control: the per-mode bound must be able to fail. The same predicate (`rampMaxDeltaE`
+  // against `HUE_SPACE_MODE_BOUND`) on the default kit's Primary perceptual ramp against a planted
+  // alternate render, Primary with hueShift 45 (a real hue divergence across the ramp, stop 500 still
+  // the anchor), must read above the bound (plan-time 0.0474; hueShift 20 reads only 0.0219, too thin
+  // a margin to prove the predicate bites).
+  {
+    const planted = hydrate({ ...baseDoc, palettes: baseDoc.palettes.map((p) => (p.name === "Primary" ? { ...p, hueShift: 45 } : p)) });
+    const a = projectView(baseDoc).palettes.find((v) => v.name === "Primary").fullRamp;
+    const b = projectView(planted).palettes.find((v) => v.name === "Primary").fullRamp;
+    const ctl = rampMaxDeltaE(a, b);
+    const bites = ctl.de > HUE_SPACE_MODE_BOUND;
+    if (!bites) FAIL("anchor-f4", `hueSpace bound control: the planted render (default kit Primary perceptual, hueShift 45) reads max OKLab dE ${ctl.de.toFixed(4)}, want > ${HUE_SPACE_MODE_BOUND}, so the per-mode bound cannot catch a real hue divergence`);
+    console.log(`  ${bites ? "pass" : "FAIL"}  anchor-f4 hueSpace bound control: planted render (default kit Primary perceptual, hueShift 45) reads max OKLab dE ${ctl.de.toFixed(4)} at stop ${ctl.stop} (want > ${HUE_SPACE_MODE_BOUND}), so the per-mode bound reds on it`);
   }
 
   // Negative control (review pass 3, Finding 4, 2026-09-18): the prior in-suite "reference lerp"
@@ -1448,10 +1400,11 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
   // `deriveKeyColor` `projectView` calls, so measuring it measures the rendered derivation.
   let keyEq = 0, keyOff = 0, primeEq = 0, primeOff = 0;
   let worst = null, worstDl = 0;
-  for (const { slug, presetName, hueSpace, palette: p } of anchored) {
-    const key = paletteKeyColors({ palettes: [p], hueSpace: hueSpace ?? "oklch" })[0].key;
-    const primeHex = primeSwatches(p, { hueSpace: hueSpace ?? "oklch", primeChroma: 100 })[3].hex;
-    const label = `${slug} "${presetName}" ${p.name}`;
+  const keyChecked = anchored.length * BOTH_HUE_SPACES.length;
+  for (const { slug, presetName, palette: p } of anchored) for (const hueSpace of BOTH_HUE_SPACES) {
+    const key = paletteKeyColors({ palettes: [p], hueSpace })[0].key;
+    const primeHex = primeSwatches(p, { hueSpace, primeChroma: 100 })[3].hex;
+    const label = `${slug} "${presetName}" ${p.name} (${hueSpace})`;
     if (key === p.anchor.toUpperCase()) keyEq++;
     else {
       keyOff++;
@@ -1462,7 +1415,7 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
     if (key === primeHex) primeEq++;
     else { primeOff++; FAIL("key-anchor", `${label}: key swatch ${key} !== primeSwatches(...)[3].hex ${primeHex} - the two producers disagree`); }
   }
-  console.log(`  ${keyOff === 0 && primeOff === 0 ? "pass" : "FAIL"}  key-anchor corpus: ${keyEq} of ${anchored.length} anchored palettes where the identity swatch equals the stored anchor, ${primeEq} of ${anchored.length} where it equals primeSwatches(...)[3].hex, ${keyOff}/${primeOff} off${worst ? `; worst ${worst}` : ""}`);
+  console.log(`  ${keyOff === 0 && primeOff === 0 ? "pass" : "FAIL"}  key-anchor corpus: ${keyEq} of ${keyChecked} anchored palette renders where the identity swatch equals the stored anchor, ${primeEq} of ${keyChecked} where it equals primeSwatches(...)[3].hex, ${keyOff}/${primeOff} off${worst ? `; worst ${worst}` : ""} (hueSpace oklch and cam16)`);
 
   // Leg 2, the rendered path: projectView(hydrate(doc)), the projection the app renders from, over
   // the 16 default-kit palettes and three named corpus presets. hydrate() is in the loop on purpose:
@@ -1503,32 +1456,73 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
 // at least one anchored palette leaves its anchor (a near-achromatic anchor may not move).
 {
   let eq = 0, off = 0, moved = 0;
-  for (const { slug, presetName, hueSpace, palette: p } of anchored) {
-    const hs = hueSpace ?? "oklch";
+  const kChecked = anchored.length * BOTH_HUE_SPACES.length;
+  for (const { slug, presetName, palette: p } of anchored) for (const hs of BOTH_HUE_SPACES) {
     const key = paletteKeyColors({ palettes: [p], hueSpace: hs, primeChroma: 50 })[0].key;
     const primeHex = primeSwatches(p, { hueSpace: hs, primeChroma: 50 })[3].hex;
     if (key === primeHex) eq++;
-    else { off++; FAIL("anchor-k", `${slug} "${presetName}" ${p.name}: key ${key} !== primeSwatches(...)[3].hex ${primeHex} at Prime chroma 50`); }
+    else { off++; FAIL("anchor-k", `${slug} "${presetName}" ${p.name} (${hs}): key ${key} !== primeSwatches(...)[3].hex ${primeHex} at Prime chroma 50`); }
     if (primeHex !== p.anchor.toUpperCase()) moved++;
   }
   if (anchored.length === 0) FAIL("anchor-k", "no anchored palettes to measure");
-  if (moved === 0) FAIL("anchor-k", `0 of ${anchored.length} anchored prime middles moved off the anchor at Prime chroma 50, the k does not reach the anchored rung`);
-  console.log(`  ${fails.some((f) => f.startsWith("anchor-k:")) ? "FAIL" : "pass"}  anchor-k: ${eq} of ${anchored.length} anchored palettes where the key equals primeSwatches(...)[3].hex at Prime chroma 50, ${off} off; ${moved} moved off the anchor`);
+  if (moved === 0) FAIL("anchor-k", `0 of ${kChecked} anchored prime middles moved off the anchor at Prime chroma 50, the k does not reach the anchored rung`);
+  console.log(`  ${fails.some((f) => f.startsWith("anchor-k:")) ? "FAIL" : "pass"}  anchor-k: ${eq} of ${kChecked} anchored palette renders where the key equals primeSwatches(...)[3].hex at Prime chroma 50, ${off} off; ${moved} moved off the anchor (hueSpace oklch and cam16)`);
 
   // anchor-k scale control: the anchor-identity and key-anchor comparisons, re-run at Prime chroma 99,
   // must each find at least one palette off its anchor. That is the planted regression those two gates
   // must catch: a 1 percent scale at the identity setting. A dropped k === 1 short-circuit alone is
   // invisible (the hctToRgb round trip is byte-exact on every corpus anchor), so a scale is the plant.
   let primeOff99 = 0, keyOff99 = 0;
-  for (const { hueSpace, palette: p } of anchored) {
-    const hs = hueSpace ?? "oklch";
+  for (const { palette: p } of anchored) for (const hs of BOTH_HUE_SPACES) {
     const a = p.anchor.toUpperCase();
     if (primeSwatches(p, { hueSpace: hs, primeChroma: 99 })[3].hex !== a) primeOff99++;
     if (paletteKeyColors({ palettes: [p], hueSpace: hs, primeChroma: 99 })[0].key !== a) keyOff99++;
   }
-  if (primeOff99 === 0) FAIL("anchor-k scale control", `anchor-identity comparison at Prime chroma 99 found 0 of ${anchored.length} prime middles off the anchor, a 1 percent scale regression would pass that gate`);
-  if (keyOff99 === 0) FAIL("anchor-k scale control", `key-anchor comparison at Prime chroma 99 found 0 of ${anchored.length} keys off the anchor, a 1 percent scale regression would pass that gate`);
-  console.log(`  ${fails.some((f) => f.startsWith("anchor-k scale control:")) ? "FAIL" : "pass"}  anchor-k scale control: at Prime chroma 99, ${primeOff99} of ${anchored.length} prime middles and ${keyOff99} of ${anchored.length} keys off the anchor (at least 1 each: anchor-identity and key-anchor red on a 1 percent scale)`);
+  if (primeOff99 === 0) FAIL("anchor-k scale control", `anchor-identity comparison at Prime chroma 99 found 0 of ${kChecked} prime middles off the anchor, a 1 percent scale regression would pass that gate`);
+  if (keyOff99 === 0) FAIL("anchor-k scale control", `key-anchor comparison at Prime chroma 99 found 0 of ${kChecked} keys off the anchor, a 1 percent scale regression would pass that gate`);
+  console.log(`  ${fails.some((f) => f.startsWith("anchor-k scale control:")) ? "FAIL" : "pass"}  anchor-k scale control: at Prime chroma 99, ${primeOff99} of ${kChecked} prime middles and ${keyOff99} of ${kChecked} keys off the anchor (at least 1 each: anchor-identity and key-anchor red on a 1 percent scale; hueSpace oklch and cam16)`);
+}
+
+// ── prime-huespace (T-0015): the hue space moves the anchored prime ladder ────────────────────────
+// The rule: hueSpace names the space the anchor's own measured hue is held constant in, so an
+// anchored ladder's six outer rungs render differently under oklch (the anchor's OKLCH hue, solved
+// per rung) and cam16 (its CAM16 hue), while rung 3 at Prime chroma 100 is the stored anchor in
+// both. `huespaceMoves` is the ONE predicate: it takes a render(palette, hueSpace) and compares the
+// two spaces' strips. The gate runs it on the real primeSwatches; the control runs it on the planted
+// regression (an oklch ladder still holding the CAM16 hue, i.e. the cam16 render on both sides),
+// which must read 0 moved and dE 0, so a ladder that ignored the hue space would red the gate.
+{
+  const OUTER = [0, 1, 2, 4, 5, 6];
+  const PRIME_HUESPACE_DE_FLOOR = 0.01;
+  const huespaceMoves = (palettes, render) => {
+    let moved = 0, maxDe = 0, rung3Moved = 0;
+    for (const p of palettes) {
+      const a = render(p, "oklch"), b = render(p, "cam16");
+      if (OUTER.some((i) => a[i].hex !== b[i].hex)) {
+        moved++;
+        for (const i of OUTER) maxDe = Math.max(maxDe, deltaEOk(a[i].hex, b[i].hex));
+      }
+      if (a[3].hex !== b[3].hex) rung3Moved++;
+    }
+    return { moved, maxDe, rung3Moved };
+  };
+  const gateHolds = (kit, corpusRes) => kit.moved >= 1 && kit.maxDe > PRIME_HUESPACE_DE_FLOOR && kit.rung3Moved + corpusRes.rung3Moved === 0;
+  const kitPalettes = defaultDocument().palettes;
+  if (kitPalettes.length !== 16 || kitPalettes.some((p) => typeof p.anchor !== "string")) FAIL("prime-huespace", `default kit has ${kitPalettes.length} palettes, ${kitPalettes.filter((p) => typeof p.anchor === "string").length} anchored (want 16 of 16)`);
+  const real = (p, hueSpace) => primeSwatches(p, { hueSpace, primeChroma: 100 });
+  const kit = huespaceMoves(kitPalettes, real);
+  const corpusRes = huespaceMoves(anchored.map((c) => c.palette), real);
+  if (kit.moved === 0) FAIL("prime-huespace", "0 default-kit anchored ladders moved between oklch and cam16, the hue space does not reach the ladder");
+  if (kit.maxDe <= PRIME_HUESPACE_DE_FLOOR) FAIL("prime-huespace", `default-kit max OKLab dE ${kit.maxDe.toFixed(4)} does not clear ${PRIME_HUESPACE_DE_FLOOR}, a rounding-only move`);
+  if (kit.rung3Moved + corpusRes.rung3Moved !== 0) FAIL("prime-huespace", `rung 3 moved between hue spaces on ${kit.rung3Moved} default-kit and ${corpusRes.rung3Moved} corpus ladders, the anchor must be verbatim in both`);
+  const rung3 = kit.rung3Moved + corpusRes.rung3Moved;
+  console.log(`  ${fails.some((f) => f.startsWith("prime-huespace:")) ? "FAIL" : "pass"}  prime-huespace: default kit ${kit.moved} of ${kitPalettes.length} ladders moved, corpus ${corpusRes.moved} of ${anchored.length}, max OKLab dE ${kit.maxDe.toFixed(4)} (want > ${PRIME_HUESPACE_DE_FLOOR}), rung 3 moved ${rung3} (want 0)`);
+
+  const planted = (p) => primeSwatches(p, { hueSpace: "cam16", primeChroma: 100 });
+  const ctl = huespaceMoves(kitPalettes, planted);
+  if (ctl.moved !== 0 || ctl.maxDe !== 0) FAIL("prime-huespace control", `the planted regression (cam16 render on both sides) read ${ctl.moved} ladders moved, max dE ${ctl.maxDe}, want 0 and 0 - the predicate is not comparing the two renders`);
+  if (gateHolds(ctl, { rung3Moved: 0 })) FAIL("prime-huespace control", "the planted regression passes the prime-huespace predicate, the gate cannot catch a ladder that ignores the hue space");
+  console.log(`  ${fails.some((f) => f.startsWith("prime-huespace control:")) ? "FAIL" : "pass"}  prime-huespace control: planted regression (the cam16 render on both sides) reads default kit ${ctl.moved} of ${kitPalettes.length} ladders moved, max OKLab dE ${ctl.maxDe.toFixed(4)} (want 0, 0), so prime-huespace reds on it`);
 }
 
 // ── anchor-achromatic (U10, pre-land F1): an achromatic anchor renders real colours ─────────
@@ -1628,7 +1622,7 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["anchor-identity", "prime-identity-control", "anchor-ladder", "anchor-ramp", "anchor-f4", "key-anchor", "anchor-k", "anchor-k scale control", "anchor-achromatic", "achromatic-anchor"]) {
+for (const g of ["anchor-identity", "prime-identity-control", "anchor-ladder", "anchor-ramp", "anchor-f4", "key-anchor", "anchor-k", "anchor-k scale control", "prime-huespace", "prime-huespace control", "anchor-achromatic", "achromatic-anchor"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   if (!f) continue; // already printed a pass/FAIL summary line above; only surface the FIRST failure detail here
   console.error(`, ${f.slice(g.length + 2)}`);
@@ -1647,8 +1641,9 @@ if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); pr
 // pre-#681 reference - Q1's own resolution, not "untouched": U6 replaced the base ladder outright, so
 // `prime-identity-control` now asserts every one of 3,796 subjects differs from that reference), C3
 // (stop 500 exact + lift-40 negative control), C5 (monotone, pixel L*, a true 0, no list), C6/F4 (peak
-// != perceptual, Curve/Tension/Vibrancy each live for every anchored ramp, hueSpace live in even mode
-// + bounded to rounding in perceptual/peak per Q-D, stop 500 exact under every toggle).
+// != perceptual, Curve/Tension/Vibrancy each live for every anchored ramp, hueSpace live in every mode,
+// above the 0.01 floor in even and within the 0.02 bound in perceptual/peak per T-0015 (ADR-031), stop
+// 500 exact under every toggle).
 //
 // Rework pass 2 (#713 U3, reviewer finding 1): this line used to print the FULL wording unconditionally,
 // so the SAMPLED leg signed off in the exact words of the gate of record after checking a tenth of the

@@ -293,16 +293,21 @@ ladder, their own chroma control, and their own token group; the editor strip re
   `brightest` and `dimmest` failed to read 1:1 around `prime`. `primeChroma` still scales the target
   linearly, which AC-050 (g) asserts exactly rather than approximately, because the scaling now
   applies to the chroma the engine actually renders.
-- **REQ-053** Hue: the anchor's own CAM16 hue, read directly and shared by all seven swatches; there
-  is NO hue re-solve in the prime system (ruled 2026-09-11 on #537: `solveOkhslHue` at the palette hue
+- **REQ-053** Hue: on the cusp-identity path, one CAM16 hue shared by all seven swatches, with no
+  per-rung hue re-solve on that path (ruled 2026-09-11 on #537: `solveOkhslHue` at the palette hue
   carried an Abney drift into the muted swatches and can oscillate at very low saturation, and it is
   shared with `tonal.js`, whose legacy fixture is a hard wall). Re-based 2026-09-20 with REQ-050..052
   (#681 U6): the hue is `effHue(palette.hue, controls.hueSpace, chroma / 100)` on the cusp-identity
-  path, which is the SAME `baseHue` `deriveKeyColor` uses, and `cam16FromRgb(anchorRgb).hue` on the
-  stored-`anchor` path, and it is passed straight to `hctToRgb`, so the construction holds each rung's
-  CAM16 hue rather than its OKHSL hue. OKLCH hue is NOT held across rungs of differing tone even at a
-  fixed CAM16 hue, which is the Abney spread this codebase corrects for elsewhere, so AC-050 (e)/(f)
-  measure CAM16 hue. Since the anchor's own L*, chroma, and hue are all read off the real colour at
+  path, which is the SAME `baseHue` `deriveKeyColor` uses, and it is passed straight to `hctToRgb`, so
+  the construction holds each rung's CAM16 hue rather than its OKHSL hue. Re-based 2026-10-07
+  (T-0015, ADR-031): the stored-`anchor` path holds the measured hue of the anchor constant in the
+  chosen hue space. Under `cam16` every rung renders at the anchor's CAM16 hue,
+  `cam16FromRgb(anchorRgb).hue`; under `oklch` each rung renders at its own solved CAM16 hue, the one
+  whose gamut-capped render at the rung's L\* reads back at the anchor's OKLCH hue (`solveCam16Hue`
+  with `chromaAt`), which removes the Abney spread from the anchored ladder (default-kit outer-rung
+  OKLCH drift 0.41 to 7.97 degrees before, 0.12 to 0.65 after). On the cusp-identity path and on an
+  anchored ladder under `cam16`, OKLCH hue is NOT held across rungs of differing tone, which is the
+  Abney spread this codebase corrects for elsewhere, so AC-050 (e)/(f) measure CAM16 hue. Since the anchor's own L*, chroma, and hue are all read off the real colour at
   `primeChroma 100`, `prime` reproduces the key colour exactly, not approximately. `hueShift` applies with the ramp's rule
   (`dir = hueSameDir ? -|t| : t`, `t = (i - 3) / 3`, so `brightest` is `t = -1`, `dimmest` `t = +1`).
   (Ratified 2026-09-11, R5.)

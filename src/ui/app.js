@@ -1593,8 +1593,8 @@ class HctApp extends HTMLElement {
   // then re-focus the newly-active button by its stable id, because the fk-restore
   // path (see _restoreFocus) would otherwise return focus to the OLD button.
   //
-  // disabled/disabledReason (Q-D, ticket #681 U2): additive - default disabled:false
-  // reproduces the control exactly as before. When disabled, every button gets the
+  // disabled/disabledReason: additive - default disabled:false reproduces the control
+  // exactly as before, and no shipped control passes it today. When disabled, every button gets the
   // native `disabled` attribute (no click, no focus, no arrow-key handler) plus
   // aria-disabled, and disabledReason replaces each button's title and becomes the
   // group's own title, so the reason surfaces on hover over the whole control, not
