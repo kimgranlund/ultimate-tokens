@@ -3,7 +3,7 @@ id: T-0009
 title: "Anchored notch at stop 200 on the default kit #774902 palette at hueShift -30/-45 (GitHub #784)"
 type: bug             # feature | bug | chore | spike | idea
 status: ready     # proposed | ready | blocked | done | dropped
-size: L
+size: M
 priority: P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
 created: 2026-10-06
