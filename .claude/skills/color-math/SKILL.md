@@ -119,7 +119,11 @@ A palette carrying a valid 6-hex `anchor` (a STORED source colour, never fitted)
    failure, not a style question. Two properties it must keep: it keys on `liftStop(stop, lift)`, not
    the nominal stop (re-deriving an effective stop reopens the #668 upticks), and `env(anchorStop)`
    is exactly 1 for any lift, which is what makes the pivot continuous with its neighbours. Damping
-   must NEVER perturb tone (the `damping-curve (f)` gate, `|Δ| ≤ 1e-9`).
+   must NEVER perturb tone (the `damping-curve (f)` gate, `|Δ| ≤ 1e-9`). The closed form is the spec
+   (ADR-029): `ENVELOPE_PRESETS` names its slider settings, and `test/engine/chroma-envelope-gate.mjs`
+   writes the curve out as its own SPEC, then asserts its curve leg (every stop's `env` to 1e-12) and
+   its residue leg (every pixel within TOL codes of its stop's model). A change that moves the curve
+   updates that SPEC and ADR-029 in the same change; never re-pin rounded pixels.
 4. **Mind the stop-vs-index trap.** OKHSL lightness is keyed off the **stop number**, not the array index, so
    stop 500 is the same color in the 19-stop display ramp and the 25-stop export ramp (the `okhsl-modes`
    stop-consistency check). Don't reintroduce index-based math.

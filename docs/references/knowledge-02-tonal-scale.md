@@ -145,9 +145,11 @@ for each stop:
 
 chromaEnvelope(stop, anchorStop, lift, controls):      // src/engine/tonal.js, ONE definition
   sd    = (liftStop(stop, lift) - liftStop(anchorStop, lift)) / 450   // keyed on the LIFTED reading
-  isEven = toneMode == "even"
-  damp   = isEven ? 100 - (100 - damp) * 0.25 : damp   // EVEN_DAMP_FACTOR = 0.25
-  γ      = (isEven ? 0.25 : 1) * dampCurve
+  isEven = toneMode == "even"                          // perceptual and peak take the OKHSL map
+  damp   = isEven ? 100 - (100 - damp) * EVEN_DAMP_FACTOR                     // 0.25
+                  : 100 - 100 * clamp01((100 - damp)/100) ^ OKHSL_DAMP_RESIDUE_EXP
+                                          // OKHSL_DAMP_RESIDUE_EXP = ln(1 - OKHSL_DAMP_D)/ln(0.3), OKHSL_DAMP_D = 0.9275 (#725)
+  γ      = (isEven ? EVEN_DAMP_FACTOR : OKHSL_DAMP_CURVE_GAIN) * dampCurve    // OKHSL_DAMP_CURVE_GAIN = log2(3)/1.5
   uG     = |sd| ^ γ
   if isEven: uG *= smoothstep(min(1, |sd| / EVEN_NEIGHBOURHOOD_R))   // R = 0.2; flat start at the anchor (#701)
   sideW  = max(0, 1 + (dampBias/100)*sign(sd))
@@ -178,9 +180,11 @@ chromaEnvelope(stop, anchorStop, lift, controls):      // src/engine/tonal.js, O
   0 at the anchor, 1 from R out. At lift 0 the smoothstep is 1 by stops 400/600 (`|sd|` 0.222), so nothing
   beyond them moves; under lift `liftStop` sets the reach, and above `|lift|` about 14 the near-side 400 or
   600 enters it. `perceptual` and `peak` never take it.
-- **Differential damping curve.** The defaults
-  `dampCurve 1.5, dampAmp 0, dampBias 0` reduce it to the legacy `1 - (damp/100)·u^1.5`
-  edge damp **exactly** (backward-compatible, existing palettes/exports are unchanged).
+- **Differential damping curve.** With `dampAmp 0, dampBias 0` the shoulder and the tilt drop out,
+  leaving `1 - (damp'/100)·uG` with `damp'` and `γ` the mode-mapped values above. That is not the
+  legacy `1 - (damp/100)·u^1.5` edge damp in any shipped mode: `even` remaps both sliders since #681 U3
+  and #701, and `perceptual` and `peak` since #725 (R69), so `dampCurve 1.5` renders at `γ` 0.375 on
+  even and `log2(3)` = 1.585 on perceptual and peak.
   - **`damp`** sets the edge depth (amount); **`dampCurve` (γ)** shapes *where* damping
     bites, low spreads it into the mids, high confines it to the extreme ends.
   - **`dampAmp`** boosts mid-tone chroma toward the ceiling (`m > 1`, peaking at stop 500,
@@ -189,6 +193,29 @@ chromaEnvelope(stop, anchorStop, lift, controls):      // src/engine/tonal.js, O
     were previously locked together.
 - Final chroma is always clamped to the gamut ceiling `cm` (the `min(·, cm)`), so amplify
   can only push *toward* the ceiling and every emitted color stays in sRGB by construction.
+
+**The curve is the spec (ADR-029, #778).** The closed form above is what the gates assert, not rounded
+pixels: `test/engine/chroma-envelope-gate.mjs` writes the curve out as its own SPEC and holds every
+stop's `env` to it within 1e-12, and holds every emitted pixel within a few 8-bit codes of its stop's
+model (`node scripts/report-preset-fidelity.mjs --envelope-residue` prints the residue table). The
+named curves are `ENVELOPE_PRESETS` in `src/engine/tonal.js`; each is a setting of the four sliders,
+which stay exposed, and `envelopePresetOf` names the preset a control set matches.
+
+| Preset | damp | dampCurve | dampAmp | dampBias | Note |
+|---|---|---|---|---|---|
+| Default | 80 | 1.5 | 0 | 0 | the kit's `DEFAULT_CONTROLS` |
+| Curated | 70 | 1.5 | 0 | 0 | the curated corpus setting; perceptual env(300) 0.744, env(100) 0.230 |
+| Calm ends | 92 | 2.6 | 0 | 0 | |
+| Vivid mids | 70 | 1.5 | 55 | 0 | the editor chip; not the corpus's `VIVID_MIDS` (`scripts/gen-categories.mjs`, dampAmp 0, the Curated row) |
+| Shade-heavy | 84 | 1.5 | 12 | 55 | |
+| Tint-heavy | 84 | 1.5 | 12 | -55 | |
+| Flat | 35 | 1 | 0 | 0 | |
+
+**An anchored ramp keeps the curve and changes the basis.** On `perceptual` and `peak` the envelope
+multiplies the anchor's own OKHSL `s`, held constant at every stop; on `even` it multiplies
+`anchorChromaBasis`'s smoothstep blend from the anchor's chroma toward the hue's peak. An anchor
+outside [`RAMP_L_MIN`, `RAMP_L_MAX`] renders a clamped pivot. The curve passes through the anchor:
+env(500) = 1, and stop 500 emits the anchor verbatim when the pivot is unclamped.
 
 ## 6. `paletteStops`: the per-stop pipeline
 

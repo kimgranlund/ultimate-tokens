@@ -917,6 +917,53 @@ Format: Context → Decision → Rationale → Consequences → Status.
   is the owner's: the owner edits this line to DECIDED, or amends the text under the file's amendment
   shape.
 
+## ADR-029: The chroma envelope's closed form is the spec
+- **Context.** #778. The chroma envelope (`chromaEnvelope` in `src/engine/tonal.js`) is a closed-form
+  curve of four sliders, yet its gate pinned rounded 8-bit readings in
+  `test/engine/fixtures/chroma-envelope.json`, so any change to a pixel path reddened a ratchet that
+  said nothing about whether the curve itself had moved. #725 (R69) retuned the perceptual and peak
+  mode map and amended ADR-026; the editor's preset chips were a separate, unnamed list of slider
+  settings.
+- **Decision.** (1) The closed form is the spec. Per stop, `sd` is the lifted distance from the anchor
+  over 450, capped at 1. The mode map: on perceptual and peak, damp's headroom `r = (100 - damp)/100`
+  becomes `r^OKHSL_DAMP_RESIDUE_EXP` with `OKHSL_DAMP_RESIDUE_EXP = ln(1 - d)/ln(0.3)` and `d =
+  OKHSL_DAMP_D` 0.9275 (so the corpus's r 0.3 maps to 1 - d), and dampCurve is scaled by
+  `OKHSL_DAMP_CURVE_GAIN = log2(3)/1.5`; on even, damp's headroom and dampCurve are both scaled by
+  `EVEN_DAMP_FACTOR` 0.25, and `uG` takes the smoothstep plateau of `|sd| / EVEN_NEIGHBOURHOOD_R`
+  (0.2). The curve is `max(0, 1 + shoulder - (damp/100) * sideW * uG)` with `uG = |sd|^dampCurve`.
+  (2) `ENVELOPE_PRESETS` names the curves (Default, Curated, Calm ends, Vivid mids, Shade-heavy,
+  Tint-heavy, Flat), each a damp / dampCurve / dampAmp / dampBias setting; `envelopePresetOf` names
+  the preset a control set matches, else null. Presets are slider data: the four knobs stay exposed.
+  Curated is the corpus setting (damp 70, dampCurve 1.5): perceptual env(300) 0.744 and env(100) 0.230
+  against the 0.75 and 0.25 bars. Default is the kit's `DEFAULT_CONTROLS` (damp 80). (3) Gate A, the
+  curve leg of `test/engine/chroma-envelope-gate.mjs`: every stop record's `env` equals the gate's own
+  written-out SPEC to 1e-12, and the record's `model` composes from `env` as the record fields state
+  (on perceptual and peak `model / model(500)` is `env` where both models sit under the s clamp at 1
+  and the stop is not capped; on even `model` is
+  `min(maxc, max(min(basis * env, maxc), floor), anchorCap)` at stops not refined, not damped by the
+  group and not the anchored stop 500). (4) Gate B, the residue leg: every
+  emitted pixel reads back within TOL of its stop's `model`, over a cube of +/- K codes per channel.
+  K is `TOL_CODES` 1 for a plain stop, 2 for a damped stop and for a capped one (capped is one-sided,
+  since the refinement only lowers chroma), and 4 = 1 + `enforceMonotonePixelL`'s RADIUS 3 for a
+  refined stop. Two rules are named: the gamut edge (a pixel with a channel at 0 or 255 whose OKHSL s
+  reads at least `EDGE_S` 0.999 widens its range to 1) and the white point (an achromatic pixel reads
+  CAM16 C 0 on even; under the engine's viewing conditions #FFFFFF reads C 2.869). The evidence is
+  `node scripts/report-preset-fidelity.mjs --envelope-residue`: 0 stops outside TOL.
+- **How an anchored ramp deviates.** The curve is unchanged; the basis it multiplies is not the
+  kit's. On perceptual and peak the basis is the anchor's own OKHSL s, held constant at every stop. On
+  even it is `anchorChromaBasis`'s smoothstep blend from the anchor's chroma toward the hue's peak. An
+  anchor outside [RAMP_L_MIN, RAMP_L_MAX] renders a clamped pivot. The curve still passes through the
+  anchor: env(500) = 1, and stop 500 emits the anchor verbatim when the pivot is unclamped.
+- **Rationale.** A curve stated once and asserted exactly cannot drift silently, and a planted
+  constant reds it (the gate never reads the engine's constants). A tolerance derived from the pixel
+  path's own rounding steps tells a rendering defect from a rounding step, which a pinned pixel table
+  cannot. Named presets keep the chips and the gate on one list without hiding the sliders.
+- **Consequences.** `test/engine/fixtures/chroma-envelope.json` is retired, and its owner clause moves
+  here: a change that moves the curve updates the gate's SPEC and this ADR in the same change.
+  `NAMED_EXCEPTIONS` and `OVER_90_AT_300` stay report-only in `scripts/lib/envelope-measure.mjs`.
+- **Status.** PROPOSED 2026-10-07 (#778; builds on #725 and ADR-026). Ratification is the owner's:
+  the owner edits this line to DECIDED, or amends the text under the file's amendment shape.
+
 ## Quick map: decisions an enhancing agent is most likely to "fix" (don't)
 | ADR | Looks wrong because… | But it's intentional because… |
 |-----|----------------------|-------------------------------|
@@ -936,3 +983,4 @@ Format: Context → Decision → Rationale → Consequences → Status.
 | ADR-022 | `scripts/migrate-type-registers.mjs` looks like dead one-off code to delete | kept deliberately as the executable record of the slots→registers rename, the squash-merge would erase an add-then-delete from history |
 | ADR-027 | rerunning a measurement another seat already recorded looks like waste | the recorded figure is a lead, not evidence; six defects in one plan came from trusting one (#721) |
 | ADR-028 | `docs/reference/data` and `docs/reference/colors/categories` sit outside `docs/assets/` and look misfiled | code, generators and the shipped Describe MCP zip read them at that exact path; do not move `docs/reference/data` or `docs/reference/colors/categories` |
+| ADR-029 | the envelope gate asserts a curve to 1e-12 but lets pixels miss it by up to 4 codes, and no fixture pins the emitted values | the closed form is the spec and the pixel tolerance is the path's own rounding steps; re-pinning rounded pixels brings back the ratchet #778 retired, and a curve change updates the gate's SPEC and ADR-029 together |
