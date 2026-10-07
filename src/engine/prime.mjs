@@ -123,16 +123,18 @@ function rgbToOklch([r, g, b]) {
 // primeSwatches(palette, controls), REQ-050. Returns seven { step, l, s, hue, rgb, hex, oklch,
 // inGamut } entries, brightest..dimmest, lightest first. `l` is the rung's CIE L* (its `hctToRgb` tone
 // argument, exact); `s` is the rung's rendered CAM16 chroma (renamed in USE, not in shape, from the
-// retired OKHSL-domain field, REQ-052's per-palette/global `primeChroma` control still scales it
-// linearly, gate (g) re-based #681 U6); `hue` is the anchor's own CAM16 hue (matching deriveKeyColor,
-// REQ-053 superseded 2026-09-11). Deterministic; no DOM.
+// retired OKHSL-domain field, the global Prime chroma k scales it linearly on all seven rungs, gate (g)
+// re-based #681 U6); `hue` is the anchor's own CAM16 hue (matching deriveKeyColor, REQ-053 superseded
+// 2026-09-11). Deterministic; no DOM.
 //
 // ANCHOR BRANCH (ticket #681, U1, "every preset's prime.DEFAULT is its sampled source colour
-// byte-for-byte"; #681 U4 integration onto U6's ladder): a palette carrying a valid `anchor` (a STORED
-// source hex, never fitted, see persist.js DOMAINS.palette.anchor) renders its `prime` step (index 3)
-// from that hex VERBATIM, never reconstructed via hctToRgb, the ticket's baseline measured the round
-// trip `hctToRgb(cam16FromRgb(anchorRgb))` is not guaranteed byte-exact either, so a re-derived swatch
-// cannot be trusted to reproduce the stored hex exactly; the stored bytes always can, by definition.
+// byte-for-byte"; #681 U4 integration onto U6's ladder; #804 k rule): a palette carrying a valid
+// `anchor` (a STORED source hex, never fitted, see persist.js DOMAINS.palette.anchor) renders its
+// `prime` step (index 3) from that hex VERBATIM at the identity k (Prime chroma 100), never
+// reconstructed via hctToRgb: a stored byte reproduces itself by definition, a round trip only by
+// measurement. At any other k the prime step follows the slider like the other six: the anchor's own
+// CAM16 hue and exact CIE L*, its measured CAM16 chroma times k, gamut-capped, rendered through the
+// same `hctToRgb` the ladder uses, so the whole strip moves together.
 // The other six rungs ladder off the anchor's OWN measured CIE L*/CAM16 hue/chroma (`lstarFromRgb`/
 // `cam16FromRgb(anchorRgb)`) through the SAME U6 equal-compress, hold-chroma construction every
 // non-anchored palette uses, the same "read off the real colour, not a proxy" principle already
@@ -164,15 +166,31 @@ export function primeSwatches(palette, controls) {
   }
   const g = 3 ** ((palette.skew ?? 0) / 100); // REQ-053a: the ramp's own toneAt gamma, reused as the ladder bend
 
-  // REQ-052 (superseded 2026-09-11, re-based #681 U6 on CAM16 chroma instead of OKHSL saturation): a
-  // per-palette override wins over the global control; primeChroma scales the key colour's OWN chroma.
-  // Per the ticket's "never moves it," this does NOT apply to the anchor's own verbatim prime rung
-  // below, only to the six ladder rungs, anchored or not.
-  const pc = (palette.primeChroma ?? controls.primeChroma ?? 100) / 100;
-  const cPrime = Math.max(0, keyChroma * pc);
+  // REQ-052 (superseded 2026-09-11, re-based #681 U6 on CAM16 chroma instead of OKHSL saturation;
+  // #804 k rule): the global Prime chroma k, read from `controls` alone (there is no per-palette prime
+  // factor), scales the key colour's OWN chroma on every rung, the anchored prime step included. At
+  // k === 1 the anchored prime step is the stored hex itself (below).
+  const k = (controls.primeChroma ?? 100) / 100;
+  const cPrime = Math.max(0, keyChroma * k);
 
   const shift = palette.hueShift ?? 0;
   const sameDir = palette.hueSameDir === true;
+
+  // The anchored `prime` step, computed ONCE, before the widening search, so the search's dedupe seed
+  // and the returned strip read the same hex. k === 1: the stored bytes verbatim. Otherwise the
+  // anchor's hue and exact L* (`lPrime`, never the clamped `lLadder`) at its chroma times k, capped at
+  // the gamut, the same `Math.min(chroma * k, maxChromaInGamut(hue, L))` deriveKeyColor applies.
+  let anchorPrime = null;
+  if (anchorHex) {
+    if (k === 1) {
+      anchorPrime = { l: lPrime, s: keyChroma, hue: hOk, rgb: anchorRgb, hex: anchorHex, oklch: anchorOklch, inGamut: true };
+    } else {
+      const c3 = Math.min(cPrime, maxChromaInGamut(hOk, lPrime));
+      const { rgb, inGamut } = hctToRgb(hOk, c3, lPrime);
+      const hex = "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
+      anchorPrime = { l: lPrime, s: c3, hue: hOk, rgb, hex, oklch: rgbToOklch(rgb), inGamut };
+    }
+  }
 
   // rungHex(i, lLadderArg, up, down) - the SAME l/hue/chroma/hex a real ladder rung (i !== 3) would
   // render, used both by the widening search below and by the final PRIME_STEPS.map so the two can
@@ -190,7 +208,7 @@ export function primeSwatches(palette, controls) {
     return "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
   }
 
-  // Q3 (b), ruled: the `prime` step is exact regardless of the ladder window; the six OTHER steps
+  // Q3 (b), ruled: the `prime` step sits at the anchor's own L* regardless of the ladder window; the six OTHER steps
   // clamp their ladder anchor into [PRIME_L_MIN, PRIME_L_MAX] so a source outside that window (e.g. a
   // near-white or very dark sampled swatch) still gets a real six-rung ladder rather than `primeSteps`
   // crediting one side out-of-domain room (its own floor-at-0 only guards a side past ITS OWN bound,
@@ -204,10 +222,11 @@ export function primeSwatches(palette, controls) {
   // search, commit 7bda1d7e, into this L*-domain construction). At the exact window bound, equal-
   // compress's own `min(STEP_L, roomUp, roomDown)` reads 0 on BOTH sides at once (roomDown === 0 pins
   // `step` to 0 for roomUp too, unlike the old per-side redistribute rule) - collapsing all six
-  // non-prime rungs onto the single clamped `lLadder` value. Q3 (b) still holds (`prime` never moves:
-  // `lPrime`/`anchorHex` are untouched below); this loop only widens the LADDER's own pivot away from
-  // the bound, by the same amount on both sides (equal-compress's own invariant is preserved, unlike
-  // the old redistribute search), until the six ladder rungs plus the anchor are all distinct hexes -
+  // non-prime rungs onto the single clamped `lLadder` value. Q3 (b) still holds (this loop never
+  // touches `lPrime` or `anchorPrime`); it only widens the LADDER's own pivot away from the bound, by
+  // the same amount on both sides (equal-compress's own invariant is preserved, unlike the old
+  // redistribute search), until the six ladder rungs plus the prime step (the anchor at k 1, its
+  // k-scaled render otherwise, `anchorPrime.hex` either way) are all distinct hexes -
   // capped at a full STEP_L of reserve on each side (the ladder's own nominal per-side step; beyond
   // that the window is offering less room than the ladder was ever designed to need). RESERVE_UNIT is
   // the old search's 0.001 (of a 0..1 OKHSL domain) scaled by the ~100x L*-domain factor the rest of
@@ -219,7 +238,7 @@ export function primeSwatches(palette, controls) {
   if (anchorHex) {
     const RESERVE_UNIT = 0.1;
     const distinct = (lLadderArg, up, down) => {
-      const seen = new Set([anchorHex]);
+      const seen = new Set([anchorPrime.hex]);
       for (let i = 0; i < 7; i++) {
         if (i === 3) continue;
         const hx = rungHex(i, lLadderArg, up, down);
@@ -243,12 +262,10 @@ export function primeSwatches(palette, controls) {
   }
 
   return PRIME_STEPS.map((step, i) => {
-    // The anchor branch's `prime` step (i===3) renders the STORED hex verbatim, unconditionally,
-    // never scaled by `primeChroma` (unlike the other six rungs' chroma below): the ticket's "never
-    // moves it" applies even to that control, not only to the hctToRgb round trip this bypasses.
-    if (anchorHex && i === 3) {
-      return { step, l: lPrime, s: keyChroma, hue: hOk, rgb: anchorRgb, hex: anchorHex, oklch: anchorOklch, inGamut: true };
-    }
+    // The anchor branch's `prime` step (i===3) is `anchorPrime`, computed above: the stored hex at
+    // k === 1, the anchor's chroma times k at its own hue and L* otherwise, the same k the six rungs
+    // below scale by.
+    if (anchorHex && i === 3) return { step, ...anchorPrime };
     const t = (i - 3) / 3; // brightest -1 .. prime 0 .. dimmest +1
     const absT = Math.abs(t);
     // The bend is normalised PER SIDE, `w` runs 0..1 on each side independently, so it applies to

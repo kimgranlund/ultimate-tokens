@@ -746,14 +746,11 @@ for (const p of DEFAULTS) {
 //        not OKHSL saturation, REQ-052 still scales the key colour's own chroma directly, so the
 //        relation is EXACT, not merely close, on an unclamped probe): ratio of measured s at 50 vs 100
 //        == 0.5 (Primary, chroma 95 < 100, so cPrime never saturates against maxChromaInGamut).
-//        #681 U4 integration: this relation only applies to the NON-anchored path - U1's anchor
-//        branch emits the anchor's own measured chroma verbatim at the prime rung regardless of
-//        `primeChroma` (prime.mjs:143-150, "prime == anchor" per the plan's Blast-radius table), so
-//        `primeChroma` is a no-op on the prime rung for an anchored palette by design. Since all 16
-//        `DEFAULTS` are now anchored (U1), the probe here strips Primary's own `anchor` field
-//        (keeping its hue/chroma/skew, the values the original 0.5 ratio was written against)
-//        rather than testing a palette that can no longer exercise this path at all. A companion
-//        assertion below pins the anchored (immune) behaviour so a regression either way is caught. ──
+//        The probe runs twice. With Primary's own `anchor` stripped (keeping its hue/chroma/skew, the
+//        values the original 0.5 ratio was written against) it exercises the cusp path. With the
+//        anchor kept (all 16 `DEFAULTS` are anchored, U1) it exercises the #804 k rule: the anchored
+//        prime rung is the stored hex at Prime chroma 100 and the anchor's chroma times k at any other
+//        k, so at 50 its `s` is half the anchor's measured chroma and its hex leaves the anchor. ──
 {
   const PRIMARY_NO_ANCHOR = { ...PRIMARY, anchor: undefined };
   const s100 = primeSwatches(PRIMARY_NO_ANCHOR, { ...CTL, primeChroma: 100 })[3].s;
@@ -761,10 +758,11 @@ for (const p of DEFAULTS) {
   const ratio = s50 / s100;
   if (Math.abs(ratio - 0.5) > 1e-6) FAIL("g", `Primary (anchor stripped): measured chroma ratio (primeChroma 50/100) = ${ratio.toFixed(6)}, expected 0.5 exactly (unclamped)`);
 
-  const aS100 = primeSwatches(PRIMARY, { ...CTL, primeChroma: 100 })[3].s;
-  const aS50 = primeSwatches(PRIMARY, { ...CTL, primeChroma: 50 })[3].s;
-  const aRatio = aS50 / aS100;
-  if (Math.abs(aRatio - 1) > 1e-9) FAIL("g", `Primary (anchored): measured chroma ratio (primeChroma 50/100) = ${aRatio.toFixed(6)}, expected 1 exactly (anchor pass-through is immune to primeChroma)`);
+  const a100 = primeSwatches(PRIMARY, { ...CTL, primeChroma: 100 })[3];
+  const a50 = primeSwatches(PRIMARY, { ...CTL, primeChroma: 50 })[3];
+  const aRatio = a50.s / a100.s;
+  if (Math.abs(aRatio - 0.5) > 1e-6) FAIL("g", `Primary (anchored): measured chroma ratio (primeChroma 50/100) = ${aRatio.toFixed(6)}, expected 0.5 exactly (the anchored prime rung follows the Prime chroma k)`);
+  if (a50.hex === PRIMARY.anchor.toUpperCase()) FAIL("g", `Primary (anchored): prime rung at primeChroma 50 is still the anchor ${a50.hex}, expected it to move off the anchor`);
 }
 
 // ── (h) REQ-056: at primeChroma 100, prime.hex == deriveKeyColor hex, BYTE-IDENTICAL, every default
@@ -823,21 +821,18 @@ for (const p of DEFAULTS) {
   if (a !== b) FAIL("i", `${p.name}: two calls not deep-equal`);
 }
 
-// ── (j) palette.primeChroma overrides controls.primeChroma; an absent controls.primeChroma
-//        defaults to 100 flat, with NO fallback to any stray keyIntensity field (the P2..P3
-//        rename window, LLD Risk 2, closed once P3/#548 landed primeChroma as a real control,
-//        the fallback tail was removed from primeSwatches accordingly).
-//        #681 U4 integration: like (g), `primeChroma` (global or per-palette) has no effect on an
-//        anchored palette's prime rung by design, so this probe uses Primary with its `anchor`
-//        stripped (same rationale as (g)) rather than a palette that can no longer exercise either
-//        override path at all. ─────────────────────────────────────────────────────────────────
-{
-  const PRIMARY_NO_ANCHOR = { ...PRIMARY, anchor: undefined };
-  const swOverride = primeSwatches({ ...PRIMARY_NO_ANCHOR, primeChroma: 30 }, { ...CTL, primeChroma: 100 })[3];
-  const swGlobal30 = primeSwatches(PRIMARY_NO_ANCHOR, { ...CTL, primeChroma: 30 })[3];
-  const swGlobal100 = primeSwatches(PRIMARY_NO_ANCHOR, { ...CTL, primeChroma: 100 })[3];
-  if (Math.abs(swOverride.s - swGlobal30.s) > 1e-9) FAIL("j", `palette.primeChroma override: s ${swOverride.s} != global-30 s ${swGlobal30.s}`);
-  if (Math.abs(swOverride.s - swGlobal100.s) < 1e-9) FAIL("j", "palette.primeChroma override had no effect vs global primeChroma 100");
+// ── (j) the Prime chroma k resolves from `controls.primeChroma` alone (#804: there is no
+//        per-palette prime factor, a stray `palette.primeChroma` field is ignored); an absent
+//        controls.primeChroma defaults to 100 flat, with NO fallback to any stray keyIntensity field
+//        (the P2..P3 rename window, LLD Risk 2, closed once P3/#548 landed primeChroma as a real
+//        control, the fallback tail was removed from primeSwatches accordingly). Probed on anchored
+//        Primary, whose whole strip follows k (#804), and on Primary with its anchor stripped. ──
+for (const [label, probe] of [["anchored", PRIMARY], ["anchor stripped", { ...PRIMARY, anchor: undefined }]]) {
+  const swField = JSON.stringify(primeSwatches({ ...probe, primeChroma: 30 }, { ...CTL, primeChroma: 100 }));
+  const swGlobal100 = JSON.stringify(primeSwatches(probe, { ...CTL, primeChroma: 100 }));
+  const swGlobal30 = JSON.stringify(primeSwatches(probe, { ...CTL, primeChroma: 30 }));
+  if (swField !== swGlobal100) FAIL("j", `Primary (${label}): a palette.primeChroma field of 30 changed the strip under controls.primeChroma 100, the field must be ignored`);
+  if (swGlobal30 === swGlobal100) FAIL("j", `Primary (${label}): controls.primeChroma 30 rendered the same strip as 100, the control has no effect`);
 }
 {
   // no controls.primeChroma field at all -> defaults to 100, ignoring a stray keyIntensity: if the

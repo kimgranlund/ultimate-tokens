@@ -3641,6 +3641,24 @@ flushRaf();
   app.render(); flushRaf();
 }
 
+// ── (pcm) the global Prime chroma k moves the anchored prime middle and the key with it (#804): at 50
+// Primary's middle swatch leaves its anchor (Primary, not Neutral: a near-achromatic anchor may not
+// move) and the view's key equals that middle, so the tile and the strip agree at any k. ─────────────
+{
+  const { projectView: pvPCM } = await import("../../src/ui/model.mjs");
+  app.createSet(); flushRaf();
+  const pIdx = app.doc.palettes.findIndex((p) => p.name === "Primary");
+  const anchorPCM = String(app.doc.palettes[pIdx]?.anchor || "").toUpperCase();
+  app.setSegment("global"); app.render(); flushRaf();
+  const globalPrime = findFk("slider:Prime chroma");
+  globalPrime.value = "50"; globalPrime.dispatch("input", {});
+  app.commitDrag(); app.render(); flushRaf();
+  const vpPCM = (app._view || pvPCM(app.doc)).palettes[pIdx];
+  ok(app.doc.primeChroma === 50 && !!anchorPCM && vpPCM.prime[3].hex !== anchorPCM && vpPCM.key === vpPCM.prime[3].hex, `(pcm1) the global Prime chroma slider at 50 moves Primary's middle swatch off its anchor (${anchorPCM} to ${vpPCM.prime[3].hex}) and the view's key equals that middle (key ${vpPCM.key})`);
+  app.doc.primeChroma = 100; // restore the k-100 default for later groups
+  app.render(); flushRaf();
+}
+
 // ── (rx) renderRadixScene, the pannable "Radix" canvas view (ticket #637). ONE ATOMIC UNIT
 //    (I2): the chip, the dispatch branch, and renderRadixScene land in the same commit, test
 //    (rx3) is the single assertion that fails on a tree shipping only half of that. ─────────────
