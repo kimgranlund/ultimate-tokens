@@ -1,4 +1,4 @@
-<!-- sdlc-lite:managed:start v1 sha256:79c4c827e756 -->
+<!-- sdlc-lite:managed:start v1 sha256:49597d7eb482 -->
 # Work records
 
 This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and `config`. `tickets.py roadmap` (also run by `new` and `close`) generates this block: do not edit inside it; change a ticket's `handoff.md` front matter and rerun `roadmap`. `roadmap.md` lists every ticket in dependency order. Closed `.NNNN-*` folders are history: open one only when asked.
@@ -10,12 +10,10 @@ This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and
 ## Stages
 
 - proposed: 0
-- ready: 3
-  - T-0005 gates-batch follow-ups: gate breadth, a fourth rename-map copy, stale lines (GitHub #783) (gh-783)
-  - T-0009 Anchored notch at stop 200 on the default kit #774902 palette at hueShift -30/-45 (GitHub #784) (gh-784)
-  - T-0011 Palette slugs can collide with another palette's suffixed token names (GitHub #787) (gh-787)
+- ready: 1
+  - T-0013 Chroma envelope: the curve as the spec, presets, tolerance gates (gh 778) (gh-778)
 - blocked: 0
-- done: 8
+- done: 11
 - dropped: 0
 
 ## Procedures

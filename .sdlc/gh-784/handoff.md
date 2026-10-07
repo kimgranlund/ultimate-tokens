@@ -2,7 +2,7 @@
 id: T-0009
 title: "Anchored notch at stop 200 on the default kit #774902 palette at hueShift -30/-45 (GitHub #784)"
 type: bug             # feature | bug | chore | spike | idea
-status: ready     # proposed | ready | blocked | done | dropped
+status: done     # proposed | ready | blocked | done | dropped
 size: M
 priority: P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -47,3 +47,7 @@ Prototype from the first solo run (`/tmp/gh784/proto.mjs`, `meas.mjs` if still p
 - The author ran `npm test` (54 of 54 test files pass) and `npm run gate:sweeps` through gate_lock with SDLC_GATE_WORKERS=10 (exit 0, all eight gates PASS; log at `/tmp/gh784i/sweeps.log`). `gate:sweeps` takes about 12 minutes, over the 10 minute foreground Bash cap that headless sessions run under, and a first verifier run was killed at that limit while re-running it. Do not re-run `gate:sweeps`; read the log, and re-run only the cheap checks: `node test/engine/even-dips-gate.mjs --full` (about 60 s), `node test/repo/em-dash.mjs`, and a planted-regression run in a temporary worktree.
 - Corpus movement was measured against `git show HEAD:src/engine/tonal.js` over every curated preset palette and the default kit (both hue spaces, both stop sets, authored hueShift and hueShift 0): 0 cells moved of 334,048 each.
 - Time limit: two earlier verifier runs were killed at the session's 20 minute wall while re-running corpus gates (`gate:corpus-anchor`, `gate:sweep-prime`, `gate:corpus-reset`, `npm test`). Run none of those: the author's logs are `/tmp/gh784i/npmtest2.log` (54 of 54 pass) and `/tmp/gh784i/sweeps.log` (exit 0). Finish inside 10 minutes: review the diff against the acceptance criteria, run `node test/engine/even-dips-gate.mjs --full`, run `node test/repo/em-dash.mjs`, plant the regression once, and write the result.
+
+## Closed
+
+2026-10-07: merged in PR #802 (4801994f)

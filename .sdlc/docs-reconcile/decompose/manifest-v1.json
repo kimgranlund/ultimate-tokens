@@ -1,0 +1,408 @@
+{
+  "domain": "technical-architecture",
+  "plan": true,
+  "nodes": [
+    {
+      "id": "sys",
+      "label": "docs-reconcile migration",
+      "leaf": false,
+      "justify": "grouping"
+    },
+    {
+      "id": "n-prep",
+      "label": "unit worktree .worktrees/docs-reconcile on plan/docs-reconcile, carrying onboard's untracked output (root AGENTS.md, CLAUDE.md, docs/AGENTS.md, docs/CLAUDE.md, docs/layout.md)",
+      "leaf": true,
+      "justify": null,
+      "accept": "in the worktree: `test -f docs/layout.md && python3 $SDLC/scripts/docs_check.py | tail -1` prints `docs_check: 32 errors` (the baseline reproduces before any move)"
+    },
+    {
+      "id": "n-map",
+      "label": "move map: .sdlc/docs-reconcile/decompose/move-map.tsv (old<TAB>new, relative to docs/), the single source every other slice reads",
+      "leaf": true,
+      "justify": null,
+      "accept": "`git ls-files docs | sed 's#^docs/##' | sort | diff - <(cut -f1 move-map.tsv | sort)` is empty on the pre-move tree and `cut -f2 move-map.tsv | sort | uniq -d` is empty"
+    },
+    {
+      "id": "n-layout",
+      "label": "docs/layout.md contract: `reference/` listed under Homes with a Kinds row bound to kind assets, holding only the runtime-read data (data/, colors/categories/)",
+      "leaf": true,
+      "justify": null,
+      "accept": "`python3 $SDLC/scripts/docs_check.py --only D-1` exits 0 and prints `info D-1 docs/reference/: custom home bound to kind assets`; `python3 $SDLC/scripts/onboard.py check` exits 0"
+    },
+    {
+      "id": "n-moves",
+      "label": "git mv executor: apply every changed row of the map, delete the untracked legacy entry files under docs/{lld,marketing,plan,reference,site,spec,tickets}/",
+      "leaf": true,
+      "justify": null,
+      "accept": "`git ls-files docs | grep -v -E '/(AGENTS|CLAUDE)\\.md$|^docs/layout\\.md$' | sed 's#^docs/##' | sort | diff - <(cut -f2 move-map.tsv | sort)` is empty; measured before any content edit, `git diff --cached -M --name-status -- docs | grep -c '^R100'` is 99; `python3 $SDLC/scripts/docs_check.py --only D-1,D-9,D-12` exits 0"
+    },
+    {
+      "id": "rw",
+      "label": "reference rewrite",
+      "leaf": false,
+      "justify": "grouping"
+    },
+    {
+      "id": "n-rw-code",
+      "label": "code-side references: src (hand-written), scripts, test, mcp, figma (hand-written), plugin, .github, .gitignore, README.md",
+      "leaf": true,
+      "justify": null,
+      "accept": "residue grep (report.md, Residue contract) scoped to `src scripts test mcp figma plugin .github .gitignore README.md` minus generated files returns 0 lines; `node test/repo/citations.mjs && node test/repo/branding.mjs && node test/repo/em-dash.mjs` exit 0"
+    },
+    {
+      "id": "n-rw-agents",
+      "label": "agent-side references: .claude/CLAUDE.md, .claude/skills, .claude/agents, .claude/commands, .claude/hooks, root AGENTS.md",
+      "leaf": true,
+      "justify": null,
+      "accept": "residue grep scoped to `.claude AGENTS.md CLAUDE.md` returns 0 lines; every `docs/...` path named in .claude/CLAUDE.md exists (`grep -o 'docs/[A-Za-z0-9_./-]*' .claude/CLAUDE.md | sort -u | while read p; do test -e \"$p\" || echo MISSING $p; done` prints nothing)"
+    },
+    {
+      "id": "n-rw-docs",
+      "label": "docs-internal references: links and path mentions in live docs, spec-cell relative links, the reactivity report index, Markdown link repair inside reports/ and archive/",
+      "leaf": true,
+      "justify": null,
+      "accept": "`python3 $SDLC/scripts/docs_check.py --only D-10` prints at most the 2 known warnings (store-copy.md skills link, docs/AGENTS.md reports/AGENTS.md); residue grep scoped to `docs` minus `docs/archive docs/reports docs/references/changelog.md` and the pre-existing ADR bodies returns 0 lines"
+    },
+    {
+      "id": "n-rw-sdlc-live",
+      "label": ".sdlc live contracts: adapter.md (section 5 and row X10), baseline.md, architecture.md, survey.md, debt.md, board.md, checks/card-amendment-check.sh, scripts/",
+      "leaf": true,
+      "justify": null,
+      "accept": "residue grep scoped to `.sdlc/adapter.md .sdlc/baseline.md .sdlc/architecture.md .sdlc/survey.md .sdlc/debt.md .sdlc/board.md .sdlc/checks .sdlc/scripts` returns 0 lines; `bash .sdlc/checks/card-amendment-check.sh` exits as it does on main; `git diff --stat main -- .sdlc/handoffs .sdlc/verdicts .sdlc/records .sdlc/reviews .sdlc/questions .sdlc/plans .sdlc/tickets` is empty"
+    },
+    {
+      "id": "n-gen",
+      "label": "regenerated committed artifacts (src/ui/describe-mcp-assets.js, figma/plugin/ui.html, docs/assets/palette-preview.svg and any other gen output), produced by the generators, never hand-edited",
+      "leaf": true,
+      "justify": null,
+      "accept": "after staging everything, `npm test` exits 0 and `git status --porcelain` is byte-identical before and after it (no unstaged regeneration drift)"
+    },
+    {
+      "id": "n-entries",
+      "label": "entry files: `onboard.py setup --yes` run after all moves are staged",
+      "leaf": true,
+      "justify": null,
+      "accept": "`python3 $SDLC/scripts/docs_check.py --only D-7` exits 0; `python3 $SDLC/scripts/onboard.py check` exits 0 and reports every managed file `current`"
+    },
+    {
+      "id": "n-adr",
+      "label": "new ADR appended before the Quick map of docs/references/decision-records.md recording the schema adoption, the `reference/` assets exception, and the finished-record policy",
+      "leaf": true,
+      "justify": null,
+      "accept": "`git diff -M main -- docs/reference/references/decision-records.md docs/references/decision-records.md` shows a rename with only added lines: one new ADR section before the Quick map plus one Quick map row; the new ADR names the nine homes, the `reference/` assets home, and the frozen-record rule; `bash .sdlc/checks/card-amendment-check.sh` exits as it does on main"
+    },
+    {
+      "id": "n-residue",
+      "label": "residue gate: old-prefix grep plus basename sweep over the whole tree with the frozen-record allowlist",
+      "leaf": true,
+      "justify": null,
+      "accept": "the residue grep over `.` with the allowlist pathspecs (report.md, Residue contract) prints 0 lines, and the basename sweep prints no hit whose path prefix is an old home"
+    },
+    {
+      "id": "n-report",
+      "label": "docs/reports/2026-10-06-docs-reconcile.md: the old-to-new path map plus the .sdlc audit (dangling old paths per subdir, B-2a findings, stale or duplicated records)",
+      "leaf": true,
+      "justify": null,
+      "accept": "file exists, name matches `YYYY-MM-DD-slug.md`, contains one row per moved folder rule and a count per .sdlc subdir; `node test/repo/em-dash.mjs && node test/repo/branding.mjs` exit 0"
+    },
+    {
+      "id": "n-private-audit",
+      "label": "private audit of .claude/docs/other (23 files) against docs/, written inside .claude/docs/other/ so it stays local",
+      "leaf": true,
+      "justify": null,
+      "accept": "`git status --porcelain | grep -c '.claude/docs/other'` is 0 and `git grep -l -E 'monetization-and-hosting-plan|launch-compliance-checklist' -- docs .sdlc/docs-reconcile` adds no file that main did not already have"
+    },
+    {
+      "id": "n-gates",
+      "label": "final gates in the worktree: docs_check, npm test, npm run build, em-dash, branding",
+      "leaf": true,
+      "justify": null,
+      "accept": "`python3 $SDLC/scripts/docs_check.py` exits 0 with `0 errors`; `npm test` exits 0 with the tree unchanged after; `npm ci && npm run build` exits 0; `node test/repo/em-dash.mjs` exits 0"
+    }
+  ],
+  "actions": [
+    {
+      "id": "a1",
+      "label": "make every top-level docs folder a schema home (D-1)"
+    },
+    {
+      "id": "a2",
+      "label": "keep non-Markdown files only where the schema allows them (D-9)"
+    },
+    {
+      "id": "a3",
+      "label": "give every docs file and folder a lowercase kebab-case name (D-12)"
+    },
+    {
+      "id": "a4",
+      "label": "give every home and topic with two or more documents an entry file (D-7 stays at zero after the move)"
+    },
+    {
+      "id": "a5",
+      "label": "keep every runtime-read and shipped data path resolving unchanged (role-table.json, category JSON, the Describe MCP zip layout)"
+    },
+    {
+      "id": "a6",
+      "label": "keep generators reading and writing the right paths"
+    },
+    {
+      "id": "a7",
+      "label": "keep path-keyed test pins and exemption lists matching the files they name"
+    },
+    {
+      "id": "a8",
+      "label": "keep agent, skill, command and CLAUDE.md routing truthful"
+    },
+    {
+      "id": "a9",
+      "label": "keep live .sdlc contracts and checks pointing at real paths"
+    },
+    {
+      "id": "a10",
+      "label": "leave finished run records unrewritten yet resolvable through a published path map"
+    },
+    {
+      "id": "a11",
+      "label": "keep Markdown links inside docs resolving"
+    },
+    {
+      "id": "a12",
+      "label": "keep committed generated artifacts in sync with their sources"
+    },
+    {
+      "id": "a13",
+      "label": "preserve file history across the move"
+    },
+    {
+      "id": "a14",
+      "label": "prove no live file still names an old path"
+    },
+    {
+      "id": "a15",
+      "label": "audit .claude/docs/other and .sdlc for stale or duplicated records, report only"
+    },
+    {
+      "id": "a16",
+      "label": "keep private docs and their names out of every commit"
+    },
+    {
+      "id": "a17",
+      "label": "keep new records free of U+2014 and of the retired maker brand"
+    },
+    {
+      "id": "a18",
+      "label": "run gates in an isolated tree that still has onboard's uncommitted output"
+    },
+    {
+      "id": "a19",
+      "label": "keep the ADR-017 ticket archive intact: moved whole, nothing added"
+    },
+    {
+      "id": "a20",
+      "label": "keep the ADR append workflow working and record this decision in it"
+    },
+    {
+      "id": "a21",
+      "label": "keep npm test and npm run build green"
+    },
+    {
+      "id": "a22",
+      "label": "give every later slice one authoritative old-to-new mapping"
+    }
+  ],
+  "hosts": [
+    {
+      "action": "a1",
+      "node": "n-layout"
+    },
+    {
+      "action": "a1",
+      "node": "n-moves"
+    },
+    {
+      "action": "a2",
+      "node": "n-layout"
+    },
+    {
+      "action": "a2",
+      "node": "n-moves"
+    },
+    {
+      "action": "a3",
+      "node": "n-moves"
+    },
+    {
+      "action": "a4",
+      "node": "n-entries"
+    },
+    {
+      "action": "a5",
+      "node": "n-layout"
+    },
+    {
+      "action": "a5",
+      "node": "n-map"
+    },
+    {
+      "action": "a6",
+      "node": "n-rw-code"
+    },
+    {
+      "action": "a7",
+      "node": "n-rw-code"
+    },
+    {
+      "action": "a8",
+      "node": "n-rw-agents"
+    },
+    {
+      "action": "a9",
+      "node": "n-rw-sdlc-live"
+    },
+    {
+      "action": "a10",
+      "node": "n-report"
+    },
+    {
+      "action": "a10",
+      "node": "n-rw-sdlc-live"
+    },
+    {
+      "action": "a11",
+      "node": "n-rw-docs"
+    },
+    {
+      "action": "a12",
+      "node": "n-gen"
+    },
+    {
+      "action": "a13",
+      "node": "n-moves"
+    },
+    {
+      "action": "a14",
+      "node": "n-residue"
+    },
+    {
+      "action": "a15",
+      "node": "n-report"
+    },
+    {
+      "action": "a15",
+      "node": "n-private-audit"
+    },
+    {
+      "action": "a16",
+      "node": "n-private-audit"
+    },
+    {
+      "action": "a17",
+      "node": "n-gates"
+    },
+    {
+      "action": "a17",
+      "node": "n-report"
+    },
+    {
+      "action": "a18",
+      "node": "n-prep"
+    },
+    {
+      "action": "a19",
+      "node": "n-moves"
+    },
+    {
+      "action": "a20",
+      "node": "n-adr"
+    },
+    {
+      "action": "a20",
+      "node": "n-rw-agents"
+    },
+    {
+      "action": "a21",
+      "node": "n-gates"
+    },
+    {
+      "action": "a22",
+      "node": "n-map"
+    }
+  ],
+  "edges": [
+    {
+      "from": "n-prep",
+      "to": "n-moves",
+      "why": "moves are staged in the unit worktree, never in the main checkout"
+    },
+    {
+      "from": "n-map",
+      "to": "n-moves",
+      "why": "the executor applies the map rows"
+    },
+    {
+      "from": "n-layout",
+      "to": "n-entries",
+      "why": "onboard setup reads the Homes and Kinds rows to decide which folders get entries"
+    },
+    {
+      "from": "n-moves",
+      "to": "n-entries",
+      "why": "onboard only sees tracked or staged files, verified in the dry run"
+    },
+    {
+      "from": "n-moves",
+      "to": "n-rw-docs",
+      "why": "one writer per file: link repair edits the files at their new paths"
+    },
+    {
+      "from": "n-moves",
+      "to": "n-adr",
+      "why": "the ADR is appended to decision-records.md at its new path"
+    },
+    {
+      "from": "n-rw-code",
+      "to": "n-gen",
+      "why": "generators embed hand-written sources whose comments cite moved paths"
+    },
+    {
+      "from": "n-rw-code",
+      "to": "n-residue",
+      "why": "the sweep judges the finished rewrite"
+    },
+    {
+      "from": "n-rw-agents",
+      "to": "n-residue",
+      "why": "the sweep judges the finished rewrite"
+    },
+    {
+      "from": "n-rw-docs",
+      "to": "n-residue",
+      "why": "the sweep judges the finished rewrite"
+    },
+    {
+      "from": "n-rw-sdlc-live",
+      "to": "n-residue",
+      "why": "the sweep judges the finished rewrite"
+    },
+    {
+      "from": "n-residue",
+      "to": "n-report",
+      "why": "the report publishes the dangling counts the sweep measures in frozen records"
+    },
+    {
+      "from": "n-gen",
+      "to": "n-gates",
+      "why": "tree-clean-after needs the regenerated output staged"
+    },
+    {
+      "from": "n-entries",
+      "to": "n-gates",
+      "why": "D-7 fires until entries exist"
+    },
+    {
+      "from": "n-report",
+      "to": "n-gates",
+      "why": "the report is a new docs file the checker and the em-dash gate must pass"
+    }
+  ]
+}
