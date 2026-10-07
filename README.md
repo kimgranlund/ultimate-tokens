@@ -30,12 +30,12 @@ collections.
   ramp (050 → 950) with three **distribution modes**, `even` (uniform CIELAB L\*), `perceptual`
   (uniform OKHSL lightness + gamut-proportional chroma, the **default**), and `peak` (anchored to the
   hue's chroma cusp). A **vibrancy** control keeps the palette's mid vivid, `relative-chroma`
-  harmonizes saturation across hues, and a chroma floor kills the near-white dead zone. **Base chroma**
-  mutes the whole ramp evenly (with a per-palette **Intensity** override), and every palette carries a
-  **prime system**: seven swatches (brightest → dimmest) on their own lightness ladder around the
-  palette's key color, scaled by **Prime chroma** (global, with a per-palette override), drawn as the
-  strip ahead of each ramp row and exported as their own `prime` token group. Today's shipped defaults
-  keep every ramp unchanged.
+  harmonizes saturation across hues, and a chroma floor kills the near-white dead zone. Each palette's
+  **Base chroma** mutes its whole ramp evenly, times a global **Base chroma** factor, and every palette
+  carries a **prime system**: seven swatches (brightest → dimmest) on their own lightness ladder around
+  the palette's key color, scaled by one global **Prime chroma** factor, drawn as the strip ahead of
+  each ramp row and exported as their own `prime` token group. Both global factors default to 100, where
+  a sampled palette's own colour is emitted exactly.
 - **Key colors.** Pin exact brand colors (a `dominant` and optional `supportive`, stored losslessly in
   OKLCH); the ramp is re-derived around them through the perceptual lens, so a palette keeps its real
   source color while every other stop stays even.

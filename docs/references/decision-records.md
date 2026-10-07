@@ -738,7 +738,7 @@ Format: Context → Decision → Rationale → Consequences → Status.
   so the residual is structural, not a tuning failure.
 - **Decision.** The source hex itself is stored on the palette, as `anchor`, and the engine reads it
   rather than re-deriving it. A palette carrying a valid `anchor` emits it verbatim at
-  `prime.DEFAULT` (`primeSwatches(...)[3]`, unconditionally) and, when the source sits inside the ramp
+  `prime.DEFAULT` (`primeSwatches(...)[3]`, unconditionally; superseded by ADR-030 on 2026-10-07: verbatim only at Prime chroma k 100, below it the rung follows k) and, when the source sits inside the ramp
   window `[9.95, 95.05]` L\*, at ramp stop 500 in all three tone modes. A second field,
   `sourceAnchor`, carries the generator's own copy: it is written only by `scripts/gen-categories.mjs`
   and `defaultDocument()`, never by the UI. Editing `hue` or `chroma` DETACHES the palette (`anchor`
@@ -964,12 +964,68 @@ Format: Context → Decision → Rationale → Consequences → Status.
 - **Status.** PROPOSED 2026-10-07 (#778; builds on #725 and ADR-026). Ratification is the owner's:
   the owner edits this line to DECIDED, or amends the text under the file's amendment shape.
 
+## ADR-030: Chroma controls are per-palette Base chroma times two global k factors; the anchor follows Prime chroma
+- **Context.** T-0014 (#804). The user's screenshot of the Brand > Primary card showed the anchored
+  prime middle (rung 3 of the seven-swatch strip) staying saturated while the outer six muted:
+  ADR-026 emitted it verbatim, unconditionally. Behind that sat three chroma layers (a per-palette
+  override, a per-group default, a global fallback) and a dead-global finding: `model.mjs` filled
+  every group's `primeChroma`, so `primeChromaOf` never fell through and the Global tab's Base chroma
+  and Prime chroma sliders moved nothing (a `projectView(defaultDocument())` with global
+  `primeChroma: 0` rendered the same strip as at 100, while a group or palette at 0 moved six rungs).
+  Material's group prime default of 60 muted every Neutral strip.
+- **Decision.** Five user decisions of 2026-10-07. (1) A saved prime value below 100 is not kept:
+  the one-time move is accepted and recorded, with no hidden legacy field. (2) Two layers, formed
+  once in `src/engine/resolve.mjs`: each palette carries its own optional Base chroma
+  (`palette.baseChroma`, 0 to 100, absent 100), the ramp damper ADR-026's 2026-10-03 amendment
+  ruled for the group; the Global tab's Base chroma (`doc.baseIntensity`) and Prime chroma
+  (`doc.primeChroma`) are k factors on every palette, both default 100.
+  `rampChromaOf = palette.baseChroma x k_base / 100` and `primeChromaOf = k_prime`. The per-group
+  sliders and the per-palette Prime chroma slider are removed; a palette's canvas group is grouping
+  metadata only. The prime k also scales the gallery key tile (`deriveKeyColor`), so the tile equals
+  the prime middle at every k and the `key-anchor` gate keeps two independent producers. (3) The
+  per-palette Chroma slider on an anchored palette keeps its detach semantics (ADR-026 unchanged
+  there). (4) The global vibrancy default is 50 (was 0); a pre-v8 document's vibrancy 0 becomes 50,
+  any other value is kept. (5) T-0014 lands before T-0015 (hue space); T-0013 owns the envelope and
+  damping constants in `tonal.js`. The anchor rule: at Prime chroma k 100 the anchored prime step is
+  the stored hex verbatim; at any other k it is rendered at the anchor's own CAM16 hue and exact
+  CIE L\*, its measured CAM16 chroma times k, gamut-capped, so the whole strip moves together. Ramp
+  stop 500 equals the anchor at the palette's Base chroma 100 times the global k 100.
+- **Rationale.** Two layers that multiply are order-free (`dampStops` is linear with an `r >= 1`
+  no-op), so the product is formed once and no fallback can go dead again. Identity holds at the
+  defaults: both k are 100 and a fresh palette's Base chroma is 100, so the anchor is byte-exact on
+  both the strip and stop 500 unless the user moves a slider. Folding the group value onto each
+  palette instead of keeping the group layer makes a saved kit render the same ramps.
+- **Consequences.** Schema v8 (`src/ui/persist.js`): the `foldGroups` entry writes each palette's
+  resolved group base chroma onto its own `baseChroma`, drops `paletteGroups` and every per-palette
+  `primeChroma`, resets both globals to 100 (before v8 they never reached a palette), reporting each
+  through `DROPPED_KEYS`; `vibrancyDefault` moves a pre-v8 vibrancy 0 to 50. `EXPORT_SCHEMA_VERSION`
+  is 6 (`ultimate-tokens-brand-kit/6`, brand-kit MCP server 0.6.0). The before and after report,
+  `docs/reports/2026-10-07-chroma-controls-redesign.md` (`report-preset-fidelity.mjs
+  --identity-control --migrate --authored --base 1da44336`), measures over 3,796 palettes and 94,900
+  cells per mode: ramp peak 0 and even 0 cells; perceptual 82,466 cells (vibrancy, every palette
+  without its own `cuspPull`); key tiles 0 of 3,796; prime strips 344 of 3,796 (the 342 curated
+  Neutrals and the default kit's Neutral outer six from the retired Material 60, and Adia Primary
+  from 99). The vibrancy move re-pinned, with old and new values in the report: 7 role-contrast
+  dark floors in `test/engine/semantic.mjs` (lowest 4.6229, above AA 4.5), 3 panda EX-2 literals,
+  the C6 (ii) duplicate list 30 to 32 keys, the `hue-solver-best` and `group-chroma-damper` pins,
+  the `intensity-legacy` fixture (335 of 400 perceptual cells), and the shadcn (44 / 38 / 38 lines)
+  and radix (793 / 440 / 478 leaves) baselines, and the `mode-isolation` perceptual fingerprint
+  (`86f6e551dc20e6d7` to `22a43e80320a8c95`, peak unchanged; at vibrancy 0 this tree reproduces the
+  old value). No `tonal.js` constant moved, and the chroma-envelope
+  gate holds at vibrancy 50. The user ruled the `oklch-native` bar in `test/ui/shell.mjs` from 30 to
+  45 RGB: vibrancy 50 moves lightness toward each hue's cusp and widens the OKLCH versus CAM16
+  starter gap (measured 44.6, worst Neutral); it keeps measuring at the shipped default.
+- **Status.** PROPOSED 2026-10-07 (T-0014, #804; supersedes ADR-026's unconditional verbatim
+  clause and its 2026-10-03 group damper wording, which now reads as the per-palette Base chroma
+  times the global k). Ratification is the owner's: the owner edits this line to DECIDED, or amends
+  the text under the file's amendment shape.
+
 ## Quick map: decisions an enhancing agent is most likely to "fix" (don't)
 | ADR | Looks wrong because… | But it's intentional because… |
 |-----|----------------------|-------------------------------|
 | ADR-003 | on-colors fail WCAG on Warning | the historical brand override; AMENDED by ADR-025, contrast-aware on-colors are the default since #662 |
 | ADR-025 | on-colors jump to pure white/black on some accents | the ramp ends miss AA there and #662 forbids moving a stop; the achromatic constants are the only way to the floor |
-| ADR-026 | a curated palette stores a source hex that looks redundant beside its own `{hue, chroma, skew, lift}` | the four fitted numbers cannot reproduce an arbitrary sRGB colour through a cusp-derived key colour; the stored hex is the sample itself, and deleting it silently replaces every preset's own colour with a reconstruction of it; amended 2026-09-28 (#701, even-mode floor and shoulder), 2026-09-29 (#725, R69: the anchored basis capped at the anchor, the retuned damping pair and the per-stop tone hold), 2026-10-03 (#785, R94: the group value is one damper on the whole ramp, `r * at-100`, stop 500 included), 2026-10-03 (#766, R85: the even floor's gamut reference read per stop at its own hue before edge rotation, which edge rotation does not move) and 2026-10-03 (#785, #766: the `even-dips` grid renders the chroma-100 cell, the only chroma that reaches the floor, and its random line is pinned at 8) |
+| ADR-026 | a curated palette stores a source hex that looks redundant beside its own `{hue, chroma, skew, lift}` | the four fitted numbers cannot reproduce an arbitrary sRGB colour through a cusp-derived key colour; the stored hex is the sample itself, and deleting it silently replaces every preset's own colour with a reconstruction of it; amended 2026-09-28 (#701, even-mode floor and shoulder), 2026-09-29 (#725, R69: the anchored basis capped at the anchor, the retuned damping pair and the per-stop tone hold), 2026-10-03 (#785, R94: the group value is one damper on the whole ramp, `r * at-100`, stop 500 included), 2026-10-03 (#766, R85: the even floor's gamut reference read per stop at its own hue before edge rotation, which edge rotation does not move) and 2026-10-03 (#785, #766: the `even-dips` grid renders the chroma-100 cell, the only chroma that reaches the floor, and its random line is pinned at 8); superseded in part 2026-10-07 by ADR-030 (#804: the group damper is now each palette's own Base chroma times the global k, and the prime middle is verbatim only at Prime chroma k 100) |
 | ADR-004 | scrims unified onto one 500 ramp (SUPERSEDED) | scrims now a single 500 ramp; the former base-750-only decision is superseded |
 | ADR-002 | semantic could alias raw to cascade | native import errors on name-only aliasData; plugin does cascade |
 | ADR-011 | `role-table.json` still encodes cam16 hues though hueSpace is now OKLCH | role-table is the cam16 answer key for the parity gate; the OKLCH flip is at the doc/seed layer, not the role table |
@@ -984,3 +1040,4 @@ Format: Context → Decision → Rationale → Consequences → Status.
 | ADR-027 | rerunning a measurement another seat already recorded looks like waste | the recorded figure is a lead, not evidence; six defects in one plan came from trusting one (#721) |
 | ADR-028 | `docs/reference/data` and `docs/reference/colors/categories` sit outside `docs/assets/` and look misfiled | code, generators and the shipped Describe MCP zip read them at that exact path; do not move `docs/reference/data` or `docs/reference/colors/categories` |
 | ADR-029 | the envelope gate asserts a curve to 1e-12 but lets pixels miss it by up to 4 codes, and no fixture pins the emitted values | the closed form is the spec and the pixel tolerance is the path's own rounding steps; re-pinning rounded pixels brings back the ratchet #778 retired, and a curve change updates the gate's SPEC and ADR-029 together |
+| ADR-030 | the canvas groups carry no chroma, and an anchored palette's prime middle leaves its stored hex below Prime chroma 100 | chroma is per-palette Base chroma times two global k factors, formed once in `resolve.mjs`; a group layer made the globals dead, and the anchor is verbatim exactly at the default k 100 |

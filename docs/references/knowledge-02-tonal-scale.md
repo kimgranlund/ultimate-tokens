@@ -11,8 +11,8 @@
 5. Chroma targeting and edge damping
 6. `paletteStops`: the per-stop pipeline
 7. Worked example
-8. Palette groups, base chroma, and the prime system (per-group whole-ramp damper, seven prime swatches)
-9. Anchored palettes (a stored source colour, exact at `prime.DEFAULT`, and at stop 500 at group base chroma 100)
+8. Palette groups, base chroma, and the prime system (per-palette whole-ramp damper times a global k, seven prime swatches)
+9. Anchored palettes (a stored source colour, exact at `prime.DEFAULT` at Prime chroma 100, and at stop 500 at Base chroma 100)
 
 ---
 
@@ -241,13 +241,12 @@ lmin 5, lmax 100, damp 80:
 
 ## 8. Palette groups, base chroma, and the prime system
 
-> Spec: `docs/specs/spec-muted-base-key-spikes.md` 0.3.0 (REQ-001..011 palette groups + per-group
-> base chroma, absolute there, a damper since #785; REQ-050..057 the prime system); design:
-> `docs/specs/lld-muted-base-key-spikes.md` 0.3.0. Shipped in the engine (`tonal.js`, `prime.mjs`,
-> the new `src/engine/resolve.mjs`) and the UI (`src/ui/model.mjs`, `src/ui/persist.js`). Unlike
-> 0.2.0's shipped defaults, the 0.3.0 `GROUP_DEFAULTS` (§8.1) make a REAL visual change to the
-> default document: Neutral (material) rendered muted until #785 (R96) and the eight data palettes render
-> at equal ramp chroma regardless of their own `chroma` field, see the CHANGELOG. The 0.1.0
+> Spec: `docs/specs/spec-muted-base-key-spikes.md` (REQ-001..011 palette groups and base chroma;
+> REQ-050..057 the prime system); design: `docs/specs/lld-muted-base-key-spikes.md`; current model:
+> ADR-030 (#804), which removed the group chroma layer: each palette carries its own Base chroma and
+> the two Global-tab sliders are k factors on every palette. Shipped in the engine (`tonal.js`,
+> `prime.mjs`, `src/engine/resolve.mjs`) and the UI (`src/ui/model.mjs`, `src/ui/persist.js`). The
+> before and after measurement is `docs/reports/2026-10-07-chroma-controls-redesign.md`. The 0.1.0
 > "key-stop spike" on the ramp (identity stops, `keyIntensity`) was retired under #533; the ramp
 > is continuous and the vivid identity colours live in the prime system (§8.3) below.
 
@@ -260,26 +259,16 @@ default, `neutral` is material; `primary`/`secondary`/`tertiary` are brand; `inf
 preset-opened) is data. Groups are an editor concept only: they never enter token names, CSS
 variables, Figma paths, the role table, or MCP output.
 
-The document carries a `paletteGroups` facet, one `{ baseChroma, primeChroma, locked? }` per
-group, default-filled from `GROUP_DEFAULTS` (declared in `src/ui/persist.js`, re-exported by
-`src/ui/model.mjs`):
+Since #804 (ADR-030) a group carries no chroma value: it is canvas grouping metadata only.
 
-| Group | `baseChroma` | `primeChroma` | `locked` |
-|---|---|---|---|
-| `material` | 100 | 60 | none |
-| `brand` | 100 | 100 | none |
-| `system` | 100 | 100 | none |
-| `data` | 100 | 100 | yes |
-
-**Base chroma is the group's ramp damper (#785, R94 to R98).** For a palette `p` in
-group `g`, the pure resolver `rampChromaOf(palette, paletteGroups, controls)`
-(`src/engine/resolve.mjs`, imported identically by `src/ui/model.mjs`'s `projectView` and
-`src/engine/exports.js`'s `derivePalette` so the canvas and every export format can never
-disagree, the doc-shaped convenience wrapper `rampChromaOf(p, doc)` in `model.mjs` resolves the
-palette's group and the document's `paletteGroups`/global fallbacks first) computes:
+**Base chroma is each palette's own ramp damper, times one global k (#785 R94, #804).** For a palette
+`p`, the pure resolver `rampChromaOf(palette, controls)` (`src/engine/resolve.mjs`, imported
+identically by `src/ui/model.mjs`'s `projectView` and `src/engine/exports.js`'s `derivePalette` so the
+canvas and every export format can never disagree; the doc-shaped wrapper `rampChromaOf(p, doc)` in
+`model.mjs` renames the document's `baseIntensity` to `baseChroma` at that one boundary) computes:
 
 ```
-rampChromaOf(p, doc) = paletteGroups[paletteGroup(p)].baseChroma ?? controls.baseIntensity
+rampChromaOf(p, doc) = (p.baseChroma ?? 100) * (doc.baseIntensity ?? 100) / 100
 ```
 
 and the model hands the resolved number to `paletteStops` AS the palette's own
@@ -288,46 +277,35 @@ and the model hands the resolved number to `paletteStops` AS the palette's own
 ramp: every path renders its stops exactly as at `g = 100` (every floor, cap, tone hold and gamut
 step included), then `dampStops` multiplies each stop's emitted chroma coordinate by `r = g / 100`
 at the same lightness and hue, OKHSL `s` on perceptual and peak, CAM16 C on even, anchored and
-unanchored alike, stop 500 included. At 100 the multiply is the identity (byte-identical); the
-range is 0 to 100, damp only, and nothing raises a stop above its at-100 render. `palette.chroma` itself now feeds
-only `deriveKeyColor` (the gallery tile and the prime system, §8.3); the ramp ignores it
-entirely. There is no per-palette ramp override in any group any more: `palette.intensity` was
-retired at schema v4 (§8.4) and a stray stored value is ignored on read.
+unanchored alike, stop 500 included. `dampStops` is linear with an `r >= 1` no-op, so the product of
+the two layers is order-free. At 100 the multiply is the identity (byte-identical); the range is 0
+to 100, damp only, and nothing raises a stop above its at-100 render. `palette.chroma` itself feeds
+only `deriveKeyColor` (the gallery tile and the prime system, §8.3); the ramp ignores it entirely.
+`palette.baseChroma` (UI "Base chroma", palette inspector) is the one per-palette ramp control; the
+retired `palette.intensity` is ignored on read (§8.4).
 
-`baseIntensity` (UI "Base chroma", global) is the fallback target used only when a palette's
-group carries no `baseChroma` of its own. The field name is a deliberate legacy holdover from
-the 0.2.0 per-stop multiplier it used to control, only its MEANING changed. It is a
-document/UI-side control now, not an engine one: `tonal.js`'s `DEFAULT_CONTROLS` no longer
-defines or reads `baseIntensity` at all, and `intensityAt` is deleted
-(`git grep -n "intensityAt\|baseIntensity\|\.intensity\b" src/engine` returns nothing).
+`baseIntensity` (UI "Base chroma", Global tab, default 100) is the global Base chroma k. The field
+name is a legacy holdover from the 0.2.0 per-stop multiplier; it is a document/UI-side control, not an
+engine one: `tonal.js`'s `DEFAULT_CONTROLS` never defines or reads `baseIntensity`, and `intensityAt`
+is deleted (`git grep -n "intensityAt\|baseIntensity\|\.intensity\b" src/engine` returns nothing).
 
-A palette's rendered ramp is byte-identical to the pre-groups engine only for a chroma-100 subject in
-a group at 100 (since #785 a `chroma` below 100 is a damper on the at-100 ramp, not the pre-groups
-absolute target, so a chroma-95 palette in a group at 95 renders the damped at-100 ramp). Before #785
-the rule read IF AND ONLY IF its own `chroma` control equals its resolved `rampChroma`. In the default
-document the byte identity holds for
-Secondary and Warning (both sit at `chroma 100` inside a group whose `baseChroma` is 100) and for
-every data palette minted at the primary's chroma only when that chroma is 100; it does NOT hold
-for Neutral, Primary, Tertiary, Info, Success, Danger, or the default data palettes, which now
-render at a different chroma than their own `chroma` field states. Material's default moved from
-30 to 100 with the damper (R96) and no persist migration (R98): a saved doc that stored material 30
-renders its Neutral at 0.3 of the at-100 ramp.
+A palette's rendered ramp is byte-identical to the pre-groups engine only for a chroma-100 subject at
+Base chroma 100 under k 100 (since #785 a value below 100 is a damper on the at-100 ramp, not the
+pre-groups absolute target). The schema-v8 hydrate (§8.4) folds an old document's group base chroma
+onto each palette's own `baseChroma`, so a saved kit renders the same ramps after the fold.
 
-### 8.2 Prime chroma resolution (feeds only the prime system, §8.3: never the ramp)
+### 8.2 Prime chroma resolution (feeds only the prime system and the key tile, §8.3: never the ramp)
 
 The companion resolver, also pure and living in `src/engine/resolve.mjs`:
 
 ```
-primeChromaOf(palette, paletteGroups, controls):
-  g = paletteGroups[palette.group] ?? {}
-  if g.locked: return g.primeChroma                       // data, the per-palette override is ignored, not deleted
-  return palette.primeChroma ?? g.primeChroma ?? controls.primeChroma
+primeChromaOf(palette, controls) = controls.primeChroma ?? 100     // one global k, every palette
 ```
 
-The `data` group is locked: a data palette's own `primeChroma` override, if it has one stored, is
-ignored while grouped as data, it becomes live again the moment the palette moves to another
-group. `primeChroma` (UI "Prime chroma", global) is the prime system's own global fallback,
-independent of `baseIntensity`.
+There is no per-palette or per-group prime value (ADR-030): the v8 hydrate drops a stored
+`palette.primeChroma` and the group values. `primeChroma` (UI "Prime chroma", Global tab, default 100)
+is independent of `baseIntensity`. `deriveKeyColor` reads the same k, so the gallery key tile equals
+the prime middle at every k.
 
 ### 8.3 The prime system (`src/engine/prime.mjs`)
 
@@ -340,16 +318,13 @@ unchanged and roles never alias prime tokens (knowledge-03 §3).
 
 | Control | Range | Default | Purpose |
 |---------|-------|---------|---------|
-| `primeChroma` (UI "Prime chroma", global) | 0–100 | 100 | the global fallback `primeChromaOf` (§8.2) reads last; was `keyIntensity` through schema v2, renamed at v3 (REQ-011, R4) |
-| `palette.primeChroma` (UI "Prime chroma", inspector) | 0–100, optional | absent (inherits) | per-palette override, folded into `primeChromaOf` (§8.2), ignored while the palette's group is locked (`data`) |
+| `primeChroma` (UI "Prime chroma", global) | 0–100 | 100 | the one global k `primeChromaOf` (§8.2) returns, on every rung of every palette, the anchored `prime` rung included; was `keyIntensity` through schema v2, renamed at v3 (REQ-011, R4) |
 
-`primeSwatches` itself is unchanged by SPEC 0.3.0 and stays group-unaware: its caller
-(`src/ui/model.mjs`'s `projectView`, `src/engine/exports.js`'s `derivePalette`) resolves
-`primeChromaOf(p, doc)` (§8.2) FIRST and calls `primeSwatches({ ...p, primeChroma: undefined },
-{ ...controls, primeChroma: primeChromaResolved })`, the palette's own `primeChroma` field is
-cleared and the already-resolved number rides in on `controls.primeChroma` instead, so
-`primeSwatches(palette, controls)` (REQ-050..053a, REQ-056; #537 ruling) below can keep reading
-`palette.primeChroma ?? controls.primeChroma` with no group knowledge of its own:
+`primeSwatches` stays group-unaware: its caller (`src/ui/model.mjs`'s `projectView`,
+`src/engine/exports.js`'s `derivePalette`) resolves `primeChromaOf(p, doc)` (§8.2) FIRST and calls
+`primeSwatches({ ...p, primeChroma: undefined }, { ...controls, primeChroma: primeChromaResolved })`,
+and `primeSwatches(palette, controls)` (REQ-050..053a, REQ-056; #537 ruling) reads the k from
+`controls.primeChroma` alone:
 
 ```
 // (a) where the ladder is pivoted - the anchored branch first (#681 U1, §9)
@@ -370,7 +345,7 @@ lLadder = anchored ? clamp(lPrime, PRIME_L_MIN, PRIME_L_MAX) : lPrime    // Q3 (
 { up, down } = primeSteps(lLadder):
   roomUp = max(0, (PRIME_L_MAX - lLadder) / 3);  roomDown = max(0, (lLadder - PRIME_L_MIN) / 3)
   up = down = min(STEP_L, roomUp, roomDown)           // BOTH sides take the smaller room: equal-compress
-cPrime = max(0, cKey · primeChroma / 100)             // scales the six ladder rungs, never the prime rung
+cPrime = max(0, cKey · primeChroma / 100)             // scales every rung, the anchored prime rung included (ADR-030)
 
 // (c) the seven rungs
 g      = 3 ** (skew / 100)                            // the ramp's toneAt gamma, reused as the ladder bend
@@ -379,7 +354,9 @@ L_i    = i < 3 ? lLadder + 3 · up · w_i : lLadder - 3 · down · w_i
 hue_i  = hue + hueShift · (hueSameDir ? -|t_i| : t_i)
 C_i    = min(cPrime, maxChromaInGamut(hue_i, L_i))    // chroma HELD; only the gamut desaturates a rung
 rgb_i  = hctToRgb(hue_i, C_i, L_i)
-rgb_3  = anchored ? anchor.rgb verbatim : rgb_3       // the prime rung is the source byte for byte
+rgb_3  = anchored && primeChroma == 100 ? anchor.rgb verbatim   // the source byte for byte at k 100
+       : anchored ? hctToRgb(hue, min(cPrime, maxChromaInGamut(hue, lPrime)), lPrime)  // follows k
+       : rgb_3
 ```
 
 **Equal-compress, not redistribution.** Up to #655 a side that hit the window handed its shortfall to
@@ -423,24 +400,23 @@ than 54. Anchored, the shipped default-kit Primary (`anchor #0C5DCC`, `skew -20`
 57.9296 #4D88F8 · 48.5072 #2E6FDE · [prime] · 30.4587 #00439B · 22.1378 #003276 · 14.6366 #002256`,
 span exactly 54. The SPEC's EX-4/EX-4b/EX-5 carry the full tables.
 
-### 8.4 Migration (schema v7)
+### 8.4 Migration (schema v8)
 
-`CURRENT_SCHEMA_VERSION` is 7 (`src/ui/persist.js`). Three bumps landed after v4: two added
-brand-new optional palette fields rather than renaming anything, so neither needs a `RENAME_MAPS`
-entry: v5 added `palette.anchor`/`sourceAnchor` (#681 U1) and v6 added
-`palette.preDetachHue`/`preDetachChroma`/`preDetachLift` (#681 U2). A document predating either
-simply carries none of those fields, which is `clampPalette`'s correct absent-stays-absent
-behaviour with no version gate. v7 is the first `RENAME_MAPS` entry since v3: a kit saved on the
-Material preset's old export prefix triple has it rewritten to `md-color` / `md-typescale` / `md`
-once, on a document stamped below v7 (#791); a lone old prefix, or a doc already at v7, stays as
-typed. The v4 migration below still runs, unconditionally, on every hydrate.
+`CURRENT_SCHEMA_VERSION` is 8 (`src/ui/persist.js`). v5 added `palette.anchor`/`sourceAnchor` (#681
+U1) and v6 added `palette.preDetachHue`/`preDetachChroma`/`preDetachLift` (#681 U2), brand-new
+optional fields with no `RENAME_MAPS` entry. v7 rewrites a kit saved on the Material preset's old
+export prefix triple to `md-color` / `md-typescale` / `md` once, on a document stamped below v7
+(#791). v8 (#804, ADR-030) runs `foldGroups` once on a document stamped below v8: every palette
+without a numeric `baseChroma` takes its group's stored base chroma (written only when it is not
+100), `paletteGroups` and every `palette.primeChroma` are deleted, and both globals are reset to 100
+(before v8 they never reached a palette); the same entry moves a vibrancy of exactly 0 (the old
+default) to 50. Each drop and each reset of a value other than 100 is reported through
+`DROPPED_KEYS` (TKT-0455, loud not silent). A saved prime value below 100 is not kept: the 343
+Neutral strips at the retired Material 60 and Adia Primary at 99 move once, by user decision.
 
-Hydrating below v4 deletes `palette.intensity`
-from every palette, there is no per-palette ramp override in any group any more, and reports it
-through `DROPPED_KEYS` (TKT-0455, loud not silent); the document's `paletteGroups` facet is
-default-filled from `GROUP_DEFAULTS` unconditionally on every hydrate, not gated by schema version.
-`palette.group` is never written by the migration itself: an old document stays byte-stable on
-reload apart from the dropped key, deriving its group by name on every read via `paletteGroup(p)`.
+Hydrating below v4 deletes `palette.intensity` from every palette and reports it through
+`DROPPED_KEYS`. `palette.group` is never written by any migration: an old document derives its
+group by name on every read via `paletteGroup(p)`.
 
 ## 9. Anchored palettes
 
@@ -454,10 +430,10 @@ itself is stored and both of the places a user reads "the" colour reproduce it b
 
 | Guarantee | Scope | Where |
 |---|---|---|
-| `prime.DEFAULT` equals `anchor` byte for byte | every palette carrying an `anchor`, 3,380 on the regenerated corpus, unconditionally | `primeSwatches(...)[3]` returns the anchor's own rgb verbatim (§8.3) |
-| ramp stop 500 equals `anchor` byte for byte, in all three tone modes, at group base chroma 100 (below it the group damper scales stop 500 too, §8.1) | the 3,370 anchored palettes whose source sits INSIDE the ramp window `[9.95, 95.05]` L\* | `paletteStopsAnchored` / `okhslStopsAnchored`, the `stop === 500 && !clamped` case |
+| `prime.DEFAULT` equals `anchor` byte for byte | every palette carrying an `anchor`, 3,380 on the regenerated corpus, at Prime chroma k 100 (below it the rung follows k at the anchor's own hue and L\*, ADR-030) | `primeSwatches(...)[3]` returns the anchor's own rgb verbatim at k 100 (§8.3) |
+| ramp stop 500 equals `anchor` byte for byte, in all three tone modes, at the palette's Base chroma 100 times the global k 100 (below it the damper scales stop 500 too, §8.1) | the 3,370 anchored palettes whose source sits INSIDE the ramp window `[9.95, 95.05]` L\* | `paletteStopsAnchored` / `okhslStopsAnchored`, the `stop === 500 && !clamped` case |
 
-The two scopes differ on purpose. The TOKEN is exact for all 3,380: a source outside the ramp window
+The two scopes differ on purpose. At the defaults the TOKEN is exact for all 3,380: a source outside the ramp window
 still exports its own hex at `prime.DEFAULT`. The RAMP clamps: for the 10 named out-of-window sources
 (9 dark ones between 7.32 and 9.84 L\*, plus one pure white) stop 500 lands at the window edge nearest
 the source, because forcing the verbatim pixel at a clamped pivot would jump away from the window edge
@@ -470,13 +446,14 @@ palette leaves stop 500 unchanged while the same edit on a non-anchored copy mov
 
 **Chroma at the pivot is a blend, not a pin.** The anchored branches call the same `chromaEnvelope`
 (§5) as everything else; what differs is the BASIS fed to it. On perceptual and peak the basis is
-the anchor's own OKHSL `s` at every stop (no climb toward the group). On even, `anchorChromaBasis`
-blends the anchor's own measured chroma exactly at the pivot toward `groupValue` at each side's
+the anchor's own OKHSL `s` at every stop (no climb toward the at-100 target). On even, `anchorChromaBasis`
+blends the anchor's own measured chroma exactly at the pivot toward the at-100 target (`groupValue` in `tonal.js`) at each side's
 endpoint, weighted by a smoothstep on the `liftStop` position, so the weight and its derivative are
 both 0 at the pivot. That is what keeps a near-grey anchor from reading as a notch against its own
-neighbours. The basis is always computed at group 100; a group's Base chroma below 100 then damps
-the whole anchored ramp by `g / 100` (§8.1), stop 500 included, so stop 500 is byte-exact to the
-anchor at group 100 only, and an achromatic anchor's ramp stays achromatic (`r * 0 = 0`).
+neighbours. The basis is always computed at 100; a Base chroma product below 100 (the palette's own
+value times the global k) then damps the whole anchored ramp by `g / 100` (§8.1), stop 500 included,
+so stop 500 is byte-exact to the anchor at a product of 100 only, and an achromatic anchor's ramp
+stays achromatic (`r * 0 = 0`).
 
 **Reset.** Editing `hue` or `chroma` on an anchored palette REMOVES `anchor`: the palette becomes an
 ordinary one and `prime.DEFAULT` reverts to the derived key colour. The generator-written

@@ -1,5 +1,26 @@
 # CHANGELOG
 
+## 1.66 - 2026-10-07 - chroma controls are per-palette Base chroma times two global k factors; the anchor follows Prime chroma (#804)
+
+**The group chroma layer is gone.** Each palette carries its own Base chroma (`palette.baseChroma`,
+0 to 100, absent 100), the whole-ramp damper #785 ruled for the group. The Global tab's Base chroma
+(`baseIntensity`) and Prime chroma (`primeChroma`) are k factors on every palette, both default 100,
+multiplied once in `src/engine/resolve.mjs`: `rampChromaOf = baseChroma x k_base / 100`,
+`primeChromaOf = k_prime`. Before, `model.mjs` filled every group's prime value, so the globals never
+reached a palette. Canvas groups stay as grouping metadata only. This supersedes the 1.58 group model
+below.
+
+**The anchored prime middle follows Prime chroma.** At k 100 it is the stored hex byte for byte; below
+it the rung renders at the anchor's own hue and L\* with its chroma times k, gamut-capped, and the
+gallery key tile reads the same k. The default vibrancy is 50 (was 0).
+
+**Records.** Schema v8 folds each group's base chroma onto its palettes, drops `paletteGroups` and
+every `palette.primeChroma`, resets both globals to 100 and moves vibrancy 0 to 50, reporting through
+`DROPPED_KEYS`. `EXPORT_SCHEMA_VERSION` is 6. Over 3,796 palettes the ramps move 0 cells in peak and
+even and 82,466 of 94,900 in perceptual (vibrancy); 344 prime strips move once (343 Neutrals from the
+retired Material 60, Adia Primary from 99); 0 key tiles move. ADR-030 and
+`docs/reports/2026-10-07-chroma-controls-redesign.md` carry the re-pinned gates.
+
 ## 1.65 - 2026-09-28 - the even ramp's chroma floor and shoulder no longer leave spikes or valleys beside the anchor (#701)
 
 **Even-mode palettes lose their lone spikes and their off-anchor chroma dips.** The `even` ramp used to
