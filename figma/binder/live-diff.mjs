@@ -1,7 +1,7 @@
 // live-diff.mjs, PURE comparison between a live Figma read-back (figma/plugin/code.js's
 // readFloatVariables, the Geometry/Type counterpart to readRawColors) and the apply plans the UI is
 // about to write, so the apply gate can show "N values will be overwritten" before the user commits
-// (TKT-0020 / docs/reference/reviews/2026-07-17-collections-arch.md C2). Zero figma calls; consumed by
+// (TKT-0020 / docs/reports/2026-07-17-collections-arch.md C2). Zero figma calls; consumed by
 // src/ui/overlays/apply-gate.js and this module's own unit test (test/figma/live-diff.mjs).
 //
 // SHAPES:

@@ -45,8 +45,8 @@ const SKIP_DIRS = new Set([".git", "node_modules", "dist", "other", "worktrees",
 // are exempt rather than swept.
 const RECORDS = new Set([
   "CHANGELOG.md",
-  "docs/reference/CHANGELOG.md",
-  "docs/reference/references/decision-records.md",
+  "docs/references/changelog.md",
+  "docs/references/decision-records.md",
 ]);
 
 // Skip binaries only: everything else is scanned by default, so a new text-ish extension (a .txt

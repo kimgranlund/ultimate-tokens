@@ -40,7 +40,7 @@ scenarios below name the constraint number they ride, they don't re-derive it.
 ## The seven scenarios
 
 Each is a real, load-bearing procedure proven live against BZZR Tokens (findings in
-`docs/tickets/tkt-0009.md`, `tkt-0010.md`, `tkt-0012.md`, `tkt-0013.md`, and the 2026-07-28
+`docs/archive/tickets/tkt-0009.md`, `tkt-0010.md`, `tkt-0012.md`, `tkt-0013.md`, and the 2026-07-28
 weight-ramp session). Full steps + traps in
 [`references/scenario-playbook.md`](references/scenario-playbook.md); this table is the index.
 
@@ -113,7 +113,7 @@ weight-ramp session). Full steps + traps in
 | `references/rubric.md` | scoring a migration before calling it done |
 | `../maintaining-figma-plugins/references/figma-styles-hard-constraints.md` | before touching styles or metric-field bindings, the underlying API constraints this playbook cites (fontStyle/fontWeight XOR, NUMBER-only metric fields, path-prefix folder-ization, no variable-font axis metadata, name/weight matching, segment-level bindings, full-payload mode adds, clear-before-set ordering, deletion-readback via getLocalVariablesAsync not getVariableByIdAsync) |
 | `../maintaining-figma-plugins/SKILL.md` | changing the PLUGIN CODE (code.js/manifest) that performs an apply for every user, as opposed to a one-off live-file migration |
-| `docs/tickets/tkt-0009.md`, `tkt-0010.md`, `tkt-0012.md`, `tkt-0013.md` | the worked narratives these scenarios were extracted from, read for the full BZZR numbers (270/362/1,197 variables, 141 styles, 464 bindings) |
+| `docs/archive/tickets/tkt-0009.md`, `tkt-0010.md`, `tkt-0012.md`, `tkt-0013.md` | the worked narratives these scenarios were extracted from, read for the full BZZR numbers (270/362/1,197 variables, 141 styles, 464 bindings) |
 
 Peers: [[maintaining-figma-plugins]] (the plugin code these migrations carry a rename INTO) ·
 [[adding-semantic-roles]] (a role-table change that also needs a rename map) ·

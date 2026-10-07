@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// smoke-panda.mjs, REQ-070..072 (docs/spec/spec-panda-park-ui-exports.md): the one leg that
+// smoke-panda.mjs, REQ-070..072 (docs/specs/spec-panda-park-ui-exports.md): the one leg that
 // proves the Panda + Park UI presets survive a REAL `panda cssgen` run, not just the pure-engine
 // gates in test/engine/exports.mjs. Writes both preset modules for the default document to a
 // scratch dir with a minimal panda.config.mjs, then runs `npx --yes @pandacss/dev@<pinned>

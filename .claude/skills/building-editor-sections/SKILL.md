@@ -106,8 +106,8 @@ Type/Geom **Tokens** matrix both do this:
 | `references/foundations.md` | the workbench principle, the doc→view→render data flow, the `h()`/render/`_sync` model |
 | `references/best-practices.md` | the mechanics behind the body's rules (the fill:none selector, font-quoting, reuse-over-CSS, shim internals, retire-modal call sites) + worked walkthrough |
 | `references/rubric.md` | score a built/evolved section before calling it done |
-| `docs/lld/app-shell.md` | the frame, its regions, the render pipeline, and the state that routes them |
-| `docs/reference/references/component-inventory.md` | the shared primitives (`app-helpers.mjs`) a section builds from |
+| `docs/specs/app-shell.md` | the frame, its regions, the render pipeline, and the state that routes them |
+| `docs/references/component-inventory.md` | the shared primitives (`app-helpers.mjs`) a section builds from |
 
 **Peers:** [[color-math]] · [[type-scale]] · [[geometry-system]] (the engines the sections host) ·
 [[shipping-changes]].

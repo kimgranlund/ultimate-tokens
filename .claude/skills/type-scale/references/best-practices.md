@@ -78,7 +78,7 @@ The non-obvious do/don'ts (each a real trap in this engine), then a worked walkt
   - the **`test/smoke/smoke.mjs`** Typography-section count, **Chrome-only, so `npm test` won't catch
     it; only CI's smoke leg does** (the classic Safari-blind-spot trap in reverse, a green local gate can
     still red the smoke leg on a stale count);
-  - `docs/reference/typography/README.md`'s voice table and the `TYPE_SPECIMENS`/`SHORT` specimen maps.
+  - `docs/references/typography/README.md`'s voice table and the `TYPE_SPECIMENS`/`SHORT` specimen maps.
 
   There is NO code-enforced type answer-key (unlike colour's `role-table.json`), the consumption plugin's
   `voice-parity.mjs` auto-derives the voice list from the live engine, so the guard is the tests + these

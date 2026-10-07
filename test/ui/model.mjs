@@ -5,7 +5,7 @@
 // direct test coverage: nothing called them until U8 (#517) wired UI buttons to them, and even
 // then test/ui/headless-boot.mjs's (dpa) group only exercises them THROUGH button clicks. This
 // file imports and calls them directly, pure, no DOM, covering SPEC
-// docs/spec/spec-muted-base-key-spikes.md REQ-020..024 at the model layer.
+// docs/specs/spec-muted-base-key-spikes.md REQ-020..024 at the model layer.
 import { PALETTE_GROUPS, brandKit, defaultDocument, exportDesignSystemBundle, geomScaleFor, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixCollisionBadge, radixExportKey, radixKeyCollision, RADIX_COLLISION_BADGE, rederiveDataHues, resolvedPalettes, slug, typeScaleFor } from "../../src/ui/model.mjs";
 import { deriveDataHues } from "../../src/engine/data-hues.mjs";
 import { RESERVED_ALIAS_KEYS, isDataPalette, exportRadixModule } from "../../src/engine/exports.js";

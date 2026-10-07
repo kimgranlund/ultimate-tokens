@@ -1,6 +1,6 @@
 // describe-rubric.mjs, the interpretation RUBRIC + a bundled EXEMPLAR corpus + cheap keyword retrieval
 // for the describe-palette generator (#370, a child of the #379 program). Contract:
-// docs/site/describe-palette-spec.md §5.1/§10. Ships INSIDE the MCP package: an MCP host has no nonoun
+// docs/specs/site/describe-palette-spec.md §5.1/§10. Ships INSIDE the MCP package: an MCP host has no nonoun
 // skills, agents, or corpus installed, so the words->seeds METHOD has to travel in the tool result itself
 // (the briefing payload) rather than live in a skill file only Claude Code would ever load.
 //

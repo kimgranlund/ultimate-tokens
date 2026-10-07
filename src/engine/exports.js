@@ -940,7 +940,7 @@ export function exportShadcn(state, opts = {}, derived) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// 9. PANDA (a Panda CSS preset module, docs/spec/spec-panda-park-ui-exports.md REQ-001..009)
+// 9. PANDA (a Panda CSS preset module, docs/specs/spec-panda-park-ui-exports.md REQ-001..009)
 // ──────────────────────────────────────────────────────────────────────────────
 // exportPanda(state, opts) -> a preset OBJECT `{ name, theme: { extend: { tokens,
 // semanticTokens } } }`, `theme.extend`, never bare `theme` (PF-1), so `@pandacss/preset-panda`
@@ -1065,7 +1065,7 @@ export function exportPandaModule(preset) {
 
 // ──────────────────────────────────────────────────────────────────────────────
 // 10. RADIX (a Panda preset in Park UI's own 1..12/a1..a12/appearance-group color shape,
-//     docs/spec/spec-panda-park-ui-exports.md REQ-020..028)
+//     docs/specs/spec-panda-park-ui-exports.md REQ-020..028)
 // ──────────────────────────────────────────────────────────────────────────────
 // The 1..8 steps of the 12-step ladder are RAW RAMP STOPS read straight from the palette's own
 // stops (issue #588's correction, superseding the original role-indirected/flattened P-1

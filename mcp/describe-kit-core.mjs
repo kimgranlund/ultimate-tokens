@@ -3,7 +3,7 @@
 // and hexes, never colors. This module turns a PaletteBrief into a full brand kit through the SAME engine
 // path the app uses: brief -> clamp (reusing src/ui/persist.js's own clampPalette/clampStory, not a
 // duplicated domain table, resolving the contract's own §12.1 open item) -> a doc (State, 8 palettes,
-// toneMode "perceptual") -> brandKit(doc). The contract this implements: docs/site/describe-palette-spec.md.
+// toneMode "perceptual") -> brandKit(doc). The contract this implements: docs/specs/site/describe-palette-spec.md.
 //
 // Scope: this module builds the schema + the core generation pipeline + §4.1's absent-family defaulting
 // (Neutral-follows-Primary, the Secondary/Tertiary harmony recipe, the role-table status defaults) + the
@@ -28,7 +28,7 @@ const ROLE_DEFAULTS = new Map(ROLE_TABLE.defaults.map((d) => [d.name, d]));
 // The 8 canonical family names, role-table order (Neutral, Primary, then the 6 accents/status families).
 // role-table.json `defaults` grew to 16 rows at #515/U6 (the 8 brand families followed by the 8 Data N
 // families, REQ-024), this generator's brief/family enum stays the ORIGINAL 8 brand families only
-// (docs/site/describe-palette-spec.md §3.1/§3.2: "Keys of `families` are exactly the 8 canonical
+// (docs/specs/site/describe-palette-spec.md §3.1/§3.2: "Keys of `families` are exactly the 8 canonical
 // names"); Data families are never brief-generated, so the slice, not the raw row count.
 export const FAMILY_NAMES = ROLE_TABLE.defaults.slice(0, 8).map((d) => d.name);
 
@@ -237,7 +237,7 @@ function buildDoc(brief) {
   return { doc, lint };
 }
 
-// The PaletteBrief JSON Schema, verbatim per docs/site/describe-palette-spec.md §3. Published inside every
+// The PaletteBrief JSON Schema, verbatim per docs/specs/site/describe-palette-spec.md §3. Published inside every
 // briefing payload (#371); the schema an agent constructs against.
 export const PALETTE_BRIEF_SCHEMA = {
   $id: "ultimate-tokens-palette-brief/1",

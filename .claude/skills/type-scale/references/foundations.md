@@ -2,7 +2,7 @@
 
 The load-bearing ideas. If a change feels like it needs a hand-authored size or a new branch, you are
 probably fighting one of these. The full *why* (the fifteen voices, the fixed-size-table rewrite, the
-target token shape) is owned by `docs/reference/typography/README.md`, this file is only the mental
+target token shape) is owned by `docs/references/typography/README.md`, this file is only the mental
 model the *procedure* assumes. Sibling-weight ladders, the Figma Styles label vocabulary, and the
 `•`/`-single` naming convention are a SEPARATE axis, owned by `references/weight-ladders-and-labels.md`,
 cited here, not duplicated.
@@ -46,7 +46,7 @@ skips a layer.
 
 ### 2. The fifteen named voices + the two ramps
 
-The canonical taxonomy (`docs/reference/typography/README.md`, `type.mjs`'s own header comment): **Display
+The canonical taxonomy (`docs/references/typography/README.md`, `type.mjs`'s own header comment): **Display
 · Headline · Sub-heading · Title · Sub-title · Lead · Body · Body-mono · Label · Label-mono · Kicker ·
 Tiny · Tiny-mono · UI-control · UI-widget** (the two INTERACTIVE voices joined 2026-07-16, TKT-0008).
 Thirteen voices ride the uniform 3-step ramp, **SM · MD · LG** (`RANKS`); UI-control and UI-widget ride

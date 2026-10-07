@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // data-hues.mjs: verifier for the data-hue derivation math (src/engine/data-hues.mjs). Pure, no DOM.
-// Covers SPEC docs/spec/spec-muted-base-key-spikes.md AC-020/AC-021.
+// Covers SPEC docs/specs/spec-muted-base-key-spikes.md AC-020/AC-021.
 import * as D from "../../src/engine/data-hues.mjs";
 
 const fails = [];

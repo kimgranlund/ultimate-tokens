@@ -359,7 +359,7 @@ export const DAMP_PRESETS = [
 // contract (markup + a11y) lives in ONE place instead of being re-typed inline.
 // Pure builders take their handlers as arguments and live here; the one stateful,
 // focus-managing control (segmented) is a class method below (it needs `this` to
-// re-focus after a render). See docs/reference/references/component-inventory.md.
+// re-focus after a render). See docs/references/component-inventory.md.
 
 // switchControl, an accessible on/off (or either/or) switch. Replaces the old
 // `<div class=toggle onclick>` which had no role, no tab focus, and no keyboard. A
@@ -848,7 +848,7 @@ export function posterStripBands(enabled, groups) {
 // not, in its own hue form. This lives here and not in persist.js: the rule needs defaultDocument(),
 // and model.mjs already imports persist.js, so persist.js importing model.mjs back would cycle.
 // Placed at file end, not beside hydrateStoredDoc above, so it adds no line before
-// docs/reference/references/component-inventory.md's existing app-helpers.mjs:N citations (a
+// docs/references/component-inventory.md's existing app-helpers.mjs:N citations (a
 // hoisted `export function` runs identically wherever it sits).
 export function backfillDefaultAnchors(stored) {
   if (!stored || typeof stored !== "object" || !Array.isArray(stored.palettes)) return stored;

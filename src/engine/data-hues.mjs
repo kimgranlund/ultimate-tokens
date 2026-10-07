@@ -1,5 +1,5 @@
 // data-hues.mjs: PURE derivation of the `count` (default 8) evenly-spaced DATA-family hues
-// (SPEC docs/spec/spec-muted-base-key-spikes.md REQ-020/021, LLD docs/lld/lld-muted-base-key-spikes.md
+// (SPEC docs/specs/spec-muted-base-key-spikes.md REQ-020/021, LLD docs/specs/lld-muted-base-key-spikes.md
 // U5). No DOM, no imports. Sibling of derive.mjs (the New Palette modal's math) but scoped only to
 // this one rule; derive.mjs stays untouched (its own header still owns the modal's relationships).
 //
