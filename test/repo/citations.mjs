@@ -121,19 +121,24 @@ for (const pin of FACT_PINS) {
 }
 
 // (4b) a fact pin's `source` must read the code, never restate the number (#769): a literal
-// `source: () => 15` compares the doc with a typed copy of itself and can never drift. The predicate
-// matches a number literal in any bare shape (plain, arrow, async, block body) and not a body that
-// reads. It runs over this file's own FACT_PINS slice; its fixture sits below the closing `];` so
-// the slice never reads it.
-const bareLiteralSource = (text) => [...text.matchAll(/source:\s*(?:async\s*)?(?:\(\s*\)\s*=>\s*)?(?:\{\s*return\s+)?[-+]?\d+(?:\.\d+)?\s*;?\s*\}?\s*(?=[,}\n])/g)].map((m) => m.index);
+// `source: () => 15` compares the doc with a typed copy of itself and can never drift; a boolean
+// pin (`source: () => true`) restates `true` the same way (#783). The predicate matches a number or
+// boolean literal in any bare shape (plain, async, arrow with no parens, empty parens or a parameter
+// list, a `function` expression, a parenthesised value, block body) and not a body that reads. It
+// runs over this file's own FACT_PINS slice; its fixture sits below the closing `];` so the slice
+// never reads it.
+const bareLiteralSource = (text) => [...text.matchAll(/source:\s*(?:async\s*)?(?:(?:function\b[^(]*\(\s*[^)]*\)\s*|(?:\(\s*[^)]*\)|[A-Za-z_$][\w$]*)\s*=>\s*))?(?:\{\s*return\s+)?\(?\s*(?:[-+]?\d+(?:\.\d+)?|true|false)\s*\)?\s*;?\s*\}?\s*(?=[,}\n])/g)].map((m) => m.index);
 {
   const self = txt("test/repo/citations.mjs"), a = self.indexOf("const FACT_PINS = ["), slice = self.slice(a, self.indexOf("\n];", a));
   for (const at of bareLiteralSource(slice)) {
     const ids = [...slice.slice(0, at).matchAll(/id: "([^"]+)"/g)];
     FAIL("test/repo/citations.mjs", `fact pin "${ids.at(-1)?.[1] ?? "?"}": bare literal source (a source must read the code, not restate a number)`);
   }
-  const positives = ["source: 53,", "source: () => 15,", "source: async () => 15,", "source: () => { return 15; },", "source: async () => { return 59 },", "source: () => -1.5,"];
-  const negatives = ["source: () => Object.keys(x).length },", "source: () => /a/.test(y) },", "source: async () => Object.keys((await import(\"a.mjs\")).b()).length },", "source: drawerColorFormats },", "source: () => {\n      const cell = 4;"];
+  const positives = ["source: 53,", "source: () => 15,", "source: async () => 15,", "source: () => { return 15; },", "source: async () => { return 59 },", "source: () => -1.5,",
+    "source: true,", "source: false },", "source: () => true,", "source: async () => false,", "source: () => { return true; },",
+    "source: (needle) => 15,", "source: async (needle) => true },", "source: n => 15,", "source: async n => false,", "source: () => (15),", "source: (n) => { return false; },", "source: function () { return 15; },"];
+  const negatives = ["source: () => Object.keys(x).length },", "source: () => /a/.test(y) },", "source: async () => Object.keys((await import(\"a.mjs\")).b()).length },", "source: drawerColorFormats },", "source: () => {\n      const cell = 4;",
+    "source: (needle) => needle === \"x\" },", "source: () => trueish() },", "source: () => true && check() },", "source: async (needle) => { const held = 1;", "source: (n) => Object.keys(n).length },"];
   for (const f of positives) if (!bareLiteralSource(f).length) FAIL("test/repo/citations.mjs", `bareLiteralSource missed a bare literal: ${f}`);
   for (const f of negatives) if (bareLiteralSource(f).length) FAIL("test/repo/citations.mjs", `bareLiteralSource flagged a reading source: ${f}`);
 }
@@ -218,6 +223,13 @@ for (const pin of FACT_PINS) {
   const before = phrasesRead;
   const reach = pin.doc.startsWith(".claude/skills/") ? tracked.filter((f) => f.startsWith(pin.doc.split("/").slice(0, 3).join("/") + "/") && f.endsWith(".md")) : [pin.doc];
   const re = new RegExp(`(?<![\\w-])(${numTok})[- ](?:(?:named|colou?r|semantic|export) )?(?:${pin.noun})(?![\\w])`, "gi");
+  // the zero-read floor below passes on one read, so a NARROWED noun (`roles?` to `role`) still clears it
+  // while a planted `52 roles` goes unread (#783). Probe the scan itself, with no code read: it must read
+  // the pin's own needle (a noun narrowed to the plural drops `a 53-role`) and the needle's noun in the
+  // plural (a noun narrowed to the singular drops `99 roles`).
+  const probe = new RegExp(re.source, "i"), plural = pin.needle.split(/[\s-]/).pop().replace(/s?$/, "s");
+  if (!probe.test(pin.needle)) FAIL("test/repo/citations.mjs", `count phrases: fact pin "${pin.id}": noun \`${pin.noun}\` does not read the pin's own needle \`${pin.needle}\` (the noun was narrowed)`);
+  if (!probe.test(`99 ${plural}`)) FAIL("test/repo/citations.mjs", `count phrases: fact pin "${pin.id}": noun \`${pin.noun}\` does not read the plural \`99 ${plural}\` (the noun was narrowed)`);
   for (const doc of reach) txt(doc).split("\n").forEach((line, i) => {
     for (const m of line.matchAll(re)) {
       const phrase = m[0].toLowerCase().replace(/\s+/g, " "), n = readNum(m[1]);

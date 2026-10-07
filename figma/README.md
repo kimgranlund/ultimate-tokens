@@ -24,7 +24,7 @@ Two plugins live here, per the `maintaining-figma-plugins` skill (load it before
   the text between each marker pair; `npm test` and `npm run build` run it as the first half of
   `gen:figma-assets`. Every other line is hand-kept: the binding loop mirrors `bind-plan.mjs`, and
   `SEMANTIC_RENAME_FROM`, `LIBRARY_TYPE_VOICE_MAP` and `GEOMETRY_FIELD_RENAME_MAP` mirror
-  `migrations.mjs`, because the Figma sandbox cannot import a `.mjs` module at run time; the `renameparity` gate in `test/figma/binder.mjs` deep-compares all three (and the flagship's two maps) against `migrations.mjs`, so a hand edit that drifts reds `npm test`. Beside it live
+  `migrations.mjs`, because the Figma sandbox cannot import a `.mjs` module at run time; the `renameparity` gate in `test/figma/binder.mjs` deep-compares all three (and the flagship's two maps) against `migrations.mjs` and fails on a declaration of any of them in another `binder/*.mjs` module, so a hand edit that drifts reds `npm test`. Beside it live
   six pure top-level `.mjs` modules: three planners (`bind-plan`, `mode-apply-plan`, `style-plan`), a
   live diff, the migration maps and one splice helper:
   - `binder/bind-plan.mjs`: plans the COLOR alias cascade (semantic to raw, Light/Dark); the tested

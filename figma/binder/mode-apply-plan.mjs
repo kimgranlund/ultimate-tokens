@@ -346,15 +346,9 @@ export function typeWeightAliasMap(oldWeightRecords, voiceMap, weightCandidates)
   return map;
 }
 
-// GEOMETRY_FIELD_RENAME_MAP, old ADIA size/* field spelling -> the current spelling (#498). "font" is
-// deliberately excluded: its only sensible current target (Type Primitives' "font/ui-control") lives in
-// a DIFFERENT collection than "Geometry", and, unlike the Type-grammar bridges above, where Geometry's
-// type/ variables are ALREADY live by the time Type Primitives' plan runs, Geometry's OWN plan
-// (applyFloatPlans) runs FIRST in every real caller, BEFORE Type Primitives even exists on a first-time
-// apply; aliasing to a not-yet-created foreign variable isn't safe here the way the reverse direction is.
-// A "size/{step}/font" name is left unmapped (deprecates, id-preserving), a deliberate scope decision,
-// documented rather than risking a cross-collection create from the wrong execution phase.
-export const GEOMETRY_FIELD_RENAME_MAP = { edgePadding: "padding-wide", gap: "icon-gap", minWidth: "min-width", padding: "padding-narrow", radius: "pill-radius" };
+// GEOMETRY_FIELD_RENAME_MAP (the old ADIA size/* field spelling -> the current one, #498) lives only in
+// migrations.mjs, with its rationale; the flagship and the binder carry hand copies that `renameparity`
+// (test/figma/binder.mjs) compares, and it fails on a declaration in any other figma/binder module (#783).
 
 // liveAliasTargetsByName(existingNames, modeName, liveVarsByName, idToName), PURE: for every EXISTING
 // name whose live value at `modeName` is CURRENTLY a resolvable VARIABLE_ALIAS, its one-hop target NAME,

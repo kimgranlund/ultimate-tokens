@@ -829,6 +829,11 @@ function selftest() {
     { name: "E1 heading in a string", md: false,
       line: `const h = "## Hard rules ${DASH} IMPORTANT";`,
       expectRule: "R2s", expectFix: `const h = "## Hard rules: IMPORTANT";` },
+    // #783: the heading leg tests the enclosing string's content whatever its quote kind (the base
+    // classifier read only a double quote or a backtick), so a single-quoted heading string earns the colon.
+    { name: "E1 heading in a single-quoted string", md: false,
+      line: `const q = '## Head ${DASH} tail';`,
+      expectRule: "R2s", expectFix: `const q = '## Head: tail';` },
     { name: "E2 bold label in a string", md: false,
       line: `const b = "- **Pro** ${DASH} the paid tier";`,
       expectRule: "R3s", expectFix: `const b = "- **Pro**: the paid tier";` },

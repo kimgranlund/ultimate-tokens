@@ -12149,15 +12149,9 @@ function typeWeightAliasMap(oldWeightRecords, voiceMap, weightCandidates) {
   return map;
 }
 
-// GEOMETRY_FIELD_RENAME_MAP, old ADIA size/* field spelling -> the current spelling (#498). "font" is
-// deliberately excluded: its only sensible current target (Type Primitives' "font/ui-control") lives in
-// a DIFFERENT collection than "Geometry", and, unlike the Type-grammar bridges above, where Geometry's
-// type/ variables are ALREADY live by the time Type Primitives' plan runs, Geometry's OWN plan
-// (applyFloatPlans) runs FIRST in every real caller, BEFORE Type Primitives even exists on a first-time
-// apply; aliasing to a not-yet-created foreign variable isn't safe here the way the reverse direction is.
-// A "size/{step}/font" name is left unmapped (deprecates, id-preserving), a deliberate scope decision,
-// documented rather than risking a cross-collection create from the wrong execution phase.
-const GEOMETRY_FIELD_RENAME_MAP = { edgePadding: "padding-wide", gap: "icon-gap", minWidth: "min-width", padding: "padding-narrow", radius: "pill-radius" };
+// GEOMETRY_FIELD_RENAME_MAP (the old ADIA size/* field spelling -> the current one, #498) lives only in
+// migrations.mjs, with its rationale; the flagship and the binder carry hand copies that `renameparity`
+// (test/figma/binder.mjs) compares, and it fails on a declaration in any other figma/binder module (#783).
 
 // liveAliasTargetsByName(existingNames, modeName, liveVarsByName, idToName), PURE: for every EXISTING
 // name whose live value at `modeName` is CURRENTLY a resolvable VARIABLE_ALIAS, its one-hop target NAME,
@@ -12325,7 +12319,7 @@ function libraryModeReport(plan, liveVarsByName, aliasMap, liveAliasTargets, ext
   return { renames: renamed, adds: adds.sort(), valueUpdates: valueUpdates.sort(), aliases: toAlias, deprecates: toDeprecate };
 }
 
-return { mergeModeInterchanges, modeApplyPlan, validateModeInterchange, applyRenameMigrations, retirementsFor, nearestStepByHeight, geometrySizeAliasMap, resolveLiteralHeight, TYPE_STEP_FIELD_MAP, parseOldTypeStepName, typeStepAliasMap, typeWeightAliasMap, GEOMETRY_FIELD_RENAME_MAP, liveAliasTargetsByName, priorLibraryUplift, pruneCandidates, libraryModeReconcile, valueChanged, libraryModeReport };
+return { mergeModeInterchanges, modeApplyPlan, validateModeInterchange, applyRenameMigrations, retirementsFor, nearestStepByHeight, geometrySizeAliasMap, resolveLiteralHeight, TYPE_STEP_FIELD_MAP, parseOldTypeStepName, typeStepAliasMap, typeWeightAliasMap, liveAliasTargetsByName, priorLibraryUplift, pruneCandidates, libraryModeReconcile, valueChanged, libraryModeReport };
 })();
 __M.stylePlan = (function(){
 // style-plan.mjs, the PURE, testable planner for the Figma STYLES swatches (paint styles bound to the
@@ -17568,7 +17562,7 @@ class TypeSectionImpl {
 
 
   // renderTypographyScene, the canvas "Typography" view: the FULL specimen (all 51 steps, 15 named
-  // voices: 13 × 3 (SM, MD, LG) + UI-control and UI-widget × 6 (XS to 2XL), since the 2026-07-13 fixed-size-table rewrite), grouped by voice,
+  // voices: 13 × 3 (SM, MD, LG) since the 2026-07-13 fixed-size-table rewrite + UI-control and UI-widget × 6 (XS to 2XL) since 2026-07-16), grouped by voice,
   // each step a live line in the treatment's real face at its size/lineHeight/letterSpacing/weight + a
   // compact metrics readout. Lives in the same pannable .canvas-scene as the ramps; paints in the scheme
   // column it is built in (var(--ink*) flips with that column's color-scheme, see _schemeColumn) and the treatment's fonts (ensureTypeFonts).
