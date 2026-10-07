@@ -4372,6 +4372,30 @@ app.setSection("color"); app.render(); flushRaf();
   ok(added === `Palette ${nextN + 1}`, `(sc7) + Palette skips "Palette ${nextN}" while "Palette ${nextN} hover" is taken (got "${added}")`);
 }
 
+// ── (g786) palette stepping / add / duplicate / delete keep the current right-pane tab ──
+{
+  app.section = "color"; app.render(); flushRaf();
+  for (const tab of ["palette", "global", "story"]) {
+    app.selectPalette(0, { tab: true });
+    app.setSegment(tab);
+    fireKey("ArrowDown");
+    ok(app.segment === tab, `(g786) ArrowDown keeps the "${tab}" tab (got ${app.segment})`);
+    fireKey("ArrowUp");
+    ok(app.segment === tab, `(g786) ArrowUp keeps the "${tab}" tab (got ${app.segment})`);
+    app.addPalette();
+    ok(app.segment === tab, `(g786) addPalette keeps the "${tab}" tab (got ${app.segment})`);
+    app.duplicatePalette(app.selectedIndex());
+    ok(app.segment === tab, `(g786) duplicatePalette keeps the "${tab}" tab (got ${app.segment})`);
+    app.deletePalette(app.selectedIndex());
+    ok(app.segment === tab, `(g786) deletePalette keeps the "${tab}" tab (got ${app.segment})`);
+    app.deletePalette(app.doc.palettes.length - 1); // undo the add so the loop is size-neutral
+  }
+  // a row click is the only caller that switches to the Palette tab
+  app.setSegment("global");
+  app.selectPalette(1, { tab: true });
+  ok(app.segment === "palette", `(g786) a row click (tab: true) switches to Palette (got ${app.segment})`);
+}
+
 // ── report ──────────────────────────────────────────────────────────────────────────
 if (fails.length) {
   console.error("HEADLESS BOOT FAIL:");
