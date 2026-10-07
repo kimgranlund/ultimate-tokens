@@ -5,20 +5,20 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 
 | ID | Ticket | Title | Type | Size | Pri | Depends on | Status |
 |---|---|---|---|---|---|---|---|
-| T-0002 | [docs-reconcile](docs-reconcile/handoff.md) | docs-reconcile: docs/ to the sdlc-lite schema | chore | XL | P2 | none | 🟢 done |
-| T-0003 | [gh-782](gh-782/handoff.md) | src/ui/sections/typography.js: replace the retired voice counts (GitHub #782) | chore | S | P3 | none | 🟢 done |
-| T-0004 | [gh-796](gh-796/handoff.md) | Stale eleven-voice wording in Download-All README, inspector copy and store copy (GitHub #796) | bug | S | P3 | none | 🟢 done |
-| T-0005 | [gh-783](gh-783/handoff.md) | gates-batch follow-ups: gate breadth, a fourth rename-map copy, stale lines (GitHub #783) | chore | M | P3 | none | 🟢 done |
-| T-0006 | [gh-798](gh-798/handoff.md) | pane-context follow-up: stale comments and wording after #785 (GitHub #798) | chore | S | P3 | none | 🟢 done |
-| T-0007 | [gh-800](gh-800/handoff.md) | headless-boot shim: print a summary of failed assertions at the end (GitHub #800) | chore | S | P3 | none | 🟢 done |
-| T-0008 | [gh-799](gh-799/handoff.md) | tonal.js: drop vestigial palette.chroma / 100 reads and the groupTarget name (GitHub #799) | chore | S | P3 | none | 🟢 done |
-| T-0009 | [gh-784](gh-784/handoff.md) | Anchored notch at stop 200 on the default kit #774902 palette at hueShift -30/-45 (GitHub #784) | bug | M | P3 | none | 🟢 done |
-| T-0010 | [gh-794](gh-794/handoff.md) | card-source-range-check is red on main: ADR-026 and ADR-027 card ranges are stale (GitHub #794) | bug | S | P3 | none | 🟢 done |
-| T-0011 | [gh-787](gh-787/handoff.md) | Palette slugs can collide with another palette's suffixed token names (GitHub #787) | bug | M | P3 | none | 🟢 done |
-| T-0012 | [gh-748](gh-748/handoff.md) | marketing: voice reread of the swept store copy (GitHub #748, part 1 only) | chore | S | P3 | none | 🟢 done |
-| T-0013 | [gh-778](gh-778/handoff.md) | Chroma envelope: the curve as the spec, presets, tolerance gates (gh 778) | feature | L | P2 | none | 🟢 done |
-| T-0014 | [prime-anchor-follows-chroma](prime-anchor-follows-chroma/handoff.md) | Chroma controls redesign: Chroma + Base chroma per palette, global base/prime k factors, vibrancy 50 | feature | L | P2 | none | 🟢 done |
-| T-0015 | [hue-space-anchored](hue-space-anchored/handoff.md) | Hue space toggle (OKLCH/CAM16) also applies to anchored palettes | feature | L | P2 | none | 🔵 ready |
-| T-0016 | [semantic-mapping-tidy](semantic-mapping-tidy/handoff.md) | Semantic Mapping tab: swatch border, drop Roles pane tab, rename Raw token column | chore | M | P2 | none | 🟢 done |
-| T-0017 | [geometry-maison-ladder](geometry-maison-ladder/handoff.md) | Geometry system adopts the Maison ui-kit ladder (tier x scale x size, --g-* and --r-* roles) | feature | XL | P2 | none | ⏳ proposed |
-| T-0018 | [gh-786](gh-786/handoff.md) | Arrow-stepping and palette add/duplicate/delete must keep the current right-pane tab (gh 786) | bug | S | P2 | none | 🟢 done |
+| T-0002 | [docs-reconcile](docs-reconcile/handoff.md) | docs-reconcile: docs/ to the sdlc-lite schema | chore | L4 | P2 | none | 🟢 done |
+| T-0003 | [gh-782](gh-782/handoff.md) | src/ui/sections/typography.js: replace the retired voice counts (GitHub #782) | chore | L1 | P3 | none | 🟢 done |
+| T-0004 | [gh-796](gh-796/handoff.md) | Stale eleven-voice wording in Download-All README, inspector copy and store copy (GitHub #796) | bug | L1 | P3 | none | 🟢 done |
+| T-0005 | [gh-783](gh-783/handoff.md) | gates-batch follow-ups: gate breadth, a fourth rename-map copy, stale lines (GitHub #783) | chore | L2 | P3 | none | 🟢 done |
+| T-0006 | [gh-798](gh-798/handoff.md) | pane-context follow-up: stale comments and wording after #785 (GitHub #798) | chore | L1 | P3 | none | 🟢 done |
+| T-0007 | [gh-800](gh-800/handoff.md) | headless-boot shim: print a summary of failed assertions at the end (GitHub #800) | chore | L1 | P3 | none | 🟢 done |
+| T-0008 | [gh-799](gh-799/handoff.md) | tonal.js: drop vestigial palette.chroma / 100 reads and the groupTarget name (GitHub #799) | chore | L1 | P3 | none | 🟢 done |
+| T-0009 | [gh-784](gh-784/handoff.md) | Anchored notch at stop 200 on the default kit #774902 palette at hueShift -30/-45 (GitHub #784) | bug | L2 | P3 | none | 🟢 done |
+| T-0010 | [gh-794](gh-794/handoff.md) | card-source-range-check is red on main: ADR-026 and ADR-027 card ranges are stale (GitHub #794) | bug | L1 | P3 | none | 🟢 done |
+| T-0011 | [gh-787](gh-787/handoff.md) | Palette slugs can collide with another palette's suffixed token names (GitHub #787) | bug | L2 | P3 | none | 🟢 done |
+| T-0012 | [gh-748](gh-748/handoff.md) | marketing: voice reread of the swept store copy (GitHub #748, part 1 only) | chore | L1 | P3 | none | 🟢 done |
+| T-0013 | [gh-778](gh-778/handoff.md) | Chroma envelope: the curve as the spec, presets, tolerance gates (gh 778) | feature | L3 | P2 | none | 🟢 done |
+| T-0014 | [prime-anchor-follows-chroma](prime-anchor-follows-chroma/handoff.md) | Chroma controls redesign: Chroma + Base chroma per palette, global base/prime k factors, vibrancy 50 | feature | L3 | P2 | none | 🟢 done |
+| T-0015 | [hue-space-anchored](hue-space-anchored/handoff.md) | Hue space toggle (OKLCH/CAM16) also applies to anchored palettes | feature | L3 | P2 | none | 🟢 done |
+| T-0016 | [semantic-mapping-tidy](semantic-mapping-tidy/handoff.md) | Semantic Mapping tab: swatch border, drop Roles pane tab, rename Raw token column | chore | L2 | P2 | none | 🟢 done |
+| T-0017 | [geometry-maison-ladder](geometry-maison-ladder/handoff.md) | Geometry system adopts the Maison ui-kit ladder (tier x scale x size, --g-* and --r-* roles) | feature | L4 | P2 | none | ⏳ proposed |
+| T-0018 | [gh-786](gh-786/handoff.md) | Arrow-stepping and palette add/duplicate/delete must keep the current right-pane tab (gh 786) | bug | L1 | P2 | none | 🟢 done |

@@ -1,4 +1,4 @@
-<!-- sdlc-lite:managed:start v1 sha256:0a5127b81236 -->
+<!-- sdlc-lite:managed:start v1 sha256:af1e8d3a03fb -->
 # Work records
 
 This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and `config`. `tickets.py roadmap` (also run by `new` and `close`) generates this block: do not edit inside it; change a ticket's `handoff.md` front matter and rerun `roadmap`. `roadmap.md` lists every ticket in dependency order. Closed `.NNNN-*` folders are history: open one only when asked.
@@ -11,10 +11,9 @@ This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and
 
 - proposed: 1
   - T-0017 Geometry system adopts the Maison ui-kit ladder (tier x scale x size, --g-* and --r-* roles) (geometry-maison-ladder)
-- ready: 1
-  - T-0015 Hue space toggle (OKLCH/CAM16) also applies to anchored palettes (hue-space-anchored)
+- ready: 0
 - blocked: 0
-- done: 15
+- done: 16
 - dropped: 0
 
 ## Procedures
