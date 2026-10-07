@@ -19,7 +19,7 @@
 // engine's own mode-scoped mapping (tonal.js OKHSL_DAMP_D) still applies to what they set.
 //
 // The READING (a) corpus loop is scripts/lib/envelope-measure.mjs's `measureEnvelope` (#725 U1), the
-// same function test/engine/chroma-envelope-gate.mjs ratchets against its fixture; this report only
+// same function test/engine/chroma-envelope-gate.mjs reads for its direction leg; this report only
 // prints it against the ruled bars.
 //
 // READING (a) prints TWICE per mode (#725 R74, option A, C2.2): a `gate path` block (each palette
@@ -27,8 +27,9 @@
 // ruled bars (`TARGET`, unchanged) and their OK/FAIL suffixes, and an `anchored` block (the RENDERED
 // path, anchor passed, since fa0264fa) that prints each median and p90 with no bar, the count of
 // instances over 90% at stop 300, and the clause lines. The anchored cells are held by the
-// chroma-envelope gate's ratchet, not by a bar: their stop-300 excess is a lightness effect (a dark
-// anchor's stop 500 sits below its hue's cusp lightness, stop 300 on it) that no chroma cap reaches.
+// chroma-envelope gate's curve and residue legs (#778), not by a bar: their stop-300 excess is a
+// lightness effect (a dark anchor's stop 500 sits below its hue's cusp lightness, stop 300 on it) that
+// no chroma cap reaches.
 // The anchored clause lines stay barred for perceptual (the cusp-run rule, L*-window scoped) and peak
 // (0 above 100%); even's anchored clause is reported only (#701 Q2), its barred clause is the gate path's.
 //
@@ -96,6 +97,16 @@
 //   node scripts/report-preset-fidelity.mjs --floor-ref (--base <rev> | --base-dir <dir>)
 //     [--only <category>|default-kit]
 //
+// `--envelope-residue` (#778) is a FOURTH, separate mode: how far each emitted pixel sits from the
+// continuous curve its stop record carries (`model`), read back in the path's unit (OKHSL s on
+// perceptual and peak, CAM16 C on even), over the C6 corpus in all three modes, on `STOPS` (19) and
+// `EXPORT_STOPS` (25), anchored and on the gate path. Per mode, stop set, path and stop class (plain,
+// damped, capped, refined) it prints n, the count outside TOL (scripts/lib/envelope-measure.mjs, the
+// constants the chroma-envelope gate's residue leg reads) and the max, p99 and p50 residue, then the 5
+// largest residues, then the total outside TOL. It exits 0 only when that total is 0.
+//
+//   node scripts/report-preset-fidelity.mjs --envelope-residue
+//
 // `--only` narrows the subjects to one category or `default-kit`, as in `--identity-control`. The mode
 // reports and exits 0; the bounds (#766 C2.1/C2.2) are read off its output by the verifier, not enforced
 // here.
@@ -107,7 +118,7 @@ import { join as pathJoin, resolve as pathResolve, dirname } from "node:path";
 import { hydrate } from "../src/ui/persist.js";
 import { rampChromaOf, EXPORT_STOPS, lstarFromRgb } from "../src/ui/model.mjs";
 import * as T from "../src/engine/tonal.js";
-import { CATS, REPORT_STOPS, MODES, ADIA_CARVEOUT, CUSP_RUN_BOUND, OVER_90_AT_300, percentile, measureEnvelope } from "./lib/envelope-measure.mjs";
+import { CATS, REPORT_STOPS, MODES, ADIA_CARVEOUT, CUSP_RUN_BOUND, OVER_90_AT_300, RESIDUE_CLASSES, percentile, measureEnvelope, measureResidues } from "./lib/envelope-measure.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = pathJoin(HERE, "..");
@@ -123,6 +134,7 @@ const mode_envelope = args.includes("--envelope");
 const mode_identity = args.includes("--identity-control");
 const mode_groupChroma = args.includes("--group-chroma");
 const mode_floorRef = args.includes("--floor-ref");
+const mode_envelopeResidue = args.includes("--envelope-residue");
 const dampAmpIdx = args.indexOf("--damp-amp");
 const dampAmpOverride = dampAmpIdx >= 0 ? Number(args[dampAmpIdx + 1]) : null;
 const dampIdx = args.indexOf("--damp");
@@ -136,9 +148,10 @@ const USAGE =
   "       node scripts/report-preset-fidelity.mjs --identity-control (--base <rev> | --base-dir <dir>) [--authored] [--only <category>|default-kit] [--perturb]\n" +
   "       node scripts/report-preset-fidelity.mjs --group-chroma --group <material|brand|system|data> --values A,B [--tone-mode perceptual|peak|even] [--base <rev> | --base-dir <dir>]\n" +
   "       node scripts/report-preset-fidelity.mjs --group-chroma --defaults [--saved-material N] [--base <rev> | --base-dir <dir>]\n" +
-  "       node scripts/report-preset-fidelity.mjs --floor-ref (--base <rev> | --base-dir <dir>) [--only <category>|default-kit]";
+  "       node scripts/report-preset-fidelity.mjs --floor-ref (--base <rev> | --base-dir <dir>) [--only <category>|default-kit]\n" +
+  "       node scripts/report-preset-fidelity.mjs --envelope-residue";
 
-if (!mode_envelope && !mode_identity && !mode_groupChroma && !mode_floorRef) {
+if (!mode_envelope && !mode_identity && !mode_groupChroma && !mode_floorRef && !mode_envelopeResidue) {
   console.error(USAGE);
   process.exit(2);
 }
@@ -154,6 +167,10 @@ if (mode_groupChroma) {
 if (mode_floorRef) {
   await runFloorRef(args);
   // runFloorRef always exits the process itself; nothing below this line runs for this mode.
+}
+if (mode_envelopeResidue) {
+  await runEnvelopeResidue();
+  // runEnvelopeResidue always exits the process itself; nothing below this line runs for this mode.
 }
 
 // The C6 corpus and READING (a)'s loop live in scripts/lib/envelope-measure.mjs (#725 U1), which
@@ -266,7 +283,7 @@ for (const mode of MODES) {
   console.log(`${mode}:`);
   printReadingA(gateRun, mode, `gate path (anchor omitted; the ruled bars apply)`, { barCells: true, barClause: true });
   if (anchoredRun) {
-    printReadingA(anchoredRun, mode, `anchored (rendered path; reported, no bar, ratcheted by test/engine/fixtures/chroma-envelope.json)`,
+    printReadingA(anchoredRun, mode, `anchored (rendered path; reported, no bar, held by test/engine/chroma-envelope-gate.mjs's curve and residue legs)`,
       { barCells: false, barClause: mode !== "even" });
   }
 }
@@ -836,4 +853,46 @@ async function runFloorRef(args) {
   console.log("");
   console.log(`${totalMoved} moved cell(s) in total`);
   process.exit(0);
+}
+
+// ── --envelope-residue ──────────────────────────────────────────────────────────────────────────
+// #778: the emitted pixel against its stop record's continuous `model` (see the header).
+
+async function runEnvelopeResidue() {
+  const fmt = (x) => x.toExponential(3);
+  const top = []; // the 5 largest residues over every block
+  let outside = 0, total = 0;
+  const blocks = [];
+  for (const [setName, stops] of [["19", T.STOPS], ["25", T.EXPORT_STOPS]]) {
+    for (const [pathName, gp] of [["anchored", false], ["gate path", true]]) {
+      const rows = await measureResidues({ gatePath: gp, stops });
+      for (const r of rows) {
+        total++;
+        if (!r.within) outside++;
+        if (top.length < 5 || r.residue > top[top.length - 1].residue) {
+          top.push({ ...r, setName, pathName });
+          top.sort((a, b) => b.residue - a.residue);
+          if (top.length > 5) top.pop();
+        }
+      }
+      blocks.push({ setName, pathName, rows });
+    }
+  }
+  for (const mode of MODES) {
+    for (const { setName, pathName, rows } of blocks) {
+      for (const cls of RESIDUE_CLASSES) {
+        const sel = rows.filter((r) => r.mode === mode && r.cls === cls);
+        if (sel.length === 0) continue;
+        const res = sel.map((r) => r.residue).sort((a, b) => a - b);
+        const k = sel.filter((r) => !r.within).length;
+        console.log(`residue ${mode} ${setName} ${pathName} ${cls}: n ${sel.length}, outside ${k}, max ${fmt(res[res.length - 1])} p99 ${fmt(percentile(res, 99))} p50 ${fmt(percentile(res, 50))}`);
+      }
+    }
+  }
+  console.log("largest residues:");
+  for (const r of top) {
+    console.log(`  ${r.label} ${r.mode} ${r.setName} ${r.pathName} stop ${r.stop} ${r.cls}: model ${r.record.model.toFixed(6)} readback ${r.readback.toFixed(6)} rgb ${r.record.rgb.join(",")}${r.within ? "" : " OUTSIDE TOL"}`);
+  }
+  console.log(`residue: ${outside} stop(s) outside TOL over ${total} stops`);
+  process.exit(outside === 0 ? 0 : 1);
 }

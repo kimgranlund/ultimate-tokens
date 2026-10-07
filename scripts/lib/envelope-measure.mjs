@@ -12,9 +12,20 @@
 // instance (the cusp-run window's L* 5 anchor) without editing a category file. `dampOverride` and
 // `dampCurveOverride` (#725 U3) force the damp and dampCurve SLIDERS (the report's `--damp N` and
 // `--damp-curve N`); the engine's own mode-scoped mapping still applies to what they set.
+// `engineDir` (#778) renders on another tree's engine: `paletteStops` and `STOPS` load from
+// `<engineDir>/src/engine/tonal.js` (the loader shape of the report's `--identity-control`), so a
+// gate can run against a planted copy. Instances, controls and `rampChromaOf` stay this tree's.
+//
+// The residue measurement (#778): `residueOf` reads one emitted stop back in its path's unit and says
+// whether the stop's continuous `model` lies within TOL of the pixel; `measureResidues` runs it over the
+// C6 corpus in all three modes (the report's `--envelope-residue`, the chroma-envelope gate's Gate B).
 import { readFileSync } from "node:fs";
+import { resolve as pathResolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { hydrate } from "../../src/ui/persist.js";
 import { defaultDocument, rampChromaOf, hexToRgb, lstarFromRgb } from "../../src/ui/model.mjs";
+import { rgbToOkhsl } from "../../src/engine/okhsl.js";
+import { cam16FromRgb } from "../../src/engine/hct.js";
 import * as T from "../../src/engine/tonal.js";
 
 export const CATS = ["architecture", "brands", "cuisine", "film", "literature", "music", "nature", "travel"];
@@ -90,7 +101,8 @@ export async function loadEnvelopeInstances() {
 // READING (a): emitted CAM16 chroma at stops 100/300/700/900 as % of stop 500's, per mode, with the
 // clause counters (perceptual: cusp-run rule violations; peak and even: instances above 100%).
 // Returns the unrounded median/p90 per mode and stop; callers round for display.
-export async function measureEnvelope({ dampAmpOverride = null, dampOverride = null, dampCurveOverride = null, gatePath = false, instances: injected = null } = {}) {
+export async function measureEnvelope({ dampAmpOverride = null, dampOverride = null, dampCurveOverride = null, gatePath = false, instances: injected = null, engineDir = null } = {}) {
+  const E = await engineOf(engineDir);
   const { instances, totalCurated } = injected !== null
     ? { instances: injected, totalCurated: injected.length }
     : await loadEnvelopeInstances();
@@ -120,10 +132,10 @@ export async function measureEnvelope({ dampAmpOverride = null, dampOverride = n
       // reported rendered on the NON-anchored construction regardless of whether the source preset is
       // anchored - the same fault the dip gate had. Passing anchor through matches projectView's own call
       // shape (src/ui/model.mjs, "the SAME resolved-chroma call" the report's own header already claimed).
-      const ramp = T.paletteStops(
+      const ramp = E.paletteStops(
         { hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull, anchor: gatePath ? undefined : pal.anchor },
         controls,
-        T.STOPS,
+        E.STOPS,
       );
       const at = (s) => ramp.find((r) => r.stop === s);
       const c500 = at(500).chroma;
@@ -138,7 +150,7 @@ export async function measureEnvelope({ dampAmpOverride = null, dampOverride = n
         // Ruling (f): report by RUN, not by raw stop count  -  a palette's natural cusp shoulder can span
         // several adjacent stops; only a SECOND separate run, or any stop past CUSP_RUN_BOUND, is a fail.
         let runs = 0, inRun = false, worstRatio = 0;
-        for (const s of T.STOPS) {
+        for (const s of E.STOPS) {
           const pct = at(s).chroma / c500;
           if (pct > 1 + 1e-6) { if (!inRun) runs++; inRun = true; worstRatio = Math.max(worstRatio, pct); }
           else inRun = false;
@@ -165,7 +177,7 @@ export async function measureEnvelope({ dampAmpOverride = null, dampOverride = n
         }
       } else {
         let roseAboveHere = false;
-        for (const s of T.STOPS) {
+        for (const s of E.STOPS) {
           const pct = (at(s).chroma / c500) * 100;
           if (pct > 100 + 1e-6) roseAboveHere = true;
         }
@@ -188,4 +200,92 @@ export async function measureEnvelope({ dampAmpOverride = null, dampOverride = n
     instances, totalCurated, results, aboveTotal, adiaAboveTotal, namedAbove, namedExceptions, aboveWitnesses, perceptualRunFails,
     perceptualWindowExcluded, outsideWindow, over90At300, gatePath,
   };
+}
+
+// engineOf: this tree's tonal engine, or `<engineDir>/src/engine/tonal.js` when a directory is given.
+async function engineOf(engineDir) {
+  if (engineDir === null) return T;
+  return import(pathToFileURL(pathResolve(engineDir, "src/engine/tonal.js")).href);
+}
+
+// TOL (#778), ruled from a plan-time probe over the C6 corpus (2,920 instances x 3 modes x 25 stops x
+// both paths, 0 stops outside). A stop is within TOL when its readback equals `model` to 1e-9, or when
+// `model` lies in [lo, hi], the range of the path unit over the emitted pixel's cube of +/- K codes per
+// channel (clamped to 0..255). K by class, in precedence order: TOL_CODES_REFINED (1 plus
+// `enforceMonotonePixelL`'s RADIUS 3) for a `refined` stop; TOL_CODES_TWICE for a `capped` stop
+// (`refineNearestRgb` only ever lowers chroma, so the check is one-sided, lo <= model) and for a damped
+// one (`damper < 1`: `dampStops` rounds a second time); TOL_CODES (8-bit rounding) otherwise.
+export const TOL_CODES = 1;
+export const TOL_CODES_TWICE = 2;
+export const TOL_CODES_REFINED = 4;
+// The gamut edge, the one clipping named: OKHSL s saturates at the sRGB boundary and no 8-bit pixel
+// reads exactly 1, so an emitted pixel with a channel at 0 or 255 whose s reads at least EDGE_S widens
+// its range to 1.
+export const EDGE_S = 0.999;
+export const RESIDUE_CLASSES = ["plain", "damped", "capped", "refined"];
+
+export function stopClass(record) {
+  if (record.refined) return "refined";
+  if (record.capped) return "capped";
+  if ((record.damper ?? 1) < 1) return "damped";
+  return "plain";
+}
+
+// The path unit: OKHSL s on perceptual and peak; CAM16 C on even, where an achromatic pixel reads 0
+// (the white point: under the engine's viewing conditions CAM16 reads #FFFFFF at C 2.869).
+export function unitOf(rgb, mode) {
+  if (mode !== "even") return rgbToOkhsl(rgb).s;
+  return rgb[0] === rgb[1] && rgb[1] === rgb[2] ? 0 : cam16FromRgb(rgb).chroma;
+}
+
+export function residueOf(record, mode) {
+  const cls = stopClass(record);
+  const k = cls === "refined" ? TOL_CODES_REFINED : cls === "plain" ? TOL_CODES : TOL_CODES_TWICE;
+  const model = record.model;
+  const [r0, g0, b0] = record.rgb;
+  const readback = unitOf(record.rgb, mode);
+  let lo = Infinity, hi = -Infinity;
+  for (let r = Math.max(0, r0 - k); r <= Math.min(255, r0 + k); r++) {
+    for (let g = Math.max(0, g0 - k); g <= Math.min(255, g0 + k); g++) {
+      for (let b = Math.max(0, b0 - k); b <= Math.min(255, b0 + k); b++) {
+        const u = unitOf([r, g, b], mode);
+        if (u < lo) lo = u;
+        if (u > hi) hi = u;
+      }
+    }
+  }
+  if (mode !== "even" && record.rgb.some((v) => v === 0 || v === 255) && readback >= EDGE_S) hi = Math.max(hi, 1);
+  const within = Math.abs(readback - model) <= 1e-9 || (cls === "capped" ? lo <= model : lo <= model && model <= hi);
+  return { readback, model, k, lo, hi, within };
+}
+
+// measureResidues: every stop of every C6 instance in all three modes, on `stops` (default: the engine's
+// EXPORT_STOPS), rendered with READING (a)'s controls and `paletteStops` call shape (anchor omitted when
+// `gatePath`). Each row carries its stop record, the ramp it sits in and the controls it rendered with.
+export async function measureResidues({ engineDir = null, gatePath = false, stops = null, instances = null } = {}) {
+  const E = await engineOf(engineDir);
+  const list = instances !== null ? instances : (await loadEnvelopeInstances()).instances;
+  const stopSet = stops ?? E.EXPORT_STOPS;
+  const rows = [];
+  for (const mode of MODES) {
+    for (const { label, pal, doc } of list) {
+      const controls = {
+        curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax,
+        damp: doc.damp, dampCurve: doc.dampCurve, dampAmp: doc.dampAmp,
+        dampBias: doc.dampBias, hueSpace: doc.hueSpace, relChroma: doc.relChroma,
+        chromaFloor: doc.chromaFloor, vibrancy: doc.vibrancy, toneMode: mode,
+      };
+      const chroma = rampChromaOf(pal, doc);
+      const ramp = E.paletteStops(
+        { hue: pal.hue, chroma, skew: pal.skew, lift: pal.lift, hueShift: pal.hueShift ?? 0, hueSameDir: pal.hueSameDir === true, cuspPull: pal.cuspPull, anchor: gatePath ? undefined : pal.anchor },
+        controls,
+        stopSet,
+      );
+      for (const record of ramp) {
+        const { readback, model, within } = residueOf(record, mode);
+        rows.push({ label, pal, mode, stop: record.stop, cls: stopClass(record), record, readback, residue: Math.abs(readback - model), within, ramp, controls });
+      }
+    }
+  }
+  return rows;
 }
