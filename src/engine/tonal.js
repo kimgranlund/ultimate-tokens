@@ -40,7 +40,9 @@ export const DEFAULT_CONTROLS = {
   // Hue space the per-palette `hue` is expressed in. "oklch" (default): the slider value IS the OKLCH
   // hue, resolved to a CAM16 hue once per palette via effHue→oklchToCam16Hue. "cam16": the hue is a
   // CAM16 hue, passed straight through. (Legacy docs that predate the OKLCH-native flip carry "cam16"
-  // explicitly and keep rendering in cam16, see persist.js / app.js openSet.)
+  // explicitly and keep rendering in cam16, see persist.js / app.js openSet.) An ANCHORED palette has no
+  // slider hue to read: it holds its anchor's own measured hue constant in the chosen space (the OKLCH
+  // or the CAM16 reading), with the anchor verbatim at stop 500, prime rung 3 and the k-100 key (T-0015).
   hueSpace: "oklch",
   // Chroma basis. false (default): the chroma control is % of the BASE-hue PEAK, per-hue, but the
   // ABSOLUTE chroma still varies with each hue's gamut, so hues come out unequally saturated. true:
@@ -1315,6 +1317,54 @@ function capChromaAtHeldTone(hue, s, l, rgb, chroma, ceiling, hueCam16, strictSe
   return { s, l, rgb, chroma, capped: rgb.some((v, i) => v !== rgbIn[i]) };
 }
 
+// solveOkhslHueForCam16(targetCam16Hue, seedOkhslHue, renderAt) - the OKHSL hue whose render carries
+// `targetCam16Hue` (T-0015, hueSpace "cam16" on the anchored perceptual/peak path). `renderAt(h)` returns
+// the FLOAT render at candidate hue h (the caller closes over its tone hold, so the solve is joint with
+// it), never the 8-bit `okhslToRgb`, whose staircase returns arbitrary hues at pale stops (#725 revision
+// 8). A candidate under CAM16 C 5 is achromatic: its CAM16 hue is noise and carries no signal. Fast path
+// first (the fixed-point step `solveCam16Hue` also tries), then a bracketed scan over seed +/- 60 at 5
+// degrees, bisecting the sign change nearest the seed. No bracket, or an achromatic midpoint, returns the
+// seed (the anchor's OKLCH hue): on an ill-conditioned pale stop a least-error candidate invents a tint.
+function solveOkhslHueForCam16(targetCam16Hue, seedOkhslHue, renderAt) {
+  const C_ACHROMATIC = 5, SCAN_RANGE = 60, SCAN_STEP = 5, BISECT_TOL = 1e-4, BISECT_STEPS = 40;
+  const wrap = (h) => ((h % 360) + 360) % 360;
+  // err in (-180, 180], or null for an achromatic candidate.
+  const errAt = (h) => {
+    const cam = cam16FromRgb(renderAt(h));
+    if (cam.chroma < C_ACHROMATIC) return null;
+    return 180 - wrap(180 - (cam.hue - targetCam16Hue));
+  };
+  {
+    let h = seedOkhslHue;
+    for (let i = 0; i < 16; i++) {
+      const err = errAt(h);
+      if (err === null) break; // achromatic: the scan's guard applies
+      if (Math.abs(err) < 1e-3) return h;
+      h = wrap(h - err);
+    }
+  }
+  let bracket = null; // the sign change whose midpoint is nearest the seed
+  let prevOffset = null, prevErr = null;
+  for (let offset = -SCAN_RANGE; offset <= SCAN_RANGE; offset += SCAN_STEP) {
+    const err = errAt(wrap(seedOkhslHue + offset));
+    // Adjacent non-achromatic samples only; |err difference| < 90 excludes the +/-180 wrap.
+    if (err !== null && prevErr !== null && ((prevErr > 0 && err < 0) || (prevErr < 0 && err > 0)) && Math.abs(err - prevErr) < 90) {
+      const mid = Math.abs((prevOffset + offset) / 2);
+      if (!bracket || mid < bracket.mid) bracket = { loOffset: prevOffset, loErr: prevErr, hiOffset: offset, mid };
+    }
+    prevOffset = offset; prevErr = err;
+  }
+  if (!bracket) return seedOkhslHue;
+  let { loOffset, loErr, hiOffset } = bracket;
+  for (let i = 0; i < BISECT_STEPS && hiOffset - loOffset > BISECT_TOL; i++) {
+    const midOffset = (loOffset + hiOffset) / 2;
+    const midErr = errAt(wrap(seedOkhslHue + midOffset));
+    if (midErr === null) return seedOkhslHue;
+    if ((loErr > 0) === (midErr > 0)) { loOffset = midOffset; loErr = midErr; } else hiOffset = midOffset;
+  }
+  return wrap(seedOkhslHue + (loOffset + hiOffset) / 2);
+}
+
 // okhslStopsAnchored - the perceptual/peak path's anchored branch: a piecewise OKHSL-`l` ladder
 // pivoting on (500, the anchor's own OKHSL lightness), replacing `lightnessAt`'s even/cusp blend with
 // a pivot-preserving analog (F4, re-diagnosis Finding 2, owner-ruled 2026-09-18: the controls stay
@@ -1326,18 +1376,17 @@ function capChromaAtHeldTone(hue, s, l, rgb, chroma, ceiling, hueCam16, strictSe
 // ORIGINAL, pre-F4 construction), `peakL` is the curve/tension-shaped one, and `t = mode==="peak" ? 1
 // : vibrancy/100` blends them - "peak" pins full curve/tension shaping, "perceptual" moves continuously
 // with Vibrancy, and at vibrancy 0 (DEFAULT_CONTROLS until T-0014's 50) perceptual mode reduces to `evenL` exactly, so
-// existing perceptual-mode renders at default vibrancy are UNCHANGED by this fix. Hue: "cam16" hueSpace
-// holds the anchor's own measured OKHSL hue constant (matching prime.mjs's `hOk = key.h`, no solve
-// needed, we already have the real value). "oklch" hueSpace (R3, review pass 2, 2026-09-18) used to
-// solve the OKHSL hue reproducing the anchor's own OKLCH hue reading AT THE ANCHOR'S OWN saturation/
-// lightness - a degenerate solve (that point IS the anchor's own point, so it always returned
-// anchor.okhsl.h back unchanged) that measured as dead (0 of 3,396 moved). #725 U3 revision 8 removes
-// the per-stop solve that replaced it: OKHSL hue IS OKLab hue by construction, so solving per stop was
-// the identity in the continuous domain and read only the 8-bit staircase, returning an arbitrary hue
-// at damped pale stops (106° against the anchor's 68.7° at default Warning perceptual 150) that the
-// tone hold then priced at the basis `s` and that differed per hueSpace. The "oklch" branch now uses
-// the anchor's own OKLCH hue, `targetOklchHue`, which equals `anchor.okhsl.h`, so both hueSpaces
-// render byte-identical anchored perceptual and peak ramps (the Q-D ruling, made structural).
+// existing perceptual-mode renders at default vibrancy are UNCHANGED by this fix. Hue (T-0015, ADR-031):
+// hueSpace names the space the anchor's own measured hue is held constant in, the anchor pixel verbatim
+// at stop 500 in both. "oklch" holds the anchor's OKLCH hue, `targetOklchHue` (equal to
+// `anchor.okhsl.h`): OKHSL hue IS OKLab hue by construction, so no per-stop solve is needed, and #725 U3
+// revision 8 removed the one that was there, which was the identity in the continuous domain and read
+// only the 8-bit staircase (106° against the anchor's 68.7° at default Warning perceptual 150). "cam16"
+// holds the anchor's CAM16 hue: each stop solves the OKHSL hue whose float render, jointly with the tone
+// hold, carries it (`solveOkhslHueForCam16`), keeping the anchor's OKLCH hue where no root exists or the
+// candidate is achromatic. The two lines meet at the anchor and part by at most about 0.02 OKLab dE
+// elsewhere: the toggle moves an anchored perceptual or peak ramp within rounding, the even ramp and
+// the prime ladder visibly (anchor.mjs anchor-f4 hueSpace-<mode>).
 function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
   const shift = palette.hueShift ?? 0;
   const sameDir = palette.hueSameDir === true;
@@ -1396,11 +1445,17 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
     // the CIE-L* path, `s` never reads the resolved hue; the damped `s` itself is holdTone's (below).
     const env = chromaEnvelope(stop, 500, palette.lift ?? 0, controls);
     const intendedS = anchor.okhsl.s;
-    // hueSpace: "oklch" emits the anchor's own OKLCH hue, no per-stop solveOkhslHue (#725 revision 8:
-    // OKHSL hue is OKLab hue, so the solve was the identity reading the 8-bit staircase; see this
-    // function's header comment). "cam16" keeps hOkSeed, the same number.
+    // Hue (T-0015): `seedH` is the anchor's own OKLCH hue plus the edge rotation (OKHSL hue IS OKLab
+    // hue, so no per-stop solve: #725 revision 8, see this function's header comment; hOkSeed is the
+    // same number). "oklch" emits it. "cam16" solves, per stop and jointly with the tone hold on the
+    // float render, the OKHSL hue whose render carries the anchor's CAM16 hue plus the rotation (the
+    // rotation applied in CAM16, as the even and ladder cam16 branches do), seeded at and falling back
+    // to `seedH`. An achromatic anchor (#739) has no CAM16 hue to hold and emits `seedH` in both.
     const hOkStop = oklchSpace ? targetOklchHue : hOkSeed;
-    const hue = (((hOkStop + shift * dir) % 360) + 360) % 360;
+    const seedH = (((hOkStop + shift * dir) % 360) + 360) % 360;
+    const hue = !oklchSpace && !anchor.achromatic
+      ? solveOkhslHueForCam16((((anchor.cam.hue + shift * dir) % 360) + 360) % 360, seedH, (h) => { const hd = holdTone(h, intendedS, l, env); return okhslToRgbFloat(h, hd.s, hd.l); })
+      : seedH;
     // Tone hold (#725 U3): the one hue above feeds both the hold's target and the emission.
     const hold = holdTone(hue, intendedS, l, env);
     const rgb = okhslToRgb(hue, hold.s, hold.l);
@@ -1408,8 +1463,10 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
   };
   // Peak joint cap (#725 U2, R69): the anchored peak ramp emits no stop above stop 500's own chroma, the
   // same `capChromaAtHeldTone` construction `okhslStops` runs, scoped the same way (peak, dampAmp 0).
-  // The polish hue is solved from each stop's own pre-cap OKLCH hue (null): this path's OKHSL hue is
-  // the anchor's, never a CAM16 hue it could reuse.
+  // The polish hue is solved from each stop's own pre-cap OKLCH hue (null) in BOTH hue spaces: under
+  // "cam16" that pre-cap hue already sits on the anchor's CAM16 line (preCap's solve), and a chroma cut
+  // made after the hue is set keeps the stop's own OKLCH hue, as dampStops does (T-0015; passing the
+  // anchor's CAM16 hue instead measured a 0.0202 OKLab dE flip on capped corpus stops, over the 0.02 bound).
   const capPeak = mode === "peak" && (controls.dampAmp ?? 0) === 0;
   const ceiling = !capPeak ? Infinity : clamped ? preCap(500).chroma : anchor.cam.chroma;
   const built = stops.map((stop) => {

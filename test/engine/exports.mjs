@@ -898,6 +898,11 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
 //    T-0014 re-capture (2026-10-07, by script from the engine): C() carries no vibrancy, so the export
 //    renders at DEFAULT_CONTROLS.vibrancy, 0 -> 50 (ADR-030), and every perceptual ramp moves:
 //    793 / 440 / 478 leaves (ALL / BRAND_ONLY / COLLIDING). No leaf shape, key, or ordering changed.
+//    T-0015 re-capture (2026-10-07, by script from the engine, ADR-031): C() renders at hueSpace
+//    "cam16", where an anchored perceptual ramp now holds its anchor's own CAM16 hue instead of its
+//    OKLCH hue, so the anchored families and their aliases move within rounding: 550 / 306 / 286
+//    leaves (ALL / BRAND_ONLY / COLLIDING). The unanchored Accent and Error palettes are byte-identical.
+//    No leaf shape, key, or ordering changed.
 {
   const G = "radix-refs-values-unchanged";
   const fixture = JSON.parse(readFileSync(new URL("./fixtures/radix-baseline.json", import.meta.url), "utf8"));

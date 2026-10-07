@@ -1261,37 +1261,62 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
   const baseDoc = hydrate({ ...dkBase, toneMode: "perceptual" });
   const vibrantCurveDoc = hydrate({ ...dkBase, toneMode: "perceptual", vibrancy: 60, curve: "cubic", tension: 0 });
   const vibrantTensionDoc = hydrate({ ...dkBase, toneMode: "perceptual", vibrancy: 60, curve: "logistic", tension: 0 });
-  // hueSpace (review pass 3, Finding 1, 2026-09-18): moved from perceptual to EVEN mode. Review 3 proved
-  // the perceptual/peak (OKHSL) per-stop hue solve moves a ramp only by 8-bit re-picking (0 of 3,393/
-  // 3,390 anchored ramps clear ΔE_OK > 0.01), because OKHSL already holds the anchor's own OKLCH hue
-  // constant under "cam16" - "moved >= 1 hex" alone passes on a single-code rounding flip there, not a
-  // real hueSpace effect. In EVEN mode the two hueSpace settings ARE a real Abney correction (1,060 of
-  // 3,396 anchored ramps clear ΔE_OK > 0.01).
-  //
-  // Q-D (ruled + verified, superseding the "open question" this comment used to record): the OKHSL
-  // (perceptual/peak) construction stays UNCHANGED - `okhslStopsAnchored`'s own per-stop OKHSL hue
-  // solve is untouched by this pass, same as review pass 3 left it. Instead the UI now disables the
-  // doc-level Hue space control for an anchored palette in perceptual/peak (src/ui/sections/color.js's
-  // renderGlobalInspector + renderPaletteInspector, gated in test/ui/headless-boot.mjs's (hs) block),
-  // on the strength of this file's OWN bound below: flipping hueSpace on an anchored perceptual/peak
-  // ramp never moves any channel by more than 2 (8-bit). This is the engine-side half of that ruling -
-  // it does not just re-assert Finding 1's magnitude-floor miss, it bounds the miss.
+  // hueSpace (T-0015, ADR-031): the hue space names the space an anchored palette holds its anchor's
+  // own measured hue constant in, so flipping it moves the anchored ramp in EVERY mode, with stop 500
+  // (the anchor) exact in both spaces. One case per mode. Even mode carries a real Abney correction
+  // and keeps the magnitude floor (review pass 3, Finding 1: "moved >= 1 hex" alone passes on a 1-code
+  // rounding flip; 1,060 of 3,396 anchored even ramps clear 0.01). Perceptual and peak move within
+  // rounding: the OKLCH and CAM16 constancy lines through the anchor part by at most about 0.02 OKLab
+  // dE anywhere (plan-time 0.0164 perceptual, 0.0169 peak over the full corpus plus default kit), so
+  // those two modes carry an upper bound instead, `HUE_SPACE_MODE_BOUND` (decision 1): max OKLab dE
+  // over every stop, capped or not, of every anchored ramp across the run's corpus plus the default
+  // kit. The bound is read first, so each mode prints one line.
   const evenBaseDoc = hydrate({ ...dkBase, toneMode: "even" });
+  const peakBaseDoc = hydrate({ ...dkBase, toneMode: "peak" });
+  const flipHueSpace = (doc) => ({ hueSpace: doc.hueSpace === "cam16" ? "oklch" : "cam16" });
+  const HUE_SPACE_MODE_BOUND = 0.02;
+  const hueSpaceBoundSubjects = [...presetsByCat, { slug: "default kit", preset: dkBase }];
+  // rampMaxDeltaE: the one dE predicate the bound and its control read, max OKLab dE (deltaEOk's
+  // independent conversion) over a ramp's stops, with the stop it peaks at.
+  const rampMaxDeltaE = (a, b) => {
+    let de = 0, stop = null;
+    for (let i = 0; i < a.length; i++) {
+      const d = deltaEOk(a[i].hex, b[i].hex);
+      if (d > de) { de = d; stop = a[i].stop; }
+    }
+    return { de, stop };
+  };
+  const hueSpaceBound = {};
+  for (const modeName of ["perceptual", "peak"]) {
+    let max = 0, worst = "n/a";
+    for (const { slug, preset } of hueSpaceBoundSubjects) {
+      const base = hydrate({ ...preset, toneMode: modeName });
+      const baseV = projectView(base), altV = projectView(hydrate({ ...base, ...flipHueSpace(base) }));
+      for (const p of base.palettes) {
+        if (typeof p.anchor !== "string") continue;
+        const r = rampMaxDeltaE(baseV.palettes.find((v) => v.name === p.name).fullRamp, altV.palettes.find((v) => v.name === p.name).fullRamp);
+        if (r.de > max) { max = r.de; worst = `${slug} "${preset.name}" ${p.name} stop ${r.stop}`; }
+      }
+    }
+    hueSpaceBound[modeName] = { max, worst };
+  }
   const F4_CASES = {
     curve: { base: vibrantCurveDoc, altPatch: { curve: "sine" } },
     tension: { base: vibrantTensionDoc, altPatch: { tension: 80 } },
     vibrancy: { base: baseDoc, altPatch: { vibrancy: 60 } },
-    hueSpace: {
-      base: evenBaseDoc, altPatch: { hueSpace: evenBaseDoc.hueSpace === "cam16" ? "oklch" : "cam16" },
+    "hueSpace-even": {
+      base: evenBaseDoc, altPatch: flipHueSpace(evenBaseDoc),
       // magnitude floor (Finding 1's fix): "moved >= 1 hex" alone cannot tell a real hue effect from a
       // 1-code rounding flip. Require at least one anchored ramp with a stop whose OKLab ΔE (Euclidean,
       // independent conversion, never the engine's own) between the two hueSpace settings exceeds 0.01 -
       // a magnitude no single 8-bit rounding step reaches in practice (review 3's own measured floor).
       magnitudeFloor: 0.01,
     },
+    "hueSpace-perceptual": { base: baseDoc, altPatch: flipHueSpace(baseDoc), bound: hueSpaceBound.perceptual },
+    "hueSpace-peak": { base: peakBaseDoc, altPatch: flipHueSpace(peakBaseDoc), bound: hueSpaceBound.peak },
   };
   for (const key in F4_CASES) {
-    const { base, altPatch, magnitudeFloor } = F4_CASES[key];
+    const { base, altPatch, magnitudeFloor, bound } = F4_CASES[key];
     const baseV = projectView(base);
     const altDoc = hydrate({ ...base, ...altPatch });
     const altView = projectView(altDoc);
@@ -1311,107 +1336,27 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
     }
     if (moved === 0) FAIL("anchor-f4", `${key}: moved 0 of the default kit's anchored ramps, this control is dead for anchored palettes`);
     if (magnitudeFloor !== undefined && maxDeltaE <= magnitudeFloor) FAIL("anchor-f4", `${key}: max OKLab delta-E ${maxDeltaE.toFixed(4)} does not clear the ${magnitudeFloor} magnitude floor - a rounding-only move would also report "moved >= 1"`);
+    const corpusName = `${FULL ? "full" : "SAMPLED"} corpus + default kit`;
+    if (bound !== undefined && bound.max > HUE_SPACE_MODE_BOUND) FAIL("anchor-f4", `${key}: max OKLab dE ${bound.max.toFixed(4)} over ${corpusName} exceeds ${HUE_SPACE_MODE_BOUND} (worst ${bound.worst}), the two hue spaces part visibly on an anchored ramp`);
     const floorNote = magnitudeFloor !== undefined ? `, max OKLab dE ${maxDeltaE.toFixed(4)} (want > ${magnitudeFloor}, a magnitude floor - below the commonly used OKLab JND of about 0.02, not itself a JND), asserted in even only` : "";
-    console.log(`  ${moved > 0 && s500moved === 0 && (magnitudeFloor === undefined || maxDeltaE > magnitudeFloor) ? "pass" : "FAIL"}  anchor-f4 ${key}: moved ${moved} default-kit anchored ramps, stop 500 moved ${s500moved} (want >=1, 0)${floorNote}`);
+    const boundNote = bound !== undefined ? `, max OKLab dE ${bound.max.toFixed(4)} over ${corpusName} (want <= ${HUE_SPACE_MODE_BOUND}, worst ${bound.worst})` : "";
+    const ok = moved > 0 && s500moved === 0 && (magnitudeFloor === undefined || maxDeltaE > magnitudeFloor) && (bound === undefined || bound.max <= HUE_SPACE_MODE_BOUND);
+    console.log(`  ${ok ? "pass" : "FAIL"}  anchor-f4 ${key}: moved ${moved} default-kit anchored ramps, stop 500 moved ${s500moved} (want >=1, 0)${floorNote}${boundNote}`);
   }
 
-  // Q-D (ruled + verified, 2026-09-18; scope corrected + re-ruled, review pass 4 Finding 1, plan rev
-  // 23, 2026-09-19): the engine-side half of the ruling - flipping hueSpace on an ANCHORED palette in
-  // perceptual or peak has NO VISIBLE effect. Review 3's own in-suite sample (the 16-palette default
-  // kit only) measured a max 8-bit per-channel diff of 1 and stated a "<= 2 codes" bound as if it held
-  // for every anchored palette; review 4 measured the full 3,396-ramp curated corpus and found 39
-  // perceptual / 17 peak ramps exceed 2 codes (max 10 / 12) - the default-kit sample was too small to
-  // see this. The perceptual magnitude stays invisible throughout: 0 of 3,396 ramps in either mode
-  // clear a 0.01 OKLab delta-E (max 0.0047 perceptual, 0.0053 peak). RULED: the gate is max OKLab
-  // delta-E <= 0.01 over the full anchored corpus, per mode - the corpus data supports that bound, not
-  // a codes bound. "<= 2 codes" STAYS as its own gate, scoped to the DEFAULT KIT ONLY (tracked below as
-  // `dkMaxDiff`, separately from the corpus-wide `maxDiff`, which is reported for visibility only and
-  // is not, and will not be, gated). This is a final ruling, not an open question any more.
-  // This is the bound the UI's "disabled,
-  // rounding only" claim rests on (src/ui/sections/color.js's renderGlobalInspector/
-  // renderPaletteInspector; gated in test/ui/headless-boot.mjs's (hs) block). Unlike F4_CASES's
-  // hueSpace entry (which asserts a REAL effect exists, in even mode), this asserts the OPPOSITE
-  // direction for perceptual/peak - that whatever effect exists stays invisible - so it is a separate
-  // block, not folded into that loop's shared "moved === 0 -> FAIL" liveness check.
-  //
-  // Negative control (run by the review-4 reviewer, recorded here since it needs a source patch this
-  // file does not carry): substituting the anchor's own CAM16 hue for the OKHSL hue candidate at every
-  // iteration (i.e. solving nothing - always rendering at the "cam16" hue while hueSpace claims
-  // "oklch") reds this exact gate at a max per-channel diff of 33 (perceptual) / 34 (peak) - proving
-  // the predicate below can tell a real hue divergence from the actual rounding-only behavior.
-  const maxChannelDiff = (hexA, hexB) => {
-    const a = hexToRgb(hexA), b = hexToRgb(hexB);
-    return Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]), Math.abs(a[2] - b[2]));
-  };
-  const HUE_SPACE_DELTA_E_BOUND = 0.01;
-  // #725 U2 pass 2 (R74): a peak stop the anchored cap moved is re-solved by `capChromaAtHeldTone`'s
-  // `hctToRgb` at a per-hueSpace polish hue, then polished hue-blind, so its hueSpace flip carries more
-  // than rounding (measured worst 0.0184, Jekyll and Hyde tertiary stop 400). The bound there is 0.02;
-  // every other stop keeps 0.01. "The cap moved it" is the row's own `capped` flag (#725 U3), set by
-  // `capChromaAtHeldTone` when it changed the pixel, on either side of the flip. U2 derived the same
-  // set by rendering a scratch engine with the cap lifted and diffing hexes (about 10 s of `--full`);
-  // the flag was measured against that diff at U3's own head (revision 8) before the diff was removed,
-  // since U2's engine has no flag: 84900 anchored peak stops, flag 7364, diff 7364, 0 disagreements
-  // each way (.sdlc/handoffs/chroma-envelope-U3.md D9). U2's 7841 was a different engine's diff count.
-  const HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED = 0.02;
-  const HUE_SPACE_CODES_BOUND = 2;
-  const hueSpaceBoundSubjects = [...presetsByCat, { slug: "default kit", preset: dkBase }];
-  let cappedStops = 0, cappedMaxDeltaE = 0, cappedWorst = "n/a";
-  for (const modeName of ["perceptual", "peak"]) {
-    let maxDiff = 0, worstCodes = "n/a", maxDeltaE = 0, worstDeltaE = "n/a", overBoundRamps = 0;
-    let dkMaxDiff = 0, dkWorstCodes = "n/a";
-    const overBoundNames = new Set();
-    for (const { slug, preset } of hueSpaceBoundSubjects) {
-      const base = hydrate({ ...preset, toneMode: modeName });
-      const alt = hydrate({ ...base, hueSpace: base.hueSpace === "cam16" ? "oklch" : "cam16" });
-      const baseV = projectView(base), altV = projectView(alt);
-      const readCap = modeName === "peak";
-      for (const p of base.palettes) {
-        if (typeof p.anchor !== "string") continue;
-        const a = baseV.palettes.find((v) => v.name === p.name).fullRamp;
-        const b = altV.palettes.find((v) => v.name === p.name).fullRamp;
-        let rampOverBound = false;
-        for (let i = 0; i < a.length; i++) {
-          const d = maxChannelDiff(a[i].hex, b[i].hex);
-          if (d > maxDiff) { maxDiff = d; worstCodes = `${slug} "${preset.name}" ${p.name} stop ${a[i].stop}`; }
-          if (slug === "default kit" && d > dkMaxDiff) { dkMaxDiff = d; dkWorstCodes = `${preset.name} ${p.name} stop ${a[i].stop}`; }
-          const de = deltaEOk(a[i].hex, b[i].hex);
-          const capped = readCap && (a[i].capped === true || b[i].capped === true);
-          const where = `${slug} "${preset.name}" ${p.name} stop ${a[i].stop}`;
-          if (capped) {
-            cappedStops++;
-            if (de > cappedMaxDeltaE) { cappedMaxDeltaE = de; cappedWorst = `${where} (${base.hueSpace} ${a[i].hex} / ${alt.hueSpace} ${b[i].hex})`; }
-            if (de > HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED) rampOverBound = true;
-            continue;
-          }
-          if (de > maxDeltaE) { maxDeltaE = de; worstDeltaE = where; }
-          if (de > HUE_SPACE_DELTA_E_BOUND) rampOverBound = true;
-        }
-        if (rampOverBound) { overBoundRamps++; overBoundNames.add(`${slug}|${preset.name}|${p.name}`); }
-      }
-    }
-    if (maxDeltaE > HUE_SPACE_DELTA_E_BOUND) {
-      FAIL(
-        "anchor-f4",
-        `hueSpace ${modeName}: ${overBoundRamps} anchored ramp(s) clear a ${HUE_SPACE_DELTA_E_BOUND} OKLab delta-E when hueSpace flips (max ${maxDeltaE.toFixed(4)}, worst ${worstDeltaE}) - the UI's "disabled, rounding only" claim for anchored ${modeName} palettes is now false`,
-      );
-    }
-    if (modeName === "peak" && cappedStops === 0) {
-      FAIL("anchor-f4", "hueSpace peak: 0 cap-moved stops read - no peak row carries the cap's `capped` flag, so the 0.02 scope is dead");
-    }
-    if (modeName === "peak" && cappedMaxDeltaE > HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED) {
-      FAIL("anchor-f4", `hueSpace peak, capped stops: max OKLab dE ${cappedMaxDeltaE.toFixed(4)} over ${cappedStops} cap-moved stop(s), want <= ${HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED} (worst ${cappedWorst})`);
-    }
-    if (dkMaxDiff > HUE_SPACE_CODES_BOUND) {
-      FAIL(
-        "anchor-f4",
-        `hueSpace ${modeName}: default-kit codes bound broken, ${dkMaxDiff} > ${HUE_SPACE_CODES_BOUND} (worst ${dkWorstCodes})`,
-      );
-    }
-    const codesNote = maxDiff > HUE_SPACE_CODES_BOUND ? `${FULL ? "full-corpus" : "SAMPLED-corpus"} codes reach ${maxDiff} (worst ${worstCodes}) - reported only, not gated; default kit's own codes bound held (max ${dkMaxDiff}, want <= ${HUE_SPACE_CODES_BOUND})` : `codes bound held everywhere (max ${maxDiff})`;
-    const cappedNote = modeName === "peak" ? `; cap-moved stops ${cappedStops}, max OKLab dE ${cappedMaxDeltaE.toFixed(4)} (want <= ${HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED}, worst ${cappedWorst})` : "";
-    const cappedOk = modeName !== "peak" || cappedMaxDeltaE <= HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED;
-    console.log(`  ${maxDeltaE <= HUE_SPACE_DELTA_E_BOUND && dkMaxDiff <= HUE_SPACE_CODES_BOUND && cappedOk ? "pass" : "FAIL"}  anchor-f4 hueSpace-${modeName}-bound: ${FULL ? "full" : "SAMPLED"} corpus + default kit, max OKLab dE ${maxDeltaE.toFixed(4)} over uncapped stops (want <= ${HUE_SPACE_DELTA_E_BOUND}, worst ${worstDeltaE})${cappedNote}; ${codesNote}`);
+  // Bound control: the per-mode bound must be able to fail. The same predicate (`rampMaxDeltaE`
+  // against `HUE_SPACE_MODE_BOUND`) on the default kit's Primary perceptual ramp against a planted
+  // alternate render, Primary with hueShift 45 (a real hue divergence across the ramp, stop 500 still
+  // the anchor), must read above the bound (plan-time 0.0474; hueShift 20 reads only 0.0219, too thin
+  // a margin to prove the predicate bites).
+  {
+    const planted = hydrate({ ...baseDoc, palettes: baseDoc.palettes.map((p) => (p.name === "Primary" ? { ...p, hueShift: 45 } : p)) });
+    const a = projectView(baseDoc).palettes.find((v) => v.name === "Primary").fullRamp;
+    const b = projectView(planted).palettes.find((v) => v.name === "Primary").fullRamp;
+    const ctl = rampMaxDeltaE(a, b);
+    const bites = ctl.de > HUE_SPACE_MODE_BOUND;
+    if (!bites) FAIL("anchor-f4", `hueSpace bound control: the planted render (default kit Primary perceptual, hueShift 45) reads max OKLab dE ${ctl.de.toFixed(4)}, want > ${HUE_SPACE_MODE_BOUND}, so the per-mode bound cannot catch a real hue divergence`);
+    console.log(`  ${bites ? "pass" : "FAIL"}  anchor-f4 hueSpace bound control: planted render (default kit Primary perceptual, hueShift 45) reads max OKLab dE ${ctl.de.toFixed(4)} at stop ${ctl.stop} (want > ${HUE_SPACE_MODE_BOUND}), so the per-mode bound reds on it`);
   }
 
   // Negative control (review pass 3, Finding 4, 2026-09-18): the prior in-suite "reference lerp"
@@ -1696,8 +1641,9 @@ if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); pr
 // pre-#681 reference - Q1's own resolution, not "untouched": U6 replaced the base ladder outright, so
 // `prime-identity-control` now asserts every one of 3,796 subjects differs from that reference), C3
 // (stop 500 exact + lift-40 negative control), C5 (monotone, pixel L*, a true 0, no list), C6/F4 (peak
-// != perceptual, Curve/Tension/Vibrancy each live for every anchored ramp, hueSpace live in even mode
-// + bounded to rounding in perceptual/peak per Q-D, stop 500 exact under every toggle).
+// != perceptual, Curve/Tension/Vibrancy each live for every anchored ramp, hueSpace live in every mode,
+// above the 0.01 floor in even and within the 0.02 bound in perceptual/peak per T-0015 (ADR-031), stop
+// 500 exact under every toggle).
 //
 // Rework pass 2 (#713 U3, reviewer finding 1): this line used to print the FULL wording unconditionally,
 // so the SAMPLED leg signed off in the exact words of the gate of record after checking a tenth of the
