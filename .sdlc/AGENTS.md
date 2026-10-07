@@ -1,4 +1,4 @@
-<!-- sdlc-lite:managed:start v1 sha256:61e8eb572ce4 -->
+<!-- sdlc-lite:managed:start v1 sha256:4863e6e685b8 -->
 # Work records
 
 This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and `config`. `tickets.py roadmap` (also run by `new` and `close`) generates this block: do not edit inside it; change a ticket's `handoff.md` front matter and rerun `roadmap`. `roadmap.md` lists every ticket in dependency order. Closed `.NNNN-*` folders are history: open one only when asked.
@@ -10,15 +10,14 @@ This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and
 ## Stages
 
 - proposed: 0
-- ready: 6
+- ready: 5
   - T-0004 Stale eleven-voice wording in Download-All README, inspector copy and store copy (GitHub #796) (gh-796)
   - T-0005 gates-batch follow-ups: gate breadth, a fourth rename-map copy, stale lines (GitHub #783) (gh-783)
   - T-0007 headless-boot shim: print a summary of failed assertions at the end (GitHub #800) (gh-800)
-  - T-0008 tonal.js: drop vestigial palette.chroma / 100 reads and the groupTarget name (GitHub #799) (gh-799)
   - T-0009 Anchored notch at stop 200 on the default kit #774902 palette at hueShift -30/-45 (GitHub #784) (gh-784)
   - T-0011 Palette slugs can collide with another palette's suffixed token names (GitHub #787) (gh-787)
 - blocked: 0
-- done: 5
+- done: 6
 - dropped: 0
 
 ## Procedures
