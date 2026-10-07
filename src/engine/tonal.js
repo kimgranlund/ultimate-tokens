@@ -82,10 +82,10 @@ export const DEFAULT_CONTROLS = {
   // 500, one mode-agnostic accent token. Applied via applyAccentRef alongside applyOnColorContrast.
   accentRef: "mode",
   // (SPEC spec-muted-base-key-spikes 0.3.0, REQ-002/004, AC-004): the ramp's chroma multiplier that
-  // used to live here as a control field is fully retired. A palette group's "Base chroma" is resolved
+  // used to live here as a control field is fully retired. A palette's "Base chroma" times the global k is resolved
   // in src/ui/model.mjs and src/ui/persist.js and handed to paletteStops AS the palette's own `chroma`;
   // since #785 (R94 to R98) paletteStops reads it as a ratio, the whole-ramp damper `groupDamper` /
-  // `dampStops` below. No trace of the group survives on DEFAULT_CONTROLS.
+  // `dampStops` below (T-0014: the per-group layer is gone). No trace of it survives on DEFAULT_CONTROLS.
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -109,7 +109,7 @@ export function effHue(hue, hueSpace, chromaFrac = 1) {
 // puts the OKLCH-hue calibration on the saturated swatches the user reads, so they land on the SET hue.
 // REQ-005 (0.3.0): `palette.chroma` is the chroma the ramp is rendered at, so the anchor follows the SAME
 // chroma the ramp is built from. Since #785 that is always 100 here: `paletteStops` re-enters at 100 and
-// `dampStops` applies the group value after, so the re-entry hides it; a direct call uses its own chroma.
+// `dampStops` applies the palette's Base chroma times the global k after, so the re-entry hides it; a direct call uses its own chroma.
 //
 // No longer amplified by dampAmp (#681 U3, Q7): chromaEnvelope is exactly 1 at the anchor stop for EVERY
 // dampAmp value when lift is 0 (the anchor's own rendered chroma no longer moves with dampAmp  -  that
