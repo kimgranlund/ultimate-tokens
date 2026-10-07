@@ -525,8 +525,8 @@ export class TypeSectionImpl {
   // renderTypographyScene, the canvas "Typography" view: the FULL specimen (all 51 steps, 15 named
   // voices: 13 × 3 (SM, MD, LG) + UI-control and UI-widget × 6 (XS to 2XL), since the 2026-07-13 fixed-size-table rewrite), grouped by voice,
   // each step a live line in the treatment's real face at its size/lineHeight/letterSpacing/weight + a
-  // compact metrics readout. Lives in the same pannable .canvas-scene as the ramps; paints in the canvas
-  // preview scheme (var(--ink*) flips with the area's color-scheme) and the treatment's fonts (ensureTypeFonts).
+  // compact metrics readout. Lives in the same pannable .canvas-scene as the ramps; paints in the scheme
+  // column it is built in (var(--ink*) flips with that column's color-scheme, see _schemeColumn) and the treatment's fonts (ensureTypeFonts).
   renderTypographyScene(view) {
     ensureTypeFonts();
     const cfg = this._activeType();

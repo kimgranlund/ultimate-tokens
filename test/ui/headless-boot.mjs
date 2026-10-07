@@ -2656,7 +2656,7 @@ app.setTypeSpecMode("specimen"); flushRaf();
 app.typeMode = "base"; flushRaf();
 ok(app._activeType().bodyBase === 16, "(ty-bp) switching back to Base resolves the base body size");
 // ── (ty-cmp) Phase 5.3, per-mode COMPARE: one specimen column per breakpoint mode (Base + each mode),
-// side by side in one pannable scene (mirrors Color's "Both"). _typeModeOverride forces each column's mode. ──
+// side by side in one pannable scene (light columns first, then dark). _typeModeOverride forces each column's mode. ──
 // the doc still carries the _bpId mode (bodyBase 20); the Mode control offers a Compare item now that ≥1 mode exists.
 ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && e.getAttribute("data-fk") === "tmode:compare").length === 1, "(ty-cmp) the Mode control offers a Compare item when ≥1 breakpoint mode exists");
 app.typeMode = "compare"; app.render(); flushRaf();

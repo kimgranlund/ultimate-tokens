@@ -11,7 +11,7 @@ audience: builder, reviewer, planner
 ---
 # SPEC: Muted base ramps, a per-palette prime system, and 8 brand-derived data palettes
 
-> Superseded in part by R94 to R98 (#785): a group's Base chroma is now a whole-ramp damper (the at-100 ramp times g/100, damp only), not REQ-002's absolute target, and Material defaults to 100/60, not 30/60 (EX-2's `chroma 30` Neutral ramp no longer holds). The byte identity of EX-1 and REQ-003 holds for chroma-100 subjects only, and the fixtures of AC-003(a) and AC-006 pin the damped construction (see EX-1, REQ-003, AC-003 and AC-006). The lines that still state Material 30 as the default or an absolute ramp target (REQ-001's shipped defaults, REQ-003's "Neutral (29 vs 30)", AC-007's `chroma 30` Neutral ramp, G2, and the Open follow-up on the material 30/60 values) are the pre-#785 record and stay as written.
+> Superseded in part by R94 to R98 (#785): a group's Base chroma is now a whole-ramp damper (the at-100 ramp times g/100, damp only), not REQ-002's absolute target, and Material defaults to 100/60, not 30/60 (EX-2's `chroma 30` Neutral ramp no longer holds). The byte identity of EX-1 and REQ-003 holds for chroma-100 subjects only, and the fixtures of AC-003(a) and AC-006 pin the damped construction (see EX-1, REQ-003, AC-003 and AC-006). The lines that still state Material 30 as the default or an absolute ramp target (REQ-001's shipped defaults, REQ-007's "ramp at 30" product defaults, REQ-003's "Neutral (29 vs 30)", AC-007's `chroma 30` Neutral ramp, G2, and the Open follow-up on the material 30/60 values) are the pre-#785 record and stay as written.
 
 Intent records: GitHub issue #503 (`kind:feature`, `size:big`, `lane:color-engine`) and #533 (the
 prime-system re-ruling, Findings 2026-09-11). Companion design: `docs/specs/lld-muted-base-key-spikes.md`.
@@ -441,7 +441,7 @@ ladder, their own chroma control, and their own token group; the editor strip re
 - **AC-006** The full tonal verifier passes; the damped stop keeps its at-100 L* within the two
   pixels' rounding floors on perceptual and peak, and exactly on even (`group-chroma-damper` (v);
   probe on a hue 267, skew -20 palette at group values 30, 60 and 95: largest stop tone delta
-  0.177 to 0.200 on perceptual and peak, 0 on even). Its
+  0.177 to 0.200 over the 19 display stops, up to 0.212 over the 25 export stops, on perceptual and peak, 0 on even). Its
   0.2.0 pin is no longer unchanged: #785 regenerated the `tonal-legacy` fixture (512 of 800 cells
   moved), and it pins the damped construction for 14 of the 16 defaults (see AC-003(a)).
 - **AC-007** `DEFAULT_CONTROLS.baseIntensity === 100 && primeChroma === 100`; in
