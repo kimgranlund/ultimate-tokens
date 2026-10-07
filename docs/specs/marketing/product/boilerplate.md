@@ -35,7 +35,7 @@ Derive OKLCH-true color, type & geometry systems from one source. Export to CSS,
 > Ultimate Tokens turns a few perceptual decisions into a complete design system. Color is
 > modeled where human vision is even, OKLCH-native, HEX derived only for output, so a single key
 > color becomes a measured tonal ramp and 53 semantic roles, resolved for light and dark in one pass.
-> Typography and geometry compose from the same source: eleven type voices on a modular scale, a size
+> Typography and geometry compose from the same source: fifteen type voices on a modular scale, a size
 > ramp built on one centering law. Every export, CSS custom properties, W3C design tokens, Tailwind,
 > shadcn, Panda CSS, Radix, Figma variables (with bound paint & text style swatches), and a
 > Brand-Kit MCP server your AI agents read directly, each under whichever naming convention your
