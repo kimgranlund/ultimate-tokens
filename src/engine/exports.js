@@ -1122,6 +1122,47 @@ export function radixPaletteKeys(slugs) {
   return slugs.map((n, i) => radixPaletteKey(n, new Set(slugs.filter((_, j) => j !== i))));
 }
 
+// flatNamesOf(palette), every hyphen-flat token name ONE palette emits (#787): its bare accent role
+// (`x`), the semantic role suffixes (`x-hover`, `x-on-surface`, ...), the raw stops padded and
+// unpadded (`x-050` on the CSS surfaces, `x-50` on Tailwind's), the seven prime steps (primeSlug),
+// the scrims (refSlug), and any retained key colours (`x-key-{role}`). Derived from the SAME helpers
+// the emitters call, never a typed suffix list, so a new role or step is covered with no edit here
+// (test/engine/exports.mjs's "slug-collision" gate pins the set against real CSS output).
+export function flatNamesOf(palette) {
+  const n = slug(palette.name);
+  const out = new Set([n]);
+  const add = (tail) => out.add(`${n}-${tail}`);
+  for (const r of semanticRoles(n)) out.add(n + r.suffix);
+  for (const s of EXPORT_STOPS) { add(pad3(s)); add(String(s)); }
+  for (const step of PRIME_STEPS) add(primeSlug(step));
+  for (const base of SCRIM_BASES) for (const step of SCRIM_STEPS) add(refSlug(`${base}-${step}`));
+  for (const kc of Array.isArray(palette.keyColors) ? palette.keyColors : []) add(`key-${kc.role}`);
+  return out;
+}
+
+// paletteNameClash(name, palettes, selfIndex), the cross-palette slug guard (#787). Flat token names
+// join a palette's slug and a suffix with `-`, so a palette slugged `x-prime` (its bare accent role,
+// `x-prime`) emits the same name as palette `x`'s centre prime step, and likewise `x-hover`,
+// `x-500`, ... for every suffix. Returns the NAME of the first other palette whose emitted flat names
+// overlap the ones `name` would emit, or null. Checked in both directions by intersecting the two
+// name sets, so adding `x-prime` beside `x` and adding `x` beside `x-prime` both clash. `selfIndex`
+// is the palette being renamed (skipped, its key colours ride along); disabled palettes count too,
+// because enabling one later would otherwise create the collision silently. An EXACT slug match
+// (two palettes both "Neutral") is a different, already-ruled case (#630 F1: last write wins) and is
+// not reported here. Policy: the UI REFUSES a clashing rename and skips a clashing generated name,
+// it never auto-renames, because renaming a palette renames every token it emits (a Figma
+// migration) and this guard must leave every existing document's output byte-identical.
+export function paletteNameClash(name, palettes, selfIndex = -1) {
+  const n = slug(name);
+  const mine = flatNamesOf({ name, keyColors: selfIndex >= 0 ? palettes[selfIndex].keyColors : undefined });
+  for (let j = 0; j < palettes.length; j++) {
+    if (j === selfIndex) continue;
+    if (slug(palettes[j].name) === n) continue;
+    for (const f of flatNamesOf(palettes[j])) if (mine.has(f)) return palettes[j].name;
+  }
+  return null;
+}
+
 // flattenOver(end, bgRgb), Vocabulary "Flattened": a translucent role end composited over an
 // opaque background in 8-bit sRGB. Exported per REQ-041 for the test's independent check; no
 // caller remains inside exportRadix after issue #588's correction (steps 1..8 are raw stops,
