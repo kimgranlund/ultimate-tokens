@@ -1145,7 +1145,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     const refMod = X.exportRadixModule(refPreset);
     const valMod = X.exportRadixModule(valPreset);
     const lines = refMod.split("\n");
-    if (lines[0] !== `/* ultimate-tokens export schema ${5} */`) FAIL(G, `reference module first line = ${JSON.stringify(lines[0])}`);
+    if (lines[0] !== `/* ultimate-tokens export schema ${6} */`) FAIL(G, `reference module first line = ${JSON.stringify(lines[0])}`);
     if (!lines[1].startsWith("/* Radix preset")) FAIL(G, `reference module header does not open with the Radix preset comment: ${JSON.stringify(lines[1])}`);
     if (!lines[2].includes("LINKS")) FAIL(G, `the header's second comment line must name the link form, got ${JSON.stringify(lines[2])}`);
     if (!/css-hex|css-oklch/.test(refMod)) FAIL(G, "the reference header never tells the consumer which export to load first");
@@ -2331,23 +2331,20 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 
 // ── hpg-export-json-meta (SPEC 0.3.0 RP-2, ticket #573, plan PR #571 step E2), exportJSON's
 // top-level `meta` states the chroma policy the export was resolved under: `generator` names the
-// tool, `controls` deep-equals stateOf(doc)'s OWN resolved baseChroma/primeChroma/paletteGroups,
-// never a stale or independently re-derived snapshot. `doc` below carries NON-default controls
-// (every group differs from GROUP_DEFAULTS, the two global fallbacks differ from 100/100) so the
-// deep-equal actually exercises resolution, not a default-vs-default match that would pass even if
-// exportJSON ignored `state` entirely. `schemaVersion` itself is covered by the hpg-export-schema-stamp
-// gate below (E6, #577), not here.
+// tool, `controls` is exactly stateOf(doc)'s OWN resolved global k factors { baseChroma, primeChroma }
+// (#804: no group facet, each palette's own Base chroma is already in its stops), never a stale or
+// independently re-derived snapshot. `doc` below carries NON-default controls (the two global k
+// factors differ from 100/100, and a palette carries its own baseChroma that must NOT leak into the
+// block) so the check actually exercises resolution, not a default-vs-default match that would pass
+// even if exportJSON ignored `state` entirely. `schemaVersion` itself is covered by the
+// hpg-export-schema-stamp gate below (E6, #577), not here.
 {
+  const dd = defaultDocument();
   const doc = {
-    ...defaultDocument(),
+    ...dd,
     baseIntensity: 42,
     primeChroma: 77,
-    paletteGroups: {
-      material: { baseChroma: 12, primeChroma: 34 },
-      brand: { baseChroma: 56, primeChroma: 78 },
-      system: { baseChroma: 90, primeChroma: 11 },
-      data: { baseChroma: 100, primeChroma: 100 }, // data stays locked to its own default (REQ-002)
-    },
+    palettes: dd.palettes.map((p) => (p.name === "Primary" ? { ...p, baseChroma: 56 } : p)),
   };
   const state = stateOf(doc);
   const json = X.exportJSON(state);
@@ -2359,11 +2356,10 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
     else {
       if (c.baseChroma !== state.baseChroma) FAIL("hpg-export-json-meta", `meta.controls.baseChroma = ${c.baseChroma}, want stateOf(doc).baseChroma ${state.baseChroma}`);
       if (c.primeChroma !== state.primeChroma) FAIL("hpg-export-json-meta", `meta.controls.primeChroma = ${c.primeChroma}, want stateOf(doc).primeChroma ${state.primeChroma}`);
-      if (JSON.stringify(c.paletteGroups) !== JSON.stringify(state.paletteGroups)) FAIL("hpg-export-json-meta", `meta.controls.paletteGroups drifted from stateOf(doc).paletteGroups: ${JSON.stringify(c.paletteGroups)} vs ${JSON.stringify(state.paletteGroups)}`);
+      if (JSON.stringify(c) !== JSON.stringify({ baseChroma: state.baseChroma, primeChroma: state.primeChroma })) FAIL("hpg-export-json-meta", `meta.controls must be exactly { baseChroma, primeChroma } (#804, no group facet), got ${JSON.stringify(c)}`);
       // not a trivial pass: the resolved values must actually be the doc's own non-default numbers.
       if (c.baseChroma !== 42) FAIL("hpg-export-json-meta", `meta.controls.baseChroma didn't resolve the doc's own non-default value (got ${c.baseChroma}, want 42)`);
       if (c.primeChroma !== 77) FAIL("hpg-export-json-meta", `meta.controls.primeChroma didn't resolve the doc's own non-default value (got ${c.primeChroma}, want 77)`);
-      if (c.paletteGroups.brand.baseChroma !== 56 || c.paletteGroups.brand.primeChroma !== 78) FAIL("hpg-export-json-meta", `meta.controls.paletteGroups.brand didn't resolve the doc's own non-default override (got ${JSON.stringify(c.paletteGroups.brand)})`);
     }
   }
 
@@ -2385,7 +2381,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 // `v` is bumped alongside it in the same PR, that IS the bump-rule contract, not a bug in the gate.
 {
   const G = "hpg-export-schema-stamp";
-  const v = 5;
+  const v = 6;
   const doc = defaultDocument();
   const state = stateOf(doc);
   const tsc = typeScale({});

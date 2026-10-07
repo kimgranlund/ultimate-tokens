@@ -379,8 +379,8 @@ answer "why is neutral muted" without re-deriving it:
 
 | Format | Placement |
 |---|---|
-| JSON | a top-level `meta.controls: { baseChroma, primeChroma, paletteGroups }`, verbatim off the same resolved state every palette in the file was derived from |
-| Brand-kit (`brandKit()`) | the same shape, `kit.controls: { baseChroma, primeChroma, paletteGroups }` |
+| JSON | a top-level `meta.controls: { baseChroma, primeChroma }`, the two global k factors (multiplied onto every palette, #804), verbatim off the same resolved state every palette in the file was derived from; each palette's own Base chroma is already in its stops |
+| Brand-kit (`brandKit()`) | the same shape, `kit.controls: { baseChroma, primeChroma }` |
 | Every other format | not emitted, values already reflect the resolved controls, so a CSS/DTCG/UI3/Tailwind/ShadCN/Panda/Radix consumer never needs the policy that produced them |
 
 `baseChroma` is the public field name in both places, never the document-level `baseIntensity` the
@@ -388,7 +388,7 @@ UI still carries internally (`src/ui/persist.js`); AC-004 (`spec-muted-base-key-
 literal string `baseIntensity` from `src/engine` entirely, including as a property name, and this is
 the export-facing rename boundary that keeps it out.
 
-**The schema stamp** (E6, ticket #577, `EXPORT_SCHEMA_VERSION`, currently `2`), one constant, stamped
+**The schema stamp** (E6, ticket #577, `EXPORT_SCHEMA_VERSION`, currently `6`), one constant, stamped
 wherever a surface has a slot for it; absence on an older export meant v1:
 
 | Format | Placement |

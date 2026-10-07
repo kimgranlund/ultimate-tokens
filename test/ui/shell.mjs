@@ -198,28 +198,30 @@ const rampRgbDist = (a, b) => { let m = 0; for (let i = 0; i < a.length; i++) { 
   if (none.hueSpace !== "oklch") FAIL("oklch-native", `persist: a doc without hueSpace hydrated to ${none.hueSpace}, want oklch (new default)`);
 }
 
-// ── resolver gates (SPEC spec-muted-base-key-spikes 0.3.0, ticket #559: absolute per-group base
-// chroma + prime chroma resolution), AC-002, AC-003(b), AC-007, AC-008. ─────────────────────────
+// ── resolver gates (SPEC spec-muted-base-key-spikes 0.3.0; #804: per-palette Base chroma times the
+// global k, one global Prime chroma k), AC-002, AC-003(b), AC-007, AC-008. ──────────────────────
 
-// (AC-002) rampChromaOf(p, doc) equals paletteGroups[g].baseChroma when present, else
-// controls.baseIntensity; it ignores palette.chroma AND palette.intensity entirely. A probe at
-// chroma:10, intensity:100 (a dead legacy field, still readable if stored) in a group whose
-// baseChroma is set to 60 must render the chroma-60 ramp, on BOTH of tonal.js's own ramp paths
-// (toneMode "even" and "perceptual"), never the palette's own chroma:10.
+// (AC-002) rampChromaOf(p, doc) equals the palette's own baseChroma (absent 100) times
+// doc.baseIntensity / 100; it ignores palette.chroma AND palette.intensity entirely. A probe at
+// chroma:10, intensity:100 (a dead legacy field, still readable if stored) with its own baseChroma
+// 60 must render the chroma-60 ramp, and under a global k of 50 the chroma-30 ramp, on BOTH of
+// tonal.js's own ramp paths (toneMode "even" and "perceptual"), never the palette's own chroma:10.
 {
-  const probeBase = { name: "Probe", hue: 210, chroma: 10, intensity: 100, skew: 0, lift: 0, group: "material", on: true };
+  const probeBase = { name: "Probe", hue: 210, chroma: 10, intensity: 100, skew: 0, lift: 0, group: "material", on: true, baseChroma: 60 };
   for (const toneMode of ["even", "perceptual"]) {
-    const doc = M.defaultDocument();
-    doc.toneMode = toneMode;
-    doc.paletteGroups.material = { ...doc.paletteGroups.material, baseChroma: 60 };
-    doc.palettes = [probeBase];
-    const rc = M.rampChromaOf(doc.palettes[0], doc);
-    if (rc !== 60) FAIL("ac002", `rampChromaOf ignored the group override (got ${rc}, want 60) at toneMode ${toneMode}`);
-    const view = M.projectView(doc);
-    const got = view.palettes[0].fullRamp.map((s) => s.hex);
-    const ctl = { ...M.DEFAULT_CONTROLS, toneMode };
-    const want = paletteStops({ hue: probeBase.hue, chroma: 60, skew: probeBase.skew, lift: probeBase.lift }, ctl, EXPORT_STOPS).map((s) => s.hex);
-    if (JSON.stringify(got) !== JSON.stringify(want)) FAIL("ac002", `probe ramp at toneMode ${toneMode} did not match a direct chroma-60 call, palette.chroma/intensity leaked into the ramp`);
+    for (const [k, want] of [[100, 60], [50, 30]]) {
+      const doc = M.defaultDocument();
+      doc.toneMode = toneMode;
+      doc.baseIntensity = k;
+      doc.palettes = [probeBase];
+      const rc = M.rampChromaOf(doc.palettes[0], doc);
+      if (rc !== want) FAIL("ac002", `rampChromaOf got ${rc}, want ${want} (baseChroma 60 times k ${k}) at toneMode ${toneMode}`);
+      const view = M.projectView(doc);
+      const got = view.palettes[0].fullRamp.map((s) => s.hex);
+      const ctl = { ...M.DEFAULT_CONTROLS, toneMode };
+      const direct = paletteStops({ hue: probeBase.hue, chroma: want, skew: probeBase.skew, lift: probeBase.lift }, ctl, EXPORT_STOPS).map((s) => s.hex);
+      if (JSON.stringify(got) !== JSON.stringify(direct)) FAIL("ac002", `probe ramp at toneMode ${toneMode}, k ${k} did not match a direct chroma-${want} call, palette.chroma/intensity leaked into the ramp`);
+    }
   }
 }
 
@@ -227,7 +229,7 @@ function directAt(p, chroma, ctl) {
   return paletteStops({ hue: p.hue, chroma, skew: p.skew, lift: p.lift, anchor: p.anchor }, ctl, EXPORT_STOPS).map((s) => s.hex);
 }
 function readsChroma(row, p, ctl) { return JSON.stringify(row) === JSON.stringify(directAt(p, p.chroma, ctl)); }
-// The group damper tonal.js applies to the at-100 render (#785 U2, R94): every stop's chroma
+// The damper tonal.js applies to the at-100 render (#785 U2, R94): every stop's chroma
 // coordinate becomes r times its at-100 value, anchored or not, with r = chroma / 100 clamped to
 // [0, 1] (R95, damp only).
 function damperRatio(chroma) {
@@ -239,12 +241,12 @@ function damperRatio(chroma) {
 // identity rule must hold LIVE: for every default palette whose chroma equals its resolved
 // rampChroma, the fixture row equals a direct paletteStops(p, controls, EXPORT_STOPS) call at
 // p.chroma; for every other default palette it must differ.
-// #785 U2 (R94, R95): the group value is a damper r on the at-100 ramp, so the rule reads: every row
-// equals the direct call at its rampChroma; the must-differ arm (row vs the direct call at p.chroma)
-// applies whenever the two damper ratios differ, and a skip is printed only where both clamp to the
-// same r (a value past 100 damps nothing). At the defaults every group sits at 100, so each palette
-// whose chroma is below 100 must differ; the witness below keeps the arm discriminating below 100,
-// and its control proves the predicate reds on a row rendered at p.chroma.
+// #785 U2 (R94, R95): the resolved value is a damper r on the at-100 ramp, so the rule reads: every
+// row equals the direct call at its rampChroma; the must-differ arm (row vs the direct call at
+// p.chroma) applies whenever the two damper ratios differ, and a skip is printed only where both clamp
+// to the same r (a value past 100 damps nothing). At the defaults every palette sits at 100, so each
+// palette whose chroma is below 100 must differ; the witness below keeps the arm discriminating below
+// 100, and its control proves the predicate reds on a row rendered at p.chroma.
 {
   const fixturePath = join(HERE, "fixtures", "default-doc-ramps.json");
   if (!existsSync(fixturePath)) FAIL("ac003b", "test/ui/fixtures/default-doc-ramps.json is missing, run node scripts/gen-ramp-fixture.mjs");
@@ -268,37 +270,38 @@ function damperRatio(chroma) {
         FAIL("ac003b", `REQ-003 identity: "${p.name}" has chroma ${p.chroma} !== rampChroma ${rc}, but its fixture row is byte-identical to the direct chroma-${p.chroma} call (should differ)`);
       }
     }
-    // Witness: Neutral with its group's baseChroma at 10, so the damper ratios (0.10 vs its chroma's
+    // Witness: Neutral with its own baseChroma at 10, so the damper ratios (0.10 vs its chroma's
     // 0.29) differ and the must-differ arm must hold on a live projectView row.
     const wd = M.defaultDocument();
-    const wn = wd.palettes.find((p) => p.name === "Neutral");
-    const wg = M.paletteGroup(wn);
-    wd.paletteGroups = { ...wd.paletteGroups, [wg]: { ...(wd.paletteGroups || {})[wg], baseChroma: 10 } };
+    const wi = wd.palettes.findIndex((p) => p.name === "Neutral");
+    wd.palettes[wi] = { ...wd.palettes[wi], baseChroma: 10 };
+    const wn = wd.palettes[wi];
     const wrc = M.rampChromaOf(wn, wd);
     const wrow = M.projectView(wd).palettes.find((v) => v.name === "Neutral").fullRamp.map((s) => s.hex);
-    if (wrc !== 10) FAIL("ac003b", `witness: Neutral's rampChroma is ${wrc} under a group baseChroma of 10, want 10`);
+    if (wrc !== 10) FAIL("ac003b", `witness: Neutral's rampChroma is ${wrc} under its own baseChroma of 10, want 10`);
     else if (damperRatio(wrc) === damperRatio(wn.chroma)) FAIL("ac003b", `witness: Neutral's damper ratios ${damperRatio(wrc)} / ${damperRatio(wn.chroma)} do not differ, the witness cannot discriminate`);
     else {
-      if (JSON.stringify(wrow) !== JSON.stringify(directAt(wn, wrc, ctl))) FAIL("ac003b", "witness: Neutral's row at group baseChroma 10 differs from the direct rampChroma-10 call");
-      if (readsChroma(wrow, wn, ctl)) FAIL("ac003b", `witness: Neutral's row at group baseChroma 10 equals the direct chroma-${wn.chroma} call, the ramp read palette.chroma`);
-      // Control: a LIVE row whose group baseChroma equals Neutral's own chroma must be flagged by the
-      // same predicate and must differ from the witness row, so group chroma reaches the ramp and the
+      if (JSON.stringify(wrow) !== JSON.stringify(directAt(wn, wrc, ctl))) FAIL("ac003b", "witness: Neutral's row at its own baseChroma 10 differs from the direct rampChroma-10 call");
+      if (readsChroma(wrow, wn, ctl)) FAIL("ac003b", `witness: Neutral's row at its own baseChroma 10 equals the direct chroma-${wn.chroma} call, the ramp read palette.chroma`);
+      // Control: a LIVE row whose own baseChroma equals Neutral's chroma must be flagged by the same
+      // predicate and must differ from the witness row, so Base chroma reaches the ramp and the
       // must-differ arm has a gap to tell apart (a projectView that reads p.chroma makes the two equal).
       const cd = M.defaultDocument();
-      const cn = cd.palettes.find((p) => p.name === "Neutral");
-      cd.paletteGroups = { ...cd.paletteGroups, [wg]: { ...(cd.paletteGroups || {})[wg], baseChroma: cn.chroma } };
+      const ci = cd.palettes.findIndex((p) => p.name === "Neutral");
+      cd.palettes[ci] = { ...cd.palettes[ci], baseChroma: cd.palettes[ci].chroma };
+      const cn = cd.palettes[ci];
       const crow = M.projectView(cd).palettes.find((v) => v.name === "Neutral").fullRamp.map((s) => s.hex);
-      if (M.rampChromaOf(cn, cd) !== cn.chroma) FAIL("ac003b", `witness control: Neutral's rampChroma is ${M.rampChromaOf(cn, cd)} under a group baseChroma of ${cn.chroma}, want ${cn.chroma}`);
+      if (M.rampChromaOf(cn, cd) !== cn.chroma) FAIL("ac003b", `witness control: Neutral's rampChroma is ${M.rampChromaOf(cn, cd)} under its own baseChroma of ${cn.chroma}, want ${cn.chroma}`);
       else if (!readsChroma(crow, cn, ctl)) FAIL("ac003b", `witness control: the must-differ predicate did not flag a live row at rampChroma ${cn.chroma} = palette.chroma`);
-      else if (JSON.stringify(crow) === JSON.stringify(wrow)) FAIL("ac003b", `witness control: Neutral's rows at group baseChroma 10 and ${cn.chroma} are identical, group chroma does not reach the ramp`);
+      else if (JSON.stringify(crow) === JSON.stringify(wrow)) FAIL("ac003b", `witness control: Neutral's rows at its own baseChroma 10 and ${cn.chroma} are identical, Base chroma does not reach the ramp`);
     }
   }
 }
 
-// (AC-007) DEFAULT_CONTROLS.baseIntensity === 100 && primeChroma === 100 (the global fallback, only
-// reached when a group itself carries no value); in projectView(defaultDocument()) Neutral's ramp
-// equals its OWN chroma-100 ramp (Material's default, 30 until #785 U2's R96) and every one of the eight data palettes'
-// ramps equals its own chroma-100 ramp (Data's default).
+// (AC-007) DEFAULT_CONTROLS.baseIntensity === 100 && primeChroma === 100 (the global k factors, #804);
+// in projectView(defaultDocument()) Neutral's ramp equals its OWN chroma-100 ramp (no palette carries
+// a baseChroma at the defaults) and every one of the eight data palettes' ramps equals its own
+// chroma-100 ramp.
 {
   if (M.DEFAULT_CONTROLS.baseIntensity !== 100) FAIL("ac007", `DEFAULT_CONTROLS.baseIntensity is ${M.DEFAULT_CONTROLS.baseIntensity}, want 100`);
   if (M.DEFAULT_CONTROLS.primeChroma !== 100) FAIL("ac007", `DEFAULT_CONTROLS.primeChroma is ${M.DEFAULT_CONTROLS.primeChroma}, want 100`);
@@ -308,41 +311,36 @@ function damperRatio(chroma) {
   const neutral = dd.palettes.find((p) => p.name === "Neutral");
   const neutralGot = dv.palettes.find((p) => p.name === "Neutral").fullRamp.map((s) => s.hex);
   const neutralWant = paletteStops({ hue: neutral.hue, chroma: 100, skew: neutral.skew, lift: neutral.lift, anchor: neutral.anchor }, ctl, EXPORT_STOPS).map((s) => s.hex);
-  if (JSON.stringify(neutralGot) !== JSON.stringify(neutralWant)) FAIL("ac007", "Neutral's ramp does not equal its own chroma-100 ramp (Material's default)");
+  if (JSON.stringify(neutralGot) !== JSON.stringify(neutralWant)) FAIL("ac007", "Neutral's ramp does not equal its own chroma-100 ramp (the default Base chroma)");
   for (let i = 1; i <= 8; i++) {
     const name = `Data ${i}`;
     const dp = dd.palettes.find((p) => p.name === name);
     const got = dv.palettes.find((p) => p.name === name).fullRamp.map((s) => s.hex);
     const want = paletteStops({ hue: dp.hue, chroma: 100, skew: dp.skew, lift: dp.lift, anchor: dp.anchor }, ctl, EXPORT_STOPS).map((s) => s.hex);
-    if (JSON.stringify(got) !== JSON.stringify(want)) { FAIL("ac007", `${name}'s ramp does not equal its own chroma-100 ramp (Data's default)`); break; }
+    if (JSON.stringify(got) !== JSON.stringify(want)) { FAIL("ac007", `${name}'s ramp does not equal its own chroma-100 ramp (the default Base chroma)`); break; }
   }
 }
 
-// (AC-008) primeChromaOf(p, doc): a brand palette's stored override wins over its group's own
-// default; a data palette's stored override is IGNORED (its group default applies instead);
-// moving that same palette out of Data restores the override; the material group's default 60
-// reaches Neutral's prime strip (its flat OKHSL saturation `s` equals the SAME palette's own
-// primeChroma-100 saturation ("key.s") times 0.6).
+// (AC-008, #804) primeChromaOf(p, doc) is the one global Prime chroma k for every palette: a stray
+// per-palette primeChroma is never read, a palette's group never matters, and the global value
+// reaches Neutral's prime strip (its flat OKHSL saturation `s` at k 60 equals the SAME palette's own
+// k-100 saturation ("key.s") times 0.6).
 {
   const dd = M.defaultDocument();
+  dd.primeChroma = 60;
   const brandIdx = dd.palettes.findIndex((p) => M.paletteGroup(p) === "brand");
   dd.palettes[brandIdx] = { ...dd.palettes[brandIdx], primeChroma: 37 };
-  if (M.primeChromaOf(dd.palettes[brandIdx], dd) !== 37) FAIL("ac008", "a brand palette's own primeChroma override must win over Brand's group default (100)");
-
+  if (M.primeChromaOf(dd.palettes[brandIdx], dd) !== 60) FAIL("ac008", `a palette's stray primeChroma must never be read, got ${M.primeChromaOf(dd.palettes[brandIdx], dd)}, want the global 60`);
   const dataIdx = dd.palettes.findIndex((p) => M.paletteGroup(p) === "data");
-  dd.palettes[dataIdx] = { ...dd.palettes[dataIdx], primeChroma: 12 };
-  if (M.primeChromaOf(dd.palettes[dataIdx], dd) !== 100) FAIL("ac008", `a Data palette's stored primeChroma override must be ignored (Data is locked), got ${M.primeChromaOf(dd.palettes[dataIdx], dd)}, want the group default 100`);
-  const movedOut = { ...dd.palettes[dataIdx], group: "brand" };
-  if (M.primeChromaOf(movedOut, dd) !== 12) FAIL("ac008", "moving a Data palette out of Data must restore its stored primeChroma override");
+  if (M.primeChromaOf(dd.palettes[dataIdx], dd) !== 60) FAIL("ac008", "a Data palette must take the same global Prime chroma k");
+  if (M.primeChromaOf({ ...dd.palettes[dataIdx], group: "material" }, dd) !== 60) FAIL("ac008", "moving a palette between groups must never change its Prime chroma");
 
   const nIdx = dd.palettes.findIndex((p) => p.name === "Neutral");
-  const view = M.projectView(dd);
-  const neutralS = view.palettes[nIdx].prime[0].s;
+  const neutralS = M.projectView(dd).palettes[nIdx].prime[0].s;
   const keyDoc = JSON.parse(JSON.stringify(dd));
-  keyDoc.palettes[nIdx].group = "brand"; // Brand's own default primeChroma is 100 -> reproduces key.s exactly
-  const keyView = M.projectView(keyDoc);
-  const keyS = keyView.palettes[nIdx].prime[0].s;
-  if (Math.abs(neutralS - keyS * 0.6) > 1e-9) FAIL("ac008", `Neutral's prime saturation ${neutralS} must equal key.s*0.6 = ${keyS * 0.6} (Material's default primeChroma 60)`);
+  keyDoc.primeChroma = 100; // k 100 reproduces key.s exactly
+  const keyS = M.projectView(keyDoc).palettes[nIdx].prime[0].s;
+  if (Math.abs(neutralS - keyS * 0.6) > 1e-9) FAIL("ac008", `Neutral's prime saturation ${neutralS} must equal key.s*0.6 = ${keyS * 0.6} (global Prime chroma 60)`);
 }
 
 // (resolver-agree, conductor ruling 2026-09-11 on PR #566) The two ramp paths cannot drift apart:

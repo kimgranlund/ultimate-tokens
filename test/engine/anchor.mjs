@@ -69,15 +69,15 @@ function rgbToOklchIndep([r, g, b]) {
 }
 
 // a minimal single-palette exports.js state, the SAME shape controlsOf()/enabledPalettes() expect
-// (exports.js:207-241/245-247); `paletteGroups: {}` makes rampChromaOf fall back to `baseChroma`
-// (irrelevant to prime, which never reads the ramp chroma), and `roleOverrides: {}` so
+// (exports.js:207-241/245-247); `baseChroma: 100` is the global k rampChromaOf multiplies each
+// palette's own Base chroma by (irrelevant to prime, which never reads the ramp chroma), and `roleOverrides: {}` so
 // applyRoleOverrides has a defined object to iterate.
 function stateFor(p) {
   return {
     palettes: [{ ...p, on: true }],
     curve: "logistic", tension: 0, lmin: 5, lmax: 100, damp: 80, dampCurve: 1.5, dampAmp: 0, dampBias: 0,
     hueSpace: p.hueSpace ?? "oklch", toneMode: "perceptual", vibrancy: 0, onColorMode: "fixed", accentRef: "mode",
-    relChroma: false, chromaFloor: 40, baseChroma: 100, primeChroma: 100, paletteGroups: {},
+    relChroma: false, chromaFloor: 40, baseChroma: 100, primeChroma: 100,
     roleOverrides: {},
   };
 }

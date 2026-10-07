@@ -52,7 +52,7 @@ export const relLumExp = (rgb) => {
 // Bump rule (adding-export-formats/SKILL.md carries the same note): any additive or shape change
 // to an emitted format bumps this ONE constant, once, across every surface, in the same PR; a
 // value-only change (e.g. a chroma default) never bumps it.
-export const EXPORT_SCHEMA_VERSION = 5;
+export const EXPORT_SCHEMA_VERSION = 6;
 
 // ── Constants (from data/role-table.json) ─────────────────────────────────────
 // Scrims are a 500-based translucency ramp: a scrim primitive "{n}/500-{step}" is the
@@ -214,20 +214,16 @@ function controlsOf(state) {
     dampCurve: state.dampCurve ?? DEFAULT_CONTROLS.dampCurve,
     dampAmp: state.dampAmp ?? DEFAULT_CONTROLS.dampAmp,
     dampBias: state.dampBias ?? DEFAULT_CONTROLS.dampBias,
-    // baseChroma (SPEC 0.3.0 REQ-002/004): the GLOBAL fallback group damper value (#785), used only when a
-    // palette's group carries no value of its own. Named `state.baseChroma` here, a DIFFERENT name
-    // than the field persist.js/model.mjs persist on the document (kept there for backward compat),
+    // baseChroma (SPEC 0.3.0 REQ-002/004, #804): the GLOBAL Base chroma k factor, multiplied onto every
+    // palette's own `baseChroma` (the ramp damper, #785). Named `state.baseChroma` here, a DIFFERENT
+    // name than the field persist.js/model.mjs persist on the document (kept there for backward compat),
     // because a retired per-stop multiplier control once lived under that old name right in this file,
-    // and AC-004 bars its reintroduction, in any form, under src/engine. model.mjs's stateOf() is the
-    // one place that renames the document's own field onto this one when building `state`.
+    // and AC-004 bars its reintroduction, in any form, under src/engine. model.mjs's stateOf() (and
+    // dsDocOf() for the DS bundles) is where the document's own field is renamed onto this one.
     baseChroma: state.baseChroma ?? 100,
-    // primeChroma (REQ-008/050..057): the prime system's own chroma control, a plain 100 default.
+    // primeChroma (REQ-008/050..057, #804): the GLOBAL Prime chroma k factor, the same for every
+    // palette's prime strip, a plain 100 default.
     primeChroma: state.primeChroma ?? 100,
-    // paletteGroups (REQ-002/008): each group's own { baseChroma, primeChroma, locked? }, default-filled
-    // by model.mjs's resolvePaletteGroups() before this state ever reaches an exporter. derivePalette
-    // below reads controls.paletteGroups[palette.group], model.mjs also stamps `palette.group` onto
-    // every state-shaped palette object, so this file never re-derives the by-name default rule.
-    paletteGroups: state.paletteGroups ?? {},
     hueSpace: state.hueSpace ?? "cam16", // a raw legacy state without the field was authored in cam16 (mirror the UI's legacy-preservation stamp); a live doc always carries it explicitly
     // distribution mode + its shapers, previously dropped here, so exports always used the
     // default mode regardless of the doc. Threaded now so exports match what the UI renders.
@@ -272,11 +268,10 @@ function derivePalette(palette, controls, overrides) {
   // rampChroma/primeChromaResolved (SPEC 0.3.0 REQ-002/004/008, Risk 0b: "one shared resolver
   // imported by both, never two copies"), engine/resolve.mjs's OWN pure functions, the SAME ones
   // model.mjs's projectView calls, so the CSS/JSON/DTCG/… exports and the canvas agree byte for
-  // byte by construction, not by two hand-kept-in-sync formulas. `palette.group` arrives ALREADY
-  // resolved (a definite one of the four ids, never absent), model.mjs's stateOf() stamps it
-  // before this file ever sees the palette, so no by-name default rule is duplicated here either.
-  const rampChroma = rampChromaOf(palette, controls.paletteGroups, controls);
-  const primeChromaResolved = primeChromaOf(palette, controls.paletteGroups, controls);
+  // byte by construction, not by two hand-kept-in-sync formulas: the palette's own `baseChroma` times
+  // the global k for the ramp, the global prime k for the strip (#804, no group layer).
+  const rampChroma = rampChromaOf(palette, controls);
+  const primeChromaResolved = primeChromaOf(palette, controls);
   const stopList = paletteStops(
     { hue: palette.hue, chroma: rampChroma, skew: palette.skew, lift: palette.lift, hueShift: palette.hueShift, hueSameDir: palette.hueSameDir, cuspPull: palette.cuspPull, anchor: palette.anchor },
     ctl,
@@ -351,7 +346,7 @@ function derivePalette(palette, controls, overrides) {
   // primeSwatches reads controls.hueSpace/primeChroma, neither of which `ctl` needs). `chroma` is
   // the palette's OWN unresolved value (REQ-002: the ramp target above never feeds this); `primeChroma`
   // is cleared on the palette so prime.mjs's own `palette.primeChroma ?? controls.primeChroma` falls
-  // straight through to the value already resolved above (REQ-008), prime.mjs itself never changes.
+  // straight through to the global k resolved above (REQ-008, #804), whatever a stray palette carries.
   // `anchor` (ticket #681, U1) forwards straight through: prime.mjs's own branch is a no-op when it
   // is absent (byte-identical to the pre-#681 call below), and this is the ONLY site that resolves a
   // palette down into the primeSwatches() call for every emitted export format, omitting it here
@@ -505,12 +500,13 @@ export function exportJSON(state, derived) {
   // meta (SPEC 0.3.0 RP-2, ticket #573, plan PR #571 step E2): `generator` names this tool (the same
   // literal ds-export.js's `$generator`/model.mjs's `brandKit().generator` already use); `controls`
   // states the chroma policy this export was resolved under, verbatim off `state` (the SAME two
-  // global-fallback fields and `paletteGroups` derivePalette used for every palette above, never a
-  // re-derived or stale snapshot). The first control's key is `baseChroma`, not the document-level
-  // control name it's read off of: AC-004 (SPEC 0.3.0) bars that literal string from src/engine in
-  // ANY form, including as a mere property name here, see resolvePaletteGroups' own doc comment in
-  // model.mjs for the renamed-at-one-boundary rule this keeps. `schemaVersion` (RP-8, ticket #577,
-  // plan PR #571 step E6) stamps EXPORT_SCHEMA_VERSION verbatim, absence on an older export meant v1.
+  // global k factors derivePalette used for every palette above, never a re-derived or stale
+  // snapshot; each palette's own Base chroma is already in its stops, #804). The first control's key
+  // is `baseChroma`, not the document-level control name it's read off of: AC-004 (SPEC 0.3.0) bars
+  // that literal string from src/engine in ANY form, including as a mere property name here, see
+  // model.mjs's stateOf() for the renamed-at-one-boundary rule this keeps. `schemaVersion` (RP-8,
+  // ticket #577, plan PR #571 step E6) stamps EXPORT_SCHEMA_VERSION verbatim, absence on an older
+  // export meant v1.
   const out = {
     meta: {
       generator: "Ultimate Tokens",
@@ -518,7 +514,6 @@ export function exportJSON(state, derived) {
       controls: {
         baseChroma: state.baseChroma,
         primeChroma: state.primeChroma,
-        paletteGroups: state.paletteGroups,
       },
     },
   };

@@ -20,7 +20,7 @@ const ok = (c, m) => { if (!c) fails.push(m); };
 // 1. generate a real brand kit from the default doc (no systems arg → all three, the back-compat default)
 const kit = brandKit(defaultDocument());
 // $schema/2 (RP-8, ticket #577, plan PR #571 step E6): EXPORT_SCHEMA_VERSION stamped verbatim.
-ok(kit.$schema === "ultimate-tokens-brand-kit/5" && kit.palettes.length === 16, `brandKit shape: $schema=${kit.$schema}, ${kit.palettes.length} palettes (want ultimate-tokens-brand-kit/5, 16)`);
+ok(kit.$schema === "ultimate-tokens-brand-kit/6" && kit.palettes.length === 16, `brandKit shape: $schema=${kit.$schema}, ${kit.palettes.length} palettes (want ultimate-tokens-brand-kit/6, 16)`);
 // ZIP PACKAGE VERSION (#638 review F1): the downloaded Brand-Kit MCP zip declares a package.json
 // version, and it must be the version the server it packages reports over MCP. app.js used to carry
 // a hand-kept copy of that string, which the EXPORT_SCHEMA_VERSION 2 -> 3 bump left at 0.2.0 while
@@ -83,27 +83,24 @@ ok(!geomOnly.palettes && !geomOnly.type && geomOnly.geometry, "brandKit({geometr
 }
 
 // controls (SPEC 0.3.0 RP-2, ticket #573, plan PR #571 step E2): the brand-kit states the chroma
-// policy it was generated under, the SAME shape exportJSON's `meta.controls` carries. Proven with a
-// document whose controls are NON-default (every group differs from GROUP_DEFAULTS, both global
-// fallbacks differ from 100/100) so the check exercises real resolution, not a default-vs-default
-// match that would pass even if brandKit ignored the document's controls entirely.
+// policy it was generated under, the SAME shape exportJSON's `meta.controls` carries: the two global
+// k factors { baseChroma, primeChroma } (#804, no group facet; a palette's own Base chroma is already
+// in its ramp). Proven with a document whose k factors are NON-default (both differ from 100/100) and
+// whose Primary carries its own baseChroma, so the check exercises real resolution, not a
+// default-vs-default match that would pass even if brandKit ignored the document's controls entirely.
 {
+  const dd = defaultDocument();
   const customDoc = {
-    ...defaultDocument(),
+    ...dd,
     baseIntensity: 42,
     primeChroma: 77,
-    paletteGroups: {
-      material: { baseChroma: 12, primeChroma: 34 },
-      brand: { baseChroma: 56, primeChroma: 78 },
-      system: { baseChroma: 90, primeChroma: 11 },
-      data: { baseChroma: 100, primeChroma: 100 }, // data stays locked to its own default (REQ-002)
-    },
+    palettes: dd.palettes.map((p) => (p.name === "Primary" ? { ...p, baseChroma: 56 } : p)),
   };
   const customKit = brandKit(customDoc);
   ok(customKit.controls && customKit.controls.baseChroma === 42 && customKit.controls.primeChroma === 77,
-    `brandKit(doc).controls resolves the doc's own global fallbacks (got ${JSON.stringify(customKit.controls)})`);
-  ok(customKit.controls && customKit.controls.paletteGroups && customKit.controls.paletteGroups.brand.baseChroma === 56 && customKit.controls.paletteGroups.brand.primeChroma === 78,
-    `brandKit(doc).controls.paletteGroups resolves the doc's own per-group override (got ${JSON.stringify(customKit.controls && customKit.controls.paletteGroups.brand)})`);
+    `brandKit(doc).controls resolves the doc's own global k factors (got ${JSON.stringify(customKit.controls)})`);
+  ok(JSON.stringify(customKit.controls) === JSON.stringify({ baseChroma: 42, primeChroma: 77 }),
+    `brandKit(doc).controls is exactly { baseChroma, primeChroma }, no group facet and no per-palette value (got ${JSON.stringify(customKit.controls)})`);
   ok(kit.controls && customKit.controls.baseChroma !== kit.controls.baseChroma,
     "the default doc's kit.controls differs from the custom doc's, proves controls isn't a hardcoded constant");
 }

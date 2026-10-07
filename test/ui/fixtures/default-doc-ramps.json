@@ -1,24 +1,5 @@
 {
  "generatedFrom": "hand",
- "paletteGroups": {
-  "material": {
-   "baseChroma": 30,
-   "primeChroma": 60
-  },
-  "brand": {
-   "baseChroma": 100,
-   "primeChroma": 100
-  },
-  "system": {
-   "baseChroma": 100,
-   "primeChroma": 100
-  },
-  "data": {
-   "baseChroma": 100,
-   "primeChroma": 100,
-   "locked": true
-  }
- },
  "palettes": {
   "Neutral": [
    "#FFFFFF",

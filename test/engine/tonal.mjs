@@ -435,8 +435,9 @@ for (const mode of ["perceptual", "peak"]) {
       }
     }
   }
-  // (c) AC-005 (0.3.0): the anchor holds at chroma in {20, 45, 100}, values the group's chroma damper
-  // (rampChromaOf, #785 U2: the at-100 ramp times chroma / 100) feeds `paletteStops` as `palette.chroma`.
+  // (c) AC-005 (0.3.0): the anchor holds at chroma in {20, 45, 100}, values the resolved chroma damper
+  // (rampChromaOf, #785 U2: the at-100 ramp times chroma / 100; #804: the palette's own Base chroma
+  // times the global k) feeds `paletteStops` as `palette.chroma`.
   // Budget: 1°, or the emitted pixel's own 8-bit rounding bound where that is wider. A float colour
   // solved exactly onto the hue still rounds to a pixel up to half a step off in each channel, and at
   // low chroma one step turns the hue a long way: `roundingBound` sums, per channel, half the larger
@@ -1274,7 +1275,7 @@ for (const mode of ["perceptual", "peak"]) {
 //
 //    RENDERED PATH, not a raw-chroma proxy (fixed after review pass 1; the anchor field fixed U4 pass 2
 //    addendum 2, below): each ramp is built through `rampChromaOf(pal, doc)`  -  the SAME resolved-chroma
-//    call `src/ui/model.mjs`'s `projectView` makes at line ~913, after `resolvePaletteGroups`  -  plus the
+//    call `src/ui/model.mjs`'s `projectView` makes  -  plus the
 //    palette's own `hueShift`/`hueSameDir`/`cuspPull`/`anchor`. The `anchor` field was MISSING from all
 //    four of this section's `paletteStops` calls until U4 pass 2 (addendum 2): every one of them built a
 //    fresh palette object from `pal.hue`/`chroma`/`skew`/`lift`/... but never copied `pal.anchor`, so
@@ -2155,7 +2156,8 @@ for (const mode of ["perceptual", "peak"]) {
     console.log("okl-order: okhslLAt is a function of its argument; 0/24 ramps shifted hex by call order");
 }
 
-// ── group-chroma-damper (#785 U2, owner rulings R94 to R98): the group's base chroma g is ONE damper
+// ── group-chroma-damper (#785 U2, owner rulings R94 to R98; #804: g is now the palette's own Base
+//    chroma times the global k, no group layer, the gate keeps its name): the resolved g is ONE damper
 //    on the whole ramp. Each path renders at 100, then scales its emitted chroma coordinate by
 //    r = g / 100 (OKHSL `s` on perceptual and peak, CAM16 C on even), anchored and unanchored alike,
 //    stop 500 included, damp only. Read on the default kit's Primary (anchored), the C2.4 rows.

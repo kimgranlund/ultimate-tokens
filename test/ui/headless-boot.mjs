@@ -555,7 +555,7 @@ const _selBg = bgIn("light");
 const _areaJ = app.querySelector(".canvas-area");
 _areaJ.dispatch("click", { target: _areaJ });            // target = the area itself = empty canvas
 ok(app.sel.kind === "none", "(j6) clicking empty canvas clears the palette selection (kind:none)");
-ok(app.segment === "global" && !!findIn(app.querySelector(".right-pane"), (e) => e.dataset && "group-row" in e.dataset), `(j6-seg) empty-canvas click lands on segment "global" and the right pane carries a [data-group-row] (got ${app.segment})`);
+ok(app.segment === "global" && !!findIn(app.querySelector(".right-pane"), (e) => e.dataset && e.dataset.fk === "slider:Prime chroma"), `(j6-seg) empty-canvas click lands on segment "global" and the right pane carries a [data-fk="slider:Prime chroma"] (got ${app.segment})`);
 const _deBg = bgIn("light");
 ok(/^#([0-9A-F]{2})\1\1$/.test(_deBg) && _deBg !== _selBg, `(j6b) deselected → default neutral gray backdrop (got ${_deBg}, was ${_selBg})`);
 // (j7) selecting a palette again restores its near-edge backdrop.
@@ -3153,10 +3153,10 @@ app.addStandardGeomModes(); flushRaf();
   ok(/@media \(max-width: 991px\)/.test(files[1].css) && !/min-width/.test(files[1].css), "(std) the Mobile file is open-ended below (no gap for the smallest viewports)");
 }
 
-// ── (bpc) Base chroma / Prime chroma sliders + per-palette Prime chroma (SPEC
+// ── (bpc) Base chroma / Prime chroma global k sliders + the per-palette Base chroma slider (SPEC
 // spec-muted-base-key-spikes 0.3.0 AC-032, slider portion, "Add data palettes"/"Re-derive" are
-// U8's own scope). There is NO "Intensity" slider any more, in any group (REQ-032), the ramp's
-// chroma damper (#785) now comes entirely from the palette's group. ─────────────────────
+// U8's own scope; #804 two-layer model). There is NO "Intensity" slider any more (REQ-032), the
+// ramp's chroma damper (#785) is the palette's own Base chroma times the global k. ─────────────
 app.openSet(app.sets[0].id); flushRaf();
 app.setSegment("global"); app.render(); flushRaf();
 const baseChromaInput = findFk("slider:Base chroma");
@@ -3171,20 +3171,14 @@ ok(app.doc.baseIntensity === 40, `(bpc3) the Base chroma slider writes doc.baseI
 ok(app.doc.primeChroma === 100, `(bpc3b) the global Prime chroma default is 100 (got ${app.doc.primeChroma})`);
 primeChromaInput.value = "70"; primeChromaInput.dispatch("input", {});
 ok(app.doc.primeChroma === 70, `(bpc4) the global Prime chroma slider writes doc.primeChroma (got ${app.doc.primeChroma})`);
-app.doc.baseIntensity = 100; app.doc.primeChroma = 100; // restore the legacy-invariant default (REQ-007)
+app.doc.baseIntensity = 100; app.doc.primeChroma = 100; // restore the k-100 defaults (REQ-007)
 
-// ticket #559: palette 0 at this point in the shared `app` session may be a leftover named-set
-// palette from an earlier test block (not necessarily "Neutral"), so it can default into the
-// LOCKED Data group (any unrecognized name does), which now correctly HIDES the per-palette Prime
-// chroma override slider below. Pin it to "brand" (unlocked, non-default-numbers) explicitly so
-// this block tests the per-palette OVERRIDE slider itself, not the group-default rule.
-app.doc.palettes[0].group = "brand";
 app.setSegment("palette"); app.selectPalette(0); app.render(); flushRaf();
 ok(!findFk("slider:Intensity"), "(bpc5) the palette inspector has NO Intensity slider, in any group (REQ-032)");
 const bpcSel = app.selectedIndex();
 
 // (bpc5b) the Chroma slider changes the prime strip/key colour but leaves the RAMP untouched, the
-// ramp's chroma comes only from the palette's group now (REQ-002).
+// ramp's chroma comes only from the palette's own Base chroma and the global k now (REQ-002, #804).
 {
   const { projectView: pvBPC } = await import("../../src/ui/model.mjs");
   const before = pvBPC(app.doc).palettes[bpcSel];
@@ -3200,12 +3194,12 @@ const bpcSel = app.selectedIndex();
   ok(JSON.stringify(before.prime) !== JSON.stringify(after.prime), "(bpc5e) changing Chroma DOES move the prime strip (it still feeds deriveKeyColor/primeSwatches)");
 }
 
-const palPrimeChromaInput = findFk("slider:Prime chroma");
-ok(!!palPrimeChromaInput, "(bpc7) the palette inspector has a Prime chroma override slider next to Cusp pull");
-ok(Number(palPrimeChromaInput.getAttribute("value")) === 100, `(bpc7b) the palette Prime chroma override defaults to 100 when absent (got ${palPrimeChromaInput.getAttribute("value")})`);
-palPrimeChromaInput.value = "60"; palPrimeChromaInput.dispatch("input", {});
-ok(app.doc.palettes[bpcSel].primeChroma === 60, `(bpc8) the Prime chroma override slider writes palettes[i].primeChroma (got ${app.doc.palettes[bpcSel].primeChroma})`);
-delete app.doc.palettes[bpcSel].primeChroma; // restore absent (inherit) for later groups
+const palBaseChromaInput = findFk("slider:Base chroma");
+ok(!!palBaseChromaInput && !findFk("slider:Prime chroma"), "(bpc7) the palette inspector has a Base chroma slider and no Prime chroma slider (#804, Prime chroma is global only)");
+ok(Number(palBaseChromaInput.getAttribute("value")) === 100, `(bpc7b) the palette Base chroma slider shows 100 when the field is absent (got ${palBaseChromaInput.getAttribute("value")})`);
+palBaseChromaInput.value = "60"; palBaseChromaInput.dispatch("input", {});
+ok(app.doc.palettes[bpcSel].baseChroma === 60, `(bpc8) the palette Base chroma slider writes palettes[i].baseChroma (got ${app.doc.palettes[bpcSel].baseChroma})`);
+delete app.doc.palettes[bpcSel].baseChroma; // restore absent (100) for later groups
 app.render(); flushRaf();
 
 // ── (pst) prime swatch strip: seven prime-system swatches before the ramp, mode-independent
@@ -3544,133 +3538,107 @@ flushRaf();
   app.undo();
 }
 
-// ── (gid) Per-group base chroma (SPEC spec-muted-base-key-spikes 0.3.0, #556/#559 re-ruling; #785 U2,
-// R94 to R98): the group's Base chroma is a damper on the whole ramp, each stop's chroma coordinate
-// at r = value / 100 of its group-100 render, stop 500 included. Defaults Material 100/60, Brand/
-// System/Data 100/100, Data LOCKED (no per-palette Prime chroma override). There is NO per-palette
-// ramp override in ANY group any more, REQ-002 retires it entirely, not just for Data. ───────────
+// ── (gid) Base chroma as the ramp damper (SPEC spec-muted-base-key-spikes 0.3.0; #785 U2, R94 to
+// R98; #804 two-layer model): a palette's resolved Base chroma (its own `baseChroma`, absent 100,
+// times the global k) is a damper on the whole ramp, each stop's chroma coordinate at r = value / 100
+// of its at-100 render, stop 500 included. There is NO per-palette ramp override besides it and no
+// group layer: a palette's group is grouping metadata only. ─────────────────────────────────────
 {
-  const { defaultDocument: ddGID, paletteGroup: pgGID, projectView: pvGID, rampChromaOf: rcGID, GROUP_DEFAULTS: GIDDEF } = await import("../../src/ui/model.mjs");
-  const { paletteStops: psGID, EXPORT_STOPS: esGID } = await import("../../src/engine/tonal.js");
+  const { defaultDocument: ddGID, paletteGroup: pgGID, projectView: pvGID, rampChromaOf: rcGID } = await import("../../src/ui/model.mjs");
+  const { paletteStops: psGID, EXPORT_STOPS: esGID, holdTone: htGID, solveOkhslHue: shGID } = await import("../../src/engine/tonal.js");
+  const { rgbToOkhsl: okGID, okhslToRgb: o2rGID } = await import("../../src/engine/okhsl.js");
 
-  // (gid1) a FRESH default document already resolves Neutral (Material) to rampChroma 100, matching
-  // a DIRECT engine call at chroma:100 byte for byte (never a document-level "pin", since there is no
-  // more palette.intensity field at all); (gid3) proves a lower value is a real mute, not a no-op.
+  // (gid1) a FRESH default document resolves Neutral to rampChroma 100, matching a DIRECT engine
+  // call at chroma:100 byte for byte; (gid3) proves a lower value is a real mute, not a no-op.
   const freshDoc = ddGID();
   const freshView = pvGID(freshDoc);
   const nIdx = freshDoc.palettes.findIndex((p) => p.name === "Neutral");
   const neutral = freshDoc.palettes[nIdx];
-  ok(pgGID(neutral) === "material", "(gid1) Neutral defaults to the Material group");
-  ok(rcGID(neutral, freshDoc) === 100, `(gid1b) rampChromaOf(Neutral) resolves to Material's default 100 (got ${rcGID(neutral, freshDoc)})`);
+  ok(pgGID(neutral) === "material", "(gid1) Neutral defaults to the Material group (canvas grouping only)");
+  ok(rcGID(neutral, freshDoc) === 100, `(gid1b) rampChromaOf(Neutral) resolves to 100 at the defaults (got ${rcGID(neutral, freshDoc)})`);
   const ctlGID = { toneMode: freshDoc.toneMode, hueSpace: freshDoc.hueSpace, lmin: freshDoc.lmin, lmax: freshDoc.lmax, damp: freshDoc.damp, dampCurve: freshDoc.dampCurve, dampAmp: freshDoc.dampAmp, dampBias: freshDoc.dampBias, curve: freshDoc.curve, tension: freshDoc.tension, relChroma: freshDoc.relChroma, chromaFloor: freshDoc.chromaFloor, vibrancy: freshDoc.vibrancy };
-  const direct30 = psGID({ hue: neutral.hue, chroma: 30, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir, anchor: neutral.anchor }, ctlGID, esGID);
-  const direct100 = psGID({ hue: neutral.hue, chroma: 100, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir, anchor: neutral.anchor }, ctlGID, esGID);
-  ok(JSON.stringify(freshView.palettes[nIdx].fullRamp.map((s) => s.hex)) === JSON.stringify(direct100.map((s) => s.hex)), "(gid2) a fresh doc's Neutral ramp equals a direct engine call at chroma 100 (Material's default)");
-  // (gid3) #785 U2 (R94, reverses #725 R69's cap): the group value damps the anchored ramp's whole
-  // group-100 render, so Neutral at 50 differs from its fresh (100) ramp and each stop's OKHSL s is
-  // half its chroma-100 value, stop 500 included (within 0.02, 8-bit hex). Under R69's cap an anchor
-  // s in (0.10, 0.30] made 50 render the same as 100; the precondition keeps that witness measured,
-  // never typed.
-  const { rgbToOkhsl: okGID } = await import("../../src/engine/okhsl.js");
-  const anchorS = okGID([1, 3, 5].map((i) => parseInt(neutral.anchor.slice(i, i + 2), 16))).s;
-  const direct10 = psGID({ hue: neutral.hue, chroma: 10, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir, anchor: neutral.anchor }, ctlGID, esGID);
+  const neutralAt = (chroma) => psGID({ hue: neutral.hue, chroma, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir, anchor: neutral.anchor }, ctlGID, esGID);
+  const direct100 = neutralAt(100);
+  ok(JSON.stringify(freshView.palettes[nIdx].fullRamp.map((s) => s.hex)) === JSON.stringify(direct100.map((s) => s.hex)), "(gid2) a fresh doc's Neutral ramp equals a direct engine call at chroma 100");
+  // (gid3) #785 U2 (R94, reverses #725 R69's cap): the value damps the anchored ramp's whole at-100
+  // render, so Neutral at 50 differs from its fresh (100) ramp, stop 500 included. The ratio is read
+  // on the coordinate tonal.js `dampStops` scales, not OKHSL s re-read from the damped 8-bit hex
+  // (that re-read misses by more than 0.02 near white): every damped stop must be the pixel the at-100
+  // stop's own OKHSL s renders at r x s, its L* held (holdTone) and its hue held (solveOkhslHue).
+  const hexOf = (rgb) => "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
+  const scaledHex = (st, r) => { const { h, s, l } = okGID(st.rgb); const hold = htGID(h, s, l, r); return Math.abs(hold.s - Math.min(1, r * s)) < 1e-12 ? hexOf(o2rGID(shGID(h, hold.s, hold.l), hold.s, hold.l)) : "ratio-off"; };
   const hexesGID = (r) => JSON.stringify(r.map((s) => s.hex));
-  ok(anchorS > 0.10 && anchorS <= 0.30, `(gid3 precondition) Neutral's anchor ${neutral.anchor} OKHSL s ${anchorS.toFixed(4)} sits in (0.10, 0.30]`);
-  const direct50 = psGID({ hue: neutral.hue, chroma: 50, skew: neutral.skew, lift: neutral.lift, hueShift: neutral.hueShift, hueSameDir: neutral.hueSameDir, anchor: neutral.anchor }, ctlGID, esGID);
-  const sGID = (hex) => okGID([1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))).s;
-  const halfOff = direct50.filter((s, i) => Math.abs(sGID(s.hex) - 0.5 * sGID(direct100[i].hex)) > 0.02).map((s) => s.stop);
-  ok(hexesGID(freshView.palettes[nIdx].fullRamp) !== hexesGID(direct50) && halfOff.length === 0 && direct50.some((s) => s.stop === 500), `(gid3) a fresh doc's Neutral ramp differs from the chroma-50 ramp, and the chroma-50 ramp's OKHSL s is 0.5 x the chroma-100 ramp's at every stop, stop 500 included (off at: ${halfOff.join(" ") || "none"})`);
-  ok(hexesGID(direct10) !== hexesGID(direct30), "(gid3b) the damper keeps biting low: Neutral's chroma-10 ramp differs from its chroma-30 ramp");
+  const direct50 = neutralAt(50);
+  const ratioOff = (damped, at100, r) => damped.filter((s, i) => s.hex !== scaledHex(at100[i], r)).map((s) => s.stop);
+  const off50 = ratioOff(direct50, direct100, 0.5);
+  ok(hexesGID(freshView.palettes[nIdx].fullRamp) !== hexesGID(direct50) && off50.length === 0 && direct50.find((s) => s.stop === 500).hex !== direct100.find((s) => s.stop === 500).hex, `(gid3) a fresh doc's Neutral ramp differs from the chroma-50 ramp, and every chroma-50 stop is its at-100 stop's OKHSL s scaled by 0.5, stop 500 included (off at: ${off50.join(" ") || "none"})`);
+  // control: the same predicate reds on the wrong ratio, so a damper that skipped or misread r shows.
+  ok(ratioOff(direct50, direct100, 0.6).length > 0, "(gid3 control) the ratio predicate flags the chroma-50 ramp against r 0.6");
+  ok(hexesGID(neutralAt(10)) !== hexesGID(neutralAt(30)), "(gid3b) the damper keeps biting low: Neutral's chroma-10 ramp differs from its chroma-30 ramp");
 
-  // (gid4) the Global tab renders all four group rows, each with its own base+prime chroma
-  // sliders, seeded from GROUP_DEFAULTS.
-  app.createSet(); app.setSegment("global"); app.render(); flushRaf();
-  for (const [g, label] of [["material", "Material"], ["brand", "Brand"], ["system", "System"], ["data", "Data"]]) {
-    const baseInput = findFk(`slider:${label} base chroma`);
-    const primeInput = findFk(`slider:${label} prime chroma`);
-    ok(!!baseInput && !!primeInput, `(gid4) Global tab has a "${label}" row with base + prime chroma sliders`);
-    if (baseInput && primeInput) {
-      ok(Number(baseInput.getAttribute("value")) === GIDDEF[g].baseChroma, `(gid4b) ${label} base chroma slider shows its default ${GIDDEF[g].baseChroma} (got ${baseInput.getAttribute("value")})`);
-      ok(Number(primeInput.getAttribute("value")) === GIDDEF[g].primeChroma, `(gid4c) ${label} prime chroma slider shows its default ${GIDDEF[g].primeChroma} (got ${primeInput.getAttribute("value")})`);
-    }
-  }
-
-  // (gid5) the palette inspector has NO Intensity slider (any group) and HIDES Prime chroma
-  // entirely for a Data-group palette.
-  app.setSegment("palette");
-  const dataIdx = app.doc.palettes.findIndex((p) => pgGID(p) === "data");
-  app.selectPalette(dataIdx); app.render(); flushRaf();
-  ok(!findFk("slider:Intensity"), "(gid5) the Intensity slider does not exist, in any group (REQ-032)");
-  ok(!findFk("slider:Prime chroma"), "(gid5b) the Prime chroma slider is hidden for a Data-group palette");
-
-  // (gid6) moving a group's Base chroma slider changes every palette IN that group, uniformly,
-  // proving the ramp target is a GROUP property, not resolved per palette from anything it stores.
-  const brandIdx1 = app.doc.palettes.findIndex((p) => pgGID(p) === "brand");
-  const brandIdx2 = app.doc.palettes.findIndex((p, i) => i !== brandIdx1 && pgGID(p) === "brand");
-  const beforeRamps = pvGID(app.doc);
-  app.setSegment("global"); app.render(); flushRaf();
-  const brandBaseInput = findFk("slider:Brand base chroma");
-  brandBaseInput.value = "55"; brandBaseInput.dispatch("input", {});
-  app.commitDrag(); app.render(); flushRaf();
-  ok(app.doc.paletteGroups.brand.baseChroma === 55, `(gid7) the Brand base chroma slider writes doc.paletteGroups.brand.baseChroma (got ${app.doc.paletteGroups && app.doc.paletteGroups.brand.baseChroma})`);
-  const afterRamps = pvGID(app.doc);
-  ok(JSON.stringify(beforeRamps.palettes[brandIdx1].ramp) !== JSON.stringify(afterRamps.palettes[brandIdx1].ramp), "(gid8) moving Brand's base chroma changes the first Brand palette's ramp");
-  ok(JSON.stringify(beforeRamps.palettes[brandIdx2].ramp) !== JSON.stringify(afterRamps.palettes[brandIdx2].ramp), "(gid8b) ...and the second Brand palette's ramp too, every ramp in the group is a chroma peer");
-  app.doc.paletteGroups.brand.baseChroma = 100; // restore for later assertions
-  app.render(); flushRaf();
-
-  // (gid-damp500) #785 U2 (R94): the damper reaches stop 500 of an anchored ramp. Material at 60
-  // through the Global slider moves Neutral's stop 500 hex (R69's cap held it on the anchor).
+  // (gid-damp500) #785 U2 (R94): the damper reaches stop 500 of an anchored ramp. Neutral's own Base
+  // chroma at 60 through the palette slider moves Neutral's stop 500 hex (R69's cap held it on the anchor).
   {
+    app.createSet(); flushRaf();
     const nI = app.doc.palettes.findIndex((p) => p.name === "Neutral");
     const s500Before = pvGID(app.doc).palettes[nI].fullRamp.find((s) => s.stop === 500).hex;
-    app.setSegment("global"); app.render(); flushRaf();
-    const materialBaseInput = findFk("slider:Material base chroma");
-    materialBaseInput.value = "60"; materialBaseInput.dispatch("input", {});
+    app.setSegment("palette"); app.selectPalette(nI); app.render(); flushRaf();
+    const neutralBaseInput = findFk("slider:Base chroma");
+    neutralBaseInput.value = "60"; neutralBaseInput.dispatch("input", {});
     app.commitDrag(); app.render(); flushRaf();
     const s500After = pvGID(app.doc).palettes[nI].fullRamp.find((s) => s.stop === 500).hex;
-    ok(app.doc.paletteGroups.material.baseChroma === 60 && s500After !== s500Before, `(gid-damp500) Material base chroma 60 through the Global slider moves Neutral's stop 500 (${s500Before} to ${s500After})`);
-    app.doc.paletteGroups.material.baseChroma = GIDDEF.material.baseChroma; // restore for later assertions
+    ok(app.doc.palettes[nI].baseChroma === 60 && s500After !== s500Before, `(gid-damp500) Neutral's own Base chroma 60 through the palette slider moves Neutral's stop 500 (${s500Before} to ${s500After})`);
+    delete app.doc.palettes[nI].baseChroma; // restore absent (100) for later assertions
     app.render(); flushRaf();
   }
 
-  // (gid-owner4) #785 U2, the owner's screenshot (2026-10-03): Brand base chroma 4 must mute Primary's
-  // whole ramp to about 4% of its group-100 saturation, its vivid middle (stops 400 to 600) included.
-  // Read as OKHSL s over owner4-span: stops 200 to 800 whose at-100 s exceeds 0.05 (outside it 8-bit
-  // hex quantization dominates). Prime chroma never reaches the ramp: the base-4 ramp is the same
-  // with Brand prime chroma 100 and 0.
+  // (gid-owner4) #785 U2, the owner's screenshot (2026-10-03): Base chroma 4 must mute Primary's whole
+  // ramp to about 4% of its at-100 saturation, its vivid middle (stops 400 to 600) included. Read as
+  // OKHSL s over owner4-span: stops 200 to 800 whose at-100 s exceeds 0.05 (outside it 8-bit hex
+  // quantization dominates). Prime chroma never reaches the ramp: the base-4 ramp is the same with
+  // the global Prime chroma at 100 and 0.
   {
-    const brandAt = (base, prime) => { const d = ddGID(); d.paletteGroups.brand = { ...d.paletteGroups.brand, baseChroma: base, primeChroma: prime }; return pvGID(d).palettes.find((p) => p.name === "Primary").fullRamp; };
-    const at100 = brandAt(100, 100), at4 = brandAt(4, 100), at4p0 = brandAt(4, 0);
+    const sGID = (hex) => okGID([1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))).s;
+    const primaryAt = (base, prime) => { const d = ddGID(); d.primeChroma = prime; d.palettes = d.palettes.map((p) => (p.name === "Primary" ? { ...p, baseChroma: base } : p)); return pvGID(d).palettes.find((p) => p.name === "Primary").fullRamp; };
+    const at100 = primaryAt(100, 100), at4 = primaryAt(4, 100), at4p0 = primaryAt(4, 0);
     const span = at100.map((s, i) => ({ stop: s.stop, s100: sGID(s.hex), s4: sGID(at4[i].hex) })).filter((x) => x.stop >= 200 && x.stop <= 800 && x.s100 > 0.05);
     const outside = span.filter((x) => !(x.s4 / x.s100 >= 0.025 && x.s4 / x.s100 <= 0.055));
     const covers = [400, 500, 600].every((st) => span.some((x) => x.stop === st));
-    ok(span.length > 0 && covers && outside.length === 0 && hexesGID(at4) === hexesGID(at4p0), `(gid-owner4) Brand base 4 holds Primary's owner4-span (${span.length} stops, 400/500/600 in: ${covers}) at s(4)/s(100) in [0.025, 0.055] (outside: ${outside.map((x) => `${x.stop}:${(x.s4 / x.s100).toFixed(3)}`).join(" ") || "none"}; 500 reads ${((span.find((x) => x.stop === 500) || {}).s4 / (span.find((x) => x.stop === 500) || {}).s100).toFixed(3)}), and prime 100 and 0 render it the same: ${hexesGID(at4) === hexesGID(at4p0)}`);
+    ok(span.length > 0 && covers && outside.length === 0 && hexesGID(at4) === hexesGID(at4p0), `(gid-owner4) Base chroma 4 holds Primary's owner4-span (${span.length} stops, 400/500/600 in: ${covers}) at s(4)/s(100) in [0.025, 0.055] (outside: ${outside.map((x) => `${x.stop}:${(x.s4 / x.s100).toFixed(3)}`).join(" ") || "none"}; 500 reads ${((span.find((x) => x.stop === 500) || {}).s4 / (span.find((x) => x.stop === 500) || {}).s100).toFixed(3)}), and prime 100 and 0 render it the same: ${hexesGID(at4) === hexesGID(at4p0)}`);
   }
+}
 
-  // (gid9) moving a palette OUT of Data restores its stored per-palette PRIME override (ratified
-  // Open Question 1, the ramp itself has no per-palette override to restore any more, REQ-002): a
-  // Data-group palette's stored primeChroma is IGNORED (not deleted) while locked; reassigning its
-  // group away from "data" makes the same stored value live again, with no extra "restore" step.
-  const dataIdx2 = app.doc.palettes.findIndex((p) => pgGID(p) === "data");
-  app.doc.palettes[dataIdx2].primeChroma = 33;
+// ── (pbc) the per-palette Base chroma slider and the two global k factors (#804, the group chroma
+// layer removed): every palette, Data included, carries its own Base chroma slider in the palette
+// inspector and no Prime chroma slider; the slider moves that palette's ramp only, never its prime
+// strip; the Global tab carries no per-group rows; the global Base chroma k moves every ramp. ──────
+{
+  const { paletteGroup: pgPBC, projectView: pvPBC } = await import("../../src/ui/model.mjs");
+  app.createSet(); flushRaf();
+  const dIdx = app.doc.palettes.findIndex((p) => pgPBC(p) === "data");
+  app.setSegment("palette"); app.selectPalette(dIdx); app.render(); flushRaf();
+  const dataBase = findFk("slider:Base chroma");
+  ok(dIdx >= 0 && !!dataBase && !findFk("slider:Prime chroma"), `(pbc1) a Data palette's inspector shows slider:Base chroma and no slider:Prime chroma (palette ${dIdx})`);
+  const before = pvPBC(app.doc);
+  dataBase.value = "40"; dataBase.dispatch("input", {});
+  app.commitDrag(); app.render(); flushRaf();
+  ok(app.doc.palettes[dIdx].baseChroma === 40, `(pbc2) dragging it to 40 writes palettes[i].baseChroma (got ${app.doc.palettes[dIdx].baseChroma})`);
+  const after = pvPBC(app.doc);
+  const rampOf = (v, k) => v.palettes[k].ramp.map((s) => s.hex).join();
+  const movedRamps = before.palettes.map((_, k) => k).filter((k) => rampOf(before, k) !== rampOf(after, k));
+  ok(movedRamps.length === 1 && movedRamps[0] === dIdx, `(pbc3) only that palette's ramp moves (moved: ${JSON.stringify(movedRamps)}, want [${dIdx}])`);
+  ok(JSON.stringify(before.palettes[dIdx].prime) === JSON.stringify(after.palettes[dIdx].prime), "(pbc4) its prime strip stays (Base chroma never reaches the prime system)");
+  app.setSegment("global"); app.render(); flushRaf();
+  ok(!findIn(app.querySelector(".right-pane"), (e) => e.dataset && "group-row" in e.dataset), "(pbc5) the Global tab carries no [data-group-row]");
+  const globalBase = findFk("slider:Base chroma");
+  const beforeK = pvPBC(app.doc);
+  globalBase.value = "50"; globalBase.dispatch("input", {});
+  app.commitDrag(); app.render(); flushRaf();
+  const afterK = pvPBC(app.doc);
+  const still = beforeK.palettes.map((_, k) => k).filter((k) => rampOf(beforeK, k) === rampOf(afterK, k)).map((k) => app.doc.palettes[k].name);
+  ok(app.doc.baseIntensity === 50 && still.length === 0, `(pbc6) global Base chroma 50 changes every palette's ramp (unchanged: ${JSON.stringify(still)})`);
+  app.doc.baseIntensity = 100; delete app.doc.palettes[dIdx].baseChroma; // restore the defaults for later groups
   app.render(); flushRaf();
-  const stripOverride = (doc, idx) => ({ ...doc, palettes: doc.palettes.map((p, i) => { if (i !== idx) return p; const { primeChroma, ...rest } = p; return rest; }) });
-  const lockedView = pvGID(app.doc);
-  const lockedNoOverrideView = pvGID(stripOverride(app.doc, dataIdx2));
-  ok(JSON.stringify(lockedView.palettes[dataIdx2].prime) === JSON.stringify(lockedNoOverrideView.palettes[dataIdx2].prime), "(gid9) while still grouped as Data, the stored primeChroma:33 override is IGNORED, prime strip matches the no-override (locked-default) prime");
-
-  app.setSegment("palette"); app.doc.palettes[dataIdx2].group = "brand"; // move it OUT of Data
-  app.render(); flushRaf();
-  const movedView = pvGID(app.doc);
-  const movedNoOverrideView = pvGID(stripOverride(app.doc, dataIdx2));
-  ok(JSON.stringify(movedView.palettes[dataIdx2].prime) !== JSON.stringify(movedNoOverrideView.palettes[dataIdx2].prime), "(gid10) moving the palette OUT of Data into Brand makes the SAME stored override (33) live again, its prime strip now differs from the no-override prime, with no restore step taken");
-  ok(app.doc.palettes[dataIdx2].primeChroma === 33, "(gid10b) the stored override value is still exactly 33, it was never deleted while locked, only unused");
-
-  app.selectPalette(dataIdx2); app.render(); flushRaf();
-  const restoredInput = findFk("slider:Prime chroma");
-  ok(!!restoredInput, "(gid11) after leaving Data, the Prime chroma slider is visible again");
-  ok(Number(restoredInput.getAttribute("value")) === 33, `(gid11b) ...and shows the restored override value 33 (got ${restoredInput && restoredInput.getAttribute("value")})`);
 }
 
 // ── (rx) renderRadixScene, the pannable "Radix" canvas view (ticket #637). ONE ATOMIC UNIT
