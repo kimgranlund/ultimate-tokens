@@ -2,7 +2,7 @@
 id: T-0018
 title: "Arrow-stepping and palette add/duplicate/delete must keep the current right-pane tab (gh 786)"
 type: bug             # feature | bug | chore | spike | idea
-status: ready     # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: done     # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: S              # S | M | L | XL
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -23,3 +23,7 @@ Files overlap with T-0014 (`src/ui/sections/color.js`, `test/ui/headless-boot.mj
 
 ## Constraints
 No push, PR or issue comment from the agent. Gates local through `gate_lock.py run --name <what> -- <cmd>` with SDLC_GATE_WORKERS=16. No U+2014 em dash. Never commit `*.log`, `.run.lock`, `*.attempt.json`. Run no smoke locally.
+
+## Closed
+
+2026-10-07: delivered by the solo agent (tier S); the ticket's own checks and the fanout gates passed
