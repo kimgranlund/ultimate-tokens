@@ -1,0 +1,36 @@
+residue perceptual 19 anchored plain: n 55176, outside 0, max 7.229e-1 p99 6.701e-2 p50 2.856e-3
+residue perceptual 19 anchored damped: n 304, outside 0, max 5.179e-2 p99 2.572e-2 p50 3.117e-3
+residue perceptual 19 gate path plain: n 55176, outside 0, max 7.229e-1 p99 7.250e-2 p50 2.588e-3
+residue perceptual 19 gate path damped: n 304, outside 0, max 5.179e-2 p99 2.572e-2 p50 3.117e-3
+residue perceptual 25 anchored plain: n 72600, outside 0, max 7.229e-1 p99 6.701e-2 p50 3.330e-3
+residue perceptual 25 anchored damped: n 400, outside 0, max 8.911e-2 p99 3.573e-2 p50 3.714e-3
+residue perceptual 25 gate path plain: n 72600, outside 0, max 7.229e-1 p99 7.250e-2 p50 3.461e-3
+residue perceptual 25 gate path damped: n 400, outside 0, max 8.911e-2 p99 3.573e-2 p50 3.714e-3
+residue peak 19 anchored plain: n 49946, outside 0, max 7.229e-1 p99 6.701e-2 p50 3.718e-3
+residue peak 19 anchored damped: n 304, outside 0, max 1.639e-1 p99 5.391e-2 p50 3.337e-3
+residue peak 19 anchored capped: n 5230, outside 0, max 3.948e-1 p99 1.989e-1 p50 5.266e-2
+residue peak 19 gate path plain: n 54449, outside 0, max 7.229e-1 p99 7.250e-2 p50 3.424e-3
+residue peak 19 gate path damped: n 304, outside 0, max 1.639e-1 p99 5.391e-2 p50 3.337e-3
+residue peak 19 gate path capped: n 727, outside 0, max 3.424e-1 p99 2.646e-1 p50 9.390e-2
+residue peak 25 anchored plain: n 67370, outside 0, max 9.096e-1 p99 7.250e-2 p50 4.375e-3
+residue peak 25 anchored damped: n 400, outside 0, max 9.109e-1 p99 1.386e-1 p50 4.117e-3
+residue peak 25 anchored capped: n 5230, outside 0, max 3.948e-1 p99 1.989e-1 p50 5.266e-2
+residue peak 25 gate path plain: n 71873, outside 0, max 7.229e-1 p99 1.064e-1 p50 4.062e-3
+residue peak 25 gate path damped: n 400, outside 0, max 9.109e-1 p99 1.386e-1 p50 4.117e-3
+residue peak 25 gate path capped: n 727, outside 0, max 3.424e-1 p99 2.646e-1 p50 9.390e-2
+residue even 19 anchored plain: n 55176, outside 0, max 8.443e-1 p99 6.577e-1 p50 1.149e-1
+residue even 19 anchored damped: n 304, outside 0, max 7.799e-1 p99 5.925e-1 p50 1.237e-1
+residue even 19 gate path plain: n 55176, outside 0, max 7.675e-1 p99 5.782e-1 p50 1.143e-1
+residue even 19 gate path damped: n 304, outside 0, max 7.799e-1 p99 5.925e-1 p50 1.237e-1
+residue even 25 anchored plain: n 72599, outside 0, max 9.860e-1 p99 7.195e-1 p50 1.226e-1
+residue even 25 anchored damped: n 400, outside 0, max 7.799e-1 p99 5.927e-1 p50 1.312e-1
+residue even 25 anchored refined: n 1, outside 0, max 2.373e-1 p99 2.373e-1 p50 2.373e-1
+residue even 25 gate path plain: n 72600, outside 0, max 8.711e-1 p99 6.788e-1 p50 1.182e-1
+residue even 25 gate path damped: n 400, outside 0, max 7.799e-1 p99 5.927e-1 p50 1.312e-1
+largest residues:
+  literature/The Sound and the Fury · Faulkner · 1929 · the Compson place/secondary even 25 anchored stop 925 plain: model 10.155487 readback 11.141485 rgb 13,22,12
+  brands/Adia · The product's own design system/Warning peak 25 anchored stop 75 damped: model 0.089121 readback 1.000027 rgb 255,254,254
+  brands/Adia · The product's own design system/Warning peak 25 gate path stop 75 damped: model 0.089121 readback 1.000027 rgb 255,254,254
+  travel/37° N · November · 05:40 · MV passing Kea, en route Piraeus/primary-muted peak 25 anchored stop 75 plain: model 0.090436 readback 0.999990 rgb 254,255,254
+  architecture/Himeji Castle · 1609 · 'White Heron' keep · Japan/primary-muted even 25 gate path stop 925 plain: model 10.224426 readback 11.095572 rgb 14,23,13
+residue: 0 stop(s) outside TOL over 770880 stops

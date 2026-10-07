@@ -19,6 +19,7 @@ the arrangement moved). Supersedes the "3 lenses on one canvas" decision:
   toggle: it draws Light and Dark side by side, so the app-chrome `◐` is the only one.
 - **right-pane → segmented `[ Palette │ Global │ Roles ]`** (was a single inspector), Palette = selected
   palette's controls; Global = global controls; Roles = the 53-role table + a small semantic preview.
+- **Amended 2026-10-07 (T-0016):** the Roles tab was retired; the right pane is `[ Palette │ Global ]` (+ `Story`), and the 53-role table lives in the Mapping canvas view.
 - **Bugs fixed:** gallery search no longer steals focus on type (the `<input>` is stable; only the tile
   grid re-renders); canvas pan now works (pointer-capture `translate()`, origin-centered, a 4px drag
   threshold keeps a pan from firing row-select, wheel zoom about the cursor).
@@ -45,7 +46,7 @@ right inspector.
 
 | Section | Canvas | Inspector tabs | Notes |
 |---|---|---|---|
-| Color | `canvasView` of Palettes, Scrims, Mapping (the semantic-mapping table, the only table view) or Radix; the scene always renders twice side by side, a Light and a Dark column, through `renderCompareArea`, except in the Mapping view, whose table has no scheme and renders once | palette, global and roles, plus a story tab when the document carries a curated story | the original surface of Revision A |
+| Color | `canvasView` of Palettes, Scrims, Mapping (the semantic-mapping table, the only table view) or Radix; the scene always renders twice side by side, a Light and a Dark column, through `renderCompareArea`, except in the Mapping view, whose table has no scheme and renders once | palette and global, plus a story tab when the document carries a curated story (the per-role table is the Mapping canvas view; the Roles tab was retired, T-0016) | the original surface of Revision A |
 | Typography | a `typeSpecMode` segment of `specimen` or `tokens`, and `typeMode` breakpoint modes (base plus each mode, `compare` labeled All; Tablet and Mobile are live from `typeEffectiveModes` until a mode is materialized) | `typeSegment` of scale, fonts and specimen, in `renderTypeInspector` | the Specimen view renders each step in the real face |
 | Geometry | a `geomSpecMode` segment of `controls` or `tokens`, and `geomMode` breakpoint modes (base plus each mode, `compare` labeled All; Tablet and Mobile are live from `geomEffectiveModes` until a mode is materialized) | `renderGeomInspector` with ramp, `radius` and space tabs | per-step text size composes from the Type scale, except in the ladder prototype ramp, which derives its own text size from each step height |
 

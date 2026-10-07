@@ -1,4 +1,4 @@
-<!-- sdlc-lite:managed:start v1 sha256:49597d7eb482 -->
+<!-- sdlc-lite:managed:start v1 sha256:065256ebc627 -->
 # Work records
 
 This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and `config`. `tickets.py roadmap` (also run by `new` and `close`) generates this block: do not edit inside it; change a ticket's `handoff.md` front matter and rerun `roadmap`. `roadmap.md` lists every ticket in dependency order. Closed `.NNNN-*` folders are history: open one only when asked.
@@ -10,10 +10,9 @@ This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and
 ## Stages
 
 - proposed: 0
-- ready: 1
-  - T-0013 Chroma envelope: the curve as the spec, presets, tolerance gates (gh 778) (gh-778)
+- ready: 0
 - blocked: 0
-- done: 11
+- done: 13
 - dropped: 0
 
 ## Procedures

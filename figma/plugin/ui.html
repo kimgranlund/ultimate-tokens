@@ -702,7 +702,7 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
 .map-table td.map-sw, .map-table th.map-sw { width: 30px; }
 .map-swatch {
   position: relative; display: inline-block; width: 22px; height: 22px; border-radius: 5px;
-  border: 1px solid var(--line); overflow: hidden; vertical-align: middle;
+  overflow: hidden; vertical-align: middle;
 }
 .map-swatch-fill { position: absolute; inset: 0; display: block; }
 
@@ -716,10 +716,6 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
   border-radius: 3px; border: 1px solid var(--line); overflow: hidden;
 }
 .swatch-fill { position: absolute; inset: 0; display: block; }
-/* opt-in clickable swatch (Roles click-to-copy) */
-.swatch-btn { cursor: pointer; }
-.swatch-btn:hover { border-color: var(--ink-dim); }
-.swatch-btn:focus-visible { outline: 2px solid var(--accent, #5b9dff); outline-offset: 2px; }
 .swatch.alpha, .scrim-cell, .map-swatch {
   background-color: #fff;
   background-image:
@@ -862,7 +858,7 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 .app-footer .saved { color: var(--ok); }
 .app-footer .warn { color: var(--warn); }
 
-/* right-pane = segmented inspector [ Palette | Global | Roles ] */
+/* right-pane = segmented inspector [ Palette | Global ] (+ Story when the palette has one) */
 .right-pane {
   grid-area: right;
   border-left: 1px solid var(--line);
@@ -1044,18 +1040,6 @@ input[type="range"]::-moz-range-thumb {
 .preset-vol-num { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-faint); }
 .preset-vol-title { font-size: 15px; font-weight: 600; color: var(--ink); margin-left: 8px; }
 .preset-vol-intro { margin: 5px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-dim); max-width: 78ch; }
-
-.roles-group + .roles-group { margin-top: 14px; }
-.roles-table-name { margin: 10px 0 4px; font-size: 11.5px; font-weight: 600; color: var(--ink); }
-.roles-group + .roles-group .roles-table-name { margin-top: 0; }
-.roles-table { font-size: 11px; }
-.roles-table .rrow { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
-.roles-table .rrow.rhead { color: var(--ink-faint); font-weight: 600; border-bottom: 1px solid var(--line); padding-bottom: 5px; margin-bottom: 3px; }
-.roles-table .rrow .k { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.roles-table .rrow .suf { width: 92px; flex: none; color: var(--ink-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.roles-table .rrow .sw-pair { display: flex; gap: 3px; flex: none; align-items: center; }
-.roles-table .rrow.rhead .sw-pair { gap: 6px; }
-.roles-table .rrow.rhead .sw-pair span { width: 16px; text-align: center; }
 
 /* ───────────────────────── EXPORT DRAWER ───────────────────────── */
 /* A native <dialog> opened with showModal(): the browser renders it in the TOP LAYER, above
@@ -12812,7 +12796,6 @@ const ICONS = {
   "download": "<path d=\"M224,144v64a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V144a8,8,0,0,1,16,0v56H208V144a8,8,0,0,1,16,0Zm-101.66,5.66a8,8,0,0,0,11.32,0l40-40a8,8,0,0,0-11.32-11.32L136,124.69V32a8,8,0,0,0-16,0v92.69L93.66,98.34a8,8,0,0,0-11.32,11.32Z\"/>",
   "upload": "<path d=\"M224,144v64a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V144a8,8,0,0,1,16,0v56H208V144a8,8,0,0,1,16,0ZM93.66,77.66,120,51.31V144a8,8,0,0,0,16,0V51.31l26.34,26.35a8,8,0,0,0,11.32-11.32l-40-40a8,8,0,0,0-11.32,0l-40,40A8,8,0,0,0,93.66,77.66Z\"/>",
   "flag": "<path d=\"M42.76,50A8,8,0,0,0,40,56V224a8,8,0,0,0,16,0V179.77c26.79-21.16,49.87-9.75,76.45,3.41,16.4,8.11,34.06,16.85,53,16.85,13.93,0,28.54-4.75,43.82-18a8,8,0,0,0,2.76-6V56A8,8,0,0,0,218.76,50c-28,24.23-51.72,12.49-79.21-1.12C111.07,34.76,78.78,18.79,42.76,50ZM216,172.25c-26.79,21.16-49.87,9.74-76.45-3.41-25-12.35-52.81-26.13-83.55-8.4V59.79c26.79-21.16,49.87-9.75,76.45,3.4,25,12.35,52.82,26.13,83.55,8.4Z\"/>",
-  "roles": "<path d=\"M104,40H56A16,16,0,0,0,40,56v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,104,40Zm0,64H56V56h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,200,40Zm0,64H152V56h48v48Zm-96,32H56a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,104,136Zm0,64H56V152h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,200,136Zm0,64H152V152h48v48Z\"/>",
   "type": "<path d=\"M208,56V88a8,8,0,0,1-16,0V64H136V192h24a8,8,0,0,1,0,16H96a8,8,0,0,1,0-16h24V64H64V88a8,8,0,0,1-16,0V56a8,8,0,0,1,8-8H200A8,8,0,0,1,208,56Z\"/>",
   "ruler": "<path d=\"M235.32,73.37,182.63,20.69a16,16,0,0,0-22.63,0L20.68,160a16,16,0,0,0,0,22.63l52.69,52.68a16,16,0,0,0,22.63,0L235.32,96A16,16,0,0,0,235.32,73.37ZM84.69,224,32,171.31l24-24,17.66,17.65a8,8,0,0,0,11.31-11.31L67.31,136,88,115.31l17.66,17.66a8,8,0,0,0,11.31-11.32L99.31,104,120,83.31l17.66,17.66a8,8,0,0,0,11.31-11.32L131.31,72,152,51.31l17.66,17.66a8,8,0,0,0,11.31-11.32L163.31,40l8.69-8.69L224,84Z\"/>",
   "dot": "<circle cx=\"128\" cy=\"128\" r=\"60\"/>",
@@ -14396,22 +14379,17 @@ const switchControl = ({ on, onToggle, label, ariaLabel }) =>
   );
 
 // swatch, a fixed-size color chip, the single source for the app's many little color
-// squares (inspector dot, role refs, …). `alpha:true` lays the fill over the shared
+// squares (the inspector dot, …). `alpha:true` lays the fill over the shared
 // checkerboard (.swatch.alpha, defined once in CSS) so translucent colors read as
 // translucent. `size` drives the --sw custom property; decorative, so aria-hidden.
-const swatch = (hex, { size = 16, alpha = false, cls = "", title, onClick } = {}) =>
+const swatch = (hex, { size = 16, alpha = false, cls = "", title } = {}) =>
   h(
     "span",
     {
-      class: "swatch" + (alpha ? " alpha" : "") + (cls ? " " + cls : "") + (onClick ? " swatch-btn" : ""),
+      class: "swatch" + (alpha ? " alpha" : "") + (cls ? " " + cls : ""),
       style: `--sw:${size}px` + (alpha ? "" : `;background:${hex}`),
       title,
-      // opt-in interactive (e.g. the Roles inspector click-to-copy): a keyboard-accessible role=button.
-      ...(onClick
-        ? { role: "button", tabindex: "0", "aria-label": title || `Copy ${hex}`,
-            onclick: onClick,
-            onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(e); } } }
-        : { "aria-hidden": "true" }),
+      "aria-hidden": "true",
     },
     alpha ? h("span", { class: "swatch-fill", style: `background:${hex}` }) : false,
   );
@@ -16228,7 +16206,7 @@ class ColorSectionImpl {
       h(
         "table",
         { class: "map-table" },
-        h("thead", {}, h("tr", {}, h("th", {}, "Mode"), h("th", { class: "map-sw" }, ""), h("th", {}, "Semantic token"), h("th", {}, "Raw token"), this.inFigma ? h("th", {}, "File") : false)),
+        h("thead", {}, h("tr", {}, h("th", {}, "Mode"), h("th", { class: "map-sw" }, ""), h("th", {}, "Semantic token"), h("th", {}, "Raw token mapping"), this.inFigma ? h("th", {}, "File") : false)),
         h("tbody", {}, ...bodyRows),
       ),
     );
@@ -17080,61 +17058,6 @@ class ColorSectionImpl {
           disabled: !alreadyHasData,
           onclick: () => this.rederiveDataHuesAction(),
         }),
-      ),
-    );
-  }
-
-
-  // Roles panel: with a palette selected, that palette's 53-role table; with nothing selected, one
-  // table per enabled palette in canvas order. Each table sits under its palette name; every row is
-  // key · suffix · the light ref swatch + the dark ref swatch.
-  renderRolesInspector(view) {
-    const one = this.sel.kind === "palette";
-    const shown = one ? [view.palettes[this.selectedIndex()]] : view.palettes.filter((p) => p.on);
-    const tables = shown.filter(Boolean).map((p) => this._rolesTable(p));
-    return h(
-      "div",
-      {},
-      h("h3", { class: "insp-title" }, icon("roles"), "Roles"),
-      h("div", { class: "insp-sub" }, one ? "53 semantic roles · light / dark refs" : `${tables.length} palettes · 53 semantic roles each · light / dark refs`),
-      // (the live component preview is pinned at the bottom of the pane on every
-      // tab, see .seg-example / exampleCard, so the Roles panel no longer repeats
-      // it here at the top.)
-      ...tables,
-    );
-  }
-
-  // _rolesTable, one palette's heading + 53-role table (the unit renderRolesInspector repeats).
-  _rolesTable(p) {
-    const ns = slug(p.name);
-    return h(
-      "div",
-      { class: "roles-group" },
-      h("h4", { class: "roles-table-name" }, p.name),
-      h(
-        "div",
-        { class: "roles-table" },
-        h(
-          "div",
-          { class: "rrow rhead" },
-          h("span", { class: "k" }, "key"),
-          h("span", { class: "suf" }, "suffix"),
-          h("span", { class: "sw-pair" }, h("span", {}, "L"), h("span", {}, "D")),
-        ),
-        ...p.roles.map((r) =>
-          h(
-            "div",
-            { class: "rrow" },
-            h("span", { class: "k", title: "--c-" + ns + r.suffix }, r.key),
-            h("span", { class: "suf" }, r.suffix || "n/a"),
-            h(
-              "span",
-              { class: "sw-pair" },
-              swatch(r.lightHex, { size: 16, title: "light ref " + r.lightHex, onClick: () => this.copy(r.lightHex, "Copied " + r.lightHex) }),
-              swatch(r.darkHex, { size: 16, title: "dark ref " + r.darkHex, onClick: () => this.copy(r.darkHex, "Copied " + r.darkHex) }),
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -20795,7 +20718,7 @@ class HctApp extends HTMLElement {
     this.savedSnapshot = null; // JSON string of last-saved doc -> dirty detection
     this._dirty = false; // cheap dirty bit isDirty() reads, set true on edit(), cleared on save()/openSet()/_restore()
     this.sel = { kind: "palette", id: 0 };
-    this.segment = "palette"; // right-pane segmented control: palette | global | roles
+    this.segment = "palette"; // right-pane segmented control: palette | global (| story when the palette has one)
     this.panesLeft = true; // left analysis rail shown (ui-session state, like segment, never persisted)
     this.panesRight = true; // right inspector shown
     this.canvasView = "palettes"; // canvas content: palettes (the ramps) | scrims | mapping (the role→raw table) | radix (the 12-step Park UI ladder)
@@ -21130,7 +21053,7 @@ class HctApp extends HTMLElement {
 
   // ── keyboard shortcuts ───────────────────────────────────────────────────────
   // Installed once on the document. Undo/redo work editor-wide; the nav keys
-  // (↑↓ 1/2/3 Esc f +/-) fire ONLY when the editor is shown and focus is NOT in a
+  // (↑↓ 1/2 Esc f +/-) fire ONLY when the editor is shown and focus is NOT in a
   // text field (so typing a palette/set name is never hijacked). Pan/zoom/segment/
   // selection are UI-session, none of these keys snapshot history.
   _installKeyboard() {
@@ -21193,10 +21116,6 @@ class HctApp extends HTMLElement {
       case "2":
         e.preventDefault();
         this.setSegment("global");
-        return;
-      case "3":
-        e.preventDefault();
-        this.setSegment("roles");
         return;
       case "[":
         e.preventDefault();
@@ -22634,22 +22553,20 @@ class HctApp extends HTMLElement {
 
 
   // ── right pane (segmented inspector) ──────────────────────────────────────────
-  // [ Palette | Global | Roles ], three panels over the SELECTED palette. The
+  // [ Palette | Global ] (+ Story when the palette has one), the panels over the SELECTED palette. The
   // selection lives in ui-session state (this.segment); default is Palette.
   renderRightPane(view) {
     // section routing, Typography/Geometry each return their OWN whole .right-pane inspector; Color's
     // body (below) is unchanged.
     if (this.section === "typography") return this.renderTypeInspector(view);
     if (this.section === "geometry") return this.renderGeomInspector(view);
-    const hasStory = !!view.story;
-    const seg = this.segment === "story" && !hasStory ? "palette" : this.segment; // story tab only when there is one
+    const tabs = [{ id: "palette", label: "Palette" }, { id: "global", label: "Global" }];
+    if (view.story) tabs.push({ id: "story", label: "Story" }); // story tab only when there is one
+    const seg = tabs.some((t) => t.id === this.segment) ? this.segment : "palette"; // a stale/unknown segment (e.g. the retired "roles") falls back to Palette
     let body;
     if (seg === "story") body = this.renderStoryInspector(view);
     else if (seg === "global") body = this.renderGlobalInspector();
-    else if (seg === "roles") body = this.renderRolesInspector(view);
     else body = this.renderPaletteInspector(view);
-    const tabs = [{ id: "palette", label: "Palette" }, { id: "global", label: "Global" }, { id: "roles", label: "Roles" }];
-    if (hasStory) tabs.push({ id: "story", label: "Story" });
     return h(
       "aside",
       { class: "right-pane" },

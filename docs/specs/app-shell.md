@@ -10,7 +10,7 @@
 > **Source of record:** `src/ui/app.js` (the `HctApp` custom element: state, render dispatch, header,
 > footers, inspector shell, i.e. the frame) · `src/ui/sections/{color,typography,geometry}.js` (the per-section
 > pane bodies) · `src/ui/overlays/{drawer,settings,apply-gate}.js` (the overlays); both sets are mixed
-> onto the prototype (`mixinInto`, `app.js:2600`) of `HctApp` ·
+> onto the prototype (`mixinInto`, `app.js:2594`) of `HctApp` ·
 > `src/ui/app-helpers.mjs` (`h` + the shared primitives) · `src/ui/styles.css` (the grid) ·
 > `src/ui/model.mjs` (`projectView`, the read-model each render consumes).
 > **Scope:** the shell, the frame, its regions, the render pipeline, and the state that routes them.
@@ -23,7 +23,7 @@
 
 `HctApp` is a single vanilla custom element (no framework), built with the `h(tag, attrs, ...kids)`
 hyperscript into **light DOM**. It has exactly two top-level views and forks between them on every
-render (`render`, `app.js:576`):
+render (`render`, `app.js:572`):
 
 ```
 render() ─┬─ this.view === "gallery" → renderGallery()   (the home / set browser, UI:T9)
@@ -60,7 +60,7 @@ Stable handles for the ui-plan clauses the shell realizes. These are the *what*;
 
 ---
 
-## 1. The frame: CSS grid (`renderEditor` `app.js:1350` · `.editor` `styles.css:369`)
+## 1. The frame: CSS grid (`renderEditor` `app.js:1346` · `.editor` `styles.css:369`)
 
 `renderEditor()` returns a `.editor` grid plus its overlay siblings (drawer, dialogs, toast). The grid
 is a fixed 3×3:
@@ -81,8 +81,8 @@ is a fixed 3×3:
 .editor.left-collapsed.right-collapsed { grid-template-columns: 0 1fr 0; }
 ```
 
-Collapsing a pane is a **class on `.editor`** that zeroes one column track (`toggleLeftPane` `app.js:1454` /
-`toggleRightPane` `app.js:1456`); the `.18s` transition on `grid-template-columns` animates it. The
+Collapsing a pane is a **class on `.editor`** that zeroes one column track (`toggleLeftPane` `app.js:1450` /
+`toggleRightPane` `app.js:1452`); the `.18s` transition on `grid-template-columns` animates it. The
 pane element stays in the DOM (`.left-pane` keeps its box, its padding/border zero out,
 `styles.css:502`), collapse is layout,
 not teardown.
@@ -132,7 +132,7 @@ anchor. "Interface" is the method's contract, not its body.
 | **LLD-C6b** | Canvas area / scene | `renderCanvasArea` `sections/color.js:858` | SPEC-R10 (pannable canvas), SPEC-R2 |
 | **LLD-C6c** | Canvas footer | `renderCanvasFooter` :1893 / `paintCanvasFooter` :1898 | SPEC-R5 |
 | **LLD-C7** | Right pane (segmented inspector) | `renderRightPane` :1934 | SPEC-R11, SPEC-R3, SPEC-R4 |
-| **LLD-C8** | App-footer | `renderAppFooter` :2185 / `paintAppFooter` :2205 | SPEC-R6, SPEC-R1 |
+| **LLD-C8** | App-footer | `renderAppFooter` :2178 / `paintAppFooter` :2198 | SPEC-R6, SPEC-R1 |
 | **LLD-C9** | Pane-collapse toggles | `toggleLeftPane`/`toggleRightPane` :1454 / `paneToggle` :1464 | SPEC-R10 (density) |
 | **LLD-C10** | Overlays (drawer, dialogs, toast) | `renderDrawer` `overlays/drawer.js:33` / `renderSettings` `overlays/settings.js:473` / `renderNewPalette` `sections/color.js:474` / `renderApplyGate` `overlays/apply-gate.js:353` | SPEC-R8, SPEC-R2, SPEC-R1 |
 
@@ -208,7 +208,7 @@ State lives on the element instance. Two tiers, and the split is load-bearing:
 
 Exception: one of these fields, `theme`, doubles as an **app pref**:
 `_saveAppPrefs()` writes it, with two fields this table does not list (`motion`, `fontMode`), to
-`localStorage` under `_appPrefsKey()` (`app.js:2303`) on every change, and `_loadAppPrefs()` reloads
+`localStorage` under `_appPrefsKey()` (`app.js:2297`) on every change, and `_loadAppPrefs()` reloads
 them at construction. That persistence is per app, on this device, and never with the
 document: it never enters `view`, never round-trips through export/import, and carries no undo entry.
 
@@ -230,14 +230,14 @@ render():
   _restoreFocus(focus)
   _syncDrawer() ; _syncNewPal() ; _syncApplyGate() ; _syncSettings()   (re-show each open <dialog>)
 ```
-There is no mid-edit guard: `render` (`app.js:576`) always rebuilds and instead snapshots the focused
-control before the swap and puts it back after (`_captureFocus` `app.js:641`, `_restoreFocus` `app.js:659`).
+There is no mid-edit guard: `render` (`app.js:572`) always rebuilds and instead snapshots the focused
+control before the swap and puts it back after (`_captureFocus` `app.js:637`, `_restoreFocus` `app.js:655`).
 A full render mounts a *fresh, closed* `<dialog>` for each overlay; an open export drawer is
-re-`showModal()`'d after mount so a render mid-drawer doesn't dismiss it (`_syncDrawer`, `app.js:616`).
-`paintCanvasFooter` (`app.js:1898`) is not on the full-render path: the canvas footer mounts with its
-static hint (`renderCanvasFooter`, `app.js:1893`) and is painted by `applyTransform` (`app.js:1707`), the
+re-`showModal()`'d after mount so a render mid-drawer doesn't dismiss it (`_syncDrawer`, `app.js:612`).
+`paintCanvasFooter` (`app.js:1894`) is not on the full-render path: the canvas footer mounts with its
+static hint (`renderCanvasFooter`, `app.js:1889`) and is painted by `applyTransform` (`app.js:1703`), the
 canvas pointer handlers and `_liveRefreshNow` (`app.js:291`); each calls
-`paintCanvasFooter` (`app.js:1715`, `app.js:1844`, `app.js:332`).
+`paintCanvasFooter` (`app.js:1711`, `app.js:1840`, `app.js:332`).
 
 ### 4.2 Live refresh (partial: during a continuous drag, `liveRefresh` `app.js:276` → `_liveRefreshNow` `app.js:291`)
 A slider/swatch drag must not full-render (it would blow away the active control's focus/caret). Instead
@@ -289,7 +289,7 @@ the toggle relocates (see §6).
 |------|-------|----------|
 | **No palette enabled / empty set** | LLD-C6, LLD-C8 | `projectView` yields an empty `view.palettes`; footer paints `0 palettes`; canvas renders an empty scene (no throw). Export of an all-disabled set yields tokens-only JSON with a `$note` (engine-side). |
 | **Selected index out of range** | LLD-C5, LLD-C7 | `selectedIndex()` + `view.palettes[idx]` guarded; name falls back to `""`, cards render `n/a` empties (`an-empty`). |
-| **`Story` tab absent** | LLD-C7 | `hasStory=false` → the tab is not pushed and a `segment==="story"` selection falls back to `palette` (`hasStory`, `app.js:1939`). |
+| **`Story` tab absent** | LLD-C7 | `hasStory=false` → the tab is not pushed and a `segment==="story"` selection falls back to `palette` (`hasStory`, `app.js:1935`). |
 | **Two scheme columns + live drag** | LLD-C6b, §4.2 | `liveRefresh` patches each `.compare-col` in place under its own `_inScheme`, so the columns, the scene and its pan/zoom transform survive the drag. |
 | **Render mid-open-drawer** | LLD-C10, §4.1 | Fresh closed `<dialog>` each render; the open drawer is re-`showModal()`'d post-mount so it survives. |
 | **Focus/caret during a drag** | LLD-C3, §4.2 | Partial `liveRefresh` never rebuilds the header or the active control; the doc-name `<input>` keeps focus + caret while typing (rename settles on `change`). |

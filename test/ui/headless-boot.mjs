@@ -273,7 +273,7 @@ ok(app.selectedIndex() === app.doc.palettes.length - 1, "ArrowUp wraps to last")
 fireKey("2");
 ok(app.segment === "global", "key '2' -> Global segment");
 fireKey("3");
-ok(app.segment === "roles", "key '3' -> Roles segment");
+ok(app.segment === "global", "key '3' is unbound (the Roles inspector tab is gone, the Mapping canvas view lists every role)");
 fireKey("1");
 ok(app.segment === "palette", "key '1' -> Palette segment");
 app.toggleDrawer(true);
@@ -287,8 +287,8 @@ ok(app.sel.kind === "none", "Esc with no drawer deselects");
 // (b2) pane-context U1: Esc lands on Global; the tabs still win while the selection is unchanged.
 ok(app.segment === "global", `(b2) Esc deselect lands the right pane on segment "global" (got ${app.segment})`);
 app.selectPalette(2);
-app.setSegment("roles"); app.render(); flushRaf();
-ok(app.sel.kind === "palette" && app.segment === "roles", `(b2) setSegment("roles") with a palette selected survives a second render (got ${app.segment})`);
+app.setSegment("global"); app.render(); flushRaf();
+ok(app.sel.kind === "palette" && app.segment === "global", `(b2) setSegment("global") with a palette selected survives a second render (got ${app.segment})`);
 
 // (e) typing in an input must NOT trigger shortcuts
 app.selectPalette(0);
@@ -498,34 +498,17 @@ ok(app.history.length - nHistPre === 1, `(h) the whole rename is ONE undo step (
 // ── (i) NON-drag edits + UI still do a FULL render (regression guard) ─────────────────
 app.openSet(app.sets[0].id);
 flushRaf();
-// (i-all) / (i-one) pane-context U3: Roles shows every enabled palette with nothing selected, one with a palette selected.
+// (rt) T-0016: the Roles inspector tab is retired (the Mapping canvas view lists every role); the right pane offers
+// Palette + Global (+ Story), and a stale "roles" segment falls back to Palette instead of an empty panel.
 {
   const keepSel = app.sel, keepSeg = app.segment, keepDocSel = app.doc.selected;
-  const offIdx = 3, offName = app.doc.palettes[offIdx].name;
-  app.commit((d) => (d.palettes[offIdx].on = false)); // one palette off: the all-palettes list is the ENABLED ones only
-  const enabled = app.doc.palettes.filter((p) => p.on !== false);
-  const enabledN = enabled.length;
-  ok(enabledN === app.doc.palettes.length - 1, `(i-all) setup: exactly one palette is off (${enabledN} of ${app.doc.palettes.length} enabled)`);
-  const textOf = (n) => (n.children || []).reduce((t, c) => t + textOf(c), n._text || "");
-  const names = () => app.querySelectorAll(".roles-table-name").map(textOf);
-  const roleRows = () => app.querySelectorAll(".rrow").filter((e) => !e.classList.contains("rhead"));
-  const pairsIn = (rows) => rows.map((e) => e.querySelectorAll(".sw-pair"));
-  app._deselect(); app.setSegment("roles"); flushRaf();
-  ok(app.querySelectorAll(".roles-table").length === enabledN && enabledN > 1, `(i-all) nothing selected: one .roles-table per enabled palette (got ${app.querySelectorAll(".roles-table").length} of ${enabledN})`);
-  ok(roleRows().length === 53 * enabledN, `(i-all) role rows are 53 per palette (got ${roleRows().length})`);
-  ok(app.querySelectorAll(".rhead").length === enabledN && app.querySelectorAll(".rrow").length === 54 * enabledN, `(i-all) each table keeps its header row (.rhead ${app.querySelectorAll(".rhead").length}, .rrow ${app.querySelectorAll(".rrow").length})`);
-  ok(JSON.stringify(names()) === JSON.stringify(enabled.map((p) => p.name)), `(i-all) headings are the enabled palette names in canvas order (got ${names().length})`);
-  const allPairs = pairsIn(app.querySelectorAll(".rrow"));
-  ok(allPairs.length === 54 * enabledN && allPairs.every((q) => q.length === 1), `(i-all) every .rrow, header included, carries one .sw-pair (${allPairs.reduce((n, q) => n + q.length, 0)} pairs over ${allPairs.length} rows)`);
-  const swTitles = (q) => q[0].children.map((c) => c.getAttribute("title") || "");
-  ok(pairsIn(roleRows()).every((q) => q[0].children.length === 2 && swTitles(q)[0].startsWith("light ref ") && swTitles(q)[1].startsWith("dark ref ")), "(i-all) each role pair holds two swatches, light then dark");
-  ok(!names().includes(offName), `(i-all) the disabled palette "${offName}" has no table`);
-  app.selectPalette(2); app.setSegment("roles"); flushRaf();
-  ok(app.querySelectorAll(".roles-table").length === 1 && app.querySelectorAll(".roles-table-name").length === 1, `(i-one) a palette selected: exactly one table and one heading (got ${app.querySelectorAll(".roles-table").length} and ${app.querySelectorAll(".roles-table-name").length})`);
-  ok(names()[0] === app.doc.palettes[2].name, `(i-one) the heading is the selected palette's name (got "${names()[0]}")`);
-  const onePairs = pairsIn(app.querySelectorAll(".rrow"));
-  ok(app.querySelectorAll(".rrow").length === 54 && onePairs.every((q) => q.length === 1), `(i-one) the one table keeps 53 role rows plus the header, each with one pair (got ${app.querySelectorAll(".rrow").length} rows)`);
-  app.commit((d) => (d.palettes[offIdx].on = true));
+  const inspTabs = () => { const out = []; const w = (n) => { for (const c of n.children || []) { const fk = c.dataset && c.dataset.fk; if (fk && fk.startsWith("tab:")) out.push({ id: fk.slice(4), on: c.classList.contains("on") }); w(c); } }; w(app); return out; };
+  app.selectPalette(2); flushRaf();
+  ok(inspTabs().map((t) => t.id).join() === "palette,global" || inspTabs().map((t) => t.id).join() === "palette,global,story", `(rt) the inspector tabs are Palette, Global (+ Story), no Roles (got ${inspTabs().map((t) => t.id).join()})`);
+  app.segment = "roles"; app.render(); flushRaf();
+  const staleTabs = inspTabs();
+  ok(staleTabs.filter((t) => t.on).map((t) => t.id).join() === "palette", `(rt) a stale "roles" segment falls back to the Palette tab (on: ${staleTabs.filter((t) => t.on).map((t) => t.id).join()})`);
+  ok(!!app.querySelector(".seg-body") && !app.querySelector(".roles-table"), "(rt) the stale-segment panel renders the Palette inspector body, no roles table");
   app.sel = keepSel; app.segment = keepSeg; app.doc.selected = keepDocSel; app.render(); flushRaf();
 }
 const palCount0 = app.doc.palettes.length;
@@ -535,15 +518,8 @@ ok(app.doc.palettes.length === palCount0 + 1, "add palette (full-render path) st
 const newPal = app.doc.palettes[app.doc.palettes.length - 1];
 ok(newPal.skew === 0 && newPal.lift === 0 && (newPal.hueShift ?? 0) === 0 && newPal.hueSameDir !== true,
   `(add) a new palette resets all shaping config to neutral (got skew ${newPal.skew}, lift ${newPal.lift}, hueShift ${newPal.hueShift}, sameDir ${newPal.hueSameDir})`);
-app.setSegment("roles");
-ok(app.segment === "roles" && !!app.querySelector(".roles-table"), "segmented control still switches panels (full render)");
-// (rl) role swatches are click-to-copy: a .swatch-btn (role=button) with the ref hex in its title; click copies it.
-const roleSw = app.querySelector(".swatch-btn");
-ok(roleSw && roleSw.attrs.role === "button" && /ref #?[0-9A-Fa-f]/.test(roleSw.attrs.title || ""), "(rl) role swatches are interactive (role=button) with the ref hex in the title");
-let rlCopied = null; const rlOrigCopy = app.copy.bind(app); app.copy = (t) => { rlCopied = t; };
-roleSw.click();
-app.copy = rlOrigCopy;
-ok(/^#?[0-9A-Fa-f]{3,8}$/.test(rlCopied || ""), `(rl) clicking a role swatch copies its hex (got ${rlCopied})`);
+app.setSegment("global");
+ok(app.segment === "global" && !!app.querySelector(".insp-body"), "segmented control still switches panels (full render)");
 app.setSegment("palette");
 
 // ── (j) canvas backdrop = the SELECTED palette's NEAR-EDGE color (125 light / 875 dark), one per scheme column ───
@@ -598,13 +574,13 @@ const _row0d = colCol(1).querySelectorAll(".ramp-row[data-pi]")[0];
 const _c925 = _stopHex(Number(_row0d.dataset.pi), 925);
 ok((_row0d.getAttribute("style") || "").includes(_c925), `(j8b) dark column: container row painted with the palette's 925 stop, not 75 (${_c925}; got "${_row0d.getAttribute("style")}")`);
 
-// ── (k) live example card present on ALL 3 tabs, painted from selected roles, once per scheme ──────────
+// ── (k) live example card present on EVERY inspector tab, painted from selected roles, once per scheme ──────────
 const { projectView: _pv } = await import("../../src/ui/model.mjs");
 const styleOf = (el) => (el ? el.getAttribute("style") || "" : "");
 const surfaceOf = (pal, d) => { const r = pal.roles.find((x) => x.key === "surface"); return d ? r.darkHex : r.lightHex; };
 app.render(); flushRaf();
 const exW = (i) => app.querySelectorAll(".example-scheme")[i];
-for (const seg of ["palette", "global", "roles"]) {
+for (const seg of ["palette", "global"]) {
   app.setSegment(seg); flushRaf();
   ok(!!app.querySelector(".seg-example") && !!app.querySelector(".example-card"), `(k1:${seg}) example card present on the ${seg} tab`);
   // the pinned preview is COLLAPSED to the first artifact (the role card) per scheme wrapper by default, the native slider +
@@ -1309,6 +1285,14 @@ try { mapSceneAA = app.renderMappingScene(pvAA); } catch { mapThrewAA = true; }
 ok(!mapThrewAA && mapSceneAA, "(aa) renderMappingScene renders without throwing");
 const swAA = walk(mapSceneAA, (e) => e.classList && e.classList.contains("map-swatch")).length;
 ok(swAA === pvAA.palettes[0].roles.length * 2, `(aa) mapping table = 2 rows (Light/Dark) per role: ${swAA} swatches for ${pvAA.palettes[0].roles.length} roles`);
+{ // T-0016: the raw-token column header reads "Raw token mapping"; the mapping swatch carries no border of its own.
+  const textOfAA = (n) => (n.children || []).reduce((t, c) => t + textOfAA(c), n._text || "");
+  const thTextAA = walk(mapSceneAA, (e) => e.tagName === "TH").map(textOfAA);
+  ok(thTextAA.join("|") === "Mode||Semantic token|Raw token mapping", `(aa) mapping table header is Mode | swatch | Semantic token | Raw token mapping (got ${thTextAA.join("|")})`);
+  const { readFileSync: rfAA } = await import("node:fs");
+  const swRuleAA = (rfAA("src/ui/styles.css", "utf8").match(/\n\.map-swatch \{([^}]*)\}/) || [])[1];
+  ok(typeof swRuleAA === "string" && swRuleAA.includes("overflow") && !/border\s*:|border-(top|right|bottom|left|width|style|color)\s*:/.test(swRuleAA), "(aa) the .map-swatch rule exists and sets no border");
+}
 // editable mapping: a per-doc override re-points a role, flows to projectView, and persists.
 const { serialize: serAA, hydrate: hydAA } = await import("../../src/ui/persist.js");
 app.doc.roleOverrides = {};
@@ -4287,7 +4271,7 @@ flushRaf();
   app.setSection("color");
   for (const v of ["palettes", "scrims", "radix", "mapping"]) {
     app.setCanvasView(v); app.render(); flushRaf();
-    for (const seg of ["palette", "global", "roles"]) { app.setSegment(seg); flushRaf(); }
+    for (const seg of ["palette", "global"]) { app.setSegment(seg); flushRaf(); }
   }
   app.setCanvasView("palettes");
   app.setSection("typography"); flushRaf();

@@ -91,7 +91,7 @@ class HctApp extends HTMLElement {
     this.savedSnapshot = null; // JSON string of last-saved doc -> dirty detection
     this._dirty = false; // cheap dirty bit isDirty() reads, set true on edit(), cleared on save()/openSet()/_restore()
     this.sel = { kind: "palette", id: 0 };
-    this.segment = "palette"; // right-pane segmented control: palette | global | roles
+    this.segment = "palette"; // right-pane segmented control: palette | global (| story when the palette has one)
     this.panesLeft = true; // left analysis rail shown (ui-session state, like segment, never persisted)
     this.panesRight = true; // right inspector shown
     this.canvasView = "palettes"; // canvas content: palettes (the ramps) | scrims | mapping (the role→raw table) | radix (the 12-step Park UI ladder)
@@ -426,7 +426,7 @@ class HctApp extends HTMLElement {
 
   // ── keyboard shortcuts ───────────────────────────────────────────────────────
   // Installed once on the document. Undo/redo work editor-wide; the nav keys
-  // (↑↓ 1/2/3 Esc f +/-) fire ONLY when the editor is shown and focus is NOT in a
+  // (↑↓ 1/2 Esc f +/-) fire ONLY when the editor is shown and focus is NOT in a
   // text field (so typing a palette/set name is never hijacked). Pan/zoom/segment/
   // selection are UI-session, none of these keys snapshot history.
   _installKeyboard() {
@@ -489,10 +489,6 @@ class HctApp extends HTMLElement {
       case "2":
         e.preventDefault();
         this.setSegment("global");
-        return;
-      case "3":
-        e.preventDefault();
-        this.setSegment("roles");
         return;
       case "[":
         e.preventDefault();
@@ -1930,22 +1926,20 @@ class HctApp extends HTMLElement {
 
 
   // ── right pane (segmented inspector) ──────────────────────────────────────────
-  // [ Palette | Global | Roles ], three panels over the SELECTED palette. The
+  // [ Palette | Global ] (+ Story when the palette has one), the panels over the SELECTED palette. The
   // selection lives in ui-session state (this.segment); default is Palette.
   renderRightPane(view) {
     // section routing, Typography/Geometry each return their OWN whole .right-pane inspector; Color's
     // body (below) is unchanged.
     if (this.section === "typography") return this.renderTypeInspector(view);
     if (this.section === "geometry") return this.renderGeomInspector(view);
-    const hasStory = !!view.story;
-    const seg = this.segment === "story" && !hasStory ? "palette" : this.segment; // story tab only when there is one
+    const tabs = [{ id: "palette", label: "Palette" }, { id: "global", label: "Global" }];
+    if (view.story) tabs.push({ id: "story", label: "Story" }); // story tab only when there is one
+    const seg = tabs.some((t) => t.id === this.segment) ? this.segment : "palette"; // a stale/unknown segment (e.g. the retired "roles") falls back to Palette
     let body;
     if (seg === "story") body = this.renderStoryInspector(view);
     else if (seg === "global") body = this.renderGlobalInspector();
-    else if (seg === "roles") body = this.renderRolesInspector(view);
     else body = this.renderPaletteInspector(view);
-    const tabs = [{ id: "palette", label: "Palette" }, { id: "global", label: "Global" }, { id: "roles", label: "Roles" }];
-    if (hasStory) tabs.push({ id: "story", label: "Story" });
     return h(
       "aside",
       { class: "right-pane" },

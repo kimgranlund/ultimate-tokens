@@ -16,4 +16,5 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 | T-0010 | [gh-794](gh-794/handoff.md) | card-source-range-check is red on main: ADR-026 and ADR-027 card ranges are stale (GitHub #794) | bug | S | P3 | none | 🟢 done |
 | T-0011 | [gh-787](gh-787/handoff.md) | Palette slugs can collide with another palette's suffixed token names (GitHub #787) | bug | M | P3 | none | 🟢 done |
 | T-0012 | [gh-748](gh-748/handoff.md) | marketing: voice reread of the swept store copy (GitHub #748, part 1 only) | chore | S | P3 | none | 🟢 done |
-| T-0013 | [gh-778](gh-778/handoff.md) | Chroma envelope: the curve as the spec, presets, tolerance gates (gh 778) | feature | L | P2 | none | 🔵 ready |
+| T-0013 | [gh-778](gh-778/handoff.md) | Chroma envelope: the curve as the spec, presets, tolerance gates (gh 778) | feature | L | P2 | none | 🟢 done |
+| T-0016 | [semantic-mapping-tidy](semantic-mapping-tidy/handoff.md) | Semantic Mapping tab: swatch border, drop Roles pane tab, rename Raw token column | chore | M | P2 | none | 🟢 done |

@@ -1326,7 +1326,7 @@ export class ColorSectionImpl {
       h(
         "table",
         { class: "map-table" },
-        h("thead", {}, h("tr", {}, h("th", {}, "Mode"), h("th", { class: "map-sw" }, ""), h("th", {}, "Semantic token"), h("th", {}, "Raw token"), this.inFigma ? h("th", {}, "File") : false)),
+        h("thead", {}, h("tr", {}, h("th", {}, "Mode"), h("th", { class: "map-sw" }, ""), h("th", {}, "Semantic token"), h("th", {}, "Raw token mapping"), this.inFigma ? h("th", {}, "File") : false)),
         h("tbody", {}, ...bodyRows),
       ),
     );
@@ -2178,61 +2178,6 @@ export class ColorSectionImpl {
           disabled: !alreadyHasData,
           onclick: () => this.rederiveDataHuesAction(),
         }),
-      ),
-    );
-  }
-
-
-  // Roles panel: with a palette selected, that palette's 53-role table; with nothing selected, one
-  // table per enabled palette in canvas order. Each table sits under its palette name; every row is
-  // key · suffix · the light ref swatch + the dark ref swatch.
-  renderRolesInspector(view) {
-    const one = this.sel.kind === "palette";
-    const shown = one ? [view.palettes[this.selectedIndex()]] : view.palettes.filter((p) => p.on);
-    const tables = shown.filter(Boolean).map((p) => this._rolesTable(p));
-    return h(
-      "div",
-      {},
-      h("h3", { class: "insp-title" }, icon("roles"), "Roles"),
-      h("div", { class: "insp-sub" }, one ? "53 semantic roles · light / dark refs" : `${tables.length} palettes · 53 semantic roles each · light / dark refs`),
-      // (the live component preview is pinned at the bottom of the pane on every
-      // tab, see .seg-example / exampleCard, so the Roles panel no longer repeats
-      // it here at the top.)
-      ...tables,
-    );
-  }
-
-  // _rolesTable, one palette's heading + 53-role table (the unit renderRolesInspector repeats).
-  _rolesTable(p) {
-    const ns = slug(p.name);
-    return h(
-      "div",
-      { class: "roles-group" },
-      h("h4", { class: "roles-table-name" }, p.name),
-      h(
-        "div",
-        { class: "roles-table" },
-        h(
-          "div",
-          { class: "rrow rhead" },
-          h("span", { class: "k" }, "key"),
-          h("span", { class: "suf" }, "suffix"),
-          h("span", { class: "sw-pair" }, h("span", {}, "L"), h("span", {}, "D")),
-        ),
-        ...p.roles.map((r) =>
-          h(
-            "div",
-            { class: "rrow" },
-            h("span", { class: "k", title: "--c-" + ns + r.suffix }, r.key),
-            h("span", { class: "suf" }, r.suffix || "n/a"),
-            h(
-              "span",
-              { class: "sw-pair" },
-              swatch(r.lightHex, { size: 16, title: "light ref " + r.lightHex, onClick: () => this.copy(r.lightHex, "Copied " + r.lightHex) }),
-              swatch(r.darkHex, { size: 16, title: "dark ref " + r.darkHex, onClick: () => this.copy(r.darkHex, "Copied " + r.darkHex) }),
-            ),
-          ),
-        ),
       ),
     );
   }
