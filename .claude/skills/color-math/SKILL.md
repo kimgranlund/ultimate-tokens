@@ -86,7 +86,7 @@ A palette carrying a valid 6-hex `anchor` (a STORED source colour, never fitted)
 ## The invariants you must never break (depth in `references/foundations.md`)
 
 1. **In-gamut by construction.** Even path: `chroma = min(maxc, max(min(intended·m, maxc), floorC))`, the
-   `min(·, maxc)` is load-bearing. `floorC = min((chromaFloor/100)·min(maxc, floorRef), intended)`, with
+   `min(·, maxc)` is load-bearing. `floorC = min((chromaFloor/100)·min(floorMaxc, floorRef), intended)` (`floorMaxc` = `maxc` except on the anchored path, where it is the stop's ceiling at the unrotated hue capped at `maxc`: the floor never exceeds its unrotated reading, #784), with
    `floorRef` the largest ceiling among the ramp's three reference tones (pivot, 450, 550; #701), read per
    stop at that stop's own hue before edge rotation (the solved CAM16 hue on the anchored OKLCH path, `seedHue`
    on anchored cam16, `baseHue` non-anchored; `floorRefAt`, #766), so the floor never rises past the first

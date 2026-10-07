@@ -1830,7 +1830,7 @@ for (const mode of ["perceptual", "peak"]) {
     const realSrc = readFileSync(new URL("../../src/engine/tonal.js", import.meta.url), "utf8");
     const hctUrl = new URL("../../src/engine/hct.js", import.meta.url).href;
     const okhslUrl = new URL("../../src/engine/okhsl.js", import.meta.url).href;
-    const FLOOR_TARGET = "const floorC = Math.min(((chromaFloor ?? 0) / 100) * Math.min(maxc, floorRef), intended);";
+    const FLOOR_TARGET = "const floorC = Math.min(((chromaFloor ?? 0) / 100) * Math.min(floorMaxc, floorRef), intended);";
     const controls = [
       ["pre-#701 gamut-relative floor", "const floorC = Math.min(((chromaFloor ?? 0) / 100) * maxc, intended);"],
       ["pre-#701 floor, 1.6x", "const floorC = Math.min((((chromaFloor ?? 0) * 1.6) / 100) * maxc, intended);"],
