@@ -14646,14 +14646,6 @@ const chip = (label, { mode = "status", on = false, tone = "", cls = "", title, 
 // number inputs is unreliable). The number field stays for any custom width.
 const MODE_WIDTH_PRESETS = [476, 768, 992, 1280, 1540];
 
-// Q-D (ticket #681, U2, ruled + verified): in the OKHSL modes (perceptual/peak), an anchored
-// palette's hue is read straight from its anchor color (hOk), so the Hue space control (OKLCH vs
-// CAM16) has no effect on it there - only in "even" mode does hueSpace change what the palette
-// renders (tonal.js's per-stop even-mode hue solve, paletteStopsAnchored). This is the shared reason string for both the
-// doc-level Hue space control (renderGlobalInspector, disabled only when every palette is anchored)
-// and the per-palette inspector's note (renderPaletteInspector, shown for any anchored palette).
-const HUE_SPACE_ANCHOR_REASON = "Hue follows the anchor; OKHSL and OKLCH hue coincide here.";
-
 // field, a labeled control row. ASSOCIATES the <label> with the control (label[for] +
 // control[id]) so the visible label IS the control's accessible name and clicking it
 // focuses the control, the association the inline .field rows lacked (Name / Distribution
@@ -14976,14 +14968,14 @@ function hydrateConfig(config) {
   return hydrate(d);
 }
 
-return { SETS_KEY, PROJECT_KEY, PROFILE_KEY, CHECKOUT_STORE, PRO_CHECKOUT_URL, STUDIO_CHECKOUT_URL, REPO_URL, SUPPORT_URL, DOCS_URL, ACCOUNT_URL, PRO_EXPORT_FORMATS, ALIASED_README, LEGACY_STORAGE_PREFIXES, migrateStorageKeys, sanitizeSetRecords, loadSets, saveSets, loadProfile, saveProfile, PRO_KEY_RE, defaultLicenseService, licenseInstanceName, DEV_FLAG_TOGGLES, newSet, hydrateStoredDoc, APP_THEME_STYLE_ID, ensureAppTheme, TYPE_FONTS_LINK_ID, ensureTypeFonts, SELF_HOSTED_FONTS, GENERIC_FONTS, ensureWebFont, ensureWebFontPreconnect, ensureWebFonts, setColorScheme, h, fmt, ago, CURVES, DAMP_PRESETS, switchControl, swatch, BTN_VARIANT, btn, SCHEME_ICON, SCHEME_NEXT, CANVAS_INSET, TYPE_SPECIMENS, TYPE_SAMPLE, TYPE_PARA, chip, MODE_WIDTH_PRESETS, HUE_SPACE_ANCHOR_REASON, field, POSTER_STRIP_MAX_BAND_PCT, POSTER_STRIP_MAX_BAND_PCT_LOW, POSTER_STRIP_MAX_BAND_PCT_HIGH, POSTER_STRIP_ACCENT_FLOOR_PCT, POSTER_STRIP_CAP_CHROMA_LOW, POSTER_STRIP_CAP_CHROMA_HIGH, posterStripDominantCap, posterStripBands, backfillDefaultAnchors, hydrateConfig };
+return { SETS_KEY, PROJECT_KEY, PROFILE_KEY, CHECKOUT_STORE, PRO_CHECKOUT_URL, STUDIO_CHECKOUT_URL, REPO_URL, SUPPORT_URL, DOCS_URL, ACCOUNT_URL, PRO_EXPORT_FORMATS, ALIASED_README, LEGACY_STORAGE_PREFIXES, migrateStorageKeys, sanitizeSetRecords, loadSets, saveSets, loadProfile, saveProfile, PRO_KEY_RE, defaultLicenseService, licenseInstanceName, DEV_FLAG_TOGGLES, newSet, hydrateStoredDoc, APP_THEME_STYLE_ID, ensureAppTheme, TYPE_FONTS_LINK_ID, ensureTypeFonts, SELF_HOSTED_FONTS, GENERIC_FONTS, ensureWebFont, ensureWebFontPreconnect, ensureWebFonts, setColorScheme, h, fmt, ago, CURVES, DAMP_PRESETS, switchControl, swatch, BTN_VARIANT, btn, SCHEME_ICON, SCHEME_NEXT, CANVAS_INSET, TYPE_SPECIMENS, TYPE_SAMPLE, TYPE_PARA, chip, MODE_WIDTH_PRESETS, field, POSTER_STRIP_MAX_BAND_PCT, POSTER_STRIP_MAX_BAND_PCT_LOW, POSTER_STRIP_MAX_BAND_PCT_HIGH, POSTER_STRIP_ACCENT_FLOOR_PCT, POSTER_STRIP_CAP_CHROMA_LOW, POSTER_STRIP_CAP_CHROMA_HIGH, posterStripDominantCap, posterStripBands, backfillDefaultAnchors, hydrateConfig };
 })();
 __M.colorSection = (function(){
 const { DEFAULT_CONTROLS, PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hasDataPalettes, hexToOklch, mintDataPalettes, nextPaletteName, paletteGroup, paletteGroupLabel, paletteNameClash, projectView, radixCollisionBadge, radixExportKey, radixKeyCollision, rederiveDataHues, seedFromKeyColor, slug } = __M.model;
 const { RELATIONSHIPS, deriveNeutral, deriveRelative } = __M.derive;
 const { chromaEnvelope, envelopePresetOf } = __M.tonal;
 const { icon } = __M.icons;
-const { CURVES, DAMP_PRESETS, HUE_SPACE_ANCHOR_REASON, btn, chip, field, fmt, h, swatch, switchControl } = __M.appHelpers;
+const { CURVES, DAMP_PRESETS, btn, chip, field, fmt, h, swatch, switchControl } = __M.appHelpers;
 
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
 // methods, copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
@@ -16705,14 +16697,6 @@ class ColorSectionImpl {
         ),
         { labelTitle: "Which canvas group this palette is organized under: Material, Brand, System, or Data." },
       ),
-      // Q-D (ticket #681, U2, ruled + verified): this palette's own hueSpace applicability note - the
-      // doc-level Hue space control (renderGlobalInspector) only moves THIS palette in "even" mode;
-      // in perceptual/peak an anchored palette's hue comes straight from its anchor, so the control
-      // has no effect on it here even when it stays enabled for other, non-anchored palettes in the
-      // same doc. Informational only - this is not a second control, it explains the one control.
-      p.anchor && this.doc.toneMode !== "even"
-        ? h("div", { class: "field" }, h("small", { class: "insp-sub", "data-fk": "huespace-palette-reason" }, "Hue space: " + HUE_SPACE_ANCHOR_REASON))
-        : false,
       // Hue/Chroma edits DETACH an anchored palette (ticket #681, U2/Q6): they drop the live `anchor`
       // (the generator-written `sourceAnchor` copy stays, so Reset below can restore it), a hue or
       // chroma slider drag makes an anchor-carrying palette ordinary again, since the ramp's stop 500
@@ -17058,23 +17042,25 @@ class ColorSectionImpl {
       // options visible, vs a toggle that hid the OFF label). On-colors: "fixed" = the light tint in both
       // modes (ADR-003); "contrast" flips on{N}/on{N}Variant to the better-contrasting end vs the accent fill.
       //
-      // Q-D (ticket #681, U2, ruled + verified): hueSpace only moves an anchored palette's rendered
-      // hue in "even" mode (the per-stop even-mode hue solve) - in perceptual/peak, an anchored
-      // palette's hue is read straight from its anchor (hOk), so the control is structurally dead
-      // for it there. Disabling this DOC-level control outright would also hide it from any
-      // NON-anchored palette in the same doc, where it still works - so it is only disabled when
-      // EVERY palette is anchored (nothing in the doc could possibly move), and only in
-      // perceptual/peak. The per-palette inspector (renderPaletteInspector) carries the matching
-      // note for one anchored palette at a time regardless of the other palettes in the doc.
+      // Hue space is one live control on every document (ticket #805): an anchored palette keeps its
+      // anchor colour and holds the anchor's hue in the chosen space, so the toggle moves anchored
+      // palettes too (the prime ladder and even ramp visibly, the perceptual and peak ramps only
+      // within rounding), and nothing here disables it.
       (() => {
-        const hueSpaceForced = d.toneMode !== "even" && d.palettes.length > 0 && d.palettes.every((p) => p.anchor);
         return h(
           "div",
           { class: "global-seg-row" },
           h(
             "div",
             { class: "field" },
-            h("label", { title: hueSpaceForced ? HUE_SPACE_ANCHOR_REASON : "OKLCH: perceptual hue (the default). CAM16: the legacy hue model." }, "Hue space"),
+            h(
+              "label",
+              {
+                title:
+                  "OKLCH: perceptual hue (the default). CAM16: the legacy hue model. An anchored palette keeps its anchor colour and holds the hue of its anchor in the chosen space: its prime ladder and even ramp move, its perceptual and peak ramps move only within rounding (at most 0.02 OKLab dE).",
+              },
+              "Hue space",
+            ),
             this.segmented(
               [{ id: "oklch", label: "OKLCH" }, { id: "cam16", label: "CAM16" }],
               d.hueSpace === "oklch" ? "oklch" : "cam16",
@@ -17084,11 +17070,8 @@ class ColorSectionImpl {
                 role: "group",
                 idPrefix: "huespace",
                 cls: "seg-sm",
-                disabled: hueSpaceForced,
-                disabledReason: HUE_SPACE_ANCHOR_REASON,
               },
             ),
-            hueSpaceForced ? h("small", { class: "insp-sub", "data-fk": "huespace-doc-reason" }, HUE_SPACE_ANCHOR_REASON) : false,
           ),
           h(
             "div",
@@ -22295,8 +22278,8 @@ class HctApp extends HTMLElement {
   // then re-focus the newly-active button by its stable id, because the fk-restore
   // path (see _restoreFocus) would otherwise return focus to the OLD button.
   //
-  // disabled/disabledReason (Q-D, ticket #681 U2): additive - default disabled:false
-  // reproduces the control exactly as before. When disabled, every button gets the
+  // disabled/disabledReason: additive - default disabled:false reproduces the control
+  // exactly as before, and no shipped control passes it today. When disabled, every button gets the
   // native `disabled` attribute (no click, no focus, no arrow-key handler) plus
   // aria-disabled, and disabledReason replaces each button's title and becomes the
   // group's own title, so the reason surfaces on hover over the whole control, not
