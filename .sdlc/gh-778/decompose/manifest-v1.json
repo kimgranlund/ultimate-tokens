@@ -1,0 +1,384 @@
+{
+  "domain": "technical-architecture",
+  "plan": true,
+  "nodes": [
+    {
+      "id": "sys",
+      "label": "gh-778 chroma envelope: curve as spec, presets, tolerance gates",
+      "leaf": false,
+      "justify": null
+    },
+    {
+      "id": "engine",
+      "label": "src/engine/tonal.js (pure engine)",
+      "leaf": false,
+      "justify": null
+    },
+    {
+      "id": "n-presets",
+      "label": "ENVELOPE_PRESETS exported from tonal.js: named slider quadruples {name, damp, dampCurve, dampAmp, dampBias}, incl. the curated corpus setting 70/1.5/0/0 and the kit default 80/1.5/0/0; envelopePresetOf(controls) returns the matching name or null",
+      "leaf": true,
+      "justify": null,
+      "accept": "`node -e \"import('./src/engine/tonal.js').then(T=>{const p=T.ENVELOPE_PRESETS;if(!p.some(x=>x.damp===70&&x.dampCurve===1.5&&x.dampAmp===0&&x.dampBias===0))process.exit(1);if(T.envelopePresetOf({damp:80,dampCurve:1.5,dampAmp:0,dampBias:0})!==p.find(x=>x.damp===80).name)process.exit(1)})\"` exits 0"
+    },
+    {
+      "id": "n-record",
+      "label": "stop record gains env (the multiplier at the stop), model (continuous post-clamp chroma in the path's own unit: OKHSL s on perceptual/peak, CAM16 C on even), on even also basis (the intended fed to evenChroma) and floor (its floorC), and refined (set by enforceMonotonePixelL, anchored paths only); set at the 4 call sites, chromaEnvelope verbatim, no new chromaEnvelope( occurrence",
+      "leaf": true,
+      "justify": null,
+      "accept": "`node -e` rendering one anchored and one unanchored palette through paletteStops in all three modes finds finite env and model on every EXPORT_STOPS stop, env===1 at stop 500, and finite basis and floor on even; `grep -c 'chromaEnvelope(' src/engine/tonal.js` prints 5; `node scripts/report-preset-fidelity.mjs --identity-control --base 4801994f` prints 0 moved cells in all three modes (model.mjs:976 copies record fields by name, so exports cannot move)"
+    },
+    {
+      "id": "gates",
+      "label": "test/engine + scripts/lib: the envelope gates",
+      "leaf": false,
+      "justify": null
+    },
+    {
+      "id": "n-measure-lib",
+      "label": "scripts/lib/envelope-measure.mjs returns per-instance, per-stop residues (readback minus model, in the path unit and in local 8-bit code steps) alongside the existing READING (a) results; report-preset-fidelity --envelope keeps its printed numbers",
+      "leaf": true,
+      "justify": null,
+      "accept": "`node scripts/report-preset-fidelity.mjs --envelope` READING (a)/(b) lines are byte-identical to the pre-change run saved in the artifacts dir (diff exits 0 on those lines), and measureEnvelope().residues is an array with one entry per instance x mode x stop"
+    },
+    {
+      "id": "n-probe",
+      "label": "the tolerance probe: `--envelope-residue` prints the residue distribution (max, p99, p50) per mode, per stop set, anchored and gate path, in both candidate units, and the worst witnesses",
+      "leaf": true,
+      "justify": null,
+      "accept": "`node scripts/report-preset-fidelity.mjs --envelope-residue` exits 0 and prints a max/p99/p50 row for each of perceptual/peak/even x 19-stop/25-stop x anchored/gate-path, plus the top 5 witnesses by residue; its output is saved to the artifacts dir as the evidence the TOL ruling reads"
+    },
+    {
+      "id": "n-gate-curve",
+      "label": "Gate A (curve exactness): for every corpus instance and stop, record.env equals the gate's own closed form (sliders -> mode map -> curve, re-derived from exported constants EVEN_DAMP_FACTOR/OKHSL_DAMP_D/OKHSL_DAMP_RESIDUE_EXP/OKHSL_DAMP_CURVE_GAIN/EVEN_NEIGHBOURHOOD_R, never by calling chromaEnvelope) to 1e-12; perceptual/peak: model/model500 === env wherever no clamp binds (not capped, model in (0,1)); even: model === min(maxc, max(basis*env, floor)) with the dampAmp-0 min(., model500) cap on the unanchored path",
+      "leaf": true,
+      "justify": null,
+      "accept": "`npm run gate:chroma-envelope` exits 0; `node test/engine/chroma-envelope-gate.mjs --spec dampCurveGain=1` (gate computes a wrong model) exits 1 naming >0 stops in perceptual and peak; `--spec evenFactor=1` exits 1 naming >0 even stops"
+    },
+    {
+      "id": "n-gate-residue",
+      "label": "Gate B (quantization residue): |readback(emitted) - record.model| <= TOL at every stop, TOL named once as code steps (TOL_CODES for plain stops, enforceMonotonePixelL's RADIUS for refined stops; capped stops one-sided); the constant comes from the probe plus owner ruling",
+      "leaf": true,
+      "justify": null,
+      "accept": "`npm run gate:chroma-envelope` exits 0 at the ruled TOL; `node test/engine/chroma-envelope-gate.mjs --engine-dir <scratch tree>` with OKHSL_DAMP_CURVE_GAIN set to 1 in that tree's tonal.js exits 1; a scratch tree with anchorChromaBasis returning anchorValue exits 1 on even Gate A; a scratch tree with sd keyed on the nominal stop exits 1 (the loader is the --base-dir precedent of report-preset-fidelity.mjs:67, passed through measureEnvelope({ engineDir }))"
+    },
+    {
+      "id": "n-gate-direction",
+      "label": "the direction leg kept fixture-free (stop-100 median < stop-300 median, 900 < 700, every mode) plus the n vacuity check",
+      "leaf": true,
+      "justify": null,
+      "accept": "`npm run gate:chroma-envelope` prints 'direction holds in 3 modes'; `--engine-dir <scratch tree>` whose chromaEnvelope returns 1 everywhere exits 1 on the direction leg"
+    },
+    {
+      "id": "n-fixture-retire",
+      "label": "retire the ratchet: delete test/engine/fixtures/chroma-envelope.json, --capture/--compare/SLACK, the cuspRuns/above100 ratchet cells and the gate's reads of NAMED_EXCEPTIONS and OVER_90_AT_300 (the report keeps printing them); the fixture's owner clause moves to the ADR",
+      "leaf": true,
+      "justify": null,
+      "accept": "`test ! -e test/engine/fixtures/chroma-envelope.json` exits 0; `grep -c -e SLACK -e '--capture' -e NAMED_EXCEPTIONS -e OVER_90_AT_300 test/engine/chroma-envelope-gate.mjs` prints 0; `grep -rn 'chroma-envelope.json' test scripts src .claude/skills docs/references/knowledge-02-tonal-scale.md` prints nothing (changelog and ADR-026 amendment text are history and stay)"
+    },
+    {
+      "id": "n-preset-bars",
+      "label": "unit test: the curated preset's perceptual closed form meets the ruled bars (env(300) <= 0.75, env(100) <= 0.25) and every preset has env(500)===1 in every mode; pure math, no corpus",
+      "leaf": true,
+      "justify": null,
+      "accept": "`node test/engine/tonal.mjs` prints `pass envelope-presets`; a scratch preset {damp:70,dampCurve:1.0} fed to the same check prints FAIL (negative control inside the test)"
+    },
+    {
+      "id": "ui",
+      "label": "src/ui (chips and graph)",
+      "leaf": false,
+      "justify": null
+    },
+    {
+      "id": "n-ui-chips",
+      "label": "dampPresets() chips read ENVELOPE_PRESETS (app-helpers DAMP_PRESETS becomes a re-export); active chip via envelopePresetOf",
+      "leaf": true,
+      "justify": null,
+      "accept": "`node test/ui/headless-boot.mjs` exits 0; `grep -c 'DAMP_PRESETS = \\[' src/ui/app-helpers.mjs` prints 0; `grep -c 'ENVELOPE_PRESETS' src/ui/app-helpers.mjs src/ui/sections/color.js` prints >= 1"
+    },
+    {
+      "id": "n-ui-graph",
+      "label": "graphDamping draws chromaEnvelope(stop, 500, 0, {...doc}) (the doc carries toneMode) instead of the legacy inline formula",
+      "leaf": true,
+      "justify": null,
+      "accept": "`node test/ui/headless-boot.mjs` exits 0; `grep -c 'Math.abs(s) \\*\\* gamma' src/ui/sections/color.js` prints 0; `grep -c 'chromaEnvelope' src/ui/sections/color.js` prints >= 1; the rendered damping SVG path for toneMode even differs from perceptual at the same sliders (headless check)"
+    },
+    {
+      "id": "docs",
+      "label": "spec records",
+      "leaf": false,
+      "justify": null
+    },
+    {
+      "id": "n-adr",
+      "label": "ADR-029 in docs/references/decision-records.md before the Quick map: the closed-form curve (with the mode map) is the spec; presets are slider data; gates assert exactness pre-quantization and one tolerance after; anchored ramps change the basis (anchor s on OKHSL, anchorChromaBasis blend on even) and the pivot clamp, never the curve; the ratchet fixture is retired; Quick map row added",
+      "leaf": true,
+      "justify": null,
+      "accept": "`grep -n '^## ADR-029' docs/references/decision-records.md` prints one line whose number is below `grep -n '^## Quick map' ...`; `node test/repo/em-dash.mjs` and `node test/repo/branding.mjs` exit 0"
+    },
+    {
+      "id": "n-k02",
+      "label": "repair the stale pseudocode copies: knowledge-02 section 5 (line 146 block lacks the OKHSL mode map), color-math references/foundations.md:96 block, SKILL.md:115-122; add the presets table and the anchored-deviation statement to knowledge-02",
+      "leaf": true,
+      "justify": null,
+      "accept": "`grep -c OKHSL_DAMP_CURVE_GAIN docs/references/knowledge-02-tonal-scale.md .claude/skills/color-math/references/foundations.md` prints >= 1 for each file; `grep -c ENVELOPE_PRESETS docs/references/knowledge-02-tonal-scale.md .claude/skills/color-math/SKILL.md` prints >= 1 for each; `grep -c 'legacy .*exactly' docs/references/knowledge-02-tonal-scale.md` prints 0"
+    },
+    {
+      "id": "verify",
+      "label": "closing verification",
+      "leaf": false,
+      "justify": null
+    },
+    {
+      "id": "n-identity",
+      "label": "identity check over every preset category and the kit against the merge-base, then the three gates under gate_lock",
+      "leaf": true,
+      "justify": null,
+      "accept": "`node scripts/report-preset-fidelity.mjs --identity-control --base <merge-base sha>` prints 0 moved cells in all three modes; `npm test`, `npm run build`, and `python3 /Users/kimgranlund/.claude/plugins/cache/sdlc-lite/sdlc-lite/0.21.0/scripts/gate_lock.py run --name sweeps -- npm run gate:sweeps` (SDLC_GATE_WORKERS=10) exit 0; `git status --porcelain` empty after npm test"
+    }
+  ],
+  "actions": [
+    {
+      "id": "a1",
+      "label": "evaluate the envelope's effective parameters for a mode from the sliders, in one place"
+    },
+    {
+      "id": "a2",
+      "label": "name the shipped curves as presets and apply one to a document"
+    },
+    {
+      "id": "a3",
+      "label": "recognise which preset a document's knobs currently match"
+    },
+    {
+      "id": "a4",
+      "label": "state the closed form as the spec: mode map, clamps named, anchored basis and pivot clamp named"
+    },
+    {
+      "id": "a5",
+      "label": "assert the rendered curve equals the closed form at every stop before quantization"
+    },
+    {
+      "id": "a6",
+      "label": "bound the 8-bit rounding and monotone post-pass residue with one named tolerance"
+    },
+    {
+      "id": "a7",
+      "label": "carry each stop's applied clamps on the stop record (maxc, capped, refined, model) instead of keyed exception lists"
+    },
+    {
+      "id": "a8",
+      "label": "prove the gates bite: a planted engine regression reds, a wrong model reds"
+    },
+    {
+      "id": "a9",
+      "label": "keep the muted-direction invariant (ends more muted than the inner stops)"
+    },
+    {
+      "id": "a10",
+      "label": "keep every shipped output byte-identical at the default preset"
+    },
+    {
+      "id": "a11",
+      "label": "retire the pinned ratchet fixture and the chroma-ratio exception reads"
+    },
+    {
+      "id": "a12",
+      "label": "assert the curated preset meets its ruled 75/25 bars as pure math"
+    },
+    {
+      "id": "a13",
+      "label": "show the curve the engine renders in the UI graph"
+    },
+    {
+      "id": "a14",
+      "label": "measure the residue distribution so the tolerance is ruled from evidence"
+    },
+    {
+      "id": "a15",
+      "label": "record the decision and repair every stale copy of the formula"
+    },
+    {
+      "id": "a16",
+      "label": "keep the fidelity report's envelope readings stable while adding the residue reading"
+    },
+    {
+      "id": "a17",
+      "label": "run the closing gates in the unit worktree and leave the tree clean"
+    }
+  ],
+  "hosts": [
+    {
+      "action": "a2",
+      "node": "n-presets"
+    },
+    {
+      "action": "a2",
+      "node": "n-ui-chips"
+    },
+    {
+      "action": "a3",
+      "node": "n-presets"
+    },
+    {
+      "action": "a3",
+      "node": "n-ui-chips"
+    },
+    {
+      "action": "a4",
+      "node": "n-adr"
+    },
+    {
+      "action": "a4",
+      "node": "n-k02"
+    },
+    {
+      "action": "a5",
+      "node": "n-gate-curve"
+    },
+    {
+      "action": "a6",
+      "node": "n-gate-residue"
+    },
+    {
+      "action": "a7",
+      "node": "n-record"
+    },
+    {
+      "action": "a8",
+      "node": "n-gate-curve"
+    },
+    {
+      "action": "a8",
+      "node": "n-gate-residue"
+    },
+    {
+      "action": "a8",
+      "node": "n-gate-direction"
+    },
+    {
+      "action": "a9",
+      "node": "n-gate-direction"
+    },
+    {
+      "action": "a10",
+      "node": "n-identity"
+    },
+    {
+      "action": "a10",
+      "node": "n-record"
+    },
+    {
+      "action": "a11",
+      "node": "n-fixture-retire"
+    },
+    {
+      "action": "a12",
+      "node": "n-preset-bars"
+    },
+    {
+      "action": "a13",
+      "node": "n-ui-graph"
+    },
+    {
+      "action": "a14",
+      "node": "n-probe"
+    },
+    {
+      "action": "a15",
+      "node": "n-adr"
+    },
+    {
+      "action": "a15",
+      "node": "n-k02"
+    },
+    {
+      "action": "a16",
+      "node": "n-measure-lib"
+    },
+    {
+      "action": "a17",
+      "node": "n-identity"
+    },
+    {
+      "action": "a1",
+      "node": "n-k02"
+    },
+    {
+      "action": "a1",
+      "node": "n-gate-curve"
+    }
+  ],
+  "edges": [
+    {
+      "from": "n-record",
+      "to": "n-measure-lib",
+      "why": "residues are readback minus record.model; the field must exist first"
+    },
+    {
+      "from": "n-measure-lib",
+      "to": "n-probe",
+      "why": "the probe prints the distribution the lib measures"
+    },
+    {
+      "from": "n-probe",
+      "to": "n-gate-residue",
+      "why": "TOL is ruled from the probe's evidence, not guessed"
+    },
+    {
+      "from": "n-record",
+      "to": "n-gate-curve",
+      "why": "Gate A compares record.env against the closed form"
+    },
+    {
+      "from": "n-gate-curve",
+      "to": "n-fixture-retire",
+      "why": "the ratchet is deleted only once the model gate guards the same corpus"
+    },
+    {
+      "from": "n-gate-residue",
+      "to": "n-fixture-retire",
+      "why": "same: both model legs must be green before the fixture goes"
+    },
+    {
+      "from": "n-presets",
+      "to": "n-ui-chips",
+      "why": "the chips read the engine table"
+    },
+    {
+      "from": "n-presets",
+      "to": "n-preset-bars",
+      "why": "the bars test reads the curated preset by name"
+    },
+    {
+      "from": "n-presets",
+      "to": "n-adr",
+      "why": "the ADR names the presets and their effective parameters"
+    },
+    {
+      "from": "n-gate-residue",
+      "to": "n-adr",
+      "why": "the ADR states the ruled TOL"
+    },
+    {
+      "from": "n-adr",
+      "to": "n-k02",
+      "why": "the pseudocode copies cite the ADR"
+    },
+    {
+      "from": "n-fixture-retire",
+      "to": "n-identity",
+      "why": "closing gates run on the finished tree"
+    },
+    {
+      "from": "n-k02",
+      "to": "n-identity",
+      "why": "docs gates (em-dash, branding) run in npm test on the finished tree"
+    },
+    {
+      "from": "n-ui-graph",
+      "to": "n-identity",
+      "why": "headless-boot runs in npm test on the finished tree"
+    }
+  ]
+}

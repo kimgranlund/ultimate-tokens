@@ -1,5 +1,6 @@
 import { PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hasDataPalettes, hexToOklch, mintDataPalettes, nextPaletteName, paletteGroup, paletteGroupLabel, paletteNameClash, projectView, radixCollisionBadge, radixExportKey, radixKeyCollision, rederiveDataHues, resolvePaletteGroups, seedFromKeyColor, slug } from "../model.mjs";
 import { RELATIONSHIPS, deriveNeutral, deriveRelative } from "../../engine/derive.mjs";
+import { chromaEnvelope, envelopePresetOf } from "../../engine/tonal.js";
 import { icon } from "../icons.js";
 import { CURVES, DAMP_PRESETS, HUE_SPACE_ANCHOR_REASON, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
 
@@ -158,9 +159,7 @@ export class ColorSectionImpl {
   // dampPresets, a row of one-click chips that set all four damping knobs together.
   // The chip matching the current values is highlighted; each is a single undo step.
   dampPresets() {
-    const d = this.doc;
-    const active = (p) =>
-      d.damp === p.damp && d.dampCurve === p.dampCurve && d.dampAmp === p.dampAmp && d.dampBias === p.dampBias;
+    const active = (p) => envelopePresetOf(this.doc) === p.name;
     return h(
       "div",
       { class: "damp-presets" },
@@ -184,19 +183,12 @@ export class ColorSectionImpl {
 
   // Damping curve, the global chroma multiplier m(stop) the differential damping
   // produces across the ramp. Crosses the 1× line (unity); dips at the ends (damp),
-  // can bulge in the mids (amplify), and tilts with bias. Palette-independent.
+  // can bulge in the mids (amplify), and tilts with bias. Palette-independent: the
+  // engine's own envelope at lift 0, in the doc's tone mode.
   graphDamping(doc) {
     const W = 244, H = 116, pad = 22;
-    const damp = (doc.damp ?? 80) / 100;
-    const gamma = doc.dampCurve ?? 1.5;
     const amp = (doc.dampAmp ?? 0) / 100;
-    const bias = (doc.dampBias ?? 0) / 100;
-    const M = (stop) => {
-      const s = (stop - 500) / 450;
-      const uG = Math.abs(s) ** gamma;
-      const sideW = Math.max(0, 1 + bias * Math.sign(s));
-      return Math.max(0, 1 + amp * (1 - uG) - damp * sideW * uG);
-    };
+    const M = (stop) => chromaEnvelope(stop, 500, 0, { ...doc });
     const ymax = Math.max(1.15, 1 + amp) * 1.05;
     const X = (i) => pad + (i / (STOPS.length - 1)) * (W - pad - 8);
     const Y = (m) => H - pad + 8 - (m / ymax) * (H - pad - 8);
@@ -1334,7 +1326,7 @@ export class ColorSectionImpl {
       h(
         "table",
         { class: "map-table" },
-        h("thead", {}, h("tr", {}, h("th", {}, "Mode"), h("th", { class: "map-sw" }, ""), h("th", {}, "Semantic token"), h("th", {}, "Raw token"), this.inFigma ? h("th", {}, "File") : false)),
+        h("thead", {}, h("tr", {}, h("th", {}, "Mode"), h("th", { class: "map-sw" }, ""), h("th", {}, "Semantic token"), h("th", {}, "Raw token mapping"), this.inFigma ? h("th", {}, "File") : false)),
         h("tbody", {}, ...bodyRows),
       ),
     );
@@ -2186,61 +2178,6 @@ export class ColorSectionImpl {
           disabled: !alreadyHasData,
           onclick: () => this.rederiveDataHuesAction(),
         }),
-      ),
-    );
-  }
-
-
-  // Roles panel: with a palette selected, that palette's 53-role table; with nothing selected, one
-  // table per enabled palette in canvas order. Each table sits under its palette name; every row is
-  // key · suffix · the light ref swatch + the dark ref swatch.
-  renderRolesInspector(view) {
-    const one = this.sel.kind === "palette";
-    const shown = one ? [view.palettes[this.selectedIndex()]] : view.palettes.filter((p) => p.on);
-    const tables = shown.filter(Boolean).map((p) => this._rolesTable(p));
-    return h(
-      "div",
-      {},
-      h("h3", { class: "insp-title" }, icon("roles"), "Roles"),
-      h("div", { class: "insp-sub" }, one ? "53 semantic roles · light / dark refs" : `${tables.length} palettes · 53 semantic roles each · light / dark refs`),
-      // (the live component preview is pinned at the bottom of the pane on every
-      // tab, see .seg-example / exampleCard, so the Roles panel no longer repeats
-      // it here at the top.)
-      ...tables,
-    );
-  }
-
-  // _rolesTable, one palette's heading + 53-role table (the unit renderRolesInspector repeats).
-  _rolesTable(p) {
-    const ns = slug(p.name);
-    return h(
-      "div",
-      { class: "roles-group" },
-      h("h4", { class: "roles-table-name" }, p.name),
-      h(
-        "div",
-        { class: "roles-table" },
-        h(
-          "div",
-          { class: "rrow rhead" },
-          h("span", { class: "k" }, "key"),
-          h("span", { class: "suf" }, "suffix"),
-          h("span", { class: "sw-pair" }, h("span", {}, "L"), h("span", {}, "D")),
-        ),
-        ...p.roles.map((r) =>
-          h(
-            "div",
-            { class: "rrow" },
-            h("span", { class: "k", title: "--c-" + ns + r.suffix }, r.key),
-            h("span", { class: "suf" }, r.suffix || "n/a"),
-            h(
-              "span",
-              { class: "sw-pair" },
-              swatch(r.lightHex, { size: 16, title: "light ref " + r.lightHex, onClick: () => this.copy(r.lightHex, "Copied " + r.lightHex) }),
-              swatch(r.darkHex, { size: 16, title: "dark ref " + r.darkHex, onClick: () => this.copy(r.darkHex, "Copied " + r.darkHex) }),
-            ),
-          ),
-        ),
       ),
     );
   }

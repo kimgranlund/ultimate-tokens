@@ -2,7 +2,7 @@
 id: T-0011
 title: "Palette slugs can collide with another palette's suffixed token names (GitHub #787)"
 type: bug             # feature | bug | chore | spike | idea
-status: ready     # proposed | ready | blocked | done | dropped
+status: done     # proposed | ready | blocked | done | dropped
 size: M
 priority: P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -35,3 +35,7 @@ Full issue: `gh issue view 787`. Likely files: `src/engine/exports.js`, palette 
 - UI: typing a clashing name never writes it to the doc; at settle the pre-typing name is restored, a toast names the clashing palette, and no undo step is added; a clash-free rename is one undo step; `+ Palette` skips a clashing `Palette N`. Check: `node test/ui/headless-boot.mjs` (group `sc`).
 - Both new tests red when `paletteNameClash` is neutered to `return null`, green with the guard. `npm test` green.
 - No emitted token name changes: no existing export output differs.
+
+## Closed
+
+2026-10-07: merged in PR #802 (4801994f)

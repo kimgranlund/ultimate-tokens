@@ -7,6 +7,7 @@
 import { DEFAULT_PALETTES, appThemeCSS, defaultDocument, hasDataPalettes, hexToOklch, mintDataPalettes } from "./model.mjs";
 import { STORAGE_KEY, hydrate, serialize } from "./persist.js";
 import { clampProfile } from "../engine/flags.js";
+import { ENVELOPE_PRESETS } from "../engine/tonal.js";
 import { TYPE_FONTS_CSS } from "./type-fonts.js";
 
 
@@ -344,15 +345,8 @@ export const CURVES = ["linear", "sine", "cubic", "logistic", "exp"];
 
 // Damping presets, named one-click setups for the four differential-damping knobs
 // (damp · dampCurve · dampAmp · dampBias), so the curve is discoverable without
-// hand-tuning. "Default" is the legacy edge-damp (backward-compatible).
-export const DAMP_PRESETS = [
-  { name: "Default", damp: 80, dampCurve: 1.5, dampAmp: 0, dampBias: 0 },
-  { name: "Calm ends", damp: 92, dampCurve: 2.6, dampAmp: 0, dampBias: 0 },
-  { name: "Vivid mids", damp: 70, dampCurve: 1.5, dampAmp: 55, dampBias: 0 },
-  { name: "Shade-heavy", damp: 84, dampCurve: 1.5, dampAmp: 12, dampBias: 55 },
-  { name: "Tint-heavy", damp: 84, dampCurve: 1.5, dampAmp: 12, dampBias: -55 },
-  { name: "Flat", damp: 35, dampCurve: 1, dampAmp: 0, dampBias: 0 },
-];
+// hand-tuning. The engine's ENVELOPE_PRESETS (tonal.js) own the set; the chips read it.
+export const DAMP_PRESETS = ENVELOPE_PRESETS;
 
 // ── primitive factories ─────────────────────────────────────────────────────────
 // Small, presentational builders shared across the render methods so a control's
@@ -383,22 +377,17 @@ export const switchControl = ({ on, onToggle, label, ariaLabel }) =>
   );
 
 // swatch, a fixed-size color chip, the single source for the app's many little color
-// squares (inspector dot, role refs, …). `alpha:true` lays the fill over the shared
+// squares (the inspector dot, …). `alpha:true` lays the fill over the shared
 // checkerboard (.swatch.alpha, defined once in CSS) so translucent colors read as
 // translucent. `size` drives the --sw custom property; decorative, so aria-hidden.
-export const swatch = (hex, { size = 16, alpha = false, cls = "", title, onClick } = {}) =>
+export const swatch = (hex, { size = 16, alpha = false, cls = "", title } = {}) =>
   h(
     "span",
     {
-      class: "swatch" + (alpha ? " alpha" : "") + (cls ? " " + cls : "") + (onClick ? " swatch-btn" : ""),
+      class: "swatch" + (alpha ? " alpha" : "") + (cls ? " " + cls : ""),
       style: `--sw:${size}px` + (alpha ? "" : `;background:${hex}`),
       title,
-      // opt-in interactive (e.g. the Roles inspector click-to-copy): a keyboard-accessible role=button.
-      ...(onClick
-        ? { role: "button", tabindex: "0", "aria-label": title || `Copy ${hex}`,
-            onclick: onClick,
-            onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(e); } } }
-        : { "aria-hidden": "true" }),
+      "aria-hidden": "true",
     },
     alpha ? h("span", { class: "swatch-fill", style: `background:${hex}` }) : false,
   );

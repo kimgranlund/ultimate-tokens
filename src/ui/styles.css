@@ -687,7 +687,7 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
 .map-table td.map-sw, .map-table th.map-sw { width: 30px; }
 .map-swatch {
   position: relative; display: inline-block; width: 22px; height: 22px; border-radius: 5px;
-  border: 1px solid var(--line); overflow: hidden; vertical-align: middle;
+  overflow: hidden; vertical-align: middle;
 }
 .map-swatch-fill { position: absolute; inset: 0; display: block; }
 
@@ -701,10 +701,6 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
   border-radius: 3px; border: 1px solid var(--line); overflow: hidden;
 }
 .swatch-fill { position: absolute; inset: 0; display: block; }
-/* opt-in clickable swatch (Roles click-to-copy) */
-.swatch-btn { cursor: pointer; }
-.swatch-btn:hover { border-color: var(--ink-dim); }
-.swatch-btn:focus-visible { outline: 2px solid var(--accent, #5b9dff); outline-offset: 2px; }
 .swatch.alpha, .scrim-cell, .map-swatch {
   background-color: #fff;
   background-image:
@@ -847,7 +843,7 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 .app-footer .saved { color: var(--ok); }
 .app-footer .warn { color: var(--warn); }
 
-/* right-pane = segmented inspector [ Palette | Global | Roles ] */
+/* right-pane = segmented inspector [ Palette | Global ] (+ Story when the palette has one) */
 .right-pane {
   grid-area: right;
   border-left: 1px solid var(--line);
@@ -1029,18 +1025,6 @@ input[type="range"]::-moz-range-thumb {
 .preset-vol-num { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-faint); }
 .preset-vol-title { font-size: 15px; font-weight: 600; color: var(--ink); margin-left: 8px; }
 .preset-vol-intro { margin: 5px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-dim); max-width: 78ch; }
-
-.roles-group + .roles-group { margin-top: 14px; }
-.roles-table-name { margin: 10px 0 4px; font-size: 11.5px; font-weight: 600; color: var(--ink); }
-.roles-group + .roles-group .roles-table-name { margin-top: 0; }
-.roles-table { font-size: 11px; }
-.roles-table .rrow { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
-.roles-table .rrow.rhead { color: var(--ink-faint); font-weight: 600; border-bottom: 1px solid var(--line); padding-bottom: 5px; margin-bottom: 3px; }
-.roles-table .rrow .k { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.roles-table .rrow .suf { width: 92px; flex: none; color: var(--ink-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.roles-table .rrow .sw-pair { display: flex; gap: 3px; flex: none; align-items: center; }
-.roles-table .rrow.rhead .sw-pair { gap: 6px; }
-.roles-table .rrow.rhead .sw-pair span { width: 16px; text-align: center; }
 
 /* ───────────────────────── EXPORT DRAWER ───────────────────────── */
 /* A native <dialog> opened with showModal(): the browser renders it in the TOP LAYER, above

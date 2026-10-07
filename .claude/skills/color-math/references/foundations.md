@@ -96,8 +96,10 @@ per stop:
 chromaEnvelope(stop, anchorStop, lift, controls):        # src/engine/tonal.js, exported, ONE definition
   sd       = (liftStop(stop, lift) − liftStop(anchorStop, lift)) / 450   # keyed on the LIFTED reading
   isEven   = controls.toneMode === "even"
-  damp     = isEven ? 100 − (100 − damp)·0.25 : damp     # EVEN_DAMP_FACTOR = 0.25
-  γ        = (isEven ? 0.25 : 1)·dampCurve
+  damp     = isEven ? 100 − (100 − damp)·EVEN_DAMP_FACTOR                    # 0.25
+                    : 100 − 100·clamp01((100 − damp)/100)^OKHSL_DAMP_RESIDUE_EXP
+                    # perceptual/peak (#725): OKHSL_DAMP_RESIDUE_EXP = ln(1 − OKHSL_DAMP_D)/ln(0.3), OKHSL_DAMP_D = 0.9275
+  γ        = (isEven ? EVEN_DAMP_FACTOR : OKHSL_DAMP_CURVE_GAIN)·dampCurve   # OKHSL_DAMP_CURVE_GAIN = log2(3)/1.5
   uG       = |sd|^γ
   if isEven: uG *= smoothstep(min(1, |sd| / EVEN_NEIGHBOURHOOD_R))   # 0.2; flat start at the anchor (#701)
   sideW    = max(0, 1 + (dampBias/100)·sign(sd))
