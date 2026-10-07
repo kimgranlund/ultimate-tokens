@@ -160,8 +160,9 @@ const rampRgbDist = (a, b) => { let m = 0; for (let i = 0; i < a.length; i++) { 
     // where the two spaces coincide (small Δ rounds to the same integer), so assert it's a valid degree.
     if (!(np.hue >= 0 && np.hue <= 360)) FAIL("oklch-native", `starter ${np.name} hue ${np.hue} out of range`);
   }
-  // 30 RGB units (~Δ8° cam16 at the blue pole × high chroma) is the documented worst-case fidelity bound.
-  if (worst > 30) FAIL("oklch-native", `starter ramp drifted ${worst.toFixed(1)} RGB from the cam16 intent (worst ${wname}), want ≤30`);
+  // 30 RGB units (~Δ8° cam16 at the blue pole × high chroma) was the documented worst-case fidelity bound;
+  // T-0014 (user ruling) moved it 30 -> 45: measured 44.6 at the vibrancy 50 default, worst Neutral (both sides render at dd.vibrancy).
+  if (worst > 45) FAIL("oklch-native", `starter ramp drifted ${worst.toFixed(1)} RGB from the cam16 intent (worst ${wname}), want ≤45`);
 }
 
 // (b) seedFromKeyColor returns the INPUT's OWN OKLCH hue (consistent with the OKLCH-native space):

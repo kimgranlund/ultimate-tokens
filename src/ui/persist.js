@@ -105,8 +105,9 @@ export const DOMAINS = {
   hueSpace: { kind: "enum", values: ["cam16", "oklch"], default: "oklch" },
   // ramp distribution mode (see tonal.js DEFAULT_CONTROLS.toneMode). Default "perceptual".
   toneMode: { kind: "enum", values: ["even", "perceptual", "peak"], default: "perceptual" },
-  // perceptual-path vibrancy: 0 = even lightness, 100 = cusp-anchored center (see tonal.js). Default 0.
-  vibrancy: { kind: "number", min: 0, max: 100, default: 0 },
+  // perceptual-path vibrancy: 0 = even lightness, 100 = cusp-anchored center (see tonal.js). Default 50
+  // (T-0014, was 0); the v8 entry below moves a pre-v8 doc's 0 (the old default) to 50.
+  vibrancy: { kind: "number", min: 0, max: 100, default: 50 },
   // on-color policy: "contrast" (WCAG-aware flip + achromatic fall-through, OD-001) | "fixed" (050
   // both modes, the pre-#662 default). Default contrast, this governs a STORED document that
   // carries no onColorMode key, so it must track tonal.js's DEFAULT_CONTROLS or a saved kit would
@@ -360,7 +361,8 @@ function clampOverrides(o) {
 // and the two globals become k factors on every palette. A RENAME_MAPS entry (foldGroups) folds a
 // pre-v8 doc's resolved group base chroma onto each palette, drops `paletteGroups` and every
 // per-palette `primeChroma` (the one-time prime move is accepted), and resets both globals to 100
-// (before v8 they never reached a palette), reporting each drop through DROPPED_KEYS.
+// (before v8 they never reached a palette), reporting each drop through DROPPED_KEYS. The same entry
+// (vibrancyDefault, T-0014) moves a pre-v8 doc's global vibrancy 0, the old default, to the new 50.
 export const CURRENT_SCHEMA_VERSION = 8;
 
 // DROPPED_KEYS (TKT-0455), the loud-fail accounting channel. hydrate() attaches the report of every
@@ -416,8 +418,12 @@ const RENAME_MAPS = [
   {
     // the group chroma layer's removal (#804): see foldGroups in applyRenameMaps below. The literal
     // `paletteGroups` lives on only here, as the pre-v8 key this entry reads and drops.
+    // vibrancyDefault (T-0014): a saved vibrancy 0 cannot be told apart from the old default, so it
+    // becomes the new default 50; any other value is kept, an absent one takes the domain default (50),
+    // and a palette's own `cuspPull` is never touched.
     version: 8,
     foldGroups: true,
+    vibrancyDefault: { from: 0, to: 50 },
   },
 ];
 
@@ -520,6 +526,7 @@ function applyRenameMaps(snapshot, drop) {
       if (Object.keys(from).every((k) => s.export[k] === from[k])) s = { ...s, export: { ...s.export, ...to } };
     }
     if (entry.foldGroups && s && typeof s === "object") s = foldGroups(s, drop);
+    if (entry.vibrancyDefault && s && s.vibrancy === entry.vibrancyDefault.from) s = { ...s, vibrancy: entry.vibrancyDefault.to };
   }
   return s;
 }

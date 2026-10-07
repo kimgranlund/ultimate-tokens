@@ -1,4 +1,4 @@
-import { PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hasDataPalettes, hexToOklch, mintDataPalettes, nextPaletteName, paletteGroup, paletteGroupLabel, paletteNameClash, projectView, radixCollisionBadge, radixExportKey, radixKeyCollision, rederiveDataHues, seedFromKeyColor, slug } from "../model.mjs";
+import { DEFAULT_CONTROLS, PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hasDataPalettes, hexToOklch, mintDataPalettes, nextPaletteName, paletteGroup, paletteGroupLabel, paletteNameClash, projectView, radixCollisionBadge, radixExportKey, radixKeyCollision, rederiveDataHues, seedFromKeyColor, slug } from "../model.mjs";
 import { RELATIONSHIPS, deriveNeutral, deriveRelative } from "../../engine/derive.mjs";
 import { chromaEnvelope, envelopePresetOf } from "../../engine/tonal.js";
 import { icon } from "../icons.js";
@@ -1774,7 +1774,7 @@ export class ColorSectionImpl {
       // Cusp pull (perceptual only), this palette's override of the global Vibrancy: how far its
       // richest stop is nudged toward 500. Starts at the inherited global value; the peak mode pins it.
       this.doc.toneMode === "perceptual"
-        ? this.slider("Cusp pull", p.cuspPull ?? (this.doc.vibrancy ?? 0), 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].cuspPull = v)))
+        ? this.slider("Cusp pull", p.cuspPull ?? (this.doc.vibrancy ?? DEFAULT_CONTROLS.vibrancy), 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].cuspPull = v)))
         : false,
       // Base chroma (SPEC spec-muted-base-key-spikes REQ-032, #804), this palette's own ramp damper:
       // the at-100 ramp times Base chroma / 100, then times the global Base chroma k (Global tab).

@@ -530,7 +530,10 @@ for (const mode of ["perceptual", "peak"]) {
     // Data 7/perceptual and Primary/peak are UNCHANGED (re-verified, still discriminate, still their
     // original pinned (s, l) exactly - only Neutral moved).
     [326, 1, 0.5782463229408346, ["Data 2", "peak"]],                           // wide margin, chroma-100 default
-    [195, 0.9999999007688885, 0.5399970062712544, ["Data 7", "perceptual"]],    // saturated, the default tone mode
+    // T-0014 re-pin (vibrancy default 0 to 50, ADR-030): Data 7/perceptual's l500 moved 0.5399970062712544 ->
+    // 0.7192231368098202 (t500 0 -> 0.5), s unchanged; read at okhslStops's own solveOkhslHue call, still
+    // discriminating (old last-iterate 1.0471 deg vs best 0.2311 deg, not converged).
+    [195, 0.9999999007688885, 0.7192231368098202, ["Data 7", "perceptual"]],    // saturated, the default tone mode
     [259, 0.9999999532281996, 0.4556174494320429, ["Primary", "peak"]],
   ];
   {
@@ -706,6 +709,10 @@ for (const mode of ["perceptual", "peak"]) {
 //   x 2 paths). Secondary and Warning (the only chroma-100 defaults) are byte-identical, and the U2
 //   review found 0 of 96 at-100 ramps (16 palettes x 3 modes x 2 hue spaces) differ, base vs head.
 //   The carve-out history above records the cells' earlier provenance; the cells themselves are #785's.
+//   T-0014 re-pin (vibrancy default 0 to 50, ADR-030): REGENERATED wholesale by
+//   `node scripts/gen-tonal-fixture.mjs "T-0014 vibrancy 50"`. DEFAULT_CONTROLS.vibrancy moved 0 -> 50, so
+//   335 of the 400 perceptual cells moved, 15 of 16 ramps (the perceptual Data 3 ramp measured
+//   byte-identical); the 400 even cells are byte-identical (the even path reads no vibrancy).
 {
   const FX = JSON.parse(readFileSync(new URL("./fixtures/tonal-legacy.json", import.meta.url), "utf8")).paths;
   const dc = T.DEFAULT_CONTROLS || {};
@@ -1400,7 +1407,7 @@ for (const mode of ["perceptual", "peak"]) {
   // entry each  -  `seenBaselineDup` still marks the key seen either way). The negative control right
   // after this gate still proves an UNLISTED collision is caught. 18 keys come first, then Nike
   // tertiary-muted's four at hue 36 (#744; see their own comment below). The counts above are #744's:
-  // #725 U3 re-froze the list to 30 keys (its own note, last in the list, names each key it moved).
+  // #725 U3 re-froze the list to 30 keys and T-0014 to 32 (each note, in the list, names every key it moved).
   const KNOWN_BASELINE_DUP = new Set([
     "even|240|100.00|0|0|25-stop|900&925",
     "even|79|100.00|0|0|25-stop|75&100",
@@ -1436,10 +1443,18 @@ for (const mode of ["perceptual", "peak"]) {
     // separates its dark stops), peak|36 75&100 (re-keyed), and 8 keys U2's head already did not
     // reproduce (peak|240 825&850, peak|280 800&825, perceptual|270 and peak|270 800&825, peak|78
     // 850&875, perceptual|65 800&825, perceptual|80 and peak|80 800&825).
-    "perceptual|36|100.00|0|0|25-stop|100&125",
-    "perceptual|270|100.00|0|0|25-stop|850&875",
+    // T-0014 re-freeze (vibrancy default 0 to 50, ADR-030), measured FULL at vibrancy 50: 30 -> 32 keys,
+    // 5 added and 3 removed, all perceptual (peak and even read no vibrancy), all at stops 75 to 175 or
+    // 850 to 900, the same 8-bit rounding-collision class. Added: perceptual|36 75&100 (#FEFEFE) and
+    // 150&175 (#FCFCFC), Nike tertiary-muted; perceptual|270 875&900 (#121213); perceptual|250 850&875
+    // (#121314); perceptual|60 875&900 (#131211, two presets share the key). Removed, no longer
+    // reproduced: perceptual|36 100&125, perceptual|270 850&875, perceptual|60 800&825.
+    "perceptual|36|100.00|0|0|25-stop|75&100",
+    "perceptual|36|100.00|0|0|25-stop|150&175",
+    "perceptual|270|100.00|0|0|25-stop|875&900",
+    "perceptual|250|100.00|0|0|25-stop|850&875",
+    "perceptual|60|100.00|0|0|25-stop|875&900",
     "perceptual|280|100.00|0|0|25-stop|825&850",
-    "perceptual|60|100.00|0|0|25-stop|800&825",
     "peak|36|100.00|0|0|19-stop|50&100",
     "peak|36|100.00|0|0|25-stop|50&75",
     "peak|36|100.00|0|0|25-stop|50&100",
@@ -2171,7 +2186,10 @@ for (const mode of ["perceptual", "peak"]) {
   // (i) at 100 the kit's Primary is the render before the damper, byte for byte: these are the 19-stop
   //     hex lists' sha256 prefixes captured from the pre-damper engine (306f9a9e's tonal.js); the even
   //     pin is main's at-100 render at 0ef7b87b, which #766's per-stop floor reference moved.
-  const AT100 = { perceptual: "517576c558838c97", peak: "5b1905c4160c2a85", even: "98d8a73594eb7383" };
+  //     T-0014 (vibrancy default 0 to 50, ADR-030): the perceptual pin moved 517576c558838c97 ->
+  //     f311872069c3b5b1, the same pre-damper engine (306f9a9e) rendered at vibrancy 50, which hashes
+  //     f311872069c3b5b1 there and still 517576c558838c97 at vibrancy 0; peak and even did not move.
+  const AT100 = { perceptual: "f311872069c3b5b1", peak: "5b1905c4160c2a85", even: "98d8a73594eb7383" };
   for (const toneMode of ["perceptual", "peak", "even"]) {
     const at100 = render(100, toneMode);
     const got = createHash("sha256").update(at100.map((r) => r.hex).join(",")).digest("hex").slice(0, 16);

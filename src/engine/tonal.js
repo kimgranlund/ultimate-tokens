@@ -67,7 +67,8 @@ export const DEFAULT_CONTROLS = {
   // toward the hue's CUSP-anchored distribution (100), so the CENTER sits where the hue is most
   // chromatic. The fix for hues whose vivid expression lives off-center (e.g. yellow, cusp at high L*):
   // crank it and the mid stops read vibrant for ANY hue. ("peak" mode = vibrancy 100.)
-  vibrancy: 0,
+  // Default vibrancy 50 since T-0014 (ADR-030, was 0); persist.js's v8 entry moves a pre-v8 doc's vibrancy 0 to 50.
+  vibrancy: 50,
   // On-color policy (resolution layer, not the ramp). "contrast" (DEFAULT since #662, ADR-003
   // amendment): on{N}/on{N}Variant take the end with the better WCAG contrast vs the accent fill
   // (550/450) per mode, falling through to the white/black constants when neither ramp end clears
@@ -1323,7 +1324,7 @@ function capChromaAtHeldTone(hue, s, l, rgb, chroma, ceiling, hueCam16, strictSe
 // STRAIGHT pivot-to-edge lerp (curve "linear" reduces anchorLerp's shape(w,...) to w exactly - the
 // ORIGINAL, pre-F4 construction), `peakL` is the curve/tension-shaped one, and `t = mode==="peak" ? 1
 // : vibrancy/100` blends them - "peak" pins full curve/tension shaping, "perceptual" moves continuously
-// with Vibrancy, and at vibrancy 0 (DEFAULT_CONTROLS) perceptual mode reduces to `evenL` exactly, so
+// with Vibrancy, and at vibrancy 0 (DEFAULT_CONTROLS until T-0014's 50) perceptual mode reduces to `evenL` exactly, so
 // existing perceptual-mode renders at default vibrancy are UNCHANGED by this fix. Hue: "cam16" hueSpace
 // holds the anchor's own measured OKHSL hue constant (matching prime.mjs's `hOk = key.h`, no solve
 // needed, we already have the real value). "oklch" hueSpace (R3, review pass 2, 2026-09-18) used to
@@ -1379,7 +1380,7 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
   const preCap = (stop) => {
     const evenL = anchorLerp(pivotL, lLight, lDark, stop, palette.skew ?? 0, palette.lift ?? 0, "linear", 0);
     const peakL = anchorLerp(pivotL, lLight, lDark, stop, palette.skew ?? 0, palette.lift ?? 0, controls.curve, controls.tension);
-    const v = palette.cuspPull ?? controls.vibrancy ?? 0;
+    const v = palette.cuspPull ?? controls.vibrancy ?? DEFAULT_CONTROLS.vibrancy;
     const t = mode === "peak" ? 1 : Math.max(0, Math.min(1, v / 100));
     const l = lerp(evenL, peakL, t);
     const sp = (stop - 500) / 450;
@@ -1473,7 +1474,7 @@ function okhslStops(palette, controls, stops, mode) {
   // blues, ~6°). For a CAM16-hue palette the hue IS a CAM16 hue, so carry baseHue through OKHSL as before.
   let hOk;
   if (controls.hueSpace === "oklch") {
-    const v = palette.cuspPull ?? controls.vibrancy ?? 0;
+    const v = palette.cuspPull ?? controls.vibrancy ?? DEFAULT_CONTROLS.vibrancy;
     const t500 = mode === "peak" ? 1 : Math.max(0, Math.min(1, v / 100));
     const l500 = lightnessAt(500, t500);                           // stop-500 lightness (even↔cusp blend, warped)
     const s500 = Math.min(1, Math.max(0, keyS * envelopeAt.get(ANCHOR_STOP)));
@@ -1500,7 +1501,7 @@ function okhslStops(palette, controls, stops, mode) {
     // mode pins t=1. Pulling the center to the cusp is what lets off-center hues (yellow) read vibrant.
     // blend amount = the PER-PALETTE "cusp pull" when set, else the global `vibrancy`. Lets one palette
     // (e.g. yellow Warning, cusp at high L*) nudge its richest stop toward 500 without touching the rest.
-    const v = palette.cuspPull ?? controls.vibrancy ?? 0;
+    const v = palette.cuspPull ?? controls.vibrancy ?? DEFAULT_CONTROLS.vibrancy;
     const t = mode === "peak" ? 1 : Math.max(0, Math.min(1, v / 100));
     const l = lightnessAt(stop, t); // skew/lift warp the position read (effStop); see lightnessAt above
     const sp = (stop - 500) / 450;

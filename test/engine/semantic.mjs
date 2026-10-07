@@ -252,17 +252,17 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
   // [family, light floor, dark floor], max(AA, own measured ratio floored to 1 decimal)
   const FLOORS = {
     perceptual: [
-      ["Neutral", 6.8, 4.8],   // measured 6.87 / 4.86 - pending U4: dark was 4.9 at bf2aaf6
+      ["Neutral", 6.8, 4.73],   // measured 7.0635 / 4.7301 at T-0014 vibrancy 50 (dark re-pinned 4.8 to 4.73, ADR-030) - pending U4: dark was 4.9 at bf2aaf6
       ["Primary", 7.1, 4.9],   // measured 7.10 / 4.98
       ["Secondary", 5.2, 5.2],   // measured 5.24 / 5.22 - pending U4: dark was 6.1 at bf2aaf6
-      ["Tertiary", 7.8, 5.6],   // measured 7.83 / 5.64
-      ["Info", 6.7, 4.7],   // measured 6.80 / 4.76
-      ["Success", 7.1, 5.0],   // measured 7.19 / 5.07
-      ["Warning", 9.1, 5.6],   // measured 9.17 / 5.64
-      ["Danger", 8.2, 5.9],   // measured 8.21 / 5.94
+      ["Tertiary", 7.8, 5.5],   // measured 8.0851 / 5.5148 at T-0014 vibrancy 50 (dark re-pinned 5.6 to 5.5, ADR-030)
+      ["Info", 6.7, 4.6],   // measured 6.9864 / 4.6403 at T-0014 vibrancy 50 (dark re-pinned 4.7 to 4.6, ADR-030)
+      ["Success", 7.1, 4.9],   // measured 7.3922 / 4.9392 at T-0014 vibrancy 50 (dark re-pinned 5.0 to 4.9, ADR-030)
+      ["Warning", 9.1, 5.4],   // measured 9.4994 / 5.4853 at T-0014 vibrancy 50 (dark re-pinned 5.6 to 5.4, ADR-030)
+      ["Danger", 8.2, 5.8],   // measured 8.4655 / 5.8325 at T-0014 vibrancy 50 (dark re-pinned 5.9 to 5.8, ADR-030)
       ["Data 1", 6.0, 4.6],   // measured 6.00 / 4.68 - pending U4: dark was 5.5 at bf2aaf6
       ["Data 2", 6.3, 4.7],   // measured 6.33 / 4.75 - pending U4: dark was 4.9 at bf2aaf6
-      ["Data 3", 6.1, 4.8],   // measured 6.14 / 4.88 at #725 U3 revision 8 (was 6.10 / 4.92; dark re-pinned 4.9 to 4.8 per R77 Q7) - pending U4: dark was 5.1 at bf2aaf6
+      ["Data 3", 6.1, 4.6],   // measured 6.3087 / 4.6229 at T-0014 vibrancy 50 (dark re-pinned 4.8 to 4.6, ADR-030); 6.14 / 4.88 at #725 U3 revision 8 (was 6.10 / 4.92; dark re-pinned 4.9 to 4.8 per R77 Q7) - pending U4: dark was 5.1 at bf2aaf6
       ["Data 4", 5.6, 4.7],   // measured 5.67 / 4.80 - pending U4: dark was 5.5 at bf2aaf6
       ["Data 5", 5.4, 5.0],   // measured 5.45 / 5.06 - pending U4: dark was 5.8 at bf2aaf6
       ["Data 6", 5.1, 5.2],   // measured 5.16 / 5.28 - pending U4: dark was 6.2 at bf2aaf6
@@ -366,10 +366,11 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
   };
   const PENDING_U4 = [
     // [mode, family, side, floor pinned at this commit]
-    ["perceptual", "Neutral", "dark", 4.8], ["perceptual", "Secondary", "dark", 5.2],
+    // perceptual Neutral dark 4.8 -> 4.73 and Data 3 dark 4.8 -> 4.6 at T-0014 (vibrancy default 0 to 50, ADR-030).
+    ["perceptual", "Neutral", "dark", 4.73], ["perceptual", "Secondary", "dark", 5.2],
     ["perceptual", "Data 1", "dark", 4.6], ["perceptual", "Data 2", "dark", 4.7],
     // perceptual Data 3 dark 4.9 -> 4.8 at #725 U3 (R77 Q7, a declared cost of the retune: 4.9376 -> 4.8869).
-    ["perceptual", "Data 3", "dark", 4.8], ["perceptual", "Data 4", "dark", 4.7],
+    ["perceptual", "Data 3", "dark", 4.6], ["perceptual", "Data 4", "dark", 4.7],
     ["perceptual", "Data 5", "dark", 5.0], ["perceptual", "Data 6", "dark", 5.2],
     ["perceptual", "Data 7", "dark", 5.1], ["perceptual", "Data 8", "dark", 4.9],
     ["even", "Secondary", "dark", 5.5], ["even", "Success", "light", 7.6],
@@ -419,7 +420,7 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
     scratchUnlisted.perceptual.find((r) => r[0] === "Primary")[1] = FLOORS_BF2AAF6.perceptual["Primary"][0] - 0.5; // Primary/light is not in PENDING_U4
     if (checkFloors(scratchUnlisted, FLOORS_BF2AAF6, PENDING_U4).length === 0) FAIL("role-contrast", "Q-B negative control DID NOT bite: lowering an unlisted floor below its bf2aaf6 value passed checkFloors()");
     const scratchListed = JSON.parse(JSON.stringify(FLOORS));
-    scratchListed.perceptual.find((r) => r[0] === "Neutral")[2] = 4.0; // Neutral/dark IS in PENDING_U4, pinned at 4.8
+    scratchListed.perceptual.find((r) => r[0] === "Neutral")[2] = 4.0; // Neutral/dark IS in PENDING_U4, pinned at 4.73
     if (checkFloors(scratchListed, FLOORS_BF2AAF6, PENDING_U4).length === 0) FAIL("role-contrast", "Q-B negative control DID NOT bite: eroding a PENDING_U4-listed floor further passed checkFloors()");
   }
   const floorViolations = checkFloors(FLOORS, FLOORS_BF2AAF6, PENDING_U4);

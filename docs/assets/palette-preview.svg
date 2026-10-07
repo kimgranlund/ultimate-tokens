@@ -22,384 +22,384 @@
 <clipPath id="r0"><rect x="116" y="48" width="760" height="34" rx="6"/></clipPath>
 <g clip-path="url(#r0)">
 <rect x="116" y="48" width="40" height="34" fill="#FFFFFF"/>
-<rect x="156" y="48" width="40" height="34" fill="#E1E3E7"/>
-<rect x="196" y="48" width="40" height="34" fill="#CBCFD8"/>
-<rect x="236" y="48" width="40" height="34" fill="#B6BCCC"/>
-<rect x="276" y="48" width="40" height="34" fill="#A3ACC1"/>
-<rect x="316" y="48" width="40" height="34" fill="#919CB6"/>
-<rect x="356" y="48" width="40" height="34" fill="#818DAB"/>
-<rect x="396" y="48" width="40" height="34" fill="#727F9F"/>
-<rect x="436" y="48" width="40" height="34" fill="#647193"/>
+<rect x="156" y="48" width="40" height="34" fill="#E7E8EA"/>
+<rect x="196" y="48" width="40" height="34" fill="#D3D6DC"/>
+<rect x="236" y="48" width="40" height="34" fill="#C0C5D0"/>
+<rect x="276" y="48" width="40" height="34" fill="#ACB4C5"/>
+<rect x="316" y="48" width="40" height="34" fill="#99A3BB"/>
+<rect x="356" y="48" width="40" height="34" fill="#8692AF"/>
+<rect x="396" y="48" width="40" height="34" fill="#7582A2"/>
+<rect x="436" y="48" width="40" height="34" fill="#657395"/>
 <rect x="476" y="48" width="40" height="34" fill="#576485"/>
-<rect x="516" y="48" width="40" height="34" fill="#4E5A78"/>
-<rect x="556" y="48" width="40" height="34" fill="#46506A"/>
-<rect x="596" y="48" width="40" height="34" fill="#3E475D"/>
-<rect x="636" y="48" width="40" height="34" fill="#373E50"/>
-<rect x="676" y="48" width="40" height="34" fill="#2F3543"/>
-<rect x="716" y="48" width="40" height="34" fill="#282C36"/>
-<rect x="756" y="48" width="40" height="34" fill="#20232A"/>
-<rect x="796" y="48" width="40" height="34" fill="#181A1E"/>
-<rect x="836" y="48" width="40" height="34" fill="#101113"/>
+<rect x="516" y="48" width="40" height="34" fill="#4D5876"/>
+<rect x="556" y="48" width="40" height="34" fill="#434D67"/>
+<rect x="596" y="48" width="40" height="34" fill="#3B4358"/>
+<rect x="636" y="48" width="40" height="34" fill="#333949"/>
+<rect x="676" y="48" width="40" height="34" fill="#2C303C"/>
+<rect x="716" y="48" width="40" height="34" fill="#252830"/>
+<rect x="756" y="48" width="40" height="34" fill="#1E2025"/>
+<rect x="796" y="48" width="40" height="34" fill="#18181B"/>
+<rect x="836" y="48" width="40" height="34" fill="#111111"/>
 </g>
 <rect x="116" y="48" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
 <text x="104" y="69" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Neutral</text>
 <clipPath id="r1"><rect x="116" y="88" width="760" height="34" rx="6"/></clipPath>
 <g clip-path="url(#r1)">
 <rect x="116" y="88" width="40" height="34" fill="#FFFFFF"/>
-<rect x="156" y="88" width="40" height="34" fill="#DCE4F0"/>
-<rect x="196" y="88" width="40" height="34" fill="#BFD0EA"/>
-<rect x="236" y="88" width="40" height="34" fill="#A2BEE9"/>
-<rect x="276" y="88" width="40" height="34" fill="#86ADE9"/>
-<rect x="316" y="88" width="40" height="34" fill="#6A9CEB"/>
-<rect x="356" y="88" width="40" height="34" fill="#4F8BEA"/>
-<rect x="396" y="88" width="40" height="34" fill="#337BE8"/>
-<rect x="436" y="88" width="40" height="34" fill="#1B6BDF"/>
+<rect x="156" y="88" width="40" height="34" fill="#E5E9EF"/>
+<rect x="196" y="88" width="40" height="34" fill="#CCD7E9"/>
+<rect x="236" y="88" width="40" height="34" fill="#B1C6E7"/>
+<rect x="276" y="88" width="40" height="34" fill="#94B5E8"/>
+<rect x="316" y="88" width="40" height="34" fill="#76A3EA"/>
+<rect x="356" y="88" width="40" height="34" fill="#5791EB"/>
+<rect x="396" y="88" width="40" height="34" fill="#397EE9"/>
+<rect x="436" y="88" width="40" height="34" fill="#1C6CE0"/>
 <rect x="476" y="88" width="40" height="34" fill="#0C5DCC"/>
-<rect x="516" y="88" width="40" height="34" fill="#1054B5"/>
-<rect x="556" y="88" width="40" height="34" fill="#144C9F"/>
-<rect x="596" y="88" width="40" height="34" fill="#174488"/>
-<rect x="636" y="88" width="40" height="34" fill="#183C73"/>
-<rect x="676" y="88" width="40" height="34" fill="#19345E"/>
-<rect x="716" y="88" width="40" height="34" fill="#182C4B"/>
-<rect x="756" y="88" width="40" height="34" fill="#152338"/>
-<rect x="796" y="88" width="40" height="34" fill="#121B27"/>
-<rect x="836" y="88" width="40" height="34" fill="#0D1117"/>
+<rect x="516" y="88" width="40" height="34" fill="#0F53B2"/>
+<rect x="556" y="88" width="40" height="34" fill="#144998"/>
+<rect x="596" y="88" width="40" height="34" fill="#17407F"/>
+<rect x="636" y="88" width="40" height="34" fill="#183768"/>
+<rect x="676" y="88" width="40" height="34" fill="#182F53"/>
+<rect x="716" y="88" width="40" height="34" fill="#182740"/>
+<rect x="756" y="88" width="40" height="34" fill="#16202F"/>
+<rect x="796" y="88" width="40" height="34" fill="#14181F"/>
+<rect x="836" y="88" width="40" height="34" fill="#101011"/>
 </g>
 <rect x="116" y="88" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
 <text x="104" y="109" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Primary</text>
 <clipPath id="r2"><rect x="116" y="128" width="760" height="34" rx="6"/></clipPath>
 <g clip-path="url(#r2)">
 <rect x="116" y="128" width="40" height="34" fill="#FFFFFF"/>
-<rect x="156" y="128" width="40" height="34" fill="#E6F2EC"/>
-<rect x="196" y="128" width="40" height="34" fill="#C4E9D6"/>
-<rect x="236" y="128" width="40" height="34" fill="#9BE1BF"/>
-<rect x="276" y="128" width="40" height="34" fill="#75D6AB"/>
-<rect x="316" y="128" width="40" height="34" fill="#57C999"/>
-<rect x="356" y="128" width="40" height="34" fill="#3FB989"/>
-<rect x="396" y="128" width="40" height="34" fill="#2DAA7A"/>
-<rect x="436" y="128" width="40" height="34" fill="#1C996D"/>
+<rect x="156" y="128" width="40" height="34" fill="#F1F5F3"/>
+<rect x="196" y="128" width="40" height="34" fill="#DBEEE4"/>
+<rect x="236" y="128" width="40" height="34" fill="#BAE7D0"/>
+<rect x="276" y="128" width="40" height="34" fill="#8DDEB8"/>
+<rect x="316" y="128" width="40" height="34" fill="#66D1A2"/>
+<rect x="356" y="128" width="40" height="34" fill="#47C18F"/>
+<rect x="396" y="128" width="40" height="34" fill="#30AF7F"/>
+<rect x="436" y="128" width="40" height="34" fill="#1D9C6F"/>
 <rect x="476" y="128" width="40" height="34" fill="#108960"/>
-<rect x="516" y="128" width="40" height="34" fill="#167B57"/>
-<rect x="556" y="128" width="40" height="34" fill="#1B6E4E"/>
-<rect x="596" y="128" width="40" height="34" fill="#1D6045"/>
-<rect x="636" y="128" width="40" height="34" fill="#1D533D"/>
-<rect x="676" y="128" width="40" height="34" fill="#1C4634"/>
-<rect x="716" y="128" width="40" height="34" fill="#1A392B"/>
-<rect x="756" y="128" width="40" height="34" fill="#172D23"/>
-<rect x="796" y="128" width="40" height="34" fill="#132019"/>
-<rect x="836" y="128" width="40" height="34" fill="#0C130F"/>
+<rect x="516" y="128" width="40" height="34" fill="#167956"/>
+<rect x="556" y="128" width="40" height="34" fill="#1B6A4C"/>
+<rect x="596" y="128" width="40" height="34" fill="#1D5B42"/>
+<rect x="636" y="128" width="40" height="34" fill="#1D4D39"/>
+<rect x="676" y="128" width="40" height="34" fill="#1C4030"/>
+<rect x="716" y="128" width="40" height="34" fill="#1A3428"/>
+<rect x="756" y="128" width="40" height="34" fill="#182921"/>
+<rect x="796" y="128" width="40" height="34" fill="#151D19"/>
+<rect x="836" y="128" width="40" height="34" fill="#111212"/>
 </g>
 <rect x="116" y="128" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
 <text x="104" y="149" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Secondary</text>
 <clipPath id="r3"><rect x="116" y="168" width="760" height="34" rx="6"/></clipPath>
 <g clip-path="url(#r3)">
 <rect x="116" y="168" width="40" height="34" fill="#FFFFFF"/>
-<rect x="156" y="168" width="40" height="34" fill="#E8DFED"/>
-<rect x="196" y="168" width="40" height="34" fill="#D9C6E6"/>
-<rect x="236" y="168" width="40" height="34" fill="#CEADE3"/>
-<rect x="276" y="168" width="40" height="34" fill="#C695E3"/>
-<rect x="316" y="168" width="40" height="34" fill="#BE7AE5"/>
-<rect x="356" y="168" width="40" height="34" fill="#B75CE7"/>
-<rect x="396" y="168" width="40" height="34" fill="#AF3AE6"/>
-<rect x="436" y="168" width="40" height="34" fill="#A21DDA"/>
+<rect x="156" y="168" width="40" height="34" fill="#EAE5EC"/>
+<rect x="196" y="168" width="40" height="34" fill="#DCCFE4"/>
+<rect x="236" y="168" width="40" height="34" fill="#D1B7E1"/>
+<rect x="276" y="168" width="40" height="34" fill="#C89EE1"/>
+<rect x="316" y="168" width="40" height="34" fill="#C083E3"/>
+<rect x="356" y="168" width="40" height="34" fill="#B864E6"/>
+<rect x="396" y="168" width="40" height="34" fill="#B03EE6"/>
+<rect x="436" y="168" width="40" height="34" fill="#A41FDC"/>
 <rect x="476" y="168" width="40" height="34" fill="#920CC6"/>
-<rect x="516" y="168" width="40" height="34" fill="#8310B2"/>
-<rect x="556" y="168" width="40" height="34" fill="#74159D"/>
-<rect x="596" y="168" width="40" height="34" fill="#651A87"/>
-<rect x="636" y="168" width="40" height="34" fill="#561F71"/>
-<rect x="676" y="168" width="40" height="34" fill="#47205C"/>
-<rect x="716" y="168" width="40" height="34" fill="#391F47"/>
-<rect x="756" y="168" width="40" height="34" fill="#2C1B36"/>
-<rect x="796" y="168" width="40" height="34" fill="#1F1625"/>
-<rect x="836" y="168" width="40" height="34" fill="#130F16"/>
+<rect x="516" y="168" width="40" height="34" fill="#800FAE"/>
+<rect x="556" y="168" width="40" height="34" fill="#6F1596"/>
+<rect x="596" y="168" width="40" height="34" fill="#5D1B7D"/>
+<rect x="636" y="168" width="40" height="34" fill="#4C1E63"/>
+<rect x="676" y="168" width="40" height="34" fill="#3C1E4D"/>
+<rect x="716" y="168" width="40" height="34" fill="#2F1C39"/>
+<rect x="756" y="168" width="40" height="34" fill="#231829"/>
+<rect x="796" y="168" width="40" height="34" fill="#18141B"/>
+<rect x="836" y="168" width="40" height="34" fill="#0F0E0F"/>
 </g>
 <rect x="116" y="168" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
 <text x="104" y="189" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Tertiary</text>
 <clipPath id="r4"><rect x="116" y="208" width="760" height="34" rx="6"/></clipPath>
 <g clip-path="url(#r4)">
 <rect x="116" y="208" width="40" height="34" fill="#FFFFFF"/>
-<rect x="156" y="208" width="40" height="34" fill="#D7E5EF"/>
-<rect x="196" y="208" width="40" height="34" fill="#B4D4E9"/>
-<rect x="236" y="208" width="40" height="34" fill="#90C4E6"/>
-<rect x="276" y="208" width="40" height="34" fill="#6BB5E3"/>
-<rect x="316" y="208" width="40" height="34" fill="#49A6DC"/>
-<rect x="356" y="208" width="40" height="34" fill="#2E97D0"/>
-<rect x="396" y="208" width="40" height="34" fill="#1988BF"/>
-<rect x="436" y="208" width="40" height="34" fill="#0B7AAE"/>
+<rect x="156" y="208" width="40" height="34" fill="#E3EAEE"/>
+<rect x="196" y="208" width="40" height="34" fill="#C6DAE8"/>
+<rect x="236" y="208" width="40" height="34" fill="#A4CBE6"/>
+<rect x="276" y="208" width="40" height="34" fill="#7EBCE4"/>
+<rect x="316" y="208" width="40" height="34" fill="#58ADE0"/>
+<rect x="356" y="208" width="40" height="34" fill="#379CD5"/>
+<rect x="396" y="208" width="40" height="34" fill="#1D8CC4"/>
+<rect x="436" y="208" width="40" height="34" fill="#0C7CB0"/>
 <rect x="476" y="208" width="40" height="34" fill="#046C9B"/>
-<rect x="516" y="208" width="40" height="34" fill="#06618B"/>
-<rect x="556" y="208" width="40" height="34" fill="#0A577D"/>
-<rect x="596" y="208" width="40" height="34" fill="#0E4C6D"/>
-<rect x="636" y="208" width="40" height="34" fill="#11425D"/>
-<rect x="676" y="208" width="40" height="34" fill="#13394F"/>
-<rect x="716" y="208" width="40" height="34" fill="#132F40"/>
-<rect x="756" y="208" width="40" height="34" fill="#122632"/>
-<rect x="796" y="208" width="40" height="34" fill="#101C24"/>
-<rect x="836" y="208" width="40" height="34" fill="#0C1216"/>
+<rect x="516" y="208" width="40" height="34" fill="#065F89"/>
+<rect x="556" y="208" width="40" height="34" fill="#0A5478"/>
+<rect x="596" y="208" width="40" height="34" fill="#0F4867"/>
+<rect x="636" y="208" width="40" height="34" fill="#123E57"/>
+<rect x="676" y="208" width="40" height="34" fill="#143447"/>
+<rect x="716" y="208" width="40" height="34" fill="#152B39"/>
+<rect x="756" y="208" width="40" height="34" fill="#14222B"/>
+<rect x="796" y="208" width="40" height="34" fill="#131A1F"/>
+<rect x="836" y="208" width="40" height="34" fill="#111112"/>
 </g>
 <rect x="116" y="208" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
 <text x="104" y="229" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Info</text>
 <clipPath id="r5"><rect x="116" y="248" width="760" height="34" rx="6"/></clipPath>
 <g clip-path="url(#r5)">
 <rect x="116" y="248" width="40" height="34" fill="#FFFFFF"/>
-<rect x="156" y="248" width="40" height="34" fill="#DCE7DA"/>
-<rect x="196" y="248" width="40" height="34" fill="#B9D8B5"/>
-<rect x="236" y="248" width="40" height="34" fill="#98CA92"/>
-<rect x="276" y="248" width="40" height="34" fill="#7BBB74"/>
-<rect x="316" y="248" width="40" height="34" fill="#64AB5D"/>
-<rect x="356" y="248" width="40" height="34" fill="#519B4A"/>
-<rect x="396" y="248" width="40" height="34" fill="#418C3A"/>
-<rect x="436" y="248" width="40" height="34" fill="#307E29"/>
+<rect x="156" y="248" width="40" height="34" fill="#EBEDEA"/>
+<rect x="196" y="248" width="40" height="34" fill="#D3E1D1"/>
+<rect x="236" y="248" width="40" height="34" fill="#B0D4AC"/>
+<rect x="276" y="248" width="40" height="34" fill="#8DC586"/>
+<rect x="316" y="248" width="40" height="34" fill="#6FB467"/>
+<rect x="356" y="248" width="40" height="34" fill="#58A250"/>
+<rect x="396" y="248" width="40" height="34" fill="#45903D"/>
+<rect x="436" y="248" width="40" height="34" fill="#31802A"/>
 <rect x="476" y="248" width="40" height="34" fill="#21701A"/>
-<rect x="516" y="248" width="40" height="34" fill="#25641F"/>
-<rect x="556" y="248" width="40" height="34" fill="#265821"/>
-<rect x="596" y="248" width="40" height="34" fill="#254D21"/>
-<rect x="636" y="248" width="40" height="34" fill="#22441F"/>
-<rect x="676" y="248" width="40" height="34" fill="#1F3A1C"/>
-<rect x="716" y="248" width="40" height="34" fill="#1B3119"/>
-<rect x="756" y="248" width="40" height="34" fill="#172715"/>
-<rect x="796" y="248" width="40" height="34" fill="#121D11"/>
-<rect x="836" y="248" width="40" height="34" fill="#0D130C"/>
+<rect x="516" y="248" width="40" height="34" fill="#24621E"/>
+<rect x="556" y="248" width="40" height="34" fill="#265521"/>
+<rect x="596" y="248" width="40" height="34" fill="#244A20"/>
+<rect x="636" y="248" width="40" height="34" fill="#21401D"/>
+<rect x="676" y="248" width="40" height="34" fill="#1E361B"/>
+<rect x="716" y="248" width="40" height="34" fill="#1B2D19"/>
+<rect x="756" y="248" width="40" height="34" fill="#182516"/>
+<rect x="796" y="248" width="40" height="34" fill="#141C13"/>
+<rect x="836" y="248" width="40" height="34" fill="#10130F"/>
 </g>
 <rect x="116" y="248" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
 <text x="104" y="269" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Success</text>
 <clipPath id="r6"><rect x="116" y="288" width="760" height="34" rx="6"/></clipPath>
 <g clip-path="url(#r6)">
 <rect x="116" y="288" width="40" height="34" fill="#FFFFFF"/>
-<rect x="156" y="288" width="40" height="34" fill="#FBFBFB"/>
-<rect x="196" y="288" width="40" height="34" fill="#F1F1F1"/>
-<rect x="236" y="288" width="40" height="34" fill="#E8E1DA"/>
-<rect x="276" y="288" width="40" height="34" fill="#E2C9AF"/>
-<rect x="316" y="288" width="40" height="34" fill="#DDAA71"/>
-<rect x="356" y="288" width="40" height="34" fill="#CC8C3C"/>
-<rect x="396" y="288" width="40" height="34" fill="#B07119"/>
-<rect x="436" y="288" width="40" height="34" fill="#925B07"/>
+<rect x="156" y="288" width="40" height="34" fill="#FCFCFC"/>
+<rect x="196" y="288" width="40" height="34" fill="#F4F4F4"/>
+<rect x="236" y="288" width="40" height="34" fill="#E8E7E6"/>
+<rect x="276" y="288" width="40" height="34" fill="#E1D2C3"/>
+<rect x="316" y="288" width="40" height="34" fill="#DEB487"/>
+<rect x="356" y="288" width="40" height="34" fill="#D29348"/>
+<rect x="396" y="288" width="40" height="34" fill="#B6761D"/>
+<rect x="436" y="288" width="40" height="34" fill="#945D08"/>
 <rect x="476" y="288" width="40" height="34" fill="#774902"/>
-<rect x="516" y="288" width="40" height="34" fill="#673F03"/>
-<rect x="556" y="288" width="40" height="34" fill="#5B3704"/>
-<rect x="596" y="288" width="40" height="34" fill="#533204"/>
-<rect x="636" y="288" width="40" height="34" fill="#4D2F05"/>
-<rect x="676" y="288" width="40" height="34" fill="#482C05"/>
-<rect x="716" y="288" width="40" height="34" fill="#422805"/>
-<rect x="756" y="288" width="40" height="34" fill="#3A2305"/>
-<rect x="796" y="288" width="40" height="34" fill="#2D1A04"/>
-<rect x="836" y="288" width="40" height="34" fill="#1A0E02"/>
+<rect x="516" y="288" width="40" height="34" fill="#643D03"/>
+<rect x="556" y="288" width="40" height="34" fill="#573504"/>
+<rect x="596" y="288" width="40" height="34" fill="#4E2F04"/>
+<rect x="636" y="288" width="40" height="34" fill="#482C04"/>
+<rect x="676" y="288" width="40" height="34" fill="#432905"/>
+<rect x="716" y="288" width="40" height="34" fill="#3E2505"/>
+<rect x="756" y="288" width="40" height="34" fill="#352005"/>
+<rect x="796" y="288" width="40" height="34" fill="#2A1904"/>
+<rect x="836" y="288" width="40" height="34" fill="#190E03"/>
 </g>
 <rect x="116" y="288" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
 <text x="104" y="309" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Warning</text>
 <clipPath id="r7"><rect x="116" y="328" width="760" height="34" rx="6"/></clipPath>
 <g clip-path="url(#r7)">
 <rect x="116" y="328" width="40" height="34" fill="#FFFFFF"/>
-<rect x="156" y="328" width="40" height="34" fill="#EDDFDC"/>
-<rect x="196" y="328" width="40" height="34" fill="#E6C5BF"/>
-<rect x="236" y="328" width="40" height="34" fill="#E4AAA0"/>
-<rect x="276" y="328" width="40" height="34" fill="#E38E80"/>
-<rect x="316" y="328" width="40" height="34" fill="#E17160"/>
-<rect x="356" y="328" width="40" height="34" fill="#DC5544"/>
-<rect x="396" y="328" width="40" height="34" fill="#CF3D2D"/>
-<rect x="436" y="328" width="40" height="34" fill="#BF281A"/>
+<rect x="156" y="328" width="40" height="34" fill="#EBE6E5"/>
+<rect x="196" y="328" width="40" height="34" fill="#E3CECB"/>
+<rect x="236" y="328" width="40" height="34" fill="#E1B5AD"/>
+<rect x="276" y="328" width="40" height="34" fill="#E1998D"/>
+<rect x="316" y="328" width="40" height="34" fill="#E07B6B"/>
+<rect x="356" y="328" width="40" height="34" fill="#DC5A49"/>
+<rect x="396" y="328" width="40" height="34" fill="#D14030"/>
+<rect x="436" y="328" width="40" height="34" fill="#C1291B"/>
 <rect x="476" y="328" width="40" height="34" fill="#AD1A0D"/>
-<rect x="516" y="328" width="40" height="34" fill="#9A1D11"/>
-<rect x="556" y="328" width="40" height="34" fill="#862116"/>
-<rect x="596" y="328" width="40" height="34" fill="#742218"/>
-<rect x="636" y="328" width="40" height="34" fill="#642018"/>
-<rect x="676" y="328" width="40" height="34" fill="#551F18"/>
-<rect x="716" y="328" width="40" height="34" fill="#461C16"/>
-<rect x="756" y="328" width="40" height="34" fill="#371914"/>
-<rect x="796" y="328" width="40" height="34" fill="#281411"/>
-<rect x="836" y="328" width="40" height="34" fill="#190E0C"/>
+<rect x="516" y="328" width="40" height="34" fill="#961D11"/>
+<rect x="556" y="328" width="40" height="34" fill="#802015"/>
+<rect x="596" y="328" width="40" height="34" fill="#6C2017"/>
+<rect x="636" y="328" width="40" height="34" fill="#5B1F17"/>
+<rect x="676" y="328" width="40" height="34" fill="#4B1D17"/>
+<rect x="716" y="328" width="40" height="34" fill="#3C1A15"/>
+<rect x="756" y="328" width="40" height="34" fill="#2D1714"/>
+<rect x="796" y="328" width="40" height="34" fill="#201311"/>
+<rect x="836" y="328" width="40" height="34" fill="#130E0D"/>
 </g>
 <rect x="116" y="328" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
 <text x="104" y="349" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Danger</text>
 <clipPath id="r8"><rect x="116" y="368" width="760" height="34" rx="6"/></clipPath>
 <g clip-path="url(#r8)">
 <rect x="116" y="368" width="40" height="34" fill="#FFFFFF"/>
-<rect x="156" y="368" width="40" height="34" fill="#ECEEF6"/>
-<rect x="196" y="368" width="40" height="34" fill="#D8DEF1"/>
-<rect x="236" y="368" width="40" height="34" fill="#C4CEEF"/>
-<rect x="276" y="368" width="40" height="34" fill="#AFBDEF"/>
-<rect x="316" y="368" width="40" height="34" fill="#99ACF1"/>
-<rect x="356" y="368" width="40" height="34" fill="#849AF4"/>
-<rect x="396" y="368" width="40" height="34" fill="#6F87F6"/>
-<rect x="436" y="368" width="40" height="34" fill="#5C72F8"/>
+<rect x="156" y="368" width="40" height="34" fill="#F1F2F6"/>
+<rect x="196" y="368" width="40" height="34" fill="#E0E4F0"/>
+<rect x="236" y="368" width="40" height="34" fill="#CDD5EE"/>
+<rect x="276" y="368" width="40" height="34" fill="#B8C5EE"/>
+<rect x="316" y="368" width="40" height="34" fill="#A2B3F0"/>
+<rect x="356" y="368" width="40" height="34" fill="#8BA1F3"/>
+<rect x="396" y="368" width="40" height="34" fill="#748CF6"/>
+<rect x="436" y="368" width="40" height="34" fill="#5F75F8"/>
 <rect x="476" y="368" width="40" height="34" fill="#4C5BF8"/>
-<rect x="516" y="368" width="40" height="34" fill="#434DEB"/>
-<rect x="556" y="368" width="40" height="34" fill="#3B46D0"/>
-<rect x="596" y="368" width="40" height="34" fill="#3642AF"/>
-<rect x="636" y="368" width="40" height="34" fill="#303C91"/>
-<rect x="676" y="368" width="40" height="34" fill="#2A3575"/>
-<rect x="716" y="368" width="40" height="34" fill="#242E5A"/>
-<rect x="756" y="368" width="40" height="34" fill="#1E2542"/>
-<rect x="796" y="368" width="40" height="34" fill="#171C2C"/>
-<rect x="836" y="368" width="40" height="34" fill="#0F1118"/>
+<rect x="516" y="368" width="40" height="34" fill="#4149E8"/>
+<rect x="556" y="368" width="40" height="34" fill="#3741C3"/>
+<rect x="596" y="368" width="40" height="34" fill="#303C9D"/>
+<rect x="636" y="368" width="40" height="34" fill="#2A357D"/>
+<rect x="676" y="368" width="40" height="34" fill="#252E60"/>
+<rect x="716" y="368" width="40" height="34" fill="#1F2746"/>
+<rect x="756" y="368" width="40" height="34" fill="#1A1F31"/>
+<rect x="796" y="368" width="40" height="34" fill="#15171F"/>
+<rect x="836" y="368" width="40" height="34" fill="#0E0F10"/>
 </g>
 <rect x="116" y="368" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
 <text x="104" y="389" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Data 1</text>
 <clipPath id="r9"><rect x="116" y="408" width="760" height="34" rx="6"/></clipPath>
 <g clip-path="url(#r9)">
 <rect x="116" y="408" width="40" height="34" fill="#FFFFFF"/>
-<rect x="156" y="408" width="40" height="34" fill="#F3ECF3"/>
-<rect x="196" y="408" width="40" height="34" fill="#EBD7EB"/>
-<rect x="236" y="408" width="40" height="34" fill="#E5C1E5"/>
-<rect x="276" y="408" width="40" height="34" fill="#E1A9E2"/>
-<rect x="316" y="408" width="40" height="34" fill="#DF8DE1"/>
-<rect x="356" y="408" width="40" height="34" fill="#DC6EE0"/>
-<rect x="396" y="408" width="40" height="34" fill="#D847DF"/>
-<rect x="436" y="408" width="40" height="34" fill="#CC22D4"/>
+<rect x="156" y="408" width="40" height="34" fill="#F3F0F3"/>
+<rect x="196" y="408" width="40" height="34" fill="#EBDEEB"/>
+<rect x="236" y="408" width="40" height="34" fill="#E5C9E5"/>
+<rect x="276" y="408" width="40" height="34" fill="#E1B2E1"/>
+<rect x="316" y="408" width="40" height="34" fill="#DE96E0"/>
+<rect x="356" y="408" width="40" height="34" fill="#DC75E0"/>
+<rect x="396" y="408" width="40" height="34" fill="#D94DE0"/>
+<rect x="436" y="408" width="40" height="34" fill="#CE25D7"/>
 <rect x="476" y="408" width="40" height="34" fill="#B90CC1"/>
-<rect x="516" y="408" width="40" height="34" fill="#A70EAE"/>
-<rect x="556" y="408" width="40" height="34" fill="#95139B"/>
-<rect x="596" y="408" width="40" height="34" fill="#821987"/>
-<rect x="636" y="408" width="40" height="34" fill="#6D2071"/>
-<rect x="676" y="408" width="40" height="34" fill="#5A225C"/>
-<rect x="716" y="408" width="40" height="34" fill="#472148"/>
-<rect x="756" y="408" width="40" height="34" fill="#351D36"/>
-<rect x="796" y="408" width="40" height="34" fill="#251725"/>
-<rect x="836" y="408" width="40" height="34" fill="#150F15"/>
+<rect x="516" y="408" width="40" height="34" fill="#A40EAB"/>
+<rect x="556" y="408" width="40" height="34" fill="#8F1395"/>
+<rect x="596" y="408" width="40" height="34" fill="#791A7D"/>
+<rect x="636" y="408" width="40" height="34" fill="#612064"/>
+<rect x="676" y="408" width="40" height="34" fill="#4D214E"/>
+<rect x="716" y="408" width="40" height="34" fill="#3A1F3B"/>
+<rect x="756" y="408" width="40" height="34" fill="#2A1B2A"/>
+<rect x="796" y="408" width="40" height="34" fill="#1C151C"/>
+<rect x="836" y="408" width="40" height="34" fill="#0F0E0F"/>
 </g>
 <rect x="116" y="408" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
 <text x="104" y="429" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Data 2</text>
 <clipPath id="r10"><rect x="116" y="448" width="760" height="34" rx="6"/></clipPath>
 <g clip-path="url(#r10)">
 <rect x="116" y="448" width="40" height="34" fill="#FFFFFF"/>
-<rect x="156" y="448" width="40" height="34" fill="#F6ECEC"/>
-<rect x="196" y="448" width="40" height="34" fill="#F1D8D7"/>
-<rect x="236" y="448" width="40" height="34" fill="#F0C2C1"/>
-<rect x="276" y="448" width="40" height="34" fill="#F0AAA9"/>
-<rect x="316" y="448" width="40" height="34" fill="#F29191"/>
-<rect x="356" y="448" width="40" height="34" fill="#F37377"/>
-<rect x="396" y="448" width="40" height="34" fill="#F2515E"/>
-<rect x="436" y="448" width="40" height="34" fill="#EA2A47"/>
+<rect x="156" y="448" width="40" height="34" fill="#F5F0F0"/>
+<rect x="196" y="448" width="40" height="34" fill="#F0DFDE"/>
+<rect x="236" y="448" width="40" height="34" fill="#EECBCA"/>
+<rect x="276" y="448" width="40" height="34" fill="#EFB5B4"/>
+<rect x="316" y="448" width="40" height="34" fill="#F19B9B"/>
+<rect x="356" y="448" width="40" height="34" fill="#F37D80"/>
+<rect x="396" y="448" width="40" height="34" fill="#F35964"/>
+<rect x="436" y="448" width="40" height="34" fill="#ED2D49"/>
 <rect x="476" y="448" width="40" height="34" fill="#D6153B"/>
-<rect x="516" y="448" width="40" height="34" fill="#C01A36"/>
-<rect x="556" y="448" width="40" height="34" fill="#A91F32"/>
-<rect x="596" y="448" width="40" height="34" fill="#92232F"/>
-<rect x="636" y="448" width="40" height="34" fill="#7B252C"/>
-<rect x="676" y="448" width="40" height="34" fill="#652428"/>
-<rect x="716" y="448" width="40" height="34" fill="#502123"/>
-<rect x="756" y="448" width="40" height="34" fill="#3C1D1D"/>
-<rect x="796" y="448" width="40" height="34" fill="#291717"/>
-<rect x="836" y="448" width="40" height="34" fill="#170F0F"/>
+<rect x="516" y="448" width="40" height="34" fill="#BC1935"/>
+<rect x="556" y="448" width="40" height="34" fill="#A21F31"/>
+<rect x="596" y="448" width="40" height="34" fill="#88232D"/>
+<rect x="636" y="448" width="40" height="34" fill="#6F2429"/>
+<rect x="676" y="448" width="40" height="34" fill="#582224"/>
+<rect x="716" y="448" width="40" height="34" fill="#431F20"/>
+<rect x="756" y="448" width="40" height="34" fill="#301B1B"/>
+<rect x="796" y="448" width="40" height="34" fill="#1F1515"/>
+<rect x="836" y="448" width="40" height="34" fill="#100F0F"/>
 </g>
 <rect x="116" y="448" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
 <text x="104" y="469" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Data 3</text>
 <clipPath id="r11"><rect x="116" y="488" width="760" height="34" rx="6"/></clipPath>
 <g clip-path="url(#r11)">
 <rect x="116" y="488" width="40" height="34" fill="#FFFFFF"/>
-<rect x="156" y="488" width="40" height="34" fill="#F5EDE6"/>
-<rect x="196" y="488" width="40" height="34" fill="#F0DBC9"/>
-<rect x="236" y="488" width="40" height="34" fill="#EDC6A6"/>
-<rect x="276" y="488" width="40" height="34" fill="#ECB27F"/>
-<rect x="316" y="488" width="40" height="34" fill="#E89D56"/>
-<rect x="356" y="488" width="40" height="34" fill="#DE8A34"/>
-<rect x="396" y="488" width="40" height="34" fill="#CE7A1B"/>
-<rect x="436" y="488" width="40" height="34" fill="#BC6D0B"/>
+<rect x="156" y="488" width="40" height="34" fill="#F5F1EE"/>
+<rect x="196" y="488" width="40" height="34" fill="#EFE1D6"/>
+<rect x="236" y="488" width="40" height="34" fill="#ECCFB7"/>
+<rect x="276" y="488" width="40" height="34" fill="#ECBB92"/>
+<rect x="316" y="488" width="40" height="34" fill="#EAA566"/>
+<rect x="356" y="488" width="40" height="34" fill="#E3903E"/>
+<rect x="396" y="488" width="40" height="34" fill="#D37E1F"/>
+<rect x="436" y="488" width="40" height="34" fill="#BF6F0C"/>
 <rect x="476" y="488" width="40" height="34" fill="#A86004"/>
-<rect x="516" y="488" width="40" height="34" fill="#985707"/>
-<rect x="556" y="488" width="40" height="34" fill="#874E0B"/>
-<rect x="596" y="488" width="40" height="34" fill="#77450F"/>
-<rect x="636" y="488" width="40" height="34" fill="#653D13"/>
-<rect x="676" y="488" width="40" height="34" fill="#543415"/>
-<rect x="716" y="488" width="40" height="34" fill="#452C15"/>
-<rect x="756" y="488" width="40" height="34" fill="#352313"/>
-<rect x="796" y="488" width="40" height="34" fill="#251A10"/>
-<rect x="836" y="488" width="40" height="34" fill="#15100C"/>
+<rect x="516" y="488" width="40" height="34" fill="#955506"/>
+<rect x="556" y="488" width="40" height="34" fill="#824B0B"/>
+<rect x="596" y="488" width="40" height="34" fill="#6F4110"/>
+<rect x="636" y="488" width="40" height="34" fill="#5D3814"/>
+<rect x="676" y="488" width="40" height="34" fill="#4C3015"/>
+<rect x="716" y="488" width="40" height="34" fill="#3C2816"/>
+<rect x="756" y="488" width="40" height="34" fill="#2D2015"/>
+<rect x="796" y="488" width="40" height="34" fill="#1F1813"/>
+<rect x="836" y="488" width="40" height="34" fill="#111010"/>
 </g>
 <rect x="116" y="488" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
 <text x="104" y="509" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Data 4</text>
 <clipPath id="r12"><rect x="116" y="528" width="760" height="34" rx="6"/></clipPath>
 <g clip-path="url(#r12)">
 <rect x="116" y="528" width="40" height="34" fill="#FFFFFF"/>
-<rect x="156" y="528" width="40" height="34" fill="#F0F0E3"/>
-<rect x="196" y="528" width="40" height="34" fill="#E3E2BC"/>
-<rect x="236" y="528" width="40" height="34" fill="#D6D390"/>
-<rect x="276" y="528" width="40" height="34" fill="#C9C467"/>
-<rect x="316" y="528" width="40" height="34" fill="#BBB546"/>
-<rect x="356" y="528" width="40" height="34" fill="#ACA52C"/>
-<rect x="396" y="528" width="40" height="34" fill="#9D961B"/>
-<rect x="436" y="528" width="40" height="34" fill="#8E870E"/>
+<rect x="156" y="528" width="40" height="34" fill="#F4F4EF"/>
+<rect x="196" y="528" width="40" height="34" fill="#E8E7D3"/>
+<rect x="236" y="528" width="40" height="34" fill="#DCDAAA"/>
+<rect x="276" y="528" width="40" height="34" fill="#CFCC7D"/>
+<rect x="316" y="528" width="40" height="34" fill="#C2BC54"/>
+<rect x="356" y="528" width="40" height="34" fill="#B2AC33"/>
+<rect x="396" y="528" width="40" height="34" fill="#A19A1E"/>
+<rect x="436" y="528" width="40" height="34" fill="#90890F"/>
 <rect x="476" y="528" width="40" height="34" fill="#7E7806"/>
-<rect x="516" y="528" width="40" height="34" fill="#716C0A"/>
-<rect x="556" y="528" width="40" height="34" fill="#65610F"/>
-<rect x="596" y="528" width="40" height="34" fill="#595513"/>
-<rect x="636" y="528" width="40" height="34" fill="#4D4A15"/>
-<rect x="676" y="528" width="40" height="34" fill="#413F16"/>
-<rect x="716" y="528" width="40" height="34" fill="#353315"/>
-<rect x="756" y="528" width="40" height="34" fill="#2A2913"/>
-<rect x="796" y="528" width="40" height="34" fill="#1E1D10"/>
-<rect x="836" y="528" width="40" height="34" fill="#12110B"/>
+<rect x="516" y="528" width="40" height="34" fill="#706A0A"/>
+<rect x="556" y="528" width="40" height="34" fill="#625D0F"/>
+<rect x="596" y="528" width="40" height="34" fill="#545113"/>
+<rect x="636" y="528" width="40" height="34" fill="#474515"/>
+<rect x="676" y="528" width="40" height="34" fill="#3B3916"/>
+<rect x="716" y="528" width="40" height="34" fill="#302F16"/>
+<rect x="756" y="528" width="40" height="34" fill="#252515"/>
+<rect x="796" y="528" width="40" height="34" fill="#1B1B13"/>
+<rect x="836" y="528" width="40" height="34" fill="#111110"/>
 </g>
 <rect x="116" y="528" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
 <text x="104" y="549" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Data 5</text>
 <clipPath id="r13"><rect x="116" y="568" width="760" height="34" rx="6"/></clipPath>
 <g clip-path="url(#r13)">
 <rect x="116" y="568" width="40" height="34" fill="#FFFFFF"/>
-<rect x="156" y="568" width="40" height="34" fill="#E8F2E9"/>
-<rect x="196" y="568" width="40" height="34" fill="#C9E9CE"/>
-<rect x="236" y="568" width="40" height="34" fill="#A5E0B0"/>
-<rect x="276" y="568" width="40" height="34" fill="#82D694"/>
-<rect x="316" y="568" width="40" height="34" fill="#65C97E"/>
-<rect x="356" y="568" width="40" height="34" fill="#50BA6D"/>
-<rect x="396" y="568" width="40" height="34" fill="#3CAB5D"/>
-<rect x="436" y="568" width="40" height="34" fill="#299B4F"/>
+<rect x="156" y="568" width="40" height="34" fill="#F2F5F2"/>
+<rect x="196" y="568" width="40" height="34" fill="#DEEDE1"/>
+<rect x="236" y="568" width="40" height="34" fill="#C2E7C8"/>
+<rect x="276" y="568" width="40" height="34" fill="#99DEA7"/>
+<rect x="316" y="568" width="40" height="34" fill="#74D28A"/>
+<rect x="356" y="568" width="40" height="34" fill="#57C274"/>
+<rect x="396" y="568" width="40" height="34" fill="#40B061"/>
+<rect x="436" y="568" width="40" height="34" fill="#2B9E51"/>
 <rect x="476" y="568" width="40" height="34" fill="#1A8B43"/>
-<rect x="516" y="568" width="40" height="34" fill="#217D3F"/>
-<rect x="556" y="568" width="40" height="34" fill="#266E3B"/>
-<rect x="596" y="568" width="40" height="34" fill="#266036"/>
-<rect x="636" y="568" width="40" height="34" fill="#245330"/>
-<rect x="676" y="568" width="40" height="34" fill="#21462A"/>
-<rect x="716" y="568" width="40" height="34" fill="#1E3924"/>
-<rect x="756" y="568" width="40" height="34" fill="#1A2D1E"/>
-<rect x="796" y="568" width="40" height="34" fill="#142016"/>
-<rect x="836" y="568" width="40" height="34" fill="#0D130E"/>
+<rect x="516" y="568" width="40" height="34" fill="#217B3E"/>
+<rect x="556" y="568" width="40" height="34" fill="#256B3A"/>
+<rect x="596" y="568" width="40" height="34" fill="#255C34"/>
+<rect x="636" y="568" width="40" height="34" fill="#234E2E"/>
+<rect x="676" y="568" width="40" height="34" fill="#214128"/>
+<rect x="716" y="568" width="40" height="34" fill="#1E3423"/>
+<rect x="756" y="568" width="40" height="34" fill="#1B291D"/>
+<rect x="796" y="568" width="40" height="34" fill="#171D18"/>
+<rect x="836" y="568" width="40" height="34" fill="#111212"/>
 </g>
 <rect x="116" y="568" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
 <text x="104" y="589" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Data 6</text>
 <clipPath id="r14"><rect x="116" y="608" width="760" height="34" rx="6"/></clipPath>
 <g clip-path="url(#r14)">
 <rect x="116" y="608" width="40" height="34" fill="#FFFFFF"/>
-<rect x="156" y="608" width="40" height="34" fill="#E4F2F2"/>
-<rect x="196" y="608" width="40" height="34" fill="#BFE8E7"/>
-<rect x="236" y="608" width="40" height="34" fill="#94DFDE"/>
-<rect x="276" y="608" width="40" height="34" fill="#6BD3D2"/>
-<rect x="316" y="608" width="40" height="34" fill="#4AC5C5"/>
-<rect x="356" y="608" width="40" height="34" fill="#31B6B5"/>
-<rect x="396" y="608" width="40" height="34" fill="#1FA5A5"/>
-<rect x="436" y="608" width="40" height="34" fill="#119595"/>
+<rect x="156" y="608" width="40" height="34" fill="#F0F5F5"/>
+<rect x="196" y="608" width="40" height="34" fill="#D8EDEC"/>
+<rect x="236" y="608" width="40" height="34" fill="#B2E5E4"/>
+<rect x="276" y="608" width="40" height="34" fill="#83DAD9"/>
+<rect x="316" y="608" width="40" height="34" fill="#59CDCC"/>
+<rect x="356" y="608" width="40" height="34" fill="#38BCBC"/>
+<rect x="396" y="608" width="40" height="34" fill="#22AAAA"/>
+<rect x="436" y="608" width="40" height="34" fill="#129898"/>
 <rect x="476" y="608" width="40" height="34" fill="#088585"/>
-<rect x="516" y="608" width="40" height="34" fill="#0C7878"/>
-<rect x="556" y="608" width="40" height="34" fill="#126B6B"/>
-<rect x="596" y="608" width="40" height="34" fill="#155E5E"/>
-<rect x="636" y="608" width="40" height="34" fill="#165151"/>
-<rect x="676" y="608" width="40" height="34" fill="#174545"/>
-<rect x="716" y="608" width="40" height="34" fill="#163838"/>
-<rect x="756" y="608" width="40" height="34" fill="#142C2C"/>
-<rect x="796" y="608" width="40" height="34" fill="#102020"/>
-<rect x="836" y="608" width="40" height="34" fill="#0B1313"/>
+<rect x="516" y="608" width="40" height="34" fill="#0C7676"/>
+<rect x="556" y="608" width="40" height="34" fill="#126767"/>
+<rect x="596" y="608" width="40" height="34" fill="#155959"/>
+<rect x="636" y="608" width="40" height="34" fill="#174C4C"/>
+<rect x="676" y="608" width="40" height="34" fill="#173F3F"/>
+<rect x="716" y="608" width="40" height="34" fill="#173333"/>
+<rect x="756" y="608" width="40" height="34" fill="#162828"/>
+<rect x="796" y="608" width="40" height="34" fill="#141D1D"/>
+<rect x="836" y="608" width="40" height="34" fill="#111212"/>
 </g>
 <rect x="116" y="608" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
 <text x="104" y="629" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Data 7</text>
 <clipPath id="r15"><rect x="116" y="648" width="760" height="34" rx="6"/></clipPath>
 <g clip-path="url(#r15)">
 <rect x="116" y="648" width="40" height="34" fill="#FFFFFF"/>
-<rect x="156" y="648" width="40" height="34" fill="#E8F0F6"/>
-<rect x="196" y="648" width="40" height="34" fill="#CDE2F1"/>
-<rect x="236" y="648" width="40" height="34" fill="#B0D4EF"/>
-<rect x="276" y="648" width="40" height="34" fill="#8EC7EF"/>
-<rect x="316" y="648" width="40" height="34" fill="#6BB9ED"/>
-<rect x="356" y="648" width="40" height="34" fill="#46AAE8"/>
-<rect x="396" y="648" width="40" height="34" fill="#279BDC"/>
-<rect x="436" y="648" width="40" height="34" fill="#118BC9"/>
+<rect x="156" y="648" width="40" height="34" fill="#EFF3F6"/>
+<rect x="196" y="648" width="40" height="34" fill="#DAE7F0"/>
+<rect x="236" y="648" width="40" height="34" fill="#C0DBEE"/>
+<rect x="276" y="648" width="40" height="34" fill="#A0CEEE"/>
+<rect x="316" y="648" width="40" height="34" fill="#7BC0EE"/>
+<rect x="356" y="648" width="40" height="34" fill="#53B0EB"/>
+<rect x="396" y="648" width="40" height="34" fill="#2D9FE1"/>
+<rect x="436" y="648" width="40" height="34" fill="#138ECD"/>
 <rect x="476" y="648" width="40" height="34" fill="#067CB5"/>
-<rect x="516" y="648" width="40" height="34" fill="#0970A3"/>
-<rect x="556" y="648" width="40" height="34" fill="#0E6491"/>
-<rect x="596" y="648" width="40" height="34" fill="#12587F"/>
-<rect x="636" y="648" width="40" height="34" fill="#154C6C"/>
-<rect x="676" y="648" width="40" height="34" fill="#17415B"/>
-<rect x="716" y="648" width="40" height="34" fill="#173548"/>
-<rect x="756" y="648" width="40" height="34" fill="#152A38"/>
-<rect x="796" y="648" width="40" height="34" fill="#121E26"/>
-<rect x="836" y="648" width="40" height="34" fill="#0C1216"/>
+<rect x="516" y="648" width="40" height="34" fill="#096EA1"/>
+<rect x="556" y="648" width="40" height="34" fill="#0E608C"/>
+<rect x="596" y="648" width="40" height="34" fill="#135378"/>
+<rect x="636" y="648" width="40" height="34" fill="#164764"/>
+<rect x="676" y="648" width="40" height="34" fill="#183B52"/>
+<rect x="716" y="648" width="40" height="34" fill="#183040"/>
+<rect x="756" y="648" width="40" height="34" fill="#172630"/>
+<rect x="796" y="648" width="40" height="34" fill="#141C21"/>
+<rect x="836" y="648" width="40" height="34" fill="#111112"/>
 </g>
 <rect x="116" y="648" width="760" height="34" rx="6" fill="none" stroke="#00000014"/>
 <text x="104" y="669" font-size="13" font-weight="600" fill="#202124" text-anchor="end">Data 8</text>
