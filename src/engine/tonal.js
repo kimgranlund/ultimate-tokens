@@ -852,7 +852,6 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
   const maxc500 = maxChromaInGamut(seedHue, anchor.lstar);
   const anchorRelFrac = maxc500 > 0 ? Math.min(1, anchor.cam.chroma / maxc500) : 0;
   const pk = peakC(seedHue).c; // the SEED hue's max chroma in sRGB - same basis paletteStops's own `target` uses
-  const groupTarget = (palette.chroma / 100) * pk;
   // evenChroma's floorRef (#701 U2, revision 14; per stop since #766): the largest gamut ceiling among
   // the pivot and its first display step on either side (450, 550), at the tones this ramp renders
   // them. See evenChroma's own comment for why the first step, not the pivot alone, sets the level.
@@ -886,7 +885,7 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
     const chromaAt = (h, hRef = h) => {
       const mc = maxChromaInGamut(h, tone);
       const anchorIntendedH = controls.relChroma ? anchorRelFrac * mc : anchor.cam.chroma;
-      const groupIntendedH = controls.relChroma ? (palette.chroma / 100) * mc : groupTarget;
+      const groupIntendedH = controls.relChroma ? mc : pk;
       const intendedH = anchorChromaBasis(stop, 500, lift, anchorIntendedH, groupIntendedH);
       return evenChroma(mc, intendedH, env, controls.chromaFloor, floorRefAt(hRef, mc, pivotTone, tone450, tone550));
     };
@@ -971,14 +970,14 @@ export function paletteStops(palette, controls, stops) {
     const tone500 = toneAt(500, palette.skew, palette.lift, ctl);
     const seedHue = effHue(palette.hue, "oklch", hueAnchorFrac(palette, controls)); // ~baseHue, only for the gamut basis
     const maxc500 = maxChromaInGamut(seedHue, tone500);
-    const intended500 = (palette.chroma / 100) * (controls.relChroma ? maxc500 : peakC(seedHue).c);
+    const intended500 = controls.relChroma ? maxc500 : peakC(seedHue).c;
     const c500 = evenChroma(maxc500, intended500, envelopeAt.get(ANCHOR_STOP), controls.chromaFloor);
     baseHue = solveCam16Hue(palette.hue, Math.max(c500, 8), tone500); // floor the solve chroma so the hue stays well-defined for near-greys
   } else {
     baseHue = palette.hue;
   }
   const pk = peakC(baseHue).c; // the BASE hue's max chroma in sRGB
-  const target = (palette.chroma / 100) * pk; // control is % of the BASE-hue peak
+  const target = pk; // control is % of the BASE-hue peak
   // anchorChroma  -  the anchor stop's OWN emitted chroma, by the SAME formula the per-stop map below
   // uses at stop 500 (relChroma-aware, and tone/hue-aware via toneAt/baseHue  -  lift- and skew-displaced,
   // never the hue's independent cusp). #681 U3 pass 3: this is the root-cause fix for the lift-sign x
@@ -990,7 +989,7 @@ export function paletteStops(palette, controls, stops) {
   // 100%" is measured against, so it is what every other stop gets held to below.
   const tone500 = toneAt(500, palette.skew, palette.lift, ctl);
   const maxc500 = maxChromaInGamut(baseHue, tone500);
-  const intended500 = controls.relChroma ? (palette.chroma / 100) * maxc500 : target;
+  const intended500 = controls.relChroma ? maxc500 : target;
   const anchorChroma = evenChroma(maxc500, intended500, envelopeAt.get(ANCHOR_STOP), controls.chromaFloor);
   // evenChroma's floorRef (#701 U2, revision 14; per stop since #766): as in paletteStopsAnchored, the
   // pivot's ceiling or its first display step's (450, 550), whichever is larger, read by floorRefAt at
@@ -1015,7 +1014,7 @@ export function paletteStops(palette, controls, stops) {
     // envelope, then clamped. Relative mode scales EACH stop by its OWN gamut ceiling, so every hue
     // fills the same fraction of its gamut envelope and palettes read as equally saturated regardless
     // of hue. min(·, maxc) keeps it in-gamut either way.
-    const intended = controls.relChroma ? (palette.chroma / 100) * maxc : target; // un-damped chroma for this stop
+    const intended = controls.relChroma ? maxc : target; // un-damped chroma for this stop
     // evenChroma: scale intended by chromaEnvelope's multiplier (exactly 1 at ANCHOR_STOP, by
     // construction  -  the edge damping starves the light/dark ends, never the anchor), then apply the
     // chroma FLOOR on the envelope itself  -  for a LOW-chroma palette the light stops collapse to near-
