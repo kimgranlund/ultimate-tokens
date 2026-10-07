@@ -2048,7 +2048,7 @@ if (applyFloatPlans && applyFontPrimitivesModes) {
       oldTypeVars.push({ name: `${voice}/${step}/weight`, type: "FLOAT", values: [{ mode: "Value", value: weight }] });
     };
     addStep("Heading", "MD", 34, 44, 0.2, 8, 620); // nearest headline step by size: sm(32,dist2) over md(40,dist6); weight exact-matches semi-bold(620)
-    addStep("UI", "3XS", 10, 14, 0.1, 4, 450); // outside ui-control's own range (xs=12 is its smallest), clamps to nearest (xs, dist 2); weight nearest regular(440,dist10) over medium(500,dist50)
+    addStep("UI", "3XS", 10, 14, 0.1, 4, 450); // ui-control's only step is md (14, T-0017), so it is the nearest by size (dist 4); weight nearest regular(440,dist10) over medium(500,dist50)
     addStep("Code", "2XS", 10, 13, 0.05, 2, 460); // outside label-mono's own range, clamps to nearest (sm, dist 2); weight nearest regular(440,dist20) over medium(500,dist40)
     addStep("Body", "MD", 15.5, 24, 0, 8, 460); // IDENTITY voice (unchanged name), nearest body step by size: md(16,dist0.5) over sm(14,dist1.5), NOT 17, a tie between md(dist1) and lg(dist1); weight nearest regular(440,dist20)
     oldTypeVars.push({ name: "UI/3XS/singleLineHeight", type: "FLOAT", values: [{ mode: "Value", value: 16 }] }); // no bridge at all, deprecates
@@ -2101,7 +2101,7 @@ if (applyFloatPlans && applyFontPrimitivesModes) {
       if (typeRpt.aliases.length !== 20) FAIL("librarygrammar", `expected 20 Type Primitives aliases (4 fields + weight, x 4 old voice/steps), got ${typeRpt.aliases.length}: ${JSON.stringify(typeRpt.aliases)}`);
       const expectAlias = {
         "Heading/MD/size": "type/headline/sm/size", "Heading/MD/weight": "weight/headline/semi-bold",
-        "UI/3XS/size": "type/ui-control/xs/size", "UI/3XS/weight": "weight/ui-control/regular",
+        "UI/3XS/size": "type/ui-control/md/size", "UI/3XS/weight": "weight/ui-control/regular",
         "Code/2XS/size": "type/label-mono/sm/size", "Code/2XS/weight": "weight/label-mono/regular",
         "Body/MD/size": "type/body/md/size", "Body/MD/weight": "weight/body/regular",
       };

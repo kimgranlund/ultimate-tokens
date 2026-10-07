@@ -597,13 +597,16 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (!wsp || wsp["4"].value !== "16px") FAIL("panda", `EX-3 tokens.spacing.4 = ${wsp && wsp["4"].value}`);
   const wbw = withOpts.theme.extend.tokens.borderWidths;
   if (!wbw || wbw.thin.value !== "1px") FAIL("panda", `EX-3 tokens.borderWidths.thin = ${wbw && wbw.thin.value}`);
-  // every voice's textStyle carries sm/md/lg + DEFAULT, fontFamily referencing its resolved role.
+  // every voice's textStyle carries exactly its OWN steps among SM/MD/LG (lowercased, read from
+  // typeScl.categories[voice]; the two interactive voices carry MD alone) + DEFAULT, fontFamily
+  // referencing its resolved role.
   const VOICE_COUNT = Object.keys(typeScl.categories).length;
   if (VOICE_COUNT !== 15) FAIL("panda", `expected 15 type voices, got ${VOICE_COUNT}`);
   for (const [voice, roleOf] of Object.entries(typeScl.roleOf)) {
     const key = voice.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
     const st = withOpts.theme.extend.textStyles[key];
-    if (!st || !st.sm || !st.md || !st.lg || !st.DEFAULT) FAIL("panda", `textStyles.${key} missing sm/md/lg/DEFAULT`);
+    const want = ["SM", "MD", "LG"].filter((r) => typeScl.categories[voice][r]).map((r) => r.toLowerCase()).concat("DEFAULT");
+    if (!st || Object.keys(st).sort().join() !== [...want].sort().join()) FAIL("panda", `textStyles.${key} carries ${st ? Object.keys(st).join("/") : "nothing"}, want its own steps + DEFAULT (${want.join("/")})`);
     if (st && st.md.value.fontFamily !== `{fonts.${roleOf}}`) FAIL("panda", `textStyles.${key}.md.fontFamily = ${st.md.value.fontFamily}, want {fonts.${roleOf}}`);
   }
 }

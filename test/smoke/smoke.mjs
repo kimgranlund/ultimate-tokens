@@ -193,9 +193,9 @@ try {
   console.log("  · screenshot → smoke-out/settings.png");
   await evalJS(`${el}.closeSettings()`); await sleep(120);
 
-  // Typography SECTION: the app-header switcher flips this.section → the full 51-step canvas specimen.
+  // Typography SECTION: the app-header switcher flips this.section → the full 41-step canvas specimen.
   await evalJS(`${el}.setSection("typography")`); await sleep(300);
-  ok(await evalJS(`(()=>{return ${el}.section==="typography" && ${el}.querySelectorAll(".compare-col")[0].querySelectorAll(".type-spec-line").length===${TYPE_STEPS} && ${el}.querySelectorAll(".compare-col")[0].querySelectorAll(".type-spec-group").length===${VOICES}})()`), `Typography section shows the full ${TYPE_STEPS}-step specimen (13×3 + 2×6) across the ${VOICES} named voices`);
+  ok(await evalJS(`(()=>{return ${el}.section==="typography" && ${el}.querySelectorAll(".compare-col")[0].querySelectorAll(".type-spec-line").length===${TYPE_STEPS} && ${el}.querySelectorAll(".compare-col")[0].querySelectorAll(".type-spec-group").length===${VOICES}})()`), `Typography section shows the full ${TYPE_STEPS}-step specimen (13×3 + 2×1) across the ${VOICES} named voices`);
   ok(await evalJS(`(()=>{const c=${el}.querySelectorAll(".canvas-compare .compare-col");return c.length===2 && getComputedStyle(c[0]).colorScheme.includes("light") && getComputedStyle(c[1]).colorScheme.includes("dark")})()`), "Typography renders Light + Dark side by side (two scheme-forced columns, light first)");
   const typSchemeShot = await send("Page.captureScreenshot", { format: "png" });
   writeFileSync(resolve(OUT, "scheme-typography.png"), Buffer.from(typSchemeShot.data, "base64"));

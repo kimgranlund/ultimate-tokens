@@ -11,7 +11,8 @@ once and it grows with the viewport.
 
 The stepping is **hierarchy-aware**, not uniform: body-class text (body · body-mono · label ·
 label-mono · tiny · tiny-mono) is
-**frozen** across breakpoints, headings compress partially on smaller screens, and display-class type
+**frozen** across breakpoints, the two interactive voices (UI-control, UI-widget, one `md` step each
+from the height-indexed UI text table) never step at all, headings compress partially on smaller screens, and display-class type
 compresses fully (a 90px Desktop display lands near 75 on Tablet, 60 on Mobile). So don't "fix" a
 heading that shrinks on mobile while body text doesn't, that asymmetry IS the system.
 

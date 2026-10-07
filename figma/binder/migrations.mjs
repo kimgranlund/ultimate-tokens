@@ -114,4 +114,7 @@ export const LIBRARY_TYPE_VOICE_MAP = { heading: "headline", ui: "ui-control", c
 // rather than a cross-collection create from the wrong execution phase. figma/plugin/code.js carries
 // the SAME map as a literal, the VM can't import this file; kept in lockstep by hand (and gated by `renameparity`), same discipline
 // as LIBRARY_TYPE_VOICE_MAP above.
+// The SAME scope decision covers the retired UI voice steps (T-0017): UI-control and UI-widget keep one
+// step, md, so a live file's type/ui-control/{xs,sm,lg,xl,2xl}/* and type/ui-widget/{xs,sm,lg,xl,2xl}/*
+// variables and their text styles have no rename target here and deprecate, id-preserving.
 export const GEOMETRY_FIELD_RENAME_MAP = { edgePadding: "padding-wide", gap: "icon-gap", minWidth: "min-width", padding: "padding-narrow", radius: "pill-radius" };

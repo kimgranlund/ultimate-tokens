@@ -44,8 +44,8 @@ try {
   const legs = [
     ["a stale count word (thirteen voices)", (d) => appendFileSync(join(d, "SKILL.md"), "\nThe scale has thirteen voices.\n"), [/thirteen/, /voice count drift/]],
     ["a magnitude count word (hundred voices)", (d) => appendFileSync(join(d, "SKILL.md"), "\nThe scale has hundred voices.\n"), [/hundred/, /outside the range/]],
-    ["a step outside its own voice (--type-body-xl-size)", (d) => appendFileSync(join(d, "SKILL.md"), "\n`--type-body-xl-size`\n"), [/--type-body-xl-size/, /not a step of voice "body"/]],
-    ["a wrong Steps cell (ui-control saying sm/md/lg)", edit("SKILL.md", "| **UI-control** | ui | xs/sm/md/lg/xl/2xl |", "| **UI-control** | ui | sm/md/lg |"), [/UI-control/, /steps drift/]],
+    ["a step outside its own voice (--type-ui-control-sm-size)", (d) => appendFileSync(join(d, "SKILL.md"), "\n`--type-ui-control-sm-size`\n"), [/--type-ui-control-sm-size/, /not a step of voice "ui-control"/]],
+    ["a wrong Steps cell (ui-control saying sm/md/lg)", edit("SKILL.md", "| **UI-control** | ui | md |", "| **UI-control** | ui | sm/md/lg |"), [/UI-control/, /steps drift/]],
     ["a voice table missing the kicker row", (d) => { const p = join(d, "SKILL.md"); writeFileSync(p, readFileSync(p, "utf8").split("\n").filter((l) => !l.startsWith("| **kicker** |")).join("\n")); }, [/kicker/, /no row with a Steps cell/]],
     ["a count heading naming roles (## The fourteen roles)", (d) => appendFileSync(join(d, "SKILL.md"), "\n## The fourteen roles\n"), [/fourteen/, /voice count drift/]],
     ["a qualified count word (fourteen named voices)", (d) => appendFileSync(join(d, "SKILL.md"), "\nIt gives fourteen named **voices**.\n"), [/fourteen/, /voice count drift/]],

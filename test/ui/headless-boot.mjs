@@ -2384,11 +2384,11 @@ app.commit((d) => { d.accentRef = "mode"; }); // restore default
 app.closeSettings(); flushRaf();
 ok(app.settingsOpen === false, "(set) closeSettings dismisses the modal");
 
-// ── (ty) Typography SECTION: the switcher flips this.section → full TYPE_STEPS-step canvas specimen (51) + inspector ──
+// ── (ty) Typography SECTION: the switcher flips this.section → full TYPE_STEPS-step canvas specimen (41) + inspector ──
 app.setSection("typography"); flushRaf();
 ok(app.section === "typography" && !!app.querySelector(".type-spec"), "(ty) the section switcher enters Typography (the canvas specimen renders)");
-ok(inLight(".type-spec-line").length === TYPE_STEPS && inLight(".type-spec-group").length === VOICES, `(ty) the light column shows the FULL specimen, ${TYPE_STEPS} steps (13 voices × 3 + the 2 interactive voices × 6) across the ${VOICES} named voices (Display·Headline·Sub-heading·Title·Sub-title·Lead·Body·Body-mono·Label·Label-mono·Kicker·Tiny·Tiny-mono·UI-control·UI-widget) (got ${inLight(".type-spec-line").length} lines / ${inLight(".type-spec-group").length} groups)`);
-{ const { readFileSync: rfTS } = await import("node:fs"); const tsrc = rfTS("src/ui/sections/typography.js", "utf8"); ok(!/\b(eleven|11|53 steps)\b[^\n]{0,24}voices|\b53 steps\b/i.test(tsrc), "(tyc) typography.js carries no retired voice count (live: 15 voices, 51 steps)"); }
+ok(inLight(".type-spec-line").length === TYPE_STEPS && inLight(".type-spec-group").length === VOICES, `(ty) the light column shows the FULL specimen, ${TYPE_STEPS} steps (13 voices × 3 + the 2 interactive voices × 1) across the ${VOICES} named voices (Display·Headline·Sub-heading·Title·Sub-title·Lead·Body·Body-mono·Label·Label-mono·Kicker·Tiny·Tiny-mono·UI-control·UI-widget) (got ${inLight(".type-spec-line").length} lines / ${inLight(".type-spec-group").length} groups)`);
+{ const { readFileSync: rfTS } = await import("node:fs"); const tsrc = rfTS("src/ui/sections/typography.js", "utf8"); ok(!/\b(eleven|11|5[13] steps)\b[^\n]{0,24}voices|\b5[13] steps\b/i.test(tsrc), "(tyc) typography.js carries no retired voice count (live: 15 voices, 41 steps)"); }
 ok(app.querySelectorAll(".an-card").length >= 4, `(ty) the left rail shows the type analysis cards (got ${app.querySelectorAll(".an-card").length})`);
 // specimen order: each group lists LARGEST → smallest (the first token in the document is Display's LG step)
 ok(txtOf(app.querySelectorAll(".type-spec-token")[0] || {}) === "type-display-lg", `(ty) the specimen lists each group largest→smallest (first token is type-display-lg, got ${txtOf(app.querySelectorAll(".type-spec-token")[0] || {})})`);
@@ -2621,7 +2621,7 @@ app.typeMode = "compare"; app.render(); flushRaf();
   ok(cols.slice(0, nT).every((c) => app._schemeOfColumn(c) === "light") && cols.slice(nT).every((c) => app._schemeOfColumn(c) === "dark"), "(ty-cmp) the light columns come first, then the dark ones");
   ok(!!app.querySelector(".canvas-compare") && !!app.querySelector(".compare"), "(ty-cmp) Compare uses the shared .canvas-compare / .canvas-scene.compare shell");
   ok(/^Base/.test(txtOf(app.querySelectorAll(".compare-col-label")[0] || {})) && /Light/.test(txtOf(app.querySelectorAll(".compare-col-label")[0] || {})), "(ty-cmp) the first column is labelled Base, Light");
-  // each column carries a full TYPE_STEPS-line specimen (51) (the override forced its mode while the scene built).
+  // each column carries a full TYPE_STEPS-line specimen (41) (the override forced its mode while the scene built).
   ok(app.querySelectorAll(".type-spec-line").length === TYPE_STEPS * cols.length, `(ty-cmp) every column renders the full ${TYPE_STEPS}-step specimen (got ${app.querySelectorAll(".type-spec-line").length} lines across ${cols.length} cols)`);
   ok(app._typeModeOverride === null, "(ty-cmp) the transient _typeModeOverride is cleared after each column builds (never leaks)");
   // MAJOR: the inspector body-size slider edits the BASE scale in Compare (it shows Base), not a no-op.

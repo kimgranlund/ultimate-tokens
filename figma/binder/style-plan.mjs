@@ -160,7 +160,7 @@ export function stylePlans({ families = [], scale = null, include = {} } = {}) {
       // text styles list LARGEST → smallest in the Figma Styles panel, the reverse of the engine's own
       // insertion order (Figma preserves the plan's own order rather than re-sorting, so this array IS
       // the panel order). Filtered per voice: most ride SM/MD/LG; the interactive voices (UI-control/
-      // UI-widget) carry the full XS..2XL ramp (2026-07-16).
+      // UI-widget) carry MD alone (T-0017).
       for (const step of ["2XL", "XL", "LG", "MD", "SM", "XS"].filter((k) => k in steps)) {
         const s = steps[step];
         if (!s || !Number.isFinite(s.size)) continue;
