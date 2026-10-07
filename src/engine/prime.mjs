@@ -54,8 +54,8 @@
 // LITERALLY the same call `deriveKeyColor` makes, not a parallel one that could disagree), and the
 // duplicate private caches the reviewer objected to are gone.
 import { hctToRgb, lstarFromRgb, maxChromaInGamut, peakC, cam16FromRgb } from "./hct.js";
-import { okhslToRgb } from "./okhsl.js";
-import { effHue } from "./tonal.js";
+import { okhslToRgb, rgbToOklchHue } from "./okhsl.js";
+import { effHue, solveCam16Hue } from "./tonal.js";
 
 export const PRIME_STEPS = ["brightest", "brighter", "bright", "prime", "dim", "dimmer", "dimmest"];
 
@@ -124,24 +124,33 @@ function rgbToOklch([r, g, b]) {
 // inGamut } entries, brightest..dimmest, lightest first. `l` is the rung's CIE L* (its `hctToRgb` tone
 // argument, exact); `s` is the rung's rendered CAM16 chroma (renamed in USE, not in shape, from the
 // retired OKHSL-domain field, the global Prime chroma k scales it linearly on all seven rungs, gate (g)
-// re-based #681 U6); `hue` is the anchor's own CAM16 hue (matching deriveKeyColor, REQ-053 superseded
-// 2026-09-11). Deterministic; no DOM.
+// re-based #681 U6); `hue` is the rung's rendered CAM16 hue: the key colour's own CAM16 hue (matching
+// deriveKeyColor, REQ-053 superseded 2026-09-11), except on an anchored ladder under hueSpace "oklch",
+// where it is the CAM16 hue solved to read back at the anchor's OKLCH hue at that rung (T-0015); the
+// edge rungs add the hueShift rotation on top. Deterministic; no DOM.
 //
 // ANCHOR BRANCH (ticket #681, U1, "every preset's prime.DEFAULT is its sampled source colour
 // byte-for-byte"; #681 U4 integration onto U6's ladder; #804 k rule): a palette carrying a valid
 // `anchor` (a STORED source hex, never fitted, see persist.js DOMAINS.palette.anchor) renders its
 // `prime` step (index 3) from that hex VERBATIM at the identity k (Prime chroma 100), never
 // reconstructed via hctToRgb: a stored byte reproduces itself by definition, a round trip only by
-// measurement. At any other k the prime step follows the slider like the other six: the anchor's own
-// CAM16 hue and exact CIE L*, its measured CAM16 chroma times k, gamut-capped, rendered through the
+// measurement. At any other k the prime step follows the slider like the other six: the anchor's
+// hue (below) and exact CIE L*, its measured CAM16 chroma times k, gamut-capped, rendered through the
 // same `hctToRgb` the ladder uses, so the whole strip moves together.
-// The other six rungs ladder off the anchor's OWN measured CIE L*/CAM16 hue/chroma (`lstarFromRgb`/
+// The other six rungs ladder off the anchor's OWN measured CIE L*/hue/CAM16 chroma (`lstarFromRgb`/
 // `cam16FromRgb(anchorRgb)`) through the SAME U6 equal-compress, hold-chroma construction every
 // non-anchored palette uses, the same "read off the real colour, not a proxy" principle already
 // applies in the non-anchored (deriveKeyColor) case, just anchored to the palette's stored source
 // instead of its cusp identity. A palette with no (or malformed) `anchor` takes the ORIGINAL,
 // byte-identical path below (C4's non-anchored identity control): `anchorHex` is null, `lLadder ===
 // lPrime`, and every other line executes exactly as it did before this ticket.
+// THE HUE SPACE (T-0015): `controls.hueSpace` names the space in which the anchor's own measured hue
+// is held constant across the ladder. "cam16" holds its CAM16 hue on every rung (`hOk`, the render
+// before T-0015, byte-identical). "oklch" holds its OKLCH hue: `rungHue(l)` solves, at each rung's
+// L*, the CAM16 hue whose gamut-capped render reads back at the anchor's OKLCH hue (`solveCam16Hue`'s
+// `chromaAt` form, the even anchored ramp's own solve), and the hueShift edge rotation applies in
+// CAM16 after the solve, the order `paletteStopsAnchored` uses. At k 1 the anchor rung is the stored
+// bytes in both spaces; every constancy line passes through it.
 export function primeSwatches(palette, controls) {
   const anchorHex = typeof palette.anchor === "string" && ANCHOR_HEX.test(palette.anchor) ? palette.anchor.toUpperCase() : null;
 
@@ -176,19 +185,29 @@ export function primeSwatches(palette, controls) {
   const shift = palette.hueShift ?? 0;
   const sameDir = palette.hueSameDir === true;
 
+  // rungHue(l) - the CAM16 hue a rung at CIE L* `l` renders at, before the edge rotation (T-0015, the
+  // header's HUE SPACE note). Anchored under "oklch": the solve that holds the anchor's OKLCH hue at
+  // this L*, its `chromaAt` the same gamut-capped `cPrime` the rung then renders. Otherwise `hOk`.
+  const rungHue = (l) =>
+    anchorHex && controls.hueSpace === "oklch"
+      ? solveCam16Hue(rgbToOklchHue(anchorRgb), 0, l, false, { chromaAt: (h) => Math.min(cPrime, maxChromaInGamut(h, l)) })
+      : hOk;
+
   // The anchored `prime` step, computed ONCE, before the widening search, so the search's dedupe seed
   // and the returned strip read the same hex. k === 1: the stored bytes verbatim. Otherwise the
-  // anchor's hue and exact L* (`lPrime`, never the clamped `lLadder`) at its chroma times k, capped at
-  // the gamut, the same `Math.min(chroma * k, maxChromaInGamut(hue, L))` deriveKeyColor applies.
+  // anchor's hue (`rungHue` at the anchor's exact L*, `lPrime`, never the clamped `lLadder`) at its
+  // chroma times k, capped at the gamut, the same `Math.min(chroma * k, maxChromaInGamut(hue, L))`
+  // deriveKeyColor applies.
   let anchorPrime = null;
   if (anchorHex) {
     if (k === 1) {
       anchorPrime = { l: lPrime, s: keyChroma, hue: hOk, rgb: anchorRgb, hex: anchorHex, oklch: anchorOklch, inGamut: true };
     } else {
-      const c3 = Math.min(cPrime, maxChromaInGamut(hOk, lPrime));
-      const { rgb, inGamut } = hctToRgb(hOk, c3, lPrime);
+      const h3 = rungHue(lPrime);
+      const c3 = Math.min(cPrime, maxChromaInGamut(h3, lPrime));
+      const { rgb, inGamut } = hctToRgb(h3, c3, lPrime);
       const hex = "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
-      anchorPrime = { l: lPrime, s: c3, hue: hOk, rgb, hex, oklch: rgbToOklch(rgb), inGamut };
+      anchorPrime = { l: lPrime, s: c3, hue: h3, rgb, hex, oklch: rgbToOklch(rgb), inGamut };
     }
   }
 
@@ -201,7 +220,7 @@ export function primeSwatches(palette, controls) {
     const w = i < 3 ? absT ** (1 / g) : absT ** g;
     const l = i < 3 ? lLadderArg + 3 * up * w : lLadderArg - 3 * down * w;
     const dir = sameDir ? -absT : t;
-    const hue = (((hOk + shift * dir) % 360) + 360) % 360;
+    const hue = (((rungHue(l) + shift * dir) % 360) + 360) % 360;
     const cap = maxChromaInGamut(hue, l);
     const chroma = Math.min(cPrime, cap);
     const { rgb } = hctToRgb(hue, chroma, l);
@@ -274,7 +293,7 @@ export function primeSwatches(palette, controls) {
     const w = i < 3 ? absT ** (1 / g) : absT ** g; // light side 1/g, dark side g; w(prime)=0, w(ends)=1
     const l = i < 3 ? lLadder + 3 * up * w : lLadder - 3 * down * w;
     const dir = sameDir ? -absT : t;
-    const hue = (((hOk + shift * dir) % 360) + 360) % 360;
+    const hue = (((rungHue(l) + shift * dir) % 360) + 360) % 360;
     // Chroma is HELD at cPrime on every rung (Q9 "hold CAM16 chroma") and desaturated ONLY where the
     // gamut at this rung's own (hue, L) cannot carry it, never damped by lightness distance the way
     // the retired flat-OKHSL-saturation construction implicitly was. SHARED `maxChromaInGamut` (#686:

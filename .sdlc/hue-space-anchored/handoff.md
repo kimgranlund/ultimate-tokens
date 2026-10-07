@@ -35,3 +35,8 @@ Run the architect pass now. Read-only on T-0014's built code: the branch plan/pr
 Sequence: build only after T-0014 lands (shared lines prime.mjs and model.mjs deriveKeyColor); independent of T-0017. ADR number: after ADR-030 (T-0014 step 4), so ADR-031.
 Plan against T-0014's built branch at /Users/kimgranlund/Projects/nonoun/ultimate-tokens/.worktrees/prime-anchor-follows-chroma (read-only) until it lands on main.
 Issue: #805. Decomposition: .sdlc/hue-space-anchored/decompose/manifest-v1.json
+
+## Notes (conductor, 2026-10-07: T-0014 landed as PR #808, main e268835c)
+- T-0014 is on main: its precondition holds. The plan's line cites were read from T-0014's branch; they should match main, but the first step's first criterion is the real check. If a cite is off, use the symbol.
+- IMPORTANT: copy this task folder's results back to the main checkout `/Users/kimgranlund/Projects/nonoun/ultimate-tokens/.sdlc/hue-space-anchored/` is the conductor's job; roles never delete the worktree.
+- Export `SDLC_BASE_SHA` from `step-<n>/base-sha` before running guards (an empty one makes guards pass vacuously).

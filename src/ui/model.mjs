@@ -25,12 +25,13 @@ import {
   peakC,
   maxChromaInGamut,
 } from "../engine/hct.js";
-import { oklchToRgb } from "../engine/okhsl.js";
+import { oklchToRgb, rgbToOklchHue } from "../engine/okhsl.js";
 import { iconSystem } from "../engine/icon-systems.mjs";
 import { motionTokens } from "../engine/motion.mjs";
 import {
   paletteStops,
   effHue,
+  solveCam16Hue,
   STOPS,
   EXPORT_STOPS,
   DEFAULT_CONTROLS as ENGINE_DEFAULT_CONTROLS,
@@ -865,20 +866,26 @@ const ANCHOR_HEX = /^#[0-9A-Fa-f]{6}$/;
 // THE PRIME CHROMA k (#804): `k` is the global Prime chroma / 100, the same factor primeSwatches
 // scales every prime rung by, so the tile always equals the prime strip's middle swatch. Anchored at
 // k === 1 the key is the stored anchor byte for byte; anchored at any other k it is the anchor's own
-// CAM16 hue and exact CIE L* at its measured CAM16 chroma times k, capped at the gamut
+// hue (in the hue space, below) and exact CIE L* at its measured CAM16 chroma times k, capped at the gamut
 // (`Math.min(chroma * k, maxChromaInGamut(hue, L))`, rendered with `hctToRgb`). Non-anchored, k
 // multiplies the cusp chroma (the 0..100 domain keeps k <= 1, inside the cusp). It is deliberately
 // NOT implemented by calling primeSwatches: the two stay independent producers of the same
 // arithmetic, which is what lets test/engine/anchor.mjs's `key-anchor` and `anchor-k` gates compare
-// them and mean something.
+// them and mean something. The hue at k != 1 follows the hue space (T-0015), as the prime ladder's
+// does: "cam16" holds the anchor's CAM16 hue, "oklch" solves the CAM16 hue whose capped render at L
+// reads back at the anchor's OKLCH hue (`solveCam16Hue`, the same target, tone and `chromaAt`).
 function deriveKeyColor(p, hueSpace, k = 1) {
   if (typeof p?.anchor === "string" && ANCHOR_HEX.test(p.anchor)) {
     const anchorHex = p.anchor.toUpperCase();
     if (k === 1) return { keyOklch: hexToOklch(anchorHex), keyHex: anchorHex };
     const rgb = [1, 3, 5].map((i) => parseInt(anchorHex.slice(i, i + 2), 16));
-    const { hue, chroma } = cam16FromRgb(rgb);
+    const { hue: camHue, chroma } = cam16FromRgb(rgb);
     const L = lstarFromRgb(rgb);
-    const c = Math.min(Math.max(0, chroma * k), maxChromaInGamut(hue, L));
+    const cK = Math.max(0, chroma * k);
+    const hue = hueSpace === "oklch"
+      ? solveCam16Hue(rgbToOklchHue(rgb), 0, L, false, { chromaAt: (h) => Math.min(cK, maxChromaInGamut(h, L)) })
+      : camHue;
+    const c = Math.min(cK, maxChromaInGamut(hue, L));
     const keyHex = "#" + hctToRgb(hue, c, L).rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
     return { keyOklch: hctToOklch(hue, c, L), keyHex };
   }

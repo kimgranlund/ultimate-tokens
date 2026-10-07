@@ -67,6 +67,16 @@ function rgbToOklchIndep([r, g, b]) {
   if (H < 0) H += 360;
   return [L, C, H];
 }
+// OKLab delta-E (Euclidean) between two hexes, through the independent conversion above. Read by the
+// F4 hueSpace magnitude floor and the prime-huespace gate (T-0015), one copy for both.
+const deltaEOk = (hexA, hexB) => {
+  const [la, ca, ha] = rgbToOklchIndep(hexToRgb(hexA));
+  const [lb, cb, hb] = rgbToOklchIndep(hexToRgb(hexB));
+  const rad = Math.PI / 180;
+  const ax = ca * Math.cos(ha * rad), ay = ca * Math.sin(ha * rad);
+  const bx = cb * Math.cos(hb * rad), by = cb * Math.sin(hb * rad);
+  return Math.hypot(la - lb, ax - bx, ay - by);
+};
 
 // a minimal single-palette exports.js state, the SAME shape controlsOf()/enabledPalettes() expect
 // (exports.js:207-241/245-247); `baseChroma: 100` is the global k rampChromaOf multiplies each
@@ -189,6 +199,11 @@ if (FULL) {
 }
 
 const anchored = corpus.filter((c) => typeof c.palette.anchor === "string");
+// T-0015: the hue space names the space the anchor's own hue is held constant in, and the anchor
+// stays verbatim in both, so the identity gates below (anchor-identity, key-anchor's corpus leg,
+// anchor-k and its scale control) run every anchored palette under both values rather than the
+// preset's own (the whole corpus is stamped oklch, so the cam16 branch would otherwise go unread).
+const BOTH_HUE_SPACES = ["oklch", "cam16"];
 
 // ── C2's negative control (runs BEFORE the real count, never skipped) ──────────────────────────────
 {
@@ -212,21 +227,21 @@ const anchored = corpus.filter((c) => typeof c.palette.anchor === "string");
 
 // ── C2 positive count ────────────────────────────────────────────────────────────────────────────
 let exact = 0, off = 0;
-for (const { slug, presetName, hueSpace, palette: p } of anchored) {
-  const ctl = { hueSpace: hueSpace ?? "oklch", primeChroma: 100 };
+for (const { slug, presetName, palette: p } of anchored) for (const hueSpace of BOTH_HUE_SPACES) {
+  const ctl = { hueSpace, primeChroma: 100 };
   const sw = primeSwatches(p, ctl);
   const prime = sw[3];
   if (prime.hex !== p.anchor) {
     off++;
-    FAIL("anchor-identity", `${slug} "${presetName}" ${p.name}: primeSwatches(...)[3].hex ${prime.hex} !== anchor ${p.anchor}`);
+    FAIL("anchor-identity", `${slug} "${presetName}" ${p.name} (${hueSpace}): primeSwatches(...)[3].hex ${prime.hex} !== anchor ${p.anchor}`);
     continue;
   }
-  const derived = derivedAll(stateFor(p))[0];
+  const derived = derivedAll({ ...stateFor(p), hueSpace })[0];
   const gotOklch = oklchStr({ L: derived.prime.prime.oklch[0], C: derived.prime.prime.oklch[1], H: derived.prime.prime.oklch[2] });
   const wantOklch = oklchStr({ L: rgbToOklchIndep(hexToRgb(p.anchor))[0], C: rgbToOklchIndep(hexToRgb(p.anchor))[1], H: rgbToOklchIndep(hexToRgb(p.anchor))[2] });
   if (gotOklch !== wantOklch) {
     off++;
-    FAIL("anchor-identity", `${slug} "${presetName}" ${p.name}: exports.js prime.DEFAULT ${gotOklch} !== independent anchor oklch ${wantOklch}`);
+    FAIL("anchor-identity", `${slug} "${presetName}" ${p.name} (${hueSpace}): exports.js prime.DEFAULT ${gotOklch} !== independent anchor oklch ${wantOklch}`);
     continue;
   }
   exact++;
@@ -236,7 +251,7 @@ if (FULL) {
 } else if (anchored.length === 0) {
   FAIL("anchor-identity", "SAMPLED counted 0 anchored palettes - the sample lost every anchor, C2 measured nothing");
 }
-console.log(`  ${fails.some((f) => f.startsWith("anchor-identity:")) ? "FAIL" : "pass"}  anchor-identity: ${exact} exact, ${off} off`);
+console.log(`  ${fails.some((f) => f.startsWith("anchor-identity:")) ? "FAIL" : "pass"}  anchor-identity: ${exact} exact, ${off} off (hueSpace oklch and cam16)`);
 
 // ── C4 (prime half): non-anchored identity control, negative control first ─────────────────────────
 const controlSubjects = [
@@ -1275,14 +1290,6 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
       magnitudeFloor: 0.01,
     },
   };
-  const deltaEOk = (hexA, hexB) => {
-    const [la, ca, ha] = rgbToOklchIndep(hexToRgb(hexA));
-    const [lb, cb, hb] = rgbToOklchIndep(hexToRgb(hexB));
-    const rad = Math.PI / 180;
-    const ax = ca * Math.cos(ha * rad), ay = ca * Math.sin(ha * rad);
-    const bx = cb * Math.cos(hb * rad), by = cb * Math.sin(hb * rad);
-    return Math.hypot(la - lb, ax - bx, ay - by);
-  };
   for (const key in F4_CASES) {
     const { base, altPatch, magnitudeFloor } = F4_CASES[key];
     const baseV = projectView(base);
@@ -1448,10 +1455,11 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
   // `deriveKeyColor` `projectView` calls, so measuring it measures the rendered derivation.
   let keyEq = 0, keyOff = 0, primeEq = 0, primeOff = 0;
   let worst = null, worstDl = 0;
-  for (const { slug, presetName, hueSpace, palette: p } of anchored) {
-    const key = paletteKeyColors({ palettes: [p], hueSpace: hueSpace ?? "oklch" })[0].key;
-    const primeHex = primeSwatches(p, { hueSpace: hueSpace ?? "oklch", primeChroma: 100 })[3].hex;
-    const label = `${slug} "${presetName}" ${p.name}`;
+  const keyChecked = anchored.length * BOTH_HUE_SPACES.length;
+  for (const { slug, presetName, palette: p } of anchored) for (const hueSpace of BOTH_HUE_SPACES) {
+    const key = paletteKeyColors({ palettes: [p], hueSpace })[0].key;
+    const primeHex = primeSwatches(p, { hueSpace, primeChroma: 100 })[3].hex;
+    const label = `${slug} "${presetName}" ${p.name} (${hueSpace})`;
     if (key === p.anchor.toUpperCase()) keyEq++;
     else {
       keyOff++;
@@ -1462,7 +1470,7 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
     if (key === primeHex) primeEq++;
     else { primeOff++; FAIL("key-anchor", `${label}: key swatch ${key} !== primeSwatches(...)[3].hex ${primeHex} - the two producers disagree`); }
   }
-  console.log(`  ${keyOff === 0 && primeOff === 0 ? "pass" : "FAIL"}  key-anchor corpus: ${keyEq} of ${anchored.length} anchored palettes where the identity swatch equals the stored anchor, ${primeEq} of ${anchored.length} where it equals primeSwatches(...)[3].hex, ${keyOff}/${primeOff} off${worst ? `; worst ${worst}` : ""}`);
+  console.log(`  ${keyOff === 0 && primeOff === 0 ? "pass" : "FAIL"}  key-anchor corpus: ${keyEq} of ${keyChecked} anchored palette renders where the identity swatch equals the stored anchor, ${primeEq} of ${keyChecked} where it equals primeSwatches(...)[3].hex, ${keyOff}/${primeOff} off${worst ? `; worst ${worst}` : ""} (hueSpace oklch and cam16)`);
 
   // Leg 2, the rendered path: projectView(hydrate(doc)), the projection the app renders from, over
   // the 16 default-kit palettes and three named corpus presets. hydrate() is in the loop on purpose:
@@ -1503,32 +1511,73 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
 // at least one anchored palette leaves its anchor (a near-achromatic anchor may not move).
 {
   let eq = 0, off = 0, moved = 0;
-  for (const { slug, presetName, hueSpace, palette: p } of anchored) {
-    const hs = hueSpace ?? "oklch";
+  const kChecked = anchored.length * BOTH_HUE_SPACES.length;
+  for (const { slug, presetName, palette: p } of anchored) for (const hs of BOTH_HUE_SPACES) {
     const key = paletteKeyColors({ palettes: [p], hueSpace: hs, primeChroma: 50 })[0].key;
     const primeHex = primeSwatches(p, { hueSpace: hs, primeChroma: 50 })[3].hex;
     if (key === primeHex) eq++;
-    else { off++; FAIL("anchor-k", `${slug} "${presetName}" ${p.name}: key ${key} !== primeSwatches(...)[3].hex ${primeHex} at Prime chroma 50`); }
+    else { off++; FAIL("anchor-k", `${slug} "${presetName}" ${p.name} (${hs}): key ${key} !== primeSwatches(...)[3].hex ${primeHex} at Prime chroma 50`); }
     if (primeHex !== p.anchor.toUpperCase()) moved++;
   }
   if (anchored.length === 0) FAIL("anchor-k", "no anchored palettes to measure");
-  if (moved === 0) FAIL("anchor-k", `0 of ${anchored.length} anchored prime middles moved off the anchor at Prime chroma 50, the k does not reach the anchored rung`);
-  console.log(`  ${fails.some((f) => f.startsWith("anchor-k:")) ? "FAIL" : "pass"}  anchor-k: ${eq} of ${anchored.length} anchored palettes where the key equals primeSwatches(...)[3].hex at Prime chroma 50, ${off} off; ${moved} moved off the anchor`);
+  if (moved === 0) FAIL("anchor-k", `0 of ${kChecked} anchored prime middles moved off the anchor at Prime chroma 50, the k does not reach the anchored rung`);
+  console.log(`  ${fails.some((f) => f.startsWith("anchor-k:")) ? "FAIL" : "pass"}  anchor-k: ${eq} of ${kChecked} anchored palette renders where the key equals primeSwatches(...)[3].hex at Prime chroma 50, ${off} off; ${moved} moved off the anchor (hueSpace oklch and cam16)`);
 
   // anchor-k scale control: the anchor-identity and key-anchor comparisons, re-run at Prime chroma 99,
   // must each find at least one palette off its anchor. That is the planted regression those two gates
   // must catch: a 1 percent scale at the identity setting. A dropped k === 1 short-circuit alone is
   // invisible (the hctToRgb round trip is byte-exact on every corpus anchor), so a scale is the plant.
   let primeOff99 = 0, keyOff99 = 0;
-  for (const { hueSpace, palette: p } of anchored) {
-    const hs = hueSpace ?? "oklch";
+  for (const { palette: p } of anchored) for (const hs of BOTH_HUE_SPACES) {
     const a = p.anchor.toUpperCase();
     if (primeSwatches(p, { hueSpace: hs, primeChroma: 99 })[3].hex !== a) primeOff99++;
     if (paletteKeyColors({ palettes: [p], hueSpace: hs, primeChroma: 99 })[0].key !== a) keyOff99++;
   }
-  if (primeOff99 === 0) FAIL("anchor-k scale control", `anchor-identity comparison at Prime chroma 99 found 0 of ${anchored.length} prime middles off the anchor, a 1 percent scale regression would pass that gate`);
-  if (keyOff99 === 0) FAIL("anchor-k scale control", `key-anchor comparison at Prime chroma 99 found 0 of ${anchored.length} keys off the anchor, a 1 percent scale regression would pass that gate`);
-  console.log(`  ${fails.some((f) => f.startsWith("anchor-k scale control:")) ? "FAIL" : "pass"}  anchor-k scale control: at Prime chroma 99, ${primeOff99} of ${anchored.length} prime middles and ${keyOff99} of ${anchored.length} keys off the anchor (at least 1 each: anchor-identity and key-anchor red on a 1 percent scale)`);
+  if (primeOff99 === 0) FAIL("anchor-k scale control", `anchor-identity comparison at Prime chroma 99 found 0 of ${kChecked} prime middles off the anchor, a 1 percent scale regression would pass that gate`);
+  if (keyOff99 === 0) FAIL("anchor-k scale control", `key-anchor comparison at Prime chroma 99 found 0 of ${kChecked} keys off the anchor, a 1 percent scale regression would pass that gate`);
+  console.log(`  ${fails.some((f) => f.startsWith("anchor-k scale control:")) ? "FAIL" : "pass"}  anchor-k scale control: at Prime chroma 99, ${primeOff99} of ${kChecked} prime middles and ${keyOff99} of ${kChecked} keys off the anchor (at least 1 each: anchor-identity and key-anchor red on a 1 percent scale; hueSpace oklch and cam16)`);
+}
+
+// ── prime-huespace (T-0015): the hue space moves the anchored prime ladder ────────────────────────
+// The rule: hueSpace names the space the anchor's own measured hue is held constant in, so an
+// anchored ladder's six outer rungs render differently under oklch (the anchor's OKLCH hue, solved
+// per rung) and cam16 (its CAM16 hue), while rung 3 at Prime chroma 100 is the stored anchor in
+// both. `huespaceMoves` is the ONE predicate: it takes a render(palette, hueSpace) and compares the
+// two spaces' strips. The gate runs it on the real primeSwatches; the control runs it on the planted
+// regression (an oklch ladder still holding the CAM16 hue, i.e. the cam16 render on both sides),
+// which must read 0 moved and dE 0, so a ladder that ignored the hue space would red the gate.
+{
+  const OUTER = [0, 1, 2, 4, 5, 6];
+  const PRIME_HUESPACE_DE_FLOOR = 0.01;
+  const huespaceMoves = (palettes, render) => {
+    let moved = 0, maxDe = 0, rung3Moved = 0;
+    for (const p of palettes) {
+      const a = render(p, "oklch"), b = render(p, "cam16");
+      if (OUTER.some((i) => a[i].hex !== b[i].hex)) {
+        moved++;
+        for (const i of OUTER) maxDe = Math.max(maxDe, deltaEOk(a[i].hex, b[i].hex));
+      }
+      if (a[3].hex !== b[3].hex) rung3Moved++;
+    }
+    return { moved, maxDe, rung3Moved };
+  };
+  const gateHolds = (kit, corpusRes) => kit.moved >= 1 && kit.maxDe > PRIME_HUESPACE_DE_FLOOR && kit.rung3Moved + corpusRes.rung3Moved === 0;
+  const kitPalettes = defaultDocument().palettes;
+  if (kitPalettes.length !== 16 || kitPalettes.some((p) => typeof p.anchor !== "string")) FAIL("prime-huespace", `default kit has ${kitPalettes.length} palettes, ${kitPalettes.filter((p) => typeof p.anchor === "string").length} anchored (want 16 of 16)`);
+  const real = (p, hueSpace) => primeSwatches(p, { hueSpace, primeChroma: 100 });
+  const kit = huespaceMoves(kitPalettes, real);
+  const corpusRes = huespaceMoves(anchored.map((c) => c.palette), real);
+  if (kit.moved === 0) FAIL("prime-huespace", "0 default-kit anchored ladders moved between oklch and cam16, the hue space does not reach the ladder");
+  if (kit.maxDe <= PRIME_HUESPACE_DE_FLOOR) FAIL("prime-huespace", `default-kit max OKLab dE ${kit.maxDe.toFixed(4)} does not clear ${PRIME_HUESPACE_DE_FLOOR}, a rounding-only move`);
+  if (kit.rung3Moved + corpusRes.rung3Moved !== 0) FAIL("prime-huespace", `rung 3 moved between hue spaces on ${kit.rung3Moved} default-kit and ${corpusRes.rung3Moved} corpus ladders, the anchor must be verbatim in both`);
+  const rung3 = kit.rung3Moved + corpusRes.rung3Moved;
+  console.log(`  ${fails.some((f) => f.startsWith("prime-huespace:")) ? "FAIL" : "pass"}  prime-huespace: default kit ${kit.moved} of ${kitPalettes.length} ladders moved, corpus ${corpusRes.moved} of ${anchored.length}, max OKLab dE ${kit.maxDe.toFixed(4)} (want > ${PRIME_HUESPACE_DE_FLOOR}), rung 3 moved ${rung3} (want 0)`);
+
+  const planted = (p) => primeSwatches(p, { hueSpace: "cam16", primeChroma: 100 });
+  const ctl = huespaceMoves(kitPalettes, planted);
+  if (ctl.moved !== 0 || ctl.maxDe !== 0) FAIL("prime-huespace control", `the planted regression (cam16 render on both sides) read ${ctl.moved} ladders moved, max dE ${ctl.maxDe}, want 0 and 0 - the predicate is not comparing the two renders`);
+  if (gateHolds(ctl, { rung3Moved: 0 })) FAIL("prime-huespace control", "the planted regression passes the prime-huespace predicate, the gate cannot catch a ladder that ignores the hue space");
+  console.log(`  ${fails.some((f) => f.startsWith("prime-huespace control:")) ? "FAIL" : "pass"}  prime-huespace control: planted regression (the cam16 render on both sides) reads default kit ${ctl.moved} of ${kitPalettes.length} ladders moved, max OKLab dE ${ctl.maxDe.toFixed(4)} (want 0, 0), so prime-huespace reds on it`);
 }
 
 // ── anchor-achromatic (U10, pre-land F1): an achromatic anchor renders real colours ─────────
@@ -1628,7 +1677,7 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["anchor-identity", "prime-identity-control", "anchor-ladder", "anchor-ramp", "anchor-f4", "key-anchor", "anchor-k", "anchor-k scale control", "anchor-achromatic", "achromatic-anchor"]) {
+for (const g of ["anchor-identity", "prime-identity-control", "anchor-ladder", "anchor-ramp", "anchor-f4", "key-anchor", "anchor-k", "anchor-k scale control", "prime-huespace", "prime-huespace control", "anchor-achromatic", "achromatic-anchor"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   if (!f) continue; // already printed a pass/FAIL summary line above; only surface the FIRST failure detail here
   console.error(`, ${f.slice(g.length + 2)}`);

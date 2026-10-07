@@ -528,8 +528,8 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (ddRaw.neutral["500"].value !== "oklch(0.5056 0.0552 267.76)") FAIL("panda", `EX-1 colors.neutral.500 = ${ddRaw.neutral["500"].value}`);
   if (ddRaw.primary.scrim["300"].value !== "oklch(0.504 0.1867 258.99 / 30%)") FAIL("panda", `EX-1 colors.primary.scrim.300 = ${ddRaw.primary.scrim["300"].value}`);
   if (ddRaw.primary.prime.prime.value !== "oklch(0.504 0.1867 258.99)") FAIL("panda", `EX-1 colors.primary.prime.prime = ${ddRaw.primary.prime.prime.value}`);
-  if (ddRaw.primary.prime.brightest.value !== "oklch(0.733 0.1374 264.49)") FAIL("panda", `EX-1 colors.primary.prime.brightest = ${ddRaw.primary.prime.brightest.value}`);
-  if (ddRaw.primary.prime.dimmest.value !== "oklch(0.2669 0.1023 258.76)") FAIL("panda", `EX-1 colors.primary.prime.dimmest = ${ddRaw.primary.prime.dimmest.value}`);
+  if (ddRaw.primary.prime.brightest.value !== "oklch(0.7307 0.1399 259.24)") FAIL("panda", `EX-1 colors.primary.prime.brightest = ${ddRaw.primary.prime.brightest.value}`); // T-0015 re-pin (oklch holds the anchor's OKLCH hue on the ladder), was oklch(0.733 0.1374 264.49)
+  if (ddRaw.primary.prime.dimmest.value !== "oklch(0.2678 0.1038 258.99)") FAIL("panda", `EX-1 colors.primary.prime.dimmest = ${ddRaw.primary.prime.dimmest.value}`); // T-0015 re-pin (oklch holds the anchor's OKLCH hue on the ladder), was oklch(0.2669 0.1023 258.76)
   if (JSON.stringify(ddRaw.primary.prime.DEFAULT) !== JSON.stringify(ddRaw.primary.prime.prime)) FAIL("panda", "EX-1 colors.primary.prime.DEFAULT != .prime");
   if (ddRaw.constant.backdrop.value !== "oklch(0 0 0 / 80%)") FAIL("panda", `EX-1 colors.constant.backdrop = ${ddRaw.constant.backdrop.value}`);
   if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.4621 0.1645 258.77)", _dark: "oklch(0.5534 0.1923 258.93)" })) // T-0014 re-pin (vibrancy 50), was base oklch(0.4669 0.1671 258.98) / dark oklch(0.5476 0.1923 259.11); #725 U3 re-pin, dark was oklch(0.5506 0.1922 259.07)

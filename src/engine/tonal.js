@@ -233,7 +233,8 @@ export function solveOkhslHue(targetOklchHue, s, l) {
 // anyway) keeps the expensive path rare instead of universal.
 // The non-`chromaAt` branch below (the non-anchored path's own call, and any future `gamutClamp=true`
 // caller) is UNTOUCHED - still the original fixed-point loop, byte-identical (C4).
-function solveCam16Hue(targetOklchHue, chroma, tone, gamutClamp = false, { chromaAt = null } = {}) {
+// Exported (T-0015) for prime.mjs's anchored ladder and model.mjs's deriveKeyColor, which call its `chromaAt` form under hueSpace "oklch".
+export function solveCam16Hue(targetOklchHue, chroma, tone, gamutClamp = false, { chromaAt = null } = {}) {
   if (!chromaAt) {
     let h = targetOklchHue; // seed: CAM16 hue ≈ OKLCH hue to first order
     for (let i = 0; i < 16; i++) {
