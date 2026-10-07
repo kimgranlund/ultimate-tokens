@@ -65,8 +65,9 @@ colors→containers→surfaces→scrims); and on-color roles can be **re-pointed
    assertion messages that name the count do.
    If you changed the SCRIM count, also fix the scrim asserts: the `scrims.length !== 7` assert in
    `test/engine/semantic.mjs` and the `=== 7` group assert `(z)` in `headless-boot.mjs`.
-6. **`src/ui/sections/color.js`**: the Roles inspector label (the `"… semantic roles · light / dark refs"` string;
-   grep `semantic roles`).
+6. **`src/ui/sections/color.js`**: nothing to edit for a count change. The Mapping table head derives it from
+   `vp.roles.length`; no UI string in `src/ui/sections/` spells the count (the Roles inspector tab and its
+   `"53 semantic roles"` label were retired in T-0016). `src/ui/overlays/drawer.js` still spells it in the export README prose.
 7. **`docs/references` prose**: bump CURRENT-state counts (`knowledge-03-semantic-system.md`,
    `rubrics/parity-checklist.md` P1, this repo's `CLAUDE.md`). **LEAVE historical counts**: the "36 vs 37"
    `surfaceHighest`-divergence anecdote, CHANGELOG entries, OD/ADR decision records ("37 (not 51)"), and

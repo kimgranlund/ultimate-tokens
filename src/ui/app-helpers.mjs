@@ -383,22 +383,17 @@ export const switchControl = ({ on, onToggle, label, ariaLabel }) =>
   );
 
 // swatch, a fixed-size color chip, the single source for the app's many little color
-// squares (inspector dot, role refs, …). `alpha:true` lays the fill over the shared
+// squares (the inspector dot, …). `alpha:true` lays the fill over the shared
 // checkerboard (.swatch.alpha, defined once in CSS) so translucent colors read as
 // translucent. `size` drives the --sw custom property; decorative, so aria-hidden.
-export const swatch = (hex, { size = 16, alpha = false, cls = "", title, onClick } = {}) =>
+export const swatch = (hex, { size = 16, alpha = false, cls = "", title } = {}) =>
   h(
     "span",
     {
-      class: "swatch" + (alpha ? " alpha" : "") + (cls ? " " + cls : "") + (onClick ? " swatch-btn" : ""),
+      class: "swatch" + (alpha ? " alpha" : "") + (cls ? " " + cls : ""),
       style: `--sw:${size}px` + (alpha ? "" : `;background:${hex}`),
       title,
-      // opt-in interactive (e.g. the Roles inspector click-to-copy): a keyboard-accessible role=button.
-      ...(onClick
-        ? { role: "button", tabindex: "0", "aria-label": title || `Copy ${hex}`,
-            onclick: onClick,
-            onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(e); } } }
-        : { "aria-hidden": "true" }),
+      "aria-hidden": "true",
     },
     alpha ? h("span", { class: "swatch-fill", style: `background:${hex}` }) : false,
   );
