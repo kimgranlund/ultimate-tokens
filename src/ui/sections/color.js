@@ -243,11 +243,11 @@ export class ColorSectionImpl {
   }
 
 
-  // selectPalette, pick the palette that drives the right pane + selected graphs.
-  selectPalette(id) {
+  // selectPalette, pick the palette that drives the right pane + selected graphs; only a row click ({ tab: true }) jumps to the Palette tab (#786).
+  selectPalette(id, { tab = false } = {}) {
     const max = this.doc.palettes.length - 1;
+    if (tab || this.sel?.kind !== "palette") this.segment = "palette"; // row click, or first selection from none (was Global)
     this.sel = { kind: "palette", id: Math.max(0, Math.min(id, max)) };
-    this.segment = "palette"; // the right pane follows the selection (the tabs still move it afterwards)
     this.doc.selected = this.sel.id; // `selected` is a real serialized field (persist.js), persist it
     this.save(); // TKT-0455: without this, isDirty() falsely reports "unsaved" after a plain reselect
     this.render();
@@ -928,7 +928,7 @@ export class ColorSectionImpl {
                 this._reordering = false; // consume the post-reorder click guard
                 return;
               }
-              this.selectPalette(i);
+              this.selectPalette(i, { tab: true });
             },
           },
           h(
@@ -979,7 +979,7 @@ export class ColorSectionImpl {
           "data-pi": i,
           onclick: () => {
             if (this._reordering) { this._reordering = false; return; }
-            this.selectPalette(i);
+            this.selectPalette(i, { tab: true });
           },
         },
         h(
@@ -1138,7 +1138,7 @@ export class ColorSectionImpl {
                 this._reordering = false;
                 return;
               }
-              this.selectPalette(i);
+              this.selectPalette(i, { tab: true });
             },
           },
           h(
