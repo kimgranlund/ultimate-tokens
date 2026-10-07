@@ -6,7 +6,7 @@ smoke-out/
 .git-worktrees/
 
 # Reference drop for the Color Categories: the category data was distilled into
-# docs/spec/colors/categories/*.json (the gen's source of truth). The full reference
+# docs/reference/colors/categories/*.json (the gen's source of truth). The full reference
 # project is bulky + redundant, so it stays local-only.
 test/plugin/.hosted-pack-scratch/
 

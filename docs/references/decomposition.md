@@ -2,7 +2,7 @@
 
 > The typed delta this spec implies once validated: the child **cells** to build and the
 > dependency-ordered **ticket batch** that builds them. This is the full form of the
-> `decomposition` block in `../SKILL.md`; the gate consumes the block, this doc explains it.
+> `decomposition` block in `docs/specs/spec-cell.md`; the gate consumes the block, this doc explains it.
 > **Computation routes to code:** coverage and partial-order legality are proven by
 > `dev-kit-corpus/bin/_entailment_check.py`, not asserted here, **27/27 parent criteria
 > covered, 6 tickets, 0 gaps**. (Coverage under the partial order is what the script proves;

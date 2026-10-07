@@ -106,20 +106,20 @@ import { fileURLToPath } from "node:url";
 // genuinely cannot be pinned (an archived record citing a deleted file is NOFILE, not STALE,
 // so it needs no exemption).
 const DOCS_IMPLIED = {
-  "docs/lld/app-shell.md": "src/ui/app.js",
-  "docs/reference/references/component-inventory.md": "src/ui/app.js",
+  "docs/specs/app-shell.md": "src/ui/app.js",
+  "docs/references/component-inventory.md": "src/ui/app.js",
 };
 // An entry's `path` is an exact tracked path or, ending in `/` or `-`, a prefix. Ruling #664:
 // dated snapshots are exempt, live records are not.
 export const DOCS_EXEMPT = [
   // the 2026-07-17 CTO/librarian/export-drift review round: a dated snapshot of the pre-#646
   // monolithic app.js (7000+ lines, now 2578); its citations describe a file that no longer exists
-  { path: "docs/reference/reviews/2026-07-17-", reason: "archived 2026-07-17 review round, pre-#646 app.js snapshot" },
+  { path: "docs/reports/2026-07-17-", reason: "archived 2026-07-17 review round, pre-#646 app.js snapshot" },
   // the file-ticket archive, frozen when tickets moved to GitHub Issues (ADR-017, 2026-07-17)
-  { path: "docs/tickets/", reason: "archived file tickets, frozen at ADR-017 (2026-07-17)" },
+  { path: "docs/archive/tickets/", reason: "archived file tickets, frozen at ADR-017 (2026-07-17)" },
   // closed plans, moved here on landing (.sdlc/adapter.md §5); a closed plan is a record of the
   // tree it was built on, not a claim about the current tree
-  { path: "docs/plan/archive/", reason: "closed plans, archived on landing" },
+  { path: "docs/archive/plans/", reason: "closed plans, archived on landing" },
 ];
 const isExempt = (p) => DOCS_EXEMPT.some((e) => p === e.path || (/[\/-]$/.test(e.path) && p.startsWith(e.path)));
 const reDocPath = /^docs\/.*\.md$/;
@@ -778,7 +778,7 @@ export function selftest() {
 
   // (d) a plain lowercase, non-call identifier that IS backticked as the citation's own subject
   // (`` `render` :570 ``) must still anchor, even though it fails camelCase/PascalCase/snake_case
-  // and has no parens: found live, post-fix, in docs/lld/app-shell.md (the audit's lone real
+  // and has no parens: found live, post-fix, in docs/specs/app-shell.md (the audit's lone real
   // STALE-WRONG-LINE after cases a-c landed). The backtick is the author's own "this is code"
   // signal; requiring the shape check on it too over-corrected the ticket's real fix.
   {

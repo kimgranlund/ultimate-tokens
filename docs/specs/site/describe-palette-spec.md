@@ -44,8 +44,8 @@ shape (§7), scoped to #374, but load-bearing for §8's G2/G3 parity gates.
 - **Zero new runtime dependencies** anywhere: core, stdio server, PNG encoder (#373: stored-deflate,
   ~100 lines), retrieval.
 - **Pro-gated, both flavors**: settled by the #379 ruling (2026-07-18), not relitigated here (§9).
-- **`docs/site/mcp-hosting-spec.md` §1 states "the generator stays client-side."** The hosted flavor
-  (#377) deliberately breaches that constraint; **RATIFIED as ADR-021** (`docs/reference/references/
+- **`docs/specs/site/mcp-hosting-spec.md` §1 states "the generator stays client-side."** The hosted flavor
+  (#377) deliberately breaches that constraint; **RATIFIED as ADR-021** (`docs/references/
   decision-records.md`, #376), which the hosting spec now references at the constraint line. This
   spec's own §8 hosted column cites that ADR rather than re-deriving the ruling.
 
@@ -471,7 +471,7 @@ full feature parity**, asserted at three gates:
    back as the replay handle, then the same deterministic core. Agent callers are steered to
    `generate_kit` by tool descriptions, routing an Opus-class caller through a Haiku-class server
    interpretation caps quality at the weaker model and adds cost + an abuse surface. **Ratified as
-   ADR-021** (#376), `docs/reference/references/decision-records.md`, not this spec.
+   ADR-021** (#376), `docs/references/decision-records.md`, not this spec.
 
 Anything else differing between flavors is a parity failure, not a judgment call. Interpretation
 quality (the words→brief step) is explicitly **outside** the parity contract, it varies by calling
@@ -594,8 +594,8 @@ not bundled with the free downloadable kit. Concretely:
   nothing in §8's hosted column ships before those. The local flavor (#369–#374) has no such
   dependency and already shipped. The ADR gate (#376) is CLEARED, see below.
 - ~~**The hosting-spec constraint amendment** must land as #376's ADR before #377 builds~~,
-  **RESOLVED**: ratified as ADR-021 (`docs/reference/references/decision-records.md`),
-  `docs/site/mcp-hosting-spec.md` §1 now references it. #377 remains blocked on domains/accounts
+  **RESOLVED**: ratified as ADR-021 (`docs/references/decision-records.md`),
+  `docs/specs/site/mcp-hosting-spec.md` §1 now references it. #377 remains blocked on domains/accounts
   only, not on this.
 - **Engines in a Worker:** the engines are pure DOM-free ESM and *expected* to run in a Worker,
   verify early in #377 (the hosting spec's Phase A lesson: lock the surface first).

@@ -2,7 +2,7 @@
 
 Each scenario below was run for real, through the Figma MCP, against the live BZZR Tokens file.
 The BZZR numbers cited are real outcomes, not illustrations, read them as evidence a procedure
-scales, not as a target to hit. Source findings: `docs/tickets/tkt-0009.md` (collection merge,
+scales, not as a target to hit. Source findings: `docs/archive/tickets/tkt-0009.md` (collection merge,
 segment bindings), `tkt-0010.md` (rename-in-place, readback), `tkt-0012.md` (the engine-side
 rename capability these scripts either drive or stand in for), `tkt-0013.md` (the full ADR-016
 rename wave + the frozen-map coverage bug).

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // describe-rubric.mjs, verifier for the interpretation rubric + exemplar corpus + keyword retrieval
-// (mcp/describe-rubric.mjs, #370). Contract: docs/site/describe-palette-spec.md §5.1/§10.
+// (mcp/describe-rubric.mjs, #370). Contract: docs/specs/site/describe-palette-spec.md §5.1/§10.
 import { DOMAINS } from "../../src/ui/persist.js";
 import { FAMILY_NAMES, SECONDARY_HARMONY_OFFSET, TERTIARY_ANALOGOUS_OFFSET, generateKit } from "../../mcp/describe-kit-core.mjs";
 import { RUBRIC, RESEARCH_TIER_NOTE, ROUND_TRIP_INSTRUCTIONS, EXEMPLARS, retrieveExemplars } from "../../mcp/describe-rubric.mjs";

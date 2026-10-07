@@ -46,7 +46,7 @@ License validation/activation only works if **license keys are enabled on each p
       (Subscription products issue a key per subscription; the key's `status`/`expires_at` tracks the
       billing period, so a lapse auto-expires the key, which the app already honors.)
 - [ ] **Pro, activation limit:** set HIGH (e.g. **25**), per the 2026-07-02 decision
-      (`licensing-identity-spec.md`), enforcement is moving to **email-bound identity** (unlimited
+      (`docs/specs/site/licensing-identity-spec.md`), enforcement is moving to **email-bound identity** (unlimited
       devices for the key's owner); the activation limit is only an abuse ceiling and must never be
       the binding constraint for one person. Never 1. The store copy says "activate on any device you
       work from."

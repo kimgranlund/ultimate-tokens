@@ -1,8 +1,8 @@
 # Preset revision ledger: the per-category re-reasoning program
 
 Program state for the register-layer revision (ADR-022; plan ratified 2026-07-30): every preset's
-`type.registers` re-reasoned from its own story via `docs/reference/typography/intended-use.md`
-Layer 3, scored by `docs/reference/rubrics/type-rubric.md`, one category per PR. Per-palette
+`type.registers` re-reasoned from its own story via `docs/references/typography/intended-use.md`
+Layer 3, scored by `docs/references/rubrics/type-rubric.md`, one category per PR. Per-palette
 rationale lives IN the spec (`type.note`), this ledger tracks only program state. Loop per
 category: `palette-researcher` draft → reconcile + gates → `design:font-choice-checker` → PR.
 
@@ -22,7 +22,7 @@ Epic: #407, **CLOSED 2026-07-31, all 8 categories done** (PRs #417/#420/#421/#42
 Program totals: 341 typed presets re-reasoned; ~310 revised. The dominant defect everywhere was
 face-reality fiction (cores/siblings naming cuts that don't exist); ~50 story-driven family
 corrections, every one upheld under independent review; 8 program rulings minted into
-`docs/reference/rubrics/type-rubric.md` along the way. Checker scores 50–53/60 across the runs.
+`docs/references/rubrics/type-rubric.md` along the way. Checker scores 50–53/60 across the runs.
 Follow-up work (font-cuts.json expansion, mapper ladder-snapping, name/inventory normalization,
 new schema checks) is consolidated on issue #418.
 

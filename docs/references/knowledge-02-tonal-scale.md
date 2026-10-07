@@ -214,9 +214,9 @@ lmin 5, lmax 100, damp 80:
 
 ## 8. Palette groups, base chroma, and the prime system
 
-> Spec: `docs/spec/spec-muted-base-key-spikes.md` 0.3.0 (REQ-001..011 palette groups + per-group
+> Spec: `docs/specs/spec-muted-base-key-spikes.md` 0.3.0 (REQ-001..011 palette groups + per-group
 > base chroma, absolute there, a damper since #785; REQ-050..057 the prime system); design:
-> `docs/lld/lld-muted-base-key-spikes.md` 0.3.0. Shipped in the engine (`tonal.js`, `prime.mjs`,
+> `docs/specs/lld-muted-base-key-spikes.md` 0.3.0. Shipped in the engine (`tonal.js`, `prime.mjs`,
 > the new `src/engine/resolve.mjs`) and the UI (`src/ui/model.mjs`, `src/ui/persist.js`). Unlike
 > 0.2.0's shipped defaults, the 0.3.0 `GROUP_DEFAULTS` (§8.1) make a REAL visual change to the
 > default document: Neutral (material) rendered muted until #785 (R96) and the eight data palettes render

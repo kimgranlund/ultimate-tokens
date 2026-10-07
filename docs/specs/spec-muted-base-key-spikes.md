@@ -14,7 +14,7 @@ audience: builder, reviewer, planner
 > Superseded in part by R94 to R98 (#785): a group's Base chroma is now a whole-ramp damper (the at-100 ramp times g/100, damp only), not REQ-002's absolute target, and Material defaults to 100/60, not 30/60 (EX-2's `chroma 30` Neutral ramp no longer holds). The byte identity of EX-1 and REQ-003 holds for chroma-100 subjects only, and the fixtures of AC-003(a) and AC-006 pin the damped construction (see EX-1, REQ-003, AC-003 and AC-006). The lines that still state Material 30 as the default or an absolute ramp target (REQ-001's shipped defaults, REQ-003's "Neutral (29 vs 30)", AC-007's `chroma 30` Neutral ramp, G2, and the Open follow-up on the material 30/60 values) are the pre-#785 record and stay as written.
 
 Intent records: GitHub issue #503 (`kind:feature`, `size:big`, `lane:color-engine`) and #533 (the
-prime-system re-ruling, Findings 2026-09-11). Companion design: `docs/lld/lld-muted-base-key-spikes.md`.
+prime-system re-ruling, Findings 2026-09-11). Companion design: `docs/specs/lld-muted-base-key-spikes.md`.
 
 Version history: 0.1.0 (approved 2026-09-11) put chroma spikes on identity stops of the base ramp.
 0.2.0 (this revision, ratified in principle 2026-09-11 under #533) RETIRES the ramp spike entirely and

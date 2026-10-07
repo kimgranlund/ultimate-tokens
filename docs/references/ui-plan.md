@@ -31,7 +31,7 @@ Built into `capability.system.ui-app` + the single-file bundle. The wireframes/r
 Revision A described a color-only editor. The app has since grown into one brand-kit document with
 three composing systems, surfaced as sections of one editor. Where the wireframes and Revision A
 differ from this revision, this revision is the current truth. It is a summary; the frame, regions,
-render pipeline and state are specified in `docs/lld/app-shell.md`, and the per-section build
+render pipeline and state are specified in `docs/specs/app-shell.md`, and the per-section build
 procedure (canvas header, scene, inspector, the headless-shim limits) lives in the
 `building-editor-sections` skill, so this file does not repeat them.
 
@@ -64,7 +64,7 @@ state: `this.category` is a category slug or `null` (the hub), and that category
 presets load lazily on entry. A preset opens as an editable copy in your own sets. Import, project load and New sit in the gallery header.
 
 **Persistence.** The document persists per set; the app preferences (`theme`, `motion`, `fontMode`) persist per
-app and never with the document (see the state table in `docs/lld/app-shell.md`).
+app and never with the document (see the state table in `docs/specs/app-shell.md`).
 
 ## 1. Why it exists (the reasoning the shell traces to)
 

@@ -3,12 +3,14 @@
 # from the cards themselves, so a new card or a new amendment is covered.
 # Usage: sh .sdlc/checks/card-amendment-check.sh   (from the repo root)
 # The exit agrees with the count (#745): a non-zero stale total is a non-zero exit.
-DR=docs/reference/references/decision-records.md
+DR=docs/references/decision-records.md
 n=0
 for c in .sdlc/records/cards/*.md; do
   id=$(basename "$c" .md)
   src=$(grep -E '^\| Source ' "$c" | grep -oE '[A-Za-z0-9_.-]+/[A-Za-z0-9_./-]+\.[a-z]+' | head -1)
   [ -n "$src" ] || src=$(grep -E '^\| (Record|File|Document) ' "$c" | grep -oE '[A-Za-z0-9_.-]+/[A-Za-z0-9_./-]+\.[a-z]+' | head -1)
+  # Cards are frozen records naming pre-2026-10-06 paths; translate a moved source through the path map.
+  [ -e "$src" ] || src=$(awk -F'\t' -v p="$src" '$1==p{print $2}' docs/assets/docs-reconcile-path-map.tsv)
   [ -n "$src" ] && [ -e "$src" ] || continue
   case "$id:$src" in
     ADR-*:"$DR")

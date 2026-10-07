@@ -37,12 +37,12 @@ original real-world consumer.)
 Intent record: GitHub issue #570 (`kind:feature`, `size:big`, `lane:exports`). Structural precedent:
 `exportShadcn` in `src/engine/exports.js` (a curated, fixed-contract framework format driven by
 name-matched palettes). Procedure of record: the `adding-export-formats` skill (serializer, then the
-three wiring sites, then the shape gate). Shapes of record: `docs/reference/references/
-knowledge-04-export-formats.md`. Color system of record: `docs/spec/spec-muted-base-key-spikes.md`
+three wiring sites, then the shape gate). Shapes of record: `docs/references/
+knowledge-04-export-formats.md`. Color system of record: `docs/specs/spec-muted-base-key-spikes.md`
 0.3.0 (25 export stops per ramp, 53 roles, the seven-swatch prime system, the 16-palette default
 document with `data-1..8`, palette groups as an editor concept).
 
-Sibling in flight: #569 (`docs/plan/archive/plan-2026-09-export-schema-revision.md` on branch
+Sibling in flight: #569 (`docs/archive/plans/plan-2026-09-export-schema-revision.md` on branch
 `docs/569-export-plan`) revises the existing formats and stamps `EXPORT_SCHEMA_VERSION`. This SPEC
 adds two NEW formats and does not restate #569's rulings; the overlap is named in "Overlap with #569".
 
@@ -253,7 +253,7 @@ Consequences that shape the design:
   `src/engine/semantic.js`'s actual role stops and found already correct).
 
   Canonical source: `docs/reference/data/radix-projection.json` (the committed projection table)
-  and `docs/reference/references/radix-park-adaptation.md` (the architecture + rules this table
+  and `docs/references/radix-park-adaptation.md` (the architecture + rules this table
   comes from, source-of-truth direction, Prime/Scrim namespace separation, data-driven
   exceptions).
 
@@ -423,9 +423,9 @@ Consequences that shape the design:
 - **REQ-080** The "8 formats" claim moves to 10 in: `src/engine/exports.js` header,
   `CLAUDE.md` Layout, `.claude/skills/adding-export-formats/SKILL.md` (the "8 of them, and ONLY those
   8" paragraph, the `nonempty` key list, the ShadCN-exception paragraph now naming Park UI as the
-  second curated-contract format), `docs/reference/references/knowledge-04-export-formats.md`
+  second curated-contract format), `docs/references/knowledge-04-export-formats.md`
   (header, §1 table, two new sections numbered after #569's E6 additions), `README.md` format list,
-  `docs/marketing/fact-sheet.md` "Export formats" row and store copy via the marketing agent.
+  `docs/specs/marketing/fact-sheet.md` "Export formats" row and store copy via the marketing agent.
 - **REQ-081** DS bundle: `DESIGN.md` and the Figma Make `setup.md` are unchanged in v1 (they
   document shadcn consumption). The Claude Design `README.md` format list, if it enumerates formats,
   gains both names (K6 builder checks; if the list is generated from a constant, the constant).
@@ -434,7 +434,7 @@ Consequences that shape the design:
   (`colors.{palette}.{role}` → `--colors-{palette}-{role}`, the bare accent as the group's DEFAULT)
   and Park UI (`colorPalette.solid.bg` and friends; `accent`/`gray` are the brand's primary/neutral).
   `role-parity.mjs` is unchanged (it gates counts; the 53-per-palette count is unchanged).
-- **REQ-083** `CHANGELOG.md` entry; `docs/reference/references/decision-records.md` gains no ADR
+- **REQ-083** `CHANGELOG.md` entry; `docs/references/decision-records.md` gains no ADR
   unless a ratification below changes a fenced rule (none does by default).
 
 ## Non-goals
@@ -585,7 +585,7 @@ Neutral at full chroma, the emitters must be fed the resolved state, as the draw
   proven or as their fallback in #570's Findings; the `panda-smoke` job exists in the CI workflow
   on the same trigger as the smoke leg and ran green on the K5 PR.
 - **AC-009** REQ-080..083: `git grep -n "8 documented\|eight formats\|8 formats\|the 8 color" CLAUDE.md
-  src/engine/exports.js .claude/skills/adding-export-formats docs/reference/references/
+  src/engine/exports.js .claude/skills/adding-export-formats docs/references/
   knowledge-04-export-formats.md README.md` returns nothing; `docs:doc-checker` re-scores
   knowledge-04 after the two sections land.
 
@@ -667,7 +667,7 @@ what's ratified exactly, but steps 1..8 sat one tier lighter than the corrected 
 1..8 only (this SPEC's version bumps 0.1.0 → 0.1.1; status stays `approved`, this is a data
 correction to an already-approved SPEC, not a new draft round). The corrected table, EX-4's
 regenerated values, and the durable source material now live at
-`docs/reference/data/radix-projection.json` and `docs/reference/references/radix-park-adaptation.md`.
+`docs/reference/data/radix-projection.json` and `docs/references/radix-park-adaptation.md`.
 REQ-022 and REQ-023 were checked against the correction and need no wording change (both operate on
 step/alpha-step numbers generically, never assumed steps 6..8 were translucent), see the inline
 notes on each REQ.

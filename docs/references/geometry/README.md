@@ -1,6 +1,6 @@
 # Geometry / dimensional tokens: reference shape
 
-`geometry.tokens.json` is a **real export** from the geometry engine (`src/engine/geometry.mjs`), the
+`docs/assets/geometry-tokens.json` is a **real export** from the geometry engine (`src/engine/geometry.mjs`), the
 spatial analog of the color & type engines: a few parameters → a systematic size ramp → derived control
 geometry → [DTCG](https://tr.designtokens.org/) `dimension` tokens (and CSS custom props + utility
 classes). The sample here is the **Comfortable** treatment at a 28px base height.
@@ -44,7 +44,7 @@ These reproduce the hand-tuned reference ramp to ±1px, so the table is not six 
 | **XL** | 48 | 24 | 18 | 18 | 12 | 24 | 24 |
 | **2XL** | 64 | 28 | 21 | 21 | 18 | 32 | 32 |
 
-## Structure (`geometry.tokens.json`)
+## Structure (`docs/assets/geometry-tokens.json`)
 
 | Top-level key | What it is |
 |---|---|

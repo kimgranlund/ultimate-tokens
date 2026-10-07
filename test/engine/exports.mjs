@@ -514,7 +514,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   // src/engine/prime.mjs, never tonal.js/the ramp. Values independently re-verified against
   // exports.mjs's own resolution ladder output (this file's normal spot-check discipline, not
   // re-derived by hand), out-of-lane reporting on the SPEC's own stale EX-1 mirror carried over from
-  // U6's own paragraph (`docs/spec/spec-panda-park-ui-exports.md:419-424`, see `.sdlc/handoffs/pif-u6.md`).
+  // U6's own paragraph (`docs/specs/spec-panda-park-ui-exports.md:419-424`, see `.sdlc/handoffs/pif-u6.md`).
   const ddState = stateOf(defaultDocument());
   const ddPreset = X.exportPanda(ddState);
   const ddRaw = ddPreset.theme.extend.tokens.colors;

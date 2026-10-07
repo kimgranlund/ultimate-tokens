@@ -165,7 +165,7 @@ Gone since the last survey: `.claude/ops/*`, `.claude/overhaul-plan-2026-08-14.m
 | `docs/brand-assets` | 2 | 2026-07-12 | |
 | `.sdlc/plans` | 6 | 2026-09-17 | 1 in `archive/` |
 
-ADRs: 24 sections in `docs/reference/references/decision-records.md`, highest ADR-024.
+ADRs: 24 sections in `docs/references/decision-records.md`, highest ADR-024.
 
 ## Authorship
 

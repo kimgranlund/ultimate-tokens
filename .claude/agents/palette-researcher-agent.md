@@ -47,11 +47,11 @@ rulebook.
 ## Type mode (registers, reasoned from the story, per ADR-022)
 
 A palette's typography is a REGISTER declaration: `type.registers.{anthemic, contextual, functional,
-actionable, data}` (docs/reference/typography/intended-use.md Layer 3 - each register shapes its
+actionable, data}` (docs/references/typography/intended-use.md Layer 3 - each register shapes its
 primary voice Display/Headline/Body/Label/Kicker; `type.slots` is forbidden, not a valid shape).
 When asked to design or REVISE a palette's type (the preset revision program), emit the registers
 IN the draft JSON, reasoned from that palette's own story (kicker/source/refuses) against the canon
-and scored against docs/reference/rubrics/type-rubric.md - self-score Layer A, state it in your
+and scored against docs/references/rubrics/type-rubric.md - self-score Layer A, state it in your
 summary. Rules that bind the schema:
 
 - Optional per register: `styleName` (a REAL named cut, expressive-tier target voices only),

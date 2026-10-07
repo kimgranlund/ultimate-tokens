@@ -612,7 +612,7 @@ if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs ac
 }
 
 // stored-anchors (#740): imported here, not with the top-of-file imports, for the same reason
-// gate-report.mjs below is, this file is cited by line number from docs/reference/reviews/
+// gate-report.mjs below is, this file is cited by line number from docs/reports/
 // 2026-08-20-reactivity/03-stores-and-persistence.md (lines 11-12, 448-484), and adding a new
 // top-of-file import would shift every line after it, including that cited range, by one.
 import { hydrateStoredDoc, backfillDefaultAnchors } from "../../src/ui/app-helpers.mjs";
@@ -770,7 +770,7 @@ import { PRESETS as CAT_TRAVEL } from "../../src/ui/categories/travel.js";
 }
 
 // gate-report.mjs is imported here, immediately before its one use, rather than with the top-of-
-// file imports: this file is cited by line number from docs/reference/reviews/2026-08-20-reactivity/
+// file imports: this file is cited by line number from docs/reports/2026-08-20-reactivity/
 // 03-stores-and-persistence.md (lines 11-12, 448-484), and ES module imports hoist regardless of
 // textual position, so adding it here keeps those citations pinned instead of shifting them by one.
 import { gateReport } from "../gate-report.mjs";

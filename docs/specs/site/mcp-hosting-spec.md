@@ -32,7 +32,7 @@ foundation the **Studio** (multi-seat) tier already assumes.
 
 **Constraints (load-bearing, one narrowly amended by ADR, below)**
 - **The generator stays client-side.** The Vite SPA is static (Cloudflare **Pages**); the Figma plugin stays
-  **offline** (`networkAccess:"none"`). **Amended, narrowly, by ADR-021** (`docs/reference/references/decision-records.md`)
+  **offline** (`networkAccess:"none"`). **Amended, narrowly, by ADR-021** (`docs/references/decision-records.md`)
   for the describe-palette hosted flavor only (#377): a Pro-gated `generate_kit` + a demoted,
   LLM-less-clients-only `describe_palette` are permitted to run server-side on the Phase B Worker. Every
   other surface, this document's own kit-storage/OAuth/sync scope, the app SPA, the Figma plugin, keeps

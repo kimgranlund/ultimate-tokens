@@ -11,7 +11,7 @@
 This serves two purposes. Read it front-to-back as a **brief** to understand intent and the
 reasoning behind the HCT Palette Generator. Or jump via the table of contents to a
 **specification section** for implementation detail. Exhaustive detail lives in the
-`references/` knowledge docs; this document orients and specifies at the level an
+`docs/references/` knowledge docs; this document orients and specifies at the level an
 implementer needs to start, pointing into those docs for formulas and tables.
 
 Sections marked 📐 are specification detail, 💡 are design reasoning, ⚠️ are open decisions.
@@ -86,11 +86,11 @@ keep mode-switching in a dedicated semantic layer.
 | Semantic mapping | the 53-role table | per-stop colors | role→ref mappings + resolved leaves | role table diverges across impls |
 | Export | format serializers | semantic + raw | CSS / JSON / DTCG zip / UI3 | a ref doesn't resolve to a primitive |
 
-Full detail per layer: `references/knowledge-01..05`. An auxiliary engine module, `derive.mjs`
+Full detail per layer: `docs/references/knowledge-01..05`. An auxiliary engine module, `derive.mjs`
 (`knowledge-06`), derives a NEW palette from the existing set (the "New Palette" modal), pure, no DOM.
 
 ## 5. Color Engine 📐
-See `references/knowledge-01-color-engine.md` and `data/verification-anchors.json`.
+See `docs/references/knowledge-01-color-engine.md` and `docs/reference/data/verification-anchors.json`.
 Key contracts: `hctToRgb(hue,chroma,tone) -> {rgb,inGamut,lstar}` (binary-search J to hit
 L\*; neutral path below 0.4 chroma; black/white at tone 0/100); `maxChromaInGamut`,
 `peakC`, `oklchToCam16Hue` (chroma-aware Newton inverse, ADR-011), `hctToOklch` (high-res
@@ -98,7 +98,7 @@ HCT→OKLCH). Fixed viewing conditions (ADR-009).
 Acceptance: roundtrip `max_channel_delta <= 2` (current: 0).
 
 ## 6. Tonal-Scale Generation 📐
-See `references/knowledge-02-tonal-scale.md`. Stops 050–950 (display 19, export 25);
+See `docs/references/knowledge-02-tonal-scale.md`. Stops 050–950 (display 19, export 25);
 five curves via `shape(p)`; `toneAt(stop,skew,lift)` applies a gamma skew (`3^(skew/100)`) to
 the normalized position, and `liftStop` DISPLACES the stop by `A · w(stop)` before the curve is
 evaluated (`A = clamp(lift × 6, ±243.51)`, `w` a cosine weight, 1 at stop 500 / 0 at the ends);
@@ -110,7 +110,7 @@ sideW = max(0, 1 + (dampBias/100)·sign(stop−500))), clamp `min(target·m, gam
 lmin 5, lmax 100, damp 80, dampCurve 1.5, dampAmp 0, dampBias 0.
 
 ## 7. Data Model 📐
-Canonical machine-readable form: `data/role-table.json` (`constants`, `roleTable` 53 rows,
+Canonical machine-readable form: `docs/reference/data/role-table.json` (`constants`, `roleTable` 53 rows,
 `defaults` 16 palettes, 8 brand families + 8 data families).
 
 ```ts
@@ -148,19 +148,19 @@ interface TokenLeaf { $type:'color'; $value:{colorSpace:'srgb'; components:[numb
 Field-table convention and clamp ranges: `knowledge-02` §2 and `hydrate()` validation.
 
 ## 8. Semantic Token System 📐
-See `references/knowledge-03-semantic-system.md`. Two layers (flat raw + semantic
+See `docs/references/knowledge-03-semantic-system.md`. Two layers (flat raw + semantic
 `light-dark()`, ADR-005); 53 roles/palette; the on-color TABLE maps `050`/`200`, resolved
 per fill by the default `onColorMode: contrast` (ADR-003 amendment / ADR-025, OD-001 closed);
 7 scrim roles on base 500 (ADR-004, OD-002); surface Dim/Bright (non-mirror) vs
 Low/High (mirror).
 
 ## 9. Export Formats 📐
-See `references/knowledge-04-export-formats.md`. Ten color formats: CSS hex, CSS OKLCH, JSON,
+See `docs/references/knowledge-04-export-formats.md`. Ten color formats: CSS hex, CSS OKLCH, JSON,
 Figma DTCG 3-file zip (resolved colors, ADR-002), UI3 Collections (interchange-only,
 ADR-007/OD-003), Tailwind v4, ShadCN (a curated subset, not all roles), Panda CSS, Radix, and `exportAll`. Padding via `pad3`/`refKey` (ADR-006).
 
 ## 10. Figma Plugin 📐
-See `references/knowledge-05-figma-plugin.md`. Binds the `Color Roles` collection (#491; was
+See `docs/references/knowledge-05-figma-plugin.md`. Binds the `Color Roles` collection (#491; was
 `Color Semantic`, `Color Modes`) to `Color Primitives` by `createVariableAlias` for a true cascade JSON import cannot
 provide (ADR-002). Same role table as the generator (parity). (Collections renamed from
 `semantic-colors` / `raw-colors`, then `Color Modes` → `Color Semantic` → `Color Roles`.)
@@ -210,7 +210,7 @@ OKLCH-native designers work in familiar numbers without changing the output colo
 | OD-001 | On-color contrast vs fixed `050` | CLOSED (contrast is the default) | was: accessibility of `on*` on light fills. Resolved by ADR-025 (the ADR-003 amendment), every family now clears WCAG AA 4.5:1 in both schemes |
 | OD-002 | Surface bases 250/500 as semantic scrims | DEFERRED | scrim role coverage |
 | OD-003 | UI3 Collections schema authenticity | DECIDED (interchange-only) | the `ui3` export's usability |
-| OD-004 | Aliased semantic export without plugin | DEFERRED (spike implemented 2026-06-17, re-statused 2026-07-25, stale 5.5 weeks with no test run) | The `rawColl` opt-in emits the FULL documented alias shape (`targetVariableName` + `targetVariableSetName`), **gated by `hpg-export-resolved`** so it can't regress. Still unvalidated end-to-end in real Figma (no Figma in CI) and there is no user-facing plugin-free download yet; the plugin stays the reliable path in the meantime. Re-open by running `docs/reference/references/od-004-plugin-free-import-test.md` in real Figma (import with the `Color Primitives` collection pre-existing) before exposing the plugin-free path or removing the plugin. |
+| OD-004 | Aliased semantic export without plugin | DEFERRED (spike implemented 2026-06-17, re-statused 2026-07-25, stale 5.5 weeks with no test run) | The `rawColl` opt-in emits the FULL documented alias shape (`targetVariableName` + `targetVariableSetName`), **gated by `hpg-export-resolved`** so it can't regress. Still unvalidated end-to-end in real Figma (no Figma in CI) and there is no user-facing plugin-free download yet; the plugin stays the reliable path in the meantime. Re-open by running `docs/references/od-004-plugin-free-import-test.md` in real Figma (import with the `Color Primitives` collection pre-existing) before exposing the plugin-free path or removing the plugin. |
 | OD-005 | Palette count beyond the default 16 | DECIDED (2026-06-15), configurable | Every acceptance criterion is "for every palette", so it generalizes to any count; the validated `capability.system.ui-app` ships a configurable palette set. The 16 defaults (8 brand + 8 data, issue #503) are a seed set, NOT a ceiling. |
 
 ## 15. Current Status
@@ -226,17 +226,17 @@ OKLCH-native designers work in familiar numbers without changing the output colo
 
 | Doc | Contents |
 |-----|----------|
-| `references/knowledge-01-color-engine.md` | matrices, CAM16 fwd/inv, VC, gamut, anchors |
-| `references/knowledge-02-tonal-scale.md` | stops, curves, `toneAt`, chroma+damping |
-| `references/knowledge-03-semantic-system.md` | two layers, 53 roles, on-colors, scrims, surfaces |
-| `references/knowledge-04-export-formats.md` | 10 color formats, shapes, Figma import constraints |
-| `references/knowledge-05-figma-plugin.md` | cascade binder, parity, run/failure modes |
-| `references/knowledge-06-palette-derivation.md` | the "New Palette" engine (`derive.mjs`): Relative / Environmental / Custom |
+| `docs/references/knowledge-01-color-engine.md` | matrices, CAM16 fwd/inv, VC, gamut, anchors |
+| `docs/references/knowledge-02-tonal-scale.md` | stops, curves, `toneAt`, chroma+damping |
+| `docs/references/knowledge-03-semantic-system.md` | two layers, 53 roles, on-colors, scrims, surfaces |
+| `docs/references/knowledge-04-export-formats.md` | 10 color formats, shapes, Figma import constraints |
+| `docs/references/knowledge-05-figma-plugin.md` | cascade binder, parity, run/failure modes |
+| `docs/references/knowledge-06-palette-derivation.md` | the "New Palette" engine (`derive.mjs`): Relative / Environmental / Custom |
 | `color-neutral-derivation.md` | the neutral/environment rule (hue + max chroma) |
-| `references/decision-records.md` | ADR-001…010 (fenced choices) |
-| `references/glossary.md` | project vocabulary |
-| `data/role-table.json` | canonical 53-role table + defaults + constants |
-| `data/verification-anchors.json` | engine roundtrip anchors |
-| `rubrics/quality-rubric.md` | spec scoring (spec-author 10 dims + project checks) |
-| `rubrics/acceptance-criteria.md` | runnable acceptance predicates |
-| `rubrics/parity-checklist.md` | three-implementation parity gate |
+| `docs/references/decision-records.md` | ADR-001…010 (fenced choices) |
+| `docs/references/glossary.md` | project vocabulary |
+| `docs/reference/data/role-table.json` | canonical 53-role table + defaults + constants |
+| `docs/reference/data/verification-anchors.json` | engine roundtrip anchors |
+| `docs/references/rubrics/quality-rubric.md` | spec scoring (spec-author 10 dims + project checks) |
+| `docs/references/rubrics/acceptance-criteria.md` | runnable acceptance predicates |
+| `docs/references/rubrics/parity-checklist.md` | three-implementation parity gate |

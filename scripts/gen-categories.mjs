@@ -11,7 +11,7 @@
 //   src/ui/categories/<slug>.js    one LAZY module per category: VOLUMES (per-volume headers) + PRESETS
 //                               (the read-only gallery presets the generator opens as copies).
 //
-// NAMING, per docs/reference/colors/color-model-function.md:
+// NAMING, per docs/references/colors/color-model-function.md:
 //   sampled 6 colors → {tier}[-muted]: primary/primary-muted, secondary/secondary-muted, tertiary/tertiary-muted
 //   (the base tier of each family carries NO "-base" suffix, only the muted sibling is suffixed;
 //   the "-base"/"-muted" symmetric split was retired in favor of bare-name/"-muted", 2026-07-12.
@@ -240,7 +240,7 @@ const CURVE_RANGE_KEYS = ["lmin", "lmax"];
 
 // ── per-palette TYPOGRAPHY: map a spec palette's REGISTER declaration (its optional `type`) to an
 // engine typeScale config { treatment, bodyBase?, fonts, voices }. Registers are the intended-use
-// canon's Layer 3 (docs/reference/typography/intended-use.md): a story/brand's tone tiers mapped
+// canon's Layer 3 (docs/references/typography/intended-use.md): a story/brand's tone tiers mapped
 // onto the 15 voices. This mapper is the ONE place that vocabulary is translated, persist.clampType
 // + engine/type.mjs consume the output verbatim, so opening a preset applies it via hydrate.
 // Each register carries {font, weight, tracking "%", leading "%"} shaping its PRIMARY voice, plus

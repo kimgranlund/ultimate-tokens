@@ -884,6 +884,39 @@ Format: Context → Decision → Rationale → Consequences → Status.
   ADR-026). Ratification is the owner's: the owner edits this line to DECIDED, or amends the text
   under the file's amendment shape; no plan seat does either.
 
+## ADR-028: docs/ follows the nine schema homes; runtime-read data stays in docs/reference/
+- **Context.** `docs/` grew one folder per topic (low-level designs, marketing, plans, PRDs, site specs,
+  specs, tickets, images, a catch-all `reference/`), and the sdlc-lite docs-schema check reported 32
+  errors against that tree. Two kinds of file in `docs/reference/` are not documents: the role-table
+  answer key and the other files under `docs/reference/data`, and the curated palettes under
+  `docs/reference/colors/categories`. Code, the generators and the shipped Describe MCP zip read them at
+  that exact path. Finished records under `.sdlc/` and the root changelog name the old paths, and those
+  records are not rewritten. The plan-closing rule in `.sdlc/adapter.md` section 5 kept two plan homes.
+- **Decision.** (1) Every document under `docs/` lives in one of the nine schema homes `docs/layout.md`
+  lists: specs, planning, decisions, references, guides, reports, assets, archive, other. (2)
+  `docs/reference/data` and `docs/reference/colors/categories` stay where they are, as the `reference/`
+  home that `docs/layout.md` lists with kind assets; nothing else lives in `docs/reference/`. (3)
+  Finished records keep the old paths and resolve through `docs/assets/docs-reconcile-path-map.tsv`
+  (one old-to-new row per moved file) and `docs/reports/2026-10-06-docs-reconcile.md`; a check that
+  reads a frozen record translates an old path through the map. (4) `.sdlc/plans/archive/` is the only
+  live plan archive; the closed plans that predate 2026-10-06 are read-only history in
+  `docs/archive/plans/`.
+- **Rationale.** One home per kind of document is what the schema check enforces and what a reader can
+  find without a map. Moving the data files to `docs/assets/` was rejected: every reader (the app, the
+  category and export generators, the Describe MCP core and its rubric, the consumer plugin's
+  role-parity script) and every shipped zip would change in lockstep for no gain, since the files are
+  data rather than documents. Rewriting finished records was rejected because they are evidence of what
+  a seat read at the time; the path map keeps them resolvable instead. One plan archive removes the
+  question of which home a closing plan goes to.
+- **Consequences.** A new document picks its home from `docs/AGENTS.md`; a new data file a reader
+  needs at a fixed path goes under `docs/reference/` only if code reads it there, else `docs/assets/`.
+  The old folders are gone; a path under them in a live file is a defect, in a finished record it is
+  history read through the map. The Orchestrator archives a closed plan to `.sdlc/plans/archive/`
+  only. Splitting this file into `docs/decisions/NNNN-*.md` is a follow-up, not part of this decision.
+- **Status.** PROPOSED 2026-10-06 (plan `docs-reconcile`, user decisions of 2026-10-06). Ratification
+  is the owner's: the owner edits this line to DECIDED, or amends the text under the file's amendment
+  shape.
+
 ## Quick map: decisions an enhancing agent is most likely to "fix" (don't)
 | ADR | Looks wrong because… | But it's intentional because… |
 |-----|----------------------|-------------------------------|
@@ -902,3 +935,4 @@ Format: Context → Decision → Rationale → Consequences → Status.
 | ADR-021 | the hosted MCP runs generation server-side though "the generator stays client-side" is a load-bearing constraint | deliberate, narrow amendment for describe-palette only (#379's Pro anchor); every other surface (app SPA, Figma plugin, hosted kit-sync) keeps the original rule verbatim |
 | ADR-022 | `scripts/migrate-type-registers.mjs` looks like dead one-off code to delete | kept deliberately as the executable record of the slots→registers rename, the squash-merge would erase an add-then-delete from history |
 | ADR-027 | rerunning a measurement another seat already recorded looks like waste | the recorded figure is a lead, not evidence; six defects in one plan came from trusting one (#721) |
+| ADR-028 | `docs/reference/data` and `docs/reference/colors/categories` sit outside `docs/assets/` and look misfiled | code, generators and the shipped Describe MCP zip read them at that exact path; do not move `docs/reference/data` or `docs/reference/colors/categories` |

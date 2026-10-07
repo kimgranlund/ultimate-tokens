@@ -41,7 +41,7 @@ is the cautionary tale, the product had moved to 59 while the copy still said 53
 | Refund | **14 days**, full, no questions | store policy |
 | Store | Lemon Squeezy (`ultimate-tokens.lemonsqueezy.com`) | store-copy.md |
 | Support channel | **GitHub Issues** on `kimgranlund/ultimate-tokens`, there is no support inbox (decided 2026-07-09) | store-copy.md placeholders |
-| Licensing direction | email-bound identity: unlimited devices for the key's owner; Studio seats become named emails (Phase 2), customer copy describes SHIPPED behavior until each phase lands | `docs/site/licensing-identity-spec.md` |
+| Licensing direction | email-bound identity: unlimited devices for the key's owner; Studio seats become named emails (Phase 2), customer copy describes SHIPPED behavior until each phase lands | `docs/specs/site/licensing-identity-spec.md` |
 | Dogfooding | the app chrome runs on the very tokens it generates | README |
 
 **Rules of use**
@@ -51,7 +51,7 @@ is the cautionary tale, the product had moved to 59 while the copy still said 53
 2. A feature behind a flag that isn't live (hosted MCP; enforcement pre-flip) is **never marketed as
    available**; "when live" phrasing or omission only.
 3. When the product changes a value, update this sheet **in the same change**, then sweep **every
-   customer-facing surface**, not just this corpus: `grep -rn "<old>" docs/marketing/
+   customer-facing surface**, not just this corpus: `grep -rn "<old>" docs/specs/marketing/
    README.md index.html src/ui/app.js` (the 53-defect lived *outside* the corpus; the sweep that only
    covers the corpus recreates it).
 4. **Deployed surfaces don't grep.** Copy already pasted into external dashboards must be re-pasted

@@ -2,7 +2,7 @@
 
 These are the load-bearing ideas. If adding a role feels like it needs a new mechanism, you are probably
 fighting one of these. The full taxonomy + rationale is owned by
-`docs/reference/references/knowledge-03-semantic-system.md` and the answer key by `docs/reference/data/role-table.json`,
+`docs/references/knowledge-03-semantic-system.md` and the answer key by `docs/reference/data/role-table.json`,
 this file is only the mental model the *procedure* assumes.
 
 ### 1. Two layers: raw primitives (mode-independent) → semantic roles (the light/dark flip)

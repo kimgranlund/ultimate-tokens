@@ -43,7 +43,7 @@ const ENTRY_FIELDS = new Set(["font", "weight", "tracking", "leading", "styleNam
 // hydrate, so the mapper emitting an off-list name (e.g. "Mono") would lose that voice with no error. Keep in lockstep.
 const VOICES = ["Display", "Headline", "Sub-heading", "Title", "Sub-title", "Lead", "Body", "Body-mono", "Label", "Label-mono", "Kicker", "Tiny", "Tiny-mono", "UI-control", "UI-widget"];
 
-// FACE-EXISTENCE + PURPOSE gate (docs/reference/typography/intended-use.md Layer 2; extends #402):
+// FACE-EXISTENCE + PURPOSE gate (docs/references/typography/intended-use.md Layer 2; extends #402):
 // every styleName must name a REAL cut of its resolved family, every configured weight must resolve
 // to a DISTINCT real face, and body-class/UI cores stay ≤450 (the Regular-face snap). Families not in
 // the inventory are unresolvable → skipped by design (the inventory is hand-curated, not parsed).

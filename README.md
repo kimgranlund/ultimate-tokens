@@ -17,7 +17,7 @@ component**, and a **Figma plugin** that writes the palette straight into the fi
 collections.
 
 <!-- Hero: regenerate with `npm run gen:preview`, rendered straight from the engine (projectView) in the PERCEPTUAL distribution. -->
-![The 16 default palettes, perceptual tonal ramps, 050 → 950](docs/img/palette-preview.svg)
+![The 16 default palettes, perceptual tonal ramps, 050 → 950](docs/assets/palette-preview.svg)
 
 > The image above is the tool's **real output**, the 16 default palettes (8 brand families + 8
 > data palettes) in the **perceptual** distribution, rendered straight from the engine (no mockup):
@@ -149,12 +149,12 @@ The app starts in a gallery; opening a set enters one editor with three sections
 **Gallery.** The home hub shows your saved palette sets as tiles under a search box, then the curated
 color categories as a grid. Opening a category lists its volumes of presets, searchable within that
 category, and clicking a preset opens an editable copy in your own sets. **Project** (load the saved
-config), **Import** (a config `.json`) and **+ New** sit in the header. Detail: `docs/lld/app-shell.md`.
+config), **Import** (a config `.json`) and **+ New** sit in the header. Detail: `docs/specs/app-shell.md`.
 
 **Color.** The canvas shows Palettes (the ramps), Scrims, Mapping (the semantic-role table) or Radix
 (the 12-step ladder). Every canvas draws Light and Dark side by side, except Mapping, whose table already
 shows both; Typography and Geometry do the same, and **Compare** adds a pair per breakpoint. The left pane holds palette analysis
-cards; the right pane is the inspector. Detail: `docs/reference/references/ui-plan.md` (Revision B).
+cards; the right pane is the inspector. Detail: `docs/references/ui-plan.md` (Revision B).
 
 **Typography.** The canvas is a Specimen (each step in its real face) or a Tokens matrix (Base plus each
 breakpoint). Breakpoint modes sit beside it, Tablet and Mobile by default, and an **All** button shows

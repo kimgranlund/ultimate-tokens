@@ -21,8 +21,8 @@ description: >
 > **SKILL-format spec cell `spec.system.hct-palette-generator-spec`.** This file is both the
 > readable brief and, in the fenced `json` contract block below, the machine-readable
 > contract the **spec-quality** gate reads (the first `json` block is the single source of
-> truth). Depth lives in `references/` and `rubrics/`; provenance and research-grounding in
-> `CHANGELOG.md`. It carries everything needed to write, enhance, regenerate, or review the
+> truth). Depth lives in `docs/references/` and `docs/references/rubrics/`; provenance and research-grounding in
+> `docs/references/changelog.md`. It carries everything needed to write, enhance, regenerate, or review the
 > tool, and is structured for handoff to **spec-author** and downstream decomposition.
 
 **Intent.** Design-system engineers need color ramps with *perceptually even* steps and a
@@ -46,13 +46,13 @@ single-file tool.
 > time-sensitive; re-verify on an enhancing pass).
 
 **Acceptance criteria.** Twenty-nine checkable predicates, one contract criterion per
-load-bearing predicate in `rubrics/acceptance-criteria.md` (AC-E/T/S/X/P/U) and
-`rubrics/parity-checklist.md` (P1–P8), promoted into the contract so the gate's signal
+load-bearing predicate in `docs/references/rubrics/acceptance-criteria.md` (AC-E/T/S/X/P/U) and
+`docs/references/rubrics/parity-checklist.md` (P1–P8), promoted into the contract so the gate's signal
 covers the *anti-hack* predicates (engine-math parity P6/P7, the chroma floor AC-T5, the
 mirror invariant AC-S5, leaf validity AC-X5, the disabled-palette filter AC-U2), not only the
 happy path. The machine-readable form is the contract block below; the full runnable
 procedures (including the three-implementation extraction for parity) are in those rubric
-files; engine anchors are `data/verification-anchors.json`.
+files; engine anchors are `docs/reference/data/verification-anchors.json`.
 
 **Non-goals.** Eight explicit boundaries (contract block), each tied to an ADR or OPEN
 decision: not a brand picker / non-HCT tool (ADR-001; the default kit ships 16 palettes, 8
@@ -72,7 +72,7 @@ is **split across three cells** (engine-math parity → `color-engine`; role-tab
 shared `role-table.json` into a green "three implementations agree" while the engine math
 diverges. `_entailment_check.py` proves the carving **covers** all criteria (the partial-order
 gate: **29/29 covered, 6 tickets**); the council's entailment lens additionally
-pressure-tested intent-entailment. Full carving + the honest-maturity note in `references/decomposition.md`.
+pressure-tested intent-entailment. Full carving + the honest-maturity note in `docs/references/decomposition.md`.
 The six child rubric cells **and** the six capability cells are **validated**. Two further
 **integration** cells consume them downstream and are validated against their own harnesses, NOT part
 of this engine/output carving (the same way the editor UI is a separate concern): `capability.system.ui-app`
@@ -86,11 +86,11 @@ every role is aliased to its primitive, **idempotently** on re-apply).
   "cell": "spec.system.hct-palette-generator-spec",
   "binds_rubric": "rubric.system.spec-quality",
   "acceptance_criteria": [
-    { "id": "hpg-engine-roundtrip", "check": "for the 6 anchors in data/verification-anchors.json AND for >=1000 random in-gamut (hue,chroma,tone) triples, cam16FromRgb + L* forward then hctToRgb inverse roundtrips with max(|dr|,|dg|,|db|) on sRGB 0-255 <= 2 (AC-E1; anchors are a regression floor, the random quantification defeats a 6-entry lookup-table engine)" },
+    { "id": "hpg-engine-roundtrip", "check": "for the 6 anchors in docs/reference/data/verification-anchors.json AND for >=1000 random in-gamut (hue,chroma,tone) triples, cam16FromRgb + L* forward then hctToRgb inverse roundtrips with max(|dr|,|dg|,|db|) on sRGB 0-255 <= 2 (AC-E1; anchors are a regression floor, the random quantification defeats a 6-entry lookup-table engine)" },
     { "id": "hpg-engine-branches", "check": "hctToRgb(h,c,0) == black and hctToRgb(h,c,100) == white for any h,c (AC-E2); hctToRgb(h,0.3,t) returns a neutral gray (max(r,g,b)-min(r,g,b) <= 1, allowing the <=2 channel roundtrip budget) for any h and t in (0,100) (AC-E3)" },
     { "id": "hpg-engine-gamut-ceiling", "check": "for >=1000 random (hue,tone) with tone in (0,100): hctToRgb(hue, maxChromaInGamut(hue,tone), tone).inGamut === true AND hctToRgb(hue, maxChromaInGamut(hue,tone)+0.5, tone).inGamut === false (the fixed probe 0.5 >> the binary-search residual; assumes maxChromaInGamut converges to <= 0.01 residual, e.g. 18 iterations over [0,180]) (AC-E4)" },
     { "id": "hpg-engine-oklch-deterministic", "check": "oklchToCam16Hue(h, chromaFrac) is deterministic and memoized (by h + chromaFrac), repeated calls return an identical CAM16 angle, and maxChromaInGamut/peakC are stable across repeated calls (AC-E5, ADR-011). Bridge FIDELITY is no longer a non-goal: the chroma-aware Newton inverse lands the rendered identity color on the stored OKLCH hue to ~0.00°, gated separately by the engine's hct-oklch-inverse (test/engine/hct.mjs)" },
-    { "id": "hpg-engine-parity", "check": "CONDITIONAL on packaging (parity is a property of multi-impl distribution, NOT of the domain): a SINGLE-SOURCE build, one engine module imported everywhere, satisfies this structurally (no second implementation can diverge), so it is auto-satisfied. IF >=2 independent engine implementations are shipped, they must agree differentially: >=1000 random (hue,chroma,tone) with chroma >= 5 and tone in (2,98) agree within max(|dr|,|dg|,|db|) <= 2 (sRGB 0-255), both pass every data/verification-anchors.json anchor (P7), and SCRIM_BASES/SCRIM_STEPS/PEAK/stops match (P6), a shared role-table.json cannot fake engine-math agreement" },
+    { "id": "hpg-engine-parity", "check": "CONDITIONAL on packaging (parity is a property of multi-impl distribution, NOT of the domain): a SINGLE-SOURCE build, one engine module imported everywhere, satisfies this structurally (no second implementation can diverge), so it is auto-satisfied. IF >=2 independent engine implementations are shipped, they must agree differentially: >=1000 random (hue,chroma,tone) with chroma >= 5 and tone in (2,98) agree within max(|dr|,|dg|,|db|) <= 2 (sRGB 0-255), both pass every docs/reference/data/verification-anchors.json anchor (P7), and SCRIM_BASES/SCRIM_STEPS/PEAK/stops match (P6), a shared role-table.json cannot fake engine-math agreement" },
     { "id": "hpg-tonal-ingamut", "check": "for every default palette and every EXPORT_STOPS stop, hctToRgb(...).inGamut === true AND applied chroma <= maxChromaInGamut at that stop (AC-T1, AC-T4)" },
     { "id": "hpg-tonal-monotonic", "check": "on the `even` toneMode path (`toneAt`) ONLY: tone is STRICTLY decreasing (no duplicate consecutive stops) across EXPORT_STOPS from 050 to 950 for each of the five curves, over the full curve x skew x lift x tension grid (skew in {-100,-50,0,50,100}, lift in {-40,-20,-5,0,5,15,20,40}, tension in {0,50,100}) and each of six lmin/lmax bands, with both endpoints exact to lmax/lmin and every interior stop strictly inside (lmin,lmax) so the clamp never binds (AC-T3, #648). NOT a claim about `perceptual`/`peak` (`okhslStops`): those tone modes can duplicate or reverse on some skew/lift/band combinations; they are gated at the default palettes only (test/engine/tonal.mjs:301-327 `okhsl-modes`, test/engine/tonal.mjs:735-884 `lift-monotonic`), no grid-wide guarantee" },
     { "id": "hpg-tonal-chroma-target", "check": "edge damping reduces chroma toward the ends, chroma at stop 500 >= chroma at 050 and >= chroma at 950 for a saturated palette (AC-T5), AND for each saturated default palette (chroma control >= 50) applied chroma at the prime tone (stop 500) equals min(target*m, maxChromaInGamut), where m is the differential damping multiplier, m = 1 at stop 500 when dampAmp = 0, within |dC| <= 1.0 AND >= 0.5*min(target, maxChromaInGamut) (a hard floor no tolerance-widening can readmit), so a flat gray ramp (chroma ~ 0) does NOT satisfy the tonal criteria" },
@@ -100,10 +100,10 @@ every role is aliased to its primitive, **idempotently** on re-apply).
     { "id": "hpg-tonal-damping-curve", "check": "the differential damping multiplier m(stop) = max(0, 1 + (dampAmp/100)(1-u^dampCurve) - (damp/100)·sideW·u^dampCurve), u = |stop-500|/450, sideW = max(0, 1 + (dampBias/100)·sign(stop-500)), property-gated (NOT a re-derivation of the formula) and run over EVERY saturated default hue (not one): (a) the defaults dampCurve=1.5/dampAmp=0/dampBias=0 reproduce the legacy 1-(damp/100)u^1.5 chroma EXACTLY (|dC| <= 1e-6, checked against the INDEPENDENT legacy formula); (b) amplify is gamut-safe, dampAmp=100 (and damp=100 × dampBias=±100) across curve extremes keeps every stop inGamut with chroma <= ceiling AND chroma >= 0 (the min(target·m, ceiling) clamp and the max(0,·) floor both hold; a removed floor feeds negative chroma to the engine); (c) amplify pushes mid (stop 500) chroma TO the ceiling, on a hue where target·2 exceeds the ceiling, at dampAmp=100 the mid equals the ceiling within 0.5 (the clamp is the binding constraint, asserted, not merely a rise); (d) bias is a MIRROR-SYMMETRIC per-side weight that VANISHES at the mid, chroma(500) is dampBias-invariant, and on an unclamped low-chroma probe ramp(+b)[stop S] equals ramp(−b)[stop 1000−S] (defeats a directional sign-branch that orders the per-half sums but isn't a true per-side weight); (e) dampCurve REDISTRIBUTES, not rescales, it leaves chroma(500) fixed AND a sharp curve keeps MORE chroma at a quarter stop than a broad one (damping confined to the ends; defeats a global γ-scalar); (f) damping is tone-invariant, it perturbs chroma only, never tone" },
     { "id": "hpg-tonal-edge-hue", "check": "per-palette EDGE HUE ROTATION hueShift (−60..60°, default 0): the emitted hue rotates toward the two ends, pivoting on stop 500, in OPPOSITE directions by default, or BOTH ends the SAME direction when the per-palette hueSameDir flag is set. Per-stop target hue = baseHue + hueShift·s (opposite) or baseHue − hueShift·|s| (same-direction, both ends matching the LIGHT end), s=(stop−500)/450 (light end s=−1, dark end s=+1; the gamut ceiling is taken at the rotated per-stop hue, chroma target stays % of the BASE-hue peak). Property-gated on a saturated hue, the emitted CAM16 hue measured from the pixel where chroma>30 (where hue is load-bearing): (a) hueShift=0 reproduces the flat base hue at every chromatic stop (backward-compatible, the default palettes); (b) the emitted hue TRACKS base+hueShift·s within ±2° at every load-bearing stop, both signs; (c) PIVOT, the centre stop (500, s=0) hue is invariant to hueShift; (d) OPPOSITE TORSION, at +hueShift the light end rotates negative and the dark end positive (defeats a one-sided rotation); (e) MIRROR, ramp(+H)[dark stop] hue equals ramp(−H)[light mirror stop] hue (a symmetric per-side rotation); (f) SAME-DIRECTION (hueSameDir=true), both ends bend the SAME way, matching the LIGHT end: both rotate the same sign, tracking baseHue − hueShift·|s| (e.g. a light+20/dark−20 opposite becomes light+20/dark+20), defeats an engine that ignores the flag (torsions opposite, mismatched signs) or anchors the dark end" },
     { "id": "hpg-semantic-roles", "check": "semanticRoles(n) returns exactly 53 roles for every palette, of which exactly 7 are scrims on the 500 translucency ramp (scrimWeakest..scrimStrongest, each = the palette's 500 stop at alpha% = step/10, light === dark; outline + container/Low/High also resolve onto this 500 ramp) (AC-S1, AC-S2)" },
-    { "id": "hpg-semantic-oncolors", "check": "for every palette, on{N}.light === on{N}.dark === the 50 stop (stored ref '50', padded '050') and on{N}Variant.light === on{N}Variant.dark === the 200 stop, matching data/role-table.json exactly (AC-S3, the fixed-on-color override ADR-003)" },
-    { "id": "hpg-semantic-refs-canonical", "check": "every role's light/dark ref EQUALS the canonical ref in data/role-table.json for that key (not merely resolves), and each resolves to an existing raw primitive, a solid EXPORT_STOPS stop or a {base}-{step} scrim primitive (base in SCRIM_BASES = {500}, step in EXPORT_STOPS, the 500 color at alpha% = step/10) (AC-S4)" },
-    { "id": "hpg-semantic-surface-mode", "check": "surface Low/High families mirror, light+dark sum to 1000 (e.g. surfaceLowest 50/950, surfaceHigh 150/850), and Dim/Bright families do NOT (e.g. surfaceDim 150/900), exactly as data/role-table.json encodes, per ADR-005 (AC-S5)" },
-    { "id": "hpg-parity-roletable", "check": "the emitted role table, semanticRoles ordered keys + every light/dark ref, deep-equals data/role-table.json's 53-row roleTable. CONDITIONAL on packaging: a single-source build imports ONE semanticRoles, so cross-impl identity is structural; IF the table is reproduced across multiple implementations (artifact / gen.js / plugin), they must all deep-equal the canonical (P1-P5, the extraction procedure in rubrics/parity-checklist.md applies only then)" },
+    { "id": "hpg-semantic-oncolors", "check": "for every palette, on{N}.light === on{N}.dark === the 50 stop (stored ref '50', padded '050') and on{N}Variant.light === on{N}Variant.dark === the 200 stop, matching docs/reference/data/role-table.json exactly (AC-S3, the fixed-on-color override ADR-003)" },
+    { "id": "hpg-semantic-refs-canonical", "check": "every role's light/dark ref EQUALS the canonical ref in docs/reference/data/role-table.json for that key (not merely resolves), and each resolves to an existing raw primitive, a solid EXPORT_STOPS stop or a {base}-{step} scrim primitive (base in SCRIM_BASES = {500}, step in EXPORT_STOPS, the 500 color at alpha% = step/10) (AC-S4)" },
+    { "id": "hpg-semantic-surface-mode", "check": "surface Low/High families mirror, light+dark sum to 1000 (e.g. surfaceLowest 50/950, surfaceHigh 150/850), and Dim/Bright families do NOT (e.g. surfaceDim 150/900), exactly as docs/reference/data/role-table.json encodes, per ADR-005 (AC-S5)" },
+    { "id": "hpg-parity-roletable", "check": "the emitted role table, semanticRoles ordered keys + every light/dark ref, deep-equals docs/reference/data/role-table.json's 53-row roleTable. CONDITIONAL on packaging: a single-source build imports ONE semanticRoles, so cross-impl identity is structural; IF the table is reproduced across multiple implementations (artifact / gen.js / plugin), they must all deep-equal the canonical (P1-P5, the extraction procedure in docs/references/rubrics/parity-checklist.md applies only then)" },
     { "id": "hpg-export-dtcg-shape", "check": "the DTCG export is an object with EXACTLY three keys, palette.tokens.json, Light_tokens.json, Dark_tokens.json (the three Figma variable-mode token files), and no fourth; each value is a valid, JSON-serializable DTCG token tree (AC-X4). The harness checks the OBJECT; bundling the three into a .zip for hand-off is a trivial downstream packaging step, NOT part of the verified contract (the prior 'zip / unzip -t' wording claimed a guarantee nothing produced or tested)" },
     { "id": "hpg-export-leaf-valid", "check": "each of Light_tokens.json and Dark_tokens.json contains at least 53 x (enabled palettes) resolved color leaves, each with $type 'color', colorSpace 'srgb', components in [0,1], alpha in [0,1], and a hex matching components (hex channel == Math.round(component*255) as 2-digit uppercase) (AC-X5), an empty semantic tree FAILS (non-vacuity floor)" },
     { "id": "hpg-export-resolved", "check": "with rawColl blank, NO semantic leaf carries aliasData; with rawColl set, every semantic leaf carries aliasData.targetVariableName matching {n}/{refKey} AND aliasData.targetVariableSetName === rawColl (the Color Primitives collection), the FULL documented name+collection alias SHAPE Figma's aliasData fallback hierarchy resolves on native import when the Color Primitives collection pre-exists (AC-X6, ADR-002 re-verify 2026-06-15; the OD-004 spike). This gates the emitted SHAPE only; the native-import cascade itself is validated in Figma, not by this check" },
@@ -119,7 +119,7 @@ every role is aliased to its primitive, **idempotently** on re-apply).
   "non_goals": [
     "brand-color selection or non-HCT palette generation (opinionated about HCT, ADR-001). Palette COUNT is NOT bounded, the 16 defaults (8 brand + 8 data) are a seed set, every acceptance criterion is quantified 'for every palette' so it generalizes to any count, and the validated UI ships a configurable set (OD-005 DECIDED 2026-06-15)",
     "a build-time / CI token pipeline, it is an interactive browser generator (ADR-010). 'Single-file / offline' is the DISTRIBUTION format (achievable by bundling the ES modules to one HTML), NOT an authoring constraint: the reference build authors modular ES modules and bundles to a single offline file",
-    "the interactive editor UI itself (app shell, canvas, lenses, inspector, gallery, drawer), a SEPARATE concern owned by the validated capability.system.ui-app; this spec covers the generator + its token output only (see references/ui-plan.md). This explicitly includes the editor-only surfaces the gallery/drawer add, the gallery 'Import' of a saved config and the drawer 'Config' tab that downloads serialize(doc), which are convenience surfaces over the persistence round-trip that IS specced (hpg-persistence-roundtrip), not new token-output contracts",
+    "the interactive editor UI itself (app shell, canvas, lenses, inspector, gallery, drawer), a SEPARATE concern owned by the validated capability.system.ui-app; this spec covers the generator + its token output only (see docs/references/ui-plan.md). This explicitly includes the editor-only surfaces the gallery/drawer add, the gallery 'Import' of a saved config and the drawer 'Config' tab that downloads serialize(doc), which are convenience surfaces over the persistence round-trip that IS specced (hpg-persistence-roundtrip), not new token-output contracts",
     "a contrast-aware on-color TABLE, the canonical role table still maps on{N}->050 and on{N}Variant->200 and the criteria still require that mapping. Contrast-aware on-color picking is NOT excluded: it is the default RESOLUTION policy (onColorMode, ADR-025 amending ADR-003, closing OD-001), which re-points those two roles per fill without touching the table",
     "exposed CAM16 viewing-condition controls (one fixed VC for portable exports, ADR-009)",
     "an OKLCH-native internal color model: OKLCH is an INPUT hue space (now the default) and an OUTPUT format, but the engine's internal color math stays CAM16/L* (ADR-001). The OKLCH->CAM16 input bridge is itself color-accurate now, a chroma-aware Newton inverse landing the rendered identity color on the stored OKLCH hue to ~0.00° (ADR-011, superseding the old 'unbounded drift' framing of ADR-008); determinism is validated by hpg-engine-oklch-deterministic and fidelity by the engine's hct-oklch-inverse",
@@ -167,9 +167,9 @@ every role is aliased to its primitive, **idempotently** on re-apply).
 1. **The engine is load-bearing and the spec is downstream of it.** Tone (CIELAB L\*),
    hue/chroma (CAM16), and the gamut ceiling are the irreducible mechanics. Get
    `knowledge-01` right and everything else follows; get it wrong and no amount of prose
-   helps. Verify against `data/verification-anchors.json` before trusting any engine claim.
+   helps. Verify against `docs/reference/data/verification-anchors.json` before trusting any engine claim.
 
-2. **Intent is captured as types and formulas, not adjectives.** `data/role-table.json` is
+2. **Intent is captured as types and formulas, not adjectives.** `docs/reference/data/role-table.json` is
    the contract for the semantic layer; the knowledge docs give literal matrices and curve
    equations. When enhancing, route detail into the data file and the typed interfaces, not
    into more sentences. Most acceptance criteria above are executable `check`s; a few
@@ -189,30 +189,30 @@ every role is aliased to its primitive, **idempotently** on re-apply).
    then automatic, not a gate. The 3-implementation framing (tool / `gen.js` / plugin) is *legacy
    packaging*: only when the same engine/table is reproduced across ≥2 independent implementations
    does parity become a real acceptance gate, `hpg-engine-parity` (differential, conditional) +
-   `hpg-parity-roletable` (conditional) verify it then, via `rubrics/parity-checklist.md` (P1–P8).
+   `hpg-parity-roletable` (conditional) verify it then, via `docs/references/rubrics/parity-checklist.md` (P1–P8).
    The plugin's own surface (`hpg-plugin-bindings`) is checked regardless. Parity is a property of
    multi-impl *distribution*, never of the domain.
 
 ## Working with this package
 
 **If you are spec-author / a reviewer:**
-1. The contract block above is the spec; `references/spec-draft.md` is the full Brief+TDD the
+1. The contract block above is the spec; `docs/references/spec-draft.md` is the full Brief+TDD the
    contract summarizes (the hybrid header block, "How to Read", common spine, 📐💡⚠️ markers).
-2. Use `references/knowledge-01..06`, `references/decision-records.md`, and
-   `references/glossary.md` as the **grounded knowledge foundation**, they are primary
+2. Use `docs/references/knowledge-01..06`, `docs/references/decision-records.md`, and
+   `docs/references/glossary.md` as the **grounded knowledge foundation**, they are primary
    sources; web research supplements only where they are silent (e.g. confirming current
    Figma import behavior, ADR-002, which is time-sensitive, re-verify on an enhancing pass).
 3. Carry the ADRs and open decisions forward verbatim. ODs are first-class; ADRs are settled.
-4. Score the spec with `rubrics/quality-rubric.md` (Layer A = 10 dimensions; Layer B =
-   project completeness gate). Verify the *tool* against `rubrics/acceptance-criteria.md` and
-   `rubrics/parity-checklist.md`. The mechanical floor is `spec-quality-check.py` on this
+4. Score the spec with `docs/references/rubrics/quality-rubric.md` (Layer A = 10 dimensions; Layer B =
+   project completeness gate). Verify the *tool* against `docs/references/rubrics/acceptance-criteria.md` and
+   `docs/references/rubrics/parity-checklist.md`. The mechanical floor is `spec-quality-check.py` on this
    folder; the judgment lenses are the `spec-council`.
 
 **If you are regenerating or extending the tool:**
-1. Read `references/decision-records.md` first, it tells you what *not* to change.
-2. Build from `data/role-table.json` (canonical) outward. If the role table is reproduced in more
-   than one implementation, check that they agree (`rubrics/parity-checklist.md`).
-3. Validate every change against `rubrics/acceptance-criteria.md`.
+1. Read `docs/references/decision-records.md` first, it tells you what *not* to change.
+2. Build from `docs/reference/data/role-table.json` (canonical) outward. If the role table is reproduced in more
+   than one implementation, check that they agree (`docs/references/rubrics/parity-checklist.md`).
+3. Validate every change against `docs/references/rubrics/acceptance-criteria.md`.
 
 ## Opinionated defaults
 
@@ -228,24 +228,24 @@ every role is aliased to its primitive, **idempotently** on re-apply).
 
 | File | Read when |
 |------|-----------|
-| `references/spec-draft.md` | the full Brief+TDD this contract summarizes |
-| `references/decomposition.md` | the entailment-checked carving into cells + tickets (full) |
-| `references/knowledge-01-color-engine.md` | engine math: CAM16, gamut, VC, anchors |
-| `references/knowledge-02-tonal-scale.md` | curves, `toneAt`, chroma, damping, clamp domains |
-| `references/knowledge-03-semantic-system.md` | role table, on-colors, scrims, surfaces, modes |
-| `references/knowledge-04-export-formats.md` | the ten color formats (+ type/geom) and Figma import constraints |
-| `references/ui-plan.md` | the front-end plan: tasks T1 to T9 and the arrangement of the editor |
-| `references/component-inventory.md` | the editor's components and shared primitives |
-| `../lld/app-shell.md` | the app shell LLD: frame, regions, render pipeline, state (`../` because it sits outside `docs/reference/`) |
-| `references/knowledge-05-figma-plugin.md` | the cascade binder |
-| `references/knowledge-06-palette-derivation.md` | the "New Palette" engine (`derive.mjs`): Relative / Environmental / Custom |
-| `references/decision-records.md` | the fenced choices (ADRs), read before changing anything |
-| `references/glossary.md` | project vocabulary |
-| `data/role-table.json` | canonical 53-role table, defaults, constants (machine-readable) |
-| `data/verification-anchors.json` | engine correctness anchors |
-| `rubrics/quality-rubric.md` | scoring the spec |
-| `rubrics/acceptance-criteria.md` | verifying the tool (the full AC predicates) |
-| `rubrics/parity-checklist.md` | the three-implementation gate |
+| `docs/references/spec-draft.md` | the full Brief+TDD this contract summarizes |
+| `docs/references/decomposition.md` | the entailment-checked carving into cells + tickets (full) |
+| `docs/references/knowledge-01-color-engine.md` | engine math: CAM16, gamut, VC, anchors |
+| `docs/references/knowledge-02-tonal-scale.md` | curves, `toneAt`, chroma, damping, clamp domains |
+| `docs/references/knowledge-03-semantic-system.md` | role table, on-colors, scrims, surfaces, modes |
+| `docs/references/knowledge-04-export-formats.md` | the ten color formats (+ type/geom) and Figma import constraints |
+| `docs/references/ui-plan.md` | the front-end plan: tasks T1 to T9 and the arrangement of the editor |
+| `docs/references/component-inventory.md` | the editor's components and shared primitives |
+| `docs/specs/app-shell.md` | the app shell LLD: frame, regions, render pipeline, state |
+| `docs/references/knowledge-05-figma-plugin.md` | the cascade binder |
+| `docs/references/knowledge-06-palette-derivation.md` | the "New Palette" engine (`derive.mjs`): Relative / Environmental / Custom |
+| `docs/references/decision-records.md` | the fenced choices (ADRs), read before changing anything |
+| `docs/references/glossary.md` | project vocabulary |
+| `docs/reference/data/role-table.json` | canonical 53-role table, defaults, constants (machine-readable) |
+| `docs/reference/data/verification-anchors.json` | engine correctness anchors |
+| `docs/references/rubrics/quality-rubric.md` | scoring the spec |
+| `docs/references/rubrics/acceptance-criteria.md` | verifying the tool (the full AC predicates) |
+| `docs/references/rubrics/parity-checklist.md` | the three-implementation gate |
 
 ## When NOT to use this
 

@@ -356,7 +356,7 @@ export class ColorSectionImpl {
   //   • Relative, a color-theory relationship (extend/complete/contrast/bridge/anchor/
   //     recontextualize) computed from the included palettes' identity colors.
   //   • Environmental, a neutral/environment tone (chroma-weighted-mean hue + a clamped low
-  //     chroma) per docs/reference/color-neutral-derivation.md.
+  //     chroma) per docs/references/color-neutral-derivation.md.
   //   • Custom, pick Hue + Chroma directly (parametric, the classic seed).
   // A/B derive a TARGET OKLCH (engine/derive.mjs), seed hue+chroma from it (seedFromKeyColor),
   // and retain it as the dominant key color; C sets hue+chroma straight. The "Derive from"

@@ -49,7 +49,7 @@ if (report) {
 // discovered, the audit must have walked exactly the discovered set, and every exemption must
 // carry a reason (an exemption is a ruling, not a shortcut to green)
 const discovered = discoverDocs().map((d) => d.path);
-for (const must of ["docs/lld/app-shell.md", "docs/reference/references/component-inventory.md"])
+for (const must of ["docs/specs/app-shell.md", "docs/references/component-inventory.md"])
   if (!discovered.includes(must)) FAIL(must, "no longer discovered by the citations audit (discovery rule or parser broke)");
 if (report && report.audited !== discovered.length)
   FAIL("scripts/audit-citations.mjs", `audit walked ${report.audited} docs but discovery lists ${discovered.length}`);
@@ -82,13 +82,13 @@ const ciJobs = () => {
   return out;
 };
 const FACT_PINS = [
-  { id: "type voices", doc: "docs/lld/app-shell.md", needle: "15 voices", noun: "voices", src: "src/engine/type.mjs",
+  { id: "type voices", doc: "docs/specs/app-shell.md", needle: "15 voices", noun: "voices", src: "src/engine/type.mjs",
     source: async () => Object.keys((await import("../../src/engine/type.mjs")).makeVoices()).length },
-  { id: "colour formats", doc: "docs/reference/references/ui-plan.md", line: /T8 export:/, needle: "10 formats", noun: "formats", src: "src/ui/overlays/drawer.js",
+  { id: "colour formats", doc: "docs/references/ui-plan.md", line: /T8 export:/, needle: "10 formats", noun: "formats", src: "src/ui/overlays/drawer.js",
     source: drawerColorFormats },
-  { id: "roles per palette", doc: "docs/reference/references/ui-plan.md", needle: "a 53-role", noun: "roles?", src: "docs/reference/data/role-table.json",
+  { id: "roles per palette", doc: "docs/references/ui-plan.md", needle: "a 53-role", noun: "roles?", src: "docs/reference/data/role-table.json",
     source: () => Object.keys(JSON.parse(txt("docs/reference/data/role-table.json")).roleTable).length },
-  { id: "btn home", doc: "docs/reference/references/component-inventory.md", line: /^\| `btn\(\)` \|/, needle: "app-helpers.mjs", src: "src/ui/app-helpers.mjs",
+  { id: "btn home", doc: "docs/references/component-inventory.md", line: /^\| `btn\(\)` \|/, needle: "app-helpers.mjs", src: "src/ui/app-helpers.mjs",
     source: () => /^export const btn\b/m.test(txt("src/ui/app-helpers.mjs")) },
   { id: "delete mode methods", doc: ".claude/skills/building-editor-sections/SKILL.md", needle: "`deleteTypeMode`/`deleteGeomMode`", src: "src/ui/sections/{typography,geometry}.js",
     source: () => /^  deleteTypeMode\(id\) \{/m.test(txt("src/ui/sections/typography.js")) && /^  deleteGeomMode\(id\) \{/m.test(txt("src/ui/sections/geometry.js")) },

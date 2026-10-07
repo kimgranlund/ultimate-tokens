@@ -35,7 +35,7 @@ const BINARY = /\.(woff2|woff|ttf|otf|png|jpe?g|gif|ico|webp|zip|pdf)$/i;
 // Generated artifacts `npm test` regenerates from swept sources: a per-line rule cannot read a
 // whole-Markdown-source-as-one-line-string bundle, and rewriting it by hand would only be undone
 // by the next `npm test`. The GATE still scans these (a regression here is still a FAIL); only
-// `--fix` skips them. `docs/img/palette-preview.svg` and `src/ui/type-fonts.js` are generated too
+// `--fix` skips them. `docs/assets/palette-preview.svg` and `src/ui/type-fonts.js` are generated too
 // but not by `npm test`, so `--fix` sweeps them (their generators are re-run by hand afterwards).
 function isGenerated(rel) {
   if (rel === "figma/plugin/ui.html") return true;
@@ -775,7 +775,7 @@ function selftest() {
     { name: "R4 after comma", md: true, line: `foo, ${DASH} bar`, expectRule: "R4", expectFix: "foo, bar" },
     // R0 (f), plan revision 9: a table cell that OPENS with the dash but carries more content
     // (R1's whole-cell check above does not fire) is a presence matrix where the dash means
-    // "absent" (`docs/reference/reviews/2026-07-17-export-drift.md:212`), not a pause R4 can drop
+    // "absent" (`docs/reports/2026-07-17-export-drift.md:212`), not a pause R4 can drop
     // (R4's generic drop, and R8's generic ", ", both changed the row's meaning -- Pass 2 review
     // finding 3 and the Pass 3 re-review). Refused and named; U4 rewrites it by hand.
     { name: "R0(f) table cell opens with the dash", md: true, line: `| a | ${DASH} (mapped indirectly) | b |`, expectRule: "R0" },
@@ -900,7 +900,7 @@ function selftest() {
   // (3) The two exemptions. A Markdown inline span keeps its glyph byte for byte end to end
   // through `fixLines()` (checked above, "a span dash before..."), and a PINNED path is never
   // opened by `--fix` (`shouldSkipFix()` is the seam `runFix()`'s walk actually calls).
-  const fakePinned = "docs/reference/__selftest-pinned__.md";
+  const fakePinned = "docs/references/__selftest-pinned__.md";
   if (shouldSkipFix(fakePinned)) FAIL("pinned-exemption", "an unpinned path was already skipped -- the fixture is not isolated");
   PINNED_PATHS.add(fakePinned);
   if (!shouldSkipFix(fakePinned)) FAIL("pinned-exemption", "adding a path to PINNED did not make shouldSkipFix() skip it");
@@ -927,7 +927,7 @@ function selftest() {
   if (r0gFixed.edits.length !== 1 || r0gFixed.edits[0].rule !== "R0")
     FAIL("r0g-refused", `expected one R0 edit, got ${JSON.stringify(r0gFixed.edits)}`);
 
-  // A span that wraps across a line break (found in the wild in pass 2 review, docs/tickets/
+  // A span that wraps across a line break (found in the wild in pass 2 review, docs/archive/tickets/
   // tkt-0031.md:82): the first line has an ODD backtick count, so its lone backtick opens a span
   // that only closes on the NEXT line. The dash inside that continuation is still inside the span
   // and must survive byte for byte, with zero edits.

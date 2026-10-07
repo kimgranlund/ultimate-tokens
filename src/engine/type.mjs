@@ -3,7 +3,7 @@
 // Headline · Sub-heading · Title · Sub-title · Lead · Body · Body-mono · Label · Label-mono · Kicker ·
 // Tiny · Tiny-mono · UI-control · UI-widget (TKT-0008), thirteen voices carry three steps (SM, MD and LG), UI-control and UI-widget carry six (XS to 2XL), and every step carries size, line-height,
 // letter-spacing, weight, and paragraph spacing. (The DTCG shape follows the Figma-variable export at
-// docs/reference/typography/typography.tokens.json, a frozen snapshot kept for reference.)
+// docs/assets/typography-tokens.json, a frozen snapshot kept for reference.)
 //
 // 2026-07-13, SIZE IS NOW A FIXED, HAND-AUTHORED TABLE, not a modular scale. Previously every voice
 // derived its sizes from base·ratio^n (a treatment's own base+ratio gave it a distinct scale feel).
@@ -14,7 +14,7 @@
 // per-cell `overrides` escape hatch (see buildCategory) is still how a user moves an individual cell
 // off the fixed default, untouched by this change.
 //
-// The system relationships (see docs/reference/typography/README.md):
+// The system relationships (see docs/references/typography/README.md):
 //   size          = FIXED_SIZE(voice, step) × factor     (factor = bodyBase/16; see typeScale)
 //   lineHeight     = round(size · leading)     (per-role leading; single-line = size)
 //   letterSpacing = round(size · trackingEm)  (optical: negative tightens big display, positive loosens UI)

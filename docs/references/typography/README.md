@@ -1,6 +1,6 @@
 # Typography tokens: reference shape
 
-`typography.tokens.json` is a **frozen historical snapshot** of the target output shape (a real
+`docs/assets/typography-tokens.json` is a **frozen historical snapshot** of the target output shape (a real
 Figma-exported token set, kept here as an example of the DTCG shape), it predates the 2026-07-13
 voice-taxonomy and fixed-size-table rewrite below and is not kept in lockstep with the engine; read
 `src/engine/type.mjs` for the current, live source of truth. The type analog of the color engine, a

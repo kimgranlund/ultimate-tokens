@@ -1,7 +1,7 @@
 ## Foundations: the model the Figma plugins lean on
 
 The load-bearing ideas behind both plugins. The conceptual *why* (aliasing as the only cascade mechanism) is
-owned by `docs/reference/references/knowledge-05-figma-plugin.md`; this file is the mental model the *procedure*
+owned by `docs/references/knowledge-05-figma-plugin.md`; this file is the mental model the *procedure*
 assumes, grounded in the actual `code.js` files.
 
 ### 1. Two plugins, one vocabulary, different jobs

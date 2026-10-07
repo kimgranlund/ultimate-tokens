@@ -93,7 +93,7 @@ change, don't improvise a register.
 | **Release notes / changelog** | Plain deltas, maker-voiced; what changed, why it matters, one line each, no drum-roll | "Exports now carry a px/rem/em setting. Figma still gets px." |
 | **Social / short-form** | One claim per post, compressed to its verbs, always with a real render | "Stop hand-nudging hex." |
 | **In-app microcopy** | Calm and actionable, states, limits, next steps; sells only at a ceiling (below) | "You're at the Free limit of 2 brand kits." |
-| **Palette stories (Color Categories)** | Curatorial, governed by the palette rubric at `docs/reference/colors/color-model-function.md`, not by §5's adjective rules; observed detail over adjective stacking | "Sampled at the hour the plaster goes amber." |
+| **Palette stories (Color Categories)** | Curatorial, governed by the palette rubric at `docs/references/colors/color-model-function.md`, not by §5's adjective rules; observed detail over adjective stacking | "Sampled at the hour the plaster goes amber." |
 | **Machine-facing (MCP tool descriptions, agent-read strings)** | Exact contracts, what the tool returns, when to call it; no persona performance for an audience of parsers | "Returns the 53-role semantic layer, light + dark, resolved hex + oklch." |
 | **Email / support** | Warm, brief, human, a maker answering mail, signed as one | "Anything at all: support@…" |
 | **Limits, errors & when-we're-wrong** | Plain and generous, no blame, no dark patterns; refunds granted gracefully, outages owned in first person | "Your kits are safe. You're simply back to the Free limits." |
@@ -169,6 +169,6 @@ Distilled from shipped evidence: the locked "precise/craft voice" decision and p
 architecture (OKLCH-native engine, zero-dependency bundle, offline Figma plugin, local-first storage)
 as the stance's proof. **Reviewed by the brand-forge critic council 2026-07-02, verdict CONDITIONAL,
 all three blocking conditions folded into this revision; the record:
-[`reviews/2026-07-02-brand-council.md`](reviews/2026-07-02-brand-council.md).** This is a living
+[`docs/reports/2026-07-02-brand-council.md`](../../../reports/2026-07-02-brand-council.md).** This is a living
 record, when the product changes what a claim can prove, this platform and the fact sheet change in
 the same breath.

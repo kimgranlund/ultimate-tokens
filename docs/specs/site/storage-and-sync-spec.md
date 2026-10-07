@@ -1,7 +1,7 @@
 # SPEC: Storage & Offline-First Sync
 
 **Status:** draft / design (for later). **Rubric:** spec-author (gate dims S1·S2·S4·S7).
-**Composes under:** `docs/site/mcp-hosting-spec.md` (the hosted MCP serves the kits this layer syncs).
+**Composes under:** `docs/specs/site/mcp-hosting-spec.md` (the hosted MCP serves the kits this layer syncs).
 **Altitude:** behavior + contracts; algorithms/file layout deferred to LLD.
 
 A durable storage + **offline-first background sync** layer so **everything a user makes is stored and

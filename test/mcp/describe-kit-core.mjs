@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // describe-kit-core.mjs, verifier for the PURE, deterministic describe-palette core (mcp/describe-kit-core.mjs,
-// #369). Contract: docs/site/describe-palette-spec.md.
+// #369). Contract: docs/specs/site/describe-palette-spec.md.
 import { DOMAINS, hydrate } from "../../src/ui/persist.js";
 import { brandKit, hexToOklch, seedFromKeyColor } from "../../src/ui/model.mjs";
 import { PALETTE_BRIEF_SCHEMA, FAMILY_NAMES, SECONDARY_HARMONY_OFFSET, TERTIARY_ANALOGOUS_OFFSET, STATUS_BANDS, MIN_HUE_SEP, BRAND_NUDGE, generateKit } from "../../mcp/describe-kit-core.mjs";

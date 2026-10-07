@@ -13,7 +13,7 @@ audience: builder, reviewer
 
 > Superseded in part by R94 to R98 (#785): Base chroma is now a whole-ramp damper applied in `tonal.js` (`groupDamper`, `dampStops`), not an absolute target, and `GROUP_DEFAULTS.material` is 100/60, not 30/60 (the schema-4 sample, Risk 0 and the `chroma == rampChroma` byte-identity sentence under Fixtures describe the old model).
 
-Spec: `docs/spec/spec-muted-base-key-spikes.md` 0.4.0 (REQ/AC ids below refer to it). Intent: issues
+Spec: `docs/specs/spec-muted-base-key-spikes.md` 0.4.0 (REQ/AC ids below refer to it). Intent: issues
 #503 and #533. Substrate this design leans on and does not restate: `color-math` skill (two ramp
 paths, damping multiplier `m`, hue anchors, OKHSL bijection), `adding-export-formats` skill (the
 per-format emitter map), `maintaining-figma-plugins` (collections, provenance registry),

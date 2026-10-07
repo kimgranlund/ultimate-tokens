@@ -22,7 +22,7 @@ palette's resolved `roles`, so a new semantic role emits a leaf **automatically*
 a per-role branch. The two things that bite are (1) ShadCN is the deliberate exception to that auto-flow,
 and (2) a new serializer is invisible until it is wired into THREE places: `exportAll`, the model's
 `view.exports`, and the drawer. Depth in `references/`. The per-format output shapes are owned by
-`docs/reference/references/knowledge-04-export-formats.md`, cite it, don't re-derive it. The role-side
+`docs/references/knowledge-04-export-formats.md`, cite it, don't re-derive it. The role-side
 auto-flow is owned by `adding-semantic-roles`, cite it, don't duplicate.
 
 **Not this skill's territory: `src/engine/ds-export.js`.** The Claude Design / Google Stitch / Figma Make
@@ -98,7 +98,7 @@ fragment, emitters use it to build a NAME, never to re-resolve a ref to a color.
    under the correct system toggle, `sys.color` / `sys.type` / `sys.geometry`. Colour formats ride
    `sys.color`; the `figma/` folder + the experimental `figma-aliased/` cascade (via `this.figmaBundle()`,
    OD-004) live there too. The re-importable config is pushed ALWAYS.
-6. **Document the shape** in `docs/reference/references/knowledge-04-export-formats.md`, it is the owner of per-
+6. **Document the shape** in `docs/references/knowledge-04-export-formats.md`, it is the owner of per-
    format output shapes; add a section (and keep the ten-colour-formats header count consistent if you added a color
    format). For ShadCN/Figma constraint changes, respect the fenced ADR notes (ADR-002 resolved-vs-aliased,
    ADR-007 UI3 is interchange-only), do not "fix" them.
@@ -152,7 +152,7 @@ done until `npm test` is green AND the format renders in the drawer + lands in t
 | `references/foundations.md` | `derivePalette` / `derivedAll` (and what they DON'T return), the resolved-role shape, the auto-flow vs the ShadCN curated MAP, the shared helpers (pad3/refKey/colorLeaf/roleOklch), the DTCG `$type`/`$value` shape, the Figma-number variant |
 | `references/best-practices.md` | the do/don't (reuse the resolver-free roles, three wiring sites, ShadCN-by-design, ADR fences), a worked walkthrough from the Tailwind+ShadCN addition |
 | `references/rubric.md` | score the change before calling it done (shape gate + three-site wiring is the gate) |
-| `docs/reference/references/knowledge-04-export-formats.md` | the canonical per-format output shapes + Figma-import constraints (owned there, cite, don't copy) |
+| `docs/references/knowledge-04-export-formats.md` | the canonical per-format output shapes + Figma-import constraints (owned there, cite, don't copy) |
 | `.claude/skills/adding-semantic-roles/` | the role-side auto-flow + the ShadCN-exception from the role's view (cite, don't duplicate) |
 
 **Peers:** [[color-math]] · [[type-scale]] · [[geometry-system]] (the engines it serializes) ·

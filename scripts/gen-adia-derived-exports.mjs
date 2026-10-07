@@ -1,6 +1,6 @@
 // gen-adia-derived-exports.mjs, GENERATE the two pinned, sha256-able DERIVED EXPORT ARTIFACTS for
 // the committed Adia brand document (#618, tag `adia-brand-document@1.0.0`), per #631 and
-// docs/plan/plan-2026-09-adia-derived-export-artifacts.md.
+// docs/archive/plans/plan-2026-09-adia-derived-export-artifacts.md.
 //
 // READS   src/ui/categories/brands.js, `PRESETS`, the generated mirror of
 //         docs/reference/colors/categories/brands.json. The Adia preset is looked up by EXACT name.

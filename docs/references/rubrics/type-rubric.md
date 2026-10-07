@@ -2,7 +2,7 @@
 
 > Scores ONE palette's `type.registers` declaration (ADR-022) against that palette's own story
 > (`kicker` / `source` / `refuses`) and the intended-use canon
-> (`docs/reference/typography/intended-use.md`). Two layers, same contract as `quality-rubric.md`:
+> (`docs/references/typography/intended-use.md`). Two layers, same contract as `quality-rubric.md`:
 > **Layer A** is judgment, scored 0–10 per dimension (target ≥ 48/60, no dimension below 6;
 > score → fix weakest → re-score). **Layer B** is the mechanical gate, any FAIL blocks the
 > revision regardless of Layer A score. Used by the preset revision program (Phase 3): the

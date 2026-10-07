@@ -20,17 +20,17 @@ path; a question the corpus doesn't answer is reported as absent, never guessed.
 
 | Ask | Look in |
 |---|---|
-| Problem, users, outcomes, the why | `docs/prd/` (PRD-*), one stub, `prd-0001-app-shell.md` |
-| Requirements, exact behavior, acceptance criteria (scribe-authored) | `docs/spec/` (SPEC-*), two: `spec-muted-base-key-spikes.md`, `spec-panda-park-ui-exports.md` |
-| A ratified decision and its alternatives | `docs/reference/references/decision-records.md` (ADR-001 onward, accepted = append-only); there is no `docs/adr/` directory |
-| What's queued, in flight, or done | **GitHub Issues first** (`gh issue list`, ADR-017, 2026-07-17: the live ticket backend), `docs/tickets/` is the pre-2026-07-17 ARCHIVE only (frontmatter `kind:`/`size:`/`status:` on those files reflects state as of the migration date, not current; a migrated file's `migrated-to:` frontmatter + top-of-file pointer names its Issue) |
-| Sequenced steps with done-whens | `.sdlc/plans/` (active plans; the board is `.sdlc/board.md`), closed plans archive to `.sdlc/plans/archive/` and `docs/plan/archive/` |
+| Problem, users, outcomes, the why | `docs/specs/` (PRD-*), one stub, `prd-0001-app-shell.md` |
+| Requirements, exact behavior, acceptance criteria (scribe-authored) | `docs/specs/` (SPEC-*), two: `spec-muted-base-key-spikes.md`, `spec-panda-park-ui-exports.md` |
+| A ratified decision and its alternatives | `docs/references/decision-records.md` (ADR-001 onward, accepted = append-only); there is no `docs/adr/` directory |
+| What's queued, in flight, or done | **GitHub Issues first** (`gh issue list`, ADR-017, 2026-07-17: the live ticket backend), `docs/archive/tickets/` is the pre-2026-07-17 ARCHIVE only (frontmatter `kind:`/`size:`/`status:` on those files reflects state as of the migration date, not current; a migrated file's `migrated-to:` frontmatter + top-of-file pointer names its Issue) |
+| Sequenced steps with done-whens | `.sdlc/plans/` (active plans; the board is `.sdlc/board.md`), closed plans archive to `.sdlc/plans/archive/`; pre-2026-10-06 closed plans are read-only in `docs/archive/plans/` |
 | Horizons of intent, Now / Next / Later | no horizons document exists, so report horizons as absent; `.sdlc/roadmap.md` is a generated open-issue snapshot (`status: generated`, written by `.sdlc/scripts/roadmap-gen.mjs`), cite it for what is open, never as a plan of intent |
 | One actor, one sitting, one done-when | `docs/task/` (TASK-*), not present yet |
-| The color/type/geometry ENGINE's own canonical reference (role tables, export-format shapes, typography/geometry specs, rubrics) | `docs/reference/`, pre-existing, own conventions (not scribe TICKET/SPEC frontmatter); the role-answer-key is `docs/reference/data/role-table.json` |
-| Marketing corpus (voice platform, fact sheet, store copy, launch kit) | `docs/marketing/`, author via the `marketing-manager-agent` + `ultimate-tokens-brand-voice` skill, not this skill |
-| Hosting/licensing design docs, one architecture LLD | `docs/site/`, `docs/lld/`, pre-existing, informal headers (no `doc-type:` frontmatter), predate the scribe TICKET workflow |
-| Generated README preview asset | `docs/img/`, not a document, skip for doc-shaped asks |
+| The color/type/geometry ENGINE's own canonical reference (role tables, export-format shapes, typography/geometry specs, rubrics) | `docs/references/` (rubrics under `docs/references/rubrics/`), own conventions (not scribe TICKET/SPEC frontmatter); runtime-read data stays in `docs/reference/`, and the role-answer-key is `docs/reference/data/role-table.json` |
+| Marketing corpus (voice platform, fact sheet, store copy, launch kit) | `docs/specs/marketing/`, author via the `marketing-manager-agent` + `ultimate-tokens-brand-voice` skill, not this skill |
+| Hosting/licensing design docs, one architecture LLD | `docs/specs/site/`, `docs/specs/app-shell.md`, pre-existing, informal headers (no `doc-type:` frontmatter), predate the scribe TICKET workflow |
+| Generated README preview asset | `docs/assets/`, not a document, skip for doc-shaped asks |
 
 The `docs/` rows live under one `docs/` root; the `.sdlc/` rows are the sdlc plugin's records.
 `.claude/docs/other/` is the one exception: it is PRIVATE and local-only (gitignored via
@@ -38,10 +38,10 @@ The `docs/` rows live under one `docs/` root; the `.sdlc/` rows are the sdlc plu
 material outside this corpus, don't read it speculatively.
 
 (A directory that doesn't exist usually means the project has none of that record type yet,
-but before answering "absent", sweep for near-miss locations: misnamed dirs (`docs/specs/`,
-`rfcs/`, `design-docs/`, `adrs/`), loose files (`NOTES.md`, `DECISIONS.md`, `ARCHITECTURE.md`),
+but before answering "absent", sweep for near-miss locations: misnamed dirs (`rfcs/`,
+`design-docs/`, `adrs/`), loose files (`NOTES.md`, `DECISIONS.md`, `ARCHITECTURE.md`),
 doc-shaped README sections. A hit → answer with the real location, marked non-canonical:
-"spec-shaped content lives at rfcs/, not indexed", and offer to move it into `docs/spec/`. A false
+"spec-shaped content lives at rfcs/, not indexed", and offer to move it into `docs/specs/`. A false
 "this project has no specs" is this skill's own worst failure. Knowledge corpora authored at
 intake are linked from their ticket, not mapped here.)
 
@@ -52,7 +52,7 @@ intake are linked from their ticket, not mapped here.)
    nouns or the TKT-/PRD- id only for the pre-2026-07-17 archive or non-ticket record types.
 2. Answer with **the claim + the source (+ the record's status where it has one)**, an Issue's
    own open/closed state for live tickets, or the file path + frontmatter `status` for archive
-   files (`docs/tickets/`) and other record types. An open ticket and a done one answer "is X
+   files (`docs/archive/tickets/`) and other record types. An open ticket and a done one answer "is X
    built?" oppositely.
 3. Cross-references between records use ids (the ID spine: a TKT links its SPEC by id), follow
    them rather than assuming one file is complete.
