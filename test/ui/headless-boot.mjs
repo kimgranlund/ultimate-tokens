@@ -2435,6 +2435,7 @@ ok(app.settingsOpen === false, "(set) closeSettings dismisses the modal");
 app.setSection("typography"); flushRaf();
 ok(app.section === "typography" && !!app.querySelector(".type-spec"), "(ty) the section switcher enters Typography (the canvas specimen renders)");
 ok(inLight(".type-spec-line").length === TYPE_STEPS && inLight(".type-spec-group").length === VOICES, `(ty) the light column shows the FULL specimen, ${TYPE_STEPS} steps (13 voices × 3 + the 2 interactive voices × 6) across the ${VOICES} named voices (Display·Headline·Sub-heading·Title·Sub-title·Lead·Body·Body-mono·Label·Label-mono·Kicker·Tiny·Tiny-mono·UI-control·UI-widget) (got ${inLight(".type-spec-line").length} lines / ${inLight(".type-spec-group").length} groups)`);
+{ const { readFileSync: rfTS } = await import("node:fs"); const tsrc = rfTS("src/ui/sections/typography.js", "utf8"); ok(!/\b(eleven|11|53 steps)\b[^\n]{0,24}voices|\b53 steps\b/i.test(tsrc), "(tyc) typography.js carries no retired voice count (live: 15 voices, 51 steps)"); }
 ok(app.querySelectorAll(".an-card").length >= 4, `(ty) the left rail shows the type analysis cards (got ${app.querySelectorAll(".an-card").length})`);
 // specimen order: each group lists LARGEST → smallest (the first token in the document is Display's LG step)
 ok(txtOf(app.querySelectorAll(".type-spec-token")[0] || {}) === "type-display-lg", `(ty) the specimen lists each group largest→smallest (first token is type-display-lg, got ${txtOf(app.querySelectorAll(".type-spec-token")[0] || {})})`);
