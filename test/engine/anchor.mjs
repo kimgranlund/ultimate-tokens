@@ -502,7 +502,7 @@ const RAMP_WINDOW_ALLOW = [
 // **91** names failing the 19-stop gap bar (RAMP_GAP_ALLOW below) and **13** names failing 25-stop
 // distinctness (RAMP_DISTINCT_ALLOW, below that) - a source can appear on both. Named, frozen, sorted
 // - compared by name, not count (N1's own lesson, applied here too). Q-U2-5's own REQ-002 chroma-basis
-// tension is RULED (the anchor's own value at the pivot, blending to `rampChroma` at the ends by
+// tension is RULED (the anchor's own value at the pivot, blending to 100 at the ends (the group value no longer reaches the ramp basis since #785) by
 // liftStop - see `anchorChromaBasis`'s own header comment in tonal.js), not an open question any more.
 // #725 R69 later held perceptual and peak at the anchor's own value; only the even path keeps the blend.
 // Gap growth attribution, corrected (review pass 3, Finding 6): from `0849f67`'s own 69, each of the
