@@ -1,4 +1,4 @@
-/* ultimate-tokens export schema 5 */
+/* ultimate-tokens export schema 6 */
 /* adia-radix-export 1.4.0
    source: docs/reference/colors/categories/brands.json (adia-brand-document@1.0.0, 770297b)
    generator: scripts/gen-adia-derived-exports.mjs (projectView(hydrate(preset)).exports.radix)
@@ -504,7 +504,7 @@ export default {
             },
             "prime": {
               "value": {
-                "base": "oklch(0.7334 0.1538 235.26)"
+                "base": "oklch(0.7354 0.1554 234.71)"
               }
             }
           },
@@ -4224,7 +4224,7 @@ export default {
             },
             "prime": {
               "value": {
-                "base": "oklch(0.7334 0.1538 235.26)"
+                "base": "oklch(0.7354 0.1554 234.71)"
               }
             }
           },

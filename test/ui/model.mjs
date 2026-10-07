@@ -6,7 +6,7 @@
 // then test/ui/headless-boot.mjs's (dpa) group only exercises them THROUGH button clicks. This
 // file imports and calls them directly, pure, no DOM, covering SPEC
 // docs/specs/spec-muted-base-key-spikes.md REQ-020..024 at the model layer.
-import { PALETTE_GROUPS, brandKit, defaultDocument, exportDesignSystemBundle, geomScaleFor, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixCollisionBadge, radixExportKey, radixKeyCollision, RADIX_COLLISION_BADGE, rederiveDataHues, resolvedPalettes, slug, typeScaleFor } from "../../src/ui/model.mjs";
+import { PALETTE_GROUPS, brandKit, defaultDocument, dsDocOf, exportDesignSystemBundle, geomScaleFor, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixCollisionBadge, radixExportKey, radixKeyCollision, RADIX_COLLISION_BADGE, rederiveDataHues, slug, typeScaleFor } from "../../src/ui/model.mjs";
 import { deriveDataHues } from "../../src/engine/data-hues.mjs";
 import { RESERVED_ALIAS_KEYS, isDataPalette, exportRadixModule } from "../../src/engine/exports.js";
 import { PRESETS as BRAND_PRESETS } from "../../src/ui/categories/brands.js";
@@ -187,16 +187,15 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   ok(minted.length === 8 && minted.every((p) => p.group === "data"), "mintDataPalettes must stamp group:\"data\" on every minted Data-N palette");
 }
 
-// ── byte-identity export check (ticket #556 non-goal guard, SUPERSEDED for intensity/primeChroma
-// by ticket #559, and again for the GROUP METADATA ITSELF by ticket #572/RP-1) ────────────────────
-// #556 shipped `group` as purely editor/organizational metadata with zero export effect. #559 makes
-// a palette's GROUP drive its resolved baseIntensity/primeChroma (Material 100/60 vs Brand/System/Data
-// all 100/100 by default since #785 R96), so reassigning a palette's group no longer guarantees byte-identical
-// exports in general; that is the whole point of the ticket. #572/RP-1 then makes the group ITSELF
-// exported metadata (JSON `group`, DTCG raw `$extensions`, a CSS/OKLCH/Tailwind comment line,
-// brandKit `group`), so even a brand<->system swap (same 100/100 chroma defaults) now legitimately
-// changes those metadata bytes; that is RP-1's whole point too. What still holds, narrowed twice
-// now: a brand<->system swap changes ONLY the group metadata itself (the new comment line's word,
+// ── byte-identity export check (ticket #556 non-goal guard; #559's group chroma layer RETIRED by
+// #804; the GROUP METADATA ITSELF exported since ticket #572/RP-1) ────────────────────────────────
+// #556 shipped `group` as purely editor/organizational metadata with zero export effect. #559 made a
+// palette's GROUP drive its resolved chroma; #804 removed that layer again (each palette carries its
+// own Base chroma, the globals are k factors on every palette), so a group move never changes a
+// value. #572/RP-1 makes the group ITSELF exported metadata (JSON `group`, DTCG raw `$extensions`, a
+// CSS/OKLCH/Tailwind comment line, brandKit `group`), so a group move legitimately changes those
+// metadata bytes; that is RP-1's whole point. What holds: a group move changes ONLY the group
+// metadata itself (the new comment line's word,
 // the `group`/`$extensions` field), every VALUE (ramp colors, role hex, prime swatches) and every
 // TOKEN NAME is unaffected, on every surface, regardless of group.
 {
@@ -237,10 +236,9 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
     for (const p of clone.palettes || []) delete p.group;
     return JSON.stringify(clone);
   };
-  // dsDocOf mirrors drawer.js's own dsDoc: exportDesignSystemBundle reads doc.palettes[i].intensity/
-  // primeChroma directly (it's called with a doc-shaped object, never through stateOf/projectView),
-  // so it needs the group layer folded in explicitly or it silently ignores it (ticket #559).
-  const dsDocOf = (doc) => ({ ...doc, palettes: resolvedPalettes(doc) });
+  // dsDocOf (model.mjs, the same helper drawer.js builds its dsDoc with): exportDesignSystemBundle
+  // reads palette.group and state.baseChroma directly (it's called with a doc-shaped object, never
+  // through stateOf/projectView).
   const base = defaultDocument();
   const baseExports = projectView(base).exports;
 
@@ -285,26 +283,32 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   ok(JSON.stringify(baseDs) === JSON.stringify(sameDefaultsDs), "the DS bundle (ds-export.js) must stay byte-identical for a brand <-> system group swap");
   ok(stripBrandKitGroup(brandKit(base)) === stripBrandKitGroup(brandKit(sameDefaults)), "the MCP brandKit() payload must stay byte-identical (net of the RP-1 `group` field) for a brand <-> system group swap");
 
-  // moving Neutral out of Material (default 100/60) into Brand (default 100/100) MUST move the
-  // export bytes on EVERY surface. Since #785 R96 both defaults render Neutral at 100, so this
-  // pair now moves through the RP-1 group metadata; the damped pair below keeps proving the
-  // group's chroma layer reaches every export/DS-bundle/MCP output, not just the UI.
+  // moving Neutral out of Material into Brand (#804: no group carries a chroma value any more) moves
+  // ONLY the RP-1 group metadata, on every surface: the CSS bytes net of the comment line, the DS
+  // bundle (no group field in the Claude Design profile) and the MCP brandKit() net of `group`.
   const neutralToBrand = defaultDocument();
   neutralToBrand.palettes = neutralToBrand.palettes.map((p) => (p.name === "Neutral" ? { ...p, group: "brand" } : p));
   const neutralToBrandExports = projectView(neutralToBrand).exports;
-  ok(baseExports.css !== neutralToBrandExports.css, "moving Neutral out of Material (100/60) into Brand (100/100) must change the CSS export bytes (ticket #559)");
+  ok(baseExports.css !== neutralToBrandExports.css, "moving Neutral out of Material into Brand must still change the CSS group comment line (RP-1)");
+  ok(stripGroupComments(baseExports.css) === stripGroupComments(neutralToBrandExports.css), "moving Neutral out of Material into Brand must leave every CSS value byte-identical (#804, no group chroma layer)");
   const neutralToBrandDs = exportDesignSystemBundle(dsDocOf(neutralToBrand), typeScaleFor(neutralToBrand, "base"), geomScaleFor(neutralToBrand, "base"), dsOpts);
-  ok(JSON.stringify(baseDs) !== JSON.stringify(neutralToBrandDs), "moving Neutral out of Material into Brand must also change the DS bundle bytes");
-  ok(JSON.stringify(brandKit(base)) !== JSON.stringify(brandKit(neutralToBrand)), "moving Neutral out of Material into Brand must also change the MCP brandKit() payload");
+  ok(JSON.stringify(baseDs) === JSON.stringify(neutralToBrandDs), "moving Neutral out of Material into Brand must leave the DS bundle byte-identical (#804)");
+  ok(stripBrandKitGroup(brandKit(base)) === stripBrandKitGroup(brandKit(neutralToBrand)), "moving Neutral out of Material into Brand must leave the MCP brandKit() payload byte-identical net of `group` (#804)");
 
-  // #785 R94: Material's base chroma at 50 damps Neutral's ramp, and that reaches every surface.
+  // #785 R94, #804: Neutral's own Base chroma at 50 damps Neutral's ramp, and that reaches every surface.
   const damped = defaultDocument();
-  damped.paletteGroups = { ...damped.paletteGroups, material: { ...damped.paletteGroups.material, baseChroma: 50 } };
-  ok(baseExports.css !== projectView(damped).exports.css, "Material base chroma 50 must change the CSS export bytes (#785 damper)");
-  ok(JSON.stringify(baseDs) !== JSON.stringify(exportDesignSystemBundle(dsDocOf(damped), typeScaleFor(damped, "base"), geomScaleFor(damped, "base"), dsOpts)), "Material base chroma 50 must change the DS bundle bytes (#785 damper)");
-  // Net of `controls`, which carries the stored 50 whether or not the ramps moved: the colors must move.
+  damped.palettes = damped.palettes.map((p) => (p.name === "Neutral" ? { ...p, baseChroma: 50 } : p));
+  ok(baseExports.css !== projectView(damped).exports.css, "Neutral's own base chroma 50 must change the CSS export bytes (#785 damper)");
+  ok(JSON.stringify(baseDs) !== JSON.stringify(exportDesignSystemBundle(dsDocOf(damped), typeScaleFor(damped, "base"), geomScaleFor(damped, "base"), dsOpts)), "Neutral's own base chroma 50 must change the DS bundle bytes (#785 damper)");
   const kitColors = (kit) => JSON.stringify({ palettes: kit.palettes, roles: kit.roles });
-  ok(kitColors(brandKit(base)) !== kitColors(brandKit(damped)), "Material base chroma 50 must change the MCP brandKit() palettes and roles (#785 damper)");
+  ok(kitColors(brandKit(base)) !== kitColors(brandKit(damped)), "Neutral's own base chroma 50 must change the MCP brandKit() palettes and roles (#785 damper)");
+
+  // #804: the global Base chroma k (doc.baseIntensity) at 50 reaches every surface too, the DS bundle
+  // through dsDocOf's engine-facing `baseChroma` (a doc-shaped object carries only `baseIntensity`).
+  const kDamped = { ...defaultDocument(), baseIntensity: 50 };
+  ok(baseExports.css !== projectView(kDamped).exports.css, "global base chroma 50 must change the CSS export bytes (#804 k factor)");
+  ok(JSON.stringify(baseDs) !== JSON.stringify(exportDesignSystemBundle(dsDocOf(kDamped), typeScaleFor(kDamped, "base"), geomScaleFor(kDamped, "base"), dsOpts)), "global base chroma 50 must change the DS bundle bytes (#804 k factor)");
+  ok(kitColors(brandKit(base)) !== kitColors(brandKit(kDamped)), "global base chroma 50 must change the MCP brandKit() palettes and roles (#804 k factor)");
 }
 
 // ── U2 (#637): radixKeyCollision(name) + RADIX_COLLISION_BADGE (I4/I5/OQ-3) ────────────────

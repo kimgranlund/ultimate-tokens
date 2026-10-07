@@ -18,8 +18,8 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
    derivation lives in `model.mjs` (`projectView`); Type/Geom's equivalent
    (`_typeScaleFor`/`_geomScaleFor`/`_typeModeScales`/`_geomModeScales`) lives as mirrored
    instance methods in two section files, with the tier-synthesis closure byte-identical in
-   both (since #460 ONE closure, `typeTierScale`, model.mjs:183-187), a third geomScale+typeScale join inside
-   `_geomModeScales` (geometry.js:196-198, now a delegate to `geomModeScales`, model.mjs:214-233), and a FOURTH, disconnected implementation in
+   both (since #460 ONE closure, `typeTierScale`, model.mjs:184-188), a third geomScale+typeScale join inside
+   `_geomModeScales` (geometry.js:196-198, now a delegate to `geomModeScales`, model.mjs:215-234), and a FOURTH, disconnected implementation in
    `model.mjs#geometryScale` that only `brandKit()` uses. They agree today by coincidence of
    independently-written code, not by sharing.
 2. **Storage is three disciplines** (03): persist.js's spec-grade doc store (fuzzed roundtrip
@@ -76,7 +76,7 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
 | H1 | `_onReorderUp()` hand-rolls the commit ladder | 01 §B2; color.js:1518-1567 (fixed in #462) | route through `this.commit(fn)` |
 | H2 | `mixinInto` has no method-collision guard (zero collisions today, verified; nothing catches the first one) | 01 §B3, 04 §C; app.js:2564-2582 (guard added in #462) | throw on duplicate own-property name during composition |
 | H3 | Gallery crash vector: set records never shape-validated; `buildTiles` search does `s.name.toLowerCase()` unguarded | 03 §C; app.js:679-681, `sanitizeSetRecords` app-helpers.mjs:104-109 (fixed in #468) | per-record shape check in `loadSets`/`receiveStoredSets` (or a `String(s.name||"")` guard) |
-| H4 | `tokenOverrides` keys never validated against voice/step domains → typo'd/retired keys accumulate as permanent inert orphans | 03 §B5; persist.js:655-666 (`validLead`, fixed in #461) | drop unknown-voice/step keys in `clampTokenOverrides` (RENAME_MAPS already translates legitimate renames) |
+| H4 | `tokenOverrides` keys never validated against voice/step domains → typo'd/retired keys accumulate as permanent inert orphans | 03 §B5; persist.js:688-699 (`validLead`, fixed in #461) | drop unknown-voice/step keys in `clampTokenOverrides` (RENAME_MAPS already translates legitimate renames) |
 | H5 | `clampProfile` has no rename-forward story (a FLAG_KEYS rename silently drops overrides); app-prefs/apply-consent sit outside `migrateStorageKeys()` undocumented at that site | 03 §B3–B4 | add a one-line comment at `migrateStorageKeys()` naming the exclusion as deliberate; add a rename-map seam to clampProfile only if flags ever rename |
 | H6 | `_applyBusy` has no timeout (a lost reply wedges apply for the session, narrower than D1 since code.js always answers `apply`) | 04 §B | decide: accept (document) or add a timeout fallback consistent with D1's fix |
 

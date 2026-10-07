@@ -1,4 +1,4 @@
-/* ultimate-tokens export schema 5 */
+/* ultimate-tokens export schema 6 */
 /* adia-oklch-export 2.1.0
    source: docs/reference/colors/categories/brands.json (adia-brand-document@1.0.0, 770297b)
    generator: scripts/gen-adia-derived-exports.mjs (projectView(hydrate(preset)).exports.oklch)
@@ -139,7 +139,7 @@
   --c-primary-prime-brightest: oklch(0.9724 0.0137 247.97);
   --c-primary-prime-brighter: oklch(0.8748 0.0694 238.86);
   --c-primary-prime-bright: oklch(0.7899 0.1228 236.7);
-  --c-primary-prime: oklch(0.7334 0.1538 235.26);
+  --c-primary-prime: oklch(0.7354 0.1554 234.71);
   --c-primary-prime-dim: oklch(0.6354 0.1347 234.97);
   --c-primary-prime-dimmer: oklch(0.5661 0.1198 234.85);
   --c-primary-prime-dimmest: oklch(0.5045 0.1065 234.66);

@@ -37,36 +37,13 @@
 // below without `anchor` too (the construction the since-retired `EVEN_DIP_BASELINE`'s `findDips` and
 // this same file's pre-fa0264fa reading both used). #701's C5 extraction reads its even block.
 //
-// `--group-chroma` (#785 U2) is a SEPARATE mode: the movement a group's Base chroma slider makes. It
-// renders the HEAD tree's `defaultDocument()` (so the head's `GROUP_DEFAULTS` and `persist.js` feed both
-// sides) through `projectView` twice: the reference side with `paletteGroups[<group>].baseChroma` at the
-// first value, on the base tree's `projectView` (`--base <rev>` or `--base-dir <dir>`; this file's own
-// tree when neither is given), and the subject side at the second value on this file's own tree. It
-// keeps the group's palettes and prints, per palette, the display-ramp hexes moved, the signed CAM16 C
-// move at stop 500 (`dC@500`, the ramp row's own `chroma`) and the largest |dC| over the ramp, once
-// with each palette's `anchor` kept (what the kit renders) and once with it stripped (the unanchored
-// path). `--values A,A` with no base is its own negative control: every column prints 0.
-// `--defaults` instead renders each tree's OWN `defaultDocument()` (the base tree's model and persist
-// against this tree's, every group at its own default, anchors kept), once per toneMode, one row per
-// palette: what a fresh document moves between the two trees. `--saved-material N` (with `--defaults`)
-// compares this tree's default render against a saved document storing material N, hydrated through
-// this tree's `persist.js` as a load would (no migration, R98), so it reads how an old save renders.
-//
-//   node scripts/report-preset-fidelity.mjs --group-chroma --group <material|brand|system|data>
-//     --values A,B [--tone-mode perceptual|peak|even] [--base <rev> | --base-dir <dir>]
-//   node scripts/report-preset-fidelity.mjs --group-chroma --defaults [--saved-material N]
-//     [--base <rev> | --base-dir <dir>]
-//
-// It reports and exits 0 (1 when the group holds no palette, nothing was compared); the bounds (#785
-// C2.1, C2.2, C2.7) are read off its output by the verifier, not enforced here.
-//
 // `--identity-control` (#715 U2, closing C4's other yellow row) is a SEPARATE mode: it renders the
 // base tree's 8 category files plus its default kit on TWO engine copies (the base tree named by
 // `--base <rev>` or `--base-dir <dir>`, and this file's own working tree) and diffs every emitted
 // cell, so a ramp move shows up cell by cell against any named base, not just as a hand measurement.
 //
 //   node scripts/report-preset-fidelity.mjs --identity-control (--base <rev> | --base-dir <dir>)
-//     [--authored] [--only <category>|default-kit] [--perturb]
+//     [--authored] [--only <category>|default-kit] [--perturb] [--migrate]
 //
 // `--authored` keeps each palette's `anchor`/`sourceAnchor` (the default strips both, since the
 // unanchored path is blind to a mutation on the anchored construction  -  see the adapter's
@@ -74,6 +51,19 @@
 // is this mode's own negative control (the `--damp-amp` pattern above): it flips the last hex digit
 // of the first rendered cell on the HEAD side before the compare, so a green run can be told apart
 // from a compare that silently never ran.
+//
+// `--migrate` (#804) reads a schema migration instead of an engine move. Without it, both sides render
+// the BASE-hydrated document, so a change to how `persist.js` folds an old document never shows. With
+// it, each corpus subject is the base tree's raw preset object, hydrated by the base `persist.hydrate`
+// on the base side and by this tree's `persist.hydrate` on the head side; the default-kit subject is
+// the base `defaultDocument()` on the base side and this tree's `hydrate` of that same document stamped
+// `schemaVersion: 7` (a saved v7 kit) on the head side. Each side renders through its own tree's
+// `rampChromaOf`. Besides the ramp cells it diffs each palette's prime strip (each tree's
+// `primeSwatches`, the palette's own `primeChroma` cleared and the tree's `primeChromaOf(p, doc)` as
+// the control, the projectView call shape; mode-independent, so once per palette) and its gallery key
+// tile (each tree's `paletteKeyColors`). It prints `ramp <mode>: <d> of <t> cells differ` per mode,
+// `prime: <m> of <t> strips moved`, `key: <k> of <t> tiles moved`, then the `<n> differing cells`
+// total; the exit code keeps the ramp-cell contract (prime and key moves are reported, not barred).
 //
 // `--floor-ref` (#766 U1) is a THIRD, separate mode: the movement report for the even-mode chroma floor's
 // gamut reference (`evenChroma`'s `floorRef`). It loads the same base tree as `--identity-control`
@@ -116,7 +106,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { tmpdir } from "node:os";
 import { join as pathJoin, resolve as pathResolve, dirname } from "node:path";
 import { hydrate } from "../src/ui/persist.js";
-import { rampChromaOf, EXPORT_STOPS, lstarFromRgb } from "../src/ui/model.mjs";
+import { rampChromaOf, primeChromaOf, paletteKeyColors, EXPORT_STOPS, lstarFromRgb } from "../src/ui/model.mjs";
+import { primeSwatches } from "../src/engine/prime.mjs";
 import * as T from "../src/engine/tonal.js";
 import { CATS, REPORT_STOPS, MODES, ADIA_CARVEOUT, CUSP_RUN_BOUND, OVER_90_AT_300, RESIDUE_CLASSES, percentile, measureEnvelope, measureResidues } from "./lib/envelope-measure.mjs";
 
@@ -132,7 +123,6 @@ const floorBand = (dC) => (dC < 0.5 ? "<0.5" : dC < 1 ? "<1" : dC < 2 ? "<2" : d
 const args = process.argv.slice(2);
 const mode_envelope = args.includes("--envelope");
 const mode_identity = args.includes("--identity-control");
-const mode_groupChroma = args.includes("--group-chroma");
 const mode_floorRef = args.includes("--floor-ref");
 const mode_envelopeResidue = args.includes("--envelope-residue");
 const dampAmpIdx = args.indexOf("--damp-amp");
@@ -145,13 +135,11 @@ const gatePath = args.includes("--gate-path");
 
 const USAGE =
   "usage: node scripts/report-preset-fidelity.mjs --envelope [--damp-amp N] [--damp N] [--damp-curve N] [--gate-path]\n" +
-  "       node scripts/report-preset-fidelity.mjs --identity-control (--base <rev> | --base-dir <dir>) [--authored] [--only <category>|default-kit] [--perturb]\n" +
-  "       node scripts/report-preset-fidelity.mjs --group-chroma --group <material|brand|system|data> --values A,B [--tone-mode perceptual|peak|even] [--base <rev> | --base-dir <dir>]\n" +
-  "       node scripts/report-preset-fidelity.mjs --group-chroma --defaults [--saved-material N] [--base <rev> | --base-dir <dir>]\n" +
+  "       node scripts/report-preset-fidelity.mjs --identity-control (--base <rev> | --base-dir <dir>) [--authored] [--only <category>|default-kit] [--perturb] [--migrate]\n" +
   "       node scripts/report-preset-fidelity.mjs --floor-ref (--base <rev> | --base-dir <dir>) [--only <category>|default-kit]\n" +
   "       node scripts/report-preset-fidelity.mjs --envelope-residue";
 
-if (!mode_envelope && !mode_identity && !mode_groupChroma && !mode_floorRef && !mode_envelopeResidue) {
+if (!mode_envelope && !mode_identity && !mode_floorRef && !mode_envelopeResidue) {
   console.error(USAGE);
   process.exit(2);
 }
@@ -159,10 +147,6 @@ if (!mode_envelope && !mode_identity && !mode_groupChroma && !mode_floorRef && !
 if (mode_identity) {
   await runIdentityControl(args);
   // runIdentityControl always exits the process itself; nothing below this line runs for this mode.
-}
-if (mode_groupChroma) {
-  await runGroupChroma(args);
-  // runGroupChroma always exits the process itself; nothing below this line runs for this mode.
 }
 if (mode_floorRef) {
   await runFloorRef(args);
@@ -371,130 +355,6 @@ console.log("");
 console.log((anyFail || envAnyFail) ? "FAIL: the envelope table does not clear the plan's ruled targets under at least one reading" : "PASS: envelope table clears the plan's ruled targets under both readings");
 process.exit((anyFail || envAnyFail) ? 1 : 0);
 
-// ── --group-chroma ──────────────────────────────────────────────────────────────────────────────
-// #785 U2: the group Base chroma movement report (see the header). The reference side may run on a
-// base tree's `projectView`; the document is always the head's own `defaultDocument()`.
-
-async function runGroupChroma(args) {
-  // local, not module-level: the dispatch near the top calls this before any later top-level `const` runs
-  const GROUP_CHROMA_GROUPS = ["material", "brand", "system", "data"];
-  const flag = (name) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : null; };
-  const group = flag("--group");
-  const values = (flag("--values") ?? "").split(",").map(Number);
-  const toneMode = flag("--tone-mode") ?? "perceptual";
-  const baseRev = flag("--base");
-  const baseDirArg = flag("--base-dir");
-  const defaults = args.includes("--defaults");
-  const savedMaterial = args.includes("--saved-material") ? Number(flag("--saved-material")) : null;
-  const badGroupArgs = !GROUP_CHROMA_GROUPS.includes(group) || values.length !== 2 || values.some((v) => !Number.isFinite(v)) || !IDENTITY_MODES.includes(toneMode);
-  if ((defaults ? (savedMaterial !== null && !Number.isFinite(savedMaterial)) : (badGroupArgs || savedMaterial !== null)) ||
-      (args.includes("--base") && !baseRev) || (baseRev && baseDirArg)) {
-    console.error(USAGE);
-    process.exit(2);
-  }
-
-  const { defaultDocument, projectView, paletteGroup } = await import("../src/ui/model.mjs");
-  let baseProjectView = projectView, baseDefaultDocument = defaultDocument;
-  let baseLabel = "this tree";
-  if (baseRev || baseDirArg) {
-    let baseDir;
-    if (baseDirArg) {
-      baseDir = pathResolve(process.cwd(), baseDirArg);
-    } else {
-      const scratch = mkdtempSync(pathJoin(tmpdir(), "group-chroma-"));
-      process.on("exit", () => { try { rmSync(scratch, { recursive: true, force: true }); } catch { /* best effort */ } });
-      try {
-        const archive = execFileSync("git", ["archive", baseRev, "src"], { cwd: REPO_ROOT, maxBuffer: 1024 * 1024 * 256 });
-        execFileSync("tar", ["-x", "-C", scratch], { input: archive });
-      } catch (e) {
-        console.error(`usage: --base ${baseRev} could not be archived: ${e.message}`);
-        process.exit(2);
-      }
-      baseDir = scratch;
-    }
-    try {
-      ({ projectView: baseProjectView, defaultDocument: baseDefaultDocument } = await import(pathToFileURL(pathJoin(baseDir, "src/ui/model.mjs")).href));
-    } catch (e) {
-      console.error(`usage: base tree at ${baseDir} failed to load: ${e.message}`);
-      process.exit(2);
-    }
-    if (typeof baseProjectView !== "function") {
-      console.error(`usage: base tree at ${baseDir} is missing the export projectView`);
-      process.exit(2);
-    }
-    baseLabel = baseRev ?? baseDir;
-  }
-
-  const render = (pv, value, keepAnchors) => {
-    const doc = defaultDocument();
-    doc.toneMode = toneMode;
-    doc.paletteGroups[group].baseChroma = value;
-    if (!keepAnchors) doc.palettes = doc.palettes.map(({ anchor, sourceAnchor, ...rest }) => rest);
-    const view = pv(doc);
-    return doc.palettes.map((p, i) => ({ name: p.name, group: paletteGroup(p), ramp: view.palettes[i].ramp })).filter((r) => r.group === group);
-  };
-  const fmt = (n) => (Math.abs(n) < 0.005 ? "0.00" : n.toFixed(2));
-  const row = (name, r, s) => {
-    const moved = s.filter((c, k) => c.hex !== r[k].hex).length;
-    const dC = s.map((c, k) => c.chroma - r[k].chroma);
-    const k500 = s.findIndex((c) => c.stop === 500);
-    return `  ${name.padEnd(12)} hex moved ${moved}/${s.length}  dC@500 ${fmt(dC[k500])}  max dC ${fmt(Math.max(...dC.map(Math.abs)))}`;
-  };
-
-  if (defaults) {
-    // The reference side: the base tree's own fresh document (or, with --saved-material, this tree's);
-    // the subject side: this tree's fresh document (or the saved one, hydrated here).
-    const savedDoc = () => {
-      const doc = hydrate(JSON.parse(JSON.stringify(defaultDocument())));
-      doc.paletteGroups = { ...doc.paletteGroups, material: { ...doc.paletteGroups.material, baseChroma: savedMaterial } };
-      return hydrate(JSON.parse(JSON.stringify(doc)));
-    };
-    const refLabel = savedMaterial !== null ? "this tree's defaults" : `${baseLabel} defaults`;
-    const subLabel = savedMaterial !== null ? `a saved doc with material ${savedMaterial}, hydrated on this tree` : "this tree's defaults";
-    console.log(`group-chroma --defaults: ${refLabel} to ${subLabel}, anchors kept`);
-    let rows = 0;
-    for (const mode of IDENTITY_MODES) {
-      const refDoc = savedMaterial !== null ? defaultDocument() : baseDefaultDocument();
-      const subDoc = savedMaterial !== null ? savedDoc() : defaultDocument();
-      refDoc.toneMode = mode;
-      subDoc.toneMode = mode;
-      const ref = (savedMaterial !== null ? projectView : baseProjectView)(refDoc).palettes;
-      const sub = projectView(subDoc).palettes;
-      console.log(`toneMode ${mode}`);
-      for (const s of sub) {
-        const r = ref.find((x) => x.name === s.name);
-        if (!r || r.ramp.length !== s.ramp.length) { console.log(`  ${s.name.padEnd(12)} no matching reference ramp`); continue; }
-        console.log(row(s.name, r.ramp, s.ramp));
-        rows++;
-      }
-    }
-    if (rows === 0) {
-      console.log("FAIL: vacuity, no palette compared");
-      process.exit(1);
-    }
-    process.exit(0);
-  }
-
-  console.log(`group-chroma: group ${group}, ${values[0]} (${baseLabel}) to ${values[1]} (this tree), toneMode ${toneMode}`);
-  let rows = 0;
-  for (const [label, keep] of [["anchors kept", true], ["anchors stripped", false]]) {
-    const ref = render(baseProjectView, values[0], keep);
-    const sub = render(projectView, values[1], keep);
-    console.log(label);
-    for (const s of sub) {
-      const r = ref.find((x) => x.name === s.name);
-      if (!r || r.ramp.length !== s.ramp.length) continue;
-      console.log(row(s.name, r.ramp, s.ramp));
-      rows++;
-    }
-  }
-  if (rows === 0) {
-    console.log(`FAIL: vacuity, the ${group} group holds no palette in the default kit`);
-    process.exit(1);
-  }
-  process.exit(0);
-}
-
 // ── --identity-control ──────────────────────────────────────────────────────────────────────────
 // C4's ramp half (the plan's own named command, #715 U2): loads a BASE tree (a git revision unpacked
 // to a scratch directory, or an existing directory) and this file's own working tree side by side,
@@ -533,6 +393,7 @@ async function runIdentityControl(args) {
   const baseDirIdx = args.indexOf("--base-dir");
   const authored = args.includes("--authored");
   const perturb = args.includes("--perturb");
+  const migrate = args.includes("--migrate");
   const onlyIdx = args.indexOf("--only");
   const only = onlyIdx >= 0 ? args[onlyIdx + 1] : null;
 
@@ -575,7 +436,7 @@ async function runIdentityControl(args) {
     process.exit(code);
   }
 
-  const REQUIRED_FILES = ["src/ui/persist.js", "src/ui/model.mjs", "src/engine/tonal.js"];
+  const REQUIRED_FILES = ["src/ui/persist.js", "src/ui/model.mjs", "src/engine/tonal.js", ...(migrate ? ["src/engine/prime.mjs"] : [])];
   for (const rel of REQUIRED_FILES) {
     if (!existsSync(pathJoin(baseDir, rel))) {
       console.error(`usage: base tree at ${baseDir} is missing ${rel}`);
@@ -586,18 +447,19 @@ async function runIdentityControl(args) {
 
   let baseModule;
   try {
-    const [basePersist, baseModel, baseTonal] = await Promise.all([
+    const [basePersist, baseModel, baseTonal, basePrime] = await Promise.all([
       import(pathToFileURL(pathJoin(baseDir, "src/ui/persist.js")).href),
       import(pathToFileURL(pathJoin(baseDir, "src/ui/model.mjs")).href),
       import(pathToFileURL(pathJoin(baseDir, "src/engine/tonal.js")).href),
+      migrate ? import(pathToFileURL(pathJoin(baseDir, "src/engine/prime.mjs")).href) : {},
     ]);
-    baseModule = { persist: basePersist, model: baseModel, tonal: baseTonal };
+    baseModule = { persist: basePersist, model: baseModel, tonal: baseTonal, prime: basePrime };
   } catch (e) {
     console.error(`usage: base tree at ${baseDir} failed to load: ${e.message}`);
     exitIdentity(2);
     return;
   }
-  const NEED = { persist: ["hydrate"], model: ["defaultDocument", "rampChromaOf", "EXPORT_STOPS"], tonal: ["paletteStops"] };
+  const NEED = { persist: ["hydrate"], model: ["defaultDocument", "rampChromaOf", "EXPORT_STOPS", ...(migrate ? ["primeChromaOf", "paletteKeyColors"] : [])], tonal: ["paletteStops"], prime: migrate ? ["primeSwatches"] : [] };
   for (const [key, names] of Object.entries(NEED)) {
     for (const name of names) {
       if (!(name in baseModule[key])) {
@@ -612,8 +474,18 @@ async function runIdentityControl(args) {
     rampChromaOf: baseModule.model.rampChromaOf,
     paletteStops: baseModule.tonal.paletteStops,
     EXPORT_STOPS: baseModule.model.EXPORT_STOPS,
+    primeChromaOf: baseModule.model.primeChromaOf,
+    paletteKeyColors: baseModule.model.paletteKeyColors,
+    primeSwatches: baseModule.prime.primeSwatches,
   };
-  const headEngine = { rampChromaOf, paletteStops: T.paletteStops, EXPORT_STOPS };
+  const headEngine = { rampChromaOf, paletteStops: T.paletteStops, EXPORT_STOPS, primeChromaOf, paletteKeyColors, primeSwatches };
+
+  // Each subject carries the palette and document each side renders: the same base-hydrated pair on
+  // both sides by default, or (--migrate) the base and the head hydration of the same raw object,
+  // paired by palette index (hydrate keeps every palette, in order).
+  const pairUp = (label, baseDoc, headDoc, out) => {
+    baseDoc.palettes.forEach((pal, i) => out.push({ label: `${label}/${pal.name}`, base: { pal, doc: baseDoc }, head: { pal: headDoc.palettes[i], doc: headDoc } }));
+  };
 
   const wantKit = only === null || only === "default-kit";
   const wantCats = only === null ? IDENTITY_CATS : (only === "default-kit" ? [] : [only]);
@@ -635,13 +507,13 @@ async function runIdentityControl(args) {
     const { PRESETS } = catModule;
     for (const preset of PRESETS) {
       const doc = baseModule.persist.hydrate({ ...preset });
-      for (const pal of doc.palettes) corpusSubjects.push({ label: `${slug}/${preset.name}/${pal.name}`, pal, doc });
+      pairUp(`${slug}/${preset.name}`, doc, migrate ? hydrate({ ...preset }) : doc, corpusSubjects);
     }
   }
   const kitSubjects = [];
   if (wantKit) {
     const doc = baseModule.model.defaultDocument();
-    for (const pal of doc.palettes) kitSubjects.push({ label: `default-kit/${pal.name}`, pal, doc });
+    pairUp("default-kit", doc, migrate ? hydrate(JSON.parse(JSON.stringify({ ...doc, schemaVersion: 7 }))) : doc, kitSubjects);
   }
 
   // a full run (no --only) that loads no palettes at all is a vacuity FAIL, not a usage error, since
@@ -652,17 +524,36 @@ async function runIdentityControl(args) {
   let renderedCount = 0;
   let loadedCount = corpusSubjects.length + kitSubjects.length;
 
+  // --migrate's two extra reads, once per palette (both are tone-mode independent).
+  const strips = { total: 0, moved: 0 }, tiles = { total: 0, moved: 0 };
+  const primeHex = (engine, pal, doc) => engine.primeSwatches(
+    { hue: pal.hue, chroma: pal.chroma, skew: pal.skew, hueShift: pal.hueShift, hueSameDir: pal.hueSameDir, anchor: pal.anchor, primeChroma: undefined },
+    { hueSpace: doc.hueSpace, primeChroma: engine.primeChromaOf(pal, doc) },
+  ).map((sw) => sw.hex).join();
+  const keyHex = (engine, pal, doc) => engine.paletteKeyColors({ ...doc, palettes: [pal] })[0].key;
+
   function sweep(subjects) {
     const agg = {};
     for (const mode of IDENTITY_MODES) agg[mode] = newIdentityAgg();
-    for (const { label, pal, doc } of subjects) {
-      const palForRender = authored ? pal : stripAnchor(pal);
+    for (const { label, base, head } of subjects) {
+      const basePal = authored ? base.pal : stripAnchor(base.pal);
+      const headPal = authored ? head.pal : stripAnchor(head.pal);
       let renderedAllModes = true;
+      if (migrate) {
+        try {
+          strips.total++;
+          if (primeHex(baseEngine, basePal, base.doc) !== primeHex(headEngine, headPal, head.doc)) strips.moved++;
+          tiles.total++;
+          if (keyHex(baseEngine, basePal, base.doc) !== keyHex(headEngine, headPal, head.doc)) tiles.moved++;
+        } catch (e) {
+          renderedAllModes = false;
+        }
+      }
       for (const mode of IDENTITY_MODES) {
         let baseRamp, headRamp;
         try {
-          baseRamp = identityRender(baseEngine, palForRender, doc, mode);
-          headRamp = identityRender(headEngine, palForRender, doc, mode);
+          baseRamp = identityRender(baseEngine, basePal, base.doc, mode);
+          headRamp = identityRender(headEngine, headPal, head.doc, mode);
         } catch (e) {
           renderedAllModes = false;
           continue;
@@ -707,8 +598,20 @@ async function runIdentityControl(args) {
       console.log(`identity ${mode}${suffix}: ${a.palettesDiff}/${a.palettesTotal} palettes, ${a.cellsDiff}/${a.cellsTotal} cells differ, max dL* ${a.maxDL.toFixed(4)}${witnessText}`);
     }
   }
-  if (corpusAgg) printAgg(corpusAgg, "");
-  if (kitAgg) printAgg(kitAgg, " default kit");
+  if (migrate) {
+    // one line per mode over the corpus and the kit together, then the strip and tile reads
+    for (const mode of IDENTITY_MODES) {
+      let d = 0, t = 0;
+      for (const agg of [corpusAgg, kitAgg]) if (agg) { d += agg[mode].cellsDiff; t += agg[mode].cellsTotal; }
+      totalDiff += d;
+      console.log(`ramp ${mode}: ${d} of ${t} cells differ`);
+    }
+    console.log(`prime: ${strips.moved} of ${strips.total} strips moved`);
+    console.log(`key: ${tiles.moved} of ${tiles.total} tiles moved`);
+  } else {
+    if (corpusAgg) printAgg(corpusAgg, "");
+    if (kitAgg) printAgg(kitAgg, " default kit");
+  }
 
   const vacuityFail = noPalettesLoaded || renderedCount !== loadedCount;
 

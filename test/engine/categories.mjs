@@ -4,15 +4,16 @@
 // typeScale) so opening a palette dresses the doc in its designed fonts, guards the seam the "every
 // palette still shows Inter" bug lived in. The (geometry) block near the end of the main loop pins the
 // smaller, verbatim `geometry` pass-through (#485, currently only Adia's `{ramp:"linear4"}`) the same way,
-// and the (groups) block pins the `paletteGroups` pass-through (#617) the same way again, plus a
-// standalone (groups-discriminate) synthetic-fixture check proving the opt-in actually changes the
-// derived ramp-chroma value (the group damper, #785), not just that it round-trips inertly.
+// and the (groups) block pins the per-palette `baseChroma` pass-through (#804, currently only Adia's
+// direct palettes) the same way again, plus a standalone (groups-discriminate) synthetic-fixture check
+// proving the value actually changes the derived ramp-chroma value (the damper, #785), not just that
+// it round-trips inertly, and (groups-validate) proving the generator's tripwire fires.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { typeScale, DEFAULT_TYPE, siblingWeightDefaults, bodyClassSiblingDefaults, BODY_CLASS_VOICES, resolvedFontFor } from "../../src/engine/type.mjs";
 import { hydrate, DOMAINS } from "../../src/ui/persist.js";
-import { paletteGroup, resolvePaletteGroups, projectView } from "../../src/ui/model.mjs";
+import { projectView } from "../../src/ui/model.mjs";
 import { rampChromaOf } from "../../src/engine/resolve.mjs";
 import { paletteStops, STOPS, DEFAULT_CONTROLS } from "../../src/engine/tonal.js";
 import { buildCategory } from "../../scripts/gen-categories.mjs";
@@ -275,25 +276,21 @@ for (const slug of CATS) {
       FAIL("geometry", `${slug}[${i}] carries a generated "geometry" field with no matching spec key, the opt-in must be byte-identical-absent by default`);
     }
 
-    // (groups) per-preset PALETTE GROUPS pass-through (#617), same opt-in, verbatim shape as
-    // `geometry` above: a spec palette's `paletteGroups` object (none of the 7 sourced/decorative
-    // categories or "brands" carries one yet, Adia's fitted values land separately, #618) must
-    // survive generate → hydrate unmodified, and a palette with NO `paletteGroups` key must carry
-    // no `paletteGroups` field on its generated preset at all (byte-identical-absent by default,
-    // asserted here across every real category so this stays true as #618 lands real values).
-    const sgp = specPals[i]?.paletteGroups;
-    if (sgp) {
-      if (!eq(p.paletteGroups, sgp)) FAIL("groups", `${slug}[${i}] the generated preset's paletteGroups ${JSON.stringify(p.paletteGroups)} != the spec's ${JSON.stringify(sgp)}`);
-      for (const g of Object.keys(sgp)) {
-        if (!eq(doc.paletteGroups[g].baseChroma, sgp[g].baseChroma ?? doc.paletteGroups[g].baseChroma))
-          FAIL("groups", `${slug}[${i}] hydrate lost/changed paletteGroups.${g}.baseChroma`);
-      }
-    } else if ("paletteGroups" in p) {
-      FAIL("groups", `${slug}[${i}] carries a generated "paletteGroups" field with no matching spec key, the opt-in must be byte-identical-absent by default`);
-    }
+    // (groups) per-palette BASE CHROMA pass-through (#804), the same opt-in, verbatim shape as
+    // `geometry` above: a `direct` spec palette's own `baseChroma` (currently only Adia's, its four
+    // former group values 25/41/32/27) must survive generate -> hydrate unmodified, a palette with
+    // no `baseChroma` must carry none on its generated preset or its hydrated doc (absent means 100),
+    // and no generated or hydrated palette may carry the retired per-palette `primeChroma`.
+    const specDirect = Array.isArray(specPals[i]?.palettes) ? specPals[i].palettes : null;
+    p.palettes.forEach((gp, k) => {
+      const want = specDirect ? specDirect[k]?.baseChroma : undefined;
+      if (gp.baseChroma !== want) FAIL("groups", `${slug}[${i}] palette "${gp.name}" generated baseChroma ${JSON.stringify(gp.baseChroma)} != the spec's ${JSON.stringify(want)}`);
+      if (doc.palettes[k].baseChroma !== want) FAIL("groups", `${slug}[${i}] palette "${gp.name}" hydrate lost/changed baseChroma (spec ${JSON.stringify(want)}, doc ${JSON.stringify(doc.palettes[k].baseChroma)})`);
+      if ("primeChroma" in gp || "primeChroma" in doc.palettes[k]) FAIL("groups", `${slug}[${i}] palette "${gp.name}" carries the retired per-palette primeChroma (#804)`);
+    });
 
     // (curve) per-preset CURVE OVERRIDE pass-through (#479, extended #625 for lmin/lmax), unlike
-    // `geometry`/`paletteGroups` (optional keys, absent by default), lmin/lmax are CORE
+    // `geometry`/`baseChroma` (optional keys, absent by default), lmin/lmax are CORE
     // DEFAULT_CONTROLS fields present on every preset, so the byte-identity contract here is "an
     // un-overridden preset carries the DEFAULT_CONTROLS value (5/100)", not "the field is absent".
     // None of the 7 sourced/decorative categories or "brands" carries an lmin/lmax override yet
@@ -308,120 +305,85 @@ for (const slug of CATS) {
   });
 }
 
-// (groups-discriminate) #617's DISCRIMINATING control: a category preset carrying an explicit
-// `paletteGroups` override must actually resolve to a DIFFERENT ramp-chroma value than the same
-// preset without one, proving the schema slot is real plumbing, not inert JSON that generate/hydrate
-// silently ignore. Runs buildCategory() (the REAL generator function, not a reimplementation) against
-// a synthetic doc, NOT a real curated category, so this stays independent of whatever real values
-// #618 eventually fits for Adia. Uses the `brands`-style `palettes` direct pass-through (no swatch/hier
-// derivation needed) so the fixture only has to carry the one thing under test.
-{
-  const groupOverride = { brand: { baseChroma: 40, primeChroma: 40 } };
-  const makeDoc = (withOverride) => ({
-    slug: "synthetic-groups-fixture",
-    volumes: [{
-      roman: "I",
-      h1: "Synthetic",
-      preface: [],
-      palettes: [{
-        kicker: "Synthetic",
-        title: "Synthetic",
-        source: "",
-        refuses: "",
-        hierarchy: {},
-        dominantHex: "#335577",
-        palettes: [{ name: "Primary", hue: 250, chroma: 60, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true, group: "brand" }],
-        ...(withOverride ? { paletteGroups: groupOverride } : {}),
-      }],
+// (groups-discriminate) #804's DISCRIMINATING control: a category preset whose direct palette carries
+// its own `baseChroma` must actually resolve to a DIFFERENT ramp-chroma value than the same preset
+// without one, proving the field is real plumbing, not inert JSON that generate/hydrate silently
+// ignore. Runs buildCategory() (the REAL generator function, not a reimplementation) against a
+// synthetic doc, NOT a real curated category, through the `brands`-style `palettes` direct
+// pass-through (no swatch/hier derivation needed) so the fixture only carries the one thing under test.
+const makeDirectDoc = (slugName, palette) => ({
+  slug: slugName,
+  volumes: [{
+    roman: "I",
+    h1: "Synthetic",
+    preface: [],
+    palettes: [{
+      kicker: "Synthetic",
+      title: "Synthetic",
+      source: "",
+      refuses: "",
+      hierarchy: {},
+      dominantHex: "#335577",
+      palettes: [{ name: "Primary", hue: 250, chroma: 60, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true, group: "brand", ...palette }],
     }],
-  });
+  }],
+});
+{
+  const withBC = buildCategory(makeDirectDoc("synthetic-groups-fixture", { baseChroma: 40 })).presets[0];
+  const withoutBC = buildCategory(makeDirectDoc("synthetic-groups-fixture", {})).presets[0];
 
-  const withPG = buildCategory(makeDoc(true)).presets[0];
-  const withoutPG = buildCategory(makeDoc(false)).presets[0];
-
-  if (!("paletteGroups" in withPG) || !eq(withPG.paletteGroups, groupOverride))
-    FAIL("groups", `synthetic fixture: buildCategory did not pass paletteGroups through verbatim (got ${JSON.stringify(withPG.paletteGroups)})`);
-  if ("paletteGroups" in withoutPG)
-    FAIL("groups", `synthetic fixture: buildCategory emitted a paletteGroups field with no spec key present`);
+  if (withBC.palettes[0].baseChroma !== 40)
+    FAIL("groups", `synthetic fixture: buildCategory did not pass the palette's baseChroma through verbatim (got ${JSON.stringify(withBC.palettes[0].baseChroma)})`);
+  if ("baseChroma" in withoutBC.palettes[0])
+    FAIL("groups", "synthetic fixture: buildCategory emitted a baseChroma field with no spec key present");
 
   const rampChromaFor = (preset) => {
     const doc = hydrate(preset);
-    const p = { ...doc.palettes[0], group: paletteGroup(doc.palettes[0]) };
-    return rampChromaOf(p, resolvePaletteGroups(doc), { baseChroma: doc.baseIntensity, primeChroma: doc.primeChroma });
+    return rampChromaOf(doc.palettes[0], { baseChroma: doc.baseIntensity, primeChroma: doc.primeChroma });
   };
-  const cWith = rampChromaFor(withPG);
-  const cWithout = rampChromaFor(withoutPG);
+  const cWith = rampChromaFor(withBC);
+  const cWithout = rampChromaFor(withoutBC);
 
-  if (cWithout !== 100) FAIL("groups", `synthetic fixture without an override resolved brand baseChroma to ${cWithout}, want the GROUP_DEFAULTS brand default (100)`);
-  if (cWith !== 40) FAIL("groups", `synthetic fixture WITH a paletteGroups override resolved brand baseChroma to ${cWith}, want the overridden 40`);
-  if (cWith === cWithout) FAIL("groups", "the paletteGroups schema slot does not discriminate, with/without overrides resolved to the same ramp chroma");
+  if (cWithout !== 100) FAIL("groups", `synthetic fixture without a baseChroma resolved its ramp chroma to ${cWithout}, want the absent-means-100 default`);
+  if (cWith !== 40) FAIL("groups", `synthetic fixture WITH baseChroma 40 resolved its ramp chroma to ${cWith}, want 40`);
+  if (cWith === cWithout) FAIL("groups", "the per-palette baseChroma does not discriminate, with/without resolved to the same ramp chroma");
 }
 
-// (groups-validate) #617 review follow-up: the GENERATOR itself must fail loudly on an authoring
-// mistake in a curated category JSON's `paletteGroups` block, an unrecognized group key, or a
-// non-numeric baseChroma/primeChroma, rather than letting it through to be silently dropped/clamped
-// by persist.js's clampPaletteGroups at OPEN time (a live doc's clamp-and-move-on is a distinct,
-// legitimate use case; a curated category JSON baked into committed src/ui/categories/*.js is not).
-// Reuses the same synthetic-fixture shape as (groups-discriminate) above.
+// (groups-validate) #804: the GENERATOR itself must fail loudly on an authoring mistake in a curated
+// category JSON's direct palette `baseChroma`, a non-number or a value outside
+// DOMAINS.palette.baseChroma, naming the category, preset and palette, rather than letting it through
+// to be silently dropped/clamped by persist.js's clampPalette at OPEN time (a live doc's
+// clamp-and-move-on is a distinct, legitimate use case; a curated category JSON baked into committed
+// src/ui/categories/*.js is not). Reuses the same synthetic-fixture shape as (groups-discriminate).
 {
-  const makeGroupsDoc = (paletteGroups) => ({
-    slug: "synthetic-groups-validate-fixture",
-    volumes: [{
-      roman: "I",
-      h1: "Synthetic",
-      preface: [],
-      palettes: [{
-        kicker: "Synthetic",
-        title: "Synthetic",
-        source: "",
-        refuses: "",
-        hierarchy: {},
-        dominantHex: "#335577",
-        palettes: [{ name: "Primary", hue: 250, chroma: 60, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true, group: "brand" }],
-        paletteGroups,
-      }],
-    }],
-  });
-  const mustThrow = (paletteGroups, wantSubstr, label) => {
+  const mustThrow = (baseChroma, wantSubstr, label) => {
     try {
-      buildCategory(makeGroupsDoc(paletteGroups));
-      FAIL("groups-validate", `${label}: buildCategory did not throw for ${JSON.stringify(paletteGroups)}`);
+      buildCategory(makeDirectDoc("synthetic-groups-validate-fixture", { baseChroma }));
+      FAIL("groups-validate", `${label}: buildCategory did not throw for baseChroma ${JSON.stringify(baseChroma)}`);
     } catch (e) {
       if (!(e instanceof Error) || !e.message.includes(wantSubstr))
         FAIL("groups-validate", `${label}: threw, but message ${JSON.stringify(e && e.message)} did not name ${JSON.stringify(wantSubstr)}`);
     }
   };
-  // unrecognized group key (a misspelled group name) must fail loudly, naming the doc + bad key.
-  mustThrow({ brnad: { baseChroma: 40, primeChroma: 40 } }, "brnad", "bad-key");
-  mustThrow({ brnad: { baseChroma: 40, primeChroma: 40 } }, "synthetic-groups-validate-fixture", "bad-key-names-doc");
-  // non-numeric baseChroma (a string typo'd where a number belongs) must fail loudly, naming the field.
-  mustThrow({ brand: { baseChroma: "forty", primeChroma: 40 } }, "brand.baseChroma", "bad-basechroma");
-  // non-numeric primeChroma, same contract.
-  mustThrow({ brand: { baseChroma: 40, primeChroma: "forty" } }, "brand.primeChroma", "bad-primechroma");
-  // out-of-range baseChroma (above the documented max) must fail loudly, naming the value + range,
-  // typeof-only checking would silently accept this and let hydrate() floor/ceil it later (#617/#619/#620
-  // review follow-up: same silent-typo-becomes-wrong-value hazard, moved from "wrong type" to "out of range").
-  mustThrow({ brand: { baseChroma: 500, primeChroma: 40 } }, "brand.baseChroma", "bad-basechroma-above-max");
-  mustThrow({ brand: { baseChroma: 500, primeChroma: 40 } }, "out of range", "bad-basechroma-above-max-range");
-  // out-of-range baseChroma (below the documented min) must fail loudly the same way.
-  mustThrow({ brand: { baseChroma: -1, primeChroma: 40 } }, "brand.baseChroma", "bad-basechroma-below-min");
-  mustThrow({ brand: { baseChroma: -1, primeChroma: 40 } }, "out of range", "bad-basechroma-below-min-range");
-  // a non-object group value (a string/array where an object belongs) must fail loudly rather than
-  // silently falling through to the group's plain defaults.
-  mustThrow({ brand: "not-an-object" }, "brand", "bad-group-shape-string");
-  mustThrow({ brand: [40, 40] }, "brand", "bad-group-shape-array");
-  // a VALID override across all four groups must still pass through fine, no regression.
-  const okDoc = makeGroupsDoc({
-    material: { baseChroma: 20, primeChroma: 30 },
-    brand: { baseChroma: 40, primeChroma: 50 },
-    system: { baseChroma: 60, primeChroma: 70 },
-    data: { baseChroma: 80, primeChroma: 90 },
-  });
-  let okResult;
-  try { okResult = buildCategory(okDoc); }
-  catch (e) { FAIL("groups-validate", `a valid paletteGroups override should not throw, but got: ${e && e.message}`); }
-  if (okResult && !eq(okResult.presets[0].paletteGroups, okDoc.volumes[0].palettes[0].paletteGroups))
-    FAIL("groups-validate", "a valid paletteGroups override was not passed through verbatim");
+  // non-numeric baseChroma (a string typo'd where a number belongs) must fail loudly, naming the
+  // category, the preset, the palette and the field.
+  mustThrow("forty", "synthetic-groups-validate-fixture", "bad-type-names-category");
+  mustThrow("forty", "Synthetic", "bad-type-names-preset");
+  mustThrow("forty", "Primary", "bad-type-names-palette");
+  mustThrow("forty", "baseChroma is not a number", "bad-type");
+  mustThrow(null, "baseChroma is not a number", "bad-type-null");
+  // out-of-range baseChroma, above the documented max and below the min, must fail loudly, naming the
+  // range (typeof-only checking would silently accept it and let hydrate() floor/ceil it later).
+  mustThrow(500, "out of range", "above-max");
+  mustThrow(500, `${DOMAINS.palette.baseChroma.min}-${DOMAINS.palette.baseChroma.max}`, "above-max-names-range");
+  mustThrow(-1, "out of range", "below-min");
+  // valid values, on the bounds and inside, must still pass through fine, no regression.
+  for (const ok of [0, 27, 100]) {
+    try {
+      const r = buildCategory(makeDirectDoc("synthetic-groups-validate-fixture", { baseChroma: ok }));
+      if (r.presets[0].palettes[0].baseChroma !== ok) FAIL("groups-validate", `a valid baseChroma ${ok} was not passed through verbatim`);
+    } catch (e) { FAIL("groups-validate", `a valid baseChroma ${ok} should not throw, but got: ${e && e.message}`); }
+  }
 }
 
 // (curve-discriminate) #625's DISCRIMINATING control: a category preset carrying an explicit

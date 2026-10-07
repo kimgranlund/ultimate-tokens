@@ -12,10 +12,10 @@
 // app is projectView(document), recomputed, never persisted.
 
 import { COLLECTIONS } from "../engine/collections.js";
-import { PALETTE_GROUPS, GROUP_DEFAULTS } from "./persist.js"; // the canonical group ids (ticket
-// #556) + their base/prime chroma defaults (ticket #559, SPEC 0.3.0), persist.js is the single
-// source of truth (the codebase's normal dependency direction has model import FROM persist, never
-// the reverse); both re-exported below so every existing model.mjs importer (sections/color.js, the
+import { PALETTE_GROUPS, DEFAULT_GROUP_BY_SLUG } from "./persist.js"; // the canonical group ids
+// (ticket #556) + the default-by-name rule's table, persist.js is the single source of truth (the
+// codebase's normal dependency direction has model import FROM persist, never the reverse);
+// PALETTE_GROUPS is re-exported below so every existing model.mjs importer (sections/color.js, the
 // test suite) keeps working unchanged.
 import {
   hctToRgb,
@@ -23,6 +23,7 @@ import {
   lstarFromRgb,
   cam16FromRgb,
   peakC,
+  maxChromaInGamut,
 } from "../engine/hct.js";
 import { oklchToRgb } from "../engine/okhsl.js";
 import { iconSystem } from "../engine/icon-systems.mjs";
@@ -396,8 +397,9 @@ export function radixCollisionBadge(key) {
 
 // ── Canvas groups (ticket #556) ──────────────────────────────────────────────────
 // PALETTE_GROUPS (imported above, from persist.js), the four canvas groups, in render order. A
-// palette's group is a per-palette metadata field, orthogonal to every chroma/tone control (so a
-// later per-group Base/Prime chroma override, explicitly out of scope here, stays possible).
+// palette's group is a per-palette metadata field, orthogonal to every chroma/tone control: since
+// #804 it carries no chroma value of its own (each palette has its own Base chroma, and the two
+// global sliders are k factors on every palette).
 export { PALETTE_GROUPS };
 export const PALETTE_GROUP_LABELS = { material: "Material", brand: "Brand", system: "System", data: "Data" };
 export function paletteGroupLabel(g) {
@@ -406,17 +408,8 @@ export function paletteGroupLabel(g) {
 
 // the default-by-name rule (ratified 2026-09-11): Neutral -> material; Primary/Secondary/
 // Tertiary -> brand; Info/Success/Warning/Danger -> system; every OTHER palette (Data 1..8,
-// user-added, preset-opened) -> data.
-const DEFAULT_GROUP_BY_SLUG = {
-  neutral: "material",
-  primary: "brand",
-  secondary: "brand",
-  tertiary: "brand",
-  info: "system",
-  success: "system",
-  warning: "system",
-  danger: "system",
-};
+// user-added, preset-opened) -> data. Its table, DEFAULT_GROUP_BY_SLUG, lives in persist.js (imported
+// above), because the v8 group fold there reads it and persist.js cannot import this file.
 
 // paletteGroup(p), the SINGLE source of truth for a palette's effective canvas group:
 // its own explicit `group` (when valid) else the default-by-name rule above. Every other
@@ -428,50 +421,19 @@ export function paletteGroup(p) {
   return DEFAULT_GROUP_BY_SLUG[slug(p && p.name)] || "data";
 }
 
-// ── Per-group base chroma (SPEC spec-muted-base-key-spikes 0.3.0, #556/#559 re-ruling) ───────────
-// GROUP_DEFAULTS (imported above, from persist.js, the canonical source, model.mjs re-exports it):
-// the four groups' own baseChroma/primeChroma defaults: Material is 100/60 since #785 (R96; the
-// slider damps the whole ramp, 30/60 before); Brand/System stay at 100/100 (no visible change); Data is
-// LOCKED, its `locked:true` marks that a Data-group palette's per-palette primeChroma override is
-// IGNORED (not deleted, just unused) by primeChromaOf below. Data's ramp chroma is NEVER
-// overridable at all, in any group (REQ-002), that half of the old per-palette override is gone
-// entirely, not just locked for Data.
-export { GROUP_DEFAULTS };
-
-// resolvePaletteGroups(doc), the doc's `paletteGroups` facet, default-filled per group from
-// GROUP_DEFAULTS: an explicit, in-domain per-group number wins; anything absent (the whole facet,
-// one group, or one field) falls back to that group's own default. Defensive, every caller here
-// (projectView, the Global tab's four rows, exports.js's derivePalette via stateOf) can
-// trust the result always has all four groups fully populated, whether `doc` came through
-// persist.hydrate()/defaultDocument() (which already fill it) or was hand-built (a test fixture).
-export function resolvePaletteGroups(doc) {
-  const raw = (doc && doc.paletteGroups) || {};
-  const out = {};
-  for (const g of PALETTE_GROUPS) {
-    const d = GROUP_DEFAULTS[g];
-    const r = (raw[g] && typeof raw[g] === "object") ? raw[g] : {};
-    out[g] = {
-      baseChroma: typeof r.baseChroma === "number" ? r.baseChroma : d.baseChroma,
-      primeChroma: typeof r.primeChroma === "number" ? r.primeChroma : d.primeChroma,
-      ...(d.locked ? { locked: true } : {}),
-    };
-  }
-  return out;
-}
-
 // rampChromaOf(p, doc) / primeChromaOf(p, doc), the doc-shaped convenience wrappers every UI call
 // site (sections/color.js, the test suite) uses. Both defer their ACTUAL arithmetic entirely to
 // engine/resolve.mjs's pure rampChromaOf/primeChromaOf (Risk 0b: "one shared resolver imported by
 // both [projectView and exports.js's derivePalette], never two copies"), this file's job is only
-// to resolve `doc` down to the three plain values that pure module needs: the palette with its
-// group made definite, the default-filled paletteGroups map, and the two global-fallback controls.
+// to resolve `doc` down to the two global k factors that pure module needs, renamed at this boundary
+// (the document's `baseIntensity` reaches src/engine as `baseChroma`, AC-004).
 export function rampChromaOf(p, doc) {
   const c = controlsOf(doc);
-  return rampChromaOfPure({ ...p, group: paletteGroup(p) }, resolvePaletteGroups(doc), { baseChroma: c.baseIntensity, primeChroma: c.primeChroma });
+  return rampChromaOfPure(p, { baseChroma: c.baseIntensity, primeChroma: c.primeChroma });
 }
 export function primeChromaOf(p, doc) {
   const c = controlsOf(doc);
-  return primeChromaOfPure({ ...p, group: paletteGroup(p) }, resolvePaletteGroups(doc), { baseChroma: c.baseIntensity, primeChroma: c.primeChroma });
+  return primeChromaOfPure(p, { baseChroma: c.baseIntensity, primeChroma: c.primeChroma });
 }
 
 // camHueToOklch, convert a CAM16 hue to its OKLCH-hue EQUIVALENT by sampling the hue's vivid
@@ -511,10 +473,10 @@ export function defaultDocument() {
     dampCurve: ENGINE_DEFAULT_CONTROLS.dampCurve,
     dampAmp: ENGINE_DEFAULT_CONTROLS.dampAmp,
     dampBias: ENGINE_DEFAULT_CONTROLS.dampBias,
-    // baseIntensity/primeChroma (SPEC 0.3.0 REQ-007): the two GLOBAL fallback controls, used only
-    // when a palette's group carries no value of its own (REQ-002/008). tonal.js no longer has any
-    // notion of either (AC-004); their shipped default (100/100) is a plain literal here, the single
-    // place a fresh document's controls are assembled.
+    // baseIntensity/primeChroma (SPEC 0.3.0 REQ-007, #804): the two GLOBAL k factors, multiplied onto
+    // every palette (Base chroma onto each palette's own `baseChroma`, Prime chroma onto every prime
+    // strip). tonal.js no longer has any notion of either (AC-004); their shipped default (100/100) is
+    // a plain literal here, the single place a fresh document's controls are assembled.
     baseIntensity: 100,
     primeChroma: 100,
     hueSpace: ENGINE_DEFAULT_CONTROLS.hueSpace,
@@ -526,12 +488,6 @@ export function defaultDocument() {
     accentRef: ENGINE_DEFAULT_CONTROLS.accentRef,
     theme: "auto",
     selected: 0,
-    // paletteGroups (SPEC 0.3.0, ticket #559), the four canvas groups' own baseChroma/primeChroma
-    // defaults, seeded from GROUP_DEFAULTS so a fresh document round-trips these explicitly (rather
-    // than relying on resolvePaletteGroups' absent-field fallback, which stays for a doc that
-    // predates groups). NOT `groups`, that key is `story.groups`, the curated story's own concept
-    // groups (REQ-010, Risk 0c).
-    paletteGroups: JSON.parse(JSON.stringify(GROUP_DEFAULTS)),
     roleOverrides: {}, // per-doc semantic-mapping re-points (empty = canonical role table)
     type: { ...DEFAULT_TYPE }, // typography config (treatment + body base), see engine/type.mjs
     geometry: { ...DEFAULT_GEOMETRY }, // dimensional config (treatment + base height), see engine/geometry.mjs
@@ -625,15 +581,24 @@ function controlsOf(doc) {
 }
 
 // resolvedPalettes(doc) -> palette[], every palette with its GROUP resolved to a definite one of
-// the four ids (`paletteGroup(p)`, never absent), every other field untouched, chroma/primeChroma
-// stay exactly as stored (REQ-002: there is no per-palette ramp override to bake in any more; the
-// ramp target is resolved from doc.paletteGroups alone, not from anything on the palette itself).
-// stateOf() below uses this for its own `palettes` field; a caller that needs the FULL doc shape
-// preserved (icons/name/story/etc, fields stateOf's State slice drops) spreads this over its own
-// doc instead of handing stateOf(doc) to a doc-shaped consumer (see drawer.js's ds-export.js call
-// sites, which read doc.icons/doc.name/doc.story directly).
+// the four ids (`paletteGroup(p)`, never absent), every other field untouched, chroma/baseChroma
+// stay exactly as stored (the ramp damper is resolved from the palette's own `baseChroma` times the
+// global k, engine/resolve.mjs, never baked in here). stateOf() below uses this for its own
+// `palettes` field; a caller that needs the FULL doc shape preserved (icons/name/story/etc, fields
+// stateOf's State slice drops) uses dsDocOf(doc) below instead of handing stateOf(doc) to a
+// doc-shaped consumer (see drawer.js's ds-export.js call sites, which read doc.icons/doc.name/
+// doc.story directly).
 export function resolvedPalettes(doc) {
   return (doc.palettes ?? []).map((p) => ({ ...p, group: paletteGroup(p) }));
+}
+
+// dsDocOf(doc), the doc-shaped object the DS-bundle exporters (ds-export.js, via exports.js's
+// derivePalette) read: the whole document with every palette's group made definite, plus the global
+// Base chroma k under the engine-facing name `baseChroma`. exports.js's controlsOf reads
+// `state.baseChroma`; a doc carries only `baseIntensity`, so without this rename the global k would
+// never reach the Claude Design, Stitch and Make bundles.
+export function dsDocOf(doc) {
+  return { ...doc, palettes: resolvedPalettes(doc), baseChroma: controlsOf(doc).baseIntensity };
 }
 
 // stateOf, the exporter-shaped State slice of a document (palettes + resolved
@@ -643,14 +608,12 @@ export function stateOf(doc) {
   const c = controlsOf(doc);
   return {
     // SPEC 0.3.0: each palette's `group` is resolved to a definite id here (resolvedPalettes) so
-    // exports.js's derivePalette never re-derives the by-name default rule; `paletteGroups` (below)
-    // carries the four groups' own baseChroma/primeChroma/locked. Neither `chroma` nor `primeChroma`
-    // is touched on the palette itself, derivePalette resolves the ramp's group damper value (#785)
-    // AND the prime system's resolved primeChroma through engine/resolve.mjs's rampChromaOf/
-    // primeChromaOf, the SAME pure functions projectView calls (via this file's own doc-shaped
-    // wrappers below), so the two paths can never resolve a palette's group differently (Risk 0b).
+    // exports.js's derivePalette never re-derives the by-name default rule. Neither `chroma` nor
+    // `baseChroma` is touched on the palette itself, derivePalette resolves the ramp's damper value
+    // (#785, #804: the palette's own Base chroma times the global k) AND the prime system's k through
+    // engine/resolve.mjs's rampChromaOf/primeChromaOf, the SAME pure functions projectView calls (via
+    // this file's own doc-shaped wrappers above), so the two paths can never resolve differently (Risk 0b).
     palettes: resolvedPalettes(doc),
-    paletteGroups: resolvePaletteGroups(doc),
     roleOverrides: doc.roleOverrides ?? {}, // threaded to the exporters so re-points reach the output
     curve: c.curve,
     tension: c.tension,
@@ -660,7 +623,7 @@ export function stateOf(doc) {
     dampCurve: c.dampCurve,
     dampAmp: c.dampAmp,
     dampBias: c.dampBias,
-    // baseChroma: the exporter-facing name for the document's own `baseIntensity` global fallback,
+    // baseChroma: the exporter-facing name for the document's own `baseIntensity` global k factor,
     // renamed at this ONE boundary (never `baseIntensity` past this point) because a retired
     // per-stop multiplier control once lived under that name inside src/engine, and AC-004 bars its
     // reintroduction there in any form, including as a mere property name exports.js reads.
@@ -724,13 +687,14 @@ export function brandKit(doc, systems) {
     // controls (SPEC 0.3.0 RP-2, ticket #573, plan PR #571 step E2): the same chroma-policy block
     // exportJSON's `meta.controls` carries, gated by sys.color like stops/palettes/roles below (it
     // states the policy behind the palette chroma this kit resolved, so it's meaningless without
-    // them), read through the SAME controlsOf/resolvePaletteGroups this file's stateOf() uses, so
-    // the kit can never disagree with the JSON export's own resolved values. Key is `baseChroma`
+    // them), read through the SAME controlsOf this file's stateOf() uses, so the kit can never
+    // disagree with the JSON export's own resolved values: the two global k factors (#804; each
+    // palette's own Base chroma is already baked into its ramp below). Key is `baseChroma`
     // (not `baseIntensity`, the doc-level field it's read off of) to keep byte-for-byte parity with
     // exportJSON's meta.controls, which is bound to that name by AC-004 (SPEC 0.3.0), src/engine
     // may never carry the literal string `baseIntensity`, even as a property name.
     const c = controlsOf(doc);
-    kit.controls = { baseChroma: c.baseIntensity, primeChroma: c.primeChroma, paletteGroups: resolvePaletteGroups(doc) };
+    kit.controls = { baseChroma: c.baseIntensity, primeChroma: c.primeChroma };
     kit.stops = on[0] ? on[0].ramp.map((s) => s.stop) : [];
     kit.palettes = on.map((p) => ({
       name: p.name, slug: slug(p.name), key: p.key,
@@ -896,19 +860,31 @@ const ANCHOR_HEX = /^#[0-9A-Fa-f]{6}$/;
 // the identity swatch the gallery tile and the inspector show came from the cusp search below, off
 // the palette's FITTED hue/chroma, so the swatch labelled "the palette's colour" disagreed with the
 // anchor on all 3,380 anchored corpus palettes and all 16 default-kit families (measured: 3,062 of
-// them over 5 L* apart, worst 82.9 L*). The anchored branch below returns the anchor itself and
-// short-circuits the cusp search entirely, so it costs less than the path it replaces rather than
-// more. It is deliberately NOT implemented by calling primeSwatches: the two stay independent
-// producers, which is what lets test/engine/anchor.mjs's `key-anchor` gate compare them and mean
-// something.
-function deriveKeyColor(p, hueSpace) {
+// them over 5 L* apart, worst 82.9 L*). The anchored branch below skips the cusp search entirely.
+//
+// THE PRIME CHROMA k (#804): `k` is the global Prime chroma / 100, the same factor primeSwatches
+// scales every prime rung by, so the tile always equals the prime strip's middle swatch. Anchored at
+// k === 1 the key is the stored anchor byte for byte; anchored at any other k it is the anchor's own
+// CAM16 hue and exact CIE L* at its measured CAM16 chroma times k, capped at the gamut
+// (`Math.min(chroma * k, maxChromaInGamut(hue, L))`, rendered with `hctToRgb`). Non-anchored, k
+// multiplies the cusp chroma (the 0..100 domain keeps k <= 1, inside the cusp). It is deliberately
+// NOT implemented by calling primeSwatches: the two stay independent producers of the same
+// arithmetic, which is what lets test/engine/anchor.mjs's `key-anchor` and `anchor-k` gates compare
+// them and mean something.
+function deriveKeyColor(p, hueSpace, k = 1) {
   if (typeof p?.anchor === "string" && ANCHOR_HEX.test(p.anchor)) {
-    const keyHex = p.anchor.toUpperCase();
-    return { keyOklch: hexToOklch(keyHex), keyHex };
+    const anchorHex = p.anchor.toUpperCase();
+    if (k === 1) return { keyOklch: hexToOklch(anchorHex), keyHex: anchorHex };
+    const rgb = [1, 3, 5].map((i) => parseInt(anchorHex.slice(i, i + 2), 16));
+    const { hue, chroma } = cam16FromRgb(rgb);
+    const L = lstarFromRgb(rgb);
+    const c = Math.min(Math.max(0, chroma * k), maxChromaInGamut(hue, L));
+    const keyHex = "#" + hctToRgb(hue, c, L).rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
+    return { keyOklch: hctToOklch(hue, c, L), keyHex };
   }
   const baseHue = effHue(p.hue, hueSpace, (p.chroma ?? 0) / 100);
   const pk = peakC(baseHue);
-  const keyChroma = ((p.chroma ?? 0) / 100) * pk.c;
+  const keyChroma = ((p.chroma ?? 0) / 100) * pk.c * k;
   return {
     // keyOklch = the HIGH-RES OKLCH (float, no 8-bit round-trip), the model's source of truth for
     // perceptual readouts/analysis; keyHex is DERIVED from the same HCT for consumption.
@@ -928,11 +904,11 @@ function deriveKeyColor(p, hueSpace) {
 // would only add invalidation risk (a stale key color after an edit) and something to leak, for no
 // measurable benefit, recompute fresh on every call.
 export function paletteKeyColors(doc) {
-  const hueSpace = controlsOf(doc).hueSpace;
+  const { hueSpace, primeChroma } = controlsOf(doc);
   return (doc.palettes ?? []).map((p) => ({
     name: p.name,
     on: p.on !== false,
-    key: deriveKeyColor(p, hueSpace).keyHex,
+    key: deriveKeyColor(p, hueSpace, primeChroma / 100).keyHex,
     ...(p.colorRole ? { colorRole: p.colorRole } : {}),
   }));
 }
@@ -955,10 +931,11 @@ export function projectView(doc) {
     // accent-ref-resolved roles ("single" → prime accent 500/500), computed before the ramp, reused below
     // for the on-color-contrast step so it's derived once per palette.
     const accentRoles = applyAccentRef(semanticRoles(n), controls.accentRef);
-    // SPEC 0.3.0 REQ-002/008: rampChromaOf is the group's chroma damper (#785, R94: tonal.js
-    // `dampStops` scales the at-100 ramp by it / 100); it REPLACES p.chroma below, never multiplies
-    // it (there is no more per-palette ramp override in any group). primeChromaOf feeds the prime system alone, via primeSwatches' own `controls`
-    // param below; p.chroma itself stays untouched and still feeds deriveKeyColor (REQ-002/052).
+    // SPEC 0.3.0 REQ-002/008, #804: rampChromaOf is the palette's chroma damper, its own Base chroma
+    // times the global k (#785, R94: tonal.js `dampStops` scales the at-100 ramp by it / 100); it
+    // REPLACES p.chroma below, never multiplies it. primeChromaOf (the global prime k) feeds the prime
+    // system, via primeSwatches' own `controls` param below, and the key colour (deriveKeyColor's `k`),
+    // never the ramp; p.chroma itself stays untouched and still feeds deriveKeyColor (REQ-002/052).
     const rampChroma = rampChromaOf(p, doc);
     const primeChromaResolved = primeChromaOf(p, doc);
     // Resolve roles against the FULL EXPORT_STOPS ramp (25) so refs to the export-only
@@ -1003,7 +980,7 @@ export function projectView(doc) {
     // ramp damps mid-stop chroma, so a ramp stop reads muted; this is what the gallery tile should show).
     // deriveKeyColor (below) is the single source of truth, paletteKeyColors (the cheap tile-only path)
     // calls the SAME helper, so the two can never drift apart.
-    const { keyHex, keyOklch } = deriveKeyColor(p, controls.hueSpace);
+    const { keyHex, keyOklch } = deriveKeyColor(p, controls.hueSpace, primeChromaResolved / 100);
 
     // keyColors = retained brand colors placed on the ramp through the perceptual lens.
     const keyColors = placeKeyColors(p.keyColors, fullStops);
@@ -1146,9 +1123,9 @@ export function tokenCount(doc) {
 
 // Re-exports the app needs from the core (so app.js imports one module).
 // DEFAULT_CONTROLS (UI layer), the engine's own DEFAULT_CONTROLS (tonal.js, fully group/chroma-
-// resolver-unaware per AC-004) plus the two GLOBAL fallback values a group falls back to when it
-// carries no value of its own (REQ-007/010, AC-007): baseChroma's document field is `baseIntensity`
-// for schema stability, so this key keeps that name too. Never read by tonal.js itself, only by
-// resolvePaletteGroups/rampChromaOf/primeChromaOf below and by the shell's own default-value checks.
+// resolver-unaware per AC-004) plus the two GLOBAL k factors multiplied onto every palette
+// (REQ-007/010, AC-007, #804): baseChroma's document field is `baseIntensity` for schema stability,
+// so this key keeps that name too. Never read by tonal.js itself, only by rampChromaOf/primeChromaOf
+// above and by the shell's own default-value checks.
 export const DEFAULT_CONTROLS = { ...ENGINE_DEFAULT_CONTROLS, baseIntensity: 100, primeChroma: 100 };
 export { hctToRgb, lstarFromRgb, hexToRgb, STOPS, EXPORT_STOPS };

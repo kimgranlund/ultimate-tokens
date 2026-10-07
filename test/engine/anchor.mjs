@@ -69,15 +69,15 @@ function rgbToOklchIndep([r, g, b]) {
 }
 
 // a minimal single-palette exports.js state, the SAME shape controlsOf()/enabledPalettes() expect
-// (exports.js:207-241/245-247); `paletteGroups: {}` makes rampChromaOf fall back to `baseChroma`
-// (irrelevant to prime, which never reads the ramp chroma), and `roleOverrides: {}` so
+// (exports.js:207-241/245-247); `baseChroma: 100` is the global k rampChromaOf multiplies each
+// palette's own Base chroma by (irrelevant to prime, which never reads the ramp chroma), and `roleOverrides: {}` so
 // applyRoleOverrides has a defined object to iterate.
 function stateFor(p) {
   return {
     palettes: [{ ...p, on: true }],
     curve: "logistic", tension: 0, lmin: 5, lmax: 100, damp: 80, dampCurve: 1.5, dampAmp: 0, dampBias: 0,
     hueSpace: p.hueSpace ?? "oklch", toneMode: "perceptual", vibrancy: 0, onColorMode: "fixed", accentRef: "mode",
-    relChroma: false, chromaFloor: 40, baseChroma: 100, primeChroma: 100, paletteGroups: {},
+    relChroma: false, chromaFloor: 40, baseChroma: 100, primeChroma: 100,
     roleOverrides: {},
   };
 }
@@ -1496,6 +1496,41 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
   console.log(`  ${rOff === 0 && rSeen >= 16 ? "pass" : "FAIL"}  key-anchor rendered path: ${rEq} of ${rSeen} anchored palettes over projectView(hydrate(doc)), ${renderSubjects.length} subjects (the 16 default-kit families plus ${namedPresets.length} named corpus presets), ${rOff} off`);
 }
 
+// ── anchor-k (#804): the anchored prime middle and the key tile follow the global Prime chroma k ──
+// At k 1 the two gates above hold the anchor verbatim. At any other k both producers scale the
+// anchor's CAM16 chroma at its own hue and L*, independently (model.mjs never calls primeSwatches),
+// so at Prime chroma 50 the tile must still equal the prime middle, and the k must actually bite:
+// at least one anchored palette leaves its anchor (a near-achromatic anchor may not move).
+{
+  let eq = 0, off = 0, moved = 0;
+  for (const { slug, presetName, hueSpace, palette: p } of anchored) {
+    const hs = hueSpace ?? "oklch";
+    const key = paletteKeyColors({ palettes: [p], hueSpace: hs, primeChroma: 50 })[0].key;
+    const primeHex = primeSwatches(p, { hueSpace: hs, primeChroma: 50 })[3].hex;
+    if (key === primeHex) eq++;
+    else { off++; FAIL("anchor-k", `${slug} "${presetName}" ${p.name}: key ${key} !== primeSwatches(...)[3].hex ${primeHex} at Prime chroma 50`); }
+    if (primeHex !== p.anchor.toUpperCase()) moved++;
+  }
+  if (anchored.length === 0) FAIL("anchor-k", "no anchored palettes to measure");
+  if (moved === 0) FAIL("anchor-k", `0 of ${anchored.length} anchored prime middles moved off the anchor at Prime chroma 50, the k does not reach the anchored rung`);
+  console.log(`  ${fails.some((f) => f.startsWith("anchor-k:")) ? "FAIL" : "pass"}  anchor-k: ${eq} of ${anchored.length} anchored palettes where the key equals primeSwatches(...)[3].hex at Prime chroma 50, ${off} off; ${moved} moved off the anchor`);
+
+  // anchor-k scale control: the anchor-identity and key-anchor comparisons, re-run at Prime chroma 99,
+  // must each find at least one palette off its anchor. That is the planted regression those two gates
+  // must catch: a 1 percent scale at the identity setting. A dropped k === 1 short-circuit alone is
+  // invisible (the hctToRgb round trip is byte-exact on every corpus anchor), so a scale is the plant.
+  let primeOff99 = 0, keyOff99 = 0;
+  for (const { hueSpace, palette: p } of anchored) {
+    const hs = hueSpace ?? "oklch";
+    const a = p.anchor.toUpperCase();
+    if (primeSwatches(p, { hueSpace: hs, primeChroma: 99 })[3].hex !== a) primeOff99++;
+    if (paletteKeyColors({ palettes: [p], hueSpace: hs, primeChroma: 99 })[0].key !== a) keyOff99++;
+  }
+  if (primeOff99 === 0) FAIL("anchor-k scale control", `anchor-identity comparison at Prime chroma 99 found 0 of ${anchored.length} prime middles off the anchor, a 1 percent scale regression would pass that gate`);
+  if (keyOff99 === 0) FAIL("anchor-k scale control", `key-anchor comparison at Prime chroma 99 found 0 of ${anchored.length} keys off the anchor, a 1 percent scale regression would pass that gate`);
+  console.log(`  ${fails.some((f) => f.startsWith("anchor-k scale control:")) ? "FAIL" : "pass"}  anchor-k scale control: at Prime chroma 99, ${primeOff99} of ${anchored.length} prime middles and ${keyOff99} of ${anchored.length} keys off the anchor (at least 1 each: anchor-identity and key-anchor red on a 1 percent scale)`);
+}
+
 // ── anchor-achromatic (U10, pre-land F1): an achromatic anchor renders real colours ─────────
 // `rgbToOkhsl([0,0,0]).s` was NaN (0/0 at L = 0), and the anchored OKHSL branches carried it to
 // `#NANNANNAN` at every stop in perceptual and peak. Called on the ENGINE directly (never through
@@ -1593,7 +1628,7 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
 }
 
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["anchor-identity", "prime-identity-control", "anchor-ladder", "anchor-ramp", "anchor-f4", "key-anchor", "anchor-achromatic", "achromatic-anchor"]) {
+for (const g of ["anchor-identity", "prime-identity-control", "anchor-ladder", "anchor-ramp", "anchor-f4", "key-anchor", "anchor-k", "anchor-k scale control", "anchor-achromatic", "achromatic-anchor"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   if (!f) continue; // already printed a pass/FAIL summary line above; only surface the FIRST failure detail here
   console.error(`, ${f.slice(g.length + 2)}`);

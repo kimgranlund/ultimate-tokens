@@ -32,21 +32,31 @@ import { COLLECTIONS } from "../engine/collections.js";
 // persist.js validates a stored `group` value against.
 export const PALETTE_GROUPS = ["material", "brand", "system", "data"];
 
-// GROUP_DEFAULTS (SPEC spec-muted-base-key-spikes 0.3.0, ticket #559 re-ruling), the four groups'
-// own baseChroma/primeChroma defaults. Declared HERE, same reasoning and same
-// import-back-and-re-export shape as PALETTE_GROUPS above: persist.js must never import model.mjs,
-// so this is the single canonical definition. model.mjs's rampChromaOf/primeChromaOf still own the
-// RESOLUTION rule that reads these numbers; this export is only the shape persist.js defaults an
-// absent/invalid stored group value against. baseChroma is the group's chroma damper (#785, R94 to
-// R98): 0 to 100, the ramp's chroma at every stop is its at-100 render times baseChroma / 100
-// (tonal.js `dampStops`). Every group defaults to 100, the ramp as sampled; a stored value below 100
-// loads as is and damps.
-export const GROUP_DEFAULTS = {
-  material: { baseChroma: 100, primeChroma: 60 },
-  brand: { baseChroma: 100, primeChroma: 100 },
-  system: { baseChroma: 100, primeChroma: 100 },
-  data: { baseChroma: 100, primeChroma: 100, locked: true },
+// DEFAULT_GROUP_BY_SLUG, the default-by-name group rule's table (ratified 2026-09-11): Neutral ->
+// material; Primary/Secondary/Tertiary -> brand; Info/Success/Warning/Danger -> system; every other
+// slug -> data. Declared HERE, same reasoning and same import-back shape as PALETTE_GROUPS above:
+// the v8 group fold below (RENAME_MAPS `foldGroups`) needs it and persist.js must never import
+// model.mjs, whose paletteGroup(p) imports this table back and still owns the RUNTIME rule.
+// exports.js keeps its own engine-side twin (src/engine stays UI-import-free).
+export const DEFAULT_GROUP_BY_SLUG = {
+  neutral: "material",
+  primary: "brand",
+  secondary: "brand",
+  tertiary: "brand",
+  info: "system",
+  success: "system",
+  warning: "system",
+  danger: "system",
 };
+
+// slug, palette name -> token namespace, identical to model.mjs's own slug (kept local for the same
+// no-import-of-model.mjs reason as the table above).
+function slug(name) {
+  return String(name)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
 
 // The persistence key, the exact slot the storage chain reads/writes (spec-draft §11).
 // Renamed hct-palette-state-v1 -> nonoun-color-tokens -> ultimate-tokens (product renames);
@@ -75,37 +85,19 @@ export const DOMAINS = {
   dampCurve: { kind: "number", min: 0.5, max: 4, default: 1.5 },
   dampAmp: { kind: "number", min: 0, max: 100, default: 0 },
   dampBias: { kind: "number", min: -100, max: 100, default: 0 },
-  // baseIntensity: the GLOBAL fallback group damper value (SPEC spec-muted-base-key-spikes 0.3.0, #785
-  // REQ-002/007), used only when a palette's group carries no baseChroma of its own. primeChroma:
-  // the prime system's own global fallback chroma control (REQ-008/050..057). Both default 100, a
-  // fresh/absent-field doc renders every Brand/System/Data palette exactly as before groups existed
-  // (Material defaults to 100/60 since #785 R96, so no group mutes the ramp by default). primeChroma was
-  // named keyIntensity through schema v2; REQ-011/R4 renamed it at v3 (RENAME_MAPS below), DOMAINS
-  // no longer lists keyIntensity at all, so a v3+ doc that still somehow carries it gets it loudly
-  // dropped. The FIELD NAME `baseIntensity` is a deliberate legacy holdover (never renamed), REQ-010
-  // keeps the document's own field name stable across the 0.3.0 re-ruling; only its MEANING (a
-  // fallback for the whole-ramp damper, the at-100 ramp times g / 100) and the engine's own copy of the concept
-  // (fully retired, AC-004) changed.
+  // baseIntensity: the GLOBAL Base chroma k factor (SPEC spec-muted-base-key-spikes 0.3.0, #785
+  // REQ-002/007, #804), multiplied onto every palette's own `baseChroma` (the ramp damper, the at-100
+  // ramp times baseChroma / 100 times this / 100). primeChroma: the GLOBAL Prime chroma k factor
+  // (REQ-008/050..057, #804), scaling every palette's prime strip. Both default 100, so a fresh or
+  // absent-field doc renders every ramp and strip as sampled. primeChroma was named keyIntensity
+  // through schema v2; REQ-011/R4 renamed it at v3 (RENAME_MAPS below), DOMAINS no longer lists
+  // keyIntensity at all, so a v3+ doc that still somehow carries it gets it loudly dropped. The FIELD
+  // NAME `baseIntensity` is a deliberate legacy holdover (never renamed), REQ-010 keeps the document's
+  // own field name stable; only its MEANING (now a k factor on every palette) and the engine's own
+  // copy of the concept (fully retired, AC-004) changed. Before v8 neither value ever reached a palette
+  // (every group carried its own), so the v8 fold below resets both to 100.
   baseIntensity: { kind: "number", min: 0, max: 100, default: 100 },
   primeChroma: { kind: "number", min: 0, max: 100, default: 100 },
-  // paletteGroups (SPEC 0.3.0 REQ-001/010), the four canvas groups' OWN baseChroma/primeChroma
-  // defaults, sitting between a palette's own resolution and the two global sliders above. Each
-  // group's number is its own field (min 0, max 100), defaulted per GROUP_DEFAULTS (the single
-  // source of truth these mirror), same absent-field-hydrates-to-a-sensible-default shape as
-  // lmin/lmax/damp above, no schema-version bump needed for THIS shape alone (the v4 bump below is
-  // for the palette.intensity removal). `data`'s `locked:true` is NOT user-settable; it is always
-  // stamped by clampPaletteGroups below, never read from the incoming snapshot. The document key is
-  // `paletteGroups`, never `groups`, `story.groups` already names the curated story's own concept
-  // groups (clampStory reads `s.groups`); a top-level `groups` would collide (Risk 0c).
-  paletteGroups: Object.fromEntries(
-    PALETTE_GROUPS.map((g) => [
-      g,
-      {
-        baseChroma: { kind: "number", min: 0, max: 100, default: GROUP_DEFAULTS[g].baseChroma },
-        primeChroma: { kind: "number", min: 0, max: 100, default: GROUP_DEFAULTS[g].primeChroma },
-      },
-    ]),
-  ),
   // Hue space (see tonal.js DEFAULT_CONTROLS.hueSpace). Default "oklch" (the slider value IS the OKLCH
   // hue). A doc PERSISTED with hueSpace:"cam16" round-trips as cam16 (legacy preserved); an absent field
   // hydrates to "oklch" (the new default). The legacy-storage stamp (app.js openSet) keeps a pre-hueSpace
@@ -113,8 +105,9 @@ export const DOMAINS = {
   hueSpace: { kind: "enum", values: ["cam16", "oklch"], default: "oklch" },
   // ramp distribution mode (see tonal.js DEFAULT_CONTROLS.toneMode). Default "perceptual".
   toneMode: { kind: "enum", values: ["even", "perceptual", "peak"], default: "perceptual" },
-  // perceptual-path vibrancy: 0 = even lightness, 100 = cusp-anchored center (see tonal.js). Default 0.
-  vibrancy: { kind: "number", min: 0, max: 100, default: 0 },
+  // perceptual-path vibrancy: 0 = even lightness, 100 = cusp-anchored center (see tonal.js). Default 50
+  // (T-0014, was 0); the v8 entry below moves a pre-v8 doc's 0 (the old default) to 50.
+  vibrancy: { kind: "number", min: 0, max: 100, default: 50 },
   // on-color policy: "contrast" (WCAG-aware flip + achromatic fall-through, OD-001) | "fixed" (050
   // both modes, the pre-#662 default). Default contrast, this governs a STORED document that
   // carries no onColorMode key, so it must track tonal.js's DEFAULT_CONTROLS or a saved kit would
@@ -135,6 +128,10 @@ export const DOMAINS = {
     skew: { kind: "number", min: -100, max: 100 },
     lift: { kind: "number", min: -40, max: 40 },
     hueShift: { kind: "number", min: -60, max: 60, default: 0 }, // edge hue rotation
+    // Base chroma (#804), the palette's own ramp damper, 0..100: the at-100 ramp times baseChroma / 100
+    // (times the global k, `baseIntensity`). OPTIONAL, absent means 100, same absent-stays-absent shape
+    // as cuspPull; the v8 fold writes it from a pre-v8 doc's group value only when that is not 100.
+    baseChroma: { kind: "number", min: 0, max: 100 },
     // canvas group (ticket #556), OPTIONAL, same absent-means-derive-on-read shape as
     // colorRole below: an explicit member of PALETTE_GROUPS round-trips as-is; absent/invalid
     // is left absent (NOT stamped with a computed default here), model.mjs's paletteGroup()
@@ -192,7 +189,7 @@ function clampEnum(v, values, dflt) {
 // iff it is "#" + 6 hex digits in EITHER case, normalized to the canonical uppercase form the
 // generator, defaultDocument() and src/engine/prime.mjs's own ANCHOR_HEX all emit/accept, else
 // undefined. The caller only attaches the field when this returns non-undefined, same absent-stays-
-// absent shape every other optional palette field (cuspPull, primeChroma, group) uses. Lowercase was
+// absent shape every other optional palette field (cuspPull, baseChroma, group) uses. Lowercase was
 // DROPPED before the fix: an authored Q5 spec JSON or a hand-edited import spelling a valid hex in
 // lowercase rendered correctly for the live session (prime.mjs accepts+normalizes it) but silently
 // lost the anchor on the next save/reload, with no DROPPED_KEYS report, persist.js and prime.mjs now
@@ -252,12 +249,13 @@ export function clampPalette(p) {
   // cuspPull (perceptual path) is OPTIONAL, a per-palette override of the global `vibrancy` (0..100):
   // how far this palette's richest stop is nudged toward stop 500. Absent → inherit the global vibrancy.
   if (Number.isFinite(src.cuspPull)) out.cuspPull = clampNumber(src.cuspPull, 0, 100);
-  // intensity: REMOVED from the palette domain entirely (SPEC 0.3.0 REQ-002/010/011), there is no
-  // per-palette ramp override in any group any more. A stray `src.intensity` is simply never copied
-  // to `out` here; hydrate() reports it loudly via DROPPED_KEYS (REQ-011) as part of the v4 migration.
-  // primeChroma (REQ-010) is OPTIONAL, a per-palette override of the global `primeChroma` (0..100),
-  // same absent-means-inherit shape as cuspPull/intensity. Absent → inherit controls.primeChroma.
-  if (Number.isFinite(src.primeChroma)) out.primeChroma = clampNumber(src.primeChroma, 0, 100);
+  // intensity: REMOVED from the palette domain entirely (SPEC 0.3.0 REQ-002/010/011). A stray
+  // `src.intensity` is simply never copied to `out` here; hydrate() reports it loudly via
+  // DROPPED_KEYS (REQ-011) as part of the v4 migration.
+  // baseChroma (#804) is OPTIONAL, the palette's own ramp damper (0..100), same absent-stays-absent
+  // shape as cuspPull. Absent means 100. primeChroma is no longer a palette field (the v8 fold drops
+  // and reports it); a stray one on a v8 snapshot is simply never copied to `out`.
+  if (Number.isFinite(src.baseChroma)) out.baseChroma = clampNumber(src.baseChroma, D.baseChroma.min, D.baseChroma.max);
   // STORY (optional, from a curated preset): the source color's evocative name, a one-line
   // description, and its role in the set. Kept as-is iff present (free strings / known role).
   if (typeof src.colorName === "string" && src.colorName) out.colorName = src.colorName;
@@ -296,28 +294,6 @@ export function clampStory(s) {
     if (g.length) out.groups = g;
   }
   return Object.keys(out).length ? out : null;
-}
-
-// clampPaletteGroups, the four canvas groups' baseChroma/primeChroma facet (SPEC 0.3.0 REQ-001/010).
-// Per-field clamp, same as clampPalette: an in-domain number on one group/field is preserved
-// byte-for-byte; anything absent or out-of-domain falls back to that field's own DOMAINS default
-// (GROUP_DEFAULTS, mirrored above). ALWAYS returns all four groups fully populated (the "required,
-// default-filled" shape, not the "absent stays absent" shape clampPalette's `group` uses), a doc
-// that predates this feature hydrates straight to the ratified defaults. `locked` is never read
-// from `src`; it is stamped `true` for `data` only, per DOMAINS.
-function clampPaletteGroups(src) {
-  const raw = (src && typeof src === "object") ? src : {};
-  const out = {};
-  for (const g of PALETTE_GROUPS) {
-    const D = DOMAINS.paletteGroups[g];
-    const r = (raw[g] && typeof raw[g] === "object") ? raw[g] : {};
-    out[g] = {
-      baseChroma: clampNumber(r.baseChroma ?? D.baseChroma.default, D.baseChroma.min, D.baseChroma.max),
-      primeChroma: clampNumber(r.primeChroma ?? D.primeChroma.default, D.primeChroma.min, D.primeChroma.max),
-      ...(GROUP_DEFAULTS[g].locked ? { locked: true } : {}),
-    };
-  }
-  return out;
 }
 
 // Per-doc semantic-mapping overrides: { [roleKey]: { light?, dark? } }, a role re-pointed to a
@@ -361,10 +337,9 @@ function clampOverrides(o) {
 // now on, the same way a Figma variable rename ships its FIGMA_MIGRATIONS entry (TKT-0012).
 //
 // v4 (SPEC spec-muted-base-key-spikes 0.3.0 REQ-011): palette.intensity retired, no RENAME_MAPS
-// entry needed, since its drop+report (hydrate(), by the keyIntensity check above) and
-// paletteGroups' own default-fill (clampPaletteGroups) both already run UNCONDITIONALLY, on every
-// snapshot regardless of schemaVersion, the bump exists to stamp v4 forward on `serialize()`, not
-// to gate a value translation the way v1/v2/v3 each needed to.
+// entry needed, since its drop+report (hydrate(), by the keyIntensity check above) already runs
+// UNCONDITIONALLY, on every snapshot regardless of schemaVersion, the bump exists to stamp v4 forward
+// on `serialize()`, not to gate a value translation the way v1/v2/v3 each needed to.
 //
 // v5 (ticket #681, U1): palette.anchor/sourceAnchor ADDED, same "no RENAME_MAPS entry needed" shape
 // as v4, for the same reason: this is a brand-new optional field, not a rename, so there is no old
@@ -381,7 +356,14 @@ function clampOverrides(o) {
 // preset carries the old export prefix triple. A RENAME_MAPS entry (renameExportRoot) rewrites that
 // exact triple once, for a doc stamped below v7; a v7 doc is never touched, so a kit that deliberately
 // carries those names after the bump stays as typed.
-export const CURRENT_SCHEMA_VERSION = 7;
+//
+// v8 (#804): the group chroma layer is removed. Each palette carries its own optional `baseChroma`
+// and the two globals become k factors on every palette. A RENAME_MAPS entry (foldGroups) folds a
+// pre-v8 doc's resolved group base chroma onto each palette, drops `paletteGroups` and every
+// per-palette `primeChroma` (the one-time prime move is accepted), and resets both globals to 100
+// (before v8 they never reached a palette), reporting each drop through DROPPED_KEYS. The same entry
+// (vibrancyDefault, T-0014) moves a pre-v8 doc's global vibrancy 0, the old default, to the new 50.
+export const CURRENT_SCHEMA_VERSION = 8;
 
 // DROPPED_KEYS (TKT-0455), the loud-fail accounting channel. hydrate() attaches the report of every
 // unknown voice/treatment/tokenOverrides key it dropped as a NON-ENUMERABLE property on its return
@@ -433,7 +415,54 @@ const RENAME_MAPS = [
       to: { colorPrefix: "md-color", typePrefix: "md-typescale", geomPrefix: "md" },
     },
   },
+  {
+    // the group chroma layer's removal (#804): see foldGroups in applyRenameMaps below. The literal
+    // `paletteGroups` lives on only here, as the pre-v8 key this entry reads and drops.
+    // vibrancyDefault (T-0014): a saved vibrancy 0 cannot be told apart from the old default, so it
+    // becomes the new default 50; any other value is kept, an absent one takes the domain default (50),
+    // and a palette's own `cuspPull` is never touched.
+    version: 8,
+    foldGroups: true,
+    vibrancyDefault: { from: 0, to: 50 },
+  },
 ];
+
+// foldGroups(s, drop), the v8 entry: (a) every palette without a numeric `baseChroma` takes its
+// group's stored base chroma (its valid `group`, else the default-by-name rule, else data), clamped
+// 0..100, written only when it is not 100, so the same number reaches tonal.js `dampStops` as
+// before; the global `baseIntensity` is never folded in (it never reached a palette before v8).
+// (b) `paletteGroups` and every per-palette `primeChroma` are deleted. (c) both globals are reset to
+// 100. Each drop and each reset of a value other than 100 is reported through `drop`.
+function foldGroups(s, drop) {
+  const groups = s.paletteGroups && typeof s.paletteGroups === "object" ? s.paletteGroups : {};
+  const groupBase = (g) => {
+    const v = groups[g] && typeof groups[g] === "object" ? groups[g].baseChroma : undefined;
+    return typeof v === "number" && Number.isFinite(v) ? clampNumber(v, 0, 100) : 100;
+  };
+  const out = { ...s };
+  if (Array.isArray(s.palettes)) {
+    out.palettes = s.palettes.map((p) => {
+      if (!p || typeof p !== "object") return p;
+      const { primeChroma, ...rest } = p;
+      if (primeChroma !== undefined) drop("palette", `${p.name || "?"}.primeChroma`, "removed at schema v8, Prime chroma is one global k factor on every palette (#804)");
+      if (typeof p.baseChroma !== "number") {
+        const g = PALETTE_GROUPS.includes(p.group) ? p.group : DEFAULT_GROUP_BY_SLUG[slug(p.name)] || "data";
+        const base = groupBase(g);
+        if (base !== 100) rest.baseChroma = base;
+      }
+      return rest;
+    });
+  }
+  if (s.paletteGroups !== undefined) {
+    delete out.paletteGroups;
+    drop("controls", "paletteGroups", "removed at schema v8, each group's base chroma folded onto its palettes' own baseChroma (#804)");
+  }
+  for (const key of ["baseIntensity", "primeChroma"]) {
+    if (s[key] !== undefined && s[key] !== 100) drop("controls", key, `reset to 100 at schema v8, it is now a k factor on every palette and its pre-v8 value never reached one (#804)`);
+    out[key] = 100;
+  }
+  return out;
+}
 
 // renameKeyedMap(obj, renameMap, rewriteKey), generic old->new key migration for a plain map: for every
 // key whose (renameKeyed-computed) old identity is in `renameMap`, move its value onto `rewriteKey`'s
@@ -457,8 +486,9 @@ function renameKeyedMap(obj, renameMap, rewriteKey) {
 // applyRenameMaps, walk every RENAME_MAPS entry the incoming snapshot predates and translate its
 // voice-keyed facets forward (`type.voices` keys + `type.tokenOverrides`' leading voice segment). Runs
 // BEFORE any allowlist clamp (see hydrate() below). Pure: returns a new snapshot when a rename actually
-// fires, the SAME snapshot reference otherwise (so a current doc pays no cost).
-function applyRenameMaps(snapshot) {
+// fires, the SAME snapshot reference otherwise (so a current doc pays no cost). `drop` is hydrate()'s
+// DROPPED_KEYS reporter, for an entry (foldGroups) that removes a value rather than renaming it.
+function applyRenameMaps(snapshot, drop) {
   const fromVersion = Number.isFinite(snapshot && snapshot.schemaVersion) ? snapshot.schemaVersion : 0;
   if (fromVersion >= CURRENT_SCHEMA_VERSION) return snapshot; // already current, nothing to translate
   let s = snapshot;
@@ -495,6 +525,8 @@ function applyRenameMaps(snapshot) {
       const { from, to } = entry.renameExportRoot;
       if (Object.keys(from).every((k) => s.export[k] === from[k])) s = { ...s, export: { ...s.export, ...to } };
     }
+    if (entry.foldGroups && s && typeof s === "object") s = foldGroups(s, drop);
+    if (entry.vibrancyDefault && s && s.vibrancy === entry.vibrancyDefault.from) s = { ...s, vibrancy: entry.vibrancyDefault.to };
   }
   return s;
 }
@@ -517,10 +549,22 @@ export function serialize(state) {
 // NOT a reset, those discard user state and fail the sealed roundtrip/per-field gates.
 export function hydrate(snapshot) {
   const raw = (snapshot && typeof snapshot === "object") ? snapshot : {};
+
+  // The loud-fail accounting list (TKT-0455), every unknown voice/treatment/tokenOverrides key this
+  // hydrate() call drops, past whatever applyRenameMaps already translated, plus every value the v8
+  // group fold removes. `drop()` both records the entry and warns immediately, so a future rename
+  // shipped without its RENAME_MAPS entry is loud on the very first hydrate that hits it, not a
+  // silent, permanent data-loss.
+  const dropped = [];
+  const drop = (facet, key, reason) => {
+    dropped.push({ facet, key, reason });
+    if (typeof console !== "undefined") console.warn(`[persist] dropped unknown ${facet} key ${JSON.stringify(key)} (${reason}), stored state for it is gone`);
+  };
+
   // TKT-0016, translate an older doc forward through any still-relevant rename maps BEFORE the
   // allowlist clamp below runs, so a renamed voice survives onto its current name instead of being
   // silently dropped by clampType's VOICES allowlist.
-  const s = applyRenameMaps(raw);
+  const s = applyRenameMaps(raw, drop);
 
   // Palettes first: `selected`'s upper bound is relational to the hydrated count.
   const rawPalettes = Array.isArray(s.palettes) ? s.palettes : [];
@@ -539,16 +583,6 @@ export function hydrate(snapshot) {
   // optional curated metadata, the set's concept story + its travel volume (both opt-in, so a
   // hand-built doc round-trips unchanged).
   const story = clampStory(s.story);
-
-  // The loud-fail accounting list (TKT-0455), every unknown voice/treatment/tokenOverrides key this
-  // hydrate() call drops, past whatever applyRenameMaps already translated. `drop()` both records the
-  // entry and warns immediately, so a future rename shipped without its RENAME_MAPS entry is loud on
-  // the very first hydrate that hits it, not a silent, permanent data-loss.
-  const dropped = [];
-  const drop = (facet, key, reason) => {
-    dropped.push({ facet, key, reason });
-    if (typeof console !== "undefined") console.warn(`[persist] dropped unknown ${facet} key ${JSON.stringify(key)} (${reason}), stored state for it is gone`);
-  };
 
   // keyIntensity (REQ-011, TKT-0455): DOMAINS no longer lists it, applyRenameMaps already carries it
   // onto primeChroma for any doc that predates the v3 rename, so a bare keyIntensity surviving to here
@@ -579,7 +613,6 @@ export function hydrate(snapshot) {
     dampBias: clampNumber(s.dampBias ?? DOMAINS.dampBias.default, DOMAINS.dampBias.min, DOMAINS.dampBias.max),
     baseIntensity: clampNumber(s.baseIntensity ?? DOMAINS.baseIntensity.default, DOMAINS.baseIntensity.min, DOMAINS.baseIntensity.max),
     primeChroma: clampNumber(s.primeChroma ?? DOMAINS.primeChroma.default, DOMAINS.primeChroma.min, DOMAINS.primeChroma.max),
-    paletteGroups: clampPaletteGroups(s.paletteGroups),
     hueSpace: clampEnum(s.hueSpace, DOMAINS.hueSpace.values, DOMAINS.hueSpace.default),
     relChroma: s.relChroma === true, // boolean chroma-basis flag; absent/non-true -> false (legacy default)
     chromaFloor: clampNumber(s.chromaFloor ?? DOMAINS.chromaFloor.default, DOMAINS.chromaFloor.min, DOMAINS.chromaFloor.max),

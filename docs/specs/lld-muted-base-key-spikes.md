@@ -13,6 +13,15 @@ audience: builder, reviewer
 
 > Superseded in part by R94 to R98 (#785): Base chroma is now a whole-ramp damper applied in `tonal.js` (`groupDamper`, `dampStops`), not an absolute target, and `GROUP_DEFAULTS.material` is 100/60, not 30/60 (the schema-4 sample, Risk 0 and the `chroma == rampChroma` byte-identity sentence under Fixtures describe the old model).
 
+> Superseded in part by ADR-030 (#804, T-0014, 2026-10-07): the group chroma layer is removed.
+> `src/engine/resolve.mjs` forms `rampChromaOf = (p.baseChroma ?? 100) * k_base / 100` and
+> `primeChromaOf = k_prime` once, where the two k factors are the document's `baseIntensity` and
+> `primeChroma` (both default 100); `GROUP_DEFAULTS`, `resolvePaletteGroups`, `clampPaletteGroups` and
+> `palette.primeChroma` are gone, and the schema-v8 hydrate folds an old document's group base chroma
+> onto each palette. The anchored `prime` rung is verbatim at k 100 and follows k below it. The
+> Components rows, the Interfaces block and the prime algorithm below state the current model; the
+> rest is the pre-#804 record. Evidence: `docs/reports/2026-10-07-chroma-controls-redesign.md`.
+
 Spec: `docs/specs/spec-muted-base-key-spikes.md` 0.4.0 (REQ/AC ids below refer to it). Intent: issues
 #503 and #533. Substrate this design leans on and does not restate: `color-math` skill (two ramp
 paths, damping multiplier `m`, hue anchors, OKHSL bijection), `adding-export-formats` skill (the
@@ -33,19 +42,19 @@ equal-compress ladder that shipped and re-measures Risk 4 against it; it adds no
 
 | Component | File | Responsibility |
 |---|---|---|
-| Ramp chroma target | `src/ui/model.mjs` (`rampChromaOf`), consumed by `projectView` and `exports.js` `derivePalette` | `rampChromaOf(p, doc) = paletteGroups[paletteGroup(p)].baseChroma ?? controls.baseIntensity`; the engine receives `{ ...p, chroma: rampChromaOf(p) }` (REQ-002). `intensityAt` and the engine's `baseIntensity` read are removed (REQ-004); `tonal.js` is the 0.2.0 contract with `palette.chroma` as its only chroma input |
-| Palette groups | `src/ui/model.mjs` (`PALETTE_GROUPS`, `paletteGroup`, `GROUP_DEFAULTS`, `resolvePaletteGroups`), `src/ui/persist.js` | The four groups, the by-name default, the per-group `{ baseChroma, primeChroma, locked }` defaults and the document's `paletteGroups` default-fill (REQ-001, REQ-010) |
-| Prime chroma resolution | `src/ui/model.mjs` (`primeChromaOf`) | `(locked ? undefined : p.primeChroma) ?? paletteGroups[g].primeChroma ?? controls.primeChroma`, handed to `primeSwatches` as `controls.primeChroma` with the palette's own field cleared (REQ-008); `prime.mjs` unchanged |
+| Ramp chroma damper | `src/engine/resolve.mjs` (`rampChromaOf`), wrapped by `src/ui/model.mjs` and consumed by `projectView` and `exports.js` `derivePalette` | `rampChromaOf(p, doc) = (p.baseChroma ?? 100) * baseIntensity / 100` (ADR-030); the engine receives `{ ...p, chroma: rampChromaOf(p) }` and `dampStops` scales the at-100 ramp by it (REQ-002, R94). `intensityAt` and the engine's `baseIntensity` read are removed (REQ-004); `tonal.js` is the 0.2.0 contract with `palette.chroma` as its only chroma input |
+| Palette groups | `src/ui/model.mjs` (`PALETTE_GROUPS`, `paletteGroup`), `src/ui/persist.js` | The four groups and the by-name default, canvas grouping metadata only; a group carries no chroma value (REQ-001, ADR-030) |
+| Prime chroma resolution | `src/engine/resolve.mjs` (`primeChromaOf`), wrapped by `src/ui/model.mjs` | `controls.primeChroma ?? 100`, the one global k, handed to `primeSwatches` as `controls.primeChroma` and read by `deriveKeyColor` too (REQ-008, ADR-030) |
 | Spike retirement | `src/engine/semantic.js`, `src/ui/model.mjs`, `src/engine/exports.js`, `test/engine/{tonal,semantic}.mjs` | `identityStops` and its callers removed; `paletteStops(palette, controls, stops)` is three-ary again; `intensity-spike` group and `identity-stops` gate deleted; `intensity-legacy` fixture kept and re-asserted (REQ-004) |
 | Prime system | `src/engine/prime.mjs` (new, pure) | `primeSwatches(palette, controls)` (REQ-050..053, REQ-056); constants `PRIME_STEPS`, `STEP_L`, `PRIME_L_MIN`, `PRIME_L_MAX` (`PRIME_STEP` retired 2026-09-18 with the OKHSL-domain ladder, #681 U6) |
-| Controls plumbing | `src/ui/model.mjs` | `controlsOf`/`stateOf` thread `baseIntensity`, `primeChroma`, and `paletteGroups`; `derivePalette` in `exports.js` calls the same `rampChromaOf`/`primeChromaOf` so every export matches the canvas; `projectView` adds `palettes[i].prime`; `brandKit` adds `prime`; `tokenCount` adds 7 per enabled palette (REQ-057) |
-| Persistence | `src/ui/persist.js` | `DOMAINS.primeChroma`, `DOMAINS.paletteGroups` (+ `clampPaletteGroups` default-fill), `clampPalette` optional `group` (enum) and `primeChroma`, no `intensity`; `CURRENT_SCHEMA_VERSION = 4`; `RENAME_MAPS` entries v3 (`keyIntensity` to `primeChroma`) and v4 (drop `palette.intensity`, reported via `DROPPED_KEYS`; default-fill `paletteGroups`) (REQ-010, REQ-011) |
+| Controls plumbing | `src/ui/model.mjs` | `controlsOf`/`stateOf` thread `baseIntensity` and `primeChroma` (the two k factors; `baseIntensity` reaches `src/engine` renamed `baseChroma`); `derivePalette` in `exports.js` calls the same `rampChromaOf`/`primeChromaOf` so every export matches the canvas; `projectView` adds `palettes[i].prime`; `brandKit` adds `prime`; `tokenCount` adds 7 per enabled palette (REQ-057) |
+| Persistence | `src/ui/persist.js` | `DOMAINS.baseIntensity`, `DOMAINS.primeChroma`, `DOMAINS.vibrancy` (default 50), `clampPalette` optional `group` (enum) and `baseChroma`, no `intensity` or `primeChroma`; `CURRENT_SCHEMA_VERSION = 8`; `RENAME_MAPS` entries v3 (`keyIntensity` to `primeChroma`), v4 (drop `palette.intensity`) and v8 (`foldGroups`: group base chroma onto each palette, drop `paletteGroups` and `palette.primeChroma`, reset both globals to 100; `vibrancyDefault` 0 to 50), each drop reported via `DROPPED_KEYS` (REQ-010, REQ-011, ADR-030) |
 | Collections | `src/engine/collections.js` | `COLLECTIONS.colorPrime = "Color Prime"` (REQ-054, R3), single mode `Base` (R2 ratified: mode-independent); both sandbox literals mirror it, diffed by the `collparity` gate |
 | Emitters | `src/engine/exports.js` | `derivePalette` gains `prime` (seven entries); `cssFrom`, `exportJSON`, `exportDTCG`, `exportUI3`, `exportTailwind` emit the group (REQ-054); `exportShadcn` untouched |
 | DS bundle | `src/engine/ds-export.js` | `prime` block per family in `tokens.json`; "Prime swatches" section in DESIGN.md (Claude Design, Stitch, Make profiles) (REQ-054, REQ-031) |
 | MCP | `mcp/brand-kit-core.mjs` | `get_prime(slug)` tool + `brand://palette/{slug}/prime` resource over `kit.palettes[i].prime` (REQ-054, REQ-057) |
 | Figma plugin apply | `figma/plugin/` (generated `ui.html` from the app), `src/ui/figma-apply*.js` (whichever module builds the apply message) | Creates or finds `Color Prime` by provenance registry key, one `Base` mode, `{n}/{step}` variables; the binder reads nothing from it this round (REQ-033, REQ-054) |
-| UI | `src/ui/sections/color.js`, `src/ui/styles.css` | Global tab "Base chroma" + "Prime chroma" fallback sliders next to Vibrancy plus a per-group row (Material, Brand, System, Data; two sliders each); canvas rows under four group headers with counts; palette inspector Group dropdown, "Chroma" (key colour + prime only), "Prime chroma" override hidden for Data, no "Intensity" slider (REQ-009, REQ-032); `.prime-strip` (seven `.prime-swatch`; `.key-strip` is the unrelated retained-key-colours row, #552) in `renderRampsScene` before `.ramp-strip` from `vp.prime` (REQ-032, REQ-034) |
+| UI | `src/ui/sections/color.js`, `src/ui/styles.css` | Global tab "Base chroma" + "Prime chroma" k sliders next to Vibrancy, no per-group rows; canvas rows under four group headers with counts; palette inspector Group dropdown, "Chroma" (key colour + prime only), "Base chroma" (the palette's own ramp damper), no "Intensity" or "Prime chroma" slider (REQ-009, REQ-032, ADR-030); `.prime-strip` (seven `.prime-swatch`; `.key-strip` is the unrelated retained-key-colours row, #552) in `renderRampsScene` before `.ramp-strip` from `vp.prime` (REQ-032, REQ-034) |
 | Data palettes | `src/engine/data-hues.mjs`, `src/ui/model.mjs`, `role-table.json` | Unchanged from 0.1.0 (U5..U9) |
 
 ## Interfaces
@@ -57,18 +66,18 @@ export function paletteStops(palette, controls, stops);            // palette.ch
 export function hueAnchorFrac(palette, controls);
 // intensityAt: removed.
 
-// model.mjs (0.3.0, #556/#559)
+// resolve.mjs (#804, ADR-030): two layers, multiplied once; no group layer
+export function rampChromaOf(palette, controls) -> number   // (palette.baseChroma ?? 100) * (controls.baseChroma ?? 100) / 100 (REQ-002)
+export function primeChromaOf(palette, controls) -> number  // controls.primeChroma ?? 100, the same for every palette (REQ-008)
+
+// model.mjs (#556 groups as metadata; #804 wrappers)
 export const PALETTE_GROUPS = ["material", "brand", "system", "data"];
-export const GROUP_DEFAULTS = { material: { baseChroma: 100, primeChroma: 60 }, brand: { baseChroma: 100, primeChroma: 100 },
-                                system: { baseChroma: 100, primeChroma: 100 }, data: { baseChroma: 100, primeChroma: 100, locked: true } };
-export function paletteGroup(p) -> "material"|"brand"|"system"|"data"   // p.group ?? default by slug(p.name)
-export function resolvePaletteGroups(doc) -> { [g]: { baseChroma, primeChroma, locked } }  // doc.paletteGroups default-filled
-export function rampChromaOf(p, doc) -> number       // groups[g].baseChroma ?? controls.baseIntensity   (REQ-002)
-export function primeChromaOf(p, doc) -> number      // (locked ? undefined : p.primeChroma) ?? groups[g].primeChroma ?? controls.primeChroma (REQ-008)
+export function paletteGroup(p) -> "material"|"brand"|"system"|"data"   // p.group ?? default by slug(p.name); no chroma
+export function rampChromaOf(p, doc) / primeChromaOf(p, doc)          // the resolve.mjs pair, doc.baseIntensity renamed baseChroma
 // projectView / derivePalette:
 //   ramp  = paletteStops({ ...p, chroma: rampChromaOf(p, doc) }, controls, EXPORT_STOPS)
 //   prime = primeSwatches({ ...p, primeChroma: undefined }, { ...controls, primeChroma: primeChromaOf(p, doc) })
-//   key colour / gallery tile: deriveKeyColor(p) at p.chroma, unchanged
+//   key colour / gallery tile: deriveKeyColor(p) at p.chroma times the same Prime chroma k
 
 // prime.mjs (P2; ladder rewritten 2026-09-18 by #681 U6, anchor branch + widening search folded in
 // by #681 U4). Pure; imports hctToRgb/lstarFromRgb/maxChromaInGamut/peakC/cam16FromRgb from hct.js,
@@ -96,7 +105,7 @@ export function primeSwatches(palette, controls)
 //     lPrime = pk.tone                                   // pk.tone IS the key colour's own CIE L*; no OKHSL round trip
 //     keyChroma = (palette.chroma / 100) * pk.c; hOk = baseHue
 //   g  = 3 ** ((palette.skew ?? 0) / 100)                // the ramp's toneAt gamma (REQ-053a, R5)
-//   pc = (palette.primeChroma ?? controls.primeChroma ?? 100) / 100
+//   pc = (controls.primeChroma ?? 100) / 100            // the global Prime chroma k (ADR-030)
 //   cPrime = max(0, keyChroma * pc)                      // REQ-052: the target chroma, HELD on every rung
 //   lLadder = anchored ? clamp(lPrime, PRIME_L_MIN, PRIME_L_MAX) : lPrime   // Q3(b): prime itself never clamps
 //   { up, down } = primeSteps(lLadder)                   // up === down by construction
@@ -113,8 +122,9 @@ export function primeSwatches(palette, controls)
 //     hue[i] = hOk + hueShift * (hueSameDir ? -|t| : t), wrapped into [0, 360)   // REQ-053, CAM16 hue
 //     chroma[i] = min(cPrime, maxChromaInGamut(hue[i], l[i]))   // REQ-052: held; only the GAMUT desaturates
 //     { rgb, inGamut } = hctToRgb(hue[i], chroma[i], l[i]); hex from the 8-bit rgb; oklch via rgbToOklch (float)
-//   anchored i === 3 short-circuits all of the above: rgb = anchorRgb VERBATIM, never re-rendered,
-//   and never scaled by primeChroma (#681 U1's "never moves it").
+//   anchored i === 3: at pc === 1, rgb = anchorRgb VERBATIM, never re-rendered (#681 U1); at any
+//   other pc, hctToRgb(hOk, min(cPrime, maxChromaInGamut(hOk, lPrime)), lPrime), the anchor's own hue
+//   and exact L* with its chroma times pc, so the whole strip follows the slider (ADR-030).
 // okhslLAt and solveOkhslHue are exported from tonal.js (P2) but the prime system does not call them (#537).
 
 // persist.js (P3)

@@ -360,7 +360,7 @@
               "hueSameDir": false,
               "on": true,
               "cuspPull": 0,
-              "primeChroma": 100
+              "baseChroma": 25
             },
             {
               "name": "Primary",
@@ -372,7 +372,7 @@
               "hueSameDir": false,
               "on": true,
               "cuspPull": 3,
-              "primeChroma": 99,
+              "baseChroma": 41,
               "colorRole": "dominant"
             },
             {
@@ -385,7 +385,7 @@
               "hueSameDir": false,
               "on": true,
               "cuspPull": 1,
-              "primeChroma": 100,
+              "baseChroma": 41,
               "colorRole": "supporting"
             },
             {
@@ -398,7 +398,7 @@
               "hueSameDir": false,
               "on": true,
               "cuspPull": 2,
-              "primeChroma": 100,
+              "baseChroma": 41,
               "colorRole": "supporting"
             },
             {
@@ -411,7 +411,7 @@
               "hueSameDir": false,
               "on": true,
               "cuspPull": 6,
-              "primeChroma": 100
+              "baseChroma": 32
             },
             {
               "name": "Success",
@@ -423,7 +423,7 @@
               "hueSameDir": false,
               "on": true,
               "cuspPull": 0,
-              "primeChroma": 100
+              "baseChroma": 32
             },
             {
               "name": "Warning",
@@ -435,7 +435,7 @@
               "hueSameDir": true,
               "on": true,
               "cuspPull": 0,
-              "primeChroma": 100
+              "baseChroma": 32
             },
             {
               "name": "Danger",
@@ -447,7 +447,7 @@
               "hueSameDir": false,
               "on": true,
               "cuspPull": 0,
-              "primeChroma": 100
+              "baseChroma": 32
             },
             {
               "name": "Data 1",
@@ -459,7 +459,7 @@
               "hueSameDir": false,
               "on": true,
               "cuspPull": 0,
-              "primeChroma": 100
+              "baseChroma": 27
             },
             {
               "name": "Data 2",
@@ -471,7 +471,7 @@
               "hueSameDir": false,
               "on": true,
               "cuspPull": 0,
-              "primeChroma": 100
+              "baseChroma": 27
             },
             {
               "name": "Data 3",
@@ -483,7 +483,7 @@
               "hueSameDir": false,
               "on": true,
               "cuspPull": 0,
-              "primeChroma": 100
+              "baseChroma": 27
             },
             {
               "name": "Data 4",
@@ -495,7 +495,7 @@
               "hueSameDir": false,
               "on": true,
               "cuspPull": 0,
-              "primeChroma": 100
+              "baseChroma": 27
             },
             {
               "name": "Data 5",
@@ -507,7 +507,7 @@
               "hueSameDir": false,
               "on": true,
               "cuspPull": 0,
-              "primeChroma": 100
+              "baseChroma": 27
             },
             {
               "name": "Data 6",
@@ -519,7 +519,7 @@
               "hueSameDir": false,
               "on": true,
               "cuspPull": 0,
-              "primeChroma": 100
+              "baseChroma": 27
             },
             {
               "name": "Data 7",
@@ -531,7 +531,7 @@
               "hueSameDir": false,
               "on": true,
               "cuspPull": 0,
-              "primeChroma": 100
+              "baseChroma": 27
             },
             {
               "name": "Data 8",
@@ -543,26 +543,12 @@
               "hueSameDir": true,
               "on": true,
               "cuspPull": 0,
-              "primeChroma": 100
+              "baseChroma": 27
             }
           ],
           "lmin": 3,
           "lmax": 100,
-          "dampBias": 0,
-          "paletteGroups": {
-            "material": {
-              "baseChroma": 25
-            },
-            "brand": {
-              "baseChroma": 41
-            },
-            "system": {
-              "baseChroma": 32
-            },
-            "data": {
-              "baseChroma": 27
-            }
-          }
+          "dampBias": 0
         },
         {
           "kicker": "BZZR · The product's own design system",

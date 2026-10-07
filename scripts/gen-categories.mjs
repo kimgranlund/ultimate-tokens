@@ -38,7 +38,7 @@ import { DEFAULT_CONTROLS, RAMP_L_MIN, RAMP_L_MAX } from "../src/engine/tonal.js
 import { deriveNeutral } from "../src/engine/derive.mjs";
 import { seedFromKeyColor } from "../src/ui/model.mjs";
 import { siblingWeightDefaults, bodyClassSiblingDefaults, BODY_CLASS_VOICES } from "../src/engine/type.mjs";
-import { PALETTE_GROUPS, DOMAINS } from "../src/ui/persist.js";
+import { DOMAINS } from "../src/ui/persist.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const SRCDIR = resolve(here, "../docs/reference/colors/categories");
@@ -128,7 +128,7 @@ const palette = (name, hex, oklch, sw, fallbackHue) => {
     // re-derived through the hue/chroma rounding two lines up): `hex` here is ALREADY the sampled or
     // status swatch's own uppercase "#RRGGBB" (mapColors uppercases it; STATUS's literals are
     // authored uppercase), so it round-trips through persist.js's hex domain unchanged. `anchor` is
-    // the LIVE anchor prime.mjs's `prime` step and (U2) the ramp's stop 500 (group 100 only, R94) render verbatim;
+    // the LIVE anchor prime.mjs's `prime` step and (U2) the ramp's stop 500 (Base chroma 100 only, R94) render verbatim;
     // `sourceAnchor` is this generator's OWN never-user-written copy, read back by the Reset action
     // (Q6, U2's C12) after a hue/chroma edit detaches `anchor`. `direct` palettes (the brands.json
     // pass-through) are untouched here, they opt in only if their own JSON authors `anchor` (Q5).
@@ -211,12 +211,12 @@ const VIVID_MIDS = { damp: 70, dampCurve: 1.5, dampAmp: 0, dampBias: 0 };
 // preset only; a preset that sets none is byte-identical to before this was added, same "opt-in,
 // no-op by default" contract as the `direct` palette pass-through above. `lmin`/`lmax` are the ramp's
 // lightness-domain bounds (tonal.js DEFAULT_CONTROLS, default 5/100), see the validation below,
-// which gives them the SAME loud-failure rigor as the `paletteGroups` tripwire (#617/#620/#621);
+// which gives them the SAME loud-failure rigor as the per-palette `baseChroma` tripwire (#804);
 // damp/dampCurve/dampAmp/dampBias carry no such gen-time validation of their own (unchanged here).
 const CURVE_OVERRIDE_KEYS = ["damp", "dampCurve", "dampAmp", "dampBias", "lmin", "lmax"];
-// per-entry lmin/lmax validation (#625), mirrors the paletteGroups tripwire's rigor (loud failure at
+// per-entry lmin/lmax validation (#625), mirrors the baseChroma tripwire's rigor (loud failure at
 // gen time on a non-numeric or out-of-range value) rather than leaving these two fields less
-// validated than paletteGroups' own baseChroma/primeChroma. Range comes from DOMAINS.lmin/lmax
+// validated than a palette's own baseChroma. Range comes from DOMAINS.lmin/lmax
 // (persist.js), the SAME bounds hydrate()'s clampNumber enforces on a live document, so this can
 // never drift from the actual hydrate() clamp.
 const CURVE_RANGE_KEYS = ["lmin", "lmax"];
@@ -229,14 +229,10 @@ const CURVE_RANGE_KEYS = ["lmin", "lmax"];
 // own. A preset with no `geometry` key is byte-identical to before this was added, same "opt-in,
 // no-op by default" contract as CURVE_OVERRIDE_KEYS and the `type.fonts` pass-through below.
 
-// per-entry PALETTE GROUPS config (#617), opt-in, mirrors `geometry`'s pass-through exactly (no
-// register-mapping layer needed: `paletteGroups`' shape, { material:{baseChroma,primeChroma},
-// brand:{...}, system:{...}, data:{baseChroma,primeChroma,locked} }, is already the engine/persist
-// shape, SPEC/LLD 0.3.0 REQ-001/010). A spec palette may carry a `paletteGroups` object that passes
-// straight through to the generated preset verbatim; opening the preset (openConfigAsSet -> hydrate ->
-// clampPaletteGroups) re-validates/clamps/default-fills it the same as any other doc.paletteGroups, so
-// gen-time does no sanitizing of its own. A preset with no `paletteGroups` key is byte-identical to
-// before this was added, same "opt-in, no-op by default" contract as CURVE_OVERRIDE_KEYS/`geometry`.
+// per-palette BASE CHROMA (#804), opt-in, currently only Adia's `direct` palettes: a direct palette may
+// carry its own `baseChroma` (0..100, the ramp damper, absent means 100), which passes through verbatim
+// with the rest of the palette. The tripwire below fails the generator loudly on a non-number or an
+// out-of-range value instead of letting hydrate()'s clampPalette silently drop or clamp it on open.
 
 // ── per-palette TYPOGRAPHY: map a spec palette's REGISTER declaration (its optional `type`) to an
 // engine typeScale config { treatment, bodyBase?, fonts, voices }. Registers are the intended-use
@@ -361,8 +357,8 @@ function registersToTypeConfig(t) {
 
 // ── build one category → { volumes, presets, strip } ─────────────────────────────────────────────
 // exported (not just called below) so test/engine/categories.mjs can run the REAL generator logic
-// against a synthetic doc, e.g. to prove the paletteGroups opt-in (#617) actually discriminates
-// output, without writing a fitted value into any real curated category (that's #618's job).
+// against a synthetic doc, e.g. to prove the per-palette baseChroma tripwire (#804) actually fires,
+// without writing a bad value into any real curated category.
 export function buildCategory(doc) {
   const volumes = {}, presets = [], strip = [];
   for (const v of doc.volumes || []) {
@@ -397,7 +393,7 @@ export function buildCategory(doc) {
       // per-preset curve override (#479, extended #625), see CURVE_OVERRIDE_KEYS above.
       const curveOverrides = {};
       for (const k of CURVE_OVERRIDE_KEYS) if (p[k] !== undefined) curveOverrides[k] = p[k];
-      // CURVE-OVERRIDE RANGE TRIPWIRE (#625, same style as the paletteGroups tripwire below): a
+      // CURVE-OVERRIDE RANGE TRIPWIRE (#625, same style as the baseChroma tripwire below): a
       // curated category JSON's typo (a non-numeric lmin/lmax, or a fitted value outside the
       // documented domain) would otherwise bake silently into the committed src/ui/categories/*.js
       // output, hydrate()'s clampNumber would silently floor/ceil it on open, with zero signal at
@@ -413,37 +409,20 @@ export function buildCategory(doc) {
       }
       // per-preset GEOMETRY config (#485), see the comment above CURVE_OVERRIDE_KEYS's declaration.
       const geomCfg = p.geometry && typeof p.geometry === "object" ? p.geometry : null;
-      // per-preset PALETTE GROUPS config (#617), see the comment above CURVE_OVERRIDE_KEYS's declaration.
-      const groupsCfg = p.paletteGroups && typeof p.paletteGroups === "object" ? p.paletteGroups : null;
-      // PALETTE-GROUPS AUTHORING TRIPWIRE (#617 review follow-up, extended #617/#619/#620 fold-in):
-      // `clampPaletteGroups` (persist.js) is a defensive, SILENT last-resort clamp for a live document,
-      // an unrecognized group key is simply never iterated (dropped with no warning), a non-numeric
-      // baseChroma/primeChroma quietly falls back to that field's domain MINIMUM (clampNumber's
-      // non-finite branch), an OUT-OF-RANGE number is silently floored/ceiled to the nearest valid bound,
-      // and a non-object group value (a string/array where an object belongs) falls through to the
-      // group's plain defaults. That's the right behavior for a live doc, but it means a curated category
-      // JSON's typo (a misspelled group name, a string where a number belongs, a fitted value outside the
-      // documented range, or a malformed group entry) would bake silently into the committed
-      // src/ui/categories/*.js output with zero signal, same class of hazard as the retired
-      // type.slots/type.faces shape above. Fail the GENERATOR loudly instead, same style as that
-      // tripwire, naming the bad doc/palette/group/field/value. The range/shape checks below read
-      // DOMAINS.paletteGroups (persist.js) so this can never drift from the actual hydrate() clamp bounds.
-      if (groupsCfg) {
-        for (const [key, val] of Object.entries(groupsCfg)) {
-          if (!PALETTE_GROUPS.includes(key))
-            throw new Error(`${doc.slug}: palette "${p.kicker || p.title}" paletteGroups has unrecognized group key "${key}" (expected one of ${PALETTE_GROUPS.join(", ")})`);
-          if (val === null || typeof val !== "object" || Array.isArray(val))
-            throw new Error(`${doc.slug}: palette "${p.kicker || p.title}" paletteGroups.${key} must be an object (got ${JSON.stringify(val)})`);
-          for (const field of ["baseChroma", "primeChroma"]) {
-            if (!(field in val)) continue;
-            const value = val[field];
-            if (typeof value !== "number")
-              throw new Error(`${doc.slug}: palette "${p.kicker || p.title}" paletteGroups.${key}.${field} is not a number (got ${JSON.stringify(value)})`);
-            const { min, max } = DOMAINS.paletteGroups[key][field];
-            if (value < min || value > max)
-              throw new Error(`${doc.slug}: palette "${p.kicker || p.title}" paletteGroups.${key}.${field} is out of range: ${value} (valid range ${min}-${max})`);
-          }
-        }
+      // BASE-CHROMA AUTHORING TRIPWIRE (#804, successor to the retired group-facet tripwire): a
+      // `direct` palette's optional `baseChroma` must be a number inside DOMAINS.palette.baseChroma
+      // (persist.js, the SAME bounds hydrate()'s clampPalette enforces on a live document).
+      // clampPalette would silently drop a non-number or clamp an out-of-range value on open, so a
+      // curated category JSON's typo would bake into the committed src/ui/categories/*.js output
+      // with zero signal. Fail the GENERATOR loudly instead, naming the category, preset and palette.
+      for (const dp of direct || []) {
+        if (!dp || dp.baseChroma === undefined) continue;
+        const value = dp.baseChroma;
+        if (typeof value !== "number" || !Number.isFinite(value))
+          throw new Error(`${doc.slug}: palette "${p.kicker || p.title}" palette "${dp.name}" baseChroma is not a number (got ${JSON.stringify(value)})`);
+        const { min, max } = DOMAINS.palette.baseChroma;
+        if (value < min || value > max)
+          throw new Error(`${doc.slug}: palette "${p.kicker || p.title}" palette "${dp.name}" baseChroma is out of range: ${value} (valid range ${min}-${max})`);
       }
       presets.push({
         // the tile/set name is the KICKER (a clean structured label, e.g. "59° N · January · Lake
@@ -467,12 +446,6 @@ export function buildCategory(doc) {
         // the opened doc's every export. Absent when the spec palette has no `geometry` (falls back to
         // the global default ramp, the identity gate every other preset still gets).
         ...(geomCfg ? { geometry: geomCfg } : {}),
-        // per-preset PALETTE GROUPS (#617), same opening path (openConfigAsSet -> hydrate ->
-        // clampPaletteGroups) carries this palette's group baseChroma/primeChroma/locked dial into the
-        // opened doc, so a curated preset can reproduce a real document's group-level tuning instead of
-        // silently losing it. Absent when the spec palette has no `paletteGroups` (falls back to the
-        // global GROUP_DEFAULTS every other preset still gets).
-        ...(groupsCfg ? { paletteGroups: groupsCfg } : {}),
         // neutral first (derived from the character palettes' key colors), then the named families,
         // unless `direct` supplies the full array itself (verbatim, in its own authored order).
         palettes: direct || (() => { const pals = mapColors(p.swatches || []); return [deriveNeutralPalette(pals), ...pals]; })(),

@@ -192,8 +192,9 @@ if (JSON.stringify(fixedOn) === JSON.stringify(contrastOn)) FAIL("oncolors", "co
 // chroma, with damping OFF (damp/dampAmp/dampBias: 0, so the ramp keeps full saturation all the way
 // to its own 050/950 instead of fading toward white/black) is measured to land its light-scheme
 // accent between its own washed-out ends, missing AA on both, the exact "no” a ramp fixture chases.
+// vibrancy: 0 is the condition the probe was measured at (T-0014): at the vibrancy 50 default its on-color is probe:950/950 (no fall-through), at 0 probe:black/950.
 const FALLBACK_PROBE = { name: "Probe", hue: 150, chroma: 100, skew: 0, lift: 0, on: true };
-const probeCtl = { ...C([...ALL, FALLBACK_PROBE]), onColorMode: "contrast", damp: 0, dampAmp: 0, dampBias: 0 };
+const probeCtl = { ...C([...ALL, FALLBACK_PROBE]), onColorMode: "contrast", damp: 0, dampAmp: 0, dampBias: 0, vibrancy: 0 };
 const contrastCss = X.exportCSS(probeCtl);
 const probeOn = onRefs(contrastCss).filter((r) => r.startsWith("probe:"));
 if (probeOn.length === 0) FAIL("oncolors", "fallback probe palette produced no on-color ref, the resolution ladder changed shape");
@@ -531,9 +532,9 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (ddRaw.primary.prime.dimmest.value !== "oklch(0.2669 0.1023 258.76)") FAIL("panda", `EX-1 colors.primary.prime.dimmest = ${ddRaw.primary.prime.dimmest.value}`);
   if (JSON.stringify(ddRaw.primary.prime.DEFAULT) !== JSON.stringify(ddRaw.primary.prime.prime)) FAIL("panda", "EX-1 colors.primary.prime.DEFAULT != .prime");
   if (ddRaw.constant.backdrop.value !== "oklch(0 0 0 / 80%)") FAIL("panda", `EX-1 colors.constant.backdrop = ${ddRaw.constant.backdrop.value}`);
-  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.4669 0.1671 258.98)", _dark: "oklch(0.5476 0.1923 259.11)" })) // #725 U3 re-pin, dark was oklch(0.5506 0.1922 259.07)
+  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.4621 0.1645 258.77)", _dark: "oklch(0.5534 0.1923 258.93)" })) // T-0014 re-pin (vibrancy 50), was base oklch(0.4669 0.1671 258.98) / dark oklch(0.5476 0.1923 259.11); #725 U3 re-pin, dark was oklch(0.5506 0.1922 259.07)
     FAIL("panda", `EX-2 colors.primary.DEFAULT = ${JSON.stringify(ddSem.primary.DEFAULT.value)}`);
-  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.3962 0.1205 259.03)", _dark: "oklch(0.6405 0.1518 258.99)" })) // #725 U3 re-pin, was base oklch(0.3971 0.1239 258.91) / dark oklch(0.6413 0.1547 259.07); base re-pinned again at revision 8 (was oklch(0.3951 0.1194 258.53)): the anchored oklch hue is the anchor's own, no per-stop solve
+  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.3808 0.1161 259.05)", _dark: "oklch(0.6588 0.148 258.89)" })) // T-0014 re-pin (vibrancy 50), was base oklch(0.3962 0.1205 259.03) / dark oklch(0.6405 0.1518 258.99); #725 U3 re-pin, was base oklch(0.3971 0.1239 258.91) / dark oklch(0.6413 0.1547 259.07); base re-pinned again at revision 8 (was oklch(0.3951 0.1194 258.53)): the anchored oklch hue is the anchor's own, no per-stop solve
     FAIL("panda", `EX-2 colors.primary.hover = ${JSON.stringify(ddSem.primary.hover.value)}`);
   if (JSON.stringify(ddSem.primary["on-primary"].value) !== JSON.stringify({ base: "oklch(1 0 0)", _dark: "oklch(1 0 0)" }))
     FAIL("panda", `EX-2 colors.primary.on-primary = ${JSON.stringify(ddSem.primary["on-primary"].value)}`);
@@ -541,7 +542,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     FAIL("panda", `EX-2 colors.neutral.on-surface = ${JSON.stringify(ddSem.neutral["on-surface"].value)}`);
   if (Object.keys(ddSem.primary).length !== 53) FAIL("panda", `EX-2 expected 53 keys under semanticTokens.colors.primary, got ${Object.keys(ddSem.primary).length}`);
   if (Object.keys(ddSem).length !== 16) FAIL("panda", `EX-2 expected 16 palette groups, got ${Object.keys(ddSem).length}`);
-  if (!ddSem["data-1"] || ddSem["data-1"].DEFAULT.value.base !== "oklch(0.5163 0.2329 272.15)") FAIL("panda", `EX-2 data-1.DEFAULT.base = ${ddSem["data-1"] && ddSem["data-1"].DEFAULT.value.base}`); // #725 U3 re-pin, was oklch(0.5184 0.2316 272.29)
+  if (!ddSem["data-1"] || ddSem["data-1"].DEFAULT.value.base !== "oklch(0.5093 0.2338 272.35)") FAIL("panda", `EX-2 data-1.DEFAULT.base = ${ddSem["data-1"] && ddSem["data-1"].DEFAULT.value.base}`); // T-0014 re-pin (vibrancy 50), was oklch(0.5163 0.2329 272.15); #725 U3 re-pin, was oklch(0.5184 0.2316 272.29)
 
   // disabled palette absent from both trees.
   const disabledPanda = X.exportPanda(oneOff);
@@ -894,6 +895,9 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
 //    COLLIDING), every one on an anchored default family or its alias (accent, gray); the unanchored
 //    Accent and Error palettes, and every section rendered without anchors or in even mode, are
 //    byte-identical. No leaf shape, key, or ordering changed.
+//    T-0014 re-capture (2026-10-07, by script from the engine): C() carries no vibrancy, so the export
+//    renders at DEFAULT_CONTROLS.vibrancy, 0 -> 50 (ADR-030), and every perceptual ramp moves:
+//    793 / 440 / 478 leaves (ALL / BRAND_ONLY / COLLIDING). No leaf shape, key, or ordering changed.
 {
   const G = "radix-refs-values-unchanged";
   const fixture = JSON.parse(readFileSync(new URL("./fixtures/radix-baseline.json", import.meta.url), "utf8"));
@@ -1145,7 +1149,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     const refMod = X.exportRadixModule(refPreset);
     const valMod = X.exportRadixModule(valPreset);
     const lines = refMod.split("\n");
-    if (lines[0] !== `/* ultimate-tokens export schema ${5} */`) FAIL(G, `reference module first line = ${JSON.stringify(lines[0])}`);
+    if (lines[0] !== `/* ultimate-tokens export schema ${6} */`) FAIL(G, `reference module first line = ${JSON.stringify(lines[0])}`);
     if (!lines[1].startsWith("/* Radix preset")) FAIL(G, `reference module header does not open with the Radix preset comment: ${JSON.stringify(lines[1])}`);
     if (!lines[2].includes("LINKS")) FAIL(G, `the header's second comment line must name the link form, got ${JSON.stringify(lines[2])}`);
     if (!/css-hex|css-oklch/.test(refMod)) FAIL(G, "the reference header never tells the consumer which export to load first");
@@ -2331,23 +2335,20 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 
 // ── hpg-export-json-meta (SPEC 0.3.0 RP-2, ticket #573, plan PR #571 step E2), exportJSON's
 // top-level `meta` states the chroma policy the export was resolved under: `generator` names the
-// tool, `controls` deep-equals stateOf(doc)'s OWN resolved baseChroma/primeChroma/paletteGroups,
-// never a stale or independently re-derived snapshot. `doc` below carries NON-default controls
-// (every group differs from GROUP_DEFAULTS, the two global fallbacks differ from 100/100) so the
-// deep-equal actually exercises resolution, not a default-vs-default match that would pass even if
-// exportJSON ignored `state` entirely. `schemaVersion` itself is covered by the hpg-export-schema-stamp
-// gate below (E6, #577), not here.
+// tool, `controls` is exactly stateOf(doc)'s OWN resolved global k factors { baseChroma, primeChroma }
+// (#804: no group facet, each palette's own Base chroma is already in its stops), never a stale or
+// independently re-derived snapshot. `doc` below carries NON-default controls (the two global k
+// factors differ from 100/100, and a palette carries its own baseChroma that must NOT leak into the
+// block) so the check actually exercises resolution, not a default-vs-default match that would pass
+// even if exportJSON ignored `state` entirely. `schemaVersion` itself is covered by the
+// hpg-export-schema-stamp gate below (E6, #577), not here.
 {
+  const dd = defaultDocument();
   const doc = {
-    ...defaultDocument(),
+    ...dd,
     baseIntensity: 42,
     primeChroma: 77,
-    paletteGroups: {
-      material: { baseChroma: 12, primeChroma: 34 },
-      brand: { baseChroma: 56, primeChroma: 78 },
-      system: { baseChroma: 90, primeChroma: 11 },
-      data: { baseChroma: 100, primeChroma: 100 }, // data stays locked to its own default (REQ-002)
-    },
+    palettes: dd.palettes.map((p) => (p.name === "Primary" ? { ...p, baseChroma: 56 } : p)),
   };
   const state = stateOf(doc);
   const json = X.exportJSON(state);
@@ -2359,11 +2360,10 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
     else {
       if (c.baseChroma !== state.baseChroma) FAIL("hpg-export-json-meta", `meta.controls.baseChroma = ${c.baseChroma}, want stateOf(doc).baseChroma ${state.baseChroma}`);
       if (c.primeChroma !== state.primeChroma) FAIL("hpg-export-json-meta", `meta.controls.primeChroma = ${c.primeChroma}, want stateOf(doc).primeChroma ${state.primeChroma}`);
-      if (JSON.stringify(c.paletteGroups) !== JSON.stringify(state.paletteGroups)) FAIL("hpg-export-json-meta", `meta.controls.paletteGroups drifted from stateOf(doc).paletteGroups: ${JSON.stringify(c.paletteGroups)} vs ${JSON.stringify(state.paletteGroups)}`);
+      if (JSON.stringify(c) !== JSON.stringify({ baseChroma: state.baseChroma, primeChroma: state.primeChroma })) FAIL("hpg-export-json-meta", `meta.controls must be exactly { baseChroma, primeChroma } (#804, no group facet), got ${JSON.stringify(c)}`);
       // not a trivial pass: the resolved values must actually be the doc's own non-default numbers.
       if (c.baseChroma !== 42) FAIL("hpg-export-json-meta", `meta.controls.baseChroma didn't resolve the doc's own non-default value (got ${c.baseChroma}, want 42)`);
       if (c.primeChroma !== 77) FAIL("hpg-export-json-meta", `meta.controls.primeChroma didn't resolve the doc's own non-default value (got ${c.primeChroma}, want 77)`);
-      if (c.paletteGroups.brand.baseChroma !== 56 || c.paletteGroups.brand.primeChroma !== 78) FAIL("hpg-export-json-meta", `meta.controls.paletteGroups.brand didn't resolve the doc's own non-default override (got ${JSON.stringify(c.paletteGroups.brand)})`);
     }
   }
 
@@ -2385,7 +2385,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 // `v` is bumped alongside it in the same PR, that IS the bump-rule contract, not a bug in the gate.
 {
   const G = "hpg-export-schema-stamp";
-  const v = 5;
+  const v = 6;
   const doc = defaultDocument();
   const state = stateOf(doc);
   const tsc = typeScale({});

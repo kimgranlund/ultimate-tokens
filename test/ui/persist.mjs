@@ -20,8 +20,8 @@ const inDomainState = () => {
     if (rnd() > 0.5) p.cuspPull = rnd() * 100; // OPTIONAL per-palette override, must round-trip when present, and stay absent when not
     // intensity: REMOVED from the palette domain entirely (SPEC 0.3.0 REQ-002/010), no in-domain
     // fuzzed palette carries it any more; the field's own drop+report is covered separately below.
-    if (rnd() > 0.5) p.primeChroma = rnd() * 100; // OPTIONAL per-palette primeChroma override (REQ-010), same absent/round-trip shape as cuspPull
-    if (rnd() > 0.5) p.group = pick(["material", "brand", "system", "data"]); // OPTIONAL canvas group (ticket #556), same absent/round-trip shape as cuspPull/primeChroma
+    if (rnd() > 0.5) p.baseChroma = rnd() * 100; // OPTIONAL per-palette Base chroma (#804), same absent/round-trip shape as cuspPull
+    if (rnd() > 0.5) p.group = pick(["material", "brand", "system", "data"]); // OPTIONAL canvas group (ticket #556), same absent/round-trip shape as cuspPull/baseChroma
     // anchor / sourceAnchor (ticket #681, U1), OPTIONAL, well-formed "#RRGGBB" only (an in-domain
     // fuzzed value never exercises the malformed-drop path; that's the dedicated clamp block above).
     if (rnd() > 0.5) { const hex = "#" + Math.floor(rnd() * 0x1000000).toString(16).padStart(6, "0").toUpperCase(); p.anchor = hex; p.sourceAnchor = hex; }
@@ -35,17 +35,9 @@ const inDomainState = () => {
   // the modeKey suffix; values are in-domain integers so they must round-trip byte-for-byte when present.
   const tyTok = {}; for (const [k, v] of [["Body|MD|base", 40], ["Display|XL|base", 90], ["Label|SM|base", 13]]) if (rnd() > 0.5) tyTok[k] = v;
   const geTok = {}; for (const [k, v] of [["MD|base", 30], ["2XL|base", 72], ["XS|base", 18]]) if (rnd() > 0.5) geTok[k] = v;
-  // paletteGroups (SPEC 0.3.0, ticket #559), the four canvas groups' own baseChroma/primeChroma, a
-  // REQUIRED, always-present field (like lmin/lmax/damp above), not an OPTIONAL per-palette one like
-  // cuspPull/primeChroma/group above. `data.locked` is never user-writable, persist.js always
-  // stamps it `true` regardless of input, so an in-domain S must already carry it for round-trip
-  // identity.
-  const paletteGroups = Object.fromEntries(
-    ["material", "brand", "system", "data"].map((g) => [g, { baseChroma: rnd() * 100, primeChroma: rnd() * 100, ...(g === "data" ? { locked: true } : {}) }]),
-  );
   return { curve: pick(["linear", "sine", "cubic", "logistic", "exp"]), tension: rnd() * 100, lmin: rnd() * 40, lmax: 60 + rnd() * 40,
     damp: rnd() * 100, dampCurve: 0.5 + rnd() * 3.5, dampAmp: rnd() * 100, dampBias: -100 + rnd() * 200,
-    baseIntensity: rnd() * 100, primeChroma: rnd() * 100, paletteGroups,
+    baseIntensity: rnd() * 100, primeChroma: rnd() * 100,
     hueSpace: pick(["cam16", "oklch"]), relChroma: rnd() > 0.5, chromaFloor: rnd() * 100, toneMode: pick(["even", "perceptual", "peak"]), vibrancy: rnd() * 100, onColorMode: pick(["fixed", "contrast"]), accentRef: pick(["mode", "single"]), type: { treatment: pick(["product", "luxury", "editorial", "technical", "statement"]), bodyBase: 10 + Math.floor(rnd() * 22), ...(rnd() > 0.5 ? { modes: [{ id: "tm-" + Math.floor(rnd() * 1e6).toString(36), name: pick(["Mobile", "Desktop", "Mode 2"]), bodyBase: 10 + Math.floor(rnd() * 22), ...(rnd() > 0.5 ? { minWidth: 320 + Math.floor(rnd() * 1200) } : {}) }] } : {}), ...(Object.keys(tyTok).length ? { tokenOverrides: tyTok } : {}) }, geometry: { treatment: pick(["comfortable", "compact", "spacious", "touch", "pill"]), baseHeight: 20 + Math.floor(rnd() * 29), ...(rnd() > 0.5 ? { ramp: "linear4" } : {}), ...(rnd() > 0.5 ? { rampContrast: Math.round(rnd() * 95) / 100 } : {}), ...(rnd() > 0.5 ? { modes: [{ id: "gm-" + Math.floor(rnd() * 1e6).toString(36), name: pick(["Mobile", "Desktop", "Mode 2"]), baseHeight: 20 + Math.floor(rnd() * 29), ...(rnd() > 0.5 ? { minWidth: 320 + Math.floor(rnd() * 1200) } : {}), ...(rnd() > 0.5 ? { rampContrast: Math.round(rnd() * 95) / 100 } : {}) }] } : {}), ...(Object.keys(geTok).length ? { tokenOverrides: geTok } : {}) }, theme: pick(["auto", "light", "dark"]), selected: Math.floor(rnd() * n), roleOverrides, palettes };
 };
 
@@ -65,10 +57,10 @@ const mut2 = JSON.parse(JSON.stringify(base)); mut2.palettes[0].hue = 410;   // 
 const hyd2 = U.hydrate(U.serialize(mut2));
 if (hyd2.palettes[0].hue !== 360) FAIL("clamp", `palette hue 410 -> ${hyd2.palettes[0].hue}, want 360`);
 if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "clamping palette hue disturbed sibling chroma");
-// intensity controls (REQ-010): baseIntensity/primeChroma (the two GLOBAL fallbacks) clamp alone;
-// the optional per-palette `primeChroma` override clamps alone when present and stays absent when
-// not set. There is no per-palette ramp-chroma override any more (REQ-002), `palette.intensity` is
-// removed from the domain entirely; its drop+report is covered separately below (dropped-keys).
+// chroma controls (REQ-010, #804): baseIntensity/primeChroma (the two GLOBAL k factors) clamp alone;
+// the optional per-palette `baseChroma` clamps alone when present and stays absent when not set.
+// `palette.intensity` is removed from the domain entirely; its drop+report is covered separately
+// below (dropped-keys). `palette.primeChroma` is no longer a palette field (the v8 fold below).
 {
   const mut3 = JSON.parse(JSON.stringify(base)); mut3.baseIntensity = 140; mut3.primeChroma = -20; // out of [0,100]
   const hyd3 = U.hydrate(U.serialize(mut3));
@@ -81,13 +73,21 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   const withStrayIntensity = JSON.parse(JSON.stringify(base)); withStrayIntensity.palettes[0].intensity = 55;
   if ("intensity" in U.hydrate(U.serialize(withStrayIntensity)).palettes[0]) FAIL("clamp", "palette.intensity must never survive hydrate (REQ-002/010, the field no longer exists in any group)");
 
-  const withPrimeChroma = JSON.parse(JSON.stringify(base)); withPrimeChroma.palettes[0].primeChroma = 240; // out of [0,100]
-  const hydPC = U.hydrate(U.serialize(withPrimeChroma));
-  if (hydPC.palettes[0].primeChroma !== 100) FAIL("clamp", `palette.primeChroma 240 -> ${hydPC.palettes[0].primeChroma}, want 100`);
-  if (!deepEq(hydPC.palettes[0].hue, base.palettes[0].hue)) FAIL("clamp", "clamping palette.primeChroma disturbed sibling hue");
+  const withBaseChroma = JSON.parse(JSON.stringify(base)); withBaseChroma.palettes[0].baseChroma = 240; // out of [0,100]
+  const hydBC = U.hydrate(U.serialize(withBaseChroma));
+  if (hydBC.palettes[0].baseChroma !== 100) FAIL("clamp", `palette.baseChroma 240 -> ${hydBC.palettes[0].baseChroma}, want 100`);
+  if (!deepEq(hydBC.palettes[0].hue, base.palettes[0].hue)) FAIL("clamp", "clamping palette.baseChroma disturbed sibling hue");
+  const lowBaseChroma = JSON.parse(JSON.stringify(base)); lowBaseChroma.palettes[0].baseChroma = -5;
+  if (U.hydrate(U.serialize(lowBaseChroma)).palettes[0].baseChroma !== 0) FAIL("clamp", "palette.baseChroma -5 must clamp to 0");
+  const fracBaseChroma = JSON.parse(JSON.stringify(base)); fracBaseChroma.palettes[0].baseChroma = 41.5;
+  if (U.hydrate(U.serialize(fracBaseChroma)).palettes[0].baseChroma !== 41.5) FAIL("clamp", "an in-domain fractional palette.baseChroma must round-trip byte-for-byte");
 
-  const noPrimeChroma = JSON.parse(JSON.stringify(base)); delete noPrimeChroma.palettes[0].primeChroma;
-  if ("primeChroma" in U.hydrate(U.serialize(noPrimeChroma)).palettes[0]) FAIL("clamp", "absent palette.primeChroma must stay absent (identity gate)");
+  const noBaseChroma = JSON.parse(JSON.stringify(base)); delete noBaseChroma.palettes[0].baseChroma;
+  if ("baseChroma" in U.hydrate(U.serialize(noBaseChroma)).palettes[0]) FAIL("clamp", "absent palette.baseChroma must stay absent (identity gate)");
+
+  // a stray palette.primeChroma on a current (v8) snapshot is never copied: there is no such field.
+  const strayPrime = JSON.parse(JSON.stringify(base)); strayPrime.palettes[0].primeChroma = 70;
+  if ("primeChroma" in U.hydrate(U.serialize(strayPrime)).palettes[0]) FAIL("clamp", "palette.primeChroma must never survive hydrate (#804, one global Prime chroma k)");
 }
 // canvas group (ticket #556): an explicit valid `group` round-trips as-is; an invalid one is
 // dropped (left absent) rather than defaulted here, model.mjs's paletteGroup() is the single
@@ -144,41 +144,56 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   const hydNoA = U.hydrate(U.serialize(noAnchor));
   if ("anchor" in hydNoA.palettes[0] || "sourceAnchor" in hydNoA.palettes[0]) FAIL("clamp", "absent palette.anchor/sourceAnchor must stay absent (identity gate)");
 }
-// paletteGroups (SPEC 0.3.0, ticket #559): the four canvas groups' own baseChroma/primeChroma.
-// Unlike palette.group above (an OPTIONAL, absent-stays-absent field), `paletteGroups` is REQUIRED
-// and default-filled, a doc missing it entirely (or missing one group, or one field) hydrates
-// straight to GROUP_DEFAULTS, same shape as lmin/lmax/damp. `data.locked` is never user-writable.
-// The key is `paletteGroups`, never `groups` (Risk 0c, `story.groups` owns that name already).
+// ── v8 group fold (#804): a pre-v8 doc's `paletteGroups` base chroma folds onto each palette's own
+// `baseChroma` (its valid `group`, else the by-name rule, else data; written only when not 100),
+// `paletteGroups` and every palette `primeChroma` are dropped and reported, and both globals reset to
+// 100 (reported when they were not 100). The global `baseIntensity` is never folded onto a palette.
 {
-  // per-field clamp: an out-of-domain group field clamps alone; every sibling (the other field on
-  // the SAME group, and every OTHER group) is preserved byte-for-byte.
-  const mutG = JSON.parse(JSON.stringify(base)); mutG.paletteGroups.material.baseChroma = 140; // out of [0,100]
-  const hydMutG = U.hydrate(U.serialize(mutG));
-  if (hydMutG.paletteGroups.material.baseChroma !== 100) FAIL("clamp", `paletteGroups.material.baseChroma 140 -> ${hydMutG.paletteGroups.material.baseChroma}, want 100`);
-  if (!deepEq(hydMutG.paletteGroups.material.primeChroma, base.paletteGroups.material.primeChroma)) FAIL("clamp", "clamping paletteGroups.material.baseChroma disturbed sibling primeChroma");
-  for (const g of ["brand", "system", "data"]) if (!deepEq(hydMutG.paletteGroups[g], base.paletteGroups[g])) FAIL("clamp", `clamping paletteGroups.material.baseChroma disturbed paletteGroups.${g}`);
+  const dk = (h) => h[U.DROPPED_KEYS].map((d) => `${d.facet}:${d.key}`);
+  const v7 = {
+    schemaVersion: 7, baseIntensity: 40, primeChroma: 30,
+    paletteGroups: { material: { baseChroma: 25, primeChroma: 60 }, brand: { baseChroma: 41 }, data: { baseChroma: 27, primeChroma: 100, locked: true }, system: { baseChroma: "32" } },
+    palettes: [
+      { name: "Neutral", hue: 250, chroma: 4, skew: 0, lift: 0, on: true },
+      { name: "Primary", hue: 260, chroma: 90, skew: 0, lift: 0, on: true, primeChroma: 70 },
+      { name: "Info", hue: 240, chroma: 60, skew: 0, lift: 0, on: true },
+      { name: "Data 1", hue: 20, chroma: 70, skew: 0, lift: 0, on: true },
+      { name: "Data 2", hue: 80, chroma: 70, skew: 0, lift: 0, on: true, group: "brand" },
+      { name: "Accent", hue: 300, chroma: 70, skew: 0, lift: 0, on: true, group: "brand", baseChroma: 60 },
+      { name: "Custom", hue: 10, chroma: 50, skew: 0, lift: 0, on: true, group: "not-a-group", primeChroma: 100 },
+    ],
+  };
+  const h = U.hydrate(JSON.parse(JSON.stringify(v7)));
+  const bc = Object.fromEntries(h.palettes.map((p) => [p.name, p.baseChroma]));
+  const wantBc = { Neutral: 25, Primary: 41, Info: undefined, "Data 1": 27, "Data 2": 41, Accent: 60, Custom: 27 };
+  for (const [n, w] of Object.entries(wantBc)) if (bc[n] !== w) FAIL("schema-rename", `palette ${n} baseChroma ${JSON.stringify(bc[n])}, want ${JSON.stringify(w)} (its group's folded value, absent at 100)`);
+  if ("baseChroma" in h.palettes[2]) FAIL("schema-rename", "a group at 100 (or a non-number) must leave the palette's baseChroma absent, never stamped 100");
+  if ("paletteGroups" in h) FAIL("schema-rename", "paletteGroups must not survive a v7 hydrate");
+  if (h.palettes.some((p) => "primeChroma" in p)) FAIL("schema-rename", "no palette.primeChroma may survive a v7 hydrate");
+  if (h.baseIntensity !== 100 || h.primeChroma !== 100) FAIL("schema-rename", `both globals reset to 100, got ${h.baseIntensity}/${h.primeChroma}`);
+  const got = dk(h);
+  for (const want of ["controls:paletteGroups", "palette:Primary.primeChroma", "palette:Custom.primeChroma", "controls:baseIntensity", "controls:primeChroma"])
+    if (!got.includes(want)) FAIL("schema-rename", `DROPPED_KEYS must name ${want} (got ${JSON.stringify(got)})`);
+  if (got.some((k) => k.startsWith("palette:") && !k.endsWith(".primeChroma"))) FAIL("schema-rename", `only palette primeChroma keys are reported per palette (got ${JSON.stringify(got)})`);
 
-  // a doc predating this feature (no `paletteGroups` at all) hydrates straight to the ratified
-  // defaults, Material 100/60 (#785 R96), Brand/System 100/100, Data 100/100 locked, no migration step, just
-  // the same absent-field-hydrates-to-a-sensible-default shape lmin/lmax/damp already use.
-  const noGroupsAtAll = { palettes: base.palettes };
-  const hydNoGroupsAtAll = U.hydrate(U.serialize(noGroupsAtAll));
-  const wantDefaults = { material: { baseChroma: 100, primeChroma: 60 }, brand: { baseChroma: 100, primeChroma: 100 }, system: { baseChroma: 100, primeChroma: 100 }, data: { baseChroma: 100, primeChroma: 100, locked: true } };
-  if (!deepEq(hydNoGroupsAtAll.paletteGroups, wantDefaults)) FAIL("field-default", `a doc with no \`paletteGroups\` at all must hydrate to the ratified per-group defaults, got ${JSON.stringify(hydNoGroupsAtAll.paletteGroups)}`);
+  // out-of-range group values clamp before the fold; 100 after the clamp writes nothing.
+  const clamped = U.hydrate({ schemaVersion: 7, paletteGroups: { brand: { baseChroma: 140 }, system: { baseChroma: -5 } }, palettes: [{ name: "Primary", hue: 1, chroma: 1, skew: 0, lift: 0 }, { name: "Info", hue: 1, chroma: 1, skew: 0, lift: 0 }] });
+  if ("baseChroma" in clamped.palettes[0] || clamped.palettes[1].baseChroma !== 0) FAIL("schema-rename", `a group value clamps 0..100 before the fold, got ${JSON.stringify(clamped.palettes.map((p) => p.baseChroma))}`);
 
-  // one group present, the other three absent: only the present group's explicit numbers survive;
-  // the other three still default-fill.
-  const partialGroups = { palettes: base.palettes, paletteGroups: { material: { baseChroma: 55, primeChroma: 77 } } };
-  const hydPartial = U.hydrate(U.serialize(partialGroups));
-  if (hydPartial.paletteGroups.material.baseChroma !== 55 || hydPartial.paletteGroups.material.primeChroma !== 77) FAIL("field-default", "an explicit paletteGroups.material must round-trip its own numbers, not the default");
-  if (hydPartial.paletteGroups.brand.baseChroma !== 100 || hydPartial.paletteGroups.system.baseChroma !== 100) FAIL("field-default", "an absent paletteGroups.brand/system must default-fill to 100/100");
+  // globals already at 100 reset silently; the global Base chroma is never folded onto a palette.
+  const quiet = U.hydrate({ schemaVersion: 7, baseIntensity: 100, primeChroma: 100, palettes: [{ name: "Primary", hue: 1, chroma: 1, skew: 0, lift: 0 }] });
+  if (quiet[U.DROPPED_KEYS].length) FAIL("schema-rename", `a v7 doc with nothing to fold must report nothing (got ${JSON.stringify(dk(quiet))})`);
+  const noFoldGlobal = U.hydrate({ schemaVersion: 7, baseIntensity: 50, palettes: [{ name: "Primary", hue: 1, chroma: 1, skew: 0, lift: 0 }] });
+  if ("baseChroma" in noFoldGlobal.palettes[0] || noFoldGlobal.baseIntensity !== 100) FAIL("schema-rename", "a pre-v8 baseIntensity never reached a palette, so it is reset, never folded onto one");
 
-  // `locked` is never user-writable: a snapshot that tries to unset Data's lock, or set it on
-  // another group, is ignored either way.
-  const spoofedLock = { palettes: base.palettes, paletteGroups: { data: { baseChroma: 40, primeChroma: 40, locked: false }, brand: { baseChroma: 20, primeChroma: 20, locked: true } } };
-  const hydSpoofed = U.hydrate(U.serialize(spoofedLock));
-  if (hydSpoofed.paletteGroups.data.locked !== true) FAIL("clamp", "paletteGroups.data.locked must always be true, regardless of the incoming snapshot");
-  if ("locked" in hydSpoofed.paletteGroups.brand) FAIL("clamp", "paletteGroups.brand must never carry a locked field, regardless of the incoming snapshot");
+  // a v8 snapshot is never folded: its globals are live k factors and its palettes are as saved.
+  const v8 = U.hydrate({ schemaVersion: 8, baseIntensity: 40, primeChroma: 30, paletteGroups: { brand: { baseChroma: 41 } }, palettes: [{ name: "Primary", hue: 1, chroma: 1, skew: 0, lift: 0 }] });
+  if (v8.baseIntensity !== 40 || v8.primeChroma !== 30) FAIL("schema-rename", "a v8 snapshot's global k factors must hydrate as saved");
+  if ("baseChroma" in v8.palettes[0] || "paletteGroups" in v8) FAIL("schema-rename", "a v8 snapshot must not fold a stray group facet onto its palettes, and the allowlist drops the facet");
+
+  // a folded doc re-serializes at v8 and hydrates identically (the fold runs once).
+  const again = U.hydrate(U.serialize(h));
+  if (!deepEq(again, h)) FAIL("schema-rename", "re-hydrating a folded doc must be the identity");
 }
 // ── schema-rename (REQ-011, EX-9): pre-v2 snapshot stamps baseIntensity 100; v2 snapshot with the
 // field absent hydrates to the domain default (also 100 today) ─────────────────────────────
@@ -195,16 +210,20 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
 // ── schema-rename v3 (REQ-011, R4, EX-9): keyIntensity -> primeChroma, value carried, old key
 // dropped, never-clobbering an already-present primeChroma ──────────────────────────────────
 {
-  // EX-9: {schemaVersion: 2, keyIntensity: 70} hydrates to primeChroma 70, no keyIntensity key.
+  // The v8 fold resets every pre-v8 primeChroma to 100 and reports it only when the value it reset
+  // was not 100, so the report is what proves the v3 rename carried the value across first.
+  const resetPrime = (h) => h[U.DROPPED_KEYS].some((d) => d.facet === "controls" && d.key === "primeChroma");
+  // EX-9: {schemaVersion: 2, keyIntensity: 70} carries 70 onto primeChroma, then v8 resets it to 100.
   const withKeyIntensity = { schemaVersion: 2, palettes: base.palettes, keyIntensity: 70 };
   const hydKI = U.hydrate(withKeyIntensity);
-  if (hydKI.primeChroma !== 70) FAIL("schema-rename", `v3 rename: keyIntensity 70 -> primeChroma ${hydKI.primeChroma}, want 70`);
+  if (hydKI.primeChroma !== 100 || !resetPrime(hydKI)) FAIL("schema-rename", `v3 rename then v8 reset: keyIntensity 70 -> primeChroma ${hydKI.primeChroma} (want 100, reported as reset from 70)`);
   if ("keyIntensity" in hydKI) FAIL("schema-rename", "v3 rename: keyIntensity must not survive onto the hydrated state");
 
-  // never-clobber: a doc carrying BOTH keeps its OWN primeChroma; the stale keyIntensity is dropped.
-  const withBoth = { schemaVersion: 2, palettes: base.palettes, keyIntensity: 40, primeChroma: 90 };
+  // never-clobber: a doc carrying BOTH keeps its OWN primeChroma (90, reported as reset) and never
+  // takes the stale keyIntensity (100, which would reset silently).
+  const withBoth = { schemaVersion: 2, palettes: base.palettes, keyIntensity: 100, primeChroma: 90 };
   const hydBoth = U.hydrate(withBoth);
-  if (hydBoth.primeChroma !== 90) FAIL("schema-rename", `v3 rename never-clobber: primeChroma ${hydBoth.primeChroma}, want 90 (the doc's own value, not the stale keyIntensity)`);
+  if (!resetPrime(hydBoth)) FAIL("schema-rename", "v3 rename never-clobber: the doc's own primeChroma 90 must be what v8 resets, not the stale keyIntensity 100");
   if ("keyIntensity" in hydBoth) FAIL("schema-rename", "v3 rename never-clobber: keyIntensity must not survive onto the hydrated state");
 
   // a doc already at schemaVersion 3 (or later) predates no rename, an absent field defaults as usual.
@@ -214,14 +233,13 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
 }
 // ── schema-rename v4 (SPEC spec-muted-base-key-spikes 0.3.0 REQ-011, EX-9's third snapshot): a v3
 // snapshot carrying a per-palette `intensity` hydrates with the field gone, DROPPED_KEYS naming it,
-// and paletteGroups filled with the REQ-001 defaults; palette.group stays absent (derive-on-read). ──
+// and no group facet (#804); palette.group stays absent (derive-on-read). ──
 {
   const withIntensity = { schemaVersion: 3, palettes: [{ name: "Primary", hue: 267, chroma: 95, intensity: 40, on: true }] };
   const hydWI = U.hydrate(withIntensity);
   if ("intensity" in hydWI.palettes[0]) FAIL("schema-rename", "EX-9 v4: a v3 snapshot's palette.intensity must not survive onto the hydrated state");
   if (!hydWI[U.DROPPED_KEYS].some((d) => d.facet === "palette" && d.key === "Primary.intensity")) FAIL("schema-rename", `EX-9 v4: palette.intensity must be reported in DROPPED_KEYS, named by palette (got ${JSON.stringify(hydWI[U.DROPPED_KEYS])})`);
-  const wantDefaults4 = { material: { baseChroma: 100, primeChroma: 60 }, brand: { baseChroma: 100, primeChroma: 100 }, system: { baseChroma: 100, primeChroma: 100 }, data: { baseChroma: 100, primeChroma: 100, locked: true } };
-  if (!deepEq(hydWI.paletteGroups, wantDefaults4)) FAIL("schema-rename", `EX-9 v4: paletteGroups must default-fill to the REQ-001 ratified defaults, got ${JSON.stringify(hydWI.paletteGroups)}`);
+  if ("paletteGroups" in hydWI || "baseChroma" in hydWI.palettes[0]) FAIL("schema-rename", "EX-9 v4: a v3 snapshot with no group facet hydrates with none, and no palette baseChroma (every group was 100)");
   if ("group" in hydWI.palettes[0]) FAIL("schema-rename", "EX-9 v4: palette.group must NOT be written by migration, it stays absent (derive-on-read)");
 }
 // export-format prefs (doc.export = { unit, colorPrefix, … }), each valid key round-trips; absent stays

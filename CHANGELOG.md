@@ -8,6 +8,22 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 
 ## [Unreleased]
 
+### 2026-10-07
+
+#### Changed
+- **Chroma controls are per-palette Base chroma times two global factors; the anchored prime middle
+  follows Prime chroma** (#804, ADR-030). Each palette now has its own Base chroma slider (its ramp
+  damper), and the per-group Base chroma and Prime chroma sliders and the per-palette Prime chroma
+  slider are gone. The Global tab's Base chroma and Prime chroma are factors on every palette, both
+  100 by default; before this change they were dead fallbacks that moved nothing. On a sampled
+  palette the middle prime swatch is still its own colour at Prime chroma 100 and now mutes with the
+  rest of the strip below it. The default Vibrancy is 50 (was 0). A saved kit loads through the v8
+  hydrate: each group's base chroma is copied onto its palettes so ramps render the same, saved
+  prime values are dropped (Neutral strips at the old Material 60 and Adia Primary at 99 move once),
+  and a vibrancy of 0 becomes 50, which moves perceptual ramps. Export schema is now
+  `ultimate-tokens-brand-kit/6` and the brand-kit MCP server is 0.6.0. Evidence:
+  `docs/reports/2026-10-07-chroma-controls-redesign.md`.
+
 ### 2026-10-03
 
 #### Changed

@@ -225,7 +225,7 @@ if (applyBundle) {
   // root key, so the stamp is inert to the reader, this proves that, rather than assuming it).
   for (const file of ["palette.tokens.json", "Light_tokens.json", "Dark_tokens.json"]) {
     const ext = bundle[file].$extensions && bundle[file].$extensions["com.ultimate-tokens"];
-    if (!ext || ext.schemaVersion !== 5) FAIL("apply", `bundle["${file}"] missing root $extensions["com.ultimate-tokens"].schemaVersion=5 (got ${JSON.stringify(ext)})`);
+    if (!ext || ext.schemaVersion !== 6) FAIL("apply", `bundle["${file}"] missing root $extensions["com.ultimate-tokens"].schemaVersion=6 (got ${JSON.stringify(ext)})`);
   }
 
   try {
@@ -369,13 +369,10 @@ if (applyBundle) {
           else {
             const before = JSON.stringify(brightestVar.values[primeA.modes[0].modeId]);
             // primeChroma (REQ-052) scales every prime swatch's saturation, a value-only mutation
-            // with no structural effect (same 7 steps, same names). Set it on the PALETTE itself
-            // (Primary's own override), not the top-level doc.primeChroma: ticket #559 put a GROUP
-            // layer between the two (Primary's "brand" group has its own explicit primeChroma
-            // default), so the global slider alone no longer reaches a grouped palette once
-            // resolveGroups() has filled every group's default, a per-palette override still does.
+            // with no structural effect (same 7 steps, same names). #804: it is one global k factor
+            // on every palette (doc.primeChroma); a per-palette primeChroma is no longer read.
             const doc10b = defaultDocument();
-            doc10b.palettes.find((p) => p.name === "Primary").primeChroma = 50;
+            doc10b.primeChroma = 50;
             const bundleB = figmaBundle(doc10b);
             const resB = await load10.applyBundle(bundleB);
             const primeCollsB = F10.collections.filter((c) => c.name === "Color Prime").length;
