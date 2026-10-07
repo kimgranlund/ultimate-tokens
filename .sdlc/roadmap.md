@@ -17,5 +17,8 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 | T-0011 | [gh-787](gh-787/handoff.md) | Palette slugs can collide with another palette's suffixed token names (GitHub #787) | bug | M | P3 | none | 🟢 done |
 | T-0012 | [gh-748](gh-748/handoff.md) | marketing: voice reread of the swept store copy (GitHub #748, part 1 only) | chore | S | P3 | none | 🟢 done |
 | T-0013 | [gh-778](gh-778/handoff.md) | Chroma envelope: the curve as the spec, presets, tolerance gates (gh 778) | feature | L | P2 | none | 🟢 done |
+| T-0014 | [prime-anchor-follows-chroma](prime-anchor-follows-chroma/handoff.md) | Chroma controls redesign: Chroma + Base chroma per palette, global base/prime k factors, vibrancy 50 | feature | L | P2 | none | 🟢 done |
+| T-0015 | [hue-space-anchored](hue-space-anchored/handoff.md) | Hue space toggle (OKLCH/CAM16) also applies to anchored palettes | feature | L | P2 | none | 🔵 ready |
 | T-0016 | [semantic-mapping-tidy](semantic-mapping-tidy/handoff.md) | Semantic Mapping tab: swatch border, drop Roles pane tab, rename Raw token column | chore | M | P2 | none | 🟢 done |
+| T-0017 | [geometry-maison-ladder](geometry-maison-ladder/handoff.md) | Geometry system adopts the Maison ui-kit ladder (tier x scale x size, --g-* and --r-* roles) | feature | XL | P2 | none | ⏳ proposed |
 | T-0018 | [gh-786](gh-786/handoff.md) | Arrow-stepping and palette add/duplicate/delete must keep the current right-pane tab (gh 786) | bug | S | P2 | none | 🟢 done |

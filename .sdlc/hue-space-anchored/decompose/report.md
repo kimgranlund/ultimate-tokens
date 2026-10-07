@@ -1,0 +1,5 @@
+Manifest: /Users/kimgranlund/Projects/nonoun/ultimate-tokens/.sdlc/hue-space-anchored/decompose/manifest-v1.json (technical-architecture · plan) · coverage_check: clean
+Quadrant: load-bearing
+Outside-in: four groups (engine, editor surface, gates, records) over nine leaves; a serial prep leaf n0 (export solveCam16Hue) feeds n2 and n3; every structure node carries a grouping justify; one writer per file (tonal.js n1, prime.mjs n2, model.mjs n3, color.js+app-helpers n4, anchor.mjs n5, headless+shell n6, docs n7, report n8).
+Inside-out: sixteen actions; the perceptual/peak move (a1) is physically sub-JND (measured max OKLab dE 0.014 across 3,378 chromatic corpus anchors), so a7 bounds it instead of flooring it; a9 (exports follow the editor's space) is already true by exports.js passing full controls and is hosted on the gate that asserts it; a14 (legacy cam16 stamp) has no code home by design, hosted on the ADR.
+Hand-off: /plan, after the user rules on the three decisions in architect-L1.md.

@@ -1,0 +1,395 @@
+{
+  "domain": "technical-architecture",
+  "plan": true,
+  "nodes": [
+    {
+      "id": "n0",
+      "label": "Geometry system on the Maison ladder (tier x scale x size, 27 cells)",
+      "leaf": false,
+      "justify": "grouping"
+    },
+    {
+      "id": "n1",
+      "label": "Engine: src/engine/geometry.mjs",
+      "leaf": false,
+      "justify": "grouping"
+    },
+    {
+      "id": "n1a",
+      "label": "Ladder data: the 25-row CSV table + the tier formula (definition.mjs tiers/sizes) -> 27 on-table cells",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/engine/geometry.mjs exits 0 with its `maison-ladder` group asserting every cell's height/inset/text/icon deep-equals test/engine/fixtures/maison-geometry-rows.json (27 rows, sha of geometry.ts recorded) and that an off-table height throws"
+    },
+    {
+      "id": "n1b",
+      "label": "Per-cell derivations: anatomy identity, compact row (caption/chip), icon ratio, radius roles under the four modes",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/engine/geometry.mjs asserts inset === (height - icon)/2 for all 27 cells, caption/chip values equal the compact-row rule for all 27, and radius-control/-mark/-inset/-card equal the k-formula for 27 x 4 = 108 cases"
+    },
+    {
+      "id": "n1c",
+      "label": "geomScale shape: config {tier, scale, radius, spaceBase, modes} -> {cells (27, keyed `{tier}-{scale}-{size}`), default cell, radii, space, insets, gaps, borders, focus}; orderedSizeNames/sizeAnchor/mdAnchor over cells; treatments/baseHeight/rampContrast/linear4 retired",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/engine/geometry.mjs asserts geomScale({}) resolves the default cell to product-md-md at 32px, mdAnchor(scale).name === 'product-md-md', sizeAnchor maps all six t-shirt names (XS..2XL) to their legacy-height cells, orderedSizeNames returns 27 names in tier/scale/size order; and `! grep -rlE 'RAMP_LADDER|rampContrast|baseHeight|CONTROL_FONT|GAP_UNIT' src/engine/geometry.mjs src/ui/model.mjs src/ui/sections/geometry.js` exits 0 (persist.js's RENAMES migration table is the one allowed reader of the old keys)"
+    },
+    {
+      "id": "n1d",
+      "label": "Emitters: cell primitives CSS + context resolver CSS, sizes-only CSS, breakpoint CSS, DTCG, Figma number tokens, Figma moded collection",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/engine/geometry.mjs asserts geomTokensCSS emits 27 `--{pfx}size-{tier}-{scale}-{size}-*` blocks plus the resolver rules for data-tier/data-scale/data-size/data-radius and the role vars (--control-*, --chip-*, --radius-control/-mark/-inset/-card); geomTokensDTCG has 27 size groups; geomTokensFigmaModes has 27 constant `size/{cell}/{field}` variables plus `control/{tier}/{size}/{field}` per-mode aliases; node test/engine/exports.mjs exits 0"
+    },
+    {
+      "id": "n2",
+      "label": "Type join: type.mjs owns the height-indexed UI text table (UI-control = CSV text column, UI-widget = compact-row text); model.mjs geometryScale/geomScaleFor/geomModeScales compose per cell and per mode scale",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/engine/geometry.mjs composition group asserts cell.text === typeScale UI-control text at cell.height for all 27 cells and chipText === UI-widget text at the compact row; node test/engine/type.mjs and node test/ui/model.mjs exit 0"
+    },
+    {
+      "id": "n3",
+      "label": "Document + persistence: persist.js clampGeometry {tier, scale, radius, spaceBase, modes[].scale}, allowlists GEOMETRY_TIERS/SCALES/SIZES/RADIUS, RENAMES v8 migration from treatment/baseHeight/rampContrast/ramp/tokenOverrides, DEFAULT_GEOMETRY",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/ui/persist.mjs exits 0: a v7 doc {treatment:'compact', baseHeight:24, ramp:'linear4', tokenOverrides:{...}} hydrates to {tier:'product', scale:'sm'...} with tokenOverrides and ramp in DROPPED_KEYS, a v8 doc round-trips byte-identical, and the allowlist-parity gate matches the engine's tier/scale/size/radius ids"
+    },
+    {
+      "id": "n4",
+      "label": "Editor Geometry section: inspector (tier, scale, radius mode, space base), canvas of all 27 cells in light and dark, tokens table, mode editor as a scale per breakpoint; drawer/apply-gate/app.js call sites",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/ui/headless-boot.mjs exits 0 with its geometry groups asserting 27 ramp rows render, the inspector writes doc.geometry.tier/scale/radius, and a mode edit writes modes[].scale; npm run smoke screenshots the Geometry canvas without console errors"
+    },
+    {
+      "id": "n5",
+      "label": "Downstream exports: ds-export dsGeometryLayer/dsIconLayer/Buttons size row over cells; exports.js radii/space/border seeds unchanged; MCP get_geometry + brand://geometry text; png-swatch-board LG-equivalent cell",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/engine/ds-gates.mjs, node test/mcp/brand-kit.mjs, node test/mcp/png-swatch-board.mjs exit 0; node test/engine/adia-derived-exports.mjs exits 0 with docs/reference/data/adia-radix-export.mjs bytes unchanged (or bumped per the file's own policy with the reason recorded)"
+    },
+    {
+      "id": "n6",
+      "label": "Figma plugin + binder: plan paths size/{cell}/{field} + control/{tier}/{size}/{field}; migrations.mjs geometry wave (old size/{xs..2xl} and size/{0..9} -> cell by legacy height, field map padding-narrow->inset, font->text, pill-radius->radius-control); mode-apply-plan tiebreak product>content>micro then md>sm>lg; code.js mirrors",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/figma/migrations.mjs asserts the six legacy steps map to product-sm-sm, product-md-sm, product-sm-md, product-lg-md, content-md-md, content-lg-md and the tiebreak is deterministic; node test/figma/mode-apply.mjs, test/figma/binder.mjs (collparity), test/figma/plugin.mjs exit 0"
+    },
+    {
+      "id": "n7",
+      "label": "Validation: vendored Maison fixture gate, real-browser resolver cases (27 x 4 radius), parity gates (persist allowlists, consumer skill)",
+      "leaf": true,
+      "justify": null,
+      "accept": "test/engine/fixtures/maison-geometry-rows.json exists with a `source` sha256 of ui-kit-maison geometry.ts; test/smoke/smoke.mjs renders 108 nested data-tier/scale/size/radius cases and asserts getComputedStyle --control-height and --radius-control equal the engine's cell values; node test/plugin/geometry-tokens.mjs exits 0; npm test exits 0"
+    },
+    {
+      "id": "n8",
+      "label": "Records: ADR-029 (decision + Maison->ours name map), geometry-system skill + references, consumer geometry-tokens skill + references + dimension-parity.mjs, type-scale skill, docs/references/geometry/README.md, mcp/README.md, Adia preset `ramp` removal in docs/reference/colors/categories/brands.json",
+      "leaf": true,
+      "justify": null,
+      "accept": "grep -q 'Geometry adopts the Maison ui-kit ladder' docs/references/decision-records.md and that ADR (the next free number) precedes the Quick map; `! grep -rlE 'baseHeight|rampContrast|linear4|CONTROL_FONT|GAP_UNIT' .claude/skills/geometry-system plugin/ultimate-tokens/skills/geometry-tokens docs/references/geometry/README.md mcp/README.md` exits 0; node test/repo/citations.mjs and node test/plugin/geometry-tokens.mjs exit 0"
+    }
+  ],
+  "actions": [
+    {
+      "id": "a1",
+      "label": "resolve a (tier, scale, size) triple to a control height by the tier formula"
+    },
+    {
+      "id": "a2",
+      "label": "look up inset, text and icon for a ladder height; reject an off-table height"
+    },
+    {
+      "id": "a3",
+      "label": "derive caption text and chip height/inset/text from the compact row (largest row at or below height minus inset, chip capped at the caller's height)"
+    },
+    {
+      "id": "a4",
+      "label": "derive the icon-height ratio per cell (precise, not rounded)"
+    },
+    {
+      "id": "a5",
+      "label": "derive control, mark, inset and card radius for the kit's radius mode (default/round/sharp/pill)"
+    },
+    {
+      "id": "a6",
+      "label": "compose each cell's text (and chip text) from the Type UI scale, value-neutral at defaults"
+    },
+    {
+      "id": "a7",
+      "label": "emit all 27 cells as CSS custom properties in our grammar under the kit's prefix"
+    },
+    {
+      "id": "a8",
+      "label": "emit the CSS context resolver: data-tier/data-scale/data-size/data-radius -> --control-*, --chip-*, --radius-control/-mark/-inset/-card, --control-micro-*"
+    },
+    {
+      "id": "a9",
+      "label": "emit DTCG dimension tokens for the 27 cells and the container ladders"
+    },
+    {
+      "id": "a10",
+      "label": "emit Figma FLOAT variables: 27 mode-constant cells plus per-breakpoint-mode aliases bound to that mode's scale"
+    },
+    {
+      "id": "a11",
+      "label": "emit per-breakpoint CSS override files from each mode's scale"
+    },
+    {
+      "id": "a12",
+      "label": "persist tier, scale, radius mode, space base and per-mode scale; drop unknown ids with a report"
+    },
+    {
+      "id": "a13",
+      "label": "migrate a saved kit forward: treatment/baseHeight -> nearest (tier, scale) by md-cell height; modes[].baseHeight -> modes[].scale; drop rampContrast, ramp, tokenOverrides via DROPPED_KEYS"
+    },
+    {
+      "id": "a14",
+      "label": "choose tier, scale, radius mode and space base in the Geometry inspector"
+    },
+    {
+      "id": "a15",
+      "label": "preview all 27 cells (default cell pinned) as live controls in light and dark on the canvas"
+    },
+    {
+      "id": "a16",
+      "label": "edit breakpoint modes as a scale per mode (standard set: Desktop=md, Desktop Lg/Xl=lg, Tablet/Mobile=sm)"
+    },
+    {
+      "id": "a17",
+      "label": "serve the ladder over MCP get_geometry / brand://geometry with a description naming tier x scale x size"
+    },
+    {
+      "id": "a18",
+      "label": "size the PNG swatch-board mock controls from the kit's LG-equivalent cell (product-lg-md)"
+    },
+    {
+      "id": "a19",
+      "label": "emit the design-system bundle geometry layer, icon sizes and the Buttons size-ladder row from cells"
+    },
+    {
+      "id": "a20",
+      "label": "keep the M3 radius ladder, space, insets, gaps, borders and focus seeds unchanged so shadcn/Panda/Radix/Tailwind and the pinned Adia artifacts hold"
+    },
+    {
+      "id": "a21",
+      "label": "apply the new variable paths to an existing Figma file, aliasing old size/{step} and size/{0..9} variables to cells by nearest legacy height with a deterministic tiebreak"
+    },
+    {
+      "id": "a22",
+      "label": "ship the rename map so a renamed emitted variable keeps its Figma id"
+    },
+    {
+      "id": "a23",
+      "label": "gate the 27 cells against the vendored Maison rows: values, anatomy identity, compact row, 108 radius values"
+    },
+    {
+      "id": "a24",
+      "label": "gate the resolver cascade in a real browser (nearest axis wins, 27 x 4 radius cases, an override on --control-height wins)"
+    },
+    {
+      "id": "a25",
+      "label": "gate persist allowlists and the consumer skill's token names against the engine"
+    },
+    {
+      "id": "a26",
+      "label": "record the decision and the Maison->ours name map in an ADR; repair the geometry-system, type-scale and consumer skills, the geometry README and the MCP README in the same change"
+    },
+    {
+      "id": "a27",
+      "label": "route every ordered or named-cell lookup through orderedSizeNames/sizeAnchor/mdAnchor so no consumer learns the cell naming"
+    },
+    {
+      "id": "a28",
+      "label": "keep the Adia preset valid after linear4 retires (remove geometry.ramp from brands.json) and regenerate its derived artifacts per their bump policy"
+    },
+    {
+      "id": "a29",
+      "label": "retire caret, icon-gap, density, padding-wide, the compact pads, pill-radius and the .control-{step} classes, each named in the migration notes"
+    },
+    {
+      "id": "a30",
+      "label": "re-key the UI-control and UI-widget voices from six t-shirt steps to the height-indexed Maison text table and retire their fixed six-step rows from the type emitters"
+    }
+  ],
+  "hosts": [
+    {
+      "action": "a1",
+      "node": "n1a"
+    },
+    {
+      "action": "a2",
+      "node": "n1a"
+    },
+    {
+      "action": "a3",
+      "node": "n1b"
+    },
+    {
+      "action": "a4",
+      "node": "n1b"
+    },
+    {
+      "action": "a5",
+      "node": "n1b"
+    },
+    {
+      "action": "a6",
+      "node": "n2"
+    },
+    {
+      "action": "a30",
+      "node": "n2"
+    },
+    {
+      "action": "a7",
+      "node": "n1d"
+    },
+    {
+      "action": "a8",
+      "node": "n1d"
+    },
+    {
+      "action": "a9",
+      "node": "n1d"
+    },
+    {
+      "action": "a10",
+      "node": "n1d"
+    },
+    {
+      "action": "a11",
+      "node": "n1d"
+    },
+    {
+      "action": "a27",
+      "node": "n1c"
+    },
+    {
+      "action": "a29",
+      "node": "n1c"
+    },
+    {
+      "action": "a12",
+      "node": "n3"
+    },
+    {
+      "action": "a13",
+      "node": "n3"
+    },
+    {
+      "action": "a14",
+      "node": "n4"
+    },
+    {
+      "action": "a15",
+      "node": "n4"
+    },
+    {
+      "action": "a16",
+      "node": "n4"
+    },
+    {
+      "action": "a17",
+      "node": "n5"
+    },
+    {
+      "action": "a18",
+      "node": "n5"
+    },
+    {
+      "action": "a19",
+      "node": "n5"
+    },
+    {
+      "action": "a20",
+      "node": "n5"
+    },
+    {
+      "action": "a28",
+      "node": "n5"
+    },
+    {
+      "action": "a21",
+      "node": "n6"
+    },
+    {
+      "action": "a22",
+      "node": "n6"
+    },
+    {
+      "action": "a23",
+      "node": "n7"
+    },
+    {
+      "action": "a24",
+      "node": "n7"
+    },
+    {
+      "action": "a25",
+      "node": "n7"
+    },
+    {
+      "action": "a26",
+      "node": "n8"
+    },
+    {
+      "action": "a28",
+      "node": "n8"
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1a",
+      "to": "n1b",
+      "why": "derivations read the resolved cell rows"
+    },
+    {
+      "from": "n1b",
+      "to": "n1c",
+      "why": "the scale shape carries the derived fields"
+    },
+    {
+      "from": "n1c",
+      "to": "n1d",
+      "why": "emitters iterate the new cells shape"
+    },
+    {
+      "from": "n1c",
+      "to": "n2",
+      "why": "the join composes per cell height"
+    },
+    {
+      "from": "n1c",
+      "to": "n3",
+      "why": "persist allowlists mirror the engine ids"
+    },
+    {
+      "from": "n1d",
+      "to": "n4",
+      "why": "the section renders and previews emitter output"
+    },
+    {
+      "from": "n1d",
+      "to": "n5",
+      "why": "ds-export and MCP read the resolved scale and emitters"
+    },
+    {
+      "from": "n1d",
+      "to": "n6",
+      "why": "the binder reconciles the emitted variable paths"
+    },
+    {
+      "from": "n1d",
+      "to": "n7",
+      "why": "the gates assert emitter output"
+    },
+    {
+      "from": "n1c",
+      "to": "n8",
+      "why": "records cite the final names and shape"
+    }
+  ]
+}

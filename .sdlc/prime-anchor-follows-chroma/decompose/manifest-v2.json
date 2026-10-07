@@ -1,0 +1,124 @@
+{
+  "domain": "technical-architecture",
+  "plan": true,
+  "supersedes": "manifest-v1.json",
+  "diff_reason": "Scope change (user, 2026-10-07): the anchor-follows-chroma rule is folded into a chroma-control redesign (per-palette Chroma + Base chroma, group chroma sliders removed, globals become k factors, vibrancy default 50 with migration). v1's engine nodes n1a-n1d, the engine/corpus gates and the record nodes carry over with pc renamed k_prime; new nodes for the resolver, the schema v8 migration, the generator, the two UI tabs, the key tile, the MCP kit shape, fixtures and the before/after report.",
+  "nodes": [
+    { "id": "n0", "label": "T-0014 chroma controls redesign (anchor follows chroma)", "leaf": false, "justify": "grouping" },
+
+    { "id": "n1", "label": "engine: src/engine/prime.mjs anchored rung 3 and the k factor", "leaf": false, "justify": "grouping" },
+    { "id": "n1a", "label": "identity short-circuit: k_prime === 1 returns the stored hex verbatim (prime.mjs:249-251 behind the factor test)", "leaf": true, "justify": null,
+      "accept": "node test/engine/prime.mjs exits 0 and gate (h) reports prime.hex === anchor for all 16 defaults in both hue spaces at controls.primeChroma 100" },
+    { "id": "n1b", "label": "scaled rung: k_prime !== 1 renders hctToRgb(hOk, min(anchorChroma*k, maxChromaInGamut(hOk, lPrime)), lPrime), l: lPrime never lLadder; cPrime for the six rungs = keyChroma * k (prime.mjs:171-172 unchanged in shape, palette.primeChroma no longer read)", "leaf": true, "justify": null,
+      "accept": "node test/engine/prime.mjs exits 0 with the inverted (g) companion: anchored Primary [3].s at 50 / at 100 === 0.5 within 1e-6 and [3].hex !== anchor at 50" },
+    { "id": "n1c", "label": "dedupe reseed: the widening search's `seen` (prime.mjs:222) and the final map share one rung-3 hex computed before the loop", "leaf": true, "justify": null,
+      "accept": "node test/engine/prime.mjs --full exits 0 (anchor-ladder allow-lists unchanged by name and count) and a probe at primeChroma 50 over the 16 defaults yields 7 distinct hexes per palette" },
+    { "id": "n1d", "label": "prime.mjs comments (:126-142, :167-170, :193-218, :246-248) say the k rule", "leaf": true, "justify": null,
+      "accept": "grep -n 'never scaled by `primeChroma`\\|never moves it\\|palette.primeChroma' src/engine/prime.mjs prints nothing" },
+
+    { "id": "n2", "label": "resolver: src/engine/resolve.mjs, one place for both k products", "leaf": true, "justify": null,
+      "accept": "rampChromaOf(palette, controls) === (palette.baseChroma ?? 100) * controls.baseChroma / 100 and primeChromaOf(palette, controls) === controls.primeChroma, unit-tested in test/engine/tonal.mjs or a new test/engine/resolve.mjs; both call sites (src/ui/model.mjs:962-963, src/engine/exports.js:278-279) call the two-argument form; grep -n paletteGroups src/engine/resolve.mjs prints nothing" },
+
+    { "id": "n3", "label": "key tile: deriveKeyColor (src/ui/model.mjs:904-919) applies k_prime with its own hctToRgb, anchored and not, never via primeSwatches", "leaf": true, "justify": null,
+      "accept": "test/engine/anchor.mjs key-anchor passes at 100 (3,380 agree) and a new leg at controls.primeChroma 50 reports deriveKeyColor hex === primeSwatches(...)[3].hex for every anchored corpus palette; grep -c primeSwatches src/ui/model.mjs is unchanged from main" },
+
+    { "id": "n4", "label": "ramp: tonal.js vibrancy default 50 (tonal.js:70) and the three `?? 0` fallbacks (tonal.js:1347, :1441, :1468) read DEFAULT_CONTROLS.vibrancy", "leaf": true, "justify": null,
+      "accept": "grep -n 'vibrancy ?? 0' src/engine/tonal.js prints nothing; DEFAULT_CONTROLS.vibrancy === 50; paletteStops(palette, {toneMode:'perceptual'} /* no vibrancy */, STOPS) deep-equals paletteStops(palette, {toneMode:'perceptual', vibrancy:50}, STOPS) for Primary" },
+
+    { "id": "n5", "label": "schema v8: src/ui/persist.js DOMAINS (palette.baseChroma added, palette.primeChroma and paletteGroups removed, vibrancy default 50, baseIntensity/primeChroma kept as k with default 100) and one RENAME_MAPS entry foldGroups", "leaf": false, "justify": "grouping" },
+    { "id": "n5a", "label": "fold base: per palette, resolved old group baseChroma (paletteGroups[g].baseChroma ?? doc.baseIntensity ?? 100) written to palette.baseChroma when !== 100; then doc.paletteGroups dropped via DROPPED_KEYS", "leaf": true, "justify": null,
+      "accept": "node test/ui/persist.mjs exits 0 with: a v7 doc carrying paletteGroups.brand.baseChroma 41 hydrates with every brand palette's baseChroma === 41 and no paletteGroups key; projectView ramps of that doc are byte-identical before and after (fixture captured on main)" },
+    { "id": "n5b", "label": "fold prime per the user's ruling (A fold into chroma / B hidden field / C accept the move); palette.primeChroma dropped via DROPPED_KEYS", "leaf": true, "justify": null,
+      "accept": "node test/ui/persist.mjs exits 0 with a v7 doc carrying palette.primeChroma 60 and paletteGroups.material.primeChroma 60 hydrating per the ruled option; hydrate(...)[DROPPED_KEYS] names palette.primeChroma and paletteGroups" },
+    { "id": "n5c", "label": "reset the formerly dead globals: pre-v8 doc.baseIntensity and doc.primeChroma set to 100 by the entry (they never reached a palette: model.mjs:455 filled every group)", "leaf": true, "justify": null,
+      "accept": "node test/ui/persist.mjs exits 0 with a v7 doc carrying baseIntensity 40 and primeChroma 30 hydrating to 100/100 and its projectView ramps and prime strips byte-identical to main's render of the same doc (net of the prime fold ruling)" },
+    { "id": "n5d", "label": "vibrancy migration: pre-v8 doc with vibrancy 0 hydrates to 50; any other value kept; palette.cuspPull untouched", "leaf": true, "justify": null,
+      "accept": "node test/ui/persist.mjs exits 0 with three v7 docs (vibrancy 0, 35, absent) hydrating to 50, 35, 50 and a palette cuspPull 20 surviving; CURRENT_SCHEMA_VERSION === 8" },
+
+    { "id": "n6", "label": "generator: scripts/gen-categories.mjs stamps the presets from DEFAULT_CONTROLS (vibrancy 50), passes paletteGroups through no more, emits per-palette baseChroma for the Adia preset", "leaf": true, "justify": null,
+      "accept": "npm run gen:categories leaves src/ui/categories/*.js with grep -c '\"vibrancy\":0' === 0 and grep -c paletteGroups === 0; the Adia preset's 16 palettes carry baseChroma 25/41/32/27 by group; node test/engine/categories.mjs exits 0" },
+
+    { "id": "n7", "label": "UI: src/ui/sections/color.js", "leaf": false, "justify": "grouping" },
+    { "id": "n7a", "label": "Palette tab: Chroma slider kept (color.js:1765, detach semantics per the user's ruling), Prime chroma slider (color.js:1792-1797) replaced by Base chroma writing palettes[i].baseChroma, shown in every group including Data", "leaf": true, "justify": null,
+      "accept": "node test/ui/headless-boot.mjs exits 0 with a new lettered group: the inspector for a Data palette shows a 'Base chroma' slider and no 'Prime chroma' slider; dragging it to 40 changes that palette's ramp hexes in the view and leaves its prime strip unchanged" },
+    { "id": "n7b", "label": "Global tab: Base chroma and Prime chroma sliders kept as k (color.js:2050-2051), the per-group rows (color.js:2052-2072) removed, the Data-lock hint (color.js:1665) and HUE_SPACE copy untouched", "leaf": true, "justify": null,
+      "accept": "node test/ui/headless-boot.mjs exits 0 with: no [data-group-row] element in the Global tab; dragging global Base chroma to 50 changes every enabled palette's ramp hexes; dragging global Prime chroma to 50 changes every prime swatch including each anchored palette's middle (Primary #0C5DCC moves) and the gallery key tile" },
+
+    { "id": "n8", "label": "state and kit shape: stateOf/controlsOf (model.mjs:605-672) drop paletteGroups; exports.js:226-230 drops controls.paletteGroups; MCP kit.controls (model.mjs:733) becomes { baseChroma, primeChroma }", "leaf": true, "justify": null,
+      "accept": "node test/engine/exports.mjs, test/mcp/brand-kit.mjs, test/mcp/describe-*.mjs exit 0; JSON.stringify(stateOf(defaultDocument())) contains no 'paletteGroups'; the RP-1 group comment line and DTCG $extensions group still appear (test/ui/model.mjs:263-272 byte-identity across brand <-> system still holds)" },
+
+    { "id": "n9", "label": "gates: unit and corpus", "leaf": false, "justify": "grouping" },
+    { "id": "n9a", "label": "test/engine/prime.mjs: (g) companion inverted, immunity comments (:750-752, :784-790, :830) rewritten, (j) rewritten for controls-only resolution", "leaf": true, "justify": null,
+      "accept": "node test/engine/prime.mjs exits 0; reverting the (g) companion to 'expected 1' exits 1; grep -n immune test/engine/prime.mjs prints nothing" },
+    { "id": "n9b", "label": "test/engine/anchor.mjs: anchor-identity and key-anchor kept at 100; planted scale regression (k * 0.99 at k === 1) reds both; controls at :80 and :125 lose paletteGroups and primeChroma overrides", "leaf": true, "justify": null,
+      "accept": "node test/engine/anchor.mjs --full exits 0 with 'anchor-identity ... 3380 exact, 0 off'; with the planted factor it exits 1 on anchor-identity and key-anchor" },
+    { "id": "n9c", "label": "test/ui/model.mjs, test/ui/shell.mjs, test/ui/persist.mjs, test/engine/tonal.mjs: group-resolution assertions (23/51/8/26 mentions) rewritten to the per-palette and k model; a model gate proves Base chroma per palette, k_base and k_prime each move the right surface", "leaf": true, "justify": null,
+      "accept": "node test/run.mjs exits 0; grep -rn 'GROUP_DEFAULTS\\|resolvePaletteGroups\\|paletteGroups' test/ src/ scripts/ prints nothing" },
+
+    { "id": "n10", "label": "fixtures and committed artifacts regenerated once: test/ui/fixtures/default-doc-ramps.json (scripts/gen-ramp-fixture.mjs), test/engine/fixtures/shadcn-baseline.css, adia exports, mcp/figma assets, docs/assets/palette-preview.svg, test/engine/exports.mjs vibrancy literals", "leaf": true, "justify": null,
+      "accept": "npm test exits 0 with a clean tree afterwards; npm run build exits 0 after npm ci; gate_lock.py run --name sweeps -- npm run gate:sweeps exits 0 (corpus-contrast: 0 under AA in all three modes; chroma-envelope R69 bars re-measured at vibrancy 50, re-ruled if red)" },
+
+    { "id": "n11", "label": "before/after report: scripts/report-preset-fidelity.mjs --identity-control --base <main sha> over the default kit and the corpus, in all three tone modes, plus the prime-strip and key-tile movement counts", "leaf": true, "justify": null,
+      "accept": "a dated report under docs/reports/ names the moved palettes and cells per mode (perceptual: every palette without cuspPull; peak and even: 0 cells), the 343 corpus Neutral strips and the default-kit Neutral strip per the prime fold ruling, and the Adia Primary; the user has ruled on it before landing" },
+
+    { "id": "n12", "label": "records: decision-records.md (ADR-026 verbatim clause superseded in place, new ADR last+1 before the Quick map at :920, Quick map row :925), spec-muted-base-key-spikes.md (REQ-002/007/008/010/052/056, groups table :73, :110-117, :229-230, :265, :319, :561-564), lld-muted-base-key-spikes.md (:37-42, :62-70, :99, :117), knowledge-02 §8 and §9, color-math SKILL.md:54, model.mjs:893-903 comment, exports.js:217-230 and :351-358 comments, persist.js:36-48 and :78-105 comments", "leaf": true, "justify": null,
+      "accept": "grep -rn 'unconditionally\\|immune to `primeChroma`\\|group.primeChroma\\|GROUP_DEFAULTS\\|Material.*60' docs/specs/spec-muted-base-key-spikes.md docs/specs/lld-muted-base-key-spikes.md docs/references/knowledge-02-tonal-scale.md .claude/skills/color-math/SKILL.md src/ui/model.mjs src/ui/persist.js prints nothing that describes current behaviour; grep -c '^## ADR-' docs/references/decision-records.md is main's count + 1; node test/repo/em-dash.mjs exits 0" },
+
+    { "id": "n13", "label": "follow-up records: T-0015 (hue space) lands after this ticket and edits the same anchored branches (prime.mjs:147-153, model.mjs:905-908); T-0013 shares decision-records.md and tonal.js", "leaf": true, "justify": null,
+      "accept": "the filer's follow-up list names T-0015's two shared sites and the serial decision-records.md slice; git diff --name-only shows no edit to tonal.js's chromaEnvelope or damping constants (T-0013's territory)" }
+  ],
+  "actions": [
+    { "id": "a1", "label": "scale the anchored prime rung's chroma by k_prime while holding the anchor's hue and L*" },
+    { "id": "a2", "label": "emit the stored anchor hex byte-exact at k_prime 100 without a round trip" },
+    { "id": "a3", "label": "cap the scaled rung-3 chroma at the gamut ceiling of the anchor's own hue and L*" },
+    { "id": "a4", "label": "keep the seven rungs distinct after the middle moves" },
+    { "id": "a5", "label": "resolve the ramp damper as the per-palette Base chroma times the global k_base, in one shared place" },
+    { "id": "a6", "label": "resolve the prime factor as the global k_prime alone, in the same shared place" },
+    { "id": "a7", "label": "the gallery key tile follows k_prime so tile and prime middle agree at every setting" },
+    { "id": "a8", "label": "render perceptual ramps at vibrancy 50 by default, with partial-control callers and the app agreeing" },
+    { "id": "a9", "label": "fold saved group base chroma into per-palette Base chroma without moving the ramp" },
+    { "id": "a10", "label": "handle saved prime values that resolve below 100 per the user's ruling and report the movement" },
+    { "id": "a11", "label": "neutralise saved global values that were never applied so they do not start damping" },
+    { "id": "a12", "label": "migrate saved and preset vibrancy 0 to 50, keeping other values and per-palette cusp pull" },
+    { "id": "a13", "label": "regenerate the curated presets with the new defaults and per-palette base chroma" },
+    { "id": "a14", "label": "edit one palette's Base chroma from its inspector" },
+    { "id": "a15", "label": "remove the per-palette Prime chroma and the per-group chroma controls from the UI" },
+    { "id": "a16", "label": "drive k_base and k_prime from the two global sliders" },
+    { "id": "a17", "label": "drop the paletteGroups chroma facet from state, exports and the MCP kit while keeping the canvas group" },
+    { "id": "a18", "label": "assert the anchored 50/100 chroma ratio is 0.5 with a negative control" },
+    { "id": "a19", "label": "assert identity at 100 over the corpus and prove a planted scale regression reds it" },
+    { "id": "a20", "label": "rewrite every group-resolution test to the per-palette and k model" },
+    { "id": "a21", "label": "regenerate fixtures and committed artifacts once and run every gate green" },
+    { "id": "a22", "label": "produce the ruled before/after report of everything that moved" },
+    { "id": "a23", "label": "supersede ADR-026's verbatim clause and record the redesign as a new ADR" },
+    { "id": "a24", "label": "repair every spec, LLD, knowledge, skill and comment line that states the group model or the exemption" },
+    { "id": "a25", "label": "record the ordering constraints with T-0015 and T-0013" },
+    { "id": "a26", "label": "explain the k rule in the engine's own comments" }
+  ],
+  "hosts": [
+    { "action": "a1", "node": "n1b" }, { "action": "a2", "node": "n1a" }, { "action": "a3", "node": "n1b" }, { "action": "a4", "node": "n1c" },
+    { "action": "a5", "node": "n2" }, { "action": "a6", "node": "n2" }, { "action": "a7", "node": "n3" }, { "action": "a8", "node": "n4" },
+    { "action": "a9", "node": "n5a" }, { "action": "a10", "node": "n5b" }, { "action": "a10", "node": "n11" }, { "action": "a11", "node": "n5c" }, { "action": "a12", "node": "n5d" }, { "action": "a12", "node": "n6" },
+    { "action": "a13", "node": "n6" }, { "action": "a14", "node": "n7a" }, { "action": "a15", "node": "n7a" }, { "action": "a15", "node": "n7b" }, { "action": "a16", "node": "n7b" },
+    { "action": "a17", "node": "n8" }, { "action": "a18", "node": "n9a" }, { "action": "a19", "node": "n9b" }, { "action": "a20", "node": "n9c" },
+    { "action": "a21", "node": "n10" }, { "action": "a22", "node": "n11" }, { "action": "a23", "node": "n12" }, { "action": "a24", "node": "n12" }, { "action": "a25", "node": "n13" }, { "action": "a26", "node": "n1d" }
+  ],
+  "edges": [
+    { "from": "n2", "to": "n1b", "why": "the engine reads the k the resolver produces" },
+    { "from": "n1b", "to": "n1c", "why": "the reseed needs the rendered rung-3 hex" },
+    { "from": "n1b", "to": "n3", "why": "the key tile must match the rung-3 construction" },
+    { "from": "n2", "to": "n5a", "why": "the migration writes the field the resolver reads" },
+    { "from": "n4", "to": "n5d", "why": "the migration target is the new engine default" },
+    { "from": "n5a", "to": "n6", "why": "the generator emits the v8 shape" },
+    { "from": "n5d", "to": "n6", "why": "presets are restamped from the new default" },
+    { "from": "n2", "to": "n7a", "why": "the slider writes the field the resolver reads" },
+    { "from": "n2", "to": "n8", "why": "state drops the facet once nothing resolves from it" },
+    { "from": "n1b", "to": "n9a", "why": "the inverted gate asserts the new rule" },
+    { "from": "n1b", "to": "n9b", "why": "the planted regression runs against the new engine" },
+    { "from": "n8", "to": "n9c", "why": "the model/shell tests assert the new state shape" },
+    { "from": "n6", "to": "n10", "why": "artifacts regenerate from the restamped presets" },
+    { "from": "n9c", "to": "n10", "why": "npm test runs the rewritten gates" },
+    { "from": "n10", "to": "n11", "why": "the report measures the regenerated tree against main" },
+    { "from": "n11", "to": "n12", "why": "the ADR cites the report's numbers" }
+  ]
+}

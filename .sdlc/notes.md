@@ -1,0 +1,1 @@
+- 2026-10-07: dropped plan/parallel-batch (6537465d), unit/pb-U4 (4e3b9115), unit/pb-U6 (ba101172), unit/pb-U8 (5c3a1be2): about 8 of 9 points landed in #802; recover with git branch <name> <sha> while objects remain. #786 to be re-checked after T-0016 (Roles tab removed). compute-layers (#788) held until T-0014 lands, then rebase and replan U4/U5 on the new schema.
