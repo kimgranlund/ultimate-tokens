@@ -6,7 +6,7 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 | ID | Ticket | Title | Type | Size | Pri | Depends on | Status |
 |---|---|---|---|---|---|---|---|
 | T-0002 | [docs-reconcile](docs-reconcile/handoff.md) | docs-reconcile: docs/ to the sdlc-lite schema | chore | XL | P2 | none | 🟢 done |
-| T-0003 | [gh-782](gh-782/handoff.md) | src/ui/sections/typography.js: replace the retired voice counts (GitHub #782) | chore | S | P3 | none | 🔵 ready |
+| T-0003 | [gh-782](gh-782/handoff.md) | src/ui/sections/typography.js: replace the retired voice counts (GitHub #782) | chore | S | P3 | none | 🟢 done |
 | T-0004 | [gh-796](gh-796/handoff.md) | Stale eleven-voice wording in Download-All README, inspector copy and store copy (GitHub #796) | bug | S | P3 | none | 🔵 ready |
 | T-0005 | [gh-783](gh-783/handoff.md) | gates-batch follow-ups: gate breadth, a fourth rename-map copy, stale lines (GitHub #783) | chore | M | P3 | none | 🔵 ready |
 | T-0006 | [gh-798](gh-798/handoff.md) | pane-context follow-up: stale comments and wording after #785 (GitHub #798) | chore | S | P3 | none | 🔵 ready |
