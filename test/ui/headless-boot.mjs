@@ -4355,6 +4355,9 @@ app.setSection("color"); app.render(); flushRaf();
 if (fails.length) {
   console.error("HEADLESS BOOT FAIL:");
   for (const f of fails) console.error("  ✗ " + f);
+  // Final summary: one line per failed assertion, so it is the last thing in the output.
+  console.error(`HEADLESS BOOT SUMMARY: ${fails.length} failed assertion${fails.length === 1 ? "" : "s"}:`);
+  fails.forEach((f, i) => console.error(`  ${i + 1}. ${f}`));
   process.exit(1);
 }
 console.log("HEADLESS BOOT PASS, all Phase-3 interaction assertions hold");
