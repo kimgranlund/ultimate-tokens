@@ -1,0 +1,20 @@
+<!-- role=verifier level=L2 model=sonnet effort=high -->
+## Verdict
+pass
+
+## Criteria
+- (red) Report headings and command string: pass. Evidence: the criterion's loop run in the tree printed `C1 ok`. `docs/reports/2026-10-07-hue-space-anchored.md` has all five `##` headings and the string `identity-control --migrate --authored`. The file is untracked, and `git ls-tree HEAD docs/reports/ | grep -c hue-space-anchored` printed 0, so the check is red at HEAD.
+- Movement script output: pass. Evidence: I reran `node scripts/report-preset-fidelity.mjs --identity-control --migrate --authored --base "$(git merge-base HEAD main)"`. It exited 0 in 2:44 and printed `ramp perceptual|peak|even: 0 of 94900 cells differ`, `prime: 3147 of 3796 strips moved`, `key: 0 of 3796 tiles moved`. All the criterion's greps matched (`C2 ok`). These numbers match the report's `## Movement`.
+- (red) ADR heading, Quick map row and ADR count: pass. Evidence: with `SDLC_BASE_SHA` read from `step-4/base-sha` (77d9230d), the criterion printed `C3 ok`. The diff shows `## ADR-031: The hue space is hue constancy through the anchor` placed before the Quick map, and the row `| ADR-031 | ... hue constancy ...`. The ADR count went from 30 to 31.
+- (red) Q-D supersession text: pass. Evidence: `C4 ok`, and the diff shows "made structural (superseded by ADR-031 on 2026-10-07: ...)". The same check on `git show HEAD:docs/references/decision-records.md` returned no match, so it can go red.
+- (red) Old spec sentence gone, new fragment in the four files: pass. Evidence: `C5 ok`. "there is NO hue re-solve in the prime system" is absent from `spec-muted-base-key-spikes.md`. HEAD still had that sentence, so the check can go red. The fragment "holds the measured hue of the anchor constant in the chosen hue space" is present in `knowledge-02-tonal-scale.md`, `color-math/SKILL.md`, `spec-muted-base-key-spikes.md` and `lld-muted-base-key-spikes.md`.
+- (guard) `gate_lock.py run --name npm-test -- npm test`: pass. Evidence: exit 0 in 5:58, "all 54 test files passed". `repo/citations.mjs`, `repo/em-dash.mjs` and `repo/branding.mjs` all passed. The git status after the run matched the one before it (the 7 expected modified files plus the untracked report).
+- (guard) `gate_lock.py run --name build -- npm run build`: pass. Evidence: exit 0. The tail of the output shows `wrote dist/ultimate-tokens.html` and `wrote figma/plugin/ui.html`. The tree was unchanged afterwards (the tracked-file status is the same).
+- (guard) `gate_lock.py run --name sweeps -- npm run gate:sweeps`: pass. Evidence: I ran the 8 legs that `package.json:38` chains, each as `gate_lock.py run --name sweeps-<leg> -- npm run gate:<leg>`, because the chain exceeds the 600 s foreground limit. They ran in parallel with 10 gate workers, and all 8 exited 0: sweep-prime 137 s, corpus-contrast 253 s, corpus-tonal 387 s, corpus-reset 420 s, even-dips 464 s, mode-isolation 518 s, chroma-envelope 599 s, corpus-anchor 795 s. The single-chain wall time was not measured by me. This matches the builder's approach, and the legs are the same commands the chain runs.
+- Report content spot checks: pass. Evidence: the `## Hue-space bounds` lines quote `anchor-f4 hueSpace-perceptual` 0.0164 and `hueSpace-peak` 0.0169 plus the cap ruling. `## Re-pinned gates` has a file:line table. `## Follow-ups` covers legacy cam16 documents, `dampStops` and no schema bump (`CURRENT_SCHEMA_VERSION` stays 8). I did not rerun the 7:47 `anchor.mjs --full` measurement separately, but the corpus-anchor leg above passed, and that leg is the same command.
+
+## Out of scope changes
+- `docs/references/component-inventory.md` and `docs/reports/2026-08-20-reactivity/02-sections-and-resolvers.md` carry citation line-number moves only. `repo/citations.mjs` needs them after step 3 removed lines from `color.js`. The builder flagged the second file as a finished dated record. It is a one-line change, not a content change, and I judge it necessary. No other out-of-scope changes: the diff is 7 modified docs files plus the new report.
+
+## For the next attempt
+None

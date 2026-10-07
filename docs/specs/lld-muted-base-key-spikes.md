@@ -305,6 +305,13 @@ P8 documents groups last.
    CAM16 hue and varying tone, which is why AC-050 (e)/(f) measure CAM16 hue, not OKLCH hue.
    Detection: AC-050 (e) chroma-aware budget against the prime pixel. Fallback: none this round; a
    per-swatch re-solve was ruled out on #537 (oscillates at low saturation, shares `tonal.js`).
+   Re-stated 2026-10-07 (T-0015, ADR-031): an anchored ladder holds the measured hue of the anchor
+   constant in the chosen hue space. The paragraph above is the `cam16` case. Under `oklch` (the
+   default) each rung solves the CAM16 hue whose gamut-capped render at its L\* reads back at the
+   anchor's OKLCH hue (`solveCam16Hue` with `chromaAt`, the even anchored ramp's own solve, not #537's
+   `solveOkhslHue`), so the OKLCH spread falls to rounding: default-kit outer rungs drift 0.12 to 0.65
+   degrees from the anchor's OKLCH hue, against 0.41 to 7.97 (Primary 5.50, Data 1 7.97) before.
+   Detection: `test/engine/anchor.mjs` `prime-huespace` and its control.
 6. **`collparity` half-applied (P4) (REQ-054, AC-033).** Three literals (`collections.js`, two sandboxes). Detection:
    `test/figma/binder.mjs` `collparity`. Fallback: the P4 checklist.
 7. **Figma duplicate collections (P5) (REQ-054, AC-052).** A re-apply that does not find the provenance key creates a

@@ -787,7 +787,8 @@ Format: Context → Decision → Rationale → Consequences → Status.
   even 0 of 16) and is the second after this ADR's own. On the OKHSL anchored path the `oklch` hue is the anchor's own OKLCH hue with no per-stop
   solve (revision 8: OKHSL hue is OKLab hue, so the solve was the identity reading the 8-bit
   staircase); `hueSpace` is exactly identical on anchored perceptual and peak, the Q-D ruling made
-  structural. The two FLOORS cells the retune costs (peak Success light 7.5, perceptual Data 3 dark
+  structural (superseded by ADR-031 on 2026-10-07: under `cam16` an anchored perceptual or peak ramp
+  holds the anchor's CAM16 hue). The two FLOORS cells the retune costs (peak Success light 7.5, perceptual Data 3 dark
   4.8, R77) are recorded with the 41 pending cells.
 - **Amendment (2026-10-03, #785, R94 to R98).** The owner ruled the `<group> base chroma` slider a
   damper on the whole ramp (`.sdlc/questions/pane-context-group-chroma.md`, revision 2), superseding
@@ -1020,12 +1021,72 @@ Format: Context → Decision → Rationale → Consequences → Status.
   times the global k). Ratification is the owner's: the owner edits this line to DECIDED, or amends
   the text under the file's amendment shape.
 
+## ADR-031: The hue space is hue constancy through the anchor
+- **Context.** T-0015 (#805). The global Hue space toggle (`doc.hueSpace`, OKLCH or CAM16) moved
+  only non-anchored palettes and anchored even ramps. Every other anchored surface carried one branch:
+  the perceptual and peak ramps held the anchor's OKLCH hue in both spaces (the Q-D ruling, made
+  structural by ADR-026's #725 amendment), while the prime ladder and the key tile below Prime chroma
+  k 100 held the anchor's CAM16 hue in both spaces. On a kit where only one palette is unanchored the
+  toggle seemed to change only that palette, and the editor disabled it when every palette was
+  anchored.
+- **Decision.** The hue space names the space in which the anchor's own measured hue is held constant
+  across a surface: `oklch` holds the anchor's OKLCH hue, `cam16` holds its CAM16 hue. The anchor is
+  still the record (ADR-026); the hue space picks the line of constant hue through it, so the anchor
+  pixel itself (ramp stop 500, ladder rung 3 and the key tile at Prime chroma k 100) is verbatim in
+  both spaces. Per surface: the prime ladder and the key tile at k != 100 solve under `oklch` (each
+  rung's CAM16 hue is the one whose gamut-capped render at the rung's L\* reads back at the anchor's
+  OKLCH hue, `solveCam16Hue`'s `chromaAt` form, now exported from `src/engine/tonal.js`), and
+  `deriveKeyColor` repeats the arithmetic with its own call so `key-anchor` and `anchor-k` keep two
+  producers; the anchored perceptual and peak ramps solve under `cam16` (each stop's OKHSL hue is the
+  one whose float render, jointly with the tone hold, carries the anchor's CAM16 hue,
+  `solveOkhslHueForCam16`, keeping the anchor's OKLCH hue where no bracketed root exists or the
+  candidate is achromatic); the even ramp is unchanged (it already held both). The cap ruling: the
+  peak cap keeps the stop's own pre-cap OKLCH hue in both spaces (`capChromaAtHeldTone(..., null,
+  true)`), because passing the anchor's CAM16 hue measured 0.0202 OKLab dE between spaces at the
+  cap-moved stops on the plan-time prototype, over the bound below, against 0.0166 with `null`.
+  User decisions of 2026-10-07: (1) the toggle moves every surface where the two hue models differ:
+  even ramps, every anchored prime ladder above JND, the key tile below k 100, and the anchored
+  perceptual and peak ramps within rounding (at most 0.02 OKLab dE), as the control's label title
+  says, with no hue kink at stop 500; (2) saved kits at the default space (oklch, k 100) move every
+  anchored ladder's outer rungs, ramps and key tiles do not, and exported `prime.*` tokens move with
+  the ladder, recorded in the before and after report; (3) legacy documents stamped `cam16` by the old
+  hydrate now render CAM16-constant anchored ramps and ladders, no migration; (4) `dampStops` keeps
+  holding the OKLCH hue after damping on perceptual and peak.
+- **Rationale.** The anchor is a pixel, not a slider value, so there is no number to reinterpret
+  across spaces; what a hue space can choose is the line of hue constancy through that pixel. The
+  even ramp already worked that way, so it is the model and no new hue model is added. Re-seeding the
+  perceptual ramp from the anchor's CAM16 hue at the cusp would move it visibly but put a hue kink at
+  stop 500, the discontinuity Q3 (b) and C5 exist to prevent. The OKLCH and CAM16 lines through one
+  anchor differ by little on the OKHSL ramps, so that half is within rounding by physics, not by
+  choice.
+- **Consequences.** The before and after report, `docs/reports/2026-10-07-hue-space-anchored.md`
+  (`report-preset-fidelity.mjs --identity-control --migrate --authored --base 10352b1a`), measures
+  over 3,796 palettes: ramp perceptual, peak and even 0 of 94,900 cells each, key tiles 0 of 3,796,
+  prime strips 3,147 of 3,796 (3,131 of 3,380 corpus anchored ladders plus the 16 default-kit ones);
+  the default kit's outer-rung OKLCH hue drift from the anchor falls from 0.41 to 7.97 degrees
+  (Primary 5.50, Data 1 7.97) to 0.12 to 0.65; the `prime-huespace` gate reads a default-kit max of
+  0.0307 OKLab dE between spaces. Under `cam16` the anchored ramps move at most 0.0164 (perceptual)
+  and 0.0169 (peak) OKLab dE, and the even ramp 0.0281. The gates are reshaped in
+  `test/engine/anchor.mjs`: a new `prime-huespace` gate with its control, the `anchor-f4` hue-space
+  case split per mode with a per-mode bound of 0.02 on perceptual and peak (`HUE_SPACE_MODE_BOUND`)
+  and its bound control, replacing the Q-D invisibility block and its constants, and `anchor-identity`,
+  `key-anchor` and `anchor-k` asserted in both spaces. Re-pinned: the panda EX-1 `prime.brightest` and
+  `prime.dimmest` literals, `ladder-span`'s `SPAN_PX_EXPECTED` 364 to 365, and the shadcn and radix
+  baselines (they render at `cam16`); the report lists old and new. The editor's Hue space control is
+  live on every document, and `HUE_SPACE_ANCHOR_REASON` and its two notes are gone. No schema bump:
+  no field is added, renamed or translated and nothing derived is stored, so
+  `CURRENT_SCHEMA_VERSION` stays 8 and T-0017 takes v9.
+- **Status.** PROPOSED 2026-10-07 (T-0015, #805; supersedes the Q-D ruling, recorded in ADR-026's
+  #725 amendment as "`hueSpace` is exactly identical on anchored perceptual and peak"). Ratification
+  is the owner's: the owner edits this line to DECIDED, or amends the text under the file's amendment
+  shape.
+
 ## Quick map: decisions an enhancing agent is most likely to "fix" (don't)
 | ADR | Looks wrong because… | But it's intentional because… |
 |-----|----------------------|-------------------------------|
 | ADR-003 | on-colors fail WCAG on Warning | the historical brand override; AMENDED by ADR-025, contrast-aware on-colors are the default since #662 |
 | ADR-025 | on-colors jump to pure white/black on some accents | the ramp ends miss AA there and #662 forbids moving a stop; the achromatic constants are the only way to the floor |
-| ADR-026 | a curated palette stores a source hex that looks redundant beside its own `{hue, chroma, skew, lift}` | the four fitted numbers cannot reproduce an arbitrary sRGB colour through a cusp-derived key colour; the stored hex is the sample itself, and deleting it silently replaces every preset's own colour with a reconstruction of it; amended 2026-09-28 (#701, even-mode floor and shoulder), 2026-09-29 (#725, R69: the anchored basis capped at the anchor, the retuned damping pair and the per-stop tone hold), 2026-10-03 (#785, R94: the group value is one damper on the whole ramp, `r * at-100`, stop 500 included), 2026-10-03 (#766, R85: the even floor's gamut reference read per stop at its own hue before edge rotation, which edge rotation does not move) and 2026-10-03 (#785, #766: the `even-dips` grid renders the chroma-100 cell, the only chroma that reaches the floor, and its random line is pinned at 8); superseded in part 2026-10-07 by ADR-030 (#804: the group damper is now each palette's own Base chroma times the global k, and the prime middle is verbatim only at Prime chroma k 100) |
+| ADR-026 | a curated palette stores a source hex that looks redundant beside its own `{hue, chroma, skew, lift}` | the four fitted numbers cannot reproduce an arbitrary sRGB colour through a cusp-derived key colour; the stored hex is the sample itself, and deleting it silently replaces every preset's own colour with a reconstruction of it; amended 2026-09-28 (#701, even-mode floor and shoulder), 2026-09-29 (#725, R69: the anchored basis capped at the anchor, the retuned damping pair and the per-stop tone hold), 2026-10-03 (#785, R94: the group value is one damper on the whole ramp, `r * at-100`, stop 500 included), 2026-10-03 (#766, R85: the even floor's gamut reference read per stop at its own hue before edge rotation, which edge rotation does not move) and 2026-10-03 (#785, #766: the `even-dips` grid renders the chroma-100 cell, the only chroma that reaches the floor, and its random line is pinned at 8); superseded in part 2026-10-07 by ADR-030 (#804: the group damper is now each palette's own Base chroma times the global k, and the prime middle is verbatim only at Prime chroma k 100); amended 2026-10-07 by ADR-031 (#805: the hue space picks the line of hue constancy through the anchor, so `cam16` moves anchored perceptual and peak ramps, the #725 "identical" clause is superseded) |
 | ADR-004 | scrims unified onto one 500 ramp (SUPERSEDED) | scrims now a single 500 ramp; the former base-750-only decision is superseded |
 | ADR-002 | semantic could alias raw to cascade | native import errors on name-only aliasData; plugin does cascade |
 | ADR-011 | `role-table.json` still encodes cam16 hues though hueSpace is now OKLCH | role-table is the cam16 answer key for the parity gate; the OKLCH flip is at the doc/seed layer, not the role table |
@@ -1041,3 +1102,4 @@ Format: Context → Decision → Rationale → Consequences → Status.
 | ADR-028 | `docs/reference/data` and `docs/reference/colors/categories` sit outside `docs/assets/` and look misfiled | code, generators and the shipped Describe MCP zip read them at that exact path; do not move `docs/reference/data` or `docs/reference/colors/categories` |
 | ADR-029 | the envelope gate asserts a curve to 1e-12 but lets pixels miss it by up to 4 codes, and no fixture pins the emitted values | the closed form is the spec and the pixel tolerance is the path's own rounding steps; re-pinning rounded pixels brings back the ratchet #778 retired, and a curve change updates the gate's SPEC and ADR-029 together |
 | ADR-030 | the canvas groups carry no chroma, and an anchored palette's prime middle leaves its stored hex below Prime chroma 100 | chroma is per-palette Base chroma times two global k factors, formed once in `resolve.mjs`; a group layer made the globals dead, and the anchor is verbatim exactly at the default k 100 |
+| ADR-031 | the Hue space toggle moves an anchored palette's prime ladder but its perceptual and peak ramps by at most 0.02 OKLab dE, and the anchored ladder solves a hue per rung | the hue space is hue constancy through the anchor: the anchor stays verbatim and the toggle picks which hue (OKLCH or CAM16) is held along the line through it; the two lines differ by little on the OKHSL ramps, and a ramp re-seeded to move more would kink at stop 500 |
