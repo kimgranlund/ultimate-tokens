@@ -336,9 +336,17 @@ function solveCam16Hue(targetOklchHue, chroma, tone, gamutClamp = false, { chrom
 // `intended`) forms no off-anchor dip; relChroma and the anchored basis blend vary `intended`, so that too is
 // a measurement, gated at 0 over the corpus (test/engine/tonal.mjs `dip-gate-even`, npm run gate:even-dips).
 // Continuous in the anchor's L* (no tone-window branch). Defaults to maxc (the stop-500 seeds pass none).
-function evenChroma(maxc, intended, env, chromaFloor, floorRef = maxc) {
+// floorMaxc (#784): the floor's own ceiling reading, min(floorMaxc, floorRef), where the floor used to read
+// the stop's maxc. It defaults to maxc, so every caller that passes none (the non-anchored path, the
+// stop-500 seeds) renders exactly as before. paletteStopsAnchored passes the stop's gamut ceiling at the
+// hue BEFORE edge rotation, capped at maxc: under hueShift the stop's own maxc is read at the rotated hue,
+// and where that ceiling runs above the unrotated one the floor rose with it past the neighbours' floors,
+// then fell back (the stop-200 notch on the default kit's #774902 palette at hueShift -30, 17.73 / 11.80 /
+// 15.51 at 100 / 200 / 300 on the old engine). With the cap the floor never exceeds its unrotated
+// reading, and at hueShift 0 (rotated hue = unrotated hue) floorMaxc is maxc: byte-identical there.
+function evenChroma(maxc, intended, env, chromaFloor, floorRef = maxc, floorMaxc = maxc) {
   const damped = Math.min(intended * env, maxc);
-  const floorC = Math.min(((chromaFloor ?? 0) / 100) * Math.min(maxc, floorRef), intended);
+  const floorC = Math.min(((chromaFloor ?? 0) / 100) * Math.min(floorMaxc, floorRef), intended);
   return Math.min(maxc, Math.max(damped, floorC));
 }
 
@@ -852,7 +860,6 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
   const maxc500 = maxChromaInGamut(seedHue, anchor.lstar);
   const anchorRelFrac = maxc500 > 0 ? Math.min(1, anchor.cam.chroma / maxc500) : 0;
   const pk = peakC(seedHue).c; // the SEED hue's max chroma in sRGB - same basis paletteStops's own `target` uses
-  const groupTarget = (palette.chroma / 100) * pk;
   // evenChroma's floorRef (#701 U2, revision 14; per stop since #766): the largest gamut ceiling among
   // the pivot and its first display step on either side (450, 550), at the tones this ramp renders
   // them. See evenChroma's own comment for why the first step, not the pivot alone, sets the level.
@@ -882,13 +889,16 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
     // chromaAt(h) - the chroma THIS stop will actually render at candidate hue h: the exact formula
     // the final chroma line below evaluates, factored out so the hue solve (review pass 4, Finding 2)
     // can converge against the real render, not a stand-in seed chroma that the render then discards -
-    // see solveCam16Hue's own header comment for why that mismatch mattered.
+    // see solveCam16Hue's own header comment for why that mismatch mattered. The floor's own ceiling is the
+    // stop's gamut ceiling at hRef (the hue before edge rotation), capped at mc: evenChroma's floorMaxc
+    // (#784 explains why the floor must not read the rotated ceiling).
     const chromaAt = (h, hRef = h) => {
       const mc = maxChromaInGamut(h, tone);
       const anchorIntendedH = controls.relChroma ? anchorRelFrac * mc : anchor.cam.chroma;
-      const groupIntendedH = controls.relChroma ? (palette.chroma / 100) * mc : groupTarget;
+      const groupIntendedH = controls.relChroma ? mc : pk;
       const intendedH = anchorChromaBasis(stop, 500, lift, anchorIntendedH, groupIntendedH);
-      return evenChroma(mc, intendedH, env, controls.chromaFloor, floorRefAt(hRef, mc, pivotTone, tone450, tone550));
+      const fm = Math.min(mc, maxChromaInGamut(hRef, tone));
+      return evenChroma(mc, intendedH, env, controls.chromaFloor, floorRefAt(hRef, fm, pivotTone, tone450, tone550), fm);
     };
     let resolvedHue = seedHue;
     if (oklchSpace) {
@@ -971,14 +981,14 @@ export function paletteStops(palette, controls, stops) {
     const tone500 = toneAt(500, palette.skew, palette.lift, ctl);
     const seedHue = effHue(palette.hue, "oklch", hueAnchorFrac(palette, controls)); // ~baseHue, only for the gamut basis
     const maxc500 = maxChromaInGamut(seedHue, tone500);
-    const intended500 = (palette.chroma / 100) * (controls.relChroma ? maxc500 : peakC(seedHue).c);
+    const intended500 = controls.relChroma ? maxc500 : peakC(seedHue).c;
     const c500 = evenChroma(maxc500, intended500, envelopeAt.get(ANCHOR_STOP), controls.chromaFloor);
     baseHue = solveCam16Hue(palette.hue, Math.max(c500, 8), tone500); // floor the solve chroma so the hue stays well-defined for near-greys
   } else {
     baseHue = palette.hue;
   }
   const pk = peakC(baseHue).c; // the BASE hue's max chroma in sRGB
-  const target = (palette.chroma / 100) * pk; // control is % of the BASE-hue peak
+  const target = pk; // control is % of the BASE-hue peak
   // anchorChroma  -  the anchor stop's OWN emitted chroma, by the SAME formula the per-stop map below
   // uses at stop 500 (relChroma-aware, and tone/hue-aware via toneAt/baseHue  -  lift- and skew-displaced,
   // never the hue's independent cusp). #681 U3 pass 3: this is the root-cause fix for the lift-sign x
@@ -990,7 +1000,7 @@ export function paletteStops(palette, controls, stops) {
   // 100%" is measured against, so it is what every other stop gets held to below.
   const tone500 = toneAt(500, palette.skew, palette.lift, ctl);
   const maxc500 = maxChromaInGamut(baseHue, tone500);
-  const intended500 = controls.relChroma ? (palette.chroma / 100) * maxc500 : target;
+  const intended500 = controls.relChroma ? maxc500 : target;
   const anchorChroma = evenChroma(maxc500, intended500, envelopeAt.get(ANCHOR_STOP), controls.chromaFloor);
   // evenChroma's floorRef (#701 U2, revision 14; per stop since #766): as in paletteStopsAnchored, the
   // pivot's ceiling or its first display step's (450, 550), whichever is larger, read by floorRefAt at
@@ -1015,7 +1025,7 @@ export function paletteStops(palette, controls, stops) {
     // envelope, then clamped. Relative mode scales EACH stop by its OWN gamut ceiling, so every hue
     // fills the same fraction of its gamut envelope and palettes read as equally saturated regardless
     // of hue. min(·, maxc) keeps it in-gamut either way.
-    const intended = controls.relChroma ? (palette.chroma / 100) * maxc : target; // un-damped chroma for this stop
+    const intended = controls.relChroma ? maxc : target; // un-damped chroma for this stop
     // evenChroma: scale intended by chromaEnvelope's multiplier (exactly 1 at ANCHOR_STOP, by
     // construction  -  the edge damping starves the light/dark ends, never the anchor), then apply the
     // chroma FLOOR on the envelope itself  -  for a LOW-chroma palette the light stops collapse to near-

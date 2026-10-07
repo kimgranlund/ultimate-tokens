@@ -132,10 +132,10 @@ incrementally.
 
 ### 2 · Toggle / switch  (was the worst card; now `switchControl()`)
 
-- **Surface** S1. **Sites** 2: palette Enabled/Disabled (`switchControl`, `sections/color.js:1704`) and
-  Chroma basis peak/gamut (`switchControl`, `sections/color.js:2141`). Hue space OKLCH/CAM16 is **not** a toggle any more:
+- **Surface** S1. **Sites** 2: palette Enabled/Disabled (`switchControl`, `sections/color.js:1721`) and
+  Chroma basis peak/gamut (`switchControl`, `sections/color.js:2163`). Hue space OKLCH/CAM16 is **not** a toggle any more:
   it is a `segmented()` `role=group` (`sections/color.js:2110`, card 3), as is its On-colors sibling
-  (`sections/color.js:2115`).
+  (`sections/color.js:2137`).
 - **Anatomy** `[ track (with ::after thumb) · label-span ]`. CSS `styles.css:955-971`; the `.track`
   is 34×19 with a 15px ::after thumb that translates on `.on`.
 - **API** `switchControl({ on, onToggle, label, ariaLabel })` (`app-helpers.mjs:370`), a
@@ -145,7 +145,7 @@ incrementally.
 - **a11y** ✓ real `<button>`: focusable, `:focus-visible` ring, Space/Enter toggle from the platform;
   ✓ `role="switch"` + `aria-checked`; ✓ `aria-label` carries the stable purpose ("Palette enabled" /
   "Chroma basis: gamut when on, peak when off"). The palette site sits in a bare `field` div with no `<label>` at all
-  (`sections/color.js:1703`); the Chroma basis site goes through `field()`, which also associates a
+  (`sections/color.js:1720`); the Chroma basis site goes through `field()`, which also associates a
   `label[for]` (`app-helpers.mjs:563`).
 - **Geometry** ad-hoc (34×19 track / 15px thumb).
 
@@ -220,12 +220,12 @@ incrementally.
 
 ### 5 · Select (native)
 
-- **Surface** S1. **Sites** 3: Distribution (`field()`, `sections/color.js:2009`), Curve (`sections/color.js:2053`),
+- **Surface** S1. **Sites** 3: Distribution (`field()`, `sections/color.js:2031`), Curve (`sections/color.js:2075`),
   `.map-raw-select` raw token (`sections/color.js:1287`, with `.ov` override state).
 - **Anatomy** native `<select>` + `<option>[]`; `.map-raw-select` is a compact mono variant
   (`styles.css:723-729`).
 - **a11y** ✓ native keyboard/picker; ✓ `aria-label` on `.map-raw-select` (`sections/color.js:1287-1289`);
-  ✓ Distribution/Curve are built through `field()` (`sections/color.js:2010/2055`), which stamps an `id`
+  ✓ Distribution/Curve are built through `field()` (`sections/color.js:2032/2077`), which stamps an `id`
   on the `<select>`, associates the `<label for>` with it and adds a fallback `aria-label`
   (`app-helpers.mjs:563-571`) → the visible label is the accessible name.
 - **Flag** none; the two naming paths (`field()` vs inline `aria-label`) both yield a name.
@@ -270,7 +270,7 @@ incrementally.
 
 ### 8 · Checkbox
 
-- **Surface** S1. **Sites** 1, "ends bend same way" (`sections/color.js:1800-1808`, native `type=checkbox`).
+- **Surface** S1. **Sites** 1, "ends bend same way" (`sections/color.js:1817-1825`, native `type=checkbox`).
 - **Anatomy** `.mini-check` `<label>` **wrapping** the native input + text (`styles.css:813-814`) →
   label *is* associated (the correct pattern, unlike the sliders/Name input).
 - **a11y** ✓ associated label, ✓ `accent-color: var(--accent)`, native keyboard (Space).

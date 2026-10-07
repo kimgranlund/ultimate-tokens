@@ -2435,6 +2435,7 @@ ok(app.settingsOpen === false, "(set) closeSettings dismisses the modal");
 app.setSection("typography"); flushRaf();
 ok(app.section === "typography" && !!app.querySelector(".type-spec"), "(ty) the section switcher enters Typography (the canvas specimen renders)");
 ok(inLight(".type-spec-line").length === TYPE_STEPS && inLight(".type-spec-group").length === VOICES, `(ty) the light column shows the FULL specimen, ${TYPE_STEPS} steps (13 voices × 3 + the 2 interactive voices × 6) across the ${VOICES} named voices (Display·Headline·Sub-heading·Title·Sub-title·Lead·Body·Body-mono·Label·Label-mono·Kicker·Tiny·Tiny-mono·UI-control·UI-widget) (got ${inLight(".type-spec-line").length} lines / ${inLight(".type-spec-group").length} groups)`);
+{ const { readFileSync: rfTS } = await import("node:fs"); const tsrc = rfTS("src/ui/sections/typography.js", "utf8"); ok(!/\b(eleven|11|53 steps)\b[^\n]{0,24}voices|\b53 steps\b/i.test(tsrc), "(tyc) typography.js carries no retired voice count (live: 15 voices, 51 steps)"); }
 ok(app.querySelectorAll(".an-card").length >= 4, `(ty) the left rail shows the type analysis cards (got ${app.querySelectorAll(".an-card").length})`);
 // specimen order: each group lists LARGEST → smallest (the first token in the document is Display's LG step)
 ok(txtOf(app.querySelectorAll(".type-spec-token")[0] || {}) === "type-display-lg", `(ty) the specimen lists each group largest→smallest (first token is type-display-lg, got ${txtOf(app.querySelectorAll(".type-spec-token")[0] || {})})`);
@@ -2656,7 +2657,7 @@ app.setTypeSpecMode("specimen"); flushRaf();
 app.typeMode = "base"; flushRaf();
 ok(app._activeType().bodyBase === 16, "(ty-bp) switching back to Base resolves the base body size");
 // ── (ty-cmp) Phase 5.3, per-mode COMPARE: one specimen column per breakpoint mode (Base + each mode),
-// side by side in one pannable scene (mirrors Color's "Both"). _typeModeOverride forces each column's mode. ──
+// side by side in one pannable scene (light columns first, then dark). _typeModeOverride forces each column's mode. ──
 // the doc still carries the _bpId mode (bodyBase 20); the Mode control offers a Compare item now that ≥1 mode exists.
 ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && e.getAttribute("data-fk") === "tmode:compare").length === 1, "(ty-cmp) the Mode control offers a Compare item when ≥1 breakpoint mode exists");
 app.typeMode = "compare"; app.render(); flushRaf();
@@ -4350,10 +4351,50 @@ for (const [sec, setup] of [["typography", () => { app.typeSegment = "scale"; }]
 }
 app.setSection("color"); app.render(); flushRaf();
 
+// ── (sc) slug-collision guard (#787): renaming a palette so its slug would emit another palette's flat
+//    token names (`x-prime` beside `x`) is REFUSED at settle, the doc never keeps the clashing name,
+//    the refused rename leaves no undo step, and a generated "Palette N" name steps past a clash.
+{
+  const valOf = (n) => n.value || n.getAttribute("value") || ""; // the shim keeps a freshly built input's value in its attribute until a property write
+  const sl = (v) => v.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  app.setSection("color"); app.openSet(app.sets[0].id); flushRaf(); app.setSegment("palette"); flushRaf();
+  const idx = 1;
+  app.selectPalette(idx); app.render(); flushRaf();
+  const owner = app.doc.palettes[0].name;
+  const nameBefore = app.doc.palettes[idx].name;
+  const clashName = sl(owner) + "-prime";
+  const inp = findIn(app.querySelector(".right-pane"), isText);
+  ok(!!inp && valOf(inp) === nameBefore, `(sc0) the inspector name field holds "${nameBefore}"`);
+  const histPre = app.history.length;
+  inp.focus();
+  for (let k = 1; k <= clashName.length; k++) { inp.value = clashName.slice(0, k); inp.dispatch("input", {}); }
+  ok(sl(app.doc.palettes[idx].name) !== clashName, `(sc1) the clashing name "${clashName}" is never written to the doc while typing (doc holds "${app.doc.palettes[idx].name}")`);
+  app.toastEl.textContent = "";
+  inp.value = clashName; inp.dispatch("change", {});
+  ok(app.doc.palettes[idx].name === nameBefore, `(sc2) the refused rename restores the pre-typing name "${nameBefore}" (got "${app.doc.palettes[idx].name}")`);
+  ok(app.history.length === histPre, `(sc3) a refused rename leaves no undo step (history ${histPre} -> ${app.history.length})`);
+  ok((app.toastEl.textContent || "").includes(owner), `(sc4) the refusal toast names the clashing palette "${owner}" (got "${app.toastEl.textContent}")`);
+  const inp2 = findIn(app.querySelector(".right-pane"), isText);
+  ok(!!inp2 && valOf(inp2) === nameBefore, `(sc5) the settled pane shows the restored name (got "${inp2 && valOf(inp2)}")`);
+  // a name that clears the guard still renames normally, as one undo step
+  const histMid = app.history.length;
+  inp2.value = "Zed"; inp2.dispatch("input", {}); inp2.dispatch("change", {});
+  ok(app.doc.palettes[idx].name === "Zed" && app.history.length - histMid === 1, `(sc6) a clash-free rename still lands as one undo step (name "${app.doc.palettes[idx].name}", +${app.history.length - histMid})`);
+  // + Palette: the generated name steps past an N whose slug would clash
+  const nextN = app.doc.palettes.length + 1;
+  app.commit((d) => (d.palettes[idx].name = `Palette ${nextN} hover`));
+  app.addPalette();
+  const added = app.doc.palettes[app.doc.palettes.length - 1].name;
+  ok(added === `Palette ${nextN + 1}`, `(sc7) + Palette skips "Palette ${nextN}" while "Palette ${nextN} hover" is taken (got "${added}")`);
+}
+
 // ── report ──────────────────────────────────────────────────────────────────────────
 if (fails.length) {
   console.error("HEADLESS BOOT FAIL:");
   for (const f of fails) console.error("  ✗ " + f);
+  // Final summary: one line per failed assertion, so it is the last thing in the output.
+  console.error(`HEADLESS BOOT SUMMARY: ${fails.length} failed assertion${fails.length === 1 ? "" : "s"}:`);
+  fails.forEach((f, i) => console.error(`  ${i + 1}. ${f}`));
   process.exit(1);
 }
 console.log("HEADLESS BOOT PASS, all Phase-3 interaction assertions hold");

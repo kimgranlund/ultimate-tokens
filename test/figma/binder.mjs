@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // verify.mjs, figma-plugin validation adapter (CRITIC side; deny-on-write to the advancer).
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -810,7 +810,9 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 // ── renameparity (#772): the three hand-copied rename constants (the Figma sandbox can't import
 //    figma/binder/migrations.mjs) are deep-compared against their canonical exports there, in the
 //    binder and in the flagship. A constant the regex cannot find is a FAIL, never a compare of
-//    undefined to undefined. The flagship carries only the two maps (no SEMANTIC_RENAME_FROM). ──
+//    undefined to undefined. The flagship carries only the two maps (no SEMANTIC_RENAME_FROM).
+//    A fourth copy in another figma/binder module (#783) would be read by nothing here, so a second
+//    declaration of any of the three in a module other than migrations.mjs is a FAIL too. ──
 {
   // key ORDER is part of the contract: expandVoiceAliasMap walks Object.keys(voiceMap) and stops at the first match
   const canonSort = (v) => JSON.stringify(v);
@@ -829,6 +831,12 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
   };
   for (const [name, v] of Object.entries(CANON_RENAME)) {
     if (!v || Object.keys(v).length === 0) FAIL("renameparity", `canonical ${name} in migrations.mjs is empty (floor: non-empty)`);
+  }
+  for (const f of readdirSync(HERE).filter((n) => n.endsWith(".mjs") && n !== "migrations.mjs")) {
+    const src = readFileSync(join(HERE, f), "utf8");
+    for (const name of Object.keys(CANON_RENAME)) {
+      if (new RegExp(`^[ \\t]*(?:export\\s+)?(?:const|var|let)\\s+${name}\\s*=`, "m").test(src)) FAIL("renameparity", `figma/binder/${f} declares its own ${name}; migrations.mjs is the one module-side home, and a copy nothing here compares can drift unseen`);
+    }
   }
   let flagSrc = "";
   try { flagSrc = readFileSync(join(HERE, "..", "plugin", "code.js"), "utf8"); } catch (e) { FAIL("renameparity", "could not read the flagship: " + e.message); }

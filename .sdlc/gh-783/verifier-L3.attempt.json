@@ -1,0 +1,21 @@
+{
+  "attempt_id": "64c24a9088b14b64935576f7b64379e6",
+  "name": "verifier-L3",
+  "role": "verifier",
+  "level": "L3",
+  "backend": "claude",
+  "transport": "exec",
+  "model": "fable",
+  "effort": "xhigh",
+  "routing_reason": "Caller selected this role and level; no task-specific rationale supplied.",
+  "reason_source": "fallback",
+  "status": "completed",
+  "started_at": "2026-10-07T01:43:53.397582+00:00",
+  "project": "/Users/kimgranlund/Projects/nonoun/ultimate-tokens/.worktrees/fanout/a",
+  "handoff": "/Users/kimgranlund/Projects/nonoun/ultimate-tokens/.worktrees/fanout/a/.sdlc/gh-783/handoff.md",
+  "owner_pid": 99006,
+  "handoff_sha256": "547c5881dd1e49fc43819c2ea3dfd7c5a187643a18330dd568316b0772847fe3",
+  "process_pid": 99116,
+  "exit_code": 0,
+  "finished_at": "2026-10-07T01:50:00.006201+00:00"
+}

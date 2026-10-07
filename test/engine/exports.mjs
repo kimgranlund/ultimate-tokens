@@ -14,7 +14,7 @@ import { geomScale, LADDER_MD_STEP, sizeAnchor } from "../../src/engine/geometry
 import { PRIME_STEPS } from "../../src/engine/prime.mjs";
 import { oklchToRgb } from "../../src/engine/okhsl.js"; // radix gate's own oklch()->rgb inverse (anti-tautology, never X's forward path)
 import { gateReport } from "../gate-report.mjs";
-import { paletteGroup, brandKit, defaultDocument, stateOf } from "../../src/ui/model.mjs"; // paletteGroup is the SINGLE
+import { paletteGroup, brandKit, defaultDocument, stateOf, nextPaletteName } from "../../src/ui/model.mjs"; // paletteGroup is the SINGLE
 // group resolver (ticket #556/#572), the group-metadata gate below asserts every emitted surface
 // matches THIS, never a second hand-kept copy; brandKit/defaultDocument prove the MCP-facing kit too.
 // stateOf builds the exporter-shaped State the hpg-export-json-meta gate (ticket #573) deep-equals
@@ -2432,6 +2432,64 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
   if (kit.$schema !== `ultimate-tokens-brand-kit/${v}`) FAIL(G, `brandKit $schema = ${JSON.stringify(kit.$schema)}, want ultimate-tokens-brand-kit/${v}`);
 }
 
+// ── slug-collision (#787), flat token names join a palette slug and a suffix with `-`, so a palette
+//    slugged `x-prime` (bare accent role `x-prime`) emitted the SAME name as palette `x`'s centre
+//    prime step, and likewise `x-hover`, `x-500`, ... for every suffix, with nothing guarding it.
+//    Policy under test: paletteNameClash REFUSES (returns the clashing palette's name); nothing is
+//    auto-renamed, because renaming a palette renames every token it emits (a Figma migration).
+//    Three halves: (a) the predicate fires in BOTH directions and not on near-misses; (b) its name
+//    set is pinned to the REAL CSS + Tailwind output, so it cannot drift from the emitters (a
+//    predicate built from a typed suffix list would pass (a) and rot); (c) it never misfires on
+//    the stock palettes, and the generated "Palette N" name steps past a clash.
+{
+  const G = "slug-collision";
+  const MK = (name, extra = {}) => ({ name, hue: 120, chroma: 60, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true, ...extra });
+  const clashOf = (name, others, self = -1) => X.paletteNameClash(name, others.map((o) => (typeof o === "string" ? MK(o) : o)), self);
+
+  // (a) the predicate
+  for (const [neu, existing] of [["x-prime", "x"], ["x-prime-dim", "x"], ["x-hover", "x"], ["x-on-surface", "x"], ["x-on-x", "x"], ["x-500", "x"], ["x-050", "x"], ["x-50", "x"], ["x-scrim-050", "x"], ["X Prime", "x"]]) {
+    if (clashOf(neu, [existing]) !== existing) FAIL(G, `new "${neu}" beside "${existing}" must clash (it emits one of "${existing}"'s flat names)`);
+  }
+  for (const [neu, existing] of [["x", "x-prime"], ["x", "x-hover"], ["x", "x-500"]]) {
+    if (clashOf(neu, [existing]) !== existing) FAIL(G, `new "${neu}" beside existing "${existing}" must clash (the reverse direction)`);
+  }
+  for (const [neu, existing] of [["x-primer", "x"], ["x-hovered", "x"], ["y", "x"], ["x2", "x"], ["x-prime", "y"], ["x", "x"], ["X", "x"]]) {
+    const got = clashOf(neu, [existing]);
+    if (got !== null) FAIL(G, `new "${neu}" beside "${existing}" must NOT clash (a near-miss or an exact-slug duplicate, #630 F1), got ${JSON.stringify(got)}`);
+  }
+  // a disabled palette still counts (enabling it later would create the collision silently)
+  if (clashOf("x-prime", [MK("x", { on: false })]) !== "x") FAIL(G, "a disabled palette must still be guarded");
+  // renaming: the palette being renamed is skipped, so retyping its own name never clashes with itself,
+  // and a retained key colour's `x-key-{role}` name rides along with the renamed palette
+  if (clashOf("x-prime", [MK("x"), MK("z")], 1) !== "x") FAIL(G, "renaming z to x-prime beside x must clash");
+  if (clashOf("x", [MK("x")], 0) !== null) FAIL(G, "renaming a palette to its own slug must not clash with itself");
+  if (clashOf("x-key-brand", [MK("x", { keyColors: [{ role: "brand", oklch: [0.5, 0.1, 120] }] })]) !== "x") FAIL(G, "x-key-brand must clash with x when x retains a brand key colour");
+  if (clashOf("x-key-brand", [MK("x")]) !== null) FAIL(G, "x-key-brand must NOT clash with x when x has no such key colour");
+
+  // (b) pinned to the real emitters: every name the CSS export emits for palette x is in flatNamesOf,
+  // and every name flatNamesOf claims is emitted by the CSS or Tailwind export (nothing invented).
+  const xPal = MK("x", { keyColors: [{ role: "brand", oklch: [0.5, 0.12, 120] }] });
+  const flat = X.flatNamesOf(xPal);
+  const namesIn = (text, pfx) => new Set([...text.matchAll(new RegExp(`--${pfx}-([a-z0-9-]+):`, "g"))].map((m) => m[1]).filter((k) => k === "x" || k.startsWith("x-")));
+  const cssNames = namesIn(X.exportCSS(C([xPal])), "c");
+  const twNames = namesIn(X.exportTailwind(C([xPal])), "color");
+  if (!cssNames.size || !twNames.size) FAIL(G, `drift pin read no palette names (css ${cssNames.size}, tailwind ${twNames.size}), the regexp or export shape moved`);
+  for (const k of cssNames) if (!flat.has(k)) FAIL(G, `the CSS export emits "${k}" but flatNamesOf does not list it`);
+  for (const k of twNames) if (!flat.has(k)) FAIL(G, `the Tailwind export emits "${k}" but flatNamesOf does not list it`);
+  for (const k of flat) if (!cssNames.has(k) && !twNames.has(k)) FAIL(G, `flatNamesOf lists "${k}" but neither the CSS nor the Tailwind export emits it`);
+  // and the premise itself: the colliding pair really does emit one identical CSS name (#787)
+  const both = X.exportCSS(C([MK("x"), MK("x-prime")]));
+  if ((both.match(/^ {2}--c-x-prime:/gm) || []).length !== 2) FAIL(G, "premise: palettes x and x-prime must each emit --c-x-prime (a duplicate declaration), the guard has nothing to prevent otherwise");
+
+  // (c) stock palettes never clash with one another, and a generated name steps past a clash
+  ALL.forEach((p, i) => {
+    const got = X.paletteNameClash(p.name, ALL, i);
+    if (got !== null) FAIL(G, `stock palette "${p.name}" clashes with "${got}"`);
+  });
+  if (nextPaletteName([MK("a"), MK("b")]) !== "Palette 3") FAIL(G, "nextPaletteName must stay `Palette (n+1)` when nothing clashes");
+  if (nextPaletteName([MK("Palette 3 hover"), MK("b")]) !== "Palette 4") FAIL(G, "nextPaletteName must step past `Palette 3` when `Palette 3 hover` is taken");
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
 // The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
 // call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
@@ -2442,7 +2500,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 // in the call, which is why an earlier naive grep over this file mistook all 14 for dead declared
 // names with no call site at all, when they are in fact real, live gates. gateReport()'s
 // self-check resolves that indirection (see gate-report.mjs).
-const DECLARED = ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "oncolors", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "shadcn-baseline", "panda", "radix", "radix-keys-drift", "radix-collision", "radix-refs-values-unchanged", "radix-refs-shape", "radix-refs-raw-pin", "radix-refs-role-pin", "radix-refs-parity", "radix-refs-alpha", "radix-refs-extras", "radix-refs-clones", "radix-refs-collision", "radix-refs-prefix", "radix-refs-module", "radix-refs-sentinel", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata", "hpg-export-json-meta", "hpg-export-schema-stamp", "prefix", "report-static"];
+const DECLARED = ["dtcg-shape", "themes", "leaf-valid", "resolved", "css-resolves", "padding", "oncolors", "disabled-palette", "nonempty", "dialog-backdrop", "white-black", "tailwind", "shadcn", "shadcn-baseline", "panda", "radix", "radix-keys-drift", "radix-collision", "radix-refs-values-unchanged", "radix-refs-shape", "radix-refs-raw-pin", "radix-refs-role-pin", "radix-refs-parity", "radix-refs-alpha", "radix-refs-extras", "radix-refs-clones", "radix-refs-collision", "radix-refs-prefix", "radix-refs-module", "radix-refs-sentinel", "data-palette", "shadcn-chart-6-8", "keycolors", "keycolors-dtcg", "keycolors-ui3", "prime", "prime-dtcg", "prime-ui3", "design-system", "design-system-catalog", "design-system-stitch", "design-system-make", "design-system-data", "design-system-prime", "hpg-export-group-metadata", "hpg-export-json-meta", "hpg-export-schema-stamp", "prefix", "slug-collision", "report-static"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: export-formats clears all [gate] predicates");

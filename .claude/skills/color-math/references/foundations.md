@@ -84,7 +84,7 @@ per stop:
   m        = chromaEnvelope(stop, 500, lift, controls)   # the ONE shared multiplier (#681 U3, below)
   intended = relChroma ? (chroma/100)·maxc : target   # per-stop ceiling basis vs base-peak basis
   damped   = min(intended·m, maxc)
-  floorC   = min((chromaFloor/100)·min(maxc, floorRef), intended)  # NEVER above intended → muted stays muted, neutral stays neutral
+  floorC   = min((chromaFloor/100)·min(floorMaxc, floorRef), intended)  # floorMaxc = maxc, except anchored: min(maxc, ceiling at the unrotated hue) (#784). NEVER above intended → muted stays muted, neutral stays neutral
                                                   # floorRef = floorRefAt(...) (#701, #766): max ceiling at the pivot, 450 and 550 tones, read at THIS stop's own hue before edge rotation
   chroma   = min(maxc, max(damped, floorC))
   rgb      = hctToRgb(hue, chroma, tone)
@@ -143,7 +143,7 @@ chromaEnvelope(stop, anchorStop, lift, controls):        # src/engine/tonal.js, 
   `intended` (kills the near-white "dead zone") but is capped at `intended`, so it never over-saturates a
   muted palette and never tints a true neutral (`intended≈0` → floorC 0). Saturated ramps already clamp at
   `maxc`, so the floor never binds. (The `chroma-floor` gate proves all four.) Its gamut reference is
-  `min(maxc, floorRef)` (#701 U2, revision 14), `floorRef` the largest ceiling among the ramp's three
+  `min(floorMaxc, floorRef)` (#701 U2, revision 14; `floorMaxc` is `maxc`, and on the anchored path the stop's ceiling at its unrotated hue capped at `maxc`, so the floor never rises with a rotated hue's wider ceiling: the #784 stop-200 notch), `floorRef` the largest ceiling among the ramp's three
   reference tones (the pivot tone and the first display step either side, 450 and 550), read per stop by
   `floorRefAt` (#766) at that stop's own hue before edge rotation: the CAM16 hue the per-stop OKLCH solve
   finds for its tone on the anchored OKLCH path, `seedHue` on anchored cam16, `baseHue` non-anchored. Near

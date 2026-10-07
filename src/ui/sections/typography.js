@@ -523,10 +523,10 @@ export class TypeSectionImpl {
 
 
   // renderTypographyScene, the canvas "Typography" view: the FULL specimen (all 51 steps, 15 named
-  // voices: 13 × 3 (SM, MD, LG) + UI-control and UI-widget × 6 (XS to 2XL), since the 2026-07-13 fixed-size-table rewrite), grouped by voice,
+  // voices: 13 × 3 (SM, MD, LG) since the 2026-07-13 fixed-size-table rewrite + UI-control and UI-widget × 6 (XS to 2XL) since 2026-07-16), grouped by voice,
   // each step a live line in the treatment's real face at its size/lineHeight/letterSpacing/weight + a
-  // compact metrics readout. Lives in the same pannable .canvas-scene as the ramps; paints in the canvas
-  // preview scheme (var(--ink*) flips with the area's color-scheme) and the treatment's fonts (ensureTypeFonts).
+  // compact metrics readout. Lives in the same pannable .canvas-scene as the ramps; paints in the scheme
+  // column it is built in (var(--ink*) flips with that column's color-scheme, see _schemeColumn) and the treatment's fonts (ensureTypeFonts).
   renderTypographyScene(view) {
     ensureTypeFonts();
     const cfg = this._activeType();
@@ -661,7 +661,7 @@ export class TypeSectionImpl {
                   this.slider("Leading", val("leading", p.leading), 0.9, 2, 0.01, (v) => fmt(v, 2), (v) => this._setTypeVoice(cName, "leading", v)),
                   // no Ratio control, size is a fixed table since 2026-07-13, not base×ratio^n; a
                   // per-cell override (Global tab) is now the lever for moving an individual step's size.
-                  // the per-voice font override (TKT-0002) is set on the Fonts tab (all 11 voices live
+                  // the per-voice font override (TKT-0002) is set on the Fonts tab (all 15 voices live
                   // there, one editing surface), this panel shows the resolved family read-only, in the
                   // collapsed row's tyi-voice-font span, so it's not duplicated/editable in two places.
                   // the Figma weight-STYLE name, only meaningful for non-variable families (GT America
@@ -991,8 +991,8 @@ export class TypeSectionImpl {
   }
 
 
-  // typeSpecimenTab, a compact in-pane specimen: each of the eleven voices at its MD step. The full
-  // scale (all 53 steps across the 11 voices) lives on the canvas.
+  // typeSpecimenTab, a compact in-pane specimen: each of the fifteen voices at its MD step. The full
+  // scale (all 51 steps across the 15 voices) lives on the canvas.
   typeSpecimenTab(view) {
     const scale = this._activeTypeScale();
     const cats = Object.keys(scale.categories);
@@ -1001,7 +1001,7 @@ export class TypeSectionImpl {
       "div",
       { class: "insp-body" },
       h("h3", { class: "insp-title" }, icon("type"), "Specimen"),
-      h("div", { class: "insp-sub" }, "Each of the eleven voices at MD. The full scale is on the canvas."),
+      h("div", { class: "insp-sub" }, "Each of the fifteen voices at MD. The full scale is on the canvas."),
       h(
         "div",
         { class: "tyi-specimen" },

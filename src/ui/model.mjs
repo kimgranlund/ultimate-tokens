@@ -247,6 +247,7 @@ import {
   exportRadixModule,
   RESERVED_ALIAS_KEYS,
   radixPaletteKey,
+  paletteNameClash,
   SCRIM_BASES,
   SCRIM_STEPS,
   dialogBackdropHex,
@@ -269,7 +270,7 @@ import {
 
 // Re-export the scrim model so the UI (app.js) can build the Mapping tab's re-point targets from the
 // SAME source of truth as the exporters, no second, drift-prone hardcoded scrim-step list.
-export { SCRIM_BASES, SCRIM_STEPS, exportDesignSystemTokens, exportDesignSystemSpine, exportDesignSystemBundle, exportDesignSystemStitchBundle, exportDesignSystemMakeBundle };
+export { SCRIM_BASES, SCRIM_STEPS, paletteNameClash, exportDesignSystemTokens, exportDesignSystemSpine, exportDesignSystemBundle, exportDesignSystemStitchBundle, exportDesignSystemMakeBundle };
 
 // The sixteen seed palettes, 8 brand + 8 Data (data/role-table.json `defaults`). Inlined so the
 // pure core has no file I/O and runs identically in node and the browser.
@@ -372,6 +373,16 @@ export function radixExportKey(name, palettes) {
     others.add(s);
   }
   return radixPaletteKey(n, others);
+}
+
+// nextPaletteName(palettes), the generated "Palette N" name for a freshly added palette (#787): N is
+// palettes.length + 1 as ever, advanced past any N whose slug would clash with another palette's
+// emitted flat token names (a user-renamed "Palette 3 hover" beside a new "Palette 3"). Identical to
+// the old inline expression whenever nothing clashes, so no existing flow changes.
+export function nextPaletteName(palettes) {
+  let k = palettes.length + 1;
+  while (paletteNameClash("Palette " + k, palettes)) k++;
+  return "Palette " + k;
 }
 
 // RADIX_COLLISION_BADGE, a PREFIX, not the whole note (OQ-3, repo owner ruling; re-ruled for #630:

@@ -44,10 +44,15 @@
 //       the chroma-100 cell is the only undamped render, so it bounds every g. 30/45/60 stay as the damper's
 //       composition cells but cannot see the rotation-following reference on their own (c161f252 read 0
 //       dips from control (a) there);
-//   (b1) rendered path: the default kit's 16 palettes WITH their anchors, hueShift +/-60, hueSameDir
-//       false and true, both hue spaces, both stop sets (128 palettes), stop 500 excluded (the owner's Q3
-//       notch class, as tonal.mjs `dip-gate-even`), bound 0. Only +/-60: at -30/-45 the kit's #774902
-//       palette carries an anchored stop-200 notch that predates #766 (#784); this line gates #766's rule;
+//   (b1) rendered path: the default kit's 16 palettes WITH their anchors, hueShift +/-60 and -30/-45, plus
+//       the kit's #774902 palette ("Warning") at every integer hueShift from -26 to -32, hueSameDir false
+//       and true, both hue spaces, both stop sets (280 palettes), stop 500 excluded (the owner's Q3 notch
+//       class, as tonal.mjs `dip-gate-even`), bound 0. The -30/-45 and -26..-32 cells are #784's: the
+//       #774902 palette carried an anchored stop-200 notch there (oklch, hueShift -30: 17.73 / 11.80 /
+//       15.51 at 100 / 200 / 300), a floor that rose with the rotated hue's gamut ceiling, which
+//       `evenChroma`'s floorMaxc cap (the stop's ceiling at the unrotated hue) retires. -45 was already
+//       clean before the cap (its control cells do not dip), so the -45 cells are held by the cap's
+//       identity with the unrotated floor, and the bite proof is the -30 notch;
 //   (b2) rendered path, random: RANDOM_PALETTES anchored palettes drawn from mulberry32(RANDOM_SEED) over
 //       the persisted control domain (randomPalette below, draw order fixed), the kit's curve, tension,
 //       lmin, lmax, damp, dampCurve, dampBias and vibrancy, both stop sets, stop 500 excluded. The chroma
@@ -61,17 +66,31 @@
 // CHROMA_AT_TARGET's `resolvedHue`, so the final chroma line reads the reference at the rotated hue
 // (paletteStopsAnchored). Each control must print more dips than its line's bound or the script fails
 // `negative control DID NOT bite`; a patch target that is not in src/engine/tonal.js exactly once fails the
-// script too. Each control and line prints its own ms. `--floor-scale` skips the grid.
+// script too. (b1) has a second control, #784's: the engine with FLOOR_MAXC_TARGET's cap dropped (`fm` =
+// `mc`, the floor reading the stop's own rotated-hue ceiling), which must reproduce the notch on the
+// #774902 palette at hueShift -30 (oklch), with the pinned neighbours NOTCH_PIN (19 stops 150/200/250 =
+// 16.58/11.80/15.51, 25 stops 175/200/250 = 15.23/11.80/15.51) and 11.80 at stop 200, while the shipped
+// engine holds no dip there. Each control and line prints its own ms. `--floor-scale` skips the grid.
 import { readFileSync } from "node:fs";
 import { hydrate } from "../../src/ui/persist.js";
 import { defaultDocument, rampChromaOf } from "../../src/ui/model.mjs";
 import * as REAL from "../../src/engine/tonal.js";
 
 const CATS = ["architecture", "brands", "cuisine", "film", "literature", "music", "nature", "travel"];
-const FLOOR_TARGET = "const floorC = Math.min(((chromaFloor ?? 0) / 100) * Math.min(maxc, floorRef), intended);";
+const FLOOR_TARGET = "const floorC = Math.min(((chromaFloor ?? 0) / 100) * Math.min(floorMaxc, floorRef), intended);";
 const CONTROL_SCALE = 1.6;
 const GRID_TARGET = "floorRefAt(baseHue, maxc, tone500, tone450, tone550)";
 const CHROMA_AT_TARGET = "chromaAt(hue, resolvedHue)";
+const FLOOR_MAXC_TARGET = "const fm = Math.min(mc, maxChromaInGamut(hRef, tone));";
+// (b1)'s hueShift grid: +/-60 (#766's rule) and -30/-45 (#784), every kit palette; plus, for the kit's
+// anchored #774902 palette (the notch palette, "Warning"), every integer shift from -26 to -32.
+const RENDERED_SHIFTS = [60, -60, -30, -45];
+const NOTCH_ANCHOR = "#774902";
+const NOTCH_SHIFTS = [-26, -27, -28, -29, -30, -31, -32];
+// #784's pinned neighbours of the notch on the engine WITHOUT the floorMaxc cap (what the gate's control
+// prints): the kit's #774902 palette at hueShift -30, oklch, kit controls, dampAmp 0, toneMode even. 19
+// stops: 150 / 200 / 250; 25 stops: 175 / 200 / 250. Stop 200 sits more than 3 C under both neighbours.
+const NOTCH_PIN = { 19: ["16.58", "11.80", "15.51"], 25: ["15.23", "11.80", "15.51"] };
 const RANDOM_SEED = 766;
 const RANDOM_PALETTES = 1000;
 // (b2)'s bound: this block's dip count on the merge-base engine, 8428280e (floorref-hue U2 pass 3, read
@@ -169,12 +188,13 @@ function gridGatePath(engine) {
   }
   return { dips: out, palettes };
 }
+const renderedShifts = (pal) => (pal.anchor === NOTCH_ANCHOR ? [...new Set([...RENDERED_SHIFTS, ...NOTCH_SHIFTS])] : RENDERED_SHIFTS);
 function gridRendered(engine) {
   const out = [];
   let palettes = 0;
   for (const hueSpace of ["oklch", "cam16"]) {
     const controls = gridControls(hueSpace);
-    for (const pal of kit.palettes) for (const hueShift of [60, -60]) for (const hueSameDir of [false, true]) {
+    for (const pal of kit.palettes) for (const hueShift of renderedShifts(pal)) for (const hueSameDir of [false, true]) {
       palettes++;
       const chroma = rampChromaOf(pal, kit);
       for (const stops of [engine.STOPS, engine.EXPORT_STOPS]) {
@@ -217,7 +237,7 @@ if (argScale === null) {
   };
   const lines = [
     ["(a) gate path (no anchor)", gridGatePath, GRID_TARGET, "floorRefAt(hue, maxc, tone500, tone450, tone550)", "GRID_TARGET", "stop 500 included", 0],
-    ["(b1) rendered (kit anchors, hueShift +/-60)", gridRendered, CHROMA_AT_TARGET, "chromaAt(hue)", "CHROMA_AT_TARGET", "stop 500 excluded", 0],
+    ["(b1) rendered (kit anchors, hueShift +/-60, -30/-45, #774902 -26 to -32)", gridRendered, CHROMA_AT_TARGET, "chromaAt(hue)", "CHROMA_AT_TARGET", "stop 500 excluded", 0],
     [`(b2) rendered (random anchored, seed ${RANDOM_SEED})`, gridRandom, CHROMA_AT_TARGET, "chromaAt(hue)", "CHROMA_AT_TARGET", "stop 500 excluded", RANDOM_PIN],
   ];
   for (const [label, sweepFn, target, replacement, name, note, bound] of lines) {
@@ -232,6 +252,31 @@ if (argScale === null) {
     const inPalettes = real.dipPalettes === undefined ? "" : ` in ${real.dipPalettes} palettes`;
     console.log(`  dip-gate even hueShift grid ${label}: ${real.dips.length} dips${inPalettes} (19 + 25 stops, ${real.palettes} palettes, ${note}, bound ${bound}${pinNote}) ${Math.round(performance.now() - t0)} ms`);
     if (real.dips.length > bound) gridFailed = true;
+  }
+
+  // (b1)'s #784 control: the engine without the floorMaxc cap (`fm` = the stop's own rotated-hue maxc, the
+  // floor of the head before #784). It must reproduce the notch on the kit's #774902 palette at hueShift -30
+  // (oklch) at stop 200, with the pinned neighbours, on both stop sets, and print dips on (b1)'s grid
+  // (the real engine's bound there is 0); a patch target that is not in tonal.js exactly once fails the script.
+  const t0 = performance.now();
+  const notchPal = kit.palettes.find((p) => p.anchor === NOTCH_ANCHOR);
+  if (!notchPal) { console.log(`FAIL: the default kit has no ${NOTCH_ANCHOR} palette  -  update NOTCH_ANCHOR`); process.exit(1); }
+  const noCap = await engineFor(FLOOR_MAXC_TARGET, "const fm = mc;", "FLOOR_MAXC_TARGET");
+  const notchRamp = (engine, stops) => engine.paletteStops({ hue: notchPal.hue, chroma: rampChromaOf(notchPal, kit), skew: notchPal.skew, lift: notchPal.lift, hueShift: -30, hueSameDir: false, cuspPull: notchPal.cuspPull, anchor: notchPal.anchor }, gridControls("oklch"), stops);
+  const chromaAtStop = (ramp, stop) => ramp.find((r) => r.stop === stop).chroma.toFixed(2);
+  const ctl = gridRendered(noCap);
+  console.log(`  negative control (b1) no floorMaxc cap (#784): ${ctl.dips.length} dips (want > 0) ${Math.round(performance.now() - t0)} ms`);
+  if (ctl.dips.length === 0) { console.log("FAIL: negative control DID NOT bite  -  the floor read at the rotated hue produced 0 (b1) dips"); process.exit(1); }
+  for (const stops of [REAL.STOPS, REAL.EXPORT_STOPS]) {
+    const n = stops.length, at = n === 19 ? [150, 200, 250] : [175, 200, 250];
+    const got = at.map((s) => chromaAtStop(notchRamp(noCap, stops), s));
+    const want = NOTCH_PIN[n];
+    const real = at.map((s) => chromaAtStop(notchRamp(REAL, stops), s));
+    console.log(`  notch pin ${n} stops, stops ${at.join("/")}: control ${got.join(" / ")} (pinned ${want.join(" / ")}), engine ${real.join(" / ")}`);
+    if (got.join() !== want.join()) { console.log(`FAIL: the control's notch neighbours moved off the pin on ${n} stops  -  the notch is no longer the #784 one, re-pin NOTCH_PIN`); process.exit(1); }
+    const key = `notch ${n} stops`;
+    if (gridDips(notchRamp(noCap, stops), key, true).length === 0) { console.log(`FAIL: negative control DID NOT bite  -  no stop-200 notch on ${n} stops at hueShift -30`); process.exit(1); }
+    if (gridDips(notchRamp(REAL, stops), key, true).length !== 0) { console.log(`FAIL: the engine still has the #784 notch on ${n} stops at hueShift -30`); gridFailed = true; }
   }
 }
 

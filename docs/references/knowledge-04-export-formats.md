@@ -165,6 +165,7 @@ Semantic values are **in-file key-path aliases** the importer resolves; prime va
 
 - `pad3(stop)` → 3 digits (`"50"→"050"`); applied to all stop keys and var refs.
 - `slug(name)` → lowercase, non-alphanumeric → `-`, trimmed. Palette name → token namespace.
+- Flat names join slug and suffix with `-`, so one palette's slug can equal another's slug plus a suffix (`x-prime` beside `x`, `x-hover`, `x-500`, #787). `paletteNameClash` (exports.js) compares the two palettes' `flatNamesOf` sets, derived from the emitters' own helpers. The UI refuses a clashing rename (settle toast, name restored, no undo step), and the generated `Palette N` name and `+ Data` skip or refuse a clash. Refuse, not auto-rename: a rename changes every token the palette emits (a Figma migration), and refusing leaves every existing document's output byte-identical. Exact duplicate slugs (#630 F1) and documents that already hold a collision are untouched.
 - `hex8(rgb, frac)` → `#RRGGBBAA` for scrims.
 - `SCRIM_BASES=[500]`, `SCRIM_STEPS=[50,100,200,300,400,500,600,700,800,900,950]`; a scrim ref `500-{step}` is the 500 color at alpha% = step/10, EMITTED as the nested `scrim/{step}` path (`refPath`) / `scrim-{step}` slug (`refSlug`), ADR-016.
 

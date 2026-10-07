@@ -17,8 +17,8 @@ Design tokens, derived, not guessed.
 
 **Subhead**
 
-> Pick a key color. Ultimate Tokens derives an even, OKLCH-true system, 53 semantic roles, a type
-> scale, a geometry ramp, and exports it everywhere your product lives: CSS, Figma variables, and
+> Pick a key color. Ultimate Tokens derives an even, OKLCH-true system: 53 semantic roles, a type
+> scale, a geometry ramp. Then it exports it everywhere your product lives: CSS, Figma variables, and
 > your AI agents.
 
 **Primary CTA** `Open the app — it's free` · **Secondary** `See a real kit ↓`
@@ -29,7 +29,7 @@ Design tokens, derived, not guessed.
 
 **H2** `One color in. A system out.`
 
-> Color is modeled where human vision is even, OKLCH-native, HEX derived only for output. A single
+> Color is modeled where human vision is even. It is OKLCH-native, with HEX derived only for output. A single
 > key color becomes a measured tonal ramp (050–950), mapped to 53 semantic roles: surfaces, on-colors,
 > outlines, containers, scrims, inverse, resolved for light and dark in one pass. Keep your exact
 > brand color pinned; every other stop stays even around it.
@@ -38,7 +38,7 @@ Design tokens, derived, not guessed.
 
 **H2** `Type and space, from the same source`
 
-> Typography composes on a modular scale, eleven voices from headline to fine-print, five treatments from
+> Typography composes on a modular scale, fifteen voices from headline to fine-print, five treatments from
 > Editorial to Brutalist, sizes snapped to a designer's ladder. Geometry builds a size ramp on one
 > centering law: edge padding = (height − glyph) / 2, so controls sit optically true at every size.
 > Change the source; both systems follow.
@@ -56,8 +56,8 @@ Design tokens, derived, not guessed.
 
 **H2** `Your agents build with your tokens`
 
-> AI agents guess design values all day, a plausible hex, an approximate size. Give yours the real
-> ones instead. The Brand-Kit MCP serves your kit to any MCP client, Claude Code, Cursor, a
+> AI agents guess design values all day: a plausible hex, an approximate size. Give yours the real
+> ones instead. The Brand-Kit MCP serves your kit to any MCP client, such as Claude Code or Cursor. It is a
 > zero-dependency server pre-filled with exact roles and resolved tokens. The free Ultimate Tokens
 > Claude plugin teaches the agent which of the 53 roles goes on each surface, binding to your
 > project's real exported variables. Serve the values; apply them correctly.
@@ -78,7 +78,7 @@ Design tokens, derived, not guessed.
 > download, the design-system export.
 > **Pro, $39/year, per user**: unlimited kits, the complete export suite, advanced treatments,
 > updates and support.
-> **Studio, $149/year for 5 seats** (+$19/seat/year), Pro for the whole team, one account.
+> **Studio, $149/year for 5 seats** (+$19/seat/year): Pro for the whole team, one account.
 >
 > 14-day refund, no questions.
 

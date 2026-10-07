@@ -1,4 +1,4 @@
-import { PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hasDataPalettes, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixCollisionBadge, radixExportKey, radixKeyCollision, rederiveDataHues, resolvePaletteGroups, seedFromKeyColor, slug } from "../model.mjs";
+import { PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hasDataPalettes, hexToOklch, mintDataPalettes, nextPaletteName, paletteGroup, paletteGroupLabel, paletteNameClash, projectView, radixCollisionBadge, radixExportKey, radixKeyCollision, rederiveDataHues, resolvePaletteGroups, seedFromKeyColor, slug } from "../model.mjs";
 import { RELATIONSHIPS, deriveNeutral, deriveRelative } from "../../engine/derive.mjs";
 import { icon } from "../icons.js";
 import { CURVES, DAMP_PRESETS, HUE_SPACE_ANCHOR_REASON, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
@@ -343,7 +343,7 @@ export class ColorSectionImpl {
       // A new palette starts from clean defaults: every shaping control reset to neutral (skew/lift 0,
       // edge-hue 0, same-dir off) so it never inherits the previous palette's tweaks, only the
       // hue/chroma seed defines it. (Global controls are doc-level and shared, so they're untouched.)
-      const name = "Palette " + (d.palettes.length + 1);
+      const name = nextPaletteName(d.palettes);
       d.palettes.push({ name, hue: 200, chroma: 60, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true, group: paletteGroup({ name }) });
     });
     this.selectPalette(this.doc.palettes.length - 1);
@@ -470,7 +470,7 @@ export class ColorSectionImpl {
     const proposed = this._newPalProposed(view);
     if (!proposed) { this.toast("Pick at least one palette to derive from"); return; }
     const tab = this.newPalTab;
-    const name = "Palette " + (this.doc.palettes.length + 1);
+    const name = nextPaletteName(this.doc.palettes);
     const pal = { name, hue: proposed.pal.hue, chroma: proposed.pal.chroma, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true, group: paletteGroup({ name }) };
     if (proposed.pal.keyColors) pal.keyColors = proposed.pal.keyColors; // A/B retain the derived dominant
     this.newPalOpen = false; // close on the commit's render (newPalOpen drives _syncNewPal)
@@ -1656,6 +1656,7 @@ export class ColorSectionImpl {
     const p = this.doc.palettes[i];
     if (!p) return h("div", {}, "No palette selected");
     const vp = view.palettes[i];
+    const nameAtRender = p.name; // p is the LIVE doc palette (typing mutates p.name), so capture the name this pane opened with
     // skew + lift shape the CIELAB tone curve (toneAt), they have NO effect in the OKHSL distribution
     // modes (perceptual/peak step lightness directly), so hide them there, matching the Global controls.
     const isEven = this.doc.toneMode === "even";
@@ -1690,10 +1691,26 @@ export class ColorSectionImpl {
           // a PARTIAL liveRefresh, it never replaces this <input> (the right pane
           // is left alone), so focus + caret survive mid-word. The canvas row name
           // + analysis header update live. blur/Enter ('change') settles + renders.
-          oninput: (e) => this.editDrag((d) => (d.palettes[i].name = e.target.value)),
-          onchange: () => {
+          // #787: a name whose slug would emit another palette's flat token names (`x-prime` beside
+          // `x`) is never written to the doc, so the live preview, history and storage only ever see
+          // clash-free names; the text stays in the field until settle, where it is refused.
+          oninput: (e) => {
+            if (paletteNameClash(e.target.value, this.doc.palettes, i)) return;
+            this.editDrag((d) => (d.palettes[i].name = e.target.value));
+          },
+          onchange: (e) => {
+            const clash = paletteNameClash(e.target.value, this.doc.palettes, i);
+            if (clash) {
+              this.toast(`"${e.target.value}" would emit the same token names as "${clash}"`);
+              // refused: restore the name this pane was rendered with (nameAtRender, the pre-typing name, not
+              // the last clash-free partial the doc holds) and drop the in-flight history snapshot, so
+              // the refused rename leaves no undo step.
+              this.edit((d) => (d.palettes[i].name = nameAtRender));
+              if (this._dragTimer) { clearTimeout(this._dragTimer); this._dragTimer = null; }
+              this._dragSnap = null;
+            }
             this.commitDrag();
-            this.render(); // settle: reconcile the right pane + rails post-edit
+            this.render(); // settle: reconcile the right pane + rails post-edit (a refused name snaps back)
           },
         }),
       ),
@@ -1979,6 +1996,11 @@ export class ColorSectionImpl {
     const fresh = mintDataPalettes(this.doc);
     if (!fresh.length) {
       this.toast("Add a Primary palette first");
+      return;
+    }
+    const clash = fresh.map((p) => paletteNameClash(p.name, this.doc.palettes)).find(Boolean);
+    if (clash) {
+      this.toast(`Rename "${clash}" first, it would emit the same token names as a data palette`);
       return;
     }
     this.commit((d) => d.palettes.push(...fresh));
