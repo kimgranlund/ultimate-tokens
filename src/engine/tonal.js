@@ -346,8 +346,15 @@ function solveCam16Hue(targetOklchHue, chroma, tone, gamutClamp = false, { chrom
 // reading, and at hueShift 0 (rotated hue = unrotated hue) floorMaxc is maxc: byte-identical there.
 function evenChroma(maxc, intended, env, chromaFloor, floorRef = maxc, floorMaxc = maxc) {
   const damped = Math.min(intended * env, maxc);
+  return Math.min(maxc, Math.max(damped, evenFloor(maxc, intended, chromaFloor, floorRef, floorMaxc)));
+}
+
+// evenFloor: evenChroma's floor term, factored so a stop record can carry the floor it rendered against.
+// It takes maxc, unread by the shipped line, because the dip-gate-even negative controls patch the
+// floorC line below verbatim into gamut-relative forms that read it (test/engine/tonal.mjs).
+function evenFloor(maxc, intended, chromaFloor, floorRef, floorMaxc) {
   const floorC = Math.min(((chromaFloor ?? 0) / 100) * Math.min(floorMaxc, floorRef), intended);
-  return Math.min(maxc, Math.max(damped, floorC));
+  return floorC;
 }
 
 // floorRefAt (#766): evenChroma's floorRef for one stop, the largest gamut ceiling among the ramp's three
@@ -496,6 +503,26 @@ export function chromaEnvelope(stop, anchorStop, lift, controls) {
   const sideW = Math.max(0, 1 + ((controls.dampBias ?? 0) / 100) * Math.sign(sd));
   const shoulder = ((controls.dampAmp ?? 0) / 100) * 4 * uG * (1 - uG); // 0 at sd=0 AND |sd|=1  -  shoulders only
   return Math.max(0, 1 + shoulder - (damp / 100) * sideW * uG);
+}
+
+// ENVELOPE_PRESETS (#778): the named envelope curves, each a damp / dampCurve / dampAmp / dampBias
+// setting of the four sliders, which stay exposed. The curve the envelope computes from a preset is the
+// spec; gates assert it, not rounded pixels. Default is the kit's DEFAULT_CONTROLS; Curated is the
+// curated corpus setting (342 of 343 presets); the other five are the editor's former chip set.
+export const ENVELOPE_PRESETS = [
+  { name: "Default", damp: 80, dampCurve: 1.5, dampAmp: 0, dampBias: 0 },
+  { name: "Curated", damp: 70, dampCurve: 1.5, dampAmp: 0, dampBias: 0 },
+  { name: "Calm ends", damp: 92, dampCurve: 2.6, dampAmp: 0, dampBias: 0 },
+  { name: "Vivid mids", damp: 70, dampCurve: 1.5, dampAmp: 55, dampBias: 0 },
+  { name: "Shade-heavy", damp: 84, dampCurve: 1.5, dampAmp: 12, dampBias: 55 },
+  { name: "Tint-heavy", damp: 84, dampCurve: 1.5, dampAmp: 12, dampBias: -55 },
+  { name: "Flat", damp: 35, dampCurve: 1, dampAmp: 0, dampBias: 0 },
+];
+
+// envelopePresetOf: the name of the first preset whose four knobs all equal the controls' own, else null.
+export function envelopePresetOf(controls) {
+  const p = ENVELOPE_PRESETS.find((x) => x.damp === controls.damp && x.dampCurve === controls.dampCurve && x.dampAmp === controls.dampAmp && x.dampBias === controls.dampBias);
+  return p ? p.name : null;
 }
 
 // shape, remap normalized position p∈[0,1] (0=light end, 1=dark end) to q∈[0,1].
@@ -814,6 +841,8 @@ function enforceMonotonePixelL(stopsOut) {
     cur.chroma = cam.chroma;
     if (cur.hue !== undefined) cur.hue = cam.hue;
     cur.maxc = maxChromaInGamut(cam.hue, cur.tone);
+    // A swapped stop is flagged; its model, env, basis and floor stay as built (the curve it was asked for).
+    cur.refined = true;
     // cur.inGamut stays true - the search above only ever considers in-gamut [0,255]^3 candidates.
   }
 }
@@ -880,25 +909,28 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
       return {
         stop, tone: anchor.lstar, chroma: anchor.cam.chroma, hue: anchor.cam.hue,
         maxc: maxc500, rgb: anchor.rgb, hex: anchor.hex, inGamut: true,
+        env: 1, model: anchor.cam.chroma, basis: anchor.cam.chroma, floor: 0,
       };
     }
     const tone = anchorLerp(pivotTone, controls.lmax ?? 100, controls.lmin ?? 5, stop, palette.skew ?? 0, palette.lift ?? 0, controls.curve, controls.tension);
     const s = (stop - 500) / 450;
     const dir = sameDir ? -Math.abs(s) : s;
     const env = chromaEnvelope(stop, 500, lift, controls);
-    // chromaAt(h) - the chroma THIS stop will actually render at candidate hue h: the exact formula
+    // chromaAt(h).chroma - the chroma THIS stop will actually render at candidate hue h: the exact formula
     // the final chroma line below evaluates, factored out so the hue solve (review pass 4, Finding 2)
     // can converge against the real render, not a stand-in seed chroma that the render then discards -
     // see solveCam16Hue's own header comment for why that mismatch mattered. The floor's own ceiling is the
     // stop's gamut ceiling at hRef (the hue before edge rotation), capped at mc: evenChroma's floorMaxc
-    // (#784 explains why the floor must not read the rotated ceiling).
+    // (#784 explains why the floor must not read the rotated ceiling). chromaAt returns the chroma with its
+    // basis (the un-damped intended chroma) and floor; the solve's wrapper hands it the number alone.
     const chromaAt = (h, hRef = h) => {
       const mc = maxChromaInGamut(h, tone);
       const anchorIntendedH = controls.relChroma ? anchorRelFrac * mc : anchor.cam.chroma;
       const groupIntendedH = controls.relChroma ? mc : pk;
       const intendedH = anchorChromaBasis(stop, 500, lift, anchorIntendedH, groupIntendedH);
       const fm = Math.min(mc, maxChromaInGamut(hRef, tone));
-      return evenChroma(mc, intendedH, env, controls.chromaFloor, floorRefAt(hRef, fm, pivotTone, tone450, tone550), fm);
+      const fr = floorRefAt(hRef, fm, pivotTone, tone450, tone550);
+      return { chroma: evenChroma(mc, intendedH, env, controls.chromaFloor, fr, fm), basis: intendedH, floor: evenFloor(mc, intendedH, controls.chromaFloor, fr, fm) };
     };
     let resolvedHue = seedHue;
     if (oklchSpace) {
@@ -907,16 +939,16 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
       // solves hue and the REAL render chroma jointly via chromaAt above; review pass 5 Finding 1
       // replaced the fixed-point step inside solveCam16Hue with a bracketed root-find (see its own
       // header comment) - seedHue is no longer passed or used as a fallback there.
-      resolvedHue = solveCam16Hue(targetOklchHue, 0, tone, false, { chromaAt });
+      resolvedHue = solveCam16Hue(targetOklchHue, 0, tone, false, { chromaAt: (h) => chromaAt(h).chroma });
     }
     const hue = (((resolvedHue + shift * dir) % 360) + 360) % 360;
     const maxc = maxChromaInGamut(hue, tone);
-    const chroma = chromaAt(hue, resolvedHue);
+    const { chroma, basis, floor } = chromaAt(hue, resolvedHue);
     const out = hctToRgb(hue, chroma, tone);
     const hex =
       "#" +
       out.rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
-    return { stop, tone, chroma, hue, maxc, rgb: out.rgb, hex, inGamut: out.inGamut };
+    return { stop, tone, chroma, hue, maxc, rgb: out.rgb, hex, inGamut: out.inGamut, env, model: chroma, basis, floor };
   });
   enforceMonotonePixelL(built);
   return built;
@@ -1033,7 +1065,8 @@ export function paletteStops(palette, controls, stops) {
     // NEVER past the anchor's own envelope of 1 (a muted palette stays muted, a neutral stays neutral,
     // saturated stops already clamp at/near maxc so the floor never binds). Shared with the stop-500 hue
     // anchor so they can't drift.
-    let chroma = evenChroma(maxc, intended, envelopeAt.get(stop), controls.chromaFloor, floorRefAt(baseHue, maxc, tone500, tone450, tone550));
+    const fr = floorRefAt(baseHue, maxc, tone500, tone450, tone550);
+    let chroma = evenChroma(maxc, intended, envelopeAt.get(stop), controls.chromaFloor, fr);
     // Generated palettes (dampAmp 0) never emit more chroma than the anchor itself (#681 U3 pass 3, the
     // C6 "0 above 100%" clause). At stop === ANCHOR_STOP this is an exact no-op (same formula, same
     // inputs, chroma === anchorChroma already). Authored dampAmp>0 overrides (Adia, C6's named carve-out)
@@ -1045,7 +1078,9 @@ export function paletteStops(palette, controls, stops) {
     const hex =
       "#" +
       out.rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
-    return { stop, tone, chroma, hue, maxc, rgb: out.rgb, hex, inGamut: out.inGamut };
+    const rec = { stop, tone, chroma, hue, maxc, rgb: out.rgb, hex, inGamut: out.inGamut, env: envelopeAt.get(stop), model: chroma, basis: intended, floor: evenFloor(maxc, intended, controls.chromaFloor, fr, maxc) };
+    if (dampAmp === 0) rec.anchorCap = anchorChroma;
+    return rec;
   });
 }
 
@@ -1367,7 +1402,7 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
     // Tone hold (#725 U3): the one hue above feeds both the hold's target and the emission.
     const hold = holdTone(hue, intendedS, l, env);
     const rgb = okhslToRgb(hue, hold.s, hold.l);
-    return { hue, s: hold.s, l: hold.l, rgb, chroma: cam16FromRgb(rgb).chroma, toneTarget: hold.target, toneHeld: hold.held };
+    return { hue, s: hold.s, l: hold.l, rgb, chroma: cam16FromRgb(rgb).chroma, toneTarget: hold.target, toneHeld: hold.held, env };
   };
   // Peak joint cap (#725 U2, R69): the anchored peak ramp emits no stop above stop 500's own chroma, the
   // same `capChromaAtHeldTone` construction `okhslStops` runs, scoped the same way (peak, dampAmp 0).
@@ -1380,15 +1415,15 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
       return {
         stop, tone: anchor.lstar, chroma: anchor.cam.chroma,
         maxc: maxChromaInGamut(anchor.cam.hue, anchor.lstar), rgb: anchor.rgb, hex: anchor.hex, inGamut: true,
-        toneTarget: anchor.lstar, toneHeld: anchor.lstar,
+        toneTarget: anchor.lstar, toneHeld: anchor.lstar, env: 1, model: anchor.okhsl.s,
       };
     }
-    let { hue, s, l, rgb, chroma, toneTarget, toneHeld } = preCap(stop);
+    let { hue, s, l, rgb, chroma, toneTarget, toneHeld, env } = preCap(stop);
     let capped = false;
     if (capPeak && chroma > ceiling + 1e-6) ({ rgb, chroma, capped } = capChromaAtHeldTone(hue, s, l, rgb, chroma, ceiling, null, true));
     const tone = lstarFromRgb(rgb);
     const hex = "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
-    return { stop, tone, chroma, maxc: maxChromaInGamut(anchor.cam.hue, tone), rgb, hex, inGamut: true, capped, toneTarget, toneHeld };
+    return { stop, tone, chroma, maxc: maxChromaInGamut(anchor.cam.hue, tone), rgb, hex, inGamut: true, capped, toneTarget, toneHeld, env, model: s };
   });
   enforceMonotonePixelL(built);
   return built;
@@ -1489,7 +1524,7 @@ function okhslStops(palette, controls, stops, mode) {
     const hex = "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
     // chroma/maxc reported (measured) for the analysis graphs; OKHSL is in-gamut by construction (the
     // HCT fallback above is validated in-gamut too, per its own engine contract).
-    return { stop, tone, chroma, maxc: maxChromaInGamut(baseHue, tone), rgb, hex, inGamut: true, capped, toneTarget: hold.target, toneHeld: hold.held };
+    return { stop, tone, chroma, maxc: maxChromaInGamut(baseHue, tone), rgb, hex, inGamut: true, capped, toneTarget: hold.target, toneHeld: hold.held, env: envelopeAt.get(stop), model: hold.s };
   });
 }
 
@@ -1516,20 +1551,22 @@ export function groupDamper(chroma) {
 }
 
 function dampStops(at100, r, mode, hueSpace) {
-  if (r >= 1) return at100;
+  if (r >= 1) return at100.map((st) => ({ ...st, damper: r }));
   const okhslPath = mode === "perceptual" || mode === "peak";
   return at100.map((st) => {
-    const out = { ...st };
+    const out = { ...st, damper: r };
     if (okhslPath) {
       const { h, s, l } = rgbToOkhsl(st.rgb);
       const hold = holdTone(h, s, l, r);
       out.rgb = okhslToRgb(solveOkhslHue(h, hold.s, hold.l), hold.s, hold.l);
       out.tone = lstarFromRgb(out.rgb);
       out.chroma = cam16FromRgb(out.rgb).chroma;
+      out.model = st.model * r;
     } else {
       const chromaAt = (h) => Math.min(st.chroma * r, maxChromaInGamut(h, st.tone));
       if (hueSpace === "oklch") out.hue = solveCam16Hue(hctToOklch(st.hue, st.chroma, st.tone)[2], 0, st.tone, false, { chromaAt });
       out.maxc = maxChromaInGamut(out.hue, st.tone);
+      out.model = Math.min(st.model * r, out.maxc);
       out.chroma = chromaAt(out.hue);
       ({ rgb: out.rgb, inGamut: out.inGamut } = hctToRgb(out.hue, out.chroma, st.tone));
     }

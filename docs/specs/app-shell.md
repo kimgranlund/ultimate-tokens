@@ -128,13 +128,13 @@ anchor. "Interface" is the method's contract, not its body.
 | **LLD-C4** | Section switcher | `sectionSwitcher` :1421 / `setSection` :1441 | SPEC-R12 |
 | **LLD-C5** | Left pane (Analysis rail) | `renderLeftPane` :1542 | SPEC-R11, SPEC-R5, SPEC-R6 |
 | **LLD-C6** | Center (canvas) | `renderCenter` :1652 | SPEC-R11, SPEC-R2, SPEC-R3 |
-| **LLD-C6a** | Canvas header | `renderCanvasHeader` `sections/color.js:807` | SPEC-R11, SPEC-R7 |
-| **LLD-C6b** | Canvas area / scene | `renderCanvasArea` `sections/color.js:866` | SPEC-R10 (pannable canvas), SPEC-R2 |
+| **LLD-C6a** | Canvas header | `renderCanvasHeader` `sections/color.js:799` | SPEC-R11, SPEC-R7 |
+| **LLD-C6b** | Canvas area / scene | `renderCanvasArea` `sections/color.js:858` | SPEC-R10 (pannable canvas), SPEC-R2 |
 | **LLD-C6c** | Canvas footer | `renderCanvasFooter` :1893 / `paintCanvasFooter` :1898 | SPEC-R5 |
 | **LLD-C7** | Right pane (segmented inspector) | `renderRightPane` :1934 | SPEC-R11, SPEC-R3, SPEC-R4 |
 | **LLD-C8** | App-footer | `renderAppFooter` :2185 / `paintAppFooter` :2205 | SPEC-R6, SPEC-R1 |
 | **LLD-C9** | Pane-collapse toggles | `toggleLeftPane`/`toggleRightPane` :1454 / `paneToggle` :1464 | SPEC-R10 (density) |
-| **LLD-C10** | Overlays (drawer, dialogs, toast) | `renderDrawer` `overlays/drawer.js:33` / `renderSettings` `overlays/settings.js:473` / `renderNewPalette` `sections/color.js:482` / `renderApplyGate` `overlays/apply-gate.js:353` | SPEC-R8, SPEC-R2, SPEC-R1 |
+| **LLD-C10** | Overlays (drawer, dialogs, toast) | `renderDrawer` `overlays/drawer.js:33` / `renderSettings` `overlays/settings.js:473` / `renderNewPalette` `sections/color.js:474` / `renderApplyGate` `overlays/apply-gate.js:353` | SPEC-R8, SPEC-R2, SPEC-R1 |
 
 ### 2.1 Region responsibilities (the non-obvious contracts)
 

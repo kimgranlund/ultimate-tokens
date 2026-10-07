@@ -2234,6 +2234,41 @@ for (const mode of ["perceptual", "peak"]) {
     console.log(`group-chroma-damper: kit Primary at 100 matches the pre-damper render in 3 modes; 50, 10 and 0 scale every stop by g/100; tone held on ${rows} rows`);
 }
 
+// ── envelope-presets (#778): the named envelope curves are the spec. (a) every preset reads exactly 1
+// at the anchor in each mode and lift; (b) envelopePresetOf names each preset back; (c) the Curated
+// curve meets the ruled perceptual/peak bars (env(300) <= 0.75, env(100) <= 0.25 at lift 0); (d) a
+// negative control: a steeper falloff (dampCurve 3, env(300) about 0.93) must fail that bar check.
+{
+  const red = [];
+  const P = T.ENVELOPE_PRESETS;
+  for (const p of P) {
+    for (const toneMode of ["perceptual", "peak", "even"]) for (const lift of [-40, 0, 40]) {
+      const v = T.chromaEnvelope(500, 500, lift, { ...p, toneMode });
+      if (!(Math.abs(v - 1) <= 1e-12)) red.push(`(a) ${p.name} ${toneMode} lift ${lift}: env(500) = ${v}`);
+    }
+    if (T.envelopePresetOf(p) !== p.name) red.push(`(b) envelopePresetOf(${p.name}) = ${T.envelopePresetOf(p)}`);
+  }
+  const barMisses = (ctl) => {
+    const miss = [];
+    for (const toneMode of ["perceptual", "peak"]) {
+      const e300 = T.chromaEnvelope(300, 500, 0, { ...ctl, toneMode }), e100 = T.chromaEnvelope(100, 500, 0, { ...ctl, toneMode });
+      if (!(e300 <= 0.75)) miss.push(`${toneMode} env(300) ${e300.toFixed(4)} > 0.75`);
+      if (!(e100 <= 0.25)) miss.push(`${toneMode} env(100) ${e100.toFixed(4)} > 0.25`);
+    }
+    return miss;
+  };
+  const curated = P.find((p) => p.name === "Curated");
+  if (!curated) red.push("(c) no Curated preset");
+  else {
+    const miss = barMisses(curated);
+    if (miss.length) red.push(`(c) Curated misses the ruled bars: ${miss.join(", ")}`);
+    if (!barMisses({ ...curated, dampCurve: 3 }).length)
+      FAIL("envelope-presets", "(envelope-presets negative control) DID NOT bite: Curated at dampCurve 3 passed the ruled bars, so the bar check cannot discriminate");
+  }
+  if (red.length) FAIL("envelope-presets", `${red.length} red: ${red.join("; ")}`);
+  else console.log(`envelope-presets: ${P.length} presets read env(500) = 1 in 3 modes x 3 lifts and name back; Curated meets the ruled bars; the dampCurve 3 control bites`);
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
 // The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
 // call (#695), so a gate missing from the list below still shows up, loudly, instead of a real
@@ -2245,7 +2280,7 @@ for (const mode of ["perceptual", "peak"]) {
 // keeps every doc citation into the gates above from drifting by a line (same convention as
 // test/ui/persist.mjs's mid-file gate-report.mjs import).
 import { gateReport } from "../gate-report.mjs";
-const DECLARED = ["ingamut", "monotonic", "white-endpoint", "chroma-target", "curve-fidelity", "hue-stability", "damping-curve", "edge-hue", "rel-chroma", "okhsl-modes", "chroma-floor", "cusp-pull", "lift-monotonic", "skew-lift-okhsl", "vibrancy", "oklch-hue-anchor", "hue-solver-best", "intensity-legacy", "ac004-greps", "chroma-envelope", "dip-gate-even", "okl-order", "group-chroma-damper", "report-static"];
+const DECLARED = ["ingamut", "monotonic", "white-endpoint", "chroma-target", "curve-fidelity", "hue-stability", "damping-curve", "edge-hue", "rel-chroma", "okhsl-modes", "chroma-floor", "cusp-pull", "lift-monotonic", "skew-lift-okhsl", "vibrancy", "oklch-hue-anchor", "hue-solver-best", "intensity-legacy", "ac004-greps", "chroma-envelope", "dip-gate-even", "okl-order", "group-chroma-damper", "envelope-presets", "report-static"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 console.log(`  (${FULL ? `FULL: ${CORPUS_DOC_COUNT} curated documents, ${CORPUS_PALETTE_COUNT} palettes` : `SAMPLED seed ${SAMPLE_SEED}: ${CORPUS_DOC_COUNT} curated documents, ${CORPUS_PALETTE_COUNT} palettes`})`);
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
