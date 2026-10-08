@@ -39,7 +39,7 @@ recipe against any tree at or after `88752594`.
 
 ## Which view the screenshots come from
 
-The 12-step rows: Color canvas, view "Radix" (`color.js:805`, scene `color.js:1033`). The 19-stop
+The 12-step rows: Color canvas, view "Radix" (the `radix` view entry and `renderRadixScene` in `color.js`). The 19-stop
 display ramp in the palette cards is the same ramp at the same stops, so it shows the same spread
 (the 25-stop table below covers both). Stop 050 is `#FFFFFF` in every palette at `lmax` 100
 (`knowledge-02-tonal-scale.md` section 7): the "pure white first swatch" is that, by design.
@@ -142,7 +142,7 @@ The spread has three independent sources. In the default kit they stack; none is
 3. Cusp pull (`vibrancy`, default 50) on UNANCHORED palettes in `perceptual` and `peak`.
    `lightnessAt` (`tonal.js:1508`) blends an even distribution with one that puts the hue's chroma
    cusp at stop 500, so yellow reads lighter and blue darker (the engine's stated intent,
-   `DEFAULT_CONTROLS` comment at `tonal.js:67`). On anchored palettes this does not apply (the pivot
+   `DEFAULT_CONTROLS` comment at the `toneMode` default in `DEFAULT_CONTROLS`). On anchored palettes this does not apply (the pivot
    is the anchor, `tonal.js:1431` blends two curve shapes about one pivot), so it is not the cause for
    the default kit. It is the cause for a user-created palette with no anchor: Table 3 row 3, spread
    0.260 at stop 500.
@@ -167,7 +167,7 @@ By design (documented and tested):
   Radix's hand-picked per-hue solids.)
 
 Against the repo's own rule: none found. The only stated "same L* for every hue" claim is for the
-`even` path (`tonal.js:61-62`, `.claude/skills/color-math/SKILL.md` line 42), and it holds: L* spread
+`even` path (the `toneAt` comment block in `tonal.js`, `.claude/skills/color-math/SKILL.md` line 42), and it holds: L* spread
 0.2 to 0.4 for the unanchored, zero-skew, `even` configuration, measured on all 343 corpus documents
 (Table 4, last column). `gate:corpus-tonal` (`test/engine/tonal.mjs --full`) checks per-palette
 monotonicity, gamut, hue and curve fidelity; it has no cross-palette lightness assertion in any mode.
