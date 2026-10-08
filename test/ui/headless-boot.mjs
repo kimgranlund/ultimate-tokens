@@ -4047,6 +4047,28 @@ flushRaf();
     ok(!colorSrc9.includes("Palettes/Scrims only"), "(rx9b) the stale 'Palettes/Scrims only' phrase is gone");
   }
 
+  // test 10 (T-0037): every Radix step swatch carries its role and intent from the ONE RADIX_STEP_GUIDE table, reachable by
+  // hover AND keyboard focus (the headless shim computes no CSS, so the show-on-hover/focus rules are read off styles.css).
+  {
+    const { RADIX_STEP_GUIDE: GUIDE_RX } = await import("../../src/engine/exports.js");
+    ok(Array.isArray(GUIDE_RX) && GUIDE_RX.length === 12, `(rx10a) RADIX_STEP_GUIDE has 12 entries (got ${GUIDE_RX && GUIDE_RX.length})`);
+    ok(GUIDE_RX.every((g, i) => g.step === i + 1 && typeof g.role === "string" && g.role.trim() !== "" && typeof g.intent === "string" && g.intent.trim() !== ""),
+      "(rx10b) every entry is step i+1 with a non-empty role and a non-empty intent");
+    ok(new Set(GUIDE_RX.map((g) => g.role)).size === 12, "(rx10c) the 12 roles are distinct");
+    ok(GUIDE_RX[0].role === "App background" && GUIDE_RX[8].role === "Solid background", "(rx10d) step 1 is the app background and step 9 the solid background");
+    app.canvasView = "radix"; app.render(); flushRaf();
+    const rowSteps = inLight(".radix-step");
+    ok(rowSteps.length >= 12 && rowSteps.length % 12 === 0, `(rx10e) the Radix scene renders swatches in whole 12-step ladders (got ${rowSteps.length})`);
+    const firstLadder = Array.from(rowSteps).slice(0, 12);
+    ok(firstLadder.every((el, i) => el.getAttribute("data-tip") === `Step ${i + 1}: ${GUIDE_RX[i].role}\n${GUIDE_RX[i].intent}`), "(rx10f) each swatch's data-tip is `Step N: <role>` + the table's intent, in table order");
+    ok(Array.from(rowSteps).every((el) => el.getAttribute("tabindex") === "0"), "(rx10g) every step swatch is keyboard-focusable (tabindex=0), so the tooltip is not hover-only");
+    ok(Array.from(rowSteps).every((el) => / step \d+: /.test(el.getAttribute("aria-label") || "") && !(el.getAttribute("aria-label") || "").includes("undefined")), "(rx10h) every swatch has a spoken aria-label naming its step");
+    const css10 = readFileSyncRX(resolveRX(dirnameRX(fileURLToPathRX(import.meta.url)), "../../src/ui/styles.css"), "utf8");
+    ok(/\.radix-step::after\s*\{[^}]*content:\s*attr\(data-tip\)/.test(css10), "(rx10i) .radix-step::after draws the tooltip from data-tip");
+    ok(/\.radix-step:hover::after[^{]*\{[^}]*display:\s*block/.test(css10) && /\.radix-step:focus-visible::after[^{]*\{[^}]*display:\s*block/.test(css10), "(rx10j) the tooltip shows on :hover and on :focus-visible");
+    ok(!/\.radix-ladder\s*\{[^}]*overflow:\s*hidden/.test(css10), "(rx10k) the ladder does not clip (overflow:hidden would hide the tooltip)");
+  }
+
   app.canvasView = rxView0; app.render(); flushRaf();
 }
 

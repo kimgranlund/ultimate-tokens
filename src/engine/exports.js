@@ -1017,6 +1017,25 @@ const RADIX_ROLE_STEPS = [
   { step: 12, suffix: "-on-surface" },
 ];
 
+// RADIX_STEP_GUIDE (T-0037), the ONE table of what each of the 12 Radix steps is FOR: Radix's published
+// step usage (the same 1..12 roles docs/reference/data/radix-projection.json projects onto). The Radix
+// canvas view reads it for each swatch's hover/focus tooltip (`Step N: <role>` + the one-line intent);
+// it is display text only and changes no step value, export, or role-table entry.
+export const RADIX_STEP_GUIDE = [
+  { step: 1, role: "App background", intent: "The page or app canvas behind everything else." },
+  { step: 2, role: "Subtle background", intent: "A quiet surface: striped rows, sidebars, cards on the canvas." },
+  { step: 3, role: "UI element background", intent: "The resting fill of a component such as a button or input." },
+  { step: 4, role: "Hovered UI element background", intent: "A component's fill while the pointer is over it." },
+  { step: 5, role: "Active or selected UI element background", intent: "A component's fill while pressed or selected." },
+  { step: 6, role: "Subtle borders and separators", intent: "Dividers and the borders of non-interactive surfaces." },
+  { step: 7, role: "UI element border and focus rings", intent: "Borders of interactive components and their focus rings." },
+  { step: 8, role: "Hovered UI element border", intent: "An interactive component's border while hovered." },
+  { step: 9, role: "Solid background", intent: "The most saturated fill: solid buttons, badges, and accents." },
+  { step: 10, role: "Hovered solid background", intent: "A solid fill while the pointer is over it." },
+  { step: 11, role: "Low-contrast text", intent: "Secondary text and icons on the lighter steps." },
+  { step: 12, role: "High-contrast text", intent: "Primary text and headings; the strongest ink." },
+];
+
 // exportRadix's own reserved alias keys (I4, ticket #637): it writes `accent` (<- primary), `gray`
 // (<- neutral), `error`, and Park's global `fg`/`canvas`/`border`/`bg` into the SAME
 // `semanticTokens.colors` object the per-palette groups live in. A palette whose slug equals one of
