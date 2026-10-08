@@ -45,10 +45,6 @@
   --r-sm: 5px;
   --r:    8px;
   --r-lg: 12px;
-  /* control geometry, the one shared dimension across controls (switch + range thumb).
-     A full (height−glyph)/2 size-ramp (component-inventory.md GRADE) would CHANGE pixels,
-     so it is intentionally not derived here, it wants a visual pass. */
-  --ctl-thumb: 15px;
   --hh: 48px;   /* header height */
   --ch: 42px;   /* canvas-header height */
   --fh: 30px;   /* footer height */
@@ -85,6 +81,7 @@ ultimate-tokens {
   --sh-chip-height: var(--chip-height, 24px);
   --sh-chip-inset: var(--chip-inset, 5.5px);
   --sh-chip-text: var(--chip-text, 12px);
+  --ctl-thumb: calc(var(--sh-control-icon) - 4px); /* switch + range thumb: a 2px edge each side */
 }
 ultimate-tokens[data-theme="system"] { color-scheme: light dark; } /* follow the OS preference */
 ultimate-tokens[data-theme="light"]  { color-scheme: light; }
@@ -805,9 +802,10 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
    Status badge (<span>, optional tone) or interactive toggle (<button>, .on). Replaces
    the old .map-drift-sum and .damp-presets .preset pill stylings. */
 .chip {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 9px; border-radius: 999px; border: 1px solid transparent;
-  font-size: 11px; font-weight: 600; line-height: 1.4; color: var(--ink-dim);
+  display: inline-flex; align-items: center; gap: calc(var(--sh-chip-inset) / 2);
+  min-block-size: var(--sh-chip-height); padding-block: 0; padding-inline: var(--sh-chip-inset);
+  border-radius: 999px; border: 1px solid transparent;
+  font-size: var(--sh-chip-text); font-weight: 600; line-height: 1.4; color: var(--ink-dim);
 }
 button.chip { background: var(--panel-2); border-color: var(--line); cursor: pointer; }
 button.chip:hover { background: var(--line-2); color: var(--ink); }
@@ -973,7 +971,8 @@ input[type="range"]::-moz-range-thumb {
 }
 .toggle:hover { background: none; }
 .toggle .track {
-  width: 34px; height: 19px; border-radius: 999px; background: var(--line);
+  inline-size: calc(1.75 * var(--sh-control-icon)); block-size: var(--sh-control-icon);
+  border-radius: 999px; background: var(--line);
   position: relative; transition: background .12s;
 }
 .toggle .track::after {
@@ -982,7 +981,7 @@ input[type="range"]::-moz-range-thumb {
   box-shadow: var(--shadow); transition: transform .12s;
 }
 .toggle.on .track { background: var(--accent); }
-.toggle.on .track::after { transform: translateX(15px); }
+.toggle.on .track::after { transform: translateX(calc(0.75 * var(--sh-control-icon))); }
 
 .insp-actions { display: flex; gap: 8px; padding-top: 14px; border-top: 1px solid var(--line); }
 .insp-actions .danger:hover { color: var(--danger); }
