@@ -31,6 +31,8 @@ export function kebabWaveOldName(newName) {
     }
   }
   if (seg[0] === "size" && seg.length === 3) {
+    // a ladder cell post-dates the wave, so it has no pre-wave name (its predecessors are the legacy steps)
+    if (/^(content|product|micro)-(sm|md|lg)-(sm|md|lg)$/.test(seg[1])) return null;
     const f = OLD_FIELD[seg[2]];
     if (f) {
       const old = `size/${seg[1].toUpperCase()}/${f}`;
@@ -98,20 +100,23 @@ export const FIGMA_MIGRATIONS = {
 // this file; kept in lockstep by hand (and gated by `renameparity` in test/figma/binder.mjs), same discipline as SEMANTIC_RENAME_FROM in the standalone binder.
 export const LIBRARY_TYPE_VOICE_MAP = { heading: "headline", ui: "ui-control", caption: "label", legal: "tiny", code: "label-mono" };
 
-// GEOMETRY_FIELD_RENAME_MAP (#498), the STATIC old->new Geometry size/* FIELD-SPELLING map "published
-// library" mode uses to ALIAS an old-spelled size/* field to its current counterpart (same step, same
-// nearest-by-height match #495 already established, this bridges the FIELD segment only). A real file
-// (the ADIA Tokens library) predates the current field spelling: "edgePadding"/"gap"/"minWidth"/
-// "padding"/"radius" instead of "padding-wide"/"icon-gap"/"min-width"/"padding-narrow"/"pill-radius".
-// NOT the same grammar as this file's own ADR-016 kebab-wave OLD_FIELD table above (that one documents
-// THIS repo's own "paddingWide"/"paddingNarrow" intermediate spelling, TKT-0013, a different, unrelated
-// naming history than the ADIA file's own external one), kept as an independent, purpose-specific
-// const rather than derived from it. "font" (size/{step}/font, no clean size/* counterpart, its only
-// sensible target lives in a DIFFERENT collection, "Type Primitives"' font/ui-control) is deliberately
-// left OUT: applyFloatPlans (Geometry) runs BEFORE applyFontPrimitivesModes (Type Primitives) in every
-// real caller, so on a first-time apply the cross-collection target wouldn't exist yet, an
-// old size/{step}/font name is left unmapped (deprecates, id-preserving), a documented scope decision
-// rather than a cross-collection create from the wrong execution phase. figma/plugin/code.js carries
-// the SAME map as a literal, the VM can't import this file; kept in lockstep by hand (and gated by `renameparity`), same discipline
-// as LIBRARY_TYPE_VOICE_MAP above.
-export const GEOMETRY_FIELD_RENAME_MAP = { edgePadding: "padding-wide", gap: "icon-gap", minWidth: "min-width", padding: "padding-narrow", radius: "pill-radius" };
+// GEOMETRY_FIELD_RENAME_MAP (#498, retargeted at T-0017), the STATIC old->new Geometry size/* FIELD-
+// SPELLING map "published library" mode uses to ALIAS an old-spelled size/* field to its current
+// counterpart (same nearest-by-height step match #495 established, which now lands on a ladder cell,
+// see geometrySizeAliasMap; this bridges the FIELD segment only). The targets are the cell fields:
+// both pad spellings ("padding-narrow", the ADIA file's "padding") map to "inset", both radius
+// spellings ("pill-radius", "radius") to "radius-control", "minWidth" to "min-width", and "font" now
+// maps to the cell's own "text" (a size/ field of the same collection since T-0017, so no
+// cross-collection target is needed). The fields with no cell counterpart, "edgePadding", "gap",
+// "caret", "icon-gap", "padding-wide", "padding-narrow-compact" and "padding-wide-compact", have no
+// target and are left OUT: an old size/{step}/{field} of that spelling deprecates, id-preserving, the
+// scope decision "font" carried until T-0017 (#498). NOT the same grammar as this file's own ADR-016
+// kebab-wave OLD_FIELD table above (that one documents THIS repo's own "paddingWide"/"paddingNarrow"
+// intermediate spelling, TKT-0013, frozen history), kept as an independent, purpose-specific const
+// rather than derived from it. figma/plugin/code.js and the standalone binder carry the SAME map as a
+// literal, the VM can't import this file; kept in lockstep by hand (and gated by `renameparity`), same
+// discipline as LIBRARY_TYPE_VOICE_MAP above.
+// The SAME scope decision covers the retired UI voice steps (T-0017): UI-control and UI-widget keep one
+// step, md, so a live file's type/ui-control/{xs,sm,lg,xl,2xl}/* and type/ui-widget/{xs,sm,lg,xl,2xl}/*
+// variables and their text styles have no rename target here and deprecate, id-preserving.
+export const GEOMETRY_FIELD_RENAME_MAP = { "padding-narrow": "inset", padding: "inset", font: "text", "pill-radius": "radius-control", radius: "radius-control", minWidth: "min-width" };

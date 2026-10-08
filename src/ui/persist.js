@@ -22,6 +22,7 @@
 // Its three imports are engine constants (icon systems, the default type, the collections); nothing from the DOM.
 import { ICON_SYSTEMS, DEFAULT_ICON_SYSTEM } from "../engine/icon-systems.mjs";
 import { DEFAULT_TYPE } from "../engine/type.mjs";
+import { DEFAULT_GEOMETRY } from "../engine/geometry.mjs";
 import { COLLECTIONS } from "../engine/collections.js";
 
 // PALETTE_GROUPS (ticket #556), the four canvas group ids. Declared HERE, not in model.mjs: this
@@ -363,7 +364,14 @@ function clampOverrides(o) {
 // per-palette `primeChroma` (the one-time prime move is accepted), and resets both globals to 100
 // (before v8 they never reached a palette), reporting each drop through DROPPED_KEYS. The same entry
 // (vibrancyDefault, T-0014) moves a pre-v8 doc's global vibrancy 0, the old default, to the new 50.
-export const CURRENT_SCHEMA_VERSION = 8;
+//
+// v9 (T-0017, #803): geometry adopts the Maison ui-kit ladder, `{ tier, scale, radius, spaceBase }`
+// over 27 fixed cells. A RENAME_MAPS entry (migrateGeometry) maps a pre-v9 doc's treatment and base
+// height to the nearest (tier, scale) by md-cell height, each mode's base height to a scale, and drops
+// the retired keys (treatment, baseHeight, rampContrast, ramp, both per-cell height tokenOverrides
+// maps and the UI-control/UI-widget type overrides on steps other than MD), reporting each through
+// DROPPED_KEYS.
+export const CURRENT_SCHEMA_VERSION = 9;
 
 // DROPPED_KEYS (TKT-0455), the loud-fail accounting channel. hydrate() attaches the report of every
 // unknown voice/treatment/tokenOverrides key it dropped as a NON-ENUMERABLE property on its return
@@ -425,6 +433,13 @@ const RENAME_MAPS = [
     foldGroups: true,
     vibrancyDefault: { from: 0, to: 50 },
   },
+  {
+    // the Maison ladder (T-0017, #803): see migrateGeometry in applyRenameMaps below. The literals
+    // `treatment`, `baseHeight`, `rampContrast` and `ramp` live on only there, as the pre-v9 keys this
+    // entry reads and drops.
+    version: 9,
+    migrateGeometry: true,
+  },
 ];
 
 // foldGroups(s, drop), the v8 entry: (a) every palette without a numeric `baseChroma` takes its
@@ -460,6 +475,89 @@ function foldGroups(s, drop) {
   for (const key of ["baseIntensity", "primeChroma"]) {
     if (s[key] !== undefined && s[key] !== 100) drop("controls", key, `reset to 100 at schema v8, it is now a k factor on every palette and its pre-v8 value never reached one (#804)`);
     out[key] = 100;
+  }
+  return out;
+}
+
+// LEGACY_TREATMENT_GEOMETRY, the migration-only copy of the five pre-v9 geometry treatments: each one's
+// own MD control height, its radiusStyle on the Maison radius modes (sharp to sharp, soft to default,
+// round to round, pill to pill) and its spacing base. Read only by migrateGeometry.
+const LEGACY_TREATMENT_GEOMETRY = {
+  comfortable: { height: 28, radius: "default", spaceBase: 4 },
+  compact: { height: 24, radius: "sharp", spaceBase: 4 },
+  spacious: { height: 32, radius: "round", spaceBase: 8 },
+  touch: { height: 36, radius: "default", spaceBase: 8 },
+  pill: { height: 28, radius: "pill", spaceBase: 4 },
+};
+// LEGACY_MD_CELLS, every (tier, scale) with its md-cell height at v9, in tie-break order (product >
+// content > micro, then md > sm > lg), so a strict nearest-height scan keeps the first of a tie.
+const LEGACY_MD_CELLS = [
+  ["product", "md", 32], ["product", "sm", 28], ["product", "lg", 36],
+  ["content", "md", 48], ["content", "sm", 36], ["content", "lg", 64],
+  ["micro", "md", 16], ["micro", "sm", 14], ["micro", "lg", 18],
+];
+const nearestMdCell = (h, tier) => {
+  let best = null;
+  for (const c of LEGACY_MD_CELLS) if ((!tier || c[0] === tier) && (!best || Math.abs(c[2] - h) < Math.abs(best[2] - h))) best = c;
+  return best;
+};
+
+// migrateGeometry(s, drop), the v9 entry: (a) a geometry carrying `treatment` or `baseHeight` takes the
+// (tier, scale) whose md cell is nearest its legacy MD height (`baseHeight` as the pre-v9 clamp read it,
+// 20..48, else the treatment's own; an absent or unknown treatment reads comfortable, the old default),
+// with the treatment's radius mode and spaceBase. (b) Each mode's `baseHeight` becomes the nearest
+// `scale` within that tier (a legacy mode without one read 28 before v9). (c) `treatment`, `baseHeight`,
+// `rampContrast`, `ramp`, every geometry `tokenOverrides` key, and every type `tokenOverrides` key on a
+// UI-control/UI-widget step other than MD are deleted. Each removal is reported through `drop`.
+function migrateGeometry(s, drop) {
+  const retired = "removed at schema v9, geometry is the Maison ladder: tier, scale, radius, spaceBase (T-0017)";
+  const out = { ...s };
+  if (s.geometry && typeof s.geometry === "object") {
+    const g = { ...s.geometry };
+    const legacy = g.treatment !== undefined || g.baseHeight !== undefined;
+    const legacyHeight = (v) => { const n = Number(v); return v != null && Number.isFinite(n) ? Math.max(20, Math.min(48, Math.round(n))) : null; };
+    const known = Object.prototype.hasOwnProperty.call(LEGACY_TREATMENT_GEOMETRY, g.treatment);
+    if (legacy) {
+      const t = LEGACY_TREATMENT_GEOMETRY[known ? g.treatment : "comfortable"];
+      const [tier, scale] = nearestMdCell(legacyHeight(g.baseHeight) ?? t.height);
+      Object.assign(g, { tier, scale, radius: t.radius, spaceBase: t.spaceBase });
+    }
+    const tier = LEGACY_MD_CELLS.some((c) => c[0] === g.tier) ? g.tier : "product";
+    if (Array.isArray(g.modes)) {
+      g.modes = g.modes.map((m) => {
+        if (!m || typeof m !== "object") return m;
+        const { baseHeight, rampContrast, ...rest } = m;
+        if (baseHeight !== undefined || (legacy && rest.scale === undefined)) rest.scale = nearestMdCell(legacyHeight(baseHeight) ?? 28, tier)[1];
+        if (baseHeight !== undefined) drop("geometry.modes", `${m.id}.baseHeight`, `migrated to scale ${rest.scale} at schema v9 (T-0017)`);
+        if (rampContrast !== undefined) drop("geometry.modes", `${m.id}.rampContrast`, retired);
+        return rest;
+      });
+    }
+    for (const k of ["treatment", "baseHeight", "rampContrast", "ramp"]) {
+      if (g[k] === undefined) continue;
+      const why = k === "treatment" && !known ? `unknown treatment id, read as comfortable and migrated to ${g.tier}/${g.scale} at schema v9 (T-0017)`
+        : k === "treatment" || k === "baseHeight" ? `migrated to ${g.tier}/${g.scale} at schema v9 (T-0017)` : retired;
+      drop("geometry", k, why);
+      delete g[k];
+    }
+    if (g.tokenOverrides !== undefined) {
+      if (g.tokenOverrides && typeof g.tokenOverrides === "object") for (const k of Object.keys(g.tokenOverrides)) drop("geometry.tokenOverrides", k, `${retired}, a per-cell height override lands off the ladder`);
+      delete g.tokenOverrides;
+    }
+    out.geometry = g;
+  }
+  const tov = s.type && typeof s.type === "object" ? s.type.tokenOverrides : null;
+  if (tov && typeof tov === "object") {
+    const kept = {};
+    let changed = false;
+    for (const k of Object.keys(tov)) {
+      const [voice, step] = k.split("|");
+      if ((voice === "UI-control" || voice === "UI-widget") && step !== "MD") {
+        drop("type.tokenOverrides", k, "removed at schema v9, UI-control and UI-widget carry one step (MD), sized from the ladder's UI text (T-0017)");
+        changed = true;
+      } else kept[k] = tov[k];
+    }
+    if (changed) out.type = { ...s.type, tokenOverrides: kept };
   }
   return out;
 }
@@ -526,6 +624,7 @@ function applyRenameMaps(snapshot, drop) {
       if (Object.keys(from).every((k) => s.export[k] === from[k])) s = { ...s, export: { ...s.export, ...to } };
     }
     if (entry.foldGroups && s && typeof s === "object") s = foldGroups(s, drop);
+    if (entry.migrateGeometry && s && typeof s === "object") s = migrateGeometry(s, drop);
     if (entry.vibrancyDefault && s && s.vibrancy === entry.vibrancyDefault.from) s = { ...s, vibrancy: entry.vibrancyDefault.to };
   }
   return s;
@@ -700,7 +799,7 @@ function clampExport(e) {
 const clampMinWidth = (v) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? { minWidth: Math.max(1, Math.min(3840, Math.round(n))) } : {}; };
 
 // clampTokenOverrides, the per-cell SIZE/HEIGHT override map (Phase 3 of the Tokens matrix), flat
-// `{ "<voice>|<step>|<modeKey>": <number> }` for type / `{ "<size>|<modeKey>": <number> }` for geom. Each
+// `{ "<voice>|<step>|<modeKey>": <number> }` for type (geometry's `<size>|<modeKey>` map retired at v9). Each
 // value is a positive number clamped into [min, max]; non-numeric / non-finite / ≤0 entries are DROPPED
 // (an invalid cell is simply not overridden). MALFORMED keys are dropped too: the key must split into
 // exactly `parts` "|"-segments (3 for type "<voice>|<step>|<modeKey>", 2 for geom "<size>|<modeKey>") with a
@@ -729,10 +828,10 @@ function clampTokenOverrides(o, min, max, parts, validLead, drop) {
 
 // clampType, the typography config (treatment + body base). Treatment to a known id, base size to a
 // sane integer range. Identity-preserving for an in-domain value (so the roundtrip gate holds).
-// Exported (with VOICES below and GEOMETRY_TREATMENTS further down) so test/ui/persist.mjs can assert
+// Exported (with VOICES below and the GEOMETRY_* axis lists further down) so test/ui/persist.mjs can assert
 // these hand-tracked allowlists stay in lockstep with their engine sources, type.mjs's TYPE_TREATMENTS
-// ids / the 15 voice names in a treatment's `categories` / geometry.mjs's GEOMETRY_TREATMENTS ids
-// (TKT-0017: the same parity-gate failure class the role-table gate already guards elsewhere, generalized
+// ids / the 15 voice names in a treatment's `categories` / geometry.mjs's TIERS, SCALES, SIZES and
+// RADIUS_MODES ids (TKT-0017: the same parity-gate failure class the role-table gate already guards elsewhere, generalized
 // here, nothing else in this file consumes these engine modules, so it's a hand-tracked copy, not an import).
 export const TYPE_TREATMENTS = ["product", "luxury", "editorial", "technical", "statement"];
 // The 15 named type VOICES (docs/reference/typography), MUST track makeVoices in type.mjs. A voice
@@ -836,52 +935,42 @@ function clampType(t, drop) {
   return out;
 }
 
-// clampGeometry, the dimensional config (treatment + base control height). Treatment to a known id, base
-// height to a sane integer range. Identity-preserving for an in-domain value (so the roundtrip gate holds).
-// Exported so test/ui/persist.mjs's allowlist-parity gate can assert this stays in lockstep with
-// geometry.mjs's GEOMETRY_TREATMENTS ids (see the TYPE_TREATMENTS/VOICES note above, TKT-0017).
-export const GEOMETRY_TREATMENTS = ["comfortable", "compact", "spacious", "touch", "pill"];
-// The canonical size names, the leading segment of a geom tokenOverrides key ("<size>|<modeKey>"),
-// the geometry analog of VOICES above. The default ramp's six t-shirt names (geometry.mjs's
-// SIZE_KEYS) and the linear-ladder's ten NUMBERED steps "0".."9" (geometry.mjs's LADDER_SIZE_KEYS,
-// the full 10-step CSV table, owner ruling 2026-09-02, TWO rulings: first 7 t-shirt names, then the
-// full 10 steps renamed numerically since gen-ui-kit binds --size-{0..9}-* directly) use ENTIRELY
-// DISJOINT naming schemes, clampTokenOverrides only ever does a plain string `.includes()` check
-// against this list, so a numeric-looking segment like "3" round-trips exactly like any other string;
-// no parsing change was needed, only this literal list. MUST track the UNION of geometry.mjs's
-// SIZE_KEYS + LADDER_SIZE_KEYS, asserted by the allowlist-parity test (TKT-0017's convention,
-// extended per TKT-0455 then TKT-0483).
-export const GEOMETRY_SIZES = ["XS", "SM", "MD", "LG", "XL", "2XL", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
-// The opt-in ramp ids (geometry.mjs's GEOMETRY_RAMPS, issue #483), mirrors the TYPE_TREATMENTS/
-// GEOMETRY_TREATMENTS/VOICES/GEOMETRY_SIZES convention above; parity-gated the same way.
-export const GEOMETRY_RAMPS = ["linear4"];
+// clampGeometry, the dimensional config: the Maison ladder's kit axes (tier, scale, radius mode) plus
+// the layout-spacing base. Each axis to a known id, spaceBase to an integer 1..16. Identity-preserving
+// for an in-domain value (so the roundtrip gate holds). The four lists below are hand-tracked copies of
+// geometry.mjs's TIERS, SCALES, SIZES and RADIUS_MODES ids, exported so test/ui/persist.mjs's
+// allowlist-parity gate keeps them in lockstep (see the TYPE_TREATMENTS/VOICES note above, TKT-0017).
+export const GEOMETRY_TIERS = ["content", "product", "micro"];
+export const GEOMETRY_SCALES = ["sm", "md", "lg"];
+// the size axis. No doc field carries one (the kit's default cell is always size md); it is listed
+// for the parity gate and for callers that address a cell `{tier}-{scale}-{size}`.
+export const GEOMETRY_SIZES = ["sm", "md", "lg"];
+export const GEOMETRY_RADIUS = ["default", "round", "sharp", "pill"];
 function clampGeometry(g, drop) {
   g = (g && typeof g === "object") ? g : {};
-  // TKT-0455, see clampType's matching check above for the absent-vs-unknown distinction.
-  if (g.treatment != null && !GEOMETRY_TREATMENTS.includes(g.treatment)) drop("geometry.treatment", g.treatment, "unknown treatment id");
-  const treatment = GEOMETRY_TREATMENTS.includes(g.treatment) ? g.treatment : "comfortable";
-  const clampH = (v) => { const n = Number(v); return Math.max(20, Math.min(48, Number.isFinite(n) ? Math.round(n) : 28)); };
-  const baseHeight = clampH(g.baseHeight);
-  const out = { treatment, baseHeight };
-  // ramp (the opt-in linear-ladder prototype, issue #483), OPTIONAL, like rampContrast: attach only a
-  // KNOWN id; absent stays absent (the default ramp round-trips identical, the identity gate). An
-  // unknown id drops (reported), same semantics as an unknown treatment.
-  if (g.ramp != null && !GEOMETRY_RAMPS.includes(g.ramp)) drop("geometry.ramp", g.ramp, "unknown ramp id");
-  if (GEOMETRY_RAMPS.includes(g.ramp)) out.ramp = g.ramp;
-  // rampContrast (the responsive-ramp knob), OPTIONAL: attach only when a finite value < 1 is set
-  // (1 is the engine default, so absent stays absent and a full-contrast kit round-trips identical).
-  const clampContrast = (v) => { const n = Number(v); return Number.isFinite(n) && n >= 0 && n < 1 ? { rampContrast: Math.round(n * 100) / 100 } : {}; };
-  Object.assign(out, clampContrast(g.rampContrast));
-  // tokenOverrides (Phase 3), per-cell control-HEIGHT overrides. OPTIONAL, like type.tokenOverrides (the
-  // identity gate holds when absent). Geom heights clamp into [8, 256] px.
-  const gov = clampTokenOverrides(g.tokenOverrides, 8, 256, 2, GEOMETRY_SIZES, (k, reason) => drop("geometry.tokenOverrides", k, reason)); // geom keys: "<size>|<modeKey>" (2 segments)
-  if (Object.keys(gov).length) out.tokenOverrides = gov;
-  // breakpoint MODES (Phase 5), each a named baseHeight override (+ optional per-mode rampContrast).
-  // OPTIONAL, like type.modes (the identity gate holds when absent).
+  // TKT-0455, an absent axis takes its default silently; a non-null, out-of-allowlist id is reported.
+  const axis = (key, ids) => {
+    if (g[key] != null && !ids.includes(g[key])) drop(`geometry.${key}`, g[key], `unknown ${key} id`);
+    return ids.includes(g[key]) ? g[key] : DEFAULT_GEOMETRY[key];
+  };
+  const sb = Number(g.spaceBase);
+  const out = {
+    tier: axis("tier", GEOMETRY_TIERS),
+    scale: axis("scale", GEOMETRY_SCALES),
+    radius: axis("radius", GEOMETRY_RADIUS),
+    spaceBase: g.spaceBase != null && Number.isFinite(sb) ? Math.max(1, Math.min(16, Math.round(sb))) : DEFAULT_GEOMETRY.spaceBase,
+  };
+  // a pre-v9 key on a snapshot that already claims v9+ (migrateGeometry removes them from every older
+  // one) is a stray leftover, not a legacy doc: reported, never copied.
+  for (const k of ["treatment", "baseHeight", "rampContrast", "ramp", "tokenOverrides"]) {
+    if (g[k] !== undefined) drop("geometry", k, "retired at schema v9 (T-0017); a v9+ snapshot should never carry it");
+  }
+  // breakpoint MODES (Phase 5), each a named scale (a missing or unknown scale reads md). OPTIONAL, like
+  // type.modes (the identity gate holds when absent).
   if (Array.isArray(g.modes) && g.modes.length) {
     const modes = g.modes
       .filter((m) => m && typeof m === "object" && typeof m.id === "string")
-      .map((m) => ({ id: m.id, name: typeof m.name === "string" ? m.name : "Mode", baseHeight: clampH(m.baseHeight), ...clampMinWidth(m.minWidth), ...clampContrast(m.rampContrast) }));
+      .map((m) => ({ id: m.id, name: typeof m.name === "string" ? m.name : "Mode", scale: GEOMETRY_SCALES.includes(m.scale) ? m.scale : "md", ...clampMinWidth(m.minWidth) }));
     if (modes.length) out.modes = modes;
   }
   // baseName, the RENAMED base layer (mirrors type.baseName; the standard set writes "Mobile").

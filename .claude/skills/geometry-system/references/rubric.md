@@ -1,30 +1,24 @@
 ## Rubric: a geometry-engine change
 
 Scores a change to `src/engine/geometry.mjs` (and the composition join in `src/ui/model.mjs`). `[gate]` =
-mechanically checkable (a `test/engine/geometry.mjs` comment block / `npm test`); `[review]` = judgment with
-cited evidence. The verifier prints one summary PASS line, not per-group output, the group names below are
-descriptive labels for its comment-delineated `{ … }` blocks (read them; each block's asserts say what it
-proves). Score each 1–5.
+mechanically checkable (a `test/engine/geometry.mjs` group / `npm test`); `[review]` = judgment with cited
+evidence. The verifier prints one summary PASS line; the group names below label its comment-delineated
+blocks. Score each 1–5.
 
 | # | Dimension | Type | What it checks | 1 (fail) → 3 (adequate) → 5 (excellent) |
 |---|---|---|---|---|
-| G1 | The centering law | [gate] | the FOUR pads hold EXACTLY for every size (exact halves, never rounded): `paddingNarrow === (h − icon)/2`; `paddingWide === (h − caret)/2`; `paddingNarrowCompact === (h − gap − icon)/2`; `paddingWideCompact === (h − gap − caret)/2`; `radiusPill === round(height/2)`; `minWidth === height`; `0 < icon ≤ height` (`centering-law` block) | 1: any pad is a literal / off / a rounding layer crept in, or `padding-block` ≠ 0 in `.control-*` · 3: laws hold for the standalone scale · 5: hold standalone AND on the composed scale, exact equality |
-| G2 | The two families (density discipline) | [gate] | `caret < font` at every size (the standalone font, comfortable); compact `gap` < comfortable `gap` at the **same** height; `paddingNarrow` **identical** across densities (`two-families` block) | 1: density moves the frame (padding/icon/radius) or `caret ≥ font` · 3: gap responds to density, frame invariant · 5: + `gap` floor (`max(1,…)`) holds at small `baseHeight` × low density |
-| G3 | The power-law ramp | [gate] | engine output matches the hand-tuned `REF` table within ±1 (icon, font) and height exact; heights strictly increase XS→2XL; `baseHeight` scales the whole ramp (the `reference-ramp` + `baseHeight-scale` comment blocks, the latter compares baseHeight 28 vs 40) | 1: a glyph drifts > 1px from the reference, or heights non-monotonic, or baseHeight doesn't scale · 3: reference reproduced at baseHeight 28 · 5: + holds at scaled baseHeights (28 and 40 both green) and roundEven/round used correctly |
-| G4 | The composition (the JOIN) | [gate] | composed `font === typeScale.categories["UI-control"][name].size` per step (all six, the voice rides XS..2XL); `caret` keeps its own power law (never composed); **frame (height + padding) untouched** vs standalone; law still holds composed; precedence `fontOverrides` > composed > `CONTROL_FONT[name]×factor` (`composition` block; the production join is re-gated in the UI headless-boot suite) | 1: composition moves the frame, or font doesn't track UI-control, or an override loses to composition · 3: font tracks UI-control, frame untouched · 5: + a `bodyBase` change scales the control font (shared source of truth proven) and the join in `model.mjs` is the single caller (gated through `brandKit` too) |
-| G5 | Treatments + ladders + space | [gate] | 5 treatments (`comfortable/compact/spacious/touch/pill`), each with `density`+`radiusStyle`+`baseHeight`; unknown treatment → first; radius ladder monotonic `sm≤md≤lg`, `none 0`/`full 9999`; space scale starts 0 + monotonic (`treatments`/`radius`/`space` asserts) | 1: a treatment missing a knob, ladder non-monotonic, space not from `SPACE_STEPS×spaceBase`, or no fallback · 3: all present + monotonic · 5: + space kept distinct from control padding (separate concern, not folded in) |
-| G6 | Emitter parity | [gate] | CSS custom props + a `.control-{size}` utility that embodies the law; DTCG `dimension` (`px`) size/radius/space groups; Figma `number` (unitless) under a `Geometry` collection (`CSS`/`DTCG`/`Figma` blocks) | 1: a field present in `buildSize` missing from an emitter, or Figma emits `px`, or `.control-*` lacks the law · 3: all three emitters carry the existing fields · 5: + a NEW field added to all three + the test in lockstep |
-| G7 | Engine discipline | [review] | the change edits the OWNING file (`geometry.mjs`); the composition join stays in `model.mjs`; constants (`2.49/0.58` icon, `3.5/0.39` caret, the `CONTROL_FONT` table, `GAP_UNIT`, `CANON_MD 28`) left as-is unless the assert that pins each is updated with it (`REF` in the reference-ramp block holds only `height`, `icon`, `font`; the caret has the `caret's own ramp` assert, `CONTROL_FONT` the control-font ramp assert, `GAP_UNIT` the `GAP calibration` block); `roundEven` for height/icon, `round` for font/caret; pure (no DOM/RNG/clock) | 1: a pad/glyph hard-coded, a constant retuned without updating the assert that pins it, density threaded into the frame, or impurity introduced · 3: right file, constants intact, pure · 5: + surgical (frame untouched by font changes), deterministic |
+| G1 | The Maison ladder | [gate] | all 27 cells deep-equal the vendored fixture's rows and resolver cells; an off-table height or unknown axis id throws `RangeError`; unknown config falls back to `DEFAULT_GEOMETRY` (`maison-ladder`) | 1: a cell drifts from the fixture or an off-table height resolves · 3: 27 cells match · 5: + a Maison re-vendor carries its commit and sha256 |
+| G2 | The centering law | [gate] | `inset === (height − icon) / 2` on all 27 cells and all 25 ladder rows (`anatomy`) | 1: any cell breaks it, or `padding-block` is used to center · 3: holds on the cells · 5: holds on every row |
+| G3 | Radius modes | [gate] | 27 cells × 4 modes = 108 radius sets match Maison's k table (`radius-modes`) | 1: a mode drifts · 3: control radius right · 5: mark, inset and card right too |
+| G4 | The composition | [gate] | cell text reads `typeScale.uiText[height]`; the frame is unchanged with or without a type scale; UI-control MD equals product-md-md text | 1: geometry owns a text row again, or type moves the frame · 3: text follows type · 5: + the join passes the base type scale at every mode |
+| G5 | The resolver and the prefix contract | [gate] | the CSS carries `[data-tier]`, `[data-scale]`, `[data-size]`, `[data-radius]` and the roles; under a prefix the primitives are prefixed and no role or `--ctx-*` is (`emitters`); the smoke resolver cases (CI) read the engine values back | 1: a role is prefixed or an attribute is missing · 3: local gate green · 5: + CI smoke green on the 108 cases |
+| G6 | Emitter parity | [gate] | CSS, DTCG, Figma and Figma modes carry all 14 fields from `CELL_FIELDS`; `icon-ratio` unitless; 378 `size/` FLOATs and 126 `control/` ALIASes at one mode; the interchange validates (`test/figma/mode-apply.mjs`) | 1: a field missing from an emitter, or an ALIAS pointing at an ALIAS · 3: all emitters agree · 5: + the consumer skill and Figma field map moved in the same change |
+| G7 | Engine discipline | [review] | the change edits the owning file; the container tier stays byte-identical at spaceBase 4 (`container-identity`); a doc-shape change bumps the persist schema with a migration; pure (no DOM/RNG/clock) | 1: a hand-tuned cell, an unmigrated doc-shape change, or impurity · 3: right file, pure · 5: + surgical, records repaired in the same change |
 
-**Gate to ship:** G1, G2, G3, G4 must each score ≥ 3, `node test/engine/geometry.mjs` green (all blocks) AND
-`npm test` green. A change that breaks the centering law (G1), lets density touch the frame (G2), drifts the
-ramp past ±1 from the reference (G3), or lets composition move the frame / break the UI-voice link (G4) is not
-done regardless of how the controls look.
+**Gate to ship:** G1, G2, G4 and G5 must each score ≥ 3, `node test/engine/geometry.mjs` green AND
+`npm test` green.
 
-**Top failure to look for first:** **density (or composition) leaking into the FRAME** (G1/G2/G4). The frame
-(`height·icon·paddingNarrow·paddingWide·radiusPill·minWidth`) is geometric and must stay invariant to both `density`
-and the type scale, only the rhythm (`gap`, and `font` when the type scale supplies it) responds; `caret` follows its own height law. A change that "tightens the control" by
-shrinking the pads with density, or that lets the brand font nudge the box, un-centers the glyph and silently
-violates `paddingNarrow === (height − icon)/2`. Compare compact vs comfortable at the SAME height (frame must match)
-and composed vs standalone (frame must match) before calling it done, both are exactly what the `two-families`
-and `composition` test blocks check.
+**Top failure to look for first:** a role or `--ctx-*` name that picked up the export prefix (G5). It
+passes every test that reads the unprefixed default and silently breaks every prefixed consumer, because
+Maison's control CSS reads the roles bare. Check the resolver under `{ prefix: "md" }` before calling it
+done.

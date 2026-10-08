@@ -36,13 +36,13 @@ triplet, never invent a parallel shape. Depth in `references/`; this body is the
    the **whole** `.right-pane`). Add the section's tab to the App-Header switcher (`setSection`).
 2. **Center = the full dataset.** Render every step/size/role in the brand's real fonts + colors + canvas
    scheme, in a pannable `.canvas-scene`. Today's value over a modal is that the **composition** is visible
-   (e.g. a control's box and its text share one number: Geometry's `font` ← the Type UI scale via
-   `geometryScale(doc)`). Add a header view/mode segment if useful (e.g. Specimen·Tokens, Controls·Tokens).
+   (e.g. a control's box and its text share one table: each Geometry cell's `text` ← the Type scale's
+   height-indexed `uiText` via `geomScaleFor(doc, modeKey)`). Add a header view/mode segment if useful (e.g. Specimen·Tokens, Controls·Tokens).
 3. **Left = read-only diagnostics.** Pure functions of the resolved engine scale; reuse `.an-card`/
    `.an-svg`/`legend()`. **SVG line charts MUST set `fill: none`** on the path class, qualified so a shared
    series-color class can't override it (an open `<path>` fills by closing → wedge artifacts).
 4. **Right = control + live example.** Writable controls bind **only** to the section's persisted doc
-   fields (e.g. `doc.geometry = {treatment, baseHeight}`); engine-derived params are shown **read-only**
+   fields (e.g. `doc.geometry = {tier, scale, radius, spaceBase, modes?}`); engine-derived params are shown **read-only**
    (never fake an editable control the engine + persist can't carry, flag it out-of-scope instead). Pin a
    `.seg-example` that paints in the selected palette's roles.
 5. **Lifecycle.** `setSection(id)` stashes/restores the color viewport, calls `this.fit()` for non-color,
@@ -67,19 +67,21 @@ Type/Geom **Tokens** matrix both do this:
   breakpoint mode)** columns; sticky first column = the token name; each column carries the **real `modeKey`**
   (`"base"` or the mode id), not a constant. Build columns from `doc.{type,geometry}.modes`, not a name-only
   helper. `<th scope>` on a genuine 2-D matrix (col/row/colgroup).
-- **Editable overrides, the per-cell lever (mirrors color `roleOverrides`).** One directive per frame:
-  - **Write path.** Cells are number inputs that write `doc.{type,geometry}.tokenOverrides`, flat,
-    keyed `<voice>|<step>|<modeKey>` / `<size>|<modeKey>`, attached only when non-empty (no override ⇒
-    byte-identical doc).
-  - **Engine param.** The pure engines take an optional `overrides` param; size/height is the lever
-    (type keeps tracking+weight, geom re-derives via the laws).
+- **Editable overrides, the per-cell lever (mirrors color `roleOverrides`), Typography only.** Geometry's
+  Tokens table is READ-ONLY since T-0017 (ADR-032): its 27 cells are one fixed ladder, the same in every
+  mode, and a mode moves the kit along the scale axis instead (`modes[].scale`). One directive per frame:
+  - **Write path.** Cells are number inputs that write `doc.type.tokenOverrides`, flat, keyed
+    `<voice>|<step>|<modeKey>`, attached only when non-empty (no override ⇒ byte-identical doc).
+  - **Engine param.** The pure type engine takes an optional `overrides` param; size is the lever (type
+    keeps tracking+weight).
   - **Centralize resolution** in `_typeScaleFor`/`_geomScaleFor` so the matrix, the specimen preview,
     AND every export (CSS `@media` · per-mode DTCG · Figma · MCP `brandKit`) read the SAME resolved
     scale, a missed export site is the classic bug.
-  - **Clamp in the live setters** to the persisted range, the range literals are owned by
-    `setTypeTokenOverride` (`src/ui/sections/typography.js`) and `setGeomTokenOverride` (`src/ui/sections/geometry.js`), mirroring persist's
-    `clampTokenOverrides`; an unclamped value diverges live-vs-persist and can yield negative geom padding.
-  - **`deleteTypeMode`/`deleteGeomMode` hygiene.** Deleting a mode strips its stale `|<id>` override keys.
+  - **Clamp in the live setter** to the persisted range, the range literals are owned by
+    `setTypeTokenOverride` (`src/ui/sections/typography.js`), mirroring persist's
+    `clampTokenOverrides`; an unclamped value diverges live-vs-persist.
+  - **`deleteTypeMode`/`deleteGeomMode` hygiene.** Deleting a mode strips its stale `|<id>` override keys
+    (type); for geometry the mode entry, with its `scale`, is all there is to remove.
   - **Mode-local.** Base does not cascade into breakpoint columns, say so in a one-line UI hint.
 - **Sticky headers (the scrollport gotcha):** for the `thead`/first-column to pin, the **table** must be
   `overflow: visible`, `overflow != visible` makes the *table itself* the sticky scrollport (so headers
@@ -87,6 +89,28 @@ Type/Geom **Tokens** matrix both do this:
   sits flush; move the gutter to the inner wrap's margin). The table loses its `border-radius` (it needed
   `overflow:hidden` to clip). Verify with a CDP scroll probe (headers pin Δ0px); WebKit supports sticky on
   `<th>` in `thead` AND `tbody`, but it's a Safari-sensitive area, sanity-check there.
+
+## The shell's own geometry (the host axes and `--sh-*` aliases)
+
+Since T-0017 (ADR-032) the editor chrome sizes its controls from the Geometry ladder, not from fixed px:
+
+- **Host axes.** `_applyShellGeometry` (`src/ui/app.js`), called from `render()`, stamps `data-tier`,
+  `data-scale`, `data-radius` and `data-size="md"` on the `<ultimate-tokens>` host from
+  `_effectiveShellGeometry`: the app pref `this.shellGeometry` (null follows the kit), else
+  `doc.geometry`, else `DEFAULT_GEOMETRY`. The pref is set in Settings (`_shellGeometryRows` in
+  `src/ui/overlays/settings.js`, Follow kit or Custom) and persisted with the other app prefs.
+- **One head style.** The same call refreshes `this._geomRolesStyle`, a `<style id="ut-geometry-roles">`
+  in `document.head` holding `geomTokensSizesCSS(sc) + geomResolverCSS(sc)`, unprefixed. It is held on the
+  instance, never looked up by id (the shim's `getElementById` returns null), and removed on disconnect.
+- **Aliases.** `src/ui/styles.css` declares one alias block on the `ultimate-tokens` selector, because the
+  host carries the attributes: `--sh-control-height/-inset/-text/-icon`, `--sh-control-radius`
+  (`--radius-control`), `--sh-radius-inset`, `--sh-chip-height/-inset/-text`, each falling back to the
+  product-md-md round cell, plus `--ctl-thumb` from `--sh-control-icon`. Buttons, inputs, segmented
+  controls, chips, the switch and `icon()` read these aliases; a new shell control does too
+  (`min-block-size`, `padding-block: 0`, `padding-inline`, `font-size`, `border-radius` from `--sh-*`).
+  The chrome heights `--hh/--ch/--fh` and `--r-sm/--r/--r-lg` stay literal.
+- **Tests.** The headless groups `(shg1)` to `(shg4)` cover the host attributes, a doc commit, the
+  Settings override and the head style; pixels are proven only by CI smoke.
 
 ## Validate (draft → check → fix → re-check)
 

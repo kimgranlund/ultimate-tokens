@@ -1,43 +1,37 @@
-# Responsive geometry: modes, the ramp, what scales
+# Responsive geometry: modes, what scales
 
-## Breakpoint modes (not media-query hand-tuning)
+## Breakpoint modes change the scale axis
 
-Every kit carries breakpoint modes, `--size-*` is **re-declared inside `@media (min-width: …)`
-blocks**. The standard set (synthesized automatically when the designer configured none) is
-**Mobile ≤476 → Tablet (992) → Desktop (1280)**; a hand-configured kit may carry its own ladder,
-read the actual widths from the blocks. A `.control-{step}` class reads the variables, so the same
-control restyles automatically at each breakpoint. Don't hand-write size `@media` overrides, you'd
-fight the exported blocks.
+The 27 cells are the same at every width. What a breakpoint changes is the **scale** axis: each
+breakpoint file is one `@media` block whose `:root` flips the resolver's `--ctx-scale-*` indicators,
+and every role (`--control-*`, `--chip-*`, `--radius-control…`) re-resolves from it. The standard set
+(synthesized when the designer configured none) keeps the kit's scale on Desktop (1280 to 1727),
+moves to `lg` on Desktop Lg (1728 to 2559) and Desktop Xl (2560 and up), and to `sm` on Tablet
+(992 to 1279) and Mobile (below 992). A hand-configured kit may carry its own ladder; read the widths and scales from the
+files. Load the breakpoint files after the base `geometry.css`.
 
-**Mode-independent (declared once, auto-track):** the radius ladder (`--radius-*`), the space ladder
-(`--space-*`), the container tier (`--inset-*`, `--gap-*`), borders, and the focus ring. Only the
-per-size `--size-*` scale with breakpoint. So a card's `--inset-card` is constant across breakpoints
-while a control's `--size-md-height` may change, by design (spacing rhythm is stable; control
-density adapts).
+A component that binds the roles restyles at each breakpoint with no CSS of its own. Don't
+hand-write size `@media` overrides, you'd fight the exported files. An explicit `data-scale` on an
+element wins over the breakpoint for that subtree (nearest ancestor wins), so pin a scale only where a
+surface must not adapt.
 
-## The responsive ramp (`rampContrast`)
-
-The kit's control ramp can compress toward small screens: the expressive band (LG·XL·2XL) has a
-contrast knob, full at desktop (a wide ramp) and compressed on mobile (the gear change flattens so
-large controls shrink toward the small ones). You don't set this, it's baked into each breakpoint's
-`--size-*` values by the export. The consequence for you: **don't assume a control's height is
-constant across breakpoints**, read the token, which already carries the per-breakpoint value. At
-small widths the gap between adjacent steps NARROWS (the expressive band goes from geometric toward a
-~4px linear step), steps stay distinct and strictly increasing, they just sit closer together. Two
-steps never collapse to the same height, so a genuine "these two are equal" IS a bug, not the
-compression.
+**Mode-independent (declared once):** the cell primitives (`--size-*`), the radius ladder
+(`--radius-*`), the space ladder (`--space-*`), the container tier (`--inset-*`, `--gap-*`), borders,
+and the focus ring. So a card's `--inset-card` is constant across breakpoints while a control's
+`--control-height` may change, by design (spacing rhythm is stable; control density adapts).
 
 ## What to reason about
 
-- The `:root` block (≤476) is the mobile ramp; larger breakpoints step control heights up.
-- An export with no `@media` blocks is from an old kit (pre-2026-07), regenerating it adds the
-  standard set.
+- Don't assume a control's height is constant across breakpoints; read the role, which carries the
+  per-breakpoint value.
+- Two sizes in one scale never collapse to the same height, but the same height can appear in
+  different cells (28px is `content-sm-sm`, `product-sm-md` and `product-lg-sm`).
 - Never author fluid `clamp()`/`vw` sizing for controls or spacing, the modes are the mechanism and
-  they land on the kit's exact quantized values (no fractional px, so no sub-pixel control edges).
+  they land on the ladder's exact values.
 
-## Composition with type across breakpoints
+## Composition with type
 
-A control's box (`--size-*`) and its text (typography-tokens' `--type-ui-*`) both re-declare per
-breakpoint, and the geometry engine composes the control font FROM the UI type voice at the matching
-step. So if you matched the step across the two systems (control `md` ↔ `.type-ui-md`), the box and
-its text stay paired at every breakpoint automatically, you don't re-pair them per media query.
+`--control-text`, `--control-caption-text` and `--chip-text` come from the type system's
+height-indexed UI text table, so a control's text always matches its height at every breakpoint. Take
+font family, weight and tracking from typography-tokens' UI-control voice and the size from the role;
+you never re-pair box and text per media query.

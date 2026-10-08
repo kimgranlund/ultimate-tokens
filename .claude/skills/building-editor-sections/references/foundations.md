@@ -5,10 +5,10 @@ These are the load-bearing ideas. If a section feels hard to place, one of these
 ## 1. A set is ONE document; the three systems compose
 
 A brand kit's `doc` already carries `palettes[]` + `type` + `geometry`. They are **not three tools**,
-they are three **sections of one document**, and they **compose**: Geometry's per-step text size (`font`)
-comes from the Typography **UI** scale, joined in `model.mjs#geometryScale(doc)` (which calls
-`geomScale(doc.geometry, { typeScale: typeScale(doc.type) })`). So a control's box (geometry) and the text
-in it (typography) share one number. **Rendering a section in the brand's real color + font + mode is the
+they are three **sections of one document**, and they **compose**: each Geometry cell's text comes from
+the Typography scale's height-indexed UI text table (`uiText`), joined in `model.mjs#geomScaleFor(doc,
+modeKey)` (which calls `geomScale(..., { typeScale: typeScaleFor(doc, "base") })`). So a control's box
+(geometry) and the text in it (typography) share one table. **Rendering a section in the brand's real color + font + mode is the
 whole point**, it makes the composition visible, which a per-system modal hid. Home stays the **set/brand
 gallery**; do not fragment into per-system hubs (Type/Geom have ~5 treatments each vs 336 color palettes).
 

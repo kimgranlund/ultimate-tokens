@@ -20,6 +20,6 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 | T-0014 | [prime-anchor-follows-chroma](prime-anchor-follows-chroma/handoff.md) | Chroma controls redesign: Chroma + Base chroma per palette, global base/prime k factors, vibrancy 50 | feature | L3 | P2 | none | 🟢 done |
 | T-0015 | [hue-space-anchored](hue-space-anchored/handoff.md) | Hue space toggle (OKLCH/CAM16) also applies to anchored palettes | feature | L3 | P2 | none | 🟢 done |
 | T-0016 | [semantic-mapping-tidy](semantic-mapping-tidy/handoff.md) | Semantic Mapping tab: swatch border, drop Roles pane tab, rename Raw token column | chore | L2 | P2 | none | 🟢 done |
-| T-0017 | [geometry-maison-ladder](geometry-maison-ladder/handoff.md) | Geometry system adopts the Maison ui-kit ladder (tier x scale x size, --g-* and --r-* roles) | feature | L4 | P2 | none | ⏳ proposed |
+| T-0017 | [geometry-maison-ladder](geometry-maison-ladder/handoff.md) | Geometry system adopts the Maison ui-kit ladder (tier x scale x size, --g-* and --r-* roles) | feature | L4 | P2 | none | 🟢 done |
 | T-0018 | [gh-786](gh-786/handoff.md) | Arrow-stepping and palette add/duplicate/delete must keep the current right-pane tab (gh 786) | bug | L1 | P2 | none | 🟢 done |
 | T-0019 | [gh-811](gh-811/handoff.md) | Describe eval scores 0/15: score by perceptual distance (#811) | bug | L2 | P2 | none | 🟢 done |

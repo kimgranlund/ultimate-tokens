@@ -59,24 +59,24 @@ ok(!typeOnly.palettes && !typeOnly.roles && typeOnly.type && !typeOnly.geometry,
 const geomOnly = brandKit(defaultDocument(), { geometry: true });
 ok(!geomOnly.palettes && !geomOnly.type && geomOnly.geometry, "brandKit({geometry}) omits colour + type");
 
-// BASE per-cell overrides reach the kit (Phase 3, the MCP zip + get_type/get_geometry are override-aware,
-// like every other export). A "<...>|base"-keyed tokenOverride must surface on kit.type / kit.geometry.
+// BASE per-cell overrides reach the kit (Phase 3, the MCP zip + get_type are override-aware, like every
+// other export). A "<...>|base"-keyed type tokenOverride must surface on kit.type. Geometry has no
+// tokenOverrides since T-0017 (the cells are a fixed ladder); kit.geometry follows the doc's axes instead.
 {
   const baseDoc = defaultDocument();
   const ovDoc = {
     ...baseDoc,
     type: { ...baseDoc.type, tokenOverrides: { "Body|MD|base": 99, "Label|MD|base": 33 } },
-    geometry: { ...baseDoc.geometry, tokenOverrides: { "MD|base": 50 } },
   };
   const ovKit = brandKit(ovDoc);
   const plainKit = brandKit(baseDoc);
   ok(ovKit.type.categories.Body.MD.size === 99, `a BASE type override reaches kit.type (got ${ovKit.type.categories.Body.MD.size}, want 99)`);
   ok(ovKit.type.categories.Body.MD.size !== plainKit.type.categories.Body.MD.size, "the type override actually moves kit.type off the un-overridden kit");
-  ok(ovKit.geometry.sizes.MD.height === 50, `a BASE geom override reaches kit.geometry (got ${ovKit.geometry.sizes.MD.height}, want 50)`);
-  ok(ovKit.geometry.sizes.MD.height !== plainKit.geometry.sizes.MD.height, "the geom override actually moves kit.geometry off the un-overridden kit");
-  // the per-step `font` is DECOUPLED from the type scale (2026-07-16), a type override must NOT move it,
-  // and a height override doesn't either (the control-text ramp is per-STEP, not per-height)
-  ok(ovKit.geometry.sizes.MD.font === plainKit.geometry.sizes.MD.font, `the control font is decoupled, type/height overrides don't move it (got ${ovKit.geometry.sizes.MD.font})`);
+  const lgKit = brandKit({ ...baseDoc, geometry: { ...baseDoc.geometry, scale: "lg" } });
+  ok(lgKit.geometry.cell.name === "product-lg-md" && lgKit.geometry.cell.height === 36 && plainKit.geometry.cell.height === 32, `kit.geometry follows the doc's scale axis (got ${lgKit.geometry.cell.name} at ${lgKit.geometry.cell.height}, default ${plainKit.geometry.cell.height})`);
+  // each cell's text composes from the type scale's height-indexed UI text table (T-0017), a Body
+  // override does not move it
+  ok(ovKit.geometry.cell.text === ovKit.type.uiText[32] && ovKit.geometry.cell.text === plainKit.geometry.cell.text, `the cell text is the type scale's UI text at its height, a Body override doesn't move it (got ${ovKit.geometry.cell.text})`);
   // a NON-base ("|md")-keyed override must NOT touch the BASE kit (the base slice is mode-local)
   const nonBaseDoc = { ...baseDoc, type: { ...baseDoc.type, tokenOverrides: { "Body|MD|md": 99 } } };
   ok(brandKit(nonBaseDoc).type.categories.Body.MD.size === plainKit.type.categories.Body.MD.size, "a non-base (|md) override does NOT leak into the BASE kit");
@@ -167,10 +167,11 @@ try {
   const ty = await callTool("get_type", {});
   ok(ty && ty.categories && ty.categories.Body, "get_type → the typography scale (Body voice present)");
   const geo = await callTool("get_geometry", {});
-  ok(geo && geo.sizes && geo.sizes.MD && geo.sizes.MD.paddingNarrow === (geo.sizes.MD.height - geo.sizes.MD.icon) / 2, "get_geometry → the dimensional scale (the centering law holds on the served MD size)");
-  // decoupled end-to-end (2026-07-16): the served geometry's per-step `font` is the control-text ramp,
-  // NOT the Label voice, and the retired composition flag is gone
-  ok(!("typed" in geo) && geo.sizes.MD.font === 15, `get_geometry font is the decoupled control-text ramp (got ${geo.sizes.MD.font}, want 15)`);
+  const md = geo && geo.cells && geo.cells["product-md-md"];
+  ok(md && !("sizes" in geo) && Object.keys(geo.cells).length === 27 && geo.cell.name === "product-md-md" && md.inset === (md.height - md.icon) / 2, "get_geometry → the 27-cell ladder (the centering law holds on the served product-md-md cell)");
+  // composed end-to-end (T-0017): the served cell text is the type scale's UI text at the cell's
+  // height (14 at 32), and the retired composition flag is gone
+  ok(!("typed" in geo) && md.text === 14 && md.text === ty.uiText[32], `get_geometry text is the type scale's UI text at height 32 (got ${md && md.text}, want 14)`);
 
   const resUris = (await rpc("resources/list")).result.resources.map((r) => r.uri);
   ok(resUris.includes("brand://type") && resUris.includes("brand://geometry"), `resources/list has brand://type + brand://geometry (${resUris})`);

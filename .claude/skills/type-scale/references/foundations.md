@@ -49,9 +49,10 @@ skips a layer.
 The canonical taxonomy (`docs/references/typography/README.md`, `type.mjs`'s own header comment): **Display
 · Headline · Sub-heading · Title · Sub-title · Lead · Body · Body-mono · Label · Label-mono · Kicker ·
 Tiny · Tiny-mono · UI-control · UI-widget** (the two INTERACTIVE voices joined 2026-07-16, TKT-0008).
-Thirteen voices ride the uniform 3-step ramp, **SM · MD · LG** (`RANKS`); UI-control and UI-widget ride
-the full **XS..2XL** 6-step ramp (`RANKS6`), `ranksFor(sizeKey)` picks by the voice's `SIZES` entry
-length, and `cat()` anchors each voice's base on its MD step. There is no other per-voice step count (the
+Thirteen voices ride the uniform 3-step ramp, **SM · MD · LG** (`RANKS`); UI-control and UI-widget carry
+one step, **MD**, sized from the height-indexed UI text table (`UI_TEXT` at `UI_HEIGHT`: 32 gives 14, 24
+gives 12; T-0017, user ruling option B, their TKT-0008 six-step XS..2XL rows retired). `stepsFor(sizeKey)`
+picks, and `cat()` anchors each voice's base on its MD step. There is no other per-voice step count (the
 old `STEPS_3`/`STEPS_5`/`STEPS_UI` split, 3/5/8 steps by voice, stays retired along with the modular
 scale, 2026-07-13).
 
@@ -99,14 +100,22 @@ singleLineHeight = size                                # BOX voices ONLY
 
 - **FIXED SIZE TABLE, not a modular scale (2026-07-13 rewrite).** `SIZES` in type.mjs holds a
   three-entry `SM · MD · LG` px row for thirteen voices (nine distinct rows; the four mono-alias voices
-  reuse their sibling's) and, since 2026-07-16, a six-entry `XS..2XL` row for the two interactive voices
-  (UI-control, UI-widget), shared identically across ALL 5 treatments, matching Material 3's own approach (one
+  reuse their sibling's), shared identically across ALL 5 treatments (the two interactive voices,
+  UI-control and UI-widget, carry no row since T-0017: their one MD size is `uiText` at a fixed control
+  height, see §2 and the UI text table below), matching Material 3's own approach (one
   fixed scale; theme varies styling, not the numbers). Previously every voice derived `base · ratio^n`
   (a treatment's own base+ratio gave it a distinct scale feel); treatments now differ ONLY in
   font/weight/tracking/leading/case, never size.
 - **`factor = bodyBase / 16`** (Body's own MD literal, `SIZES.Body[1]`), the ONE global resize lever, in
   `typeScale`. It multiplies every voice's fixed size, so the whole system scales together. `DEFAULT_TYPE`
   pins `bodyBase: 16` to match.
+- **The UI text table (T-0017, ADR-032).** `UI_TEXT` maps the 25 heights of the Maison component-geometry
+  ladder to control text (96 → 30 ... 32 → 14, 28 → 13, 24 → 12 ... 14 → 7.5, 12 → 7), verbatim from
+  Maison's CSV. `uiText(height, factor = 1)` returns `round(UI_TEXT[height] · factor · 2) / 2` (the
+  half-pixel grid, the identity at factor 1) and throws `RangeError` off-table. `typeScale(config).uiText`
+  is the whole table at the scale's bodyBase factor; `modeFactor` never applies to it (the UI voices stay
+  frozen on Tablet and Mobile). Geometry reads it for every cell's text, caption text and chip text, so
+  control text per height is one table owned here, and UI-control and UI-widget are two rows of it.
 - **The nice-number ladder ONLY engages when actually scaled or compressed** (`niceStep`/`niceSize`/
   `nextNice`), an UNSCALED literal (factor 1, no breakpoint compression) passes through EXACTLY, never
   re-snapped to a different "nice" number (the 2026-07-13 fix: 120 must stay 120, not round to 128,

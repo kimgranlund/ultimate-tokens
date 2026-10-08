@@ -7,6 +7,7 @@
 //
 // INPUT, the UI3 float interchange those producers return:
 //   { collections: { "<Name>": { modes: ["Base", <bp>…], variables: { "<key>": { type, values: { <mode>: n } } } } } }
+//   (an "ALIAS" variable's per-mode value is the NAME of the literal variable it aliases in that mode)
 //
 // OUTPUT, modeApplyPlan(interchange) → one entry per collection, a DETERMINISTIC, ordered description of the
 // Figma operations the plugin will run (no `figma` calls here, that lives in code.js, which MIRRORS this and
@@ -109,7 +110,9 @@ export function modeApplyPlan(interchange) {
 // (case-insensitive; Figma rejects duplicates) whose FIRST entry becomes the collection's default mode,
 // any name, not just "Base": the emitters may name the base layer (e.g. "Mobile") and order it last, making
 // a breakpoint (e.g. "Desktop") the default; every variable has a known type, a value for EVERY mode, and
-// FLOAT values that are finite numbers.
+// FLOAT values that are finite numbers. An "ALIAS" variable (Geometry's per-mode `control/` roles) is
+// sound when every mode's value names another variable of the SAME collection whose type is a literal
+// Figma type (one hop, never an ALIAS of an ALIAS).
 export function validateModeInterchange(interchange) {
   const out = [];
   const collections = interchange && typeof interchange === "object" ? interchange.collections : null;
@@ -131,11 +134,17 @@ export function validateModeInterchange(interchange) {
     if (Object.keys(vars).length === 0) out.push(`${name}: no variables`);
     for (const varName of Object.keys(vars)) {
       const v = vars[varName] || {};
-      if (!FIGMA_VAR_TYPES.has(v.type)) out.push(`${name}/${varName}: unknown variable type "${v.type}"`);
+      const alias = v.type === "ALIAS";
+      if (!alias && !FIGMA_VAR_TYPES.has(v.type)) out.push(`${name}/${varName}: unknown variable type "${v.type}"`);
       const values = v.values && typeof v.values === "object" ? v.values : {};
       for (const m of modes) {
         if (!(m in values)) { out.push(`${name}/${varName}: missing value for mode "${m}"`); continue; }
         if (v.type === "FLOAT" && !Number.isFinite(Number(values[m]))) out.push(`${name}/${varName}: non-finite FLOAT for mode "${m}" (${values[m]})`);
+        if (alias) {
+          const t = values[m];
+          const target = typeof t === "string" && Object.prototype.hasOwnProperty.call(vars, t) ? vars[t] : null;
+          if (!target || !FIGMA_VAR_TYPES.has(target.type)) out.push(`${name}/${varName}: ALIAS target "${t}" for mode "${m}" is not a literal variable of this collection`);
+        }
       }
     }
   }
@@ -215,18 +224,39 @@ export function nearestStepByHeight(oldHeight, currentStepHeights) {
   return best;
 }
 
+// geometryCellOrder(stepHeights), PURE: the Geometry-only tiebreak for nearestStepByHeight (T-0017). A
+// new object with the same entries, keys re-ordered so ladder cells (`{tier}-{scale}-{size}`) sort by
+// tier (product, content, micro), then size (md, sm, lg), then scale (md, sm, lg); every other key
+// follows all cells, in its original order. Needed because Maison's row order and modeApplyPlan's name
+// sort both put content-* first, so a bare insertion-order tie would send the legacy 28 and 36 heights
+// to content cells; this order sends MD 28 to product-sm-md and LG 36 to product-lg-md. The type
+// callers of nearestStepByHeight keep its plain insertion-order rule.
+const GEOMETRY_CELL_RE = /^(content|product|micro)-(sm|md|lg)-(sm|md|lg)$/;
+const CELL_TIER_RANK = { product: 0, content: 1, micro: 2 };
+const CELL_STEP_RANK = { md: 0, sm: 1, lg: 2 };
+export function geometryCellOrder(stepHeights) {
+  const cells = [], rest = [];
+  for (const key of Object.keys(stepHeights || {})) (GEOMETRY_CELL_RE.test(key) ? cells : rest).push(key);
+  const rank = (key) => { const m = GEOMETRY_CELL_RE.exec(key); return CELL_TIER_RANK[m[1]] * 9 + CELL_STEP_RANK[m[3]] * 3 + CELL_STEP_RANK[m[2]]; };
+  cells.sort((a, b) => rank(a) - rank(b));
+  const out = {};
+  for (const key of cells.concat(rest)) out[key] = stepHeights[key];
+  return out;
+}
+
 // geometrySizeAliasMap(oldStepHeights, currentStepHeights, fields, fieldRenameMap), PURE: expands a
 // "nearest step by height" match into a FULL per-field alias map for the Geometry `size/` family,
 // `{"size/${oldStep}/${field}": "size/${nearestStep}/${field}"}` for every old step × every field.
 // `fields` (e.g. height/icon/caret/icon-gap/…) come from the CURRENT plan's own size/ variables, never
 // hand-typed, a future field added to buildSize() is covered automatically, no map to maintain by hand.
 // `fieldRenameMap` (optional, #498) additionally bridges OLD-SPELLED field names a real file predates
-// the current spelling for (e.g. an ADIA-era "edgePadding" -> the current "padding-wide"), same old
-// step, same nearest-by-height match, just a DIFFERENT field name on each side of the arrow.
+// the current spelling for (e.g. an ADIA-era "padding" -> the current "inset"), same old step, same
+// nearest-by-height match, just a DIFFERENT field name on each side of the arrow. Ties between cells
+// break by geometryCellOrder (above), never by the plan's name order.
 export function geometrySizeAliasMap(oldStepHeights, currentStepHeights, fields, fieldRenameMap) {
   const map = {};
   for (const [oldStep, h] of Object.entries(oldStepHeights || {})) {
-    const nearest = nearestStepByHeight(h, currentStepHeights);
+    const nearest = nearestStepByHeight(h, geometryCellOrder(currentStepHeights));
     if (!nearest) continue;
     for (const field of fields) map[`size/${oldStep}/${field}`] = `size/${nearest}/${field}`;
     for (const [oldField, newField] of Object.entries(fieldRenameMap || {})) map[`size/${oldStep}/${oldField}`] = `size/${nearest}/${newField}`;
@@ -455,9 +485,9 @@ export function libraryModeReconcile(existingNames, wantedNames, aliasMap, liveA
 // differ from what the LIVE variable already holds at that mode (matched by MODE NAME, dry-run runs
 // before any mode ids for a NEW mode would even exist)? `liveValuesByModeName` = {modeName: value};
 // `planVar` = a plan variable entry, either modeApplyPlan's `{name, type, values: [{mode,value},…]}`
-// (Geometry, `type` is never "ALIAS" here, style-plan.mjs's FIGMA_VAR_TYPES doesn't include it) or
-// style-plan.mjs's primitivesModesApplyPlan `{name, type:"ALIAS", target}` shape (Font/Type Primitives),
-// an ALIAS entry has no `.values` at all and is reported "changed" unconditionally, matching the
+// (Geometry; its `control/` variables are per-mode ALIAS, each value the target variable's name) or
+// style-plan.mjs's primitivesModesApplyPlan `{name, type:"ALIAS", target}` shape (Font/Type Primitives).
+// An ALIAS entry, of either shape, is reported "changed" unconditionally, matching the
 // executor's own unconditional every-mode alias write (never skipped for an "unchanged" target, see
 // applyFontPrimitivesModes' own header comment for why). Numeric comparison for FLOATs (tolerates a
 // live read that's already a JS number); strict-equal otherwise. A mode the live variable has no value

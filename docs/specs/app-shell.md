@@ -10,7 +10,7 @@
 > **Source of record:** `src/ui/app.js` (the `HctApp` custom element: state, render dispatch, header,
 > footers, inspector shell, i.e. the frame) · `src/ui/sections/{color,typography,geometry}.js` (the per-section
 > pane bodies) · `src/ui/overlays/{drawer,settings,apply-gate}.js` (the overlays); both sets are mixed
-> onto the prototype (`mixinInto`, `app.js:2594`) of `HctApp` ·
+> onto the prototype (`mixinInto`, `app.js:2640`) of `HctApp` ·
 > `src/ui/app-helpers.mjs` (`h` + the shared primitives) · `src/ui/styles.css` (the grid) ·
 > `src/ui/model.mjs` (`projectView`, the read-model each render consumes).
 > **Scope:** the shell, the frame, its regions, the render pipeline, and the state that routes them.
@@ -60,7 +60,7 @@ Stable handles for the ui-plan clauses the shell realizes. These are the *what*;
 
 ---
 
-## 1. The frame: CSS grid (`renderEditor` `app.js:1346` · `.editor` `styles.css:369`)
+## 1. The frame: CSS grid (`renderEditor` `app.js:1353` · `.editor` `styles.css:386`)
 
 `renderEditor()` returns a `.editor` grid plus its overlay siblings (drawer, dialogs, toast). The grid
 is a fixed 3×3:
@@ -81,8 +81,8 @@ is a fixed 3×3:
 .editor.left-collapsed.right-collapsed { grid-template-columns: 0 1fr 0; }
 ```
 
-Collapsing a pane is a **class on `.editor`** that zeroes one column track (`toggleLeftPane` `app.js:1450` /
-`toggleRightPane` `app.js:1452`); the `.18s` transition on `grid-template-columns` animates it. The
+Collapsing a pane is a **class on `.editor`** that zeroes one column track (`toggleLeftPane` `app.js:1457` /
+`toggleRightPane` `app.js:1459`); the `.18s` transition on `grid-template-columns` animates it. The
 pane element stays in the DOM (`.left-pane` keeps its box, its padding/border zero out,
 `styles.css:502`), collapse is layout,
 not teardown.
@@ -123,18 +123,18 @@ anchor. "Interface" is the method's contract, not its body.
 | ID | Component | Method (bare `:N` = `src/ui/app.js`) | Traces to |
 |----|-----------|-------------------|-----------|
 | **LLD-C1** | Root element / view fork | `render` :576 | SPEC-R9 (gallery) + SPEC-R10 (editor) |
-| **LLD-C2** | Editor frame (grid + overlays) | `renderEditor` :1350 | SPEC-R10 |
-| **LLD-C3** | App-header | `renderAppHeader` :1371 | SPEC-R1, SPEC-R8, SPEC-R7 |
+| **LLD-C2** | Editor frame (grid + overlays) | `renderEditor` :1357 | SPEC-R10 |
+| **LLD-C3** | App-header | `renderAppHeader` :1378 | SPEC-R1, SPEC-R8, SPEC-R7 |
 | **LLD-C4** | Section switcher | `sectionSwitcher` :1421 / `setSection` :1441 | SPEC-R12 |
-| **LLD-C5** | Left pane (Analysis rail) | `renderLeftPane` :1542 | SPEC-R11, SPEC-R5, SPEC-R6 |
-| **LLD-C6** | Center (canvas) | `renderCenter` :1652 | SPEC-R11, SPEC-R2, SPEC-R3 |
+| **LLD-C5** | Left pane (Analysis rail) | `renderLeftPane` :1549 | SPEC-R11, SPEC-R5, SPEC-R6 |
+| **LLD-C6** | Center (canvas) | `renderCenter` :1659 | SPEC-R11, SPEC-R2, SPEC-R3 |
 | **LLD-C6a** | Canvas header | `renderCanvasHeader` `sections/color.js:799` | SPEC-R11, SPEC-R7 |
 | **LLD-C6b** | Canvas area / scene | `renderCanvasArea` `sections/color.js:858` | SPEC-R10 (pannable canvas), SPEC-R2 |
-| **LLD-C6c** | Canvas footer | `renderCanvasFooter` :1893 / `paintCanvasFooter` :1898 | SPEC-R5 |
-| **LLD-C7** | Right pane (segmented inspector) | `renderRightPane` :1934 | SPEC-R11, SPEC-R3, SPEC-R4 |
-| **LLD-C8** | App-footer | `renderAppFooter` :2178 / `paintAppFooter` :2198 | SPEC-R6, SPEC-R1 |
+| **LLD-C6c** | Canvas footer | `renderCanvasFooter` :1900 / `paintCanvasFooter` :1898 | SPEC-R5 |
+| **LLD-C7** | Right pane (segmented inspector) | `renderRightPane` :1941 | SPEC-R11, SPEC-R3, SPEC-R4 |
+| **LLD-C8** | App-footer | `renderAppFooter` :2185 / `paintAppFooter` :2205 | SPEC-R6, SPEC-R1 |
 | **LLD-C9** | Pane-collapse toggles | `toggleLeftPane`/`toggleRightPane` :1454 / `paneToggle` :1464 | SPEC-R10 (density) |
-| **LLD-C10** | Overlays (drawer, dialogs, toast) | `renderDrawer` `overlays/drawer.js:33` / `renderSettings` `overlays/settings.js:473` / `renderNewPalette` `sections/color.js:474` / `renderApplyGate` `overlays/apply-gate.js:353` | SPEC-R8, SPEC-R2, SPEC-R1 |
+| **LLD-C10** | Overlays (drawer, dialogs, toast) | `renderDrawer` `overlays/drawer.js:33` / `renderSettings` `overlays/settings.js:494` / `renderNewPalette` `sections/color.js:474` / `renderApplyGate` `overlays/apply-gate.js:353` | SPEC-R8, SPEC-R2, SPEC-R1 |
 
 ### 2.1 Region responsibilities (the non-obvious contracts)
 
@@ -208,7 +208,7 @@ State lives on the element instance. Two tiers, and the split is load-bearing:
 
 Exception: one of these fields, `theme`, doubles as an **app pref**:
 `_saveAppPrefs()` writes it, with two fields this table does not list (`motion`, `fontMode`), to
-`localStorage` under `_appPrefsKey()` (`app.js:2297`) on every change, and `_loadAppPrefs()` reloads
+`localStorage` under `_appPrefsKey()` (`app.js:2304`) on every change, and `_loadAppPrefs()` reloads
 them at construction. That persistence is per app, on this device, and never with the
 document: it never enters `view`, never round-trips through export/import, and carries no undo entry.
 
@@ -231,13 +231,13 @@ render():
   _syncDrawer() ; _syncNewPal() ; _syncApplyGate() ; _syncSettings()   (re-show each open <dialog>)
 ```
 There is no mid-edit guard: `render` (`app.js:572`) always rebuilds and instead snapshots the focused
-control before the swap and puts it back after (`_captureFocus` `app.js:637`, `_restoreFocus` `app.js:655`).
+control before the swap and puts it back after (`_captureFocus` `app.js:637`, `_restoreFocus` `app.js:658`).
 A full render mounts a *fresh, closed* `<dialog>` for each overlay; an open export drawer is
 re-`showModal()`'d after mount so a render mid-drawer doesn't dismiss it (`_syncDrawer`, `app.js:612`).
-`paintCanvasFooter` (`app.js:1894`) is not on the full-render path: the canvas footer mounts with its
-static hint (`renderCanvasFooter`, `app.js:1889`) and is painted by `applyTransform` (`app.js:1703`), the
+`paintCanvasFooter` (`app.js:1901`) is not on the full-render path: the canvas footer mounts with its
+static hint (`renderCanvasFooter`, `app.js:1896`) and is painted by `applyTransform` (`app.js:1710`), the
 canvas pointer handlers and `_liveRefreshNow` (`app.js:291`); each calls
-`paintCanvasFooter` (`app.js:1711`, `app.js:1840`, `app.js:332`).
+`paintCanvasFooter` (`app.js:1718`, `app.js:1847`, `app.js:332`).
 
 ### 4.2 Live refresh (partial: during a continuous drag, `liveRefresh` `app.js:276` → `_liveRefreshNow` `app.js:291`)
 A slider/swatch drag must not full-render (it would blow away the active control's focus/caret). Instead

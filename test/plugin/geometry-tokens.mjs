@@ -1,6 +1,6 @@
 // plugin/geometry-tokens.mjs, the ultimate-tokens PLUGIN gate for the geometry-tokens consumption
 // skill: every --size-*/--radius-*/--space-*/--inset-*/--gap-*/--border-*/--focus-* token and
-// .control-* class it names must match the geometry engine. The check lives WITH the skill
+// --control-* or --chip-* role it names must match the geometry engine. The check lives WITH the skill
 // (plugin/.../scripts/dimension-parity.mjs); this wrapper runs it in npm test so a dimension change
 // reddens the suite until the skill is serviced.
 import { spawnSync } from "node:child_process";

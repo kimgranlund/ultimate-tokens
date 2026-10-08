@@ -19,7 +19,7 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
    (`_typeScaleFor`/`_geomScaleFor`/`_typeModeScales`/`_geomModeScales`) lives as mirrored
    instance methods in two section files, with the tier-synthesis closure byte-identical in
    both (since #460 ONE closure, `typeTierScale`, model.mjs:184-188), a third geomScale+typeScale join inside
-   `_geomModeScales` (geometry.js:196-198, now a delegate to `geomModeScales`, model.mjs:215-234), and a FOURTH, disconnected implementation in
+   `_geomModeScales` (geometry.js:134-136, now a delegate to `geomModeScales`, model.mjs:200-205), and a FOURTH, disconnected implementation in
    `model.mjs#geometryScale` that only `brandKit()` uses. They agree today by coincidence of
    independently-written code, not by sharing.
 2. **Storage is three disciplines** (03): persist.js's spec-grade doc store (fuzzed roundtrip
@@ -74,9 +74,9 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
 | # | Finding | Evidence | Fix shape |
 |---|---|---|---|
 | H1 | `_onReorderUp()` hand-rolls the commit ladder | 01 §B2; color.js:1518-1567 (fixed in #462) | route through `this.commit(fn)` |
-| H2 | `mixinInto` has no method-collision guard (zero collisions today, verified; nothing catches the first one) | 01 §B3, 04 §C; app.js:2564-2582 (guard added in #462) | throw on duplicate own-property name during composition |
+| H2 | `mixinInto` has no method-collision guard (zero collisions today, verified; nothing catches the first one) | 01 §B3, 04 §C; app.js:2610-2628 (guard added in #462) | throw on duplicate own-property name during composition |
 | H3 | Gallery crash vector: set records never shape-validated; `buildTiles` search does `s.name.toLowerCase()` unguarded | 03 §C; app.js:679-681, `sanitizeSetRecords` app-helpers.mjs:104-109 (fixed in #468) | per-record shape check in `loadSets`/`receiveStoredSets` (or a `String(s.name||"")` guard) |
-| H4 | `tokenOverrides` keys never validated against voice/step domains → typo'd/retired keys accumulate as permanent inert orphans | 03 §B5; persist.js:688-699 (`validLead`, fixed in #461) | drop unknown-voice/step keys in `clampTokenOverrides` (RENAME_MAPS already translates legitimate renames) |
+| H4 | `tokenOverrides` keys never validated against voice/step domains → typo'd/retired keys accumulate as permanent inert orphans | 03 §B5; persist.js:787-798 (`validLead`, fixed in #461) | drop unknown-voice/step keys in `clampTokenOverrides` (RENAME_MAPS already translates legitimate renames) |
 | H5 | `clampProfile` has no rename-forward story (a FLAG_KEYS rename silently drops overrides); app-prefs/apply-consent sit outside `migrateStorageKeys()` undocumented at that site | 03 §B3–B4 | add a one-line comment at `migrateStorageKeys()` naming the exclusion as deliberate; add a rename-map seam to clampProfile only if flags ever rename |
 | H6 | `_applyBusy` has no timeout (a lost reply wedges apply for the session, narrower than D1 since code.js always answers `apply`) | 04 §B | decide: accept (document) or add a timeout fallback consistent with D1's fix |
 
@@ -85,13 +85,13 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
 - `_schemeOverride` never declared in the constructor while its two mirrors are (02; declared at the app.js constructor since #467), declare it. Resolved by pane-context U4, which removed the override mechanism for `_columnScheme`.
 - `this.view` (route string) vs local `view` (`projectView` result) one underscore apart at app.js:293 (documented at app.js:600-602), rename the route field (e.g. `this.route`) or the locals.
 - `disconnectedCallback` teardown set asymmetric with what connectedCallback registers (`_liveRaf`, `_dragTimer`, `_toastT`, window-level drag listeners), inert for a page-lifetime singleton; either complete the inventory or comment why it's deliberately partial (01 §B6, 04 §D).
-- Stale copy in `graphGeomComposition` (geometry.js:674) contradicts its own card title, font DOES still compose from Type's UI-control voice (02 §B6).
+- Stale copy in `graphGeomComposition` (geometry.js:554) contradicts its own card title, font DOES still compose from Type's UI-control voice (02 §B6).
 - `okhslLAt` (`src/engine/tonal.js:1096`) lost its module-level `_okL` memo Map, the one true exception to "engines are pure, no module state" this review found - deleted at #738, measured not load-bearing (0.40-0.90 us per uncached call on a quiet host, median 1.54 us at load 67); the function is now plain and pure like its siblings, and the comment above it says why no memo sits there.
 
 ## Deliberately fine: do not "fix"
 
 - The mixin-flattened `this` (file organization, not encapsulation), an explicit, documented
-  trade-off (`mixinInto`, app.js:2570-2574); H2's collision guard is the cheap insurance, not a redesign.
+  trade-off (`mixinInto`, app.js:2616-2620); H2's collision guard is the cheap insurance, not a redesign.
 - Color-only `liveRefresh` / the Type-Geom drag freeze until settle, canon (foundations §3),
   self-documented, intended UX.
 - The one-shot latches `_figmaProbed`/`_figmaFontsRequested`, documented fire-once by design.

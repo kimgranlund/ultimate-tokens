@@ -58,10 +58,12 @@ in/out; omitted/undefined → **all three** (the back-compat default). `buildSur
   carries the **fifteen** `makeVoices` voices (the `type-scale` skill owns the taxonomy), each step with
   `size · lineHeight · letterSpacing · weight` (+ `textTransform`, `paragraph*`). The guide prose teaches a
   four-voice mental model (Display/Heading/Body/UI); the *data* has fifteen keys, don't claim four.
-- **Geometry** (`kit.geometry` present) → tool `ultimate-tokens-brand-kit:get_geometry`; resource `brand://geometry`. The XS–2XL
-  `sizes` ramp, the top-level `radii` ladder (`none/sm/md/lg/full`), and the `space` scale. Each size carries
-  `{ height, icon, caret, font, gap, padding, edgePadding, radiusPill, minWidth }`; the centering law is
-  **`padding === (height − icon) / 2`** (the server prose calls `icon` "glyph" loosely, the field is `icon`).
+- **Geometry** (`kit.geometry` present) → tool `ultimate-tokens-brand-kit:get_geometry`; resource `brand://geometry`. The Maison
+  ladder (ADR-032): the kit axes `{ tier, scale, radius, spaceBase }`, all 27 `cells` keyed
+  `{tier}-{scale}-{size}`, the kit default `cell` (`{ name, ...fields }`), the M3 `radii` ladder
+  (`none/xs/sm/md/lg/xl/full`), the `space` scale and the container groups. Each cell carries `{ height,
+  inset, text, icon, captionText, chipHeight, chipInset, chipText, iconRatio, minWidth, radiusControl,
+  radiusMark, radiusInset, radiusCard }`; the centering law is **`inset === (height − icon) / 2`**.
 - **Always** → resource `brand://kit` (full JSON) + `brand://guide` (markdown), and prompt **`apply_brand`**
   (surfaces from `*/surface*`, accents from a palette's prime role, text from `*/on*`, never raw values).
 
@@ -110,7 +112,7 @@ node test/mcp/core.mjs        # the PURE surface: buildSurface + handle driven d
 node test/mcp/brand-kit.mjs   # generates a kit from defaultDocument(), spawns the server, asserts:
                               #   initialize → serverInfo.name "ultimate-tokens-brand-kit" + capabilities.tools
                               #   tools/list has the 6 colour tools + get_type + get_geometry
-                              #   get_type (Body voice) · get_geometry (centering law on MD; font = type UI size)
+                              #   get_type (Body voice) · get_geometry (27 cells; centering law on product-md-md; text = type uiText[32])
                               #   resources/list (brand://type + brand://geometry) · list_palettes (16)
                               #   resolve_token primary/primary (light+dark) · get_ramp (>=19 stops, incl. 500)
                               #   nearest_token (exact stop → distance 0) · get_semantic (flatten)
@@ -121,8 +123,8 @@ npm test                      # the above + engine/ui/figma + regenerates mcp-as
 The test exercises the **opt-in contract directly** on the kit projection (not the spawned server):
 `brandKit({color:true})` omits type+geometry, `brandKit({type:true})` omits colour+geometry,
 `brandKit({geometry:true})` omits colour+type. If you add a system-gated surface, add the matching opt-in
-assertion. The composition check (`geo.sizes.MD.font === ty.categories["UI-control"].MD.size`)
-proves geometry's per-step `font` is the UI-control voice's size, **one source of truth**; don't break it. Don't call it
+assertion. The composition check (`geo.cells["product-md-md"].text === ty.uiText[32]`, 14)
+proves geometry's cell text is the type scale's height-indexed UI text, **one source of truth**; don't break it. Don't call it
 done until `node test/mcp/brand-kit.mjs` AND `npm test` are green, and a manual
 `node mcp/brand-kit-server.mjs <kit.json>` prints its banner to **stderr** with nothing on stdout until a
 request arrives.

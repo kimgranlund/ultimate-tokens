@@ -8,11 +8,11 @@
 import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { figmaBundle, defaultDocument } from "../../src/ui/model.mjs";
+import { figmaBundle, defaultDocument, geometryScale } from "../../src/ui/model.mjs";
 import * as TYPE from "../../src/engine/type.mjs";
 import * as GEOM from "../../src/engine/geometry.mjs";
 import { exportDTCG } from "../../src/engine/exports.js";
-import { modeApplyPlan, mergeModeInterchanges, libraryModeReconcile, libraryModeReport, valueChanged, nearestStepByHeight, geometrySizeAliasMap, resolveLiteralHeight, liveAliasTargetsByName, priorLibraryUplift, pruneCandidates, parseOldTypeStepName, typeStepAliasMap, typeWeightAliasMap, TYPE_STEP_FIELD_MAP } from "../../figma/binder/mode-apply-plan.mjs";
+import { modeApplyPlan, mergeModeInterchanges, libraryModeReconcile, libraryModeReport, valueChanged, nearestStepByHeight, geometryCellOrder, geometrySizeAliasMap, resolveLiteralHeight, liveAliasTargetsByName, priorLibraryUplift, pruneCandidates, parseOldTypeStepName, typeStepAliasMap, typeWeightAliasMap, TYPE_STEP_FIELD_MAP } from "../../figma/binder/mode-apply-plan.mjs";
 import { stylePlans, primitivesModesApplyPlan } from "../../figma/binder/style-plan.mjs";
 import { LIBRARY_TYPE_VOICE_MAP, GEOMETRY_FIELD_RENAME_MAP } from "../../figma/binder/migrations.mjs";
 import { googleSafeFontFor } from "../../src/engine/font-fallbacks.mjs";
@@ -175,12 +175,12 @@ function mockFigma() {
 let applyBundle, applyFloatPlans, applyFontPrimitivesModes, applyStylePlans, setCollectionNames, resolveFace, sweepCandidates, styleNameWeight;
 // #495 "published library" mode, the hand-written VM mirrors of mode-apply-plan.mjs's pure planner
 // functions, extracted for the `libraryparity` behavioral-parity gate below (see its own header comment).
-let vmLibraryReconcile, vmValueChanged, vmLibraryModeReport, vmNearestStepByHeight, vmExpandGeometryAliasMap, vmExpandVoiceAliasMap, vmGeometryPlanStepHeights, vmLibraryTypeVoiceMap, vmResolveLiteralHeight, vmLiveAliasTargetsByName, vmPriorLibraryUplift, vmPruneCandidates;
+let vmLibraryReconcile, vmValueChanged, vmLibraryModeReport, vmNearestStepByHeight, vmGeometryCellOrder, vmExpandGeometryAliasMap, vmExpandVoiceAliasMap, vmGeometryPlanStepHeights, vmLibraryTypeVoiceMap, vmResolveLiteralHeight, vmLiveAliasTargetsByName, vmPriorLibraryUplift, vmPruneCandidates;
 // #498 grammar bridge, the hand-written VM mirrors, extracted for the same libraryparity gate.
 let vmParseOldTypeStepName, vmTypeStepAliasMap, vmTypeWeightAliasMap, vmTypeStepFieldMap, vmGeometryFieldRenameMap;
 const F = mockFigma();
 try {
-  const load = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle, applyFloatPlans, applyFontPrimitivesModes, applyStylePlans, setCollectionNames, resolveFace, sweepCandidates, styleNameWeight, libraryReconcile, valueChangedVM, libraryModeReportVM, nearestStepByHeightVM, expandGeometryAliasMap, expandVoiceAliasMap, geometryPlanStepHeights, LIBRARY_TYPE_VOICE_MAP, resolveLiteralHeightVM, liveAliasTargetsByNameVM, priorLibraryUpliftVM, pruneCandidatesVM, parseOldTypeStepNameVM, typeStepAliasMapVM, typeWeightAliasMapVM, TYPE_STEP_FIELD_MAP, GEOMETRY_FIELD_RENAME_MAP };");
+  const load = new Function("figma", "__html__", "module", code + "\nreturn { applyBundle, applyFloatPlans, applyFontPrimitivesModes, applyStylePlans, setCollectionNames, resolveFace, sweepCandidates, styleNameWeight, libraryReconcile, valueChangedVM, libraryModeReportVM, nearestStepByHeightVM, geometryCellOrderVM, expandGeometryAliasMap, expandVoiceAliasMap, geometryPlanStepHeights, LIBRARY_TYPE_VOICE_MAP, resolveLiteralHeightVM, liveAliasTargetsByNameVM, priorLibraryUpliftVM, pruneCandidatesVM, parseOldTypeStepNameVM, typeStepAliasMapVM, typeWeightAliasMapVM, TYPE_STEP_FIELD_MAP, GEOMETRY_FIELD_RENAME_MAP };");
   const loaded = load(F.figma, "<html>", undefined); // closes over the MOCK figma
   applyBundle = loaded.applyBundle; applyFloatPlans = loaded.applyFloatPlans;
   applyFontPrimitivesModes = loaded.applyFontPrimitivesModes; applyStylePlans = loaded.applyStylePlans;
@@ -188,6 +188,7 @@ try {
   sweepCandidates = loaded.sweepCandidates; styleNameWeight = loaded.styleNameWeight;
   vmLibraryReconcile = loaded.libraryReconcile; vmValueChanged = loaded.valueChangedVM;
   vmLibraryModeReport = loaded.libraryModeReportVM; vmNearestStepByHeight = loaded.nearestStepByHeightVM;
+  vmGeometryCellOrder = loaded.geometryCellOrderVM;
   vmExpandGeometryAliasMap = loaded.expandGeometryAliasMap; vmExpandVoiceAliasMap = loaded.expandVoiceAliasMap;
   vmGeometryPlanStepHeights = loaded.geometryPlanStepHeights; vmLibraryTypeVoiceMap = loaded.LIBRARY_TYPE_VOICE_MAP;
   vmResolveLiteralHeight = loaded.resolveLiteralHeightVM; vmLiveAliasTargetsByName = loaded.liveAliasTargetsByNameVM; vmPriorLibraryUplift = loaded.priorLibraryUpliftVM; vmPruneCandidates = loaded.pruneCandidatesVM;
@@ -1785,6 +1786,19 @@ if (applyFontPrimitivesModes) {
     if (mjsN !== vmN) FAIL("libraryparity", `nearestStepByHeight(${h}) disagree: mjs=${mjsN} vm=${vmN}`);
   }
 
+  // geometryCellOrder / geometryCellOrderVM (T-0017), the Geometry-only tiebreak: same entries, same
+  // key ORDER (the order is the whole contract, so JSON.stringify compares it), cells and non-cells mixed.
+  const cellOrderCases = [
+    { "x-step": 1, "content-sm-sm": 28, "micro-lg-lg": 20, "product-lg-sm": 28, "product-sm-md": 28 },
+    { "content-lg-lg": 72, "micro-sm-sm": 12, "product-md-md": 32, xs: 20, "product-md-sm": 24, "content-md-md": 48, "product-sm-md": 28, "2xl": 64 },
+    {}, heights,
+  ];
+  for (const c of cellOrderCases) {
+    const mjsO = JSON.stringify(geometryCellOrder(c));
+    const vmO = vmGeometryCellOrder ? JSON.stringify(vmGeometryCellOrder(c)) : "MISSING";
+    if (mjsO !== vmO) FAIL("libraryparity", `geometryCellOrder/geometryCellOrderVM disagree for ${JSON.stringify(c)}: mjs=${mjsO} vm=${vmO}`);
+  }
+
   // geometrySizeAliasMap / expandGeometryAliasMap (same signature shape: old heights, current heights, fields)
   const oldHeights = { small: 22, huge: 70 };
   const fields = ["height", "icon"];
@@ -1910,12 +1924,61 @@ if (applyFontPrimitivesModes) {
   if (bareWeightMap["Heading/MD/weight"] !== "weight/headline") FAIL("libraryparity", `typeWeightAliasMap should prefer a bare weight/<voice> candidate, got ${JSON.stringify(bareWeightMap)}`);
 
   // geometrySizeAliasMap's 4th-arg field-rename bridge (#498), same nearest-by-height step match,
-  // an OLD-SPELLED field name landing on the translated CURRENT field.
+  // an OLD-SPELLED field name landing on the translated CURRENT field (the ADIA "padding" now maps to
+  // the cell field "inset", T-0017; the synthetic steps here are not cells, so they keep their order).
   const mjsFieldGeo = geometrySizeAliasMap({ xs: 20 }, { xs: 20, sm: 24 }, ["height", "icon"], GEOMETRY_FIELD_RENAME_MAP);
   const vmFieldGeo = vmExpandGeometryAliasMap ? vmExpandGeometryAliasMap({ xs: 20 }, { xs: 20, sm: 24 }, ["height", "icon"], vmGeometryFieldRenameMap) : null;
   if (!vmFieldGeo) FAIL("libraryparity", "code.js exported no expandGeometryAliasMap (4-arg form)");
   else if (JSON.stringify(mjsFieldGeo) !== JSON.stringify(vmFieldGeo)) FAIL("libraryparity", `geometrySizeAliasMap/expandGeometryAliasMap (4-arg) disagree: mjs=${JSON.stringify(mjsFieldGeo)} vm=${JSON.stringify(vmFieldGeo)}`);
-  if (mjsFieldGeo["size/xs/edgePadding"] !== "size/xs/padding-wide") FAIL("libraryparity", `geometrySizeAliasMap should bridge size/xs/edgePadding -> size/xs/padding-wide, got ${JSON.stringify(mjsFieldGeo)}`);
+  if (mjsFieldGeo["size/xs/padding"] !== "size/xs/inset") FAIL("libraryparity", `geometrySizeAliasMap should bridge size/xs/padding -> size/xs/inset, got ${JSON.stringify(mjsFieldGeo)}`);
+}
+
+// ── legacy-cell-map (T-0017): a live file's legacy size/{XS..2XL} steps alias to ladder cells by their
+//    own default heights, with the Geometry tiebreak (geometryCellOrder) deciding the three-way ties at
+//    28 and 36. The current heights are the default kit's 27 cells in the plan's NAME-SORTED order
+//    (content-* first), the order a bare insertion-order tie would get wrong. The expected pairs are a
+//    hand table, not derived from the code under test. The VM mirror must agree on the same inputs. ──
+{
+  const LEGACY_HEIGHTS = { XS: 20, SM: 24, MD: 28, LG: 36, XL: 48, "2XL": 64 };
+  const WANT_CELL = { XS: "product-sm-sm", SM: "product-md-sm", MD: "product-sm-md", LG: "product-lg-md", XL: "content-md-md", "2XL": "content-lg-md" };
+  const defPlan = modeApplyPlan(GEOM.geomTokensFigmaModes(GEOM.geomScale({}), []))[0];
+  const cellHeights = {};
+  for (const v of defPlan.variables) {
+    const seg = v.name.split("/");
+    if (seg.length === 3 && seg[0] === "size" && seg[2] === "height") cellHeights[seg[1]] = v.values[0].value;
+  }
+  const cellKeys = Object.keys(cellHeights);
+  if (cellKeys.length !== 27 || cellKeys.join() !== cellKeys.slice().sort().join()) FAIL("legacy-cell-map", `fixture: want the 27 default cell heights in name-sorted order, got ${cellKeys.length}: ${cellKeys.join()}`);
+  const mjsMap = geometrySizeAliasMap(LEGACY_HEIGHTS, cellHeights, ["height"]);
+  for (const [step, cell] of Object.entries(WANT_CELL)) {
+    if (mjsMap[`size/${step}/height`] !== `size/${cell}/height`) FAIL("legacy-cell-map", `geometrySizeAliasMap sent size/${step}/height to ${mjsMap[`size/${step}/height`]}, want size/${cell}/height`);
+  }
+  const vmMap = vmExpandGeometryAliasMap ? vmExpandGeometryAliasMap(LEGACY_HEIGHTS, cellHeights, ["height"]) : null;
+  if (!vmMap) FAIL("legacy-cell-map", "code.js exported no expandGeometryAliasMap");
+  else if (JSON.stringify(vmMap) !== JSON.stringify(mjsMap)) FAIL("legacy-cell-map", `expandGeometryAliasMap disagrees with geometrySizeAliasMap: mjs=${JSON.stringify(mjsMap)} vm=${JSON.stringify(vmMap)}`);
+}
+
+// ── geom-alias-apply (T-0017): the Geometry plan's per-mode control/ roles are ALIAS variables whose
+//    value names a literal size/ cell; applyFloatPlans writes them in a second pass, once every literal
+//    exists, as a real VARIABLE_ALIAS to that cell's variable (never a literal copy, never skipped). ──
+if (applyFloatPlans) {
+  try {
+    const FA = mockFigma();
+    const aa = new Function("figma", "__html__", "module", code + "\nreturn { applyFloatPlans };")(FA.figma, "<html>", undefined).applyFloatPlans;
+    const kitPlans = modeApplyPlan(GEOM.geomTokensFigmaModes(geometryScale(defaultDocument()), []));
+    if (!kitPlans[0] || !kitPlans[0].variables.some((v) => v.type === "ALIAS")) FAIL("geom-alias-apply", "fixture: the default kit's Geometry plan carries no ALIAS variable, so this leg proves nothing");
+    await aa(kitPlans);
+    const geoA = FA.collections.find((c) => c.name === "Geometry");
+    const role = geoA && FA.variables.find((v) => v.variableCollectionId === geoA.id && v.name === "control/product/md/height");
+    const cell = geoA && FA.variables.find((v) => v.variableCollectionId === geoA.id && v.name === "size/product-md-md/height");
+    if (!role || !cell) FAIL("geom-alias-apply", `expected control/product/md/height and size/product-md-md/height to exist live, got role=${!!role} cell=${!!cell}`);
+    else {
+      const val = role.valuesByMode[geoA.modes[0].modeId];
+      if (!val || val.type !== "VARIABLE_ALIAS" || val.id !== cell.id) FAIL("geom-alias-apply", `control/product/md/height at the base mode = ${JSON.stringify(val)}, want { type: "VARIABLE_ALIAS", id: "${cell.id}" } (size/product-md-md/height)`);
+    }
+  } catch (e) { FAIL("geom-alias-apply", "applyFloatPlans (Geometry ALIAS leg) threw: " + e.message); }
+} else {
+  FAIL("geom-alias-apply", "code.js exported no applyFloatPlans");
 }
 
 // ── librarymode (#495): "published library" mode, the ADIA-file scenario, mirrored: an 11-voice
@@ -2009,8 +2072,8 @@ if (applyFontPrimitivesModes) {
 }
 
 // ── librarygrammar (#498): the ADIA file's TWO older grammars, bridged instead of deprecated, a
-//    Geometry size/* collection using pre-current field spellings (edgePadding/gap/minWidth/padding/
-//    radius/font, #498's own example list) AND a pre-collection-split Type Primitives collection using
+//    Geometry size/* collection using pre-current field spellings and legacy steps (edgePadding/gap/
+//    minWidth/padding/radius/font, #498's own example list, on xs..2xl, now aliased onto cells) AND a pre-collection-split Type Primitives collection using
 //    the "Voice/STEP/field" grammar (Title-Case voice, UPPERCASE step, camelCase field, e.g.
 //    "Heading/MD/size", "UI/3XS/weight"). Both collections are set up via their OWN executor first (so
 //    they're properly REGISTERED, ensureFloatCollection resolves by registry id only, same discipline
@@ -2022,11 +2085,14 @@ if (applyFloatPlans && applyFontPrimitivesModes) {
     const FG = mockFigma();
     const lg = new Function("figma", "__html__", "module", code + "\nreturn { applyFloatPlans, applyFontPrimitivesModes };")(FG.figma, "<html>", undefined);
 
-    // ── Geometry: 9 old fields (height/icon/caret unrenamed; edgePadding/gap/minWidth/padding/radius
-    //    renamed; font, no clean same-collection target, deliberately deprecated, see
-    //    GEOMETRY_FIELD_RENAME_MAP's own header comment) × 6 SAME-NAMED steps (isolates the field-
-    //    spelling bridge from step-drift, which #495's own librarygeom/binder.mjs fixture already covers).
-    const GEO_STEPS = { xs: 20, sm: 24, md: 28, lg: 36, xl: 48, "2xl": 64 }; // matches comfortable/baseHeight-28
+    // ── Geometry: 9 old fields × 6 legacy steps. Since T-0017 no old size/{step}/* name is wanted (the
+    //    plan carries only ladder cells), so each old step maps to its legacy cell by height (the
+    //    geometryCellOrder tiebreak) and each field either aliases or deprecates: height/icon through
+    //    the plan's own cell fields, minWidth/padding/radius/font through GEOMETRY_FIELD_RENAME_MAP
+    //    (min-width/inset/radius-control/text); caret/edgePadding/gap have no cell counterpart and
+    //    deprecate (see GEOMETRY_FIELD_RENAME_MAP's own header comment). Step drift onto cells is
+    //    covered by librarygeom in binder.mjs; here the steps sit exactly on legacy cell heights.
+    const GEO_STEPS = { xs: 20, sm: 24, md: 28, lg: 36, xl: 48, "2xl": 64 }; // the legacy default heights, now mapped to cells: xs product-sm-sm, sm product-md-sm, md product-sm-md, lg product-lg-md, xl content-md-md, 2xl content-lg-md
     const OLD_GEO_FIELDS = ["height", "icon", "caret", "edgePadding", "gap", "minWidth", "padding", "radius", "font"];
     const oldGeoVars = [];
     for (const [step, h] of Object.entries(GEO_STEPS)) {
@@ -2048,7 +2114,7 @@ if (applyFloatPlans && applyFontPrimitivesModes) {
       oldTypeVars.push({ name: `${voice}/${step}/weight`, type: "FLOAT", values: [{ mode: "Value", value: weight }] });
     };
     addStep("Heading", "MD", 34, 44, 0.2, 8, 620); // nearest headline step by size: sm(32,dist2) over md(40,dist6); weight exact-matches semi-bold(620)
-    addStep("UI", "3XS", 10, 14, 0.1, 4, 450); // outside ui-control's own range (xs=12 is its smallest), clamps to nearest (xs, dist 2); weight nearest regular(440,dist10) over medium(500,dist50)
+    addStep("UI", "3XS", 10, 14, 0.1, 4, 450); // ui-control's only step is md (14, T-0017), so it is the nearest by size (dist 4); weight nearest regular(440,dist10) over medium(500,dist50)
     addStep("Code", "2XS", 10, 13, 0.05, 2, 460); // outside label-mono's own range, clamps to nearest (sm, dist 2); weight nearest regular(440,dist20) over medium(500,dist40)
     addStep("Body", "MD", 15.5, 24, 0, 8, 460); // IDENTITY voice (unchanged name), nearest body step by size: md(16,dist0.5) over sm(14,dist1.5), NOT 17, a tie between md(dist1) and lg(dist1); weight nearest regular(440,dist20)
     oldTypeVars.push({ name: "UI/3XS/singleLineHeight", type: "FLOAT", values: [{ mode: "Value", value: 16 }] }); // no bridge at all, deprecates
@@ -2062,14 +2128,14 @@ if (applyFloatPlans && applyFontPrimitivesModes) {
     //    Type Primitives cross-collection bridge needs to alias against.
     const scaleG = TYPE.typeScale({ treatment: "product", bodyBase: 16 });
     const typeIxG = TYPE.typeTokensFigmaModes(scaleG, []);
-    const geomIx = GEOM.geomTokensFigmaModes(GEOM.geomScale({ treatment: "comfortable", baseHeight: 28 }), []);
+    const geomIx = GEOM.geomTokensFigmaModes(GEOM.geomScale({}), []);
     const geoPlans = modeApplyPlan(mergeModeInterchanges(typeIxG, geomIx));
     const resGeo = await lg.applyFloatPlans(geoPlans, { libraryMode: true });
     const planFP = primitivesModesApplyPlan(TYPE.typeTokensFigmaPrimitivesModes(scaleG));
     const resType = await lg.applyFontPrimitivesModes(planFP, { libraryMode: true });
 
     // 0 removals, every old var, in BOTH collections, still exists by name.
-    // "font" is deliberately DEPRECATED (renamed under _deprecated/, id-preserving, see
+    // caret/edgePadding/gap are deliberately DEPRECATED (renamed under _deprecated/, id-preserving, see
     // GEOMETRY_FIELD_RENAME_MAP's own header comment), so "still there" tolerates that rename, same as
     // #495's own librarygeom/librarymode fixtures.
     const geoStillThere = oldGeoVars.every((v) => FG.variables.some((va) => va.variableCollectionId === oldGeo.id && (va.name === v.name || va.name === "_deprecated/" + v.name)));
@@ -2077,21 +2143,21 @@ if (applyFloatPlans && applyFontPrimitivesModes) {
     const typeStillThere = oldTypeVars.every((v) => FG.variables.some((va) => va.variableCollectionId === oldType.id && (va.name === v.name || va.name === "_deprecated/" + v.name)));
     if (!typeStillThere) FAIL("librarygrammar", "library mode removed an old Type Primitives Voice/STEP/field variable");
 
-    // Geometry: exactly the 5 renamed fields × 6 steps aliased, "font" × 6 steps deprecated (documented
-    // scope decision, see GEOMETRY_FIELD_RENAME_MAP's own header comment), height/icon/caret are
-    // ALREADY-wanted names (identity steps + identity spelling), so they never enter the alias/deprecate
-    // report at all; they're ordinary create/update entries.
+    // Geometry: exactly 6 fields × 6 steps aliased (height/icon by the plan's own cell fields, minWidth/
+    // padding/radius/font through GEOMETRY_FIELD_RENAME_MAP), caret/edgePadding/gap × 6 steps deprecated
+    // (no cell counterpart, documented scope decision, see GEOMETRY_FIELD_RENAME_MAP's own header
+    // comment). No old size/{step}/* name is wanted any more, so every one enters the report.
     const geoRpt = resGeo && resGeo.libraryReports && resGeo.libraryReports[0];
     if (!geoRpt) FAIL("librarygrammar", "applyFloatPlans returned no libraryReport for Geometry");
     else {
-      if (geoRpt.aliases.length !== 30) FAIL("librarygrammar", `expected 30 Geometry field-spelling aliases (5 fields x 6 steps), got ${geoRpt.aliases.length}: ${JSON.stringify(geoRpt.aliases)}`);
-      if (!geoRpt.aliases.some((a) => a.from === "size/xs/edgePadding" && a.to === "size/xs/padding-wide")) FAIL("librarygrammar", `expected size/xs/edgePadding -> size/xs/padding-wide, got ${JSON.stringify(geoRpt.aliases)}`);
-      if (geoRpt.deprecates.length !== 6 || !geoRpt.deprecates.every((d) => d.from.indexOf("/font") === d.from.length - 5)) FAIL("librarygrammar", `expected exactly 6 "font" deprecates (1 field x 6 steps), got ${JSON.stringify(geoRpt.deprecates)}`);
+      if (geoRpt.aliases.length !== 36) FAIL("librarygrammar", `expected 36 Geometry aliases (6 fields x 6 legacy steps onto their cells), got ${geoRpt.aliases.length}: ${JSON.stringify(geoRpt.aliases)}`);
+      if (!geoRpt.aliases.some((a) => a.from === "size/xs/padding" && a.to === "size/product-sm-sm/inset")) FAIL("librarygrammar", `expected size/xs/padding -> size/product-sm-sm/inset, got ${JSON.stringify(geoRpt.aliases)}`);
+      if (geoRpt.deprecates.length !== 18 || !geoRpt.deprecates.every((d) => /\/(caret|edgePadding|gap)$/.test(d.from))) FAIL("librarygrammar", `expected exactly 18 deprecates (caret/edgePadding/gap x 6 steps), got ${JSON.stringify(geoRpt.deprecates)}`);
     }
     // the alias's actual LIVE value must resolve to a real alias pointing at the CURRENT variable.
-    const oldEdgePad = FG.variables.find((v) => v.variableCollectionId === oldGeo.id && v.name === "size/xs/edgePadding");
-    const newPadWide = FG.variables.find((v) => v.variableCollectionId === oldGeo.id && v.name === "size/xs/padding-wide");
-    if (!oldEdgePad || !newPadWide || oldEdgePad.valuesByMode[oldGeo.modes[0].modeId].type !== "VARIABLE_ALIAS" || oldEdgePad.valuesByMode[oldGeo.modes[0].modeId].id !== newPadWide.id) FAIL("librarygrammar", "size/xs/edgePadding's value was not redirected to size/xs/padding-wide via a real alias");
+    const oldPad = FG.variables.find((v) => v.variableCollectionId === oldGeo.id && v.name === "size/xs/padding");
+    const newInset = FG.variables.find((v) => v.variableCollectionId === oldGeo.id && v.name === "size/product-sm-sm/inset");
+    if (!oldPad || !newInset || oldPad.valuesByMode[oldGeo.modes[0].modeId].type !== "VARIABLE_ALIAS" || oldPad.valuesByMode[oldGeo.modes[0].modeId].id !== newInset.id) FAIL("librarygrammar", "size/xs/padding's value was not redirected to size/product-sm-sm/inset via a real alias");
 
     // Type Primitives: the {size,lineHeight,letterSpacing,paragraphSpacing} bridge (4 fields x 4 steps =
     // 16) + the weight bridge (1 field x 4 steps = 4) = 20 aliases; UI/3XS/singleLineHeight deprecated (1).
@@ -2101,7 +2167,7 @@ if (applyFloatPlans && applyFontPrimitivesModes) {
       if (typeRpt.aliases.length !== 20) FAIL("librarygrammar", `expected 20 Type Primitives aliases (4 fields + weight, x 4 old voice/steps), got ${typeRpt.aliases.length}: ${JSON.stringify(typeRpt.aliases)}`);
       const expectAlias = {
         "Heading/MD/size": "type/headline/sm/size", "Heading/MD/weight": "weight/headline/semi-bold",
-        "UI/3XS/size": "type/ui-control/xs/size", "UI/3XS/weight": "weight/ui-control/regular",
+        "UI/3XS/size": "type/ui-control/md/size", "UI/3XS/weight": "weight/ui-control/regular",
         "Code/2XS/size": "type/label-mono/sm/size", "Code/2XS/weight": "weight/label-mono/regular",
         "Body/MD/size": "type/body/md/size", "Body/MD/weight": "weight/body/regular",
       };
@@ -2245,7 +2311,7 @@ if (applyFloatPlans) {
 // declared list here so there is a single printed set. gateReport() also runs the report-static
 // self-check: a declared name with no FAIL(...) call site, or a call site whose name is not
 // declared, fails loudly on its own (report-static).
-const DECLARED = ["manifest", "offline", "vmsyntax", "ui", "parse", "apply", "cascade", "idempotent", "prune", "themes", "collnames", "floatapply", "floatidem", "floatprune", "floatprov", "floatretire", "floatlibrary", "renamecap", "colorprov", "colorlibrary", "staleskip", "staleskipfloat", "staleskipfontprim", "staleskipnotice", "colorrenamecap", "applysys", "applydone", "config", "read", "fonts", "resolveface", "sweep", "compliance", "regroup", "primevalue", "readfloat", "styles", "fontmodes", "libraryparity", "librarymode", "adoptconsent", "librarygrammar", "fontprimslibrary", "report-static"];
+const DECLARED = ["manifest", "offline", "vmsyntax", "ui", "parse", "apply", "cascade", "idempotent", "prune", "themes", "collnames", "floatapply", "floatidem", "floatprune", "floatprov", "floatretire", "floatlibrary", "renamecap", "colorprov", "colorlibrary", "staleskip", "staleskipfloat", "staleskipfontprim", "staleskipnotice", "colorrenamecap", "applysys", "applydone", "config", "read", "fonts", "resolveface", "sweep", "compliance", "regroup", "primevalue", "readfloat", "styles", "fontmodes", "libraryparity", "legacy-cell-map", "geom-alias-apply", "librarymode", "adoptconsent", "librarygrammar", "fontprimslibrary", "report-static"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)\n  ` + fails.join("\n  ")); process.exit(1); }
 console.log("\nPASS: figma-plugin-app, manifest + offline code.js + bridged ui.html + the figmaBundle→variables cascade + the Type/Geometry breakpoint-mode apply + the styles apply (bound paints/texts, registry prune)");

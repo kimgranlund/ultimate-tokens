@@ -42,7 +42,7 @@ import { TYPE_FONTS_CSS } from "./type-fonts.js";
 import { CATEGORY_INDEX, loadCategory } from "./categories/index.js";
 import { deriveNeutral, deriveRelative, RELATIONSHIPS } from "../engine/derive.mjs";
 import { typeScale, typeTokensCSS, typeTokensBreakpointCSS, typeTokensDTCG, typeTokensFigmaModes, TYPE_TREATMENTS, DEFAULT_TYPE, BUNDLED_FONTS, genericFor, siblingWeightDefaults, WEIGHT_NAMES, resolvedFontFor } from "../engine/type.mjs";
-import { geomScale, geomTokensCSS, geomTokensBreakpointCSS, geomTokensDTCG, geomTokensFigma, geomTokensFigmaModes, GEOMETRY_TREATMENTS, DEFAULT_GEOMETRY } from "../engine/geometry.mjs";
+import { geomScale, geomTokensCSS, geomTokensBreakpointCSS, geomTokensDTCG, geomTokensFigma, geomTokensFigmaModes, geomTokensSizesCSS, geomResolverCSS, DEFAULT_GEOMETRY, TIERS, SCALES, RADIUS_MODES } from "../engine/geometry.mjs";
 import { zipStore } from "./zip.mjs";
 import { modeApplyPlan, validateModeInterchange, mergeModeInterchanges, applyRenameMigrations } from "../../figma/binder/mode-apply-plan.mjs";
 import { FIGMA_MIGRATIONS, kebabWaveVarRenames, kebabWaveColorRenames } from "../../figma/binder/migrations.mjs";
@@ -106,7 +106,9 @@ class HctApp extends HTMLElement {
     this.theme = "system"; // app chrome color scheme: system (follows OS) | light | dark
     this.motion = "system"; // animation preference: system (respect prefers-reduced-motion) | reduced (always minimal), app pref
     this.fontMode = "premium"; // rendering-reliability pref: premium (as-designed families) | google (every family google-fonts-safe, per src/engine/font-fallbacks.mjs), app pref, NOT doc-bound
-    this._loadAppPrefs(); // persisted APP prefs (theme/motion/fontMode), loaded before setColorScheme below
+    this.shellGeometry = null; // the editor chrome's own { tier, scale, radius }: null follows the kit's doc.geometry, app pref, NOT doc-bound
+    this._geomRolesStyle = null; // the one <style id="ut-geometry-roles"> in document.head (the shell's --control-* roles), created on first render
+    this._loadAppPrefs(); // persisted APP prefs (theme/motion/fontMode/shellGeometry), loaded before setColorScheme below
     this.exportOpen = false;
     this.exportTab = "css";
     // which token SYSTEMS the Download-All .zip + the Brand-Kit MCP bundle (export-time opt-in, all on
@@ -137,11 +139,10 @@ class HctApp extends HTMLElement {
     this._applyTimeoutTimer = null;
     this.settingsOpen = false; // the Settings page (token-mapping + app prefs)
     this.settingsSection = "mapping"; // which Settings nav item is active (left-nav page layout)
-    this.geomSpecMode = "controls"; // geometry canvas: controls (live mock controls on the ramp) | tokens (editable token matrix: Base + breakpoints), geom-section sub-state
+    this.geomSpecMode = "controls"; // geometry canvas: controls (the 27 ladder cells as live mock controls) | tokens (the cell token table), geom-section sub-state
     this.geomMode = "base"; // active Geometry breakpoint mode: "base" | a doc.geometry.modes[].id | "compare" (Phase 5/5.3), ui-session
     this._geomModeOverride = null; // a Compare column forces its breakpoint mode ("base"|id) while its scene builds (mirrors _typeModeOverride), transient
-    this.geomSegment = "ramp"; // right-pane Geometry inspector tab: ramp | radius | space (ui-session)
-    this.geomSize = null; // the selected size in the ramp tab (null = none expanded), drives per-size Height tuning (the geometry analog of typeVoice)
+    this.geomSegment = "ramp"; // right-pane Geometry inspector tab: ramp (the Ladder tab) | radius | space (ui-session)
     this.typeSegment = "scale"; // right-pane Typography inspector tab: scale | fonts | specimen (ui-session)
     this.typeVoice = null; // the selected voice in the Scale tab (null = none expanded), drives per-voice tuning
     this.examplesExpanded = false; // right-pane preview gallery: collapsed to the first artifact until expanded (ui-session)
@@ -188,6 +189,7 @@ class HctApp extends HTMLElement {
     if (this._toastT) { clearTimeout(this._toastT); this._toastT = null; }
     if (this._activeDragCleanup) this._activeDragCleanup(); // an in-flight slider drag's window pointermove/up/cancel listeners
     if (this._applyTimeoutTimer) { clearTimeout(this._applyTimeoutTimer); this._applyTimeoutTimer = null; } // #465
+    if (this._geomRolesStyle) { this._geomRolesStyle.remove(); this._geomRolesStyle = null; } // the head <style> render() created
   }
 
 
@@ -582,6 +584,7 @@ class HctApp extends HTMLElement {
     this.replaceChildren(this.view === "gallery" ? this.renderGallery() : this.renderEditor());
     this.dataset.theme = this.theme;
     this.dataset.motion = this.motion; // styles.css gates transitions/animations on [data-motion]
+    this._applyShellGeometry();
     // TKT-0004: the Apply-to-Figma busy indicator, Figma-plugin-embed only (the web-app preview has
     // no Apply-to-Figma action, so this is never set there even if _applyBusy were somehow true).
     // ALSO stamped on the open export .drawer <dialog>: it's a native top-layer dialog (showModal()),
@@ -1262,19 +1265,20 @@ class HctApp extends HTMLElement {
   }
 
 
-  // _treatmentLocked(id, defaultId), true when a NON-default treatment is Pro-gated and the plan doesn't
-  // unlock it (advancedTreatments). Free keeps the default (Product type / Comfortable geometry). NO-OP until
-  // go-live (flagOf("advancedTreatments") is unlocked while TIERS_ENFORCED is off).
+  // _treatmentLocked(id, defaultId), true when a NON-default treatment or Geometry kit axis is Pro-gated and the
+  // plan doesn't unlock it (advancedTreatments). Free keeps the defaults (Product type; the product tier, md scale
+  // and round radius in Geometry). NO-OP until go-live (flagOf("advancedTreatments") is unlocked while
+  // TIERS_ENFORCED is off).
   _treatmentLocked(id, defaultId) {
     return id !== defaultId && !this.flagOf("advancedTreatments");
   }
 
 
   // _treatmentBlocked(id, defaultId), if picking `id` is Pro-gated, notify + route to Pro (web) + re-render
-  // to REVERT the <select> back to the committed treatment, and return true so the caller skips the commit.
+  // to REVERT the <select> back to the committed pick, and return true so the caller skips the commit.
   _treatmentBlocked(id, defaultId) {
     if (!this._treatmentLocked(id, defaultId)) return false;
-    this.toast("That treatment is a Pro feature, upgrade for the full set.");
+    this.toast("That option is a Pro feature, upgrade for the full set.");
     if (this.inFigma) this.render(); else { this.settingsSection = "account"; this.openSettings(); }
     return true;
   }
@@ -1286,9 +1290,12 @@ class HctApp extends HTMLElement {
   }
 
 
-  _pickGeomTreatment(id) {
-    if (this._treatmentBlocked(id, "comfortable")) return;
-    this.commit((d) => { d.geometry = { ...(d.geometry || DEFAULT_GEOMETRY), treatment: id, baseHeight: (GEOMETRY_TREATMENTS.find((x) => x.id === id) || GEOMETRY_TREATMENTS[0]).baseHeight }; });
+  // _pickGeomAxis(key, id), the Geometry kit's tier / scale / radius pick (T-0017, the Maison ladder's three
+  // axes), Pro-gated like the type treatments: each axis's DEFAULT_GEOMETRY id is free, any other is Pro.
+  _pickGeomAxis(key, id) {
+    if (!["tier", "scale", "radius"].includes(key)) return;
+    if (this._treatmentBlocked(id, DEFAULT_GEOMETRY[key])) return;
+    this.commit((d) => { d.geometry = { ...(d.geometry || DEFAULT_GEOMETRY), [key]: id }; });
   }
 
 
@@ -2289,7 +2296,7 @@ class HctApp extends HTMLElement {
     this.render();
   }
 
-  // ── persisted APP prefs (theme · motion · font mode), per-USER, not doc-bound →
+  // ── persisted APP prefs (theme · motion · font mode · shell geometry), per-USER, not doc-bound →
   // localStorage, versioned like the apply consent. Absent/invalid keys keep the constructor
   // defaults, so a fresh profile (or Figma's session-scoped iframe storage) boots identically to
   // pre-prefs builds.
@@ -2304,17 +2311,56 @@ class HctApp extends HTMLElement {
       if (scheme(p.theme)) this.theme = p.theme;
       if (p.motion === "reduced" || p.motion === "system") this.motion = p.motion;
       if (p.fontMode === "premium" || p.fontMode === "google") this.fontMode = p.fontMode;
+      const sg = p.shellGeometry;
+      if (sg && Object.prototype.hasOwnProperty.call(TIERS, sg.tier) && SCALES.includes(sg.scale) && Object.prototype.hasOwnProperty.call(RADIUS_MODES, sg.radius)) {
+        this.shellGeometry = { tier: sg.tier, scale: sg.scale, radius: sg.radius };
+      }
     } catch { /* storage unavailable / corrupt record → defaults */ }
   }
 
+  // shellGeometry is written only when set, so a record that follows the kit keeps the three chrome keys.
   _saveAppPrefs() {
-    try { localStorage.setItem(this._appPrefsKey(), JSON.stringify({ theme: this.theme, motion: this.motion, fontMode: this.fontMode })); } catch { /* storage unavailable */ }
+    const rec = { theme: this.theme, motion: this.motion, fontMode: this.fontMode, ...(this.shellGeometry ? { shellGeometry: this.shellGeometry } : {}) };
+    try { localStorage.setItem(this._appPrefsKey(), JSON.stringify(rec)); } catch { /* storage unavailable */ }
+  }
+
+  // _effectiveShellGeometry(), the chrome's { tier, scale, radius }: the Settings override, else the
+  // kit's doc.geometry, else the default (the gallery has no doc).
+  _effectiveShellGeometry() {
+    const g = this.shellGeometry || (this.doc && this.doc.geometry) || DEFAULT_GEOMETRY;
+    return {
+      tier: Object.prototype.hasOwnProperty.call(TIERS, g.tier) ? g.tier : DEFAULT_GEOMETRY.tier,
+      scale: SCALES.includes(g.scale) ? g.scale : DEFAULT_GEOMETRY.scale,
+      radius: Object.prototype.hasOwnProperty.call(RADIUS_MODES, g.radius) ? g.radius : DEFAULT_GEOMETRY.radius,
+    };
+  }
+
+  // _applyShellGeometry(), called from render(): stamps the host's [data-tier/scale/radius/size] (the
+  // resolver's context selectors) and refreshes the one head <style> holding the kit's cell primitives +
+  // resolver, unprefixed. Held on the instance, never looked up by id (the headless shim's getElementById
+  // returns null).
+  _applyShellGeometry() {
+    const g = this._effectiveShellGeometry();
+    this.dataset.tier = g.tier;
+    this.dataset.scale = g.scale;
+    this.dataset.radius = g.radius;
+    this.dataset.size = "md";
+    if (!this._geomRolesStyle) {
+      const el = document.createElement("style");
+      el.id = "ut-geometry-roles";
+      document.head.appendChild(el);
+      this._geomRolesStyle = el;
+    }
+    const sc = this.doc ? this._geomScaleFor("base") : geomScale(DEFAULT_GEOMETRY);
+    const css = geomTokensSizesCSS(sc) + "\n" + geomResolverCSS(sc);
+    if (this._geomRolesStyle.textContent !== css) this._geomRolesStyle.textContent = css;
   }
 
   _resetAppPrefs() {
     this.theme = "system";
     this.motion = "system";
     this.fontMode = "premium";
+    this.shellGeometry = null;
     try { localStorage.removeItem(this._appPrefsKey()); } catch { /* storage unavailable */ }
     this.dataset.theme = this.theme;
     setColorScheme(this.theme);

@@ -483,6 +483,22 @@ function nearestStepByHeightVM(oldHeight, currentStepHeights) {
   }
   return best;
 }
+// geometryCellOrderVM(stepHeights), mirrors mode-apply-plan.mjs#geometryCellOrder exactly: the same
+// entries, ladder cells ({tier}-{scale}-{size}) first, by tier (product, content, micro), then size
+// (md, sm, lg), then scale (md, sm, lg), every other key after them in its original order. The
+// Geometry-only tiebreak expandGeometryAliasMap feeds nearestStepByHeightVM (T-0017).
+function geometryCellOrderVM(stepHeights) {
+  const cellRe = /^(content|product|micro)-(sm|md|lg)-(sm|md|lg)$/;
+  const tierRank = { product: 0, content: 1, micro: 2 };
+  const stepRank = { md: 0, sm: 1, lg: 2 };
+  const cells = [], rest = [];
+  for (const key of Object.keys(stepHeights || {})) (cellRe.test(key) ? cells : rest).push(key);
+  const rank = (key) => { const m = cellRe.exec(key); return tierRank[m[1]] * 9 + stepRank[m[3]] * 3 + stepRank[m[2]]; };
+  cells.sort((a, b) => rank(a) - rank(b));
+  const out = {};
+  for (const key of cells.concat(rest)) out[key] = stepHeights[key];
+  return out;
+}
 // geometryPlanStepHeights(planVariables), the CURRENT plan's own {step: height} (Base mode) + the full
 // per-size FIELD list, derived from its own "size/{step}/{field}" variables, never hand-typed, so a
 // future buildSize() field/step is picked up automatically.
@@ -504,12 +520,12 @@ function geometryPlanStepHeights(planVariables) {
 // mode-apply-plan.mjs#geometrySizeAliasMap exactly: for each OLD step (already reduced to its OWN
 // height, read from the LIVE "size/{oldStep}/height" variable by the caller, this function itself
 // never touches figma), find the nearest CURRENT step by height, then expand across every FIELD.
-// `fieldRenameMap` (#498) additionally bridges OLD-SPELLED field names (e.g. ADIA's "edgePadding" ->
-// the current "padding-wide") under the SAME nearest-by-height step match.
+// `fieldRenameMap` (#498) additionally bridges OLD-SPELLED field names (e.g. ADIA's "padding" -> the
+// current "inset") under the SAME nearest-by-height step match; ties break by geometryCellOrderVM.
 function expandGeometryAliasMap(oldStepHeights, currentStepHeights, fields, fieldRenameMap) {
   const map = {};
   for (const oldStep of Object.keys(oldStepHeights)) {
-    const nearest = nearestStepByHeightVM(oldStepHeights[oldStep], currentStepHeights);
+    const nearest = nearestStepByHeightVM(oldStepHeights[oldStep], geometryCellOrderVM(currentStepHeights));
     if (!nearest) continue;
     for (const field of fields) map["size/" + oldStep + "/" + field] = "size/" + nearest + "/" + field;
     for (const oldField of Object.keys(fieldRenameMap || {})) map["size/" + oldStep + "/" + oldField] = "size/" + nearest + "/" + fieldRenameMap[oldField];
@@ -546,7 +562,7 @@ function resolveLiteralHeightVM(name, modeName, liveVarsByName, idToName, maxHop
 // function, so these mirror mode-apply-plan.mjs's pure versions but are NOT spliced into the binder).
 // See mode-apply-plan.mjs's own header comment on this bridge group for the full rationale. ──
 var TYPE_STEP_FIELD_MAP = { size: "size", lineHeight: "line-height", letterSpacing: "letter-spacing", paragraphSpacing: "paragraph-spacing" };
-var GEOMETRY_FIELD_RENAME_MAP = { edgePadding: "padding-wide", gap: "icon-gap", minWidth: "min-width", padding: "padding-narrow", radius: "pill-radius" };
+var GEOMETRY_FIELD_RENAME_MAP = { "padding-narrow": "inset", padding: "inset", font: "text", "pill-radius": "radius-control", radius: "radius-control", minWidth: "min-width" };
 // parseOldTypeStepNameVM(name), mirrors mode-apply-plan.mjs#parseOldTypeStepName exactly, INCLUDING
 // the uppercase-step requirement that keeps it from false-positive-matching an ordinary CURRENT
 // weight/<voice>/<slug> (or weight-style/…) 3-segment name, see the mjs version's own header comment.
@@ -1742,7 +1758,7 @@ async function applyFloatPlans(plans, opts) {
       // current step name (unlike #495's original scan, which skipped those as "already fine"), an
       // identity-matching step's own UNRENAMED fields (height/icon/caret) are already `wanted` names
       // and get skipped by libraryReconcile before ever consulting this map (harmless no-op self-
-      // mapping), but its OLD-SPELLED fields (edgePadding/gap/…, GEOMETRY_FIELD_RENAME_MAP) are NOT
+      // mapping), but its OLD-SPELLED fields (padding/radius/…, GEOMETRY_FIELD_RENAME_MAP) are NOT
       // wanted names, and need this SAME step entry to be bridged at all (#498's field-spelling bridge,
       // isolated from step drift, see GEOMETRY_FIELD_RENAME_MAP's own header comment).
       const oldStepHeights = {};
@@ -1761,10 +1777,24 @@ async function applyFloatPlans(plans, opts) {
 
     const current = new Set();
     for (const v of plan.variables) {
+      if (v.type === "ALIAS") continue; // written in the second pass, once every literal target exists
       const vr = byName[v.name] || figma.variables.createVariable(v.name, coll, v.type || "FLOAT");
       for (const pair of v.values) {
         const mid = modeId[pair.mode];
         if (mid != null && Number.isFinite(Number(pair.value))) vr.setValueForMode(mid, Number(pair.value));
+      }
+      byName[v.name] = vr; current.add(v.name); variables++;
+    }
+    // ALIAS variables (Geometry's per-mode control/ roles, T-0017): each mode's value NAMES a literal
+    // variable of this plan, written as a real alias. A missing target is skipped, never thrown (the
+    // applyFontPrimitivesModes idiom); the validator already rejects a plan whose target is absent.
+    for (const v of plan.variables) {
+      if (v.type !== "ALIAS") continue;
+      const vr = byName[v.name] || figma.variables.createVariable(v.name, coll, "FLOAT");
+      for (const pair of (v.values || [])) {
+        const mid = modeId[pair.mode];
+        const target = byName[pair.value];
+        if (mid != null && target) vr.setValueForMode(mid, figma.variables.createVariableAlias(target));
       }
       byName[v.name] = vr; current.add(v.name); variables++;
     }

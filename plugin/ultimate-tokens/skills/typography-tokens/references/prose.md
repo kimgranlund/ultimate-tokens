@@ -18,7 +18,7 @@ when one fits.
 | small monospace print, build hash, trace ID, technical footnote | `.type-tiny-mono-md` | **tiny-mono**, same size/flow as `tiny`, mono face; still prose (wraps), not a control label |
 | a smaller sub-heading in an alternate typeface | `.type-sub-title-md` | **sub-title**, mono-by-default face, but prose flow (it's a small heading, not a control label) |
 
-Every prose voice here rides the same **SM · MD · LG** ramp (`.type-{voice}-sm|md|lg`); default to `-md`. The two interactive voices are not prose and have six steps, see interface.md.
+Every prose voice here rides the same **SM · MD · LG** ramp (`.type-{voice}-sm|md|lg`); default to `-md`. The two interactive voices are not prose and have one step, `md`, see interface.md.
 
 ## Paragraph rhythm
 

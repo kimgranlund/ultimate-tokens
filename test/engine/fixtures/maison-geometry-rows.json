@@ -1,0 +1,677 @@
+{
+  "source": {
+    "repo": "ui-kit-maison",
+    "path": "src/foundation/geometry/geometry.ts",
+    "commit": "05d1c8c5e1b8a9f8bb90194600b049f4b6888591",
+    "sha256": "8d076600521cc028c390142ff38d59badcd4e0379b172d1b95a80a9ebfa58136"
+  },
+  "rows": [
+    {
+      "tier": "content",
+      "scale": "sm",
+      "size": "sm",
+      "height": 28,
+      "inset": 7,
+      "text": 13,
+      "icon": 14
+    },
+    {
+      "tier": "content",
+      "scale": "sm",
+      "size": "md",
+      "height": 36,
+      "inset": 9,
+      "text": 15,
+      "icon": 18
+    },
+    {
+      "tier": "content",
+      "scale": "sm",
+      "size": "lg",
+      "height": 44,
+      "inset": 11,
+      "text": 17,
+      "icon": 22
+    },
+    {
+      "tier": "content",
+      "scale": "md",
+      "size": "sm",
+      "height": 40,
+      "inset": 10,
+      "text": 16,
+      "icon": 20
+    },
+    {
+      "tier": "content",
+      "scale": "md",
+      "size": "md",
+      "height": 48,
+      "inset": 12,
+      "text": 18,
+      "icon": 24
+    },
+    {
+      "tier": "content",
+      "scale": "md",
+      "size": "lg",
+      "height": 56,
+      "inset": 14,
+      "text": 20,
+      "icon": 28
+    },
+    {
+      "tier": "content",
+      "scale": "lg",
+      "size": "sm",
+      "height": 56,
+      "inset": 14,
+      "text": 20,
+      "icon": 28
+    },
+    {
+      "tier": "content",
+      "scale": "lg",
+      "size": "md",
+      "height": 64,
+      "inset": 16,
+      "text": 22,
+      "icon": 32
+    },
+    {
+      "tier": "content",
+      "scale": "lg",
+      "size": "lg",
+      "height": 72,
+      "inset": 18,
+      "text": 24,
+      "icon": 36
+    },
+    {
+      "tier": "product",
+      "scale": "sm",
+      "size": "sm",
+      "height": 20,
+      "inset": 4.5,
+      "text": 10,
+      "icon": 11
+    },
+    {
+      "tier": "product",
+      "scale": "sm",
+      "size": "md",
+      "height": 28,
+      "inset": 7,
+      "text": 13,
+      "icon": 14
+    },
+    {
+      "tier": "product",
+      "scale": "sm",
+      "size": "lg",
+      "height": 36,
+      "inset": 9,
+      "text": 15,
+      "icon": 18
+    },
+    {
+      "tier": "product",
+      "scale": "md",
+      "size": "sm",
+      "height": 24,
+      "inset": 5.5,
+      "text": 12,
+      "icon": 13
+    },
+    {
+      "tier": "product",
+      "scale": "md",
+      "size": "md",
+      "height": 32,
+      "inset": 8,
+      "text": 14,
+      "icon": 16
+    },
+    {
+      "tier": "product",
+      "scale": "md",
+      "size": "lg",
+      "height": 40,
+      "inset": 10,
+      "text": 16,
+      "icon": 20
+    },
+    {
+      "tier": "product",
+      "scale": "lg",
+      "size": "sm",
+      "height": 28,
+      "inset": 7,
+      "text": 13,
+      "icon": 14
+    },
+    {
+      "tier": "product",
+      "scale": "lg",
+      "size": "md",
+      "height": 36,
+      "inset": 9,
+      "text": 15,
+      "icon": 18
+    },
+    {
+      "tier": "product",
+      "scale": "lg",
+      "size": "lg",
+      "height": 44,
+      "inset": 11,
+      "text": 17,
+      "icon": 22
+    },
+    {
+      "tier": "micro",
+      "scale": "sm",
+      "size": "sm",
+      "height": 12,
+      "inset": 2.5,
+      "text": 7,
+      "icon": 7
+    },
+    {
+      "tier": "micro",
+      "scale": "sm",
+      "size": "md",
+      "height": 14,
+      "inset": 3,
+      "text": 7.5,
+      "icon": 8
+    },
+    {
+      "tier": "micro",
+      "scale": "sm",
+      "size": "lg",
+      "height": 16,
+      "inset": 3.5,
+      "text": 8,
+      "icon": 9
+    },
+    {
+      "tier": "micro",
+      "scale": "md",
+      "size": "sm",
+      "height": 14,
+      "inset": 3,
+      "text": 7.5,
+      "icon": 8
+    },
+    {
+      "tier": "micro",
+      "scale": "md",
+      "size": "md",
+      "height": 16,
+      "inset": 3.5,
+      "text": 8,
+      "icon": 9
+    },
+    {
+      "tier": "micro",
+      "scale": "md",
+      "size": "lg",
+      "height": 18,
+      "inset": 4,
+      "text": 9,
+      "icon": 10
+    },
+    {
+      "tier": "micro",
+      "scale": "lg",
+      "size": "sm",
+      "height": 16,
+      "inset": 3.5,
+      "text": 8,
+      "icon": 9
+    },
+    {
+      "tier": "micro",
+      "scale": "lg",
+      "size": "md",
+      "height": 18,
+      "inset": 4,
+      "text": 9,
+      "icon": 10
+    },
+    {
+      "tier": "micro",
+      "scale": "lg",
+      "size": "lg",
+      "height": 20,
+      "inset": 4.5,
+      "text": 10,
+      "icon": 11
+    }
+  ],
+  "resolverCells": [
+    {
+      "tier": "content",
+      "scale": "sm",
+      "size": "sm",
+      "caption-text": 10,
+      "chip-height": 20,
+      "chip-inset": 4.5,
+      "chip-text": 10,
+      "icon-height-ratio": 0.5
+    },
+    {
+      "tier": "content",
+      "scale": "sm",
+      "size": "md",
+      "caption-text": 12,
+      "chip-height": 24,
+      "chip-inset": 5.5,
+      "chip-text": 12,
+      "icon-height-ratio": 0.5
+    },
+    {
+      "tier": "content",
+      "scale": "sm",
+      "size": "lg",
+      "caption-text": 14,
+      "chip-height": 32,
+      "chip-inset": 8,
+      "chip-text": 14,
+      "icon-height-ratio": 0.5
+    },
+    {
+      "tier": "content",
+      "scale": "md",
+      "size": "sm",
+      "caption-text": 13,
+      "chip-height": 28,
+      "chip-inset": 7,
+      "chip-text": 13,
+      "icon-height-ratio": 0.5
+    },
+    {
+      "tier": "content",
+      "scale": "md",
+      "size": "md",
+      "caption-text": 15,
+      "chip-height": 36,
+      "chip-inset": 9,
+      "chip-text": 15,
+      "icon-height-ratio": 0.5
+    },
+    {
+      "tier": "content",
+      "scale": "md",
+      "size": "lg",
+      "caption-text": 16,
+      "chip-height": 40,
+      "chip-inset": 10,
+      "chip-text": 16,
+      "icon-height-ratio": 0.5
+    },
+    {
+      "tier": "content",
+      "scale": "lg",
+      "size": "sm",
+      "caption-text": 16,
+      "chip-height": 40,
+      "chip-inset": 10,
+      "chip-text": 16,
+      "icon-height-ratio": 0.5
+    },
+    {
+      "tier": "content",
+      "scale": "lg",
+      "size": "md",
+      "caption-text": 18,
+      "chip-height": 48,
+      "chip-inset": 12,
+      "chip-text": 18,
+      "icon-height-ratio": 0.5
+    },
+    {
+      "tier": "content",
+      "scale": "lg",
+      "size": "lg",
+      "caption-text": 19,
+      "chip-height": 52,
+      "chip-inset": 13,
+      "chip-text": 19,
+      "icon-height-ratio": 0.5
+    },
+    {
+      "tier": "product",
+      "scale": "sm",
+      "size": "sm",
+      "caption-text": 7.5,
+      "chip-height": 14,
+      "chip-inset": 3,
+      "chip-text": 7.5,
+      "icon-height-ratio": 0.55
+    },
+    {
+      "tier": "product",
+      "scale": "sm",
+      "size": "md",
+      "caption-text": 10,
+      "chip-height": 20,
+      "chip-inset": 4.5,
+      "chip-text": 10,
+      "icon-height-ratio": 0.5
+    },
+    {
+      "tier": "product",
+      "scale": "sm",
+      "size": "lg",
+      "caption-text": 12,
+      "chip-height": 24,
+      "chip-inset": 5.5,
+      "chip-text": 12,
+      "icon-height-ratio": 0.5
+    },
+    {
+      "tier": "product",
+      "scale": "md",
+      "size": "sm",
+      "caption-text": 9,
+      "chip-height": 18,
+      "chip-inset": 4,
+      "chip-text": 9,
+      "icon-height-ratio": 0.5416666666666666
+    },
+    {
+      "tier": "product",
+      "scale": "md",
+      "size": "md",
+      "caption-text": 12,
+      "chip-height": 24,
+      "chip-inset": 5.5,
+      "chip-text": 12,
+      "icon-height-ratio": 0.5
+    },
+    {
+      "tier": "product",
+      "scale": "md",
+      "size": "lg",
+      "caption-text": 13,
+      "chip-height": 28,
+      "chip-inset": 7,
+      "chip-text": 13,
+      "icon-height-ratio": 0.5
+    },
+    {
+      "tier": "product",
+      "scale": "lg",
+      "size": "sm",
+      "caption-text": 10,
+      "chip-height": 20,
+      "chip-inset": 4.5,
+      "chip-text": 10,
+      "icon-height-ratio": 0.5
+    },
+    {
+      "tier": "product",
+      "scale": "lg",
+      "size": "md",
+      "caption-text": 12,
+      "chip-height": 24,
+      "chip-inset": 5.5,
+      "chip-text": 12,
+      "icon-height-ratio": 0.5
+    },
+    {
+      "tier": "product",
+      "scale": "lg",
+      "size": "lg",
+      "caption-text": 14,
+      "chip-height": 32,
+      "chip-inset": 8,
+      "chip-text": 14,
+      "icon-height-ratio": 0.5
+    },
+    {
+      "tier": "micro",
+      "scale": "sm",
+      "size": "sm",
+      "caption-text": 7,
+      "chip-height": 12,
+      "chip-inset": 2.5,
+      "chip-text": 7,
+      "icon-height-ratio": 0.5833333333333334
+    },
+    {
+      "tier": "micro",
+      "scale": "sm",
+      "size": "md",
+      "caption-text": 7,
+      "chip-height": 12,
+      "chip-inset": 2.5,
+      "chip-text": 7,
+      "icon-height-ratio": 0.5714285714285714
+    },
+    {
+      "tier": "micro",
+      "scale": "sm",
+      "size": "lg",
+      "caption-text": 7,
+      "chip-height": 12,
+      "chip-inset": 2.5,
+      "chip-text": 7,
+      "icon-height-ratio": 0.5625
+    },
+    {
+      "tier": "micro",
+      "scale": "md",
+      "size": "sm",
+      "caption-text": 7,
+      "chip-height": 12,
+      "chip-inset": 2.5,
+      "chip-text": 7,
+      "icon-height-ratio": 0.5714285714285714
+    },
+    {
+      "tier": "micro",
+      "scale": "md",
+      "size": "md",
+      "caption-text": 7,
+      "chip-height": 12,
+      "chip-inset": 2.5,
+      "chip-text": 7,
+      "icon-height-ratio": 0.5625
+    },
+    {
+      "tier": "micro",
+      "scale": "md",
+      "size": "lg",
+      "caption-text": 7.5,
+      "chip-height": 14,
+      "chip-inset": 3,
+      "chip-text": 7.5,
+      "icon-height-ratio": 0.5555555555555556
+    },
+    {
+      "tier": "micro",
+      "scale": "lg",
+      "size": "sm",
+      "caption-text": 7,
+      "chip-height": 12,
+      "chip-inset": 2.5,
+      "chip-text": 7,
+      "icon-height-ratio": 0.5625
+    },
+    {
+      "tier": "micro",
+      "scale": "lg",
+      "size": "md",
+      "caption-text": 7.5,
+      "chip-height": 14,
+      "chip-inset": 3,
+      "chip-text": 7.5,
+      "icon-height-ratio": 0.5555555555555556
+    },
+    {
+      "tier": "micro",
+      "scale": "lg",
+      "size": "lg",
+      "caption-text": 7.5,
+      "chip-height": 14,
+      "chip-inset": 3,
+      "chip-text": 7.5,
+      "icon-height-ratio": 0.55
+    }
+  ],
+  "ladder": [
+    {
+      "height": 96,
+      "inset": 24,
+      "text": 30,
+      "icon": 48
+    },
+    {
+      "height": 92,
+      "inset": 23,
+      "text": 29,
+      "icon": 46
+    },
+    {
+      "height": 88,
+      "inset": 22,
+      "text": 28,
+      "icon": 44
+    },
+    {
+      "height": 84,
+      "inset": 21,
+      "text": 27,
+      "icon": 42
+    },
+    {
+      "height": 80,
+      "inset": 20,
+      "text": 26,
+      "icon": 40
+    },
+    {
+      "height": 76,
+      "inset": 19,
+      "text": 25,
+      "icon": 38
+    },
+    {
+      "height": 72,
+      "inset": 18,
+      "text": 24,
+      "icon": 36
+    },
+    {
+      "height": 68,
+      "inset": 17,
+      "text": 23,
+      "icon": 34
+    },
+    {
+      "height": 64,
+      "inset": 16,
+      "text": 22,
+      "icon": 32
+    },
+    {
+      "height": 60,
+      "inset": 15,
+      "text": 21,
+      "icon": 30
+    },
+    {
+      "height": 56,
+      "inset": 14,
+      "text": 20,
+      "icon": 28
+    },
+    {
+      "height": 52,
+      "inset": 13,
+      "text": 19,
+      "icon": 26
+    },
+    {
+      "height": 48,
+      "inset": 12,
+      "text": 18,
+      "icon": 24
+    },
+    {
+      "height": 44,
+      "inset": 11,
+      "text": 17,
+      "icon": 22
+    },
+    {
+      "height": 40,
+      "inset": 10,
+      "text": 16,
+      "icon": 20
+    },
+    {
+      "height": 36,
+      "inset": 9,
+      "text": 15,
+      "icon": 18
+    },
+    {
+      "height": 32,
+      "inset": 8,
+      "text": 14,
+      "icon": 16
+    },
+    {
+      "height": 28,
+      "inset": 7,
+      "text": 13,
+      "icon": 14
+    },
+    {
+      "height": 24,
+      "inset": 5.5,
+      "text": 12,
+      "icon": 13
+    },
+    {
+      "height": 22,
+      "inset": 5,
+      "text": 11,
+      "icon": 12
+    },
+    {
+      "height": 20,
+      "inset": 4.5,
+      "text": 10,
+      "icon": 11
+    },
+    {
+      "height": 18,
+      "inset": 4,
+      "text": 9,
+      "icon": 10
+    },
+    {
+      "height": 16,
+      "inset": 3.5,
+      "text": 8,
+      "icon": 9
+    },
+    {
+      "height": 14,
+      "inset": 3,
+      "text": 7.5,
+      "icon": 8
+    },
+    {
+      "height": 12,
+      "inset": 2.5,
+      "text": 7,
+      "icon": 7
+    }
+  ]
+}

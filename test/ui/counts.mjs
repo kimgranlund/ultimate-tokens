@@ -17,5 +17,5 @@ export const CATEGORY_VOLUMES = 12;         // volume headers grouping a categor
 export const CORE_RAMP_STOPS = 19;          // the core (display) ramp, 19 stops
 export const EXTENDED_RAMP_STOPS = 25;      // the export-only extended ramp, core stops + half-steps
 export const VOICES = 15;                   // named typography voices (Display … UI-widget)
-export const TYPE_STEPS = 51;               // total specimen lines across all voices (13 voices × 3 + 2 interactive voices × 6)
-export const GEOM_SIZES = 6;                // control-ramp sizes (XS..2XL)
+export const TYPE_STEPS = 41;               // total specimen lines across all voices (13 voices × 3 + 2 interactive voices × 1)
+export const GEOM_SIZES = 27;               // (ladder cells, tier × scale × size)

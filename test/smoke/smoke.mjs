@@ -15,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { CATEGORIES, CATEGORY_PRESETS, CATEGORY_VOLUMES, VOICES, TYPE_STEPS, CORE_RAMP_STOPS, GEOM_SIZES } from "../ui/counts.mjs";
 import { launchChrome, onExit } from "./chrome.mjs";
+import { geomScale, geomTokensCSS, TIERS, SCALES, SIZES, RADIUS_MODES } from "../../src/engine/geometry.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "../..");
@@ -193,9 +194,9 @@ try {
   console.log("  · screenshot → smoke-out/settings.png");
   await evalJS(`${el}.closeSettings()`); await sleep(120);
 
-  // Typography SECTION: the app-header switcher flips this.section → the full 51-step canvas specimen.
+  // Typography SECTION: the app-header switcher flips this.section → the full 41-step canvas specimen.
   await evalJS(`${el}.setSection("typography")`); await sleep(300);
-  ok(await evalJS(`(()=>{return ${el}.section==="typography" && ${el}.querySelectorAll(".compare-col")[0].querySelectorAll(".type-spec-line").length===${TYPE_STEPS} && ${el}.querySelectorAll(".compare-col")[0].querySelectorAll(".type-spec-group").length===${VOICES}})()`), `Typography section shows the full ${TYPE_STEPS}-step specimen (13×3 + 2×6) across the ${VOICES} named voices`);
+  ok(await evalJS(`(()=>{return ${el}.section==="typography" && ${el}.querySelectorAll(".compare-col")[0].querySelectorAll(".type-spec-line").length===${TYPE_STEPS} && ${el}.querySelectorAll(".compare-col")[0].querySelectorAll(".type-spec-group").length===${VOICES}})()`), `Typography section shows the full ${TYPE_STEPS}-step specimen (13×3 + 2×1) across the ${VOICES} named voices`);
   ok(await evalJS(`(()=>{const c=${el}.querySelectorAll(".canvas-compare .compare-col");return c.length===2 && getComputedStyle(c[0]).colorScheme.includes("light") && getComputedStyle(c[1]).colorScheme.includes("dark")})()`), "Typography renders Light + Dark side by side (two scheme-forced columns, light first)");
   const typSchemeShot = await send("Page.captureScreenshot", { format: "png" });
   writeFileSync(resolve(OUT, "scheme-typography.png"), Buffer.from(typSchemeShot.data, "base64"));
@@ -241,25 +242,43 @@ try {
   await evalJS(`${el}.commit((d)=>{ d.type = { treatment: "product", bodyBase: 16 }; }); ${el}.typeMode="base"`); await sleep(120);
   await evalJS(`${el}.setSection("color")`); await sleep(120);
 
-  // Geometry SECTION: the app-header switcher flips this.section → the full dimensional dataset (the 6-step
-  // control ramp on the centering law + the radius + space ladders), left analysis rail + right inspector.
+  // Geometry SECTION: the app-header switcher flips this.section → the full dimensional dataset (the 27-cell
+  // control ladder on the centering law + the radius + space ladders), left analysis rail + right inspector.
   await evalJS(`${el}.setSection("geometry")`); await sleep(300);
-  ok(await evalJS(`(()=>{return ${el}.section==="geometry" && ${el}.querySelectorAll(".compare-col")[0].querySelectorAll(".geom-spec-line").length===${GEOM_SIZES}})()`), `Geometry section shows the ${GEOM_SIZES}-step control ramp (XS..2XL) on the canvas`);
+  ok(await evalJS(`(()=>{return ${el}.section==="geometry" && ${el}.querySelectorAll(".compare-col")[0].querySelectorAll(".geom-spec-line").length===${GEOM_SIZES}})()`), `Geometry section shows the ${GEOM_SIZES}-cell control ladder (tier × scale × size) on the canvas`);
   ok(await evalJS(`(()=>{const c=${el}.querySelectorAll(".canvas-compare .compare-col");return c.length===2 && getComputedStyle(c[0]).colorScheme.includes("light") && getComputedStyle(c[1]).colorScheme.includes("dark")})()`), "Geometry renders Light + Dark side by side (two scheme-forced columns, light first)");
   const geoSchemeShot = await send("Page.captureScreenshot", { format: "png" });
   writeFileSync(resolve(OUT, "scheme-geometry.png"), Buffer.from(geoSchemeShot.data, "base64"));
   console.log("  · screenshot → smoke-out/scheme-geometry.png");
   ok(await evalJS(`(()=>{return !!${el}.querySelector(".geom-spec .geom-shared-note") && ${el}.querySelectorAll(".an-card").length>=4 && (!!${el}.querySelector(".tyi-voices") || !!${el}.querySelector(".insp-title"))})()`), "Geometry section: left-rail analysis cards + right-pane inspector + the type-composition note render");
-  ok(await evalJS(`(()=>{const b=${el}.querySelector(".geom-ctl");if(!b)return false;const r=b.getBoundingClientRect();return r.height>=18 && r.height<=80})()`), "Geometry specimen renders a real mock control box on the ramp");
+  ok(await evalJS(`(()=>{const b=${el}.querySelector(".geom-ctl");if(!b)return false;const r=b.getBoundingClientRect();return r.height>=18 && r.height<=80})()`), "Geometry specimen renders a real mock control box on the ladder");
   const geoShot = await send("Page.captureScreenshot", { format: "png" });
   writeFileSync(resolve(OUT, "geometry.png"), Buffer.from(geoShot.data, "base64"));
   console.log("  · screenshot → smoke-out/geometry.png");
 
-  // Geometry breakpoint MODES (Phase 5.2): the Mode control adds a named baseHeight variant; switching it
-  // re-resolves the size ramp at the mode's base control height.
-  await evalJS(`${el}.addGeomMode(); ${el}._setActiveGeomBaseHeight(40)`); await sleep(200);
-  ok(await evalJS(`(()=>{return ${el}.doc.geometry.modes && ${el}.doc.geometry.modes.length===1 && [...${el}.querySelectorAll('[data-fk^="gmode:"]')].length>=2 && ${el}._activeGeomScale().baseHeight===40})()`), "Geometry breakpoint mode: + adds a mode, the Mode control shows Base + it, and the ramp re-resolves at the mode's base height");
-  await evalJS(`${el}.commit((d)=>{ d.geometry = { treatment: "comfortable", baseHeight: 28 }; }); ${el}.geomMode="base"`); await sleep(120);
+  // Geometry breakpoint MODES (Phase 5.2): the Mode control adds a named mode on the scale axis; picking its
+  // scale re-resolves the kit at that scale.
+  await evalJS(`${el}.addGeomMode(); ${el}._setActiveGeomScaleId("lg")`); await sleep(200);
+  ok(await evalJS(`(()=>{return ${el}.doc.geometry.modes && ${el}.doc.geometry.modes.length===1 && [...${el}.querySelectorAll('[data-fk^="gmode:"]')].length>=2 && ${el}._activeGeomScale().scale==="lg"})()`), "Geometry breakpoint mode: + adds a mode, the Mode control shows Base + it, and the kit re-resolves at the mode's scale");
+  await evalJS(`${el}.commit((d)=>{ d.geometry = { tier: "product", scale: "md", radius: "round", spaceBase: 4 }; }); ${el}.geomMode="base"`); await sleep(120);
+
+  // Geometry RESOLVER (T-0017): the exported geometry.css's context cascade can only run in a real
+  // browser. Maison's 108-case spec shape (tests/first-wave-foundation.spec.js:60): every cell x every
+  // radius mode, nested tier+decoy size+radius > scale > size so the nearest ancestor must win on each
+  // axis. The roles are read through the properties that consume them (an unregistered custom
+  // property's computed value is its unevaluated calc text), in an iframe so the app's own resolver
+  // stays out of it. Expected values are the engine's cells at that radius mode.
+  const geomCases = Object.keys(TIERS).flatMap((tier) => SCALES.flatMap((scale) => Object.keys(SIZES).flatMap((size) => Object.keys(RADIUS_MODES).map((radius) => {
+    const c = geomScale({ radius }).cells[`${tier}-${scale}-${size}`];
+    return { tier, scale, size, radius, height: c.height, radiusControl: c.radiusControl };
+  }))));
+  const geomDoc = `<!doctype html><style>${geomTokensCSS(geomScale({}))}</style>` + geomCases.map((c, i) => `<div data-tier="${c.tier}" data-size="lg" data-radius="${c.radius}"><div data-scale="${c.scale}"><div data-size="${c.size}"><i id="g${i}" style="display:block;width:100px;height:var(--control-height);border-top-left-radius:var(--radius-control)"></i></div></div></div>`).join("");
+  const geomGot = await evalJS(`(async()=>{const f=document.createElement("iframe");f.style.cssText="position:fixed;left:0;top:0;width:200px;height:200px;visibility:hidden";await new Promise((r)=>{f.onload=r;f.srcdoc=${JSON.stringify(geomDoc)};document.body.appendChild(f);});const d=f.contentDocument,w=f.contentWindow;const out=[];for(let i=0;i<${geomCases.length};i++){const cs=w.getComputedStyle(d.getElementById("g"+i));out.push([parseFloat(cs.height),parseFloat(cs.borderTopLeftRadius)]);}f.remove();return out;})()`, true);
+  const geomBad = geomCases.map((c, i) => ({ c, got: (geomGot || [])[i] || [NaN, NaN] }))
+    .filter(({ c, got }) => !(Math.abs(got[0] - c.height) < 0.01 && Math.abs(got[1] - c.radiusControl) < 0.01))
+    .map(({ c, got }) => `${c.tier}-${c.scale}-${c.size}/${c.radius}: --control-height ${got[0]} (want ${c.height}), --radius-control ${got[1]} (want ${c.radiusControl})`);
+  geomBad.slice(0, 8).forEach((m) => console.log("    " + m));
+  ok(geomCases.length === 108 && Array.isArray(geomGot) && geomGot.length === 108 && geomBad.length === 0, `geometry.css resolver: all 108 nested cases (27 cells x 4 radius modes) resolve --control-height and --radius-control to the engine's cell values${geomBad.length ? ` (${geomBad.length} off)` : ""}`);
   await evalJS(`${el}.setSection("color")`); await sleep(120);
 
   const shot = await send("Page.captureScreenshot", { format: "png" });

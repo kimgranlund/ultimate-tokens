@@ -1011,7 +1011,8 @@ export function exportPanda(state, opts = {}, derived) {
       const voiceKey = slug(voice);
       const fontFamily = `{fonts.${ts.roleOf[voice]}}`;
       const style = {};
-      for (const rank of ["SM", "MD", "LG"]) {
+      // a voice emits only its OWN ranks (the two interactive voices carry MD alone, T-0017).
+      for (const rank of ["SM", "MD", "LG"].filter((r) => steps[r])) {
         const s = steps[rank];
         style[rank.toLowerCase()] = {
           value: {

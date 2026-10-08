@@ -13,13 +13,14 @@ ok(T.TYPE_TREATMENTS.length === 5, `5 treatments (got ${T.TYPE_TREATMENTS.length
 ok(T.TYPE_TREATMENTS.every((t) => t.fonts && GROUPS.every((c) => t.categories[c])), "every treatment has the 15 voices (Display · Headline · Sub-heading · Title · Sub-title · Lead · Body · Body-mono · Label · Label-mono · Kicker · Tiny · Tiny-mono · UI-control · UI-widget) + fonts");
 ok(T.TYPE_TREATMENTS.some((t) => t.id === "product") && T.TYPE_TREATMENTS.some((t) => t.id === "luxury") && T.TYPE_TREATMENTS.some((t) => t.id === "editorial"), "has product/luxury/editorial");
 
-// ── every voice is now a FIXED, uniform 3-step SM/MD/LG ramp (2026-07-13, was 5/3/8 steps by voice) ──
+// ── every voice is now a FIXED, uniform 3-step SM/MD/LG ramp (2026-07-13, was 5/3/8 steps by voice), except the
+// two interactive voices, which carry ONE derived step, MD, sized from the height-indexed UI text table (T-0017) ──
 {
   const s = T.typeScale({ treatment: "product", bodyBase: 16 });
   const c = s.categories;
   ok(Object.keys(c).length === 15, `15 voices total (got ${Object.keys(c).length})`);
   for (const v of GROUPS) {
-    const want = v === "UI-control" || v === "UI-widget" ? "XS,SM,MD,LG,XL,2XL" : "SM,MD,LG"; // the interactive voices ride the FULL ramp (2026-07-16)
+    const want = v === "UI-control" || v === "UI-widget" ? "MD" : "SM,MD,LG"; // the interactive voices carry one derived step (T-0017)
     ok(Object.keys(c[v]).join() === want, `${v} rides its ramp ${want} (got ${Object.keys(c[v])})`);
   }
 }
@@ -81,7 +82,7 @@ ok(T.TYPE_TREATMENTS.some((t) => t.id === "product") && T.TYPE_TREATMENTS.some((
   ok(s.Tiny.MD.lineHeight === Math.round(s.Tiny.MD.size * 1.5), "Tiny uses prose leading 1.5 (not the ui box leading 1.4)");
   ok(s.Tiny.MD.paragraphSpacing === Math.round(s.Tiny.MD.size * 0.75), `Tiny paragraphSpacing = prose 0.75×size (not the ui box 1.0×), got ${s.Tiny.MD.paragraphSpacing} for size ${s.Tiny.MD.size}`);
   ok(s.Kicker.MD.paragraphSpacing === s.Kicker.MD.size && s["UI-control"].MD.paragraphSpacing === s["UI-control"].MD.size && s["UI-widget"].MD.paragraphSpacing === s["UI-widget"].MD.size, "the BOX voices (Kicker/UI-control/UI-widget) paragraphSpacing = 1.0×size");
-  ok(s.Kicker.MD.singleLineHeight === s.Kicker.MD.size && s["UI-control"].MD.singleLineHeight === s["UI-control"].MD.size && s["UI-widget"].SM.singleLineHeight === s["UI-widget"].SM.size, "singleLineHeight = size on the BOX voices Kicker/UI-control/UI-widget (Label/Body-mono/Label-mono went prose 2026-07-16)");
+  ok(s.Kicker.MD.singleLineHeight === s.Kicker.MD.size && s["UI-control"].MD.singleLineHeight === s["UI-control"].MD.size && s["UI-widget"].MD.singleLineHeight === s["UI-widget"].MD.size, "singleLineHeight = size on the BOX voices Kicker/UI-control/UI-widget (Label/Body-mono/Label-mono went prose 2026-07-16)");
   ok(GROUPS.filter((v) => !["Kicker", "UI-control", "UI-widget"].includes(v)).every((v) => !("singleLineHeight" in s[v].MD)), "singleLineHeight is ABSENT on every PROSE voice, incl. Label/Body-mono/Label-mono (prose since 2026-07-16) and Tiny/Sub-title; the BOX set is exactly Kicker/UI-control/UI-widget");
   // Title/Sub-heading ride the heading role → inherit each treatment's display face (e.g. serif in Editorial)
   const ed = T.typeScale({ treatment: "editorial" });
@@ -119,7 +120,9 @@ ok(T.TYPE_TREATMENTS.some((t) => t.id === "product") && T.TYPE_TREATMENTS.some((
       const sc = T.typeScale({ treatment: t, bodyBase: base });
       for (const [voice, steps] of Object.entries(sc.categories)) {
         const sizes = Object.values(steps).map((x) => x.size);
-        ok(sizes.every(onLadder), `${t} @${base} ${voice}: every SCALED size is on the ladder (${sizes})`);
+        // the two interactive voices take uiText's half-pixel grid instead of the ladder (T-0017, the ui-text-table group)
+        if (voice === "UI-control" || voice === "UI-widget") ok(sizes.join() === String(T.uiText(voice === "UI-control" ? 32 : 24, base / 16)), `${t} @${base} ${voice}: its one size is uiText at its height (${sizes})`);
+        else ok(sizes.every(onLadder), `${t} @${base} ${voice}: every SCALED size is on the ladder (${sizes})`);
         ok(sizes.every((v, i) => i === 0 || v > sizes[i - 1]), `${t} @${base} ${voice}: strictly increases (${sizes})`);
       }
     }
@@ -144,6 +147,34 @@ ok(T.TYPE_TREATMENTS.some((t) => t.id === "product") && T.TYPE_TREATMENTS.some((
   ok(a.categories.Body.MD.size === 16, `bodyBase 16 (identity) → Body MD 16, unscaled (got ${a.categories.Body.MD.size})`);
   ok(b.categories.Body.MD.size > a.categories.Body.MD.size, `a larger bodyBase scales Body up too (got ${b.categories.Body.MD.size})`);
   ok(b.categories.Display.LG.size > a.categories.Display.LG.size, "a larger bodyBase scales Display up too");
+}
+
+// ── ui-text-table (T-0017): Type owns the height-indexed UI text table, the Maison CSV height-to-text column
+// verbatim; uiText scales a row onto the half-pixel grid (identity at factor 1); typeScale exposes all 25 rows
+// at its factor; the two interactive voices read their one MD size from it (UI-control at 32, UI-widget at 24) ──
+{
+  const want = { 96: 30, 92: 29, 88: 28, 84: 27, 80: 26, 76: 25, 72: 24, 68: 23, 64: 22, 60: 21, 56: 20, 52: 19, 48: 18, 44: 17, 40: 16, 36: 15, 32: 14, 28: 13, 24: 12, 22: 11, 20: 10, 18: 9, 16: 8, 14: 7.5, 12: 7 };
+  ok(Object.keys(T.UI_TEXT).length === 25, `ui-text-table: UI_TEXT has 25 rows (got ${Object.keys(T.UI_TEXT).length})`);
+  ok(JSON.stringify(T.UI_TEXT) === JSON.stringify(want), `ui-text-table: UI_TEXT is the CSV column verbatim (got ${JSON.stringify(T.UI_TEXT)})`);
+  ok(Object.entries(want).every(([h, v]) => T.uiText(Number(h)) === v), "ui-text-table: uiText(h) at factor 1 is the table value itself (identity)");
+  const thrown = (h) => { try { T.uiText(h); return null; } catch (e) { return e; } };
+  ok([30, 0, 100, 13, "x"].every((h) => thrown(h) instanceof RangeError), "ui-text-table: an off-table height throws a RangeError");
+  // factor 1.125 (bodyBase 18) rounds onto the half-pixel grid: 14·1.125 = 15.75 → 16, 12·1.125 = 13.5, 7.5·1.125 = 8.4375 → 8.5, 7·1.125 = 7.875 → 8
+  ok(T.uiText(32, 1.125) === 16 && T.uiText(24, 1.125) === 13.5 && T.uiText(14, 1.125) === 8.5 && T.uiText(12, 1.125) === 8, `ui-text-table: factor 1.125 rounds to the half pixel (got ${[32, 24, 14, 12].map((h) => T.uiText(h, 1.125))})`);
+  const s = T.typeScale({ treatment: "product", bodyBase: 16 });
+  ok(Object.keys(s.uiText).length === 25 && Object.entries(want).every(([h, v]) => s.uiText[h] === v), "ui-text-table: typeScale().uiText maps all 25 heights at factor 1");
+  ok(s.categories["UI-control"].MD.size === 14 && s.categories["UI-widget"].MD.size === 12, `ui-text-table: UI-control MD = uiText(32) = 14, UI-widget MD = uiText(24) = 12 (got ${s.categories["UI-control"].MD.size}, ${s.categories["UI-widget"].MD.size})`);
+  const s18 = T.typeScale({ treatment: "product", bodyBase: 18 });
+  ok(Object.entries(want).every(([h]) => s18.uiText[h] === T.uiText(Number(h), 1.125)), "ui-text-table: typeScale({ bodyBase: 18 }).uiText is every row at factor 1.125");
+  ok(s18.categories["UI-control"].MD.size === 16 && s18.categories["UI-widget"].MD.size === 13.5, `ui-text-table: at factor 1.125 the UI voices are uiText(32) = 16 and uiText(24) = 13.5 (got ${s18.categories["UI-control"].MD.size}, ${s18.categories["UI-widget"].MD.size})`);
+  // modeFactor never applies to uiText or the UI voices (frozen on every breakpoint tier)
+  const mob = T.typeScale({ treatment: "product", bodyBase: 16, modeFactor: 2 / 3 });
+  ok(JSON.stringify(mob.uiText) === JSON.stringify(s.uiText) && mob.categories["UI-control"].MD.size === 14 && mob.categories["UI-widget"].MD.size === 12, "ui-text-table: modeFactor never moves uiText or the UI voices");
+  // character fields are unchanged: weight, tracking, leading, case, box (singleLineHeight)
+  const uc = s.categories["UI-control"].MD;
+  ok(uc.weight === 440 && Math.abs(uc.leadingRatio - 1.4) < 1e-9 && Math.abs(uc.trackingRatio - 0.006) < 1e-9 && uc.textTransform === "none" && uc.singleLineHeight === 14, "ui-text-table: UI-control keeps weight 440, leading 1.4, tracking 0.006em, no case, box singleLineHeight");
+  // a per-cell override on the one step still replaces it
+  ok(T.typeScale({ treatment: "product", bodyBase: 16, overrides: { "UI-control|MD": 15 } }).categories["UI-control"].MD.size === 15, "ui-text-table: a UI-control|MD override still replaces the derived size");
 }
 
 // ── unknown treatment falls back to the first ──

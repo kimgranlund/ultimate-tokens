@@ -21,7 +21,7 @@ import { motionTokens, MOTION_EASING, MOTION_DURATION, MOTION_NEVER } from "./mo
 import { oklchToSrgb8, hexToSrgb8, pyRound, dsBundleGates } from "./ds-gates.js"; // §8 carrier primitives + the gate itself, the receipt cites the SAME run the gate measures
 import { resolvedFontFor } from "./type.mjs"; // per-voice font resolution (TKT-0002), a voice's own override, else its role's shared default
 import { googleSafeFontFor } from "./font-fallbacks.mjs"; // the google-fonts-safe substitute lookup, for dsFontStack's optional fontMode
-import { RAMP_LADDER, mdAnchor, sizeAnchor, orderedSizeNames } from "./geometry.mjs"; // the linear-ladder size-anchor helpers + explicit ordering (issue #483, the ladder's numeric step names trap a bare Object.keys/`.MD`/`.SM`/`.XS` access)
+import { mdAnchor, sizeAnchor, orderedSizeNames } from "./geometry.mjs"; // the cell anchors (legacy step names to ladder cells) + the canonical cell order (T-0017)
 import { derivedAll, roleOklch, hexOf, hex8, relLumExp, cssPrefixOf, dialogBackdropOklch, whiteOklch, blackOklch, exportShadcn, isDataPalette, oklchStr, EXPORT_SCHEMA_VERSION } from "./exports.js";
 import { PRIME_STEPS, primeSlug } from "./prime.mjs"; // the seven step names, brightest..dimmest (REQ-050/054)
 
@@ -247,16 +247,16 @@ function dsSemanticLayer(state) {
   }
   return { semantic, semanticDark };
 }
-// dsGeometryLayer, the FULL geometry system (the control size ramp + composition ladders), beyond the
-// bare `spacing`/`radii` arrays: sizes (per-size height/icon/caret/font/gap/the four pads/
-// radiusPill/minWidth), insets, gaps, borders, focus ring, density. All px numbers (unit stated in $note).
+// dsGeometryLayer, the FULL geometry system (the Maison ladder's cells + composition ladders), beyond
+// the bare `spacing`/`radii` arrays: cells (all 27, keyed `{tier}-{scale}-{size}`, each with height/
+// inset/text/icon/captionText/chip*/iconRatio/minWidth/radiusControl/Mark/Inset/Card), insets, gaps,
+// borders, focus ring. px numbers (unit stated in $note), except the unitless iconRatio.
 function dsGeometryLayer(geomSc) {
   if (!geomSc) return null;
-  const sizes = {};
-  if (geomSc.sizes) for (const [k, v] of Object.entries(geomSc.sizes)) sizes[k.toLowerCase()] = { ...v };
+  const cells = {};
+  for (const name of orderedSizeNames(geomSc)) cells[name] = { ...geomSc.cells[name] };
   return {
-    density: geomSc.density, radiusDefault: geomSc.radiusDefault,
-    sizes, insets: { ...geomSc.insets }, gaps: { ...geomSc.gaps },
+    cells, insets: { ...geomSc.insets }, gaps: { ...geomSc.gaps },
     borders: { ...geomSc.borders }, focus: { ...geomSc.focus },
   };
 }
@@ -272,7 +272,7 @@ export function exportDesignSystemTokens(state, typeSc, geomSc) {
   for (const t of ds.tokens) { colors[t.name] = t.light.oklch; colorsDark[t.name] = t.dark.oklch; }
   if (ds.aliasDistinct) { colors[ds.alias.name] = ds.alias.light.oklch; colorsDark[ds.alias.name] = ds.alias.dark.oklch; }
   const { semantic, semanticDark } = dsSemanticLayer(state);
-  const note = `Design System tokens.json, Ultimate Tokens naming grammar: {family}[-slot], families ${ds.families.join("/")}; CSS prefix --${cssPrefixOf(state)}-. Two color tiers: \`colors\`/\`colorsDark\` are the reduced consumption grammar (the set the DESIGN.md teaches, the kit's resolved role values VERBATIM, per its onColorMode setting; contrast is measured and disclosed in README.md); \`semantic\`/\`semanticDark\` are the FULL semantic role layer (every role of every palette) for consumers that need the complete set. \`prime\` is a THIRD tier: every enabled palette's own seven identity swatches (brightest..dimmest, keyed by step name), primitives-tier and mode-independent, the SAME seven values in light and dark, never subject to onColorMode. Values are high-resolution OKLCH (never bare hex); alpha < 1 rides as \`oklch(L C H / A)\`. type.scale lineHeight is a unitless multiplier of size (leading factor, never px) and letterSpacing, where present, an em factor. \`geometry\` is the full dimensional system (control size ramp, insets, gaps, borders, focus ring; px numbers); \`spacing\`/\`radii\` remain the compact ladders. \`icons\` names the icon library + its stroke variant this kit binds to, with the size ramp it renders at (from geometry), bind to it, never substitute another set. \`motion\` carries the easing curves + the ms duration ladder: bind these, never type a raw ms or bezier; entrances decelerate, exits accelerate and run faster.`;
+  const note = `Design System tokens.json, Ultimate Tokens naming grammar: {family}[-slot], families ${ds.families.join("/")}; CSS prefix --${cssPrefixOf(state)}-. Two color tiers: \`colors\`/\`colorsDark\` are the reduced consumption grammar (the set the DESIGN.md teaches, the kit's resolved role values VERBATIM, per its onColorMode setting; contrast is measured and disclosed in README.md); \`semantic\`/\`semanticDark\` are the FULL semantic role layer (every role of every palette) for consumers that need the complete set. \`prime\` is a THIRD tier: every enabled palette's own seven identity swatches (brightest..dimmest, keyed by step name), primitives-tier and mode-independent, the SAME seven values in light and dark, never subject to onColorMode. Values are high-resolution OKLCH (never bare hex); alpha < 1 rides as \`oklch(L C H / A)\`. type.scale lineHeight is a unitless multiplier of size (leading factor, never px) and letterSpacing, where present, an em factor. \`geometry\` is the full dimensional system (the 27 ladder cells keyed {tier}-{scale}-{size}, insets, gaps, borders, focus ring; px numbers, iconRatio unitless); \`spacing\`/\`radii\` remain the compact ladders. \`icons\` names the icon library + its stroke variant this kit binds to, with the icon size of every ladder cell (from geometry), bind to it, never substitute another set. \`motion\` carries the easing curves + the ms duration ladder: bind these, never type a raw ms or bezier; entrances decelerate, exits accelerate and run faster.`;
   return JSON.stringify({
     $generator: "Ultimate Tokens",
     $schemaVersion: EXPORT_SCHEMA_VERSION,
@@ -287,13 +287,13 @@ export function exportDesignSystemTokens(state, typeSc, geomSc) {
   }, null, 2);
 }
 
-// dsIconLayer, the ICON facet: the library + its stroke/fill variant the kit binds to, plus the SIZE
-// ramp it renders at (read from geometry, never redefined here, `sizes.<size>.icon` composes with the
-// control heights by the centering law). Always present: an agent must never have to pick a library.
+// dsIconLayer, the ICON facet: the library + its stroke/fill variant the kit binds to, plus the icon size
+// of every ladder cell (read from geometry, never redefined here, a cell's `icon` composes with its height
+// by the centering law). Always present: an agent must never have to pick a library.
 function dsIconLayer(state, geomSc) {
   const ic = iconSystem((state && state.icons) || {});
   const sizes = {};
-  if (geomSc && geomSc.sizes) for (const [k, v] of Object.entries(geomSc.sizes)) if (Number.isFinite(v.icon)) sizes[k.toLowerCase()] = v.icon;
+  if (geomSc && geomSc.cells) for (const name of orderedSizeNames(geomSc)) if (Number.isFinite(geomSc.cells[name].icon)) sizes[name] = geomSc.cells[name].icon;
   return { family: ic.name, ...(ic.variant ? { variant: ic.variant } : {}), ...(ic.license ? { license: ic.license } : {}), ...(ic.url ? { url: ic.url } : {}), sizes };
 }
 
@@ -439,20 +439,15 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
   const monoStack = dsFontStack(fonts.mono, "ui-monospace, SFMono-Regular, monospace");
   // Control text (buttons/inputs/labels) is the UI-CONTROL voice (TKT-0008; the old "UI" voice name died
   // in the 2026-07-13 rename), its own font, weight, and optical tracking, NOT the body voice at a
-  // hardcoded 600. Read the UI-control MD step so the previews render what the tokens say.
+  // hardcoded 600. Its SIZE is the kit's default cell text (mdAnchor, T-0017), which geometry composes
+  // from the type scale's height-indexed UI text, so the previews render what the tokens say at the
+  // kit's own tier and scale. Every uiFont consumer below (buttons, the card CTA, the dialog actions,
+  // tabs/menu, inputs) reads uiSize. Weight/tracking stay the voice's own: tracking is authored as an EM
+  // ratio off the voice's OWN size (uiStep.size), so it scales with whatever font-size lands below.
   const uiStack = dsFontStack(fonts.ui, sans);
   const uiStep = (typeSc && typeSc.categories && typeSc.categories["UI-control"] && typeSc.categories["UI-control"].MD) || null;
-  // the linear-ladder prototype (issue #483) wins over the composed UI-control voice for control TEXT
-  // SIZE while it's active, the same "ladder wins" decision geomScale itself makes (composition is
-  // skipped there too). Every uiFont consumer below (buttons, the card CTA, the dialog actions,
-  // tabs/menu, inputs) reads uiSize, so fixing it here is enough, not just the Size-ladder preview
-  // row, which already read per-size `s.font` directly and needed no change. Weight/tracking stay the
-  // voice's own: the ladder has no weight law, and tracking is authored as an EM ratio off the voice's
-  // OWN size (uiStep.size), so it already scales proportionally with whatever font-size lands below.
-  // mdAnchor (not a bare .sizes.MD), the ladder names its steps numerically ("0".."9"), so there is
-  // no `.MD` key there; mdAnchor resolves the ramp-appropriate MD-equivalent row either way.
-  const ladderMdFont = geomSc && geomSc.ramp === RAMP_LADDER ? (mdAnchor(geomSc).size && mdAnchor(geomSc).size.font) : null;
-  const uiSize = ladderMdFont || (uiStep && uiStep.size ? uiStep.size : 14);
+  const mdCell = geomSc ? mdAnchor(geomSc).size : null;
+  const uiSize = (mdCell && mdCell.text) || (uiStep && uiStep.size ? uiStep.size : 14);
   const uiWeight = uiStep && uiStep.weight ? uiStep.weight : 500;
   const uiTrackEm = uiStep && uiStep.size ? Number((uiStep.letterSpacing / uiStep.size).toFixed(4)) : 0;
   // #477, font-size was missing entirely: every uiFont consumer (buttons, the card CTA, the dialog
@@ -465,11 +460,9 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
   const rXs = radii.xs != null ? radii.xs : rSm;
   const rXl = radii.xl != null ? radii.xl : rLg;
   const rFull = radii.full != null ? radii.full : 999;
-  // Selection controls (checkbox/radio/switch) size off the geometry ramp's own icon tokens, never a
-  // fabricated magic number: a checkbox/radio reads as an SM icon-sized control, a switch track as XS.
-  // sizeAnchor (not a bare `.sizes.SM`/`.sizes.XS`), the linear-ladder prototype (issue #483) has no
-  // SM/XS keys at all (numeric step names), so a bare access silently fell through to the hardcoded
-  // 18/16 fallback for every ladder-active kit, and the Inputs card never followed the ladder.
+  // Selection controls (checkbox/radio/switch) size off the geometry cells' own icon tokens, never a
+  // fabricated magic number: a checkbox/radio reads as the SM-anchored cell's icon, a switch track as the
+  // XS-anchored one's (sizeAnchor maps the legacy step names onto cells).
   const smSize = sizeAnchor(geomSc, "SM").size, xsSize = sizeAnchor(geomSc, "XS").size;
   const ctrlIcon = (smSize && smSize.icon) || 18;
   const switchH = (xsSize && xsSize.icon) || 16;
@@ -527,18 +520,15 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
     // own always-on container fill; Ghost's own bg is transparent even at rest, tinting only on
     // hover in the real component). Both variants now exist, correctly distinct.
     const variantRow = `<div class="brow"><span class="blabel">Variants</span><button class="btn" style="background:transparent;border:1px solid ${V(brand)};color:${V(brand)}">Outline</button><button class="btn" style="background:transparent;color:${V(brand)}">Ghost</button><button class="btn" style="background:${tint};color:${V(brand)}">Tonal</button><button class="btn" style="background:none;padding:0;color:${V(brand)};text-decoration:underline">Link</button></div>`;
-    // iterate the RESOLVED scale's own size keys, EXPLICITLY ordered by height (issue #483), never
-    // the hardcoded default SIZE_KEYS (the ladder has its own 10-step count and numeric "0".."9"
-    // names), and never Object.keys(geomSc.sizes) directly: JS forces integer-like keys like the
-    // ladder's into ascending numeric enumeration regardless of insertion order, so a bare Object.keys
-    // is a trap the MOMENT a ramp's names stop being non-numeric strings. orderedSizeNames sorts by
-    // the scale's own resolved height instead, correct for either ramp's naming scheme.
-    const sizeRow = `<div class="size-row">${orderedSizeNames(geomSc).map((sz) => {
-      const s = geomSc.sizes[sz];
-      return `<button class="btn" style="background:${V(brand)};color:${brandOn};height:${s.height}px;padding:0 ${Math.round(s.paddingWide)}px;font-size:${s.font}px">${sz}</button>`;
+    // the kit's own three cells, `{tier}-{scale}-{sm,md,lg}` in the canonical cell order (orderedSizeNames),
+    // each drawn at its height, inset and text.
+    const kitCells = geomSc ? orderedSizeNames(geomSc).filter((n) => n.startsWith(`${geomSc.tier}-${geomSc.scale}-`)) : [];
+    const sizeRow = `<div class="size-row">${kitCells.map((name) => {
+      const s = geomSc.cells[name];
+      return `<button class="btn" style="background:${V(brand)};color:${brandOn};height:${s.height}px;padding:0 ${s.inset}px;font-size:${s.text}px">${name}</button>`;
     }).join("")}</div>`;
     out.push(card("buttons.html", "Components", "Buttons", "fills · variants · states · sizes", btnCss,
-      `${rows}<p class="cap">Each fill pairs with its <code>--${pfx}-{family}-on-{family}</code>; hover is <code>--${pfx}-{family}-hover</code>, disabled the <code>--${pfx}-{family}-disabled</code> scrim.</p>${activeRow}<p class="cap">Outline / ghost / tonal / link, text is the brand token itself; ghost is transparent even at rest, tonal stands on the brand's own <code>-container</code> fill.</p>${variantRow}<p class="cap">Focus ring, <code>geometry.focus.ringWidth</code>/<code>ringOffset</code>, the brand token ringing a neutral control so it reads clearly against a fill it doesn't share.</p>${focusRow}<p class="cap">Size ladder, height, padding, and text size read straight off the geometry size ramp.</p>${sizeRow}`));
+      `${rows}<p class="cap">Each fill pairs with its <code>--${pfx}-{family}-on-{family}</code>; hover is <code>--${pfx}-{family}-hover</code>, disabled the <code>--${pfx}-{family}-disabled</code> scrim.</p>${activeRow}<p class="cap">Outline / ghost / tonal / link, text is the brand token itself; ghost is transparent even at rest, tonal stands on the brand's own <code>-container</code> fill.</p>${variantRow}<p class="cap">Focus ring, <code>geometry.focus.ringWidth</code>/<code>ringOffset</code>, the brand token ringing a neutral control so it reads clearly against a fill it doesn't share.</p>${focusRow}<p class="cap">Size row, the kit's three cells (sm, md, lg): height, inset, and text read straight off the geometry ladder.</p>${sizeRow}`));
   }
 
   // 3. Inputs, field states (default · placeholder · focus · error · disabled), select, textarea, and
@@ -855,8 +845,8 @@ function dsSpineBody(ds, state, ctx) {
   // the unknown-section tolerance). Prose, not frontmatter: the icon system is a binding RULE, not a token
   // with a value, and a frontmatter key would trip the Stitch schema linter's unknown-key check.
   const ic = iconSystem((state && state.icons) || {});
-  const iconSizes = geomSc && geomSc.sizes
-    ? orderedSizeNames(geomSc).filter((k) => Number.isFinite(geomSc.sizes[k].icon)).map((k) => `${k.toLowerCase()} ${geomSc.sizes[k].icon}px`).join(" · ")
+  const iconSizes = geomSc && geomSc.cells
+    ? orderedSizeNames(geomSc).filter((n) => n.startsWith(`${geomSc.tier}-${geomSc.scale}-`) && Number.isFinite(geomSc.cells[n].icon)).map((n) => `${n} ${geomSc.cells[n].icon}px`).join(" · ")
     : "";
   const iconography = [
     "## Iconography", "",
@@ -1551,6 +1541,14 @@ function dsMakeButtonMd() {
   ].join("\n") + "\n";
 }
 
+// DS_CELL_FIELDS, a ladder cell's 14 token fields [emitted kebab name, cell key], in geometry.mjs's emit order.
+const DS_CELL_FIELDS = [
+  ["height", "height"], ["inset", "inset"], ["text", "text"], ["icon", "icon"],
+  ["caption-text", "captionText"], ["chip-height", "chipHeight"], ["chip-inset", "chipInset"], ["chip-text", "chipText"],
+  ["icon-ratio", "iconRatio"], ["min-width", "minWidth"],
+  ["radius-control", "radiusControl"], ["radius-mark", "radiusMark"], ["radius-inset", "radiusInset"], ["radius-card", "radiusCard"],
+];
+
 // exportDesignSystemMakeBundle, the design-system-for-figma-make/ folder: `guidelines/` (the routed
 // dsFullLayersCss, the FULL token layers appended to the Make `styles.css` BELOW the shadcn projection
 // (which stays the consumption mapping the guidelines teach). Color rides the kit's `.dark`-class
@@ -1588,14 +1586,13 @@ export function dsFullLayersCss(state, typeSc, geomSc) {
   }
   const dims = [];
   if (geomSc) {
-    dims.push(`  --${basePfx}-density: ${geomSc.density};`);
-    if (geomSc.sizes) for (const sz of orderedSizeNames(geomSc)) {
-      const s = geomSc.sizes[sz];
-      const z = sz.toLowerCase();
-      dims.push(`  --${basePfx}-size-${z}-height: ${s.height}px; --${basePfx}-size-${z}-icon: ${s.icon}px; --${basePfx}-size-${z}-caret: ${s.caret}px; --${basePfx}-size-${z}-font: ${s.font}px; --${basePfx}-size-${z}-gap: ${s.gap}px; --${basePfx}-size-${z}-padding-narrow: ${s.paddingNarrow}px; --${basePfx}-size-${z}-padding-wide: ${s.paddingWide}px; --${basePfx}-size-${z}-padding-narrow-compact: ${s.paddingNarrowCompact}px; --${basePfx}-size-${z}-padding-wide-compact: ${s.paddingWideCompact}px; --${basePfx}-size-${z}-radius: ${s.radiusPill}px; --${basePfx}-size-${z}-min: ${s.minWidth}px;`);
+    // the 27 ladder cells, `--{base}-size-{cell}-{field}`, the same fields and order as the standalone
+    // geometry export (iconRatio unitless).
+    for (const name of orderedSizeNames(geomSc)) {
+      const c = geomSc.cells[name];
+      dims.push("  " + DS_CELL_FIELDS.map(([f, k]) => `--${basePfx}-size-${name}-${f}: ${c[k]}${f === "icon-ratio" ? "" : "px"};`).join(" "));
     }
     if (geomSc.radii) for (const [k, v] of Object.entries(geomSc.radii)) dims.push(`  --${basePfx}-radius-${k}: ${v}px;`);
-    if (geomSc.radiusDefault != null) dims.push(`  --${basePfx}-radius-default: ${geomSc.radiusDefault}px;`);
     if (geomSc.space) Object.keys(geomSc.space).sort((a, b) => a - b).forEach((k, i) => dims.push(`  --${basePfx}-space-${i}: ${geomSc.space[k]}px;`));
     if (geomSc.insets) for (const [k, v] of Object.entries(geomSc.insets)) dims.push(`  --${basePfx}-inset-${kebab(k)}: ${v}px;`);
     if (geomSc.gaps) for (const [k, v] of Object.entries(geomSc.gaps)) dims.push(`  --${basePfx}-gap-${kebab(k)}: ${v}px;`);

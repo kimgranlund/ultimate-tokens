@@ -1,5 +1,6 @@
 import { figmaCollectionNames } from "../model.mjs";
 import { COLLECTIONS } from "../../engine/collections.js";
+import { RADIUS_MODES, SCALES, TIERS } from "../../engine/geometry.mjs";
 import { ICON_SYSTEMS, iconSystem, iconSystemById, iconSystemLabel } from "../../engine/icon-systems.mjs";
 import { icon } from "../icons.js";
 import { ACCOUNT_URL, DEV_FLAG_TOGGLES, DOCS_URL, PRO_CHECKOUT_URL, STUDIO_CHECKOUT_URL, SUPPORT_URL, btn, field, h, setColorScheme } from "../app-helpers.mjs";
@@ -161,12 +162,32 @@ export class SettingsMixinImpl {
         this._settingRow("Font rendering", "Premium shows every kit's fonts as designed. Google Fonts swaps any non-Google family for a close, guaranteed-renderable substitute, useful when a licensed font isn't installed.",
           [{ id: "premium", label: "Premium" }, { id: "google", label: "Google Fonts" }], this.fontMode,
           (id) => { this.fontMode = id; this._saveAppPrefs(); this.render(); }, "setfontmode"),
+        ...this._shellGeometryRows(),
         h("div", { class: "settings-row" },
           h("div", { class: "settings-row-text" }, h("b", {}, "Reset app preferences"),
-            h("small", {}, "Theme, motion, and font rendering return to their defaults; the saved record is cleared. Documents are untouched.")),
+            h("small", {}, "Theme, motion, font rendering, and shell geometry return to their defaults; the saved record is cleared. Documents are untouched.")),
           btn("Reset to defaults", { cls: "settings-reset", ariaLabel: "Reset app preferences to defaults", onclick: () => this._resetAppPrefs() })),
       ])],
     };
+  }
+
+  // The Shell geometry row: Follow kit (shellGeometry null, the chrome reads doc.geometry) or Custom,
+  // which seeds from the current effective geometry and reveals one tier, scale and radius row.
+  _shellGeometryRows() {
+    const sg = this.shellGeometry;
+    const setShell = (next) => { this.shellGeometry = next; this._saveAppPrefs(); this.render(); };
+    const opts = (ids) => ids.map((id) => ({ id, label: id[0].toUpperCase() + id.slice(1) }));
+    const rows = [this._settingRow("Shell geometry", "The editor chrome's control sizes and corners. Follow kit uses this document's Geometry; Custom pins a tier, scale, and radius on this device.",
+      [{ id: "kit", label: "Follow kit" }, { id: "custom", label: "Custom" }], sg ? "custom" : "kit",
+      (id) => setShell(id === "custom" ? { ...this._effectiveShellGeometry() } : null), "setshellgeom")];
+    if (sg) {
+      rows.push(
+        this._settingRow("Shell tier", "The control height family.", opts(Object.keys(TIERS)), sg.tier, (id) => setShell({ ...sg, tier: id }), "setshelltier"),
+        this._settingRow("Shell scale", "The density step within the tier.", opts(SCALES), sg.scale, (id) => setShell({ ...sg, scale: id }), "setshellscale"),
+        this._settingRow("Shell radius", "How control corners round.", opts(Object.keys(RADIUS_MODES)), sg.radius, (id) => setShell({ ...sg, radius: id }), "setshellradius"),
+      );
+    }
+    return rows;
   }
 
   _settingsPanelIcons() {

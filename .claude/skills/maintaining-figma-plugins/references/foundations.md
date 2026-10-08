@@ -288,6 +288,8 @@ When a file has no embedded config (or to seed a new set), `configFromVariables(
 APPROXIMATE fallback (it cannot reverse-derive skew/lift/overrides; that is why the embedded config is the
 real source of truth). The drift diff is fed by `read-variables` → `variables-read` → `receiveLiveVariables`,
 which reads the live Color Primitives values back as `#RRGGBB(AA)` hexes. Geometry uses a separate path:
-`geomTokensFigma(scale)` (`src/engine/geometry.mjs`) returns `{ Geometry: { size, radius, space } }`, a
-`Geometry` collection of Figma NUMBER (FLOAT) variables, emitted as `dimension.variables.json`, independent
-of the color cascade.
+`geomTokensFigma(scale)` (`src/engine/geometry.mjs`) returns `{ Geometry: { size, radius, space, inset, gap,
+border, focus } }`, a `Geometry` collection of Figma NUMBER (FLOAT) variables (`size` keyed by the 27 ladder
+cells, `{tier}-{scale}-{size}`), emitted as `dimension.variables.json`, independent of the color cascade.
+The apply path uses `geomTokensFigmaModes` instead: mode-constant `size/{cell}/{field}` FLOATs plus per-mode
+`control/{tier}/{size}/{field}` ALIAS variables (see the SKILL body's Geometry cells paragraph).

@@ -1,13 +1,13 @@
 // type.mjs, the perceptual TYPOGRAPHY engine: the type analog of the color engine. A few parameters
 // → a systematic type scale → DTCG / CSS tokens. Pure, no DOM. Fifteen named "voices", Display ·
 // Headline · Sub-heading · Title · Sub-title · Lead · Body · Body-mono · Label · Label-mono · Kicker ·
-// Tiny · Tiny-mono · UI-control · UI-widget (TKT-0008), thirteen voices carry three steps (SM, MD and LG), UI-control and UI-widget carry six (XS to 2XL), and every step carries size, line-height,
+// Tiny · Tiny-mono · UI-control · UI-widget (TKT-0008), thirteen voices carry three steps (SM, MD and LG), UI-control and UI-widget carry one (MD, sized from the height-indexed UI_TEXT table), and every step carries size, line-height,
 // letter-spacing, weight, and paragraph spacing. (The DTCG shape follows the Figma-variable export at
 // docs/assets/typography-tokens.json, a frozen snapshot kept for reference.)
 //
 // 2026-07-13, SIZE IS NOW A FIXED, HAND-AUTHORED TABLE, not a modular scale. Previously every voice
 // derived its sizes from base·ratio^n (a treatment's own base+ratio gave it a distinct scale feel).
-// Now each voice's steps are literal px values (SIZES below: three per voice, six for UI-control and UI-widget), shared identically across all 5
+// Now each voice's steps are literal px values (SIZES below: three per voice; UI-control and UI-widget read UI_TEXT), shared identically across all 5
 // treatments, matching how Google's own Material 3 scale works (one fixed scale; theme varies
 // styling, not the numbers). Treatments now differ ONLY in font/weight/tracking/leading/case, never
 // size. `bodyBase` still scales the WHOLE fixed table proportionally (factor = bodyBase/16); the
@@ -24,7 +24,20 @@
 
 const round = (v, d = 0) => { const f = 10 ** d; return Math.round(v * f) / f; };
 
-// FIXED SIZE TABLE, literal px per step (SM, MD, LG; XS to 2XL for the two UI voices), shared across all 5 treatments. Body-mono aliases Body's
+// UI_TEXT, the HEIGHT-INDEXED UI text table (T-0017): the Maison ui-kit component-geometry CSV's
+// height-to-text column verbatim, a control height in px → the text px that sits in it. Type owns it:
+// the two interactive voices read their one size from it (uiText below) and typeScale exposes the whole
+// table at the scale's factor (`uiText`), so control text per height is one table, never two.
+export const UI_TEXT = Object.freeze({ 96: 30, 92: 29, 88: 28, 84: 27, 80: 26, 76: 25, 72: 24, 68: 23, 64: 22, 60: 21, 56: 20, 52: 19, 48: 18, 44: 17, 40: 16, 36: 15, 32: 14, 28: 13, 24: 12, 22: 11, 20: 10, 18: 9, 16: 8, 14: 7.5, 12: 7 });
+
+// uiText(height, factor), one UI_TEXT row scaled by the bodyBase factor onto the HALF-PIXEL grid (the
+// identity at factor 1). A height off the table is a caller bug, never a guess: it throws a RangeError.
+export function uiText(height, factor = 1) {
+  if (!Object.prototype.hasOwnProperty.call(UI_TEXT, height)) throw new RangeError(`uiText: no UI text row for height ${height}`);
+  return Math.round(UI_TEXT[height] * factor * 2) / 2;
+}
+
+// FIXED SIZE TABLE, literal px per step (SM, MD, LG), shared across all 5 treatments. Body-mono aliases Body's
 // own triplet (mono role, same numbers); Label-mono and Kicker both alias Label's (mono role, same
 // numbers); Tiny-mono aliases Tiny's, every "-mono" voice and Kicker are the SAME voice-scale as
 // their non-mono sibling, dressed in the mono font, not a distinct size register of their own.
@@ -38,21 +51,19 @@ const SIZES = {
   Body: [14, 16, 18],
   Label: [12, 13, 14],
   Tiny: [9, 10, 11],
-  // TKT-0008 (2026-07-16): the two INTERACTIVE-text voices, the ONLY voices on the FULL 6-step
-  // XS..2XL ramp (extended same day, at request; every other voice stays SM/MD/LG). UI-control
-  // (buttons/inputs/selects) = the ratified control table verbatim; UI-widget (tags/badges/switches,
-  // compact widgets) = its own smaller reporter-supplied table. UI-control composes into geometry's
-  // control ramp `font` at EVERY matching step (geomScale opts.typeScale).
-  "UI-control": [12, 13, 15, 16, 18, 20],
-  "UI-widget": [9, 10, 11, 12, 13, 14],
+  // The two INTERACTIVE-text voices, UI-control (buttons/inputs/selects) and UI-widget (tags/badges/
+  // switches, compact widgets), carry NO row here (T-0017, user ruling option B, 2026-10-07; their
+  // fixed six-step XS..2XL rows of TKT-0008 retired). Each keeps exactly ONE step, MD, whose size is the
+  // height-indexed UI_TEXT table at a fixed control height (UI_HEIGHT below): UI-control at the 32px
+  // product-md-md control (14), UI-widget at its 24px compact row (12). Every other size a control
+  // height needs is UI_TEXT itself (typeScale's `uiText`), not a voice step.
 };
 const RANKS = ["SM", "MD", "LG"];
-const RANKS6 = ["XS", "SM", "MD", "LG", "XL", "2XL"]; // the interactive voices' full ramp (TKT-0008)
-const ranksFor = (sizeKey) => (SIZES[sizeKey].length === 6 ? RANKS6 : RANKS);
-const stepsFor = (sizeKey) => ranksFor(sizeKey).map((r, i) => [r, SIZES[sizeKey][i]]);
+const UI_HEIGHT = { "UI-control": 32, "UI-widget": 24 }; // the control height each interactive voice's one MD size reads from UI_TEXT
+const stepsFor = (sizeKey) => (UI_HEIGHT[sizeKey] ? [["MD", UI_TEXT[UI_HEIGHT[sizeKey]]]] : RANKS.map((r, i) => [r, SIZES[sizeKey][i]]));
 
 // A "treatment" seeds the CHARACTER params, exactly as the color "Color Categories" presets seed
-// palette params. Each category: { role, base, leading, weight, trackingEm, steps, transform, box }.
+// palette params. Each category: { role, base, leading, weight, trackingEm, steps, transform, box, uiHeight? }.
 // `base` = the voice's MD-step literal (kept for typeScale's bodyBase→factor math, since Body's base
 // must still equal SIZES.Body[1], 16, for `factor = bodyBase/16` to mean what it says, and
 // DEFAULT_TYPE.bodyBase must track it too). Fonts are swappable; the
@@ -61,8 +72,12 @@ const stepsFor = (sizeKey) => ranksFor(sizeKey).map((r, i) => [r, SIZES[sizeKey]
 // emit a single-line height and use label-height paragraph spacing); prose voices wrap (no single-line
 // height, reading paragraph spacing). It DEFAULTS from the role (ui/mono ⇒ box), overridable, Tiny
 // rides the ui FONT but is prose (box:false); Sub-title rides mono but is prose too (a small heading,
-// not a control label).
-const cat = (role, sizeKey, leading, weight, trackingEm, transform = "none", box = role === "ui" || role === "mono") => ({ role, base: SIZES[sizeKey][ranksFor(sizeKey).indexOf("MD")], leading, weight, trackingEm, steps: stepsFor(sizeKey), transform, box });
+// not a control label). `uiHeight` (the two interactive voices only) names the UI_TEXT row their one
+// MD size reads (buildCategory sizes it with uiText, not the fixed-table path).
+const cat = (role, sizeKey, leading, weight, trackingEm, transform = "none", box = role === "ui" || role === "mono") => {
+  const steps = stepsFor(sizeKey);
+  return { role, base: steps.find(([r]) => r === "MD")[1], leading, weight, trackingEm, steps, transform, box, ...(UI_HEIGHT[sizeKey] ? { uiHeight: UI_HEIGHT[sizeKey] } : {}) };
+};
 
 // makeVoices, the FIFTEEN named type VOICES (docs/reference/typography): Display · Headline ·
 // Sub-heading · Title · Sub-title · Lead · Body · Body-mono · Label · Label-mono · Kicker · Tiny ·
@@ -225,8 +240,10 @@ function buildCategory(name, p, factor, overrides, vp, compress) {
     // `n` is now the voice's FIXED literal size at this step (SIZES table), no longer an exponent.
     // breakpoint compression (modeFactor) applies to the raw scaled size before rounding/quantization,
     // it IS a size change (line-height, tracking, paragraph rhythm all re-derive from the compressed size).
+    // An interactive voice (p.uiHeight, T-0017) instead takes uiText at its height: the half-pixel grid,
+    // never breakpoint-compressed (the UI voices stay frozen on every tier) and never re-snapped below.
     const rawScaled = compress ? compress(n * factor) : n * factor;
-    const derived = Math.max(8, Math.round(rawScaled)); // the scaled fixed size, letterSpacing STAYS on this
+    const derived = p.uiHeight ? uiText(p.uiHeight, factor) : Math.max(8, Math.round(rawScaled)); // the scaled fixed size, letterSpacing STAYS on this
     const ov = overrides && overrides[name + "|" + step];
     const overridden = typeof ov === "number" && Number.isFinite(ov) && ov > 0;
     // The DERIVED nice size drives the monotonic ramp (so a per-cell override never nudges its neighbours,
@@ -235,7 +252,7 @@ function buildCategory(name, p, factor, overrides, vp, compress) {
     // breakpoint compression) skips the snap entirely, `n` is already the hand-authored literal (SIZES),
     // and niceSize's coarser-as-size-grows bucketing would otherwise re-round an already-nice number to a
     // DIFFERENT nice number (120 → 128, 34 → 36) for no reason, only genuinely SCALED sizes need re-snapping.
-    let nice = factor === 1 && !compress ? derived : niceSize(derived);
+    let nice = p.uiHeight || (factor === 1 && !compress) ? derived : niceSize(derived);
     if (nice <= prevSize) nice = nextNice(prevSize);
     prevSize = nice;
     const size = overridden ? Math.round(ov) : nice;
@@ -304,6 +321,9 @@ export function typeScale(config = {}) {
   }
   const categories = {};
   for (const [name, p] of Object.entries(t.categories)) categories[name] = buildCategory(name, p, factor, overrides, voices ? voices[name] : null, compress);
+  // uiText, the whole height-indexed UI text table (UI_TEXT) at this scale's factor, height → text px,
+  // all 25 rows. Like the interactive voices, it never takes the breakpoint compression (modeFactor).
+  const uiTextAt = Object.fromEntries(Object.keys(UI_TEXT).map((h) => [h, uiText(h, factor)]));
   // fonts: the treatment's families, with optional per-role CUSTOM overrides (config.fonts). A custom family
   // exports as-is + renders if installed/bundled; the specimen falls back to a generic otherwise.
   const fonts = { ...t.fonts };
@@ -357,7 +377,7 @@ export function typeScale(config = {}) {
   if (voices) for (const [name, v] of Object.entries(voices)) {
     if (t.categories[name] && v && typeof v.font === "string" && v.font.trim()) voiceFonts[name] = v.font.trim();
   }
-  return { treatment: t.id, label: t.label, fonts, roleOf: Object.fromEntries(Object.entries(t.categories).map(([k, v]) => [k, v.role])), categories, ...(Object.keys(styleNames).length ? { styleNames } : {}), ...(Object.keys(weights).length ? { weights } : {}), ...(Object.keys(voiceFonts).length ? { voiceFonts } : {}) };
+  return { treatment: t.id, label: t.label, fonts, roleOf: Object.fromEntries(Object.entries(t.categories).map(([k, v]) => [k, v.role])), categories, uiText: uiTextAt, ...(Object.keys(styleNames).length ? { styleNames } : {}), ...(Object.keys(weights).length ? { weights } : {}), ...(Object.keys(voiceFonts).length ? { voiceFonts } : {}) };
 }
 
 // resolvedFontFor(scale, voice), the ONE resolution point for a voice's actual family: its own per-voice

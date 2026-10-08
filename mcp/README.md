@@ -59,10 +59,10 @@ those systems are included)
 | `get_semantic(scheme)` | all 53 roles per palette resolved for a scheme |
 | `nearest_token(hex)` | the brand token closest to a hex (reuse the system, don't invent a colour) |
 | `get_type` | the typography scale, treatment, fonts, and the per-voice size ramp |
-| `get_geometry` | the geometry scale, the size ramp, the centering law, radius + spacing |
+| `get_geometry` | the geometry ladder: the kit's tier, scale and radius, the 27 cells keyed `{tier}-{scale}-{size}` (height, inset, text, icon, chip, radius control/mark/inset/card), the kit default cell, radius + spacing |
 
 **Prompt**: `apply_brand`, how to apply the kit (surfaces from `*/surface*`, accents from the prime
-roles, text from `*/on*`; the type voices; the geometry size ramp + centering law; never raw values).
+roles, text from `*/on*`; the type voices; the geometry cells + centering law; never raw values).
 
 ## Protocol
 

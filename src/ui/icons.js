@@ -48,7 +48,7 @@ export function icon(name, opts = {}) {
   el.setAttribute("aria-hidden", "true");
   const path = ICONS[name];
   el.innerHTML = path
-    ? `<svg viewBox="0 0 256 256" width="${size}" height="${size}" fill="currentColor" aria-hidden="true">${path}</svg>`
+    ? `<svg viewBox="0 0 256 256" width="${size}" height="${size}" style="width:var(--sh-control-icon, ${size}px);height:var(--sh-control-icon, ${size}px)" fill="currentColor" aria-hidden="true">${path}</svg>`
     : "";
   return el;
 }

@@ -174,25 +174,36 @@ ok(swatchBoardPNG(kit, FAMILY_NAMES).equals(swatchBoardPNG(kit, FAMILY_NAMES)), 
   ok(Buffer.from(block.data, "base64").equals(png), "the block's base64 data decodes to the exact same PNG bytes swatchBoardPNG produces directly");
 }
 
-// ── the opt-in linear-ladder ramp (ultimate-tokens issue #483): boardLayout must follow the kit's
-// REAL geometry, not silently fall through to the hardcoded 36/20/14 defaults, a bare `.sizes.LG`
-// resolves to {} under the ladder (numeric step names only). Pinned against step "4" (LG's mapped
-// equivalent), computed independently via geomScale directly rather than read back off the layout. ──
+// ── the control strip follows the kit's REAL LG cell (product-lg-md), not the hardcoded 36/20/14
+// defaults: the default kit and a pill-radius kit (the radius mode is the axis that moves that fixed
+// cell's corners). Expected values come from geomScale directly, by cell name, never read back off the
+// layout or through the module's own sizeAnchor lookup. ──
 {
-  const ladderDoc = { ...defaultDocument(), geometry: { ...defaultDocument().geometry, ramp: "linear4" } };
-  const ladderKit = brandKit(ladderDoc);
-  ok(ladderKit.geometry && ladderKit.geometry.ramp === "linear4" && !ladderKit.geometry.sizes.LG, "sanity: the ladder kit really has no .sizes.LG key (numeric steps only)");
-  const wantLG = geomScale({ ramp: "linear4", baseHeight: ladderKit.geometry.baseHeight }).sizes["4"];
-  const LL = boardLayout(ladderKit);
-  ok(LL.width === L.width, "the ladder board is the same overall width (the swatch grid, not the control strip, drives it)");
-  const wantCtlH = Math.min(Math.round(wantLG.height), CONTROL_STRIP_H);
-  const wantRadius = Math.round(Math.min(wantLG.radiusPill, wantCtlH / 2));
-  const wantThumb = Math.min(Math.round(wantLG.icon), wantCtlH - 2);
-  const wantCaretW = Math.round(wantLG.caret);
-  ok(LL.light.button.h === wantCtlH && LL.light.button.r === wantRadius, `the ladder button follows step 4's real height/radius (got h=${LL.light.button.h} r=${LL.light.button.r}, want h=${wantCtlH} r=${wantRadius})`);
-  ok(LL.light.switchCtl.thumb.d === wantThumb, `the ladder switch thumb follows step 4's real icon size, not the hardcoded 20 default (got ${LL.light.switchCtl.thumb.d}, want ${wantThumb})`);
-  ok(LL.light.select.caret.w === wantCaretW, `the ladder select caret follows step 4's real caret size, not the hardcoded 14 default (got ${LL.light.select.caret.w}, want ${wantCaretW})`);
-  ok(!swatchBoardPNG(kit, FAMILY_NAMES).equals(swatchBoardPNG(ladderKit, FAMILY_NAMES)), "a ladder-active kit encodes to DIFFERENT PNG bytes than the default ramp (the control strip actually changed)");
+  const want = (cell) => {
+    const ctlH = Math.min(Math.round(cell.height), CONTROL_STRIP_H);
+    const thumb = Math.min(Math.round(cell.icon), ctlH - 2);
+    return { ctlH, radius: Math.round(Math.min(cell.radiusControl, ctlH / 2)), thumb, thumbR: Math.round(Math.min(cell.radiusMark, thumb / 2)), inset: Math.round(cell.inset), caretW: Math.round(cell.text) };
+  };
+  const check = (label, layout, w) => {
+    const b = layout.light.button, t = layout.light.switchCtl.thumb, sw = layout.light.switchCtl;
+    ok(b.h === w.ctlH && b.r === w.radius, `[${label}] the button follows the LG cell's height/control radius (got h=${b.h} r=${b.r}, want h=${w.ctlH} r=${w.radius})`);
+    ok(t.d === w.thumb && t.r === w.thumbR, `[${label}] the switch thumb follows the LG cell's icon and mark radius (got d=${t.d} r=${t.r}, want d=${w.thumb} r=${w.thumbR})`);
+    ok(sw.x + sw.w - (t.cx + t.d / 2) === w.inset, `[${label}] the switch thumb sits at the LG cell's inset (got ${sw.x + sw.w - (t.cx + t.d / 2)}, want ${w.inset})`);
+    ok(layout.light.select.caret.w === w.caretW, `[${label}] the select caret follows the LG cell's text, not the hardcoded 14 default (got ${layout.light.select.caret.w}, want ${w.caretW})`);
+  };
+  ok(!("sizes" in kit.geometry), "sanity: the kit's geometry carries cells, no legacy sizes ramp");
+  const defLG = geomScale({}).cells["product-lg-md"];
+  check("default", L, want(defLG));
+  ok(defLG.height === 36 && defLG.icon === 18 && defLG.radiusControl !== defLG.height / 2, "sanity: the default LG cell is 36 tall with an 18 icon and a non-pill corner (so the pill leg below can discriminate)");
+
+  const pillDoc = { ...defaultDocument(), geometry: { ...defaultDocument().geometry, radius: "pill" } };
+  const pillKit = brandKit(pillDoc);
+  const pillLG = geomScale({ radius: "pill" }).cells["product-lg-md"];
+  const LL = boardLayout(pillKit);
+  ok(LL.width === L.width, "the pill board is the same overall width (the swatch grid, not the control strip, drives it)");
+  check("pill", LL, want(pillLG));
+  ok(LL.light.button.r !== L.light.button.r && LL.light.switchCtl.thumb.r !== L.light.switchCtl.thumb.r, `the pill kit's button and thumb corners differ from the default kit's (button ${LL.light.button.r} vs ${L.light.button.r}, thumb ${LL.light.switchCtl.thumb.r} vs ${L.light.switchCtl.thumb.r})`);
+  ok(!swatchBoardPNG(kit, FAMILY_NAMES).equals(swatchBoardPNG(pillKit, FAMILY_NAMES)), "a pill-radius kit encodes to DIFFERENT PNG bytes than the default kit (the control strip actually changed)");
 }
 
 if (fails.length) { console.error(`png-swatch-board FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }

@@ -51,17 +51,20 @@ addition history.
 
 - **`get_type` returns `kit.type` and `get_geometry` returns `kit.geometry` as-is**: the shape is owned by
   `typeScale`/`geomScale`. `kit.type.categories` carries **seven** voices (Display, Heading/Sub-heading/
-  Kicker, Body, UI, Code); `kit.geometry.sizes` rows are `{height, icon, caret, font, gap, padding,
-  edgePadding, radiusPill, minWidth}` with the top-level `radii` ladder + `space` scale. Don't pluck or rename
+  Kicker, Body, UI, Code); `kit.geometry.cells` holds the 27 ladder cells (`{height, inset, text, icon,
+  captionText, chipHeight, chipInset, chipText, iconRatio, minWidth, radiusControl, radiusMark,
+  radiusInset, radiusCard}`) with the kit default `cell`, the top-level `radii` ladder + `space` scale. Don't pluck or rename
   fields in the server; an agent and the test rely on the full shape (the test reads `ty.categories.Body`,
-  `ty.categories["UI-control"].MD.size`, `geo.sizes.MD.padding/height/icon/font`).
-- **The geometry `font` is composed from the type UI-control voice.** The test pins `geo.sizes.MD.font`
-  tracks `ty.categories["UI-control"].MD.size`, one source of truth across the two systems. That
-  composition is `geometryScale(doc)`'s job (`geometryScale` in `src/ui/model.mjs`, which passes `{ typeScale }` into `geomScale`); a
+  `ty.uiText[32]`, `geo.cells["product-md-md"].inset/height/icon/text`).
+- **The geometry cell `text` is composed from the type UI text table.** The test pins
+  `geo.cells["product-md-md"].text` to `ty.uiText[32]`, one source of truth across the two systems. That
+  composition is `geomScaleFor`'s job (`geomScaleFor` in `src/ui/model.mjs`, which passes `{ typeScale }` into `geomScale`); a
   server change must not break the round-trip the test asserts.
-- **The centering law is `padding === (height − icon) / 2`.** The field is `icon` (the server's guide prose
-  loosely says "glyph"); the radius ladder is the top-level `radii`, not a per-size `radius` (the per-size
-  size-linked radius is `radiusPill`). State these accurately in any new prose.
+- **The centering law is `inset === (height − icon) / 2`.** The fields are `inset` and `icon`; the radius
+  ladder is the top-level `radii`, not a per-cell `radius` (the per-cell control corner is `radiusControl`,
+  with `radiusMark`, `radiusInset` and `radiusCard` beside it). The CSS roles (`--control-*`, `--chip-*`,
+  `--radius-*`) come from the export's resolver, not from the served JSON. State these accurately in any
+  new prose.
 - **`resolve_token` splits role on the FIRST `/`** so `"palette/roleKey"` works and multi-segment keys survive;
   `scheme` is `dark` only if exactly `"dark"`, else `light`. Keep that grammar, agents pass `"primary/primary"`.
 
@@ -105,7 +108,8 @@ The change that grew the kit from color-only to three opt-in systems:
    resource entries, plus the "three token systems … Include toggles" framing.
 5. **Extended the test (`test/mcp/brand-kit.mjs`).** Added the opt-in asserts (`brandKit({type:true})` omits
    colour+geometry, etc.), `get_type` (Body voice present), `get_geometry` (the centering law holds on the
-   served MD size), the composition check (`geo.sizes.MD.font` tracks the UI voice's MD size), and
+   served MD size), the composition check (then the MD font against the UI voice; since T-0017 the
+   product-md-md cell's `text` against `ty.uiText[32]`), and
    the `resources/list` includes `brand://type` + `brand://geometry`.
 6. **Validated**: `node test/mcp/brand-kit.mjs` green, then `npm test` (regenerating `mcp-assets.js`), then a
    manual `node mcp/brand-kit-server.mjs <geometry-only-kit>.json` to confirm only the geometry surface appears

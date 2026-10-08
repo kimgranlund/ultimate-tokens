@@ -49,10 +49,11 @@ larger step because you want line-height 26, is the mistake this split exists to
 ## The fifteen-role scale: pick by the text's FUNCTION
 
 Every voice is its own ramp: most are **sm/md/lg** (3-step), and the two
-interactive voices, `UI-control` and `UI-widget`, are the six-step box ramp
-**xs/sm/md/lg/xl/2xl**. Sizes are a hand-authored table, not a modular scale, and each voice's own
-step set is identical across every treatment (only font/weight/tracking/leading/case vary by
-treatment).
+interactive voices, `UI-control` and `UI-widget`, carry one step, **md**, whose size comes from the
+height-indexed UI text table (`uiText`: a control height maps to its text size; UI-control reads the
+32px control row, UI-widget the 24px compact row). Sizes are a hand-authored table, not a modular
+scale, and each voice's own step set is identical across every treatment (only
+font/weight/tracking/leading/case vary by treatment).
 
 | Voice (role) | Font role | Steps | Use for |
 |---|---|---|---|
@@ -65,8 +66,8 @@ treatment).
 | **body** | body | sm/md/lg | running prose, paragraphs, descriptions, long-form reading, and fine-print/legal (body's own smallest step) |
 | **body-mono** | mono | sm/md/lg | code snippets, tabular figures, keyboard shortcuts, technical values in running text, pegged to body's own sizes |
 | **label** | ui | sm/md/lg | STATIC labels: field labels, table cells, list metadata, prose flow (may wrap) |
-| **UI-control** | ui | xs/sm/md/lg/xl/2xl | interactive control text: buttons, inputs, selects, menu items, box voice with `-line-single` |
-| **UI-widget** | ui | xs/sm/md/lg/xl/2xl | compact widget text: tags, badges, switches, checks, box voice with `-line-single` |
+| **UI-control** | ui | md | interactive control text: buttons, inputs, selects, menu items, box voice with `-line-single` |
+| **UI-widget** | ui | md | compact widget text: tags, badges, switches, checks, box voice with `-line-single` |
 | **label-mono** | mono | sm/md/lg | monospace interface text, IDs, version tags, status readouts, pegged to label's own sizes |
 | **kicker** | mono | sm/md/lg | the smallest overline / metadata label, mono, uppercase, tracked, pegged to label's own sizes |
 | **tiny** | ui (prose) | sm/md/lg | figure/image/media captions, table captions, chart annotations, small supporting text |

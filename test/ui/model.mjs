@@ -6,7 +6,7 @@
 // then test/ui/headless-boot.mjs's (dpa) group only exercises them THROUGH button clicks. This
 // file imports and calls them directly, pure, no DOM, covering SPEC
 // docs/specs/spec-muted-base-key-spikes.md REQ-020..024 at the model layer.
-import { PALETTE_GROUPS, brandKit, defaultDocument, dsDocOf, exportDesignSystemBundle, geomScaleFor, hexToOklch, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixCollisionBadge, radixExportKey, radixKeyCollision, RADIX_COLLISION_BADGE, rederiveDataHues, slug, typeScaleFor } from "../../src/ui/model.mjs";
+import { PALETTE_GROUPS, brandKit, defaultDocument, dsDocOf, exportDesignSystemBundle, geomModeScales, geomScaleFor, geometryScale, hexToOklch, modeTierNudge, mintDataPalettes, paletteGroup, paletteGroupLabel, projectView, radixCollisionBadge, radixExportKey, radixKeyCollision, RADIX_COLLISION_BADGE, rederiveDataHues, slug, typeScaleFor } from "../../src/ui/model.mjs";
 import { deriveDataHues } from "../../src/engine/data-hues.mjs";
 import { RESERVED_ALIAS_KEYS, isDataPalette, exportRadixModule } from "../../src/engine/exports.js";
 import { PRESETS as BRAND_PRESETS } from "../../src/ui/categories/brands.js";
@@ -405,6 +405,31 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   }
   ok(subjects >= 1, `at least one anchored subject must be exercised (got ${subjects})`);
   console.log(`keyOklch agrees with hexToOklch: subjects ${subjects}`);
+}
+
+// ── T-0017: the geometry join. Every cell composes its text from the BASE type scale's height-indexed UI
+// text; a mode moves only the ladder's scale axis; with no modes configured, Desktop Lg/Xl (lg) and
+// Tablet/Mobile (sm) are synthesized; the UI-control/UI-widget breakpoint nudge rows are gone.
+{
+  const doc = defaultDocument();
+  doc.type = { ...doc.type, bodyBase: 18 }; // off the default, so the composition is visible (uiText at factor 18/16)
+  doc.geometry = { tier: "content", scale: "sm", radius: "pill", spaceBase: 4 };
+  const ts = typeScaleFor(doc, "base"), gs = geomScaleFor(doc, "base");
+  ok(JSON.stringify(geometryScale(doc)) === JSON.stringify(gs), "geometryScale(doc) must equal geomScaleFor(doc, \"base\")");
+  ok(gs.cell.name === "content-sm-md" && gs.cell.height === 36, `the kit cell must be content-sm-md at 36px, got ${gs.cell.name} at ${gs.cell.height}`);
+  ok(gs.cell.text === ts.uiText[36] && gs.cells["product-md-md"].text === ts.uiText[32], `cell text must be the base type scale's uiText at the cell height (got ${gs.cell.text} vs ${ts.uiText[36]})`);
+  ok(gs.cells["product-md-md"].text !== geomScaleFor(defaultDocument(), "base").cells["product-md-md"].text, "a bodyBase change must reach the composed cell text");
+  const synth = geomModeScales(doc).map((m) => `${m.name}:${m.minWidth}:${m.scale.scale}:${m.scale.tier}:${m.scale.radius}`).join();
+  ok(synth === "Desktop Lg:1728:lg:content:pill,Desktop Xl:2560:lg:content:pill,Tablet:992:sm:content:pill,Mobile:476:sm:content:pill", `synthesized geometry modes, got ${synth}`);
+  ok(geomModeScales(doc).every((m) => m.scale.cells["content-md-md"].text === ts.uiText[48]), "synthesized modes compose from the BASE type scale (mode-constant cells)");
+  doc.geometry.modes = [{ id: "gm-1", name: "Phone", scale: "lg", minWidth: 476 }];
+  const conf = geomModeScales(doc);
+  ok(conf.length === 1 && conf[0].name === "Phone" && conf[0].minWidth === 476 && conf[0].scale.scale === "lg" && conf[0].scale.cell.name === "content-lg-md", `a configured mode resolves its own scale, got ${JSON.stringify(conf.map((m) => [m.name, m.scale.cell.name]))}`);
+  ok(geomScaleFor(doc, "gm-1").cell.name === "content-lg-md" && geomScaleFor(doc, "nope").cell.name === "content-sm-md", "geomScaleFor(doc, modeId) applies that mode's scale; an unknown id reads base");
+  for (const f of [0.89, 0.80, 5 / 6, 2 / 3]) {
+    const ui = Object.keys(modeTierNudge(f) || {}).filter((k) => /^UI-(control|widget)\|/.test(k));
+    ok(ui.length === 0, `modeTierNudge(${f}) must carry no UI-control/UI-widget row, got ${ui.join()}`);
+  }
 }
 
 if (fails.length) { console.error(`model FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }

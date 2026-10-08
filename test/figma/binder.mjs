@@ -492,18 +492,22 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 //    lg/xl/2xl ramp), proven end-to-end through the STANDALONE BINDER's own INTERACTIVE path
 //    (main() -> applyFloatPlans(FLOAT_PLANS, {askIfUndecided:true}) -> confirmLibraryMode, the ONLY
 //    caller this ticket wires an interactive dialog into, see applyFloatPlans' own header comment on
-//    why the flagship never asks). Old steps map to their nearest CURRENT step BY HEIGHT (never by
-//    name) via geometryPlanStepHeights/expandGeometryAliasMap: "small"(25)->sm(24), "large"(40)->lg(36),
-//    "jumbo"(70)->2xl(64), none collide with a current step name, so all three are "existing but not
-//    wanted" and exercise the SAME alias path a renamed step would. 0 removals; the confirm dialog
-//    actually fires (proving the wiring, not just the pure planner already proven in plugin.mjs's
-//    libraryparity/librarymode); idempotent second run. ──
+//    why the flagship never asks). Old steps map to their nearest CURRENT ladder cell BY HEIGHT (never
+//    by name) via geometryPlanStepHeights/expandGeometryAliasMap, ties broken by geometryCellOrderVM:
+//    "small"(25)->product-md-sm(24), "large"(40)->product-md-lg(40, tied with content-md-sm, product
+//    sorts first), "jumbo"(70)->content-lg-lg(72), none collide with a current cell name, so all three
+//    are "existing but not wanted" and exercise the SAME alias path a renamed step would. Of the old
+//    kebab FIELDS, height/icon/min-width are cell fields and padding-narrow/pill-radius map through
+//    GEOMETRY_FIELD_RENAME_MAP, so they alias; caret/icon-gap/padding-wide and the two compact pads have
+//    no cell counterpart and deprecate (renamed under _deprecated/, id kept). 0 removals; the confirm
+//    dialog actually fires (proving the wiring, not just the pure planner already proven in
+//    plugin.mjs's libraryparity/librarymode); idempotent second run. ──
 {
   const F = mockFigma();
   F.figma._libraryModeAnswer = true; // "Preserve (library-safe)"
   try {
     const FIELDS = ["height", "icon", "caret", "icon-gap", "min-width", "padding-narrow", "padding-narrow-compact", "padding-wide", "padding-wide-compact", "pill-radius"];
-    const OLD_STEPS = { small: 25, large: 40, jumbo: 70 }; // heights land unambiguously nearest sm/lg/2xl (never a tie)
+    const OLD_STEPS = { small: 25, large: 40, jumbo: 70 }; // nearest cells product-md-sm/product-md-lg/content-lg-lg (large's tie broken by geometryCellOrderVM)
     const oldVars = [];
     for (const [step, h] of Object.entries(OLD_STEPS)) {
       for (const f of FIELDS) oldVars.push({ name: `size/${step}/${f}`, type: "FLOAT", values: [{ mode: "Base", value: f === "height" ? h : Math.round(h / 2) }] });
@@ -526,28 +530,29 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
     if (F.figma._libraryShowUICalls !== 1) FAIL("librarygeom", `expected exactly 1 library-mode confirm prompt, got ${F.figma._libraryShowUICalls}`);
     if (F.collections.filter((c) => c.name === "Geometry").length !== 1) FAIL("librarygeom", "the interactive library-mode apply duplicated the Geometry collection");
     const geo = F.collections.find((c) => c.name === "Geometry");
-    // 0 removals: every old step/field variable must still exist BY NAME (aliasing redirects the
-    // VALUE, never renames, id-preserving, matching applyFontPrimitivesModes' own contract).
-    const stillThere = oldVars.every((v) => F.variables.some((va) => va.variableCollectionId === geo.id && va.name === v.name));
+    // 0 removals: every old step/field variable must still exist, BY NAME when aliased (aliasing
+    // redirects the VALUE, never renames) or under "_deprecated/" when its field has no cell
+    // counterpart (an id-preserving rename, never a removal), matching applyFontPrimitivesModes' own contract.
+    const stillThere = oldVars.every((v) => F.variables.some((va) => va.variableCollectionId === geo.id && (va.name === v.name || va.name.indexOf("_deprecated/" + v.name) === 0)));
     if (!stillThere) FAIL("librarygeom", "library mode removed an old size/* variable instead of aliasing it");
-    // "small" -> nearest CURRENT step "sm" BY HEIGHT: the old variable's live value must now be a real
-    // alias pointing at the new step's SAME field.
+    // "small" -> nearest CURRENT cell "product-md-sm" BY HEIGHT: the old variable's live value must now
+    // be a real alias pointing at the new cell's SAME field.
     const oldSmallHeight = F.variables.find((va) => va.variableCollectionId === geo.id && va.name === "size/small/height");
-    const newSmHeight = F.variables.find((va) => va.variableCollectionId === geo.id && va.name === "size/sm/height");
-    if (!oldSmallHeight || !newSmHeight) FAIL("librarygeom", "expected both size/small/height (old, kept) and size/sm/height (current) to exist live");
+    const newSmHeight = F.variables.find((va) => va.variableCollectionId === geo.id && va.name === "size/product-md-sm/height");
+    if (!oldSmallHeight || !newSmHeight) FAIL("librarygeom", "expected both size/small/height (old, kept) and size/product-md-sm/height (current) to exist live");
     else {
       const baseId = geo.modes[0].modeId;
       const val = oldSmallHeight.valuesByMode[baseId];
-      if (!val || val.type !== "VARIABLE_ALIAS" || val.id !== newSmHeight.id) FAIL("librarygeom", "size/small/height's value was not redirected to size/sm/height via a real alias (nearest-by-height)");
+      if (!val || val.type !== "VARIABLE_ALIAS" || val.id !== newSmHeight.id) FAIL("librarygeom", "size/small/height's value was not redirected to size/product-md-sm/height via a real alias (nearest-by-height)");
     }
-    // "jumbo"(70) -> nearest CURRENT step "2xl"(64), not "xl"(48), proves the mapping is BY HEIGHT,
-    // not by list position or name.
+    // "jumbo"(70) -> nearest CURRENT cell "content-lg-lg"(72), not "content-lg-md"(64), proves the
+    // mapping is BY HEIGHT, not by list position or name.
     const oldJumboIcon = F.variables.find((va) => va.variableCollectionId === geo.id && va.name === "size/jumbo/icon");
-    const new2xlIcon = F.variables.find((va) => va.variableCollectionId === geo.id && va.name === "size/2xl/icon");
+    const new2xlIcon = F.variables.find((va) => va.variableCollectionId === geo.id && va.name === "size/content-lg-lg/icon");
     if (oldJumboIcon && new2xlIcon) {
       const baseId = geo.modes[0].modeId;
       const val = oldJumboIcon.valuesByMode[baseId];
-      if (!val || val.type !== "VARIABLE_ALIAS" || val.id !== new2xlIcon.id) FAIL("librarygeom", "size/jumbo/icon did not alias to the nearest-by-height current step (2xl), got a different/no target");
+      if (!val || val.type !== "VARIABLE_ALIAS" || val.id !== new2xlIcon.id) FAIL("librarygeom", "size/jumbo/icon did not alias to the nearest-by-height current cell (content-lg-lg), got a different/no target");
     }
 
     // IDEMPOTENT second run, STRICT (#495 follow-up): a variable already correctly aliased from run 1
@@ -600,7 +605,8 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
     const geo = F.collections.find((c) => c.name === "Geometry");
     if (!geo) throw new Error("run 1 produced no Geometry collection");
     const countOf = () => F.variables.filter((va) => va.variableCollectionId === geo.id).length;
-    const oldPresent = () => oldVars.filter((v) => F.variables.some((va) => va.variableCollectionId === geo.id && va.name === v.name)).length;
+    // kept by name (aliased) or under "_deprecated/" (a field with no cell counterpart, id kept): never removed
+    const oldPresent = () => oldVars.filter((v) => F.variables.some((va) => va.variableCollectionId === geo.id && (va.name === v.name || va.name === "_deprecated/" + v.name))).length;
     const n1 = countOf(), old1 = oldPresent();
     if (F.figma._libraryShowUICalls !== 1) FAIL("libraryidem", `run 1 expected exactly 1 library-mode prompt, got ${F.figma._libraryShowUICalls}`);
     if (old1 !== oldVars.length) FAIL("libraryidem", `run 1 preserved ${old1}/${oldVars.length} old names (fixture broken, run 2 would prove nothing)`);
