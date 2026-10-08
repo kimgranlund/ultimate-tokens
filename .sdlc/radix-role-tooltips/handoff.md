@@ -23,3 +23,11 @@ The Radix mapping is documented in the export format docs (`docs/references/know
 
 ## Constraints
 Every shell control text/padding reads the cell roles (`test/repo/control-text.mjs`). Doc cites into `src/ui/styles.css`, `app.js`, sections shift: run `node scripts/audit-citations.mjs` and repair in the same change. No U+2014. Hyperscript `h()` only, no framework. Gates via `scripts/gate_lock.py run -- <cmd>` with `SDLC_GATE_WORKERS=10`; `npm run smoke` needs `CHROME_BIN` set to Chrome Beta/Canary. `npm test` before done. The user previews in Safari: reason about WebKit from spec, smoke is Chrome only.
+
+## Acceptance criteria
+- `RADIX_STEP_GUIDE` in `src/engine/exports.js` has exactly 12 entries (steps 1 to 12 in order), each with a non-empty `role` and `intent`, and the 12 roles are distinct: `node test/ui/headless-boot.mjs` asserts this as (rx10a) to (rx10d).
+- Every `.radix-step` swatch in the Radix canvas view carries `data-tip` = `Step N: <role>` + newline + intent from that table, `tabindex="0"`, and a spoken `aria-label`: (rx10e) to (rx10h).
+- `src/ui/styles.css` draws the tooltip with `.radix-step::after { content: attr(data-tip) }` and shows it on `:hover` and `:focus-visible`; the ladder no longer clips with `overflow: hidden`: (rx10i) to (rx10k).
+- `npm test` passes (58 files) and `node scripts/audit-citations.mjs` reports no STALE or NOFILE line.
+- `CHROME_BIN="/Applications/Google Chrome Beta.app/Contents/MacOS/Google Chrome Beta" npm run smoke` prints SMOKE PASS.
+- No change to Radix step values, exports, or the role table.
