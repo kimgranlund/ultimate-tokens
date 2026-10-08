@@ -417,9 +417,9 @@ Noted for completeness (the "everything interactive" scope) but they are *patter
   inline in `.canvas-tools`, and inside the menu behind the icon-only `.tools-more` trigger
   (`popovertarget`, `aria-haspopup`, `aria-expanded`). `_fitCanvasHeader` measures the header after each
   render and on resize and picks the least-reduced layout that fits: every tool inline; else
-  `.tools-collapsed` (the menu); else also `.tools-compact` (the view/mode segments at one control inset
-  of padding, for content-lg's 64px controls). The inline home hides, never wraps or scrolls. A host
-  without the Popover API keeps every tool inline. `.center` is one `minmax(0, 1fr)` track so the header
+  `.tools-collapsed` (the menu); else also `.tools-compact` (the segments at one control inset of padding,
+  content-lg's 64px controls); else also `.tools-tight` (gap and text-button padding halved, a UI font
+  wider than the system face). Never wraps or scrolls. No Popover API keeps every tool inline. `.center` is one `minmax(0, 1fr)` track so the header
   is exactly the column's width and its overflow is measurable. Controls carry `data-fk` keys
   (`tool-*` inline, `menu-*` in the menu, `tools-menu` the trigger).
 - **Toast** `.toast`, transient confirmation (`role=status`, `aria-live=polite`).

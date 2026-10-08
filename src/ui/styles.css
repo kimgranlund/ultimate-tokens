@@ -1606,6 +1606,10 @@ a.account-manage:hover { text-decoration: underline; }
   .app-header button:not(.icon-only), .canvas-header button:not(.icon-only) { padding-inline: calc(var(--sh-control-inset) / 2); }
   .canvas-seg button { padding-inline: var(--sh-control-inset); }
 }
+/* the same tightening for a header that is still too wide after the compact step (app.js
+   _measureCanvasHeader step 4: a UI font wider than the system face, e.g. Linux at content-lg), at any window width */
+.canvas-header.tools-tight { gap: 6px; }
+.canvas-header.tools-tight button:not(.icon-only), .canvas-header.tools-tight .canvas-seg button { padding-inline: calc(var(--sh-control-inset) / 2); }
 
 .toast {
   position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(20px);

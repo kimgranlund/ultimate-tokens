@@ -1621,6 +1621,10 @@ a.account-manage:hover { text-decoration: underline; }
   .app-header button:not(.icon-only), .canvas-header button:not(.icon-only) { padding-inline: calc(var(--sh-control-inset) / 2); }
   .canvas-seg button { padding-inline: var(--sh-control-inset); }
 }
+/* the same tightening for a header that is still too wide after the compact step (app.js
+   _measureCanvasHeader step 4: a UI font wider than the system face, e.g. Linux at content-lg), at any window width */
+.canvas-header.tools-tight { gap: 6px; }
+.canvas-header.tools-tight button:not(.icon-only), .canvas-header.tools-tight .canvas-seg button { padding-inline: calc(var(--sh-control-inset) / 2); }
 
 .toast {
   position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(20px);
@@ -22523,12 +22527,11 @@ class HctApp extends HTMLElement {
   }
 
 
-  // _measureCanvasHeader(hd), picks the header's least-reduced layout that fits, in three steps:
-  //   1. every tool inline (no class);
-  //   2. `.tools-collapsed`, the trailing tools behind the overflow trigger;
-  //   3. `.tools-compact` too, the view/mode segments at one control inset of padding instead of two (the
-  //      same tightening the narrow-window media rule applies), for a geometry whose control height and
-  //      text leave the segments alone nearly the column's width (content-lg).
+  // _measureCanvasHeader(hd), picks the header's least-reduced layout that fits, in four steps: (1) every tool
+  // inline; (2) `.tools-collapsed`, the trailing tools behind the overflow trigger; (3) `.tools-compact` too,
+  // the segments at one control inset of padding instead of two (content-lg's control height and text leave
+  // them nearly the column's width); (4) `.tools-tight` too, gap and text-button padding halved, for a UI font
+  // wider than the system face (a Linux fallback measured 896 against 850 at content-lg, Typography).
   // Each step is measured (scrollWidth over clientWidth: the header is exactly the column wide, so its
   // content overflows rather than growing) in that layout, and the classes are set and cleared inside one
   // task, so nothing paints between. `.tools-probe` lays the inline tools out for step 1; while collapsed
@@ -22540,7 +22543,7 @@ class HctApp extends HTMLElement {
     const menu = hd.querySelector(".tools-menu");
     if (!menu || typeof menu.showPopover !== "function") return;
     const over = () => hd.scrollWidth > hd.clientWidth;
-    hd.classList.remove("tools-compact");
+    hd.classList.remove("tools-compact", "tools-tight");
     hd.classList.add("tools-probe");
     const fitsInline = !over();
     hd.classList.remove("tools-probe");
@@ -22550,6 +22553,7 @@ class HctApp extends HTMLElement {
       return;
     }
     hd.classList.toggle("tools-compact", over());
+    hd.classList.toggle("tools-tight", over());
   }
 
 

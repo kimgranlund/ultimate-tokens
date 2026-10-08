@@ -25,3 +25,11 @@ Read `.claude/skills/building-editor-sections/SKILL.md` and `docs/specs/app-shel
 
 ## Constraints
 Doc cites into app.js/styles.css shift: run `node scripts/audit-citations.mjs` and repair in the same change. No U+2014. Gates through `scripts/gate_lock.py run -- <cmd>` with `SDLC_GATE_WORKERS=10`. Smoke needs `CHROME_BIN` pointing at Chrome Beta/Canary on this host. `npm test` before done.
+
+## Result
+Right hypothesis: (2) plus (3). The UI font is `system-ui`, so no bundled font loads late and a `document.fonts.ready` refit (1) would change nothing. A UI font wider than this host's (Linux CI) leaves the header 896 against 850 after the compact step, and the fit had no step past it. Checked by forcing `--sans: Verdana` in a probe: Typography 897, Geometry 881 at content-lg (CI: 896, 880), every other cell fit. Fix: step 4 `.tools-tight` (gap 6px, text-button padding half an inset) in `_measureCanvasHeader`; with it Verdana measures 850/850. Regression: smoke leg "canvas header with a wider UI font" (a filler sized from the host's own compact and tight widths, font-independent; red with the tight toggle removed), plus headless (cht14, cht16, cht20) cases.
+
+## Acceptance criteria
+- `npm run smoke` passes the `canvas header at content-lg` and `canvas header with a wider UI font` legs (CHROME_BIN set).
+- `npm test` and `npm run build` are green; `node scripts/audit-citations.mjs` exits 0.
+- With the `tools-tight` toggle removed from `_measureCanvasHeader`, the wider-UI-font smoke leg fails (6 off).

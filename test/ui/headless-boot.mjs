@@ -4727,11 +4727,12 @@ app.setSection("color"); app.render(); flushRaf();
     let hidden = 0;
     if (popover) { menu.showPopover = () => {}; menu.hidePopover = () => { hidden++; }; menu.matches = () => popoverOpen; }
     start.forEach((c) => hd.classList.add(c));
-    const NEED = { inline: 900, trigger: 70, collapsed: 700, compact: 600 };
+    const NEED = { inline: 900, trigger: 70, collapsed: 700, compact: 600, tight: 520 };
     Object.defineProperty(hd, "clientWidth", { get: () => client });
     Object.defineProperty(hd, "scrollWidth", { get: () => {
       const c = hd.classList, collapsed = c.contains("tools-collapsed");
       if (c.contains("tools-probe")) return NEED.inline + (collapsed ? NEED.trigger : 0); // the inline tools, plus the trigger when it stays
+      if (collapsed && c.contains("tools-tight")) return NEED.tight;
       return collapsed ? (c.contains("tools-compact") ? NEED.compact : NEED.collapsed) : NEED.inline;
     } });
     app._measureCanvasHeader(hd);
@@ -4742,11 +4743,17 @@ app.setSection("color"); app.render(); flushRaf();
   r = fitCase("tools do not fit", { client: 800 });
   ok(r.has("tools-collapsed") && !r.has("tools-compact") && !r.has("tools-probe"), "(cht13) fit: when the tools overflow they collapse into the menu and the segments stay full");
   r = fitCase("collapsed still too wide", { client: 650 });
-  ok(r.has("tools-collapsed") && r.has("tools-compact"), "(cht14) fit: when even the collapsed header overflows the segments compact too");
+  ok(r.has("tools-collapsed") && r.has("tools-compact") && !r.has("tools-tight"), "(cht14) fit: when even the collapsed header overflows the segments compact too, and no further while that fits");
+  r = fitCase("compact still too wide", { client: 560 });
+  ok(r.has("tools-collapsed") && r.has("tools-compact") && r.has("tools-tight"), "(cht14) fit: when the compact header still overflows (a wider UI font) the tight step is taken too");
+  r = fitCase("nothing fits", { client: 300 });
+  ok(r.has("tools-collapsed") && r.has("tools-compact") && r.has("tools-tight"), "(cht14) fit: when even the tight header overflows it stays at the tightest step");
   r = fitCase("hysteresis stays", { client: 950, start: ["tools-collapsed"] });
   ok(r.has("tools-collapsed"), "(cht15) fit: a collapsed header whose tools fit alone but not with the trigger stays collapsed (no flapping on the boundary)");
   r = fitCase("hysteresis expands", { client: 975, start: ["tools-collapsed", "tools-compact"] });
   ok(!r.has("tools-collapsed") && !r.has("tools-compact"), "(cht16) fit: widening past tools + trigger expands the tools and drops the compact padding");
+  r = fitCase("hysteresis relaxes tight", { client: 650, start: ["tools-collapsed", "tools-compact", "tools-tight"] });
+  ok(r.has("tools-collapsed") && r.has("tools-compact") && !r.has("tools-tight"), "(cht16) fit: widening until the compact step fits drops the tight step and keeps the compact one");
   r = fitCase("open menu closes on expand", { client: 1000, popoverOpen: true, start: ["tools-collapsed"] });
   ok(!r.has("tools-collapsed") && r.hidden === 1, "(cht17) fit: when the tools come back inline an open menu is hidden with its trigger");
   r = fitCase("open menu stays while collapsed", { client: 800, popoverOpen: true, start: ["tools-collapsed"] });
@@ -4777,13 +4784,17 @@ app.setSection("color"); app.render(); flushRaf();
       && has(".canvas-header.tools-collapsed .tools-more", "display: inline-flex")
       && has(".canvas-header.tools-collapsed:not(.tools-probe) .canvas-tools", "display: none")
       && has(".canvas-header.tools-compact .canvas-seg button", "padding-inline: var(--sh-control-inset)")
+      && has(".canvas-header.tools-tight", "gap: 6px")
+      && has(".canvas-header.tools-tight button:not(.icon-only)", "padding-inline: calc(var(--sh-control-inset) / 2)")
       && has(".tools-menu:popover-open", "display: flex");
   };
-  ok(chtRulesOk(cssCHT), "(cht20) styles.css: the center column is one minmax(0, 1fr) track, the trigger shows only when collapsed, the inline tools hide only when collapsed and not probing, compact tightens the segments, and the menu shows only while popover-open");
+  ok(chtRulesOk(cssCHT), "(cht20) styles.css: the center column is one minmax(0, 1fr) track, the trigger shows only when collapsed, the inline tools hide only when collapsed and not probing, compact tightens the segments, tight halves the gap and the text buttons' padding, and the menu shows only while popover-open");
   const noTrack = cssCHT.replace("grid-template-columns: minmax(0, 1fr); /* the one track IS the column", "/* the one track IS the column");
   ok(noTrack !== cssCHT && !chtRulesOk(noTrack), "(cht20) negative control: a copy without the .center single-track rule fails the check");
   const noProbe = cssCHT.replace(".canvas-header.tools-collapsed:not(.tools-probe) .canvas-tools", ".canvas-header.tools-collapsed .canvas-tools");
   ok(noProbe !== cssCHT && !chtRulesOk(noProbe), "(cht20) negative control: a copy whose inline-tools hide rule ignores .tools-probe fails the check");
+  const noTight = cssCHT.replace(".canvas-header.tools-tight button:not(.icon-only),", ".canvas-header.tools-tight button.never,");
+  ok(noTight !== cssCHT && !chtRulesOk(noTight), "(cht20) negative control: a copy whose tight step no longer tightens the text buttons fails the check");
   const alwaysOpen = cssCHT.replace(".tools-menu:popover-open {", ".tools-menu {");
   ok(alwaysOpen !== cssCHT && !chtRulesOk(alwaysOpen), "(cht20) negative control: a copy that styles the menu open outside :popover-open (always visible) fails the check");
 }

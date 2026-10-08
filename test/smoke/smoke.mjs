@@ -387,6 +387,31 @@ try {
     bad.slice(0, 10).forEach((m) => console.log("    " + m));
     ok(bad.length === 0, `canvas header at ${tier}-${scale}: Color, Typography and Geometry headers fit the center column with the tools ${want}${bad.length ? ` (${bad.length} off)` : ""}`);
   }
+  // a UI font wider than this host's (CI Chrome on Linux measured 896 against 850 at content-lg, Typography,
+  // with the compact step alone): emulated by a trailing filler sized from this host's own measurements, so
+  // it needs no particular font. Probe the header's content width with the tools collapsed at the compact
+  // and at the tight step, then size the filler to leave the room between the two: the compact step alone
+  // overflows, so the fit has to choose the tight step, and the header must still fit the column.
+  {
+    const bad = [];
+    for (const section of ["typography", "geometry"]) {
+      await evalJS(`(()=>{${el}.shellGeometry={tier:"content",scale:"lg",radius:"round"};${el}.setSection("${section}");${el}._deselect();${el}.render();})()`); await sleep(300);
+      const need = await evalJS(`(()=>{const hd=${el}.querySelector(".canvas-header");const f=document.createElement("div");f.className="fit-filler";f.style.cssText="flex:none;width:1000px;height:1px";hd.appendChild(f);
+        const at=(c)=>{hd.className="canvas-header tools-collapsed "+c;return hd.scrollWidth-1000;};
+        return {compact:at("tools-compact"),tight:at("tools-compact tools-tight"),cw:hd.clientWidth};})()`);
+      const saved = need.compact - need.tight;
+      if (!(saved >= 8)) bad.push(`${section}: the tight step saves only ${saved}px (compact ${need.compact}, tight ${need.tight})`);
+      const room = need.cw - Math.round((need.compact + need.tight) / 2);
+      await evalJS(`(()=>{const hd=${el}.querySelector(".canvas-header");hd.querySelector(".fit-filler").style.width="${room}px";${el}._measureCanvasHeader(hd);})()`);
+      const f = await headerFit();
+      if (f.sw > f.cw) bad.push(`${section}: header content ${f.sw} wider than its ${f.cw} with the compact step ${Math.round(saved / 2)}px too wide (classes "${f.cls}")`);
+      if (!/\btools-tight\b/.test(f.cls)) bad.push(`${section}: the tight step was not taken (classes "${f.cls}")`);
+      if (!f.inColumn || f.out.length) bad.push(`${section}: a header control reaches past the column (${f.out.join(", ") || "right edge " + f.hdRight})`);
+      await evalJS(`${el}.render()`); // drop the filler
+    }
+    bad.slice(0, 10).forEach((m) => console.log("    " + m));
+    ok(bad.length === 0, `canvas header with a wider UI font: Typography and Geometry take the tight step and still fit the column at content-lg${bad.length ? ` (${bad.length} off)` : ""}`);
+  }
   // negative control: force the old layout (every tool inline) at content-lg and the same measures must fail,
   // so the check above can tell the clipping this ticket fixed from a header that fits. Measured in the same
   // task as the forcing: the header's ResizeObserver would otherwise re-collapse it a frame later.
