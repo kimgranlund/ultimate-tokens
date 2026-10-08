@@ -1,4 +1,4 @@
-<!-- sdlc-lite:managed:start v1 sha256:42696b5b4d24 -->
+<!-- sdlc-lite:managed:start v1 sha256:02418a597eab -->
 # Work records
 
 This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and `config`. `tickets.py roadmap` (also run by `new` and `close`) generates this block: do not edit inside it; change a ticket's `handoff.md` front matter and rerun `roadmap`. `roadmap.md` lists every ticket in dependency order. Closed `.NNNN-*` folders are history: open one only when asked.
@@ -10,9 +10,13 @@ This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and
 ## Stages
 
 - proposed: 0
-- ready: 2
+- ready: 6
   - T-0024 Gate A narrowing from #807: can the chroma-envelope gate cover stops where OKHSL keyS reads above 1? (gate-a-narrowing)
   - T-0029 Rebuild the app's analysis charts as native DOM (HTML/CSS marks) following /Users/kimgranlund/Projects/nonoun/native-dom-charts (native-dom-charts)
+  - T-0031 Canvas header trailing tools collapse into a menu when they do not fit (content-lg clipping) (header-tools-fit)
+  - T-0032 Add the hue constancy gate to test/engine/anchor.mjs (PR #810 review Major) (hue-constancy-gate)
+  - T-0033 Docs, specs and skills: repair stale facts after T-0015/17/21/27 (docs-facts-sweep)
+  - T-0034 Docs structure: indexes, placeholders, ADR map, plan archive, notes cleanup (docs-structure-sweep)
 - blocked: 0
 - done: 27
 - dropped: 0
