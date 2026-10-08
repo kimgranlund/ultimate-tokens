@@ -39,10 +39,11 @@ import { deriveDataHues } from "../engine/data-hues.mjs";
 import { PRIME_STEPS } from "../engine/prime.mjs";
 import { rampChromaOf as rampChromaOfPure, primeChromaOf as primeChromaOfPure } from "../engine/resolve.mjs";
 import { resolveControls } from "../engine/controls.mjs";
-import { compute } from "../engine/layers.mjs";
+import { compute, runOf, docPins } from "../engine/layers.mjs";
+import { LATEST } from "../engine/layer-pins.mjs";
 import { semanticRoles, refKey, isAchromaticRef } from "../engine/semantic.js";
-import { typeScale, DEFAULT_TYPE } from "../engine/type.mjs";
-import { geomScale, DEFAULT_GEOMETRY } from "../engine/geometry.mjs";
+import { DEFAULT_TYPE } from "../engine/type.mjs";
+import { DEFAULT_GEOMETRY } from "../engine/geometry.mjs";
 
 // geometryScale, the resolved geometry for a doc, COMPOSED with its type scale so every cell's control
 // text (`text`, `chipText`, `captionText`) is the type scale's height-indexed UI text (T-0017). The
@@ -146,7 +147,7 @@ export function typeScaleFor(doc, modeKey) {
   const t = doc.type || DEFAULT_TYPE;
   const base = modeKey === "base" ? t : (() => { const m = typeEffectiveModes(doc).find((x) => x.id === modeKey); return m ? { ...t, bodyBase: m.bodyBase ?? t.bodyBase, modeFactor: m.factor ?? 1 } : t; })();
   const overrides = { ...modeTierNudge(base.modeFactor), ...typeOverridesFor(doc, modeKey) };
-  return typeScale({ ...base, overrides });
+  return runOf(doc, "type")({ ...base, overrides });
 }
 
 // geomScaleFor(doc, modeKey), the resolved geometry scale for a mode: "base" → doc.geometry; a mode id →
@@ -156,7 +157,7 @@ export function typeScaleFor(doc, modeKey) {
 export function geomScaleFor(doc, modeKey) {
   const g = doc.geometry || DEFAULT_GEOMETRY;
   const mode = modeKey === "base" ? null : geomEffectiveModes(doc).find((x) => x.id === modeKey);
-  return geomScale(mode ? { ...g, scale: mode.scale } : g, { typeScale: typeScaleFor(doc, "base") });
+  return runOf(doc, "geometry")(mode ? { ...g, scale: mode.scale } : g, { typeScale: typeScaleFor(doc, "base") });
 }
 
 // typeTierScale(doc, mult, mf), the byte-identical tier closure that used to be reimplemented
@@ -166,7 +167,7 @@ export function geomScaleFor(doc, modeKey) {
 function typeTierScale(doc, mult, mf) {
   const t = doc.type || DEFAULT_TYPE;
   const bb = Number(t.bodyBase) || DEFAULT_TYPE.bodyBase;
-  return typeScale({ ...t, bodyBase: bb * mult, modeFactor: mf, overrides: { ...(t.overrides || {}), ...modeTierNudge(mf) } });
+  return runOf(doc, "type")({ ...t, bodyBase: bb * mult, modeFactor: mf, overrides: { ...(t.overrides || {}), ...modeTierNudge(mf) } });
 }
 
 // typeModeScales(doc), the breakpoint-mode scales for the Figma exports, [{ name, minWidth, scale }].
@@ -202,7 +203,7 @@ export function geomModeScales(doc) {
   const g = doc.geometry || DEFAULT_GEOMETRY;
   if ((g.modes || []).length) return g.modes.map((m) => ({ name: m.name, minWidth: m.minWidth, scale: geomScaleFor(doc, m.id) }));
   const typeScale = typeScaleFor(doc, "base");
-  return SYNTH_GEOM_MODES.map((m) => ({ name: m.name, minWidth: m.minWidth, scale: geomScale({ ...g, scale: m.scale }, { typeScale }) }));
+  return SYNTH_GEOM_MODES.map((m) => ({ name: m.name, minWidth: m.minWidth, scale: runOf(doc, "geometry")({ ...g, scale: m.scale }, { typeScale }) }));
 }
 import {
   exportCSS,
@@ -462,6 +463,9 @@ export function defaultDocument() {
     roleOverrides: {}, // per-doc semantic-mapping re-points (empty = canonical role table)
     type: { ...DEFAULT_TYPE }, // typography config (treatment + body base), see engine/type.mjs
     geometry: { ...DEFAULT_GEOMETRY }, // dimensional config (tier, scale, radius, spaceBase), see engine/geometry.mjs
+    // layers (#788, ADR-033): a new document pins every compute layer's latest version; a stored one
+    // keeps its own pins through hydrate (R100).
+    layers: { ...LATEST },
   };
 }
 
@@ -570,6 +574,7 @@ export function stateOf(doc) {
     // every exporter alike, so the two paths can never resolve differently (Risk 0b, ADR-033).
     palettes: resolvedPalettes(doc),
     roleOverrides: doc.roleOverrides ?? {}, // threaded to the exporters so re-points reach the output
+    layers: docPins(doc), // the compute-layer pins (#788): compute runs them, every export stamps them
     curve: c.curve,
     tension: c.tension,
     lmin: c.lmin,
@@ -1013,9 +1018,10 @@ export function projectView(doc) {
     ui3: JSON.stringify(exportUI3(state, derived), null, 2),
     tailwind: exportTailwind(state, derived),
     shadcn: exportShadcn(state, { fonts: shadType.fonts, radii: shadGeom.radii }, derived),
-    panda: exportPandaModule(exportPanda(state, { type: shadType, geometry: shadGeom }, derived)),
-    radix: exportRadixModule(radixPreset),
-    radixRef: exportRadixModule(radixRefPreset),
+    // The module exporters take a preset object, so the state's layer pins travel as `layers` (#788).
+    panda: exportPandaModule(exportPanda(state, { type: shadType, geometry: shadGeom }, derived), { layers: state.layers }),
+    radix: exportRadixModule(radixPreset, { layers: state.layers }),
+    radixRef: exportRadixModule(radixRefPreset, { layers: state.layers }),
     figma: {
       light: JSON.stringify(dtcgObj["Light_tokens.json"], null, 2),
       dark: JSON.stringify(dtcgObj["Dark_tokens.json"], null, 2),

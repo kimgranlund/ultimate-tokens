@@ -19,6 +19,17 @@ they landed on `main` and reference the squash-merged PR that introduced them.
   exports render byte for byte as before. One case moves: a raw state with no `hueSpace` sent
   straight to an exporter (the MCP server or a hand-built caller) now renders as OKLCH, the editor's
   default, instead of CAM16; a document saved by the app always carries its hue space.
+- **Every export records the compute-layer versions that produced it; export schema 7** (#788,
+  ADR-033). A document now carries a `layers` map, the version of each compute layer (`controls`,
+  `ramp`, `prime`, `roles`, `type`, `geometry`) it renders with, and every export stamps it: line 2
+  of the CSS, OKLCH, Tailwind, ShadCN, Panda and Radix outputs reads `/* ultimate-tokens layers
+  controls@1 ramp@1 prime@1 roles@1 type@1 geometry@1 */` under the unchanged schema line; JSON
+  carries `meta.layers`, DTCG `$extensions["com.ultimate-tokens"].layers`, UI3 and the
+  design-system `tokens.json` `$layers`. `EXPORT_SCHEMA_VERSION` 6 to 7, so the brand kit is
+  `ultimate-tokens-brand-kit/7` and the brand-kit MCP server 0.7.0. The saved-document schema is
+  10: a kit saved before this change loads pinned to version 1 of every layer, a new kit and an
+  opened preset pin the latest. Every layer is at version 1 today, so no token value moves. The
+  committed Adia artifacts are re-exported (oklch 2.2.0, radix 1.5.0) for the new stamp only.
 
 ### 2026-10-07
 

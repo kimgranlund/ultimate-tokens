@@ -33,7 +33,7 @@ import {
   hasDataPalettes,
   mintDataPalettes,
 } from "./model.mjs";
-import { STORAGE_KEY, serialize, hydrate } from "./persist.js";
+import { STORAGE_KEY, serialize, hydrate, presetDoc } from "./persist.js"; // presetDoc: a preset opens pinned to every layer's latest version (R100, #788)
 import { clampProfile, resolveFlags, flagOf as flagFromFlags, resolveTier, entitlementActive } from "../engine/flags.js";
 import { FIGMA_PLUGIN } from "./figma-plugin-assets.js";
 import { MCP_BRAND_KIT, MCP_BRAND_KIT_VERSION } from "./mcp-assets.js";
@@ -832,7 +832,7 @@ class HctApp extends HTMLElement {
     );
     return h(
       "button",
-      { class: "set-tile preset", title: `Open a copy of “${preset.name}”`, onclick: () => this.openConfigAsSet(preset, `Opened “${preset.name}”`, { mintData: true }) },
+      { class: "set-tile preset", title: `Open a copy of “${preset.name}”`, onclick: () => this.openConfigAsSet(presetDoc(preset), `Opened “${preset.name}”`, { mintData: true }) },
       h(
         "div",
         { class: "set-thumb" },

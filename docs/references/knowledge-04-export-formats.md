@@ -389,7 +389,7 @@ UI still carries internally (`src/ui/persist.js`); AC-004 (`spec-muted-base-key-
 literal string `baseIntensity` from `src/engine` entirely, including as a property name, and this is
 the export-facing rename boundary that keeps it out.
 
-**The schema stamp** (E6, ticket #577, `EXPORT_SCHEMA_VERSION`, currently `6`), one constant, stamped
+**The schema stamp** (E6, ticket #577, `EXPORT_SCHEMA_VERSION`, currently `7`), one constant, stamped
 wherever a surface has a slot for it; absence on an older export meant v1:
 
 | Format | Placement |
@@ -400,4 +400,16 @@ wherever a surface has a slot for it; absence on an older export meant v1:
 | CSS / CSS OKLCH / Tailwind / ShadCN | a first-line comment, `/* ultimate-tokens export schema {N} */` |
 | Brand-kit (`brandKit()`) | the `$schema` string's own trailing segment, `ultimate-tokens-brand-kit/{N}` (served as-is by `mcp/brand-kit-core.mjs`, which never itself reads or writes it); `SERVER.version` in `mcp/brand-kit-core.mjs` is a separate, hand-kept literal (that file ships standalone, no cross-file import), bump it in step with `EXPORT_SCHEMA_VERSION` by convention, not by shared code |
 | DS bundle | Claude Design profile: `tokens.json`'s own `$schemaVersion` (`exportDesignSystemTokens`) and DESIGN.md frontmatter's `tokensSchema` (`exportDesignSystemSpine`). Stitch ships the same DESIGN.md (so inherits `tokensSchema`) but no `tokens.json`, no `$schemaVersion` there. Figma Make ships neither `DESIGN.md` nor `tokens.json` (its own `guidelines/` tree + `styles.css` + `README.md`), its `styles.css` is `exportShadcn()`'s own output, so it INHERITS that format's `/* ultimate-tokens export schema N */` first-line comment for free; the figma-make profile's `README.md` receipt (`exportDesignSystemReceipt`) cites that same comment verbatim as its own "Schema stamp" line (ticket #607) so the stamp is explicit and gated (`hpg-export-schema-stamp`), not merely incidental |
-| Panda CSS / Radix | not emitted, a Panda/Radix preset object has no metadata slot short of a comment, and neither `exportPandaModule`/`exportRadixModule`'s two-line header carries one today |
+| Panda CSS / Radix | the module wrappers (`exportPandaModule`, `exportRadixModule`) open with the same first-line comment (ticket #606); the preset object itself carries no stamp |
+
+**The layer pins** (compute layers, #788, ADR-033, schema 7), the version of each compute layer
+(`controls`, `ramp`, `prime`, `roles`, `type`, `geometry`) the values came from, read
+off the document by `docPins` (`src/engine/layers.mjs`), stamped beside the schema stamp:
+
+| Format | Placement |
+|---|---|
+| JSON | `meta.layers`, `{ [id]: version }` |
+| DTCG | `$extensions["com.ultimate-tokens"].layers`, beside `schemaVersion`, on all 3 files |
+| UI3 (Figma) | a root `$layers` |
+| CSS / CSS OKLCH / Tailwind / ShadCN / Panda / Radix modules | line 2, right under the schema line: `/* ultimate-tokens layers controls@1 ramp@1 prime@1 roles@1 type@1 geometry@1 */` (`layerPinsLine`); the module wrappers take the pins as `opts.layers` |
+| DS bundle | `tokens.json` `$layers`; Figma Make's `styles.css` inherits ShadCN's line 2; DESIGN.md frontmatter takes no key (the Stitch linter rejects unknown keys) |

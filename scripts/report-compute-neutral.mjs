@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // report-compute-neutral.mjs, the byte-neutrality report for the compute-layers refactor (#788, ADR-033).
 //
-//   node scripts/report-compute-neutral.mjs --base <rev> [--only <category>|default-kit] [--perturb]
+//   node scripts/report-compute-neutral.mjs --base <rev> [--only <category>|default-kit] [--perturb] [--migrate]
 //
 // Why: report-preset-fidelity.mjs --identity-control renders each palette through `rampChromaOf` and
 // `paletteStops` alone, so it never reaches compute(), projectView() or derivedAll() and cannot see a
@@ -22,8 +22,24 @@
 // line. `--perturb` flips one hex digit in one head cell before the compare (the first subject's first
 // canvas ramp stop), as --identity-control's --perturb does, so a run can show the compare bites.
 //
-// Output: `subjects <n>`, one `<surface>: <d> of <t> cells differ` line per surface (with up to three
-// witnesses), and last `<n> differing cells`. Exit 0 only at 0, 1 on any difference or a render that
+// Stamp normalization (#788 step 2), applied to both trees' renders and touching nothing else: the
+// export-schema digit in `export schema <N>`, `schemaVersion`, `$schemaVersion`, `tokensSchema`,
+// `brand-kit/<N>` and `schema.v<N>`; every line starting `/* ultimate-tokens layers `; and every
+// `layers` and `$layers` key. JSON carried as text is parsed, normalized as an object and re-printed in
+// its own layout (only when the text round-trips through that layout; otherwise it is normalized line
+// by line). Each tree prints `normalized <n>`, the count of stamps it set aside.
+//
+// `--migrate` (#788 step 2, the meaning report-preset-fidelity.mjs --identity-control --migrate gives the
+// flag, #804): the pre-pin hydrate identity. Without it both trees render the one base-hydrated object,
+// so the head tree's v10 `stampLayers` migration never runs. With it each preset subject is the base
+// tree's raw preset object, hydrated by the base `hydrate` on the base side and by this tree's `hydrate`
+// on the head side, and the default kit is the base `defaultDocument()` (base-hydrated) on the base side
+// and this tree's `hydrate` of that document stamped `schemaVersion: 9`, a saved v9 kit, on the head
+// side. It prints `migrate: <n> subjects hydrated by head`, n counting the head subjects whose hydrate
+// carried a `layers` map; fewer than every subject fails the run.
+//
+// Output: `subjects <n>`, the `normalized` lines, one `<surface>: <d> of <t> cells differ` line per
+// surface (with up to three witnesses), and last `<n> differing cells`. Exit 0 only at 0, 1 on any difference or a render that
 // throws, 2 on a usage error. Rendering runs in worker threads (one pool per tree), because a full
 // run renders every preset through every surface twice.
 import { mkdtempSync, rmSync, existsSync, readdirSync } from "node:fs";
@@ -35,6 +51,11 @@ import { Worker, isMainThread, parentPort, workerData } from "node:worker_thread
 
 const DS_DATE = "2000-01-01";
 const SURFACES = ["projectView", "figmaBundle", "brandKit", "dsBundle", "dsStitch", "dsMake"];
+// the stamp normalization (see the header): the digit after each prefix becomes `N`
+const DIGIT_RES = [/(export schema )\d+/g, /(brand-kit\/)\d+/g, /(schema\.v)\d+/g, /("\$?schemaVersion"\s*:\s*)\d+/g, /("tokensSchema"\s*:\s*)\d+/g, /(\btokensSchema:\s*)\d+/g];
+const PINS_LINE = "/* ultimate-tokens layers ";
+const STAMP_KEYS = new Set(["layers", "$layers"]);
+const DIGIT_KEYS = new Set(["schemaVersion", "$schemaVersion", "tokensSchema"]);
 
 if (!isMainThread) {
   // worker: render the assigned subjects on one tree, one message per subject
@@ -54,7 +75,9 @@ if (!isMainThread) {
     render("dsBundle", () => M.exportDesignSystemBundle(dsDoc, typeSc, geomSc, { date: DS_DATE }));
     render("dsStitch", () => M.exportDesignSystemStitchBundle(dsDoc, typeSc, geomSc, { date: DS_DATE }));
     render("dsMake", () => M.exportDesignSystemMakeBundle(dsDoc, typeSc, geomSc, { date: DS_DATE }));
-    parentPort.postMessage({ idx, out, errors });
+    const counter = { n: 0 };
+    for (const name of Object.keys(out)) out[name] = normValue(out[name], counter);
+    parentPort.postMessage({ idx, out, errors, normalized: counter.n });
   }
 } else {
   await main();
@@ -63,12 +86,13 @@ if (!isMainThread) {
 async function main() {
   const HERE = dirname(fileURLToPath(import.meta.url));
   const REPO_ROOT = pathJoin(HERE, "..");
-  const USAGE = "usage: node scripts/report-compute-neutral.mjs --base <rev> [--only <category>|default-kit] [--perturb]";
+  const USAGE = "usage: node scripts/report-compute-neutral.mjs --base <rev> [--only <category>|default-kit] [--perturb] [--migrate]";
   const args = process.argv.slice(2);
-  const known = new Set(["--base", "--only", "--perturb"]);
+  const known = new Set(["--base", "--only", "--perturb", "--migrate"]);
   const baseIdx = args.indexOf("--base");
   const onlyIdx = args.indexOf("--only");
   const perturb = args.includes("--perturb");
+  const migrate = args.includes("--migrate");
   const rev = baseIdx >= 0 ? args[baseIdx + 1] : null;
   const only = onlyIdx >= 0 ? args[onlyIdx + 1] : null;
   const stray = args.filter((a, i) => a.startsWith("--") ? !known.has(a) : !(i > 0 && (args[i - 1] === "--base" || args[i - 1] === "--only")));
@@ -105,6 +129,7 @@ async function main() {
     if (!(name in baseModel)) { console.error(`usage: base tree at ${rev} is missing the model export ${name}`); process.exit(2); }
   }
   if (!("hydrate" in basePersist)) { console.error(`usage: base tree at ${rev} is missing the persist export hydrate`); process.exit(2); }
+  const headPersist = migrate ? await import(pathToFileURL(pathJoin(REPO_ROOT, "src/ui/persist.js")).href) : null;
 
   const cats = readdirSync(baseCatDir).filter((f) => f.endsWith(".js") && f !== "index.js").map((f) => f.slice(0, -3)).sort();
   if (only !== null && only !== "default-kit" && !cats.includes(only)) {
@@ -112,16 +137,25 @@ async function main() {
     process.exit(2);
   }
 
-  // the subjects: the base default kit and every base preset, each hydrated once by the base hydrate
+  // the subjects: the base default kit and every base preset, each hydrated once by the base hydrate;
+  // under --migrate each also carries its head-side document, hydrated by this tree's hydrate
   const subjects = [];
-  if (only === null || only === "default-kit") subjects.push({ label: "default-kit", doc: basePersist.hydrate(baseModel.defaultDocument()) });
+  if (only === null || only === "default-kit") {
+    const kit = baseModel.defaultDocument();
+    subjects.push({ label: "default-kit", doc: basePersist.hydrate(kit), ...(migrate ? { head: headPersist.hydrate({ ...kit, schemaVersion: 9 }) } : {}) });
+  }
   for (const slug of only === null ? cats : (only === "default-kit" ? [] : [only])) {
     const { PRESETS } = await import(pathToFileURL(pathJoin(baseCatDir, `${slug}.js`)).href);
-    for (const preset of PRESETS) subjects.push({ label: `${slug}/${preset.name}`, doc: basePersist.hydrate({ ...preset }) });
+    for (const preset of PRESETS) subjects.push({ label: `${slug}/${preset.name}`, doc: basePersist.hydrate({ ...preset }), ...(migrate ? { head: headPersist.hydrate({ ...preset }) } : {}) });
   }
-  console.log(`report-compute-neutral --base ${rev}${only ? ` --only ${only}` : ""}${perturb ? " --perturb" : ""}`);
+  console.log(`report-compute-neutral --base ${rev}${only ? ` --only ${only}` : ""}${perturb ? " --perturb" : ""}${migrate ? " --migrate" : ""}`);
   console.log(`subjects ${subjects.length}`);
   if (subjects.length === 0) { console.log("FAIL: vacuity, no subjects loaded"); process.exit(1); }
+  if (migrate) {
+    const stamped = subjects.filter((s) => s.head && s.head.layers && typeof s.head.layers === "object").length;
+    console.log(`migrate: ${stamped} subjects hydrated by head`);
+    if (stamped !== subjects.length) { console.log(`FAIL: --migrate, ${subjects.length - stamped} head subject(s) carry no layers map`); process.exit(1); }
+  }
 
   // one worker pool per tree; subject i goes to worker i % jobs on both trees, so the two sides advance together
   const jobs = Math.max(1, Math.min(3, Math.floor(availableParallelism() / 4), subjects.length));
@@ -129,6 +163,7 @@ async function main() {
   const pending = new Map(); // idx -> { base?, head? }
   const agg = Object.fromEntries(SURFACES.map((s) => [s, { total: 0, diff: 0, witnesses: [] }]));
   const renderErrors = [];
+  const normalized = { base: 0, head: 0 };
   let compared = 0;
 
   const compareSubject = (idx, base, head) => {
@@ -148,9 +183,10 @@ async function main() {
   };
 
   await Promise.all(Object.entries(trees).flatMap(([side, modelUrl]) => Array.from({ length: jobs }, (_, w) => new Promise((resolve, reject) => {
-    const mine = subjects.map((s, idx) => ({ idx, doc: s.doc })).filter(({ idx }) => idx % jobs === w);
+    const mine = subjects.map((s, idx) => ({ idx, doc: side === "head" && s.head ? s.head : s.doc })).filter(({ idx }) => idx % jobs === w);
     const worker = new Worker(fileURLToPath(import.meta.url), { workerData: { modelUrl, subjects: mine } });
-    worker.on("message", ({ idx, out, errors }) => {
+    worker.on("message", ({ idx, out, errors, normalized: n }) => {
+      normalized[side] += n;
       const slot = pending.get(idx) ?? {};
       slot[side] = { out, errors };
       if (slot.base && slot.head) { pending.delete(idx); compareSubject(idx, slot.base, slot.head); }
@@ -160,6 +196,8 @@ async function main() {
     worker.on("exit", (code) => (code === 0 ? resolve() : reject(new Error(`${side} worker ${w} exited ${code}`))));
   })))).catch((e) => { console.log(`FAIL: ${e.message}`); process.exit(1); });
 
+  console.log(`normalized ${normalized.base} on base`);
+  console.log(`normalized ${normalized.head} on head`);
   let totalDiff = 0;
   for (const s of SURFACES) {
     const a = agg[s];
@@ -210,6 +248,45 @@ function walk(a, b, path, acc, label) {
     if (!(k in A) || !(k in B)) { acc.total++; note(acc, label, `${path}.${k} (one side only)`); continue; }
     walk(A[k], B[k], `${path}.${k}`, acc, label);
   }
+}
+
+// normValue(v, counter), v with the export stamps set aside (see the header), counter.n counting each
+// one: a `layers`/`$layers` key dropped, a stamp digit in a DIGIT_KEYS number or a DIGIT_RES match
+// replaced by `N`, a pins line removed. A string is normalized by normText.
+function normValue(v, counter) {
+  if (typeof v === "string") return normText(v, counter);
+  if (Array.isArray(v)) return v.map((x) => normValue(x, counter));
+  if (v instanceof Map) return new Map([...v].map(([k, x]) => [k, normValue(x, counter)]));
+  if (v === null || typeof v !== "object" || ArrayBuffer.isView(v)) return v;
+  const out = {};
+  for (const [k, x] of Object.entries(v)) {
+    if (STAMP_KEYS.has(k)) { counter.n++; continue; }
+    if (DIGIT_KEYS.has(k) && typeof x === "number") { counter.n++; out[k] = "N"; continue; }
+    out[k] = normValue(x, counter);
+  }
+  return out;
+}
+
+// normText(s, counter): JSON carried as text that round-trips through its own layout (its indent, plus
+// any trailing whitespace) is parsed, normalized by normValue and re-printed in that layout; any other
+// text loses its pins lines and has each stamp digit replaced.
+function normText(s, counter) {
+  const t = s.trimStart();
+  if (t[0] === "{" || t[0] === "[") {
+    let obj;
+    try { obj = JSON.parse(s); } catch { obj = undefined; }
+    if (obj !== undefined) {
+      const indent = (s.match(/\n( +)\S/) || [, ""])[1].length;
+      const printed = JSON.stringify(obj, null, indent);
+      if (s.startsWith(printed) && /^\s*$/.test(s.slice(printed.length))) return JSON.stringify(normValue(obj, counter), null, indent) + s.slice(printed.length);
+    }
+  }
+  const lines = s.split("\n");
+  const kept = lines.filter((l) => !l.startsWith(PINS_LINE));
+  counter.n += lines.length - kept.length;
+  let out = kept.join("\n");
+  for (const re of DIGIT_RES) out = out.replace(re, (_, pre) => { counter.n++; return `${pre}N`; });
+  return out;
 }
 
 function note(acc, label, where) {

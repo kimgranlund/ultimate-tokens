@@ -4,6 +4,7 @@ import * as U from "../../src/ui/persist.js";
 import * as X from "../../src/engine/exports.js";   // theme-invariance tests the exporters against state.theme
 import * as Ty from "../../src/engine/type.mjs";     // allowlist-parity: canonical TYPE_TREATMENTS ids + voice set
 import * as Ge from "../../src/engine/geometry.mjs"; // allowlist-parity: canonical TIERS/SCALES/SIZES/RADIUS_MODES ids
+import { LATEST } from "../../src/engine/layer-pins.mjs"; // the compute-layer pins, a hydrated field since schema v10 (#788)
 
 let _s = 0x1234abcd >>> 0;
 const rnd = () => { _s = (Math.imul(_s, 1103515245) + 12345) >>> 0; return _s / 0x100000000; };
@@ -37,7 +38,7 @@ const inDomainState = () => {
   const tyTok = {}; for (const [k, v] of [["Body|MD|base", 40], ["Display|XL|base", 90], ["Label|SM|base", 13]]) if (rnd() > 0.5) tyTok[k] = v;
   return { curve: pick(["linear", "sine", "cubic", "logistic", "exp"]), tension: rnd() * 100, lmin: rnd() * 40, lmax: 60 + rnd() * 40,
     damp: rnd() * 100, dampCurve: 0.5 + rnd() * 3.5, dampAmp: rnd() * 100, dampBias: -100 + rnd() * 200,
-    baseIntensity: rnd() * 100, primeChroma: rnd() * 100,
+    baseIntensity: rnd() * 100, primeChroma: rnd() * 100, layers: { ...LATEST },
     hueSpace: pick(["cam16", "oklch"]), relChroma: rnd() > 0.5, chromaFloor: rnd() * 100, toneMode: pick(["even", "perceptual", "peak"]), vibrancy: rnd() * 100, onColorMode: pick(["fixed", "contrast"]), accentRef: pick(["mode", "single"]), type: { treatment: pick(["product", "luxury", "editorial", "technical", "statement"]), bodyBase: 10 + Math.floor(rnd() * 22), ...(rnd() > 0.5 ? { modes: [{ id: "tm-" + Math.floor(rnd() * 1e6).toString(36), name: pick(["Mobile", "Desktop", "Mode 2"]), bodyBase: 10 + Math.floor(rnd() * 22), ...(rnd() > 0.5 ? { minWidth: 320 + Math.floor(rnd() * 1200) } : {}) }] } : {}), ...(Object.keys(tyTok).length ? { tokenOverrides: tyTok } : {}) }, geometry: { tier: pick(["content", "product", "micro"]), scale: pick(["sm", "md", "lg"]), radius: pick(["default", "round", "sharp", "pill"]), spaceBase: 1 + Math.floor(rnd() * 16), ...(rnd() > 0.5 ? { modes: [{ id: "gm-" + Math.floor(rnd() * 1e6).toString(36), name: pick(["Mobile", "Desktop", "Mode 2"]), scale: pick(["sm", "md", "lg"]), ...(rnd() > 0.5 ? { minWidth: 320 + Math.floor(rnd() * 1200) } : {}) }] } : {}) }, theme: pick(["auto", "light", "dark"]), selected: Math.floor(rnd() * n), roleOverrides, palettes };
 };
 
@@ -442,7 +443,7 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
     if (JSON.stringify(kept.geometry) !== JSON.stringify({ tier: "content", scale: "lg", radius: "pill", spaceBase: 8 }) || kept[U.DROPPED_KEYS].length) FAIL("geometry-migrate", `a pre-v9 doc in the v9 shape must hydrate unchanged (got ${JSON.stringify(kept.geometry)})`);
     // a v9 doc round-trips byte-identical, every optional field present.
     const v9 = U.serialize({ ...inDomainState(), geometry: { tier: "micro", scale: "lg", radius: "pill", spaceBase: 6, modes: [{ id: "gm-c", name: "Mobile", scale: "sm", minWidth: 476 }, { id: "gm-d", name: "Wide", scale: "lg" }], baseName: "Desktop" } });
-    if (v9.schemaVersion !== 9 || JSON.stringify(U.hydrate(v9).geometry) !== JSON.stringify(v9.geometry)) FAIL("geometry-migrate", `a v9 geometry must round-trip byte-identical (got ${JSON.stringify(U.hydrate(v9).geometry)})`);
+    if (!(v9.schemaVersion >= 9) || JSON.stringify(U.hydrate(v9).geometry) !== JSON.stringify(v9.geometry)) FAIL("geometry-migrate", `a v9 geometry must round-trip byte-identical (got ${JSON.stringify(U.hydrate(v9).geometry)})`);
     // a v9 snapshot is never migrated: its stray legacy keys are reported, never read.
     const stray = U.hydrate({ schemaVersion: 9, palettes: [], geometry: { treatment: "touch", baseHeight: 36, tier: "content" } });
     if (stray.geometry.tier !== "content" || stray.geometry.scale !== "md" || stray.geometry.spaceBase !== 4) FAIL("geometry-migrate", `a v9 snapshot must not be migrated (got ${JSON.stringify(stray.geometry)})`);

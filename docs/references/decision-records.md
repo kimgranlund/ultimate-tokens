@@ -1259,6 +1259,38 @@ Format: Context → Decision → Rationale → Consequences → Status.
   instead of cam16 (`test/engine/controls.mjs`). Decisions 3 and 6 (pins, frozen versions, the
   export stamp) follow under the same plan; the plan's fifth unit (`ramp@2` without the cam16 branch,
   R102) is closed by decision 5.
+- **Amendment, step 2 (2026-10-08, #788).** How decisions 3 and 6 landed.
+  - Pins live on the document as `doc.layers = { [id]: version }`. The pin rule (a number is rounded
+    and clamped to `[1, latest]`, a missing or malformed pin reads 1, an unknown id is not carried)
+    is one function, `pinsOf` in `src/engine/layer-pins.mjs`, used by `hydrate`, `compute` and every
+    export stamp. It sits outside `layers.mjs` so `persist.js` applies it without importing the
+    registry; its `LATEST` table is gated equal to `latestOf(REGISTRY)` by
+    `test/engine/layer-pins.mjs`. `defaultDocument()` carries `layers` at `LATEST`.
+  - Persist schema 10. `CURRENT_SCHEMA_VERSION` 9 to 10, with one `RENAME_MAPS` entry
+    (`stampLayers`, shaped like v2's `stampIntensity`) that stamps every registered layer id at
+    version 1 on a doc stamped below 10 that carries no `layers` map, before the clamp. That stamp is
+    the explicit boundary, so every hydrated doc serializes with `layers`; `hydrate` then clamps each
+    pin and drops an unknown id, reported through `DROPPED_KEYS`.
+  - `presetDoc(preset)` lives in `src/ui/persist.js`: `hydrate(preset)` with `layers` overwritten by
+    every layer's latest. The preset tile in `src/ui/app.js` opens a preset through it; every other
+    open path keeps the stored pins. It is not in `layers.mjs` because `src/engine` imports nothing
+    from `src/ui`.
+  - `compute` runs each layer at the document's pin (`layerAt(registry, id, pins[id]).run`), with
+    `REGISTRY` (every runnable version) as its registry. `type` and `geometry` are mode layers:
+    `src/ui/model.mjs` (`typeScaleFor`, `typeTierScale`, `geomScaleFor`, `geomModeScales`) calls the
+    pinned version through `runOf(doc, id)`.
+  - Frozen versions are `src/engine/layers/<id>@<n>.mjs`, hash-gated by
+    `src/engine/layers/FROZEN.json` (the SHA-256 of every other file in that folder) in
+    `test/engine/layers.mjs`. This change ships only the synthetic `test-layer@1` and `@2`,
+    registered by the test alone and never bundled, so every shipped layer is still at version 1 and
+    every render keeps its token values.
+  - `EXPORT_SCHEMA_VERSION` is 7 (6 plus 1). Comment-stamped formats (CSS, OKLCH, Tailwind, ShadCN,
+    the Panda and Radix modules) carry `/* ultimate-tokens layers controls@1 ramp@1 prime@1 roles@1
+    type@1 geometry@1 */` as line 2, under the unchanged line-1 schema stamp; JSON carries
+    `meta.layers`, DTCG `$extensions["com.ultimate-tokens"].layers`, UI3 and the design-system
+    `tokens.json` `$layers`. The DESIGN.md frontmatter takes no new key. The brand kit is
+    `ultimate-tokens-brand-kit/7` and the brand-kit MCP server 0.7.0.
+  - The editor's "upgrade to latest" action is not in this change.
 - **Alternatives rejected.**
   | Alternative | Why rejected |
   |---|---|

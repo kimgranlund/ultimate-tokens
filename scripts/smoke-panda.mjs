@@ -38,8 +38,8 @@ if (typeof radixPreset === "string") {
   process.exit(1);
 }
 
-const pandaModule = exportPandaModule(pandaPreset);
-const radixModule = exportRadixModule(radixPreset);
+const pandaModule = exportPandaModule(pandaPreset, { layers: state.layers });
+const radixModule = exportRadixModule(radixPreset, { layers: state.layers });
 
 const scratch = mkdtempSync(join(tmpdir(), "ut-panda-smoke-"));
 writeFileSync(join(scratch, "panda.preset.mjs"), pandaModule);
