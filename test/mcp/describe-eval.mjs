@@ -7,6 +7,7 @@ import { execFileSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { GOLDEN_EVALS, DISTANCE_THRESHOLD, SEED_LIGHTNESS, CHROMA_TO_OKLCH, seedDistance, seedLab, scoreBrief, scoreRun } from "../../mcp/describe-eval.mjs";
+import { parseLeadingJsonObject } from "../../mcp/describe-eval-runner.mjs";
 import { EXEMPLARS } from "../../mcp/describe-rubric.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -157,6 +158,20 @@ ok(SEED_LIGHTNESS > 0 && SEED_LIGHTNESS < 1 && CHROMA_TO_OKLCH > 0, "the fixed l
 {
   const summary = scoreRun([{ id: "not-a-real-golden-id", brief: {} }]);
   ok(summary.total === 1 && summary.passCount === 0 && summary.scored[0].misses[0].reason === "unknown-golden-id", "scoreRun degrades gracefully for an id with no matching golden entry, instead of throwing");
+}
+
+// ── parseLeadingJsonObject: a string-typed `families` may carry trailing text (Haiku 5.5, #811) ──
+{
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  ok(same(parseLeadingJsonObject('{"Primary":{"hue":10}}'), { Primary: { hue: 10 } }), "a plain JSON string parses as before");
+  const trailing = '{"Primary":{"hue":10}} and then prose {"Other":1}';
+  ok(same(parseLeadingJsonObject(trailing), { Primary: { hue: 10 } }), "a valid object followed by prose and a second object parses to the first object only");
+  let threw = false; try { JSON.parse(trailing); } catch { threw = true; }
+  ok(threw, "negative control: the pre-fix JSON.parse-only path throws on the trailing-text case");
+  ok(same(parseLeadingJsonObject('{"a":"x}{y \\" } z","b":{"c":1}} tail'), { a: 'x}{y " } z', b: { c: 1 } }), "braces and escaped quotes inside string values do not end the scan early");
+  ok(parseLeadingJsonObject('{"a":{"b":1}') === '{"a":{"b":1}', "an unbalanced string is returned unchanged");
+  ok(parseLeadingJsonObject("no json here") === "no json here", "a non-JSON string is returned unchanged");
+  ok(parseLeadingJsonObject("{not json} tail") === "{not json} tail", "a balanced but unparseable slice is returned unchanged");
 }
 
 // ── the runner (a REAL process, describe-eval-runner.mjs) gracefully skips, exit 0, no network call,

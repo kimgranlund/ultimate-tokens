@@ -3,7 +3,7 @@ id: T-0027
 title: "Compound insets and radius composition for container components (segmented, listbox), square ghost icon buttons, unstyled palette name input"
 type: feature        # feature | bug | chore | spike | idea
 status: ready     # proposed | ready | blocked | done | dropped (build progress lives in /board)
-size: L2             # L1 | L2 | L3 | L4 (L5 reserved)
+size: L4
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
 created: 2026-10-08

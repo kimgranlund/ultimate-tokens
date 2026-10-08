@@ -93,6 +93,7 @@ class El extends Node {
   setSelectionRange(s, e) { this.selectionStart = s; this.selectionEnd = e; }
   click() { this.dispatch("click", {}); }
   focus() { doc.activeElement = this; }
+  blur() { if (doc.activeElement === this) doc.activeElement = null; } // the browser parks focus on <body> (null here)
 }
 
 const docListeners = {};
@@ -565,6 +566,172 @@ flushRaf();
   app.commit((d) => (d.vibrancy = 40)); app.undo(); flushRaf();
   ok(app.sel.kind === "none" && title() === "Global controls", "(ice) undo from the Global inspector stays on Global");
   app.sel = keepSel; app.doc.selected = keepDocSel; app.render(); flushRaf();
+}
+// (ir) T-0025, the #814 review follow-ups to the context-driven Color inspector (#809). Each behavior change below has a
+// negative control: the same step with the changed code path NOT taken, so the assertion cannot pass vacuously.
+{
+  const keepSel = app.sel, keepDocSel = app.doc.selected, keepView = app.canvasView;
+  const rp = () => app.querySelector(".right-pane");
+  const hasFk = (k) => !!findIn(rp(), (e) => e.dataset && e.dataset.fk === k);
+  const textOf = (n) => (n._text || "") + (n.children || []).map(textOf).join("");
+  const paneTitle = () => { const t = app.querySelector(".pane-title"); return t ? textOf(t) : ""; };
+  const backBtn = () => app.querySelector(".pane-back");
+  const lightCol = () => app.querySelectorAll(".compare-col")[0];
+  const settle = () => { flushRaf(); };
+  const nameOf = (i) => app.doc.palettes[i].name;
+  const palInspector = () => app.sel.kind === "palette" && hasFk("slider:Chroma") && !hasFk("slider:Prime chroma");
+  const globalInspector = () => app.sel.kind === "none" && hasFk("slider:Prime chroma") && !hasFk("slider:Chroma");
+
+  // (a1) a Radix row selects ITS palette. A disabled palette ahead of it makes the row's place in the enabled list differ
+  // from its place in doc.palettes, so a row index used as a palette index would select the wrong palette.
+  app.canvasView = "palettes";
+  app.commit((d) => (d.palettes[0].on = false)); app._deselect(); settle();
+  app.canvasView = "radix"; app.render(); settle();
+  const rxRows = () => lightCol().querySelectorAll(".radix-row");
+  ok(rxRows().length === app.doc.palettes.filter((p) => p.on !== false).length && rxRows().length > 1, `(ira) the Radix scene renders one row per enabled palette (got ${rxRows().length})`);
+  ok(globalInspector(), "(ira) precondition: nothing selected, the Global inspector shows");
+  // negative control: a click on the scene itself (not on a row) selects nothing
+  const rxScene = lightCol().querySelector(".radix-scene");
+  rxScene.dispatch("click", { target: rxScene }); settle();
+  ok(app.sel.kind === "none" && globalInspector(), "(ira) control: a click on the Radix scene outside any row selects nothing");
+  const enabledIdx = app.doc.palettes.map((p, i) => i).filter((i) => app.doc.palettes[i].on !== false); // row k -> doc index
+  ok(enabledIdx[0] !== 0 && enabledIdx[0] !== undefined, `(ira) precondition: row 0 is NOT doc palette 0, so a row index would be the wrong palette (doc index ${enabledIdx[0]})`);
+  rxRows()[0].dispatch("click", { target: rxRows()[0] }); settle();
+  ok(app.sel.kind === "palette" && app.sel.id === enabledIdx[0], `(ira) the first ENABLED Radix row selects its palette, doc index ${enabledIdx[0]} (got ${app.sel.kind} ${app.sel.id})`);
+  ok(palInspector() && paneTitle() === "Palette: " + nameOf(enabledIdx[0]), `(ira) the palette inspector shows for it (title "${paneTitle()}")`);
+  ok(rxRows()[0].classList.contains("sel") && !rxRows()[1].classList.contains("sel"), "(ira) the selected Radix row carries .sel, its neighbour does not");
+  rxRows()[2].dispatch("click", { target: rxRows()[2] }); settle();
+  ok(app.sel.kind === "palette" && app.sel.id === enabledIdx[2] && paneTitle() === "Palette: " + nameOf(enabledIdx[2]), `(ira) the third enabled row selects doc index ${enabledIdx[2]} (got ${app.sel.id})`);
+  app.undo(); settle(); // the disabled palette
+
+  // (a2) a Mapping row selects the palette the table is showing; the row's own select keeps its click
+  app.canvasView = "mapping"; app._deselect(); settle();
+  const mapRows = () => app.querySelectorAll(".map-row");
+  ok(mapRows().length > 2 && globalInspector(), `(irb) precondition: the Mapping table renders rows on the Global inspector (${mapRows().length} rows)`);
+  const mapShown = app.selectedIndex();
+  const selInRow = findIn(mapRows()[0], (e) => e.tagName === "SELECT");
+  ok(!!selInRow, "(irb) precondition: a Mapping row holds the raw-token select");
+  // negative control: a click that lands on the row's select does not select (a re-render would close the open dropdown)
+  const rpBeforeSel = rp(); // render() rebuilds the whole subtree, so the pane node's identity proves no render ran
+  mapRows()[0].dispatch("click", { target: selInRow }); settle();
+  ok(app.sel.kind === "none" && globalInspector() && rp() === rpBeforeSel, "(irb) control: a click on the Mapping row's select selects nothing and does not re-render (same right-pane node)");
+  mapRows()[0].dispatch("click", { target: mapRows()[0] }); settle();
+  ok(app.sel.kind === "palette" && app.sel.id === mapShown && palInspector(), `(irb) a Mapping row click selects the palette the table shows and the palette inspector appears (got ${app.sel.kind} ${app.sel.id})`);
+  ok(paneTitle() === "Palette: " + nameOf(mapShown), `(irb) the pane title names it (got "${paneTitle()}")`);
+
+  // (e) the empty-canvas deselect (wirePanZoom's click handler) exempts content: a click inside the Radix scene or the
+  // Mapping wrap is not an empty-canvas click. NOTE the live Mapping canvas-area is an .is-table shell with no pan/zoom
+  // wiring, so it carries no deselect handler today; its exemption is proven on a synthetic area wired by the same
+  // wirePanZoom, so it bites if the table ever gets the handler.
+  app.canvasView = "radix"; app.render(); settle();
+  app.selectPalette(2); settle();
+  const radixArea = app.querySelector(".canvas-area");
+  const radixStep = findIn(lightCol().querySelector(".radix-scene"), (e) => e.classList.contains("radix-step"));
+  ok(!!radixStep, "(ire) precondition: the Radix scene holds a step swatch");
+  radixArea.dispatch("click", { target: radixStep }); settle();
+  ok(app.sel.kind === "palette" && palInspector(), "(ire) a click inside the Radix scene keeps the selection (no deselect)");
+  app.querySelector(".canvas-area").dispatch("click", { target: app.querySelector(".canvas-area") }); settle();
+  ok(globalInspector(), "(ire) control: a click on empty canvas still deselects to Global");
+  {
+    const synth = new El("div"), wrap = new El("div"), sel = new El("select");
+    wrap.classList.add("map-wrap"); wrap.append(sel); synth.append(wrap);
+    app.wirePanZoom(synth);
+    app.selectPalette(2); settle();
+    synth.dispatch("click", { target: sel });
+    ok(app.sel.kind === "palette", "(ire) a click on a select inside a .map-wrap keeps the selection");
+    synth.dispatch("click", { target: wrap });
+    ok(app.sel.kind === "palette", "(ire) a click on the .map-wrap itself keeps the selection");
+    synth.dispatch("click", { target: synth });
+    ok(app.sel.kind === "none", "(ire) control: the same wired area still deselects on a click outside .map-wrap");
+  }
+
+  // (b) a drag-reorder dropped from the Global inspector leaves the inspector on Global. The pair is picked from the
+  // rendered stack (a renamed palette changes group, so doc order is not row order): two neighbours of one group.
+  const { paletteGroup: paletteGroupIr } = await import("../../src/ui/model.mjs");
+  app.canvasView = "palettes"; app._deselect(); settle();
+  const dragOneDown = (kind) => {
+    const stackRows = () => lightCol().querySelector(".ramp-stack").querySelectorAll(".ramp-row[data-pi]");
+    const grp = (r) => paletteGroupIr(app.doc.palettes[Number(r.dataset.pi)]);
+    let k = 0;
+    while (k + 1 < stackRows().length && grp(stackRows()[k]) !== grp(stackRows()[k + 1])) k++;
+    const from = Number(stackRows()[k].dataset.pi);
+    if (kind === "none") { app.doc.selected = from; app.sel = { kind: "none", id: from }; app.render(); } else app.selectPalette(from);
+    settle();
+    const rws = stackRows(); // the rows of the FINAL render, the rects go on these
+    rws.forEach((r, idx) => { r._rect = { top: idx * 50, bottom: idx * 50 + 50, left: 0, right: 200, width: 200, height: 50 }; });
+    const name = nameOf(from);
+    app._beginReorder({ currentTarget: rws[k].querySelector(".drag-handle"), pointerId: 21, stopPropagation() {}, preventDefault() {} }, from);
+    app._onReorderMove({ clientY: rws[k + 1]._rect.bottom - 5, preventDefault() {} });
+    app._onReorderUp(); settle();
+    return { name, from, now: app.doc.palettes.findIndex((p) => p.name === name) };
+  };
+  const histIr = app.history.length;
+  const dg = dragOneDown("none");
+  ok(app.history.length - histIr === 1 && dg.now !== dg.from, `(irc) the drag moved "${dg.name}" from ${dg.from} to ${dg.now}`);
+  ok(globalInspector() && paneTitle() === "Global", `(irc) a drop from the Global inspector leaves the inspector on Global (sel ${app.sel.kind}, title "${paneTitle()}")`);
+  ok(app.doc.selected === dg.now && nameOf(app.selectedIndex()) === dg.name, `(irc) the pick follows the moved palette (selected ${app.doc.selected}, palette at ${dg.now})`);
+  app.undo(); settle();
+  // negative control: the same drop with a palette selected stays on the palette inspector, on the moved palette
+  const dp = dragOneDown("palette");
+  ok(dp.now !== dp.from && app.sel.kind === "palette" && app.sel.id === dp.now && palInspector(), `(irc) control: the same drop with a palette selected keeps the palette inspector on the moved palette (got ${app.sel.kind} ${app.sel.id}, palette at ${dp.now})`);
+  app.undo(); settle();
+
+  // (c) the palette inspector has a focusable way back to Global; Esc still works, and a focused field takes two Escs
+  app.selectPalette(1); settle();
+  const bk = backBtn();
+  ok(!!bk && bk.tagName === "BUTTON" && bk.getAttribute("tabindex") !== "-1" && !bk.disabled && !!bk.getAttribute("aria-label"), "(irf) the palette inspector header holds a focusable, labelled Back-to-Global <button>");
+  ok(!!bk && !!bk.parentNode && bk.parentNode.classList.contains("pane-head"), "(irf) the back button lives in the .pane-head");
+  if (bk) bk.focus();
+  if (bk) bk.dispatch("click", { target: bk }); settle();
+  ok(globalInspector() && paneTitle() === "Global", "(irf) activating the back button returns to the Global inspector");
+  ok(!backBtn(), "(irf) control: no back button in the Global context");
+  app.selectPalette(1); settle();
+  fireKey("Escape"); settle();
+  ok(globalInspector(), "(irf) Esc from the body still deselects to Global");
+  app.selectPalette(1); settle();
+  const nameFld = findIn(rp(), (e) => e.dataset && e.dataset.fk === "pname");
+  nameFld.focus();
+  doc.dispatch("keydown", { key: "Escape", target: nameFld }); settle();
+  ok(app.sel.kind === "palette" && doc.activeElement !== nameFld, "(irf) the first Esc in a focused inspector field blurs it and keeps the palette selected");
+  doc.dispatch("keydown", { key: "Escape", target: doc.body }); settle();
+  ok(globalInspector(), "(irf) the second Esc deselects to Global");
+  app.selectPalette(1); settle();
+  const strayInput = new El("input"); strayInput.type = "text"; strayInput.focus();
+  doc.dispatch("keydown", { key: "Escape", target: strayInput });
+  ok(app.sel.kind === "palette" && doc.activeElement === strayInput, "(irf) control: Esc in a text field OUTSIDE the right pane neither blurs it nor deselects");
+  strayInput.blur();
+
+  // (d) the pane title names the context, and the aside is labelled
+  ok(rp().getAttribute("aria-label") === "Inspector", `(ird) the right pane is labelled "Inspector" (got ${rp().getAttribute("aria-label")})`);
+  app.selectPalette(2); settle();
+  ok(paneTitle() === "Palette: " + nameOf(2), `(ird) a selected palette: the pane title is "Palette: <name>" (got "${paneTitle()}")`);
+  app._deselect(); settle();
+  ok(paneTitle() === "Global", `(ird) nothing selected: the pane title is "Global" (got "${paneTitle()}")`);
+  app.selectPalette(2); settle();
+  const nameFld2 = findIn(rp(), (e) => e.dataset && e.dataset.fk === "pname");
+  nameFld2.value = "Renamed"; nameFld2.dispatch("input", {});
+  ok(paneTitle() === "Palette: Renamed", `(ird) the pane title follows the name while typing (got "${paneTitle()}")`);
+  nameFld2.dispatch("change", {}); settle(); // settle the rename into one undo step, then revert it
+  app.undo(); settle();
+  ok(nameOf(2) !== "Renamed", "(ird) the rename was undone");
+
+  // (g) focus: Esc / an empty-canvas click hand focus to the pane title instead of dropping it on <body>
+  app.selectPalette(1); settle();
+  findIn(rp(), (e) => e.dataset && e.dataset.fk === "slider:Chroma").focus();
+  fireKey("Escape"); settle();
+  ok(doc.activeElement && doc.activeElement.classList.contains("pane-title") && rp().children[0].children.includes(doc.activeElement), "(irg) Esc with a pane control focused moves focus to the pane title");
+  ok(!!doc.activeElement && doc.activeElement.getAttribute("tabindex") === "-1", "(irg) the pane title takes focus programmatically (tabindex -1, outside the Tab order)");
+  app.selectPalette(1); settle();
+  doc.activeElement = null; // a click on empty canvas has already parked focus on <body> by mousedown
+  app.querySelector(".canvas-area").dispatch("click", { target: app.querySelector(".canvas-area") }); settle();
+  ok(globalInspector() && doc.activeElement && doc.activeElement.classList.contains("pane-title"), "(irg) an empty-canvas click deselect also lands focus on the pane title");
+  // negative control: focus on a control that survives the render (a canvas-view chip) is restored, not stolen
+  app.selectPalette(1); settle();
+  const hdrBtn = findIn(app, (e) => e.tagName === "BUTTON" && e.dataset && e.dataset.fk === "cview:scrims");
+  hdrBtn.focus(); app._deselect(); settle();
+  ok(globalInspector() && doc.activeElement && doc.activeElement.dataset.fk === "cview:scrims" && !doc.activeElement.classList.contains("pane-title"), "(irg) control: a deselect with focus on a canvas-view chip leaves that focus on the chip");
+
+  app.canvasView = keepView; app.sel = keepSel; app.doc.selected = keepDocSel; app.render(); settle();
 }
 const palCount0 = app.doc.palettes.length;
 app.addPalette(); // commit() path → full render
@@ -2365,6 +2532,26 @@ app.openSet(app.sets[0].id); flushRaf();
 app.openSettings(); flushRaf();
 ok(app.settingsOpen === true && !!app.querySelector(".settings"), "(set) openSettings shows the Settings <dialog>");
 ok(app.querySelectorAll(".settings-row").length >= 2, "(set) Settings has the token-mapping rows (accent + on-colors)");
+// (setfocus) T-0028: a page click must not leave focus on the first nav item (Mapping). The shim has no
+// showModal, so simulate the browser: it focuses the first focusable descendant of the opened dialog.
+{
+  El.prototype.showModal = function () {
+    if (!this.classList.contains("settings")) return;
+    this.open = true;
+    const first = (n) => { for (const c of n.children || []) { if (c.tagName === "BUTTON") return c; const f = first(c); if (f) return f; } return null; };
+    const f = first(this); if (f) f.focus();
+  };
+  const tx = (n) => (n._text || "") + (n.children || []).map(tx).join("");
+  const navBtn = (label) => app.querySelectorAll(".settings-nav-item").find((b) => tx(b) === label);
+  app.closeSettings(); flushRaf(); app.settingsSection = "appearance"; document.activeElement = null; app.openSettings(); flushRaf();
+  ok(document.activeElement === navBtn("Appearance"), "(setfocus) first open focuses the selected page's nav item, not the first (Mapping)");
+  const acct = navBtn("Account"); acct.focus(); acct.click(); flushRaf();
+  ok(app.settingsSection === "account", "(setfocus) clicking Account selects it");
+  ok(document.activeElement !== navBtn("Mapping"), "(setfocus) Mapping does not take focus after clicking Account");
+  ok(document.activeElement === navBtn("Account"), "(setfocus) focus stays on the clicked nav item");
+  delete El.prototype.showModal;
+  app.closeSettings(); flushRaf(); app.settingsSection = "mapping"; app.openSettings(); flushRaf();
+}
 // left-nav page layout: grouped section nav + a page header reflecting the active section
 const txtOfSet = (n) => (n._text || "") + (n.children || []).map(txtOfSet).join("");
 ok(app.querySelectorAll(".settings-nav-item").length >= 3, `(set) Settings has the left section-nav (Mapping/Appearance/About) (got ${app.querySelectorAll(".settings-nav-item").length})`);
