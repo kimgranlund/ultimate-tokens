@@ -1,5 +1,5 @@
 ---
-status: approved
+status: done
 ticket: "#786 (anchor; the plan also closes #787, #796, #783, #748, #784)"
 priority: P2
 lane: batch of six, two waves. Wave A (now): `docs/marketing/**` (U1); `src/ui/overlays/drawer.js`, `src/ui/sections/typography.js` (U5, hunk-level per Q1 B); `test/repo/citations.mjs` (U7, hunk-level per Q1 B); `figma/binder/mode-apply-plan.mjs`, `test/repo/em-dash.mjs` and its fixtures, `src/engine/ds-export.js` (one prose line), `.sdlc/adapter.md` §1 (U2); new `src/engine/names.mjs`, new `test/engine/names.mjs`, the `TESTS` line of `test/run.mjs` (U3). Wave B (after #785 lands on `main`): `src/ui/sections/color.js`, `test/ui/headless-boot.mjs`, `.sdlc/questions/pane-context-U1-f1.md` (U4, then U6 on top of it, U6 adding `scripts/bundle.mjs` MODS/KEY and `src/ui/styles.css`); `src/engine/tonal.js`, `test/engine/tonal.mjs`, `test/engine/even-dips-gate.mjs`, `test/engine/fixtures/*.json`, `CHANGELOG.md` (U8). Regenerated bundles (`dist/`, `figma/plugin/ui.html`, `src/ui/describe-mcp-assets.js`) on every unit that touches `src/`
@@ -233,3 +233,4 @@ One PR from `plan/parallel-batch` after U8 verifies, pre-land pair reviewer-l3 p
 | 2026-10-04 | revision 6: C2.1's third grep uses `-nP` (`git grep -E` ignores `\b` on macOS, so the `-E` form is vacuous, the pb-U2 verdict's finding) | `.sdlc/verdicts/parallel-batch-U2.md`; owner ratified revisions 5 to 7 in `.sdlc/questions/parallel-batch-U3-pass3.md` (Q3 yes) |
 | 2026-10-04 | revision 7: U3 design sentence, C3.1 extended, C3.2 rewritten, C3.5 and C3.6 added per `.sdlc/plans/parallel-batch-U3-rediagnosis.md` §4; contract Q1 A, grade Q2 A (l5, reviewer-l3, verifier-l2) | owner answer 2026-10-04 in `.sdlc/questions/parallel-batch-U3-pass3.md`; lane unchanged |
 | 2026-10-04 | revision 8: U4 and U6 take the trivial lane (one builder, one reviewer, merged on the reviewer PASS), per owner ceremony rule R4 and R3 (Orchestrator wording authority); U8 keeps its Verifier (engine code) | `.sdlc/questions/ceremony-policy.md` 508ccbda |
+| 2026-10-08 | closed by the T-0034 docs structure sweep and archived; U6 (#787 UI) and U8 (#784 notch) stay unticked because they did not land on this plan's branch: #784 and #787 were resolved outside it, in #802 (see `.sdlc/gh-784/` and `.sdlc/gh-787/`), and no step is carried to a new ticket | `.sdlc/adapter.md` section 5 steps 1 to 3 |

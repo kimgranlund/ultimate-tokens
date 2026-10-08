@@ -1,3 +1,6 @@
+---
+status: accepted
+---
 # Decomposition: the entailment-checked carving
 
 > The typed delta this spec implies once validated: the child **cells** to build and the

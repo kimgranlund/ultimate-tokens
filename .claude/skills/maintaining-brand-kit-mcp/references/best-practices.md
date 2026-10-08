@@ -50,10 +50,11 @@ addition history.
 ### Serve verbatim; don't reshape
 
 - **`get_type` returns `kit.type` and `get_geometry` returns `kit.geometry` as-is**: the shape is owned by
-  `typeScale`/`geomScale`. `kit.type.categories` carries **seven** voices (Display, Heading/Sub-heading/
-  Kicker, Body, UI, Code); `kit.geometry.cells` holds the 27 ladder cells (`{height, inset, text, icon,
-  captionText, chipHeight, chipInset, chipText, iconRatio, minWidth, radiusControl, radiusMark,
-  radiusInset, radiusCard}`) with the kit default `cell`, the top-level `radii` ladder + `space` scale. Don't pluck or rename
+  `typeScale`/`geomScale`. `kit.type.categories` carries **fifteen** voices (Display, Headline, Sub-heading, Title, Sub-title,
+  Lead, Body, Body-mono, Label, Label-mono, Kicker, Tiny, Tiny-mono, UI-control, UI-widget);
+  `kit.geometry.cells` holds the 27 ladder cells (16 fields, `{height, inset, text, icon,
+  captionText, chipHeight, chipInset, chipText, iconRatio, minWidth, partHeight, partInset,
+  radiusControl, radiusMark, radiusInset, radiusCard}`) with the kit default `cell`, the top-level `radii` ladder + `space` scale. Don't pluck or rename
   fields in the server; an agent and the test rely on the full shape (the test reads `ty.categories.Body`,
   `ty.uiText[32]`, `geo.cells["product-md-md"].inset/height/icon/text`).
 - **The geometry cell `text` is composed from the type UI text table.** The test pins

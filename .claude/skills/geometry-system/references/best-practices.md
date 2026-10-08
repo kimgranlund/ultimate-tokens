@@ -20,7 +20,8 @@ a control with `min-block-size: var(--control-height)` and `padding-block: 0`.
 ### Roles are Maison's hooks: never prefix them
 
 `--control-*`, `--chip-*`, `--radius-control/-mark/-inset/-card` and `--ctx-*` equal Maison's
-per-instance override hooks, so Maison's control CSS (`var(--control-height, var(--g-height))`) binds
+per-instance override hooks (the exception is the pair `--control-part-height` and
+`--control-part-inset`, ADR-033's names; Maison has no part role), so Maison's control CSS (`var(--control-height, var(--g-height))`) binds
 an exported kit with no translation. Routing a role through `ns()` silently breaks every consumer that
 uses a prefix: the role would come out `--md-control-height` and nothing reads it. The `emitters` group
 asserts the resolver under `{ prefix: "md" }` keeps every role bare while the primitives it reads become
@@ -53,8 +54,9 @@ text row: control text per height is one table, `UI_TEXT` in type.mjs.
 ### Emitters in lockstep through `CELL_FIELDS`
 
 Every emitter iterates `CELL_FIELDS`; a new field added there reaches CSS, DTCG, Figma and the Figma
-modes at once. A field the resolver should expose also joins `RESOLVER_FIELDS` and gets a role name from
-the ADR-032 map. Then update the fixture-backed test, the consumer skill
+modes at once. A field the resolver should sum over the nine cells also joins `RESOLVER_FIELDS` and gets a
+role name from the ADR-032 map; a derived field (the two part fields) instead gets a `calc()` line at
+the end of the `:where(*, :host)` block in `geomResolverCSS`. Then update the fixture-backed test, the consumer skill
 (`plugin/ultimate-tokens/skills/geometry-tokens/`) and its parity script. The cell carries 16 fields since ADR-033
 added `part-height` and `part-inset` (roles `--control-part-height/-inset`, our names; Maison has no
 part role).

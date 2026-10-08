@@ -16,7 +16,7 @@ The non-obvious do/don'ts (each cost a real bug or a review cycle), then a worke
   it green. The binder's `code.js` has the same hazard (its one catch is the `main().catch((e) => …)`
   wrapper) but NO static guard, so be disciplined when editing it.
 - **Never `figma.notify` a raw error.** Figma policy rejects plugins that show a stack or `e.message`. Pattern
-  (both plugins): `main().catch((e) => { console.error("[…]", e); figma.notify("Couldn't … — please try
+  (both plugins): `main().catch((e) => { console.error("[…]", e); figma.notify("Couldn't bind the semantic variables. Please try
   again.", { error: true }); figma.closePlugin(); })` (binder), or the message handler's `catch (e)` (app).
   The technical detail goes to `console.error` ONLY. The `compliance` check in BOTH verifiers greps for
   `figma.notify(...e.message/String(e)/.stack...)` and fails the run (it's a run-failing check, not a printed

@@ -129,9 +129,11 @@ singleLineHeight = size                                # BOX voices ONLY
   compression at the TOP of the ramp (Tablet **5/6** · Mobile **2/3** canonical, e.g. Display 90 → 75 →
   60); each step's own factor interpolates in LOG-size space from ×1.0 at `bodyBase` (frozen) to
   ×`modeFactor` at the ramp's largest fixed size, so Body/Label/Kicker move ±0px while headings compress
-  partially and Display fully. The concrete breakpoint set (Tablet 992px/Mobile 476px, the 5/6 and 2/3
-  factors, plus Body's own small Mobile-only nudge) is wired app-side in `app.js`'s `_typeModeScales` /
-  `_bodyMobileNudge`, the engine only knows the generic curve.
+  partially and Display fully. The concrete breakpoint set (Desktop Lg 1728 at 0.89, Desktop Xl 2560 at 0.80,
+  Tablet 992 at 5/6, Mobile 476 at 2/3) is wired app-side in `src/ui/model.mjs`: `typeModeScales` builds
+  the set, `typeTierScale` is the one closure that scales `bodyBase` and applies the factor, and
+  `modeTierNudge(modeFactor)` carries the per-tier Label, Label-mono and Kicker overrides (plus Tiny on
+  Desktop Xl) while Body stays frozen. The engine only knows the generic curve.
 - **`leadingRatio`/`trackingRatio`, never re-derive a relative unit from a rounded absolute.** Each step
   carries the EXACT unrounded ratio alongside the rounded absolute `lineHeight`/`letterSpacing`, the
   absolute fields exist for LIVE on-screen rendering (whole-pixel-snapped); every RELATIVE-unit emitter
@@ -207,8 +209,11 @@ Figma's type/ variables (the merged breakpoint-moded Geometry collection, TKT-00
 - **`typeTokensBreakpointCSS(modes, {unit, prefix, desktopMinWidth=1280})`** → one SEPARATE, self-contained
   file PER breakpoint mode (`modes = [{name, minWidth, scale}]`), NOT one @media-embedded stylesheet
   (#264). `typeTokensCSS(baseScale)` is the complete, unconditional base file (the designed/Desktop scale);
-  each entry here is bounded on BOTH ends except the NARROWEST mode (open below). Sorted DESCENDING by
-  minWidth; load order never matters. `modes = []` ⇒ `[]`.
+  each entry is an `@media` block holding a `:where(:root)` rule. Modes below `desktopMinWidth` are
+  narrow (`max-width`, open below only for the NARROWEST); modes at or above it are wide (`min-width`,
+  open above only for the WIDEST). The array lists the wide modes ascending, then the narrow modes
+  descending. A wide mode's file must load AFTER the base file; narrow modes are load-order
+  independent. `modes = []` ⇒ `[]`.
 - **`typeTokensDTCG(scale, {unit})`** → `{fontFamily, typography, weights?}`: `fontFamily` is keyed by
   VOICE (13, via `resolvedFontFor`), `typography` is a composite `{$type:"typography", $value:{fontFamily,
   fontSize, lineHeight (unitless number), letterSpacing (em string), fontWeight (number), textCase,

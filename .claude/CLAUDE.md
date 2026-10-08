@@ -4,7 +4,7 @@
 self-contained `<ultimate-tokens>` web component, a **Figma plugin** (a semantic-variable binder), and
 an **MCP brand-kit** server. A brand kit is **one document** with three composing systems, surfaced as
 **sections of one editor**: **Color** (palettes → 53 semantic roles) · **Typography** · **Geometry**
-(its per-step text size composes *from* the Type UI scale).
+(its per-cell text size composes *from* the Type UI scale).
 
 Canonical specs + rubrics: `docs/specs/` and `docs/references/`; runtime-read data stays in `docs/reference/` (e.g. `docs/reference/data/role-table.json` is the role answer key).
 
@@ -18,16 +18,20 @@ Canonical specs + rubrics: `docs/specs/` and `docs/references/`; runtime-read da
   built single-file in **real headless Chrome** over CDP (the only real-browser leg). Screenshots
   land in `smoke-out/` (gitignored).
 - `npm run dev`: Vite dev server (the app the user previews, in **Safari**).
-- `gen:figma-assets` · `gen:mcp-assets` · `gen:categories` · `gen:adia-exports` · `gen:type-fonts`,
-  regenerate committed artifacts; `test`/`build` run all but `gen:type-fonts`. Run `gen:type-fonts` by
-  hand after changing bundled fonts.
+- `gen:figma-assets` · `gen:mcp-assets` · `gen:categories` · `gen:adia-exports` · `gen:type-fonts` ·
+  `gen:plugin-pack` · `gen:preview`, regenerate committed artifacts; `test`/`build` run the first four.
+  Run `gen:type-fonts` by hand after changing bundled fonts, `gen:plugin-pack` for the npm plugin pack,
+  `gen:preview` for the README preview SVG.
 
 ## Layout
 
 - `src/engine/`: the **pure** engines (ESM, **no DOM**): `semantic.js` (the 53-role table) · `type.mjs` ·
   `geometry.mjs` · `exports.js` (the 10 documented color formats: CSS/OKLCH/JSON/DTCG/UI3/Tailwind/shadcn/
   Panda/Radix) · `ds-export.js` (the Claude Design/Google Stitch/Figma Make design-system bundle export,
-  undocumented elsewhere, not one of the 10) · `derive`/`tonal`/`hct`/`okhsl`.
+  undocumented elsewhere, not one of the 10) · `derive`/`tonal`/`hct`/`okhsl` · `controls.mjs` +
+  `resolve.mjs` (defaults and chroma, resolved once) · `layers.mjs` + `layer-pins.mjs` + `layers/` (the
+  six versioned compute layers the canvas and every export read once, a document's pins, frozen
+  versions; ADR-034).
 - `src/ui/`: `app.js` (the `HctApp` custom element: state, render dispatch, the frame) · `sections/`
   (`color`/`typography`/`geometry` pane bodies) + `overlays/` (`drawer`/`settings`/`apply-gate`), both
   mixed onto `HctApp` · `app-helpers.mjs` (`h` + shared primitives) · `styles.css` · `model.mjs`
@@ -36,7 +40,8 @@ Canonical specs + rubrics: `docs/specs/` and `docs/references/`; runtime-read da
 - `figma/`: the plugin: `figma/binder/figma-semantic-binder/code.js` mirrors `semanticRoles` for the
   sandbox (parity-gated). `figma/plugin/ui.html` is a generated bundle of the whole app.
 - `test/`: `engine/*` verifiers · `ui/headless-boot.mjs` (the shim run, lettered groups) · `figma/` ·
-  `mcp/` · `plugin/` (skill↔role-table parity) · `smoke/smoke.mjs`. `scripts/`, the generators.
+  `mcp/` · `plugin/` (skill↔role-table parity) · `repo/` (repo-wide gates: em-dash, citations, branding,
+  control-text) · `smoke/smoke.mjs`. `scripts/`, the generators.
   `mcp/`, the MCP server. `plugin/ultimate-tokens/`, the CONSUMER-side Claude plugin: skills that
   teach agents to use exported kits in THEIR projects (parity-gated against the engine).
 - `docs/reference/`: runtime-read data only (`docs/reference/data/`, the role-table answer key;
@@ -116,4 +121,4 @@ planning, building, or landing. The one-paragraph version:
   `node test/repo/em-dash.mjs --fix` repairs a branch.
 
 <!-- Enforcement: the .claude/docs/other guard is a real PreToolUse hook (.claude/hooks/git-precommit-privatedocs-guard.mjs, registered in .claude/settings.json), added 2026-07-31 via /check-entry-file. Role-table parity + font-quoting stay conventions + CI + the test gates (test/engine/type.mjs's luxury quoting assert, categories.mjs's parity check), not pre-commit, mechanically checkable but lower-stakes than a private-dir leak, and already caught before merge by the test gate. -->
-<!-- This file is the always-loaded INDEX of cross-cutting, always-true facts only. Domain PROCEDURES (changing an engine, adding a role/format, the Figma binder, building a section, shipping, palette research) are owned by on-demand skills/agents in .claude/, discovered via their frontmatter descriptions, NOT routed from here. Conceptual depth: docs/references/ + the engine files' header comments. Keep this thin; let the frontmatter system do the routing. Audited via /check-entry-file 2026-07-31 (90→~70 lines: cut boilerplate + a stale ticket count, collapsed 2 skill-duplicated Testing bullets to a pointer, the .claude/docs/other guard became a real hook). -->
+<!-- This file is the always-loaded INDEX of cross-cutting, always-true facts only. Domain PROCEDURES (changing an engine, adding a role/format, the Figma binder, building a section, shipping, palette research) are owned by on-demand skills/agents in .claude/, discovered via their frontmatter descriptions, NOT routed from here. Conceptual depth: docs/references/ + the engine files' header comments. Keep this thin; let the frontmatter system do the routing. Audited via /check-entry-file 2026-07-31 (cut boilerplate + a stale ticket count, collapsed 2 skill-duplicated Testing bullets to a pointer, the .claude/docs/other guard became a real hook). -->

@@ -139,7 +139,7 @@ paragraphIndent }`, and the box voices (`Kicker`, `UI-control`, `UI-widget`) add
 `{ tier, scale, radius, spaceBase, cells, cell, radii, space, insets, gaps, borders, focus }`. `cells` holds
 all 27 ladder cells keyed `{tier}-{scale}-{size}` (content, product, micro × sm, md, lg × sm, md, lg); each is
 `{ height, inset, text, icon, captionText, chipHeight, chipInset, chipText, iconRatio, minWidth,
-radiusControl, radiusMark, radiusInset, radiusCard }`. `cell` is the kit default (`{tier}-{scale}-md`) with
+partHeight, partInset, radiusControl, radiusMark, radiusInset, radiusCard }` (16 fields). `cell` is the kit default (`{tier}-{scale}-md`) with
 its `name`. `radii` is the ladder `{ none, xs, sm, md, lg, xl, full }`; `space` is the spacing scale.
 
 The key composition facts the test pins: the served ladder has 27 cells and no `sizes` key, a cell's

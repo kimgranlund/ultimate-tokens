@@ -1,5 +1,5 @@
 ---
-status: approved
+status: done
 ticket: #718
 priority: P1
 lane: docs
@@ -193,3 +193,4 @@ One PR from `plan/baseline-regex` to `main`, carrying this plan and the board ro
 | Date | Change | Why |
 |---|---|---|
 | 2026-09-20 | plan written (draft). Planner reproduced the defect from ticket #718 directly (the `test` gate's cell planted with a second, disagreeing range; the unfixed script stayed `ok`/exit 0), prototyped and measured the fix in throwaway clones on both a clean tree (no regression) and two independent plants (`test` and `build` gates), and measured every P-row and U1 block above at `bcb7ce02` | dispatch: plan for #718, the time check cannot fail as originally scoped, narrowed by the records-followup U5 verifier's correction to "reads only the first range in a gate cell" |
+| 2026-10-08 | closed by the T-0034 docs structure sweep and archived; U1 is the only unit and is ticked | `.sdlc/adapter.md` section 5 steps 1 to 3 |

@@ -1,6 +1,6 @@
 # marketing
 
-Describe what this topic covers.
+The marketing corpus: the voice platform, the pinned fact sheet, store copy and the launch kit, authored through the marketing-manager agent and the brand-voice skill.
 
 <!-- sdlc-lite:managed:start v1 sha256:569877224c02 -->
 ## Documents

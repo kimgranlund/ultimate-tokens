@@ -23,7 +23,7 @@ triplet, never invent a parallel shape. Depth in `references/`; this body is the
 
 | Region | Color | Typography | Geometry | Build |
 |---|---|---|---|---|
-| Center header | `renderCanvasHeader` | `renderTypeCanvasHeader` | `renderGeomCanvasHeader` | pane toggles · a view/mode segment · reused `fit`/scheme/zoom |
+| Center header | `renderCanvasHeader` | `renderTypeCanvasHeader` | `renderGeomCanvasHeader` | pane toggles · a view/mode segment · the shared `...this.canvasTools()` (fit · zoom, + Palette in Color; collapses into an overflow menu when it does not fit) |
 | Center canvas | `renderCanvasArea` | `renderTypeCanvas` | `renderGeomCanvas` | a `.canvas-area` + `.canvas-scene` (reuse `wirePanZoom` + `applyTransform`) |
 | Center scene | `renderRampsScene` | `renderTypographyScene` | `renderGeometryScene` | the **FULL** dataset (not a curated subset), in the brand's real color/font/mode |
 | Left analysis | `analysisCards` | `typeAnalysisCards` | `geomAnalysisCards` | `.an-card`/`.an-svg`/`legend()`, pure functions of the engine output, **no inputs** |
@@ -108,13 +108,16 @@ Since T-0017 (ADR-032) the editor chrome sizes its controls from the Geometry la
   `getElementById` returns null), and removed on disconnect.
 - **Aliases.** `src/ui/styles.css` declares one alias block on the `ultimate-tokens` selector, because the
   host carries the attributes: `--sh-control-height/-inset/-text/-icon`, `--sh-control-radius`
-  (`--radius-control`), `--sh-radius-inset`, `--sh-chip-height/-inset/-text`, each falling back to the
+  (`--radius-control`), `--sh-radius-inset`, `--sh-part-height/-inset`, `--sh-chip-height/-inset/-text`, each falling back to the
   product-md-md round cell, plus `--ctl-thumb` from `--sh-control-icon`. Buttons, inputs, segmented
   controls, chips, the switch and `icon()` read these aliases; a new shell control does too
   (`min-block-size`, `padding-block: 0`, `padding-inline`, `font-size`, `border-radius` from `--sh-*`).
-  The chrome heights `--hh/--ch/--fh` and `--r-sm/--r/--r-lg` stay literal.
-- **Tests.** The headless groups `(shg1)` to `(shg4)` cover the host attributes, a doc commit, the
-  Settings override and the head style; pixels are proven only by CI smoke.
+  The chrome bands `--hh` and `--ch` are a `max()` of their `:root` literal and the control height plus
+  a margin, so they grow with it; only `--fh` and `--r-sm/--r/--r-lg` stay literal.
+- **Tests.** The headless groups `(shg1)` to `(shg6)` cover the host attributes, a doc commit, the
+  Settings override, the head style, its host scoping and a second instance's own style. The static
+  gate `test/repo/control-text.mjs` fails a shell control rule whose font-size or padding does not read
+  a `var(` alias (or is zero); pixels are proven only by CI smoke.
 
 ## Validate (draft → check → fix → re-check)
 
