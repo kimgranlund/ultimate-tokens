@@ -3,7 +3,7 @@ id: T-0038
 title: "Brightest steps do not share luminosity across peer palettes (diagnose first)"
 type: spike           # feature | bug | chore | spike | idea
 status: ready     # proposed | ready | blocked | done | dropped (build progress lives in /board)
-size: L3             # L1 | L2 | L3 | L4 (L5 reserved)
+size: L2             # L1 | L2 | L3 | L4 (L5 reserved)
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
 created: 2026-10-08

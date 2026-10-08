@@ -41,4 +41,4 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 | T-0035 | [header-fit-ci](header-fit-ci/handoff.md) | Header tools fit smoke fails on CI Chrome at content-lg (typography 896 > 850, geometry 880 > 850) | bug | L2 | P2 | none | 🟢 done |
 | T-0036 | [ui-polish-controls](ui-polish-controls/handoff.md) | Select triggers unstyled, sliders too small, drop the Back to Global button, prime swatches fill the width | bug | L2 | P2 | none | 🔵 ready |
 | T-0037 | [radix-role-tooltips](radix-role-tooltips/handoff.md) | Radix colors: hover tooltip with each step's role and intent | feature | L2 | P2 | none | 🔵 ready |
-| T-0038 | [peer-luminosity](peer-luminosity/handoff.md) | Brightest steps do not share luminosity across peer palettes (diagnose first) | spike | L3 | P2 | none | 🔵 ready |
+| T-0038 | [peer-luminosity](peer-luminosity/handoff.md) | Brightest steps do not share luminosity across peer palettes (diagnose first) | spike | L2 | P2 | none | 🔵 ready |
