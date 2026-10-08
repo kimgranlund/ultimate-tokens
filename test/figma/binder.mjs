@@ -12,7 +12,7 @@ import { gateReport } from "../gate-report.mjs";
 import { semanticRoles } from "../../src/engine/semantic.js";
 import { COLLECTIONS } from "../../src/engine/collections.js";
 import { extractFunctionSource } from "../../figma/binder/splice-utils.mjs";
-import { FIGMA_MIGRATIONS, LIBRARY_TYPE_VOICE_MAP, GEOMETRY_FIELD_RENAME_MAP } from "../../figma/binder/migrations.mjs";
+import { FIGMA_MIGRATIONS, LIBRARY_TYPE_VOICE_MAP, GEOMETRY_FIELD_RENAME_MAP, LEGACY_SIZE_FIELDS, legacySizeRenames } from "../../figma/binder/migrations.mjs";
 
 const HERE = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "figma", "binder"); // the binder lives in figma/binder/
 const RT = JSON.parse(readFileSync(new URL("../../docs/reference/data/role-table.json", import.meta.url), "utf8"));
@@ -270,6 +270,35 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
       if (geo && geo.modes.map((m) => m.name).join() !== "Base") FAIL("floatcreate", `after removing the breakpoint, Geometry modes = ${geo && geo.modes.map((m) => m.name)}, want Base`);
     }
   } catch (e) { FAIL("floatcreate", "applyFloatPlans threw: " + e.message); }
+}
+
+// ── legacyrenames (T-0026): the standalone binder's applyFloatPlans runs the same classic legacy-rename
+//    path as the flagship (mirrors plugin.mjs's legacy-renames): 120 pre-T-0017 legacy vars, a classic
+//    apply with legacySizeRenames stamped loses no id; without the stamp it prunes all 120. ──
+{
+  try {
+    const legacy = [];
+    for (const [s, ht] of Object.entries({ xs: 20, sm: 24, md: 28, lg: 36, xl: 48, "2xl": 64 })) for (const f of LEGACY_SIZE_FIELDS) legacy.push({ name: `size/${s}/${f}`, type: "FLOAT", values: [{ mode: "Base", value: f === "height" ? ht : 5 }] });
+    for (const v of ["ui-control", "ui-widget"]) for (const s of ["xs", "sm", "lg", "xl", "2xl"]) for (const p of ["size", "line-height", "letter-spacing", "weight", "paragraph-spacing", "single-line-height"]) legacy.push({ name: `type/${v}/${s}/${p}`, type: "FLOAT", values: [{ mode: "Base", value: 12 }] });
+    const run = async (stamp) => {
+      const F = mockFigma();
+      const { applyFloatPlans } = loadBinder(binderSrc, F.figma);
+      await applyFloatPlans([{ collection: "Geometry", modes: ["Base"], defaultMode: "Base", addModes: [], variables: legacy }], { libraryMode: false });
+      const coll = F.collections.find((c) => c.name === "Geometry");
+      const idOf = Object.fromEntries(F.variables.filter((v) => v.variableCollectionId === coll.id).map((v) => [v.name, v.id]));
+      const plans = MAP.modeApplyPlan(MAP.mergeModeInterchanges(TYPE.typeTokensFigmaModes(TYPE.typeScale({ treatment: "product", bodyBase: 16 }), []), GEOM.geomTokensFigmaModes(GEOM.geomScale({}), [])));
+      if (stamp) plans[0].renames = { ...(plans[0].renames || {}), ...legacySizeRenames(plans[0].variables.map((v) => v.name), GEOM.sizeAnchor(GEOM.geomScale({}), "MD").name) };
+      await applyFloatPlans(plans, { libraryMode: false });
+      const nameOf = Object.fromEntries(F.variables.filter((v) => v.variableCollectionId === coll.id).map((v) => [v.id, v.name]));
+      return { lost: legacy.filter((v) => !(idOf[v.name] in nameOf)).length, renamed: (n) => nameOf[idOf[n]] };
+    };
+    const off = await run(false);
+    if (off.lost !== legacy.length) FAIL("legacyrenames", `negative control: an unstamped classic apply lost ${off.lost} legacy ids, want ${legacy.length} (else this leg proves nothing)`);
+    const on = await run(true);
+    if (on.lost !== 0) FAIL("legacyrenames", `a stamped classic apply lost ${on.lost} legacy ids, want 0`);
+    if (on.renamed("size/md/height") !== "size/product-md-md/height") FAIL("legacyrenames", `size/md/height's id is now ${on.renamed("size/md/height")}, want size/product-md-md/height`);
+    if (on.renamed("type/ui-widget/lg/weight") !== "_deprecated/type/ui-widget/lg/weight") FAIL("legacyrenames", `type/ui-widget/lg/weight's id is now ${on.renamed("type/ui-widget/lg/weight")}, want _deprecated/type/ui-widget/lg/weight`);
+  } catch (e) { FAIL("legacyrenames", "applyFloatPlans (legacy renames leg) threw: " + e.message); }
 }
 
 // ── floatindep: with NO "Color Primitives" collection and a non-empty (injected) FLOAT_PLANS, main()
@@ -869,7 +898,7 @@ if (!/applyFloatPlans/.test(binderSrc)) FAIL("floatanchor", "code.js has no appl
 // site, or a call site whose name is not declared, fails loudly on its own (report-static).
 // "compliance" was the live hole (#699 correction): it had a real call site above but was never
 // declared, so a compliance FAIL used to exit 1 with no named row.
-const DECLARED = ["bindings", "themes", "offline", "parity", "floatanchor", "floatcreate", "floatindep", "floatnoop", "colorprov", "primereport", "adoptconsent", "librarygeom", "libraryidem", "prunemono", "colorparity", "collparity", "floatparity", "renameparity", "compliance", "report-static"];
+const DECLARED = ["bindings", "themes", "offline", "parity", "floatanchor", "floatcreate", "legacyrenames", "floatindep", "floatnoop", "colorprov", "primereport", "adoptconsent", "librarygeom", "libraryidem", "prunemono", "colorparity", "collparity", "floatparity", "renameparity", "compliance", "report-static"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 console.log(`  (checked ${targets ? targets.length : 0} binding targets vs ${CANON.size} canonical raw-colors names)`);
 console.log("  defer  hpg-parity-roletable, this file's `parity` gate above verifies the engine<->Figma-binder leg (full role objects, in order, per default palette); the canonical role-table.json<->semantic.js leg is verified by semantic-mapping's own refs-canonical gate");
