@@ -1394,6 +1394,26 @@ try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
   try { localStorage.removeItem("ultimate-tokens-apply-consent-v1"); } catch {}
 }
 
+// ── (xl) T-0026: a CLASSIC apply stamps legacySizeRenames onto the posted Geometry plan, so the first
+// apply on an existing file renames legacy size/{step}/* (id kept) instead of pruning them; a library
+// apply leaves the map off (ADR-032's alias path owns that mode). ──
+{
+  const postedRenames = (lib) => {
+    try { localStorage.setItem("ultimate-tokens-library-mode-v1", lib); } catch {}
+    app.applyGateOpen = false; app._applyBusy = false; posted = null;
+    app.applyToFigma(false);
+    if (app._applyTimeoutTimer) { clearTimeout(app._applyTimeoutTimer); app._applyTimeoutTimer = null; }
+    const fp = posted && posted.pluginMessage && posted.pluginMessage.floatPlans;
+    return fp && fp[0] ? (fp[0].renames || {}) : null;
+  };
+  const classic = postedRenames("0");
+  const library = postedRenames("1");
+  ok(!!classic && classic["size/md/height"] === "size/product-md-md/height", `(xl) a classic apply posts floatPlans[0].renames["size/md/height"] = size/product-md-md/height (got ${classic && classic["size/md/height"]})`);
+  ok(!!library && !("size/md/height" in library), `(xl) a library apply posts no legacy rename for size/md/height (got ${library && library["size/md/height"]})`);
+  app.applyGateOpen = false; app._applyBusy = false; posted = null;
+  try { localStorage.removeItem("ultimate-tokens-library-mode-v1"); } catch {}
+}
+
 // ── (xg) TKT-0020: the changed-value diff, receiveLiveFloatVariables + _figmaChangedCount + the
 // gate's rendered count, over the app's OWN real next-apply plan (not a synthetic fixture) ──
 app.applyGateOpen = false; app._applyBusy = false; posted = null; // TKT-0004: reset busy, the Regroup confirm above never got a matching onApplyDone/onApplyError

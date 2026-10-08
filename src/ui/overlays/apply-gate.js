@@ -1,9 +1,9 @@
 import { figmaCollectionNames, slug } from "../model.mjs";
 import { serialize } from "../persist.js";
 import { typeTokensFigmaModes, typeTokensFigmaPrimitivesModes } from "../../engine/type.mjs";
-import { geomTokensFigmaModes } from "../../engine/geometry.mjs";
+import { geomTokensFigmaModes, sizeAnchor } from "../../engine/geometry.mjs";
 import { applyRenameMigrations, mergeModeInterchanges, modeApplyPlan, retirementsFor, validateModeInterchange } from "../../../figma/binder/mode-apply-plan.mjs";
-import { FIGMA_MIGRATIONS, kebabWaveColorRenames, kebabWaveVarRenames } from "../../../figma/binder/migrations.mjs";
+import { FIGMA_MIGRATIONS, kebabWaveColorRenames, kebabWaveVarRenames, legacySizeRenames } from "../../../figma/binder/migrations.mjs";
 import { primitivesModesApplyPlan, stylePlans } from "../../../figma/binder/style-plan.mjs";
 import { countChangedValues, flattenModePlanValues } from "../../../figma/binder/live-diff.mjs";
 import { COLLECTIONS } from "../../engine/collections.js";
@@ -103,7 +103,11 @@ export class ApplyGateMixinImpl {
       // mode prunes, and the paint/text style prunes. #629's ruling Q1 exempted color entirely; #673
       // retired that exemption, because a published library that renames a role still lost the
       // variable; #687 closed the last gap, applyFloatPlans' own breakpoint-mode removeMode.
-      const msg = { type: "apply", config: serialize(this.doc), rebuildSemantic: !!rebuild, libraryMode: this._libraryMode(), floatPlans: this._figmaFloatPlans(), collections: figmaCollectionNames(this.doc), renames: { color: { ...kebabWaveColorRenames(_colorSlugs), collections: FIGMA_MIGRATIONS.color.collections } } };
+      // T-0026: classic mode stamps the legacy size/{step}/* renames (legacySizeRenames) so the prune
+      // never reaches them. Library mode keeps ADR-032's nearest-by-height alias and deprecate path:
+      // stamping renames there would turn every alias into a rename, since renames run before the reconcile.
+      const libraryMode = this._libraryMode();
+      const msg = { type: "apply", config: serialize(this.doc), rebuildSemantic: !!rebuild, libraryMode, floatPlans: this._figmaFloatPlans({ legacyRenames: !libraryMode }), collections: figmaCollectionNames(this.doc), renames: { color: { ...kebabWaveColorRenames(_colorSlugs), collections: FIGMA_MIGRATIONS.color.collections } } };
       if (sys.color !== false) msg.dtcg = this.figmaBundle();
       // STYLES (opt-out): the swatch layer bound to the variables, paint styles per semantic role
       // (color on), text styles per voice×step×weight (type on). Pure plans (style-plan.mjs); the
@@ -271,7 +275,9 @@ export class ApplyGateMixinImpl {
   // failure) is dropped rather than half-applied; an engine error on one system never blocks the other
   // (or the color apply), and the merged interchange is validated again (a mode-list mismatch between
   // halves surfaces as missing values there, never as a half-applied file).
-  _figmaFloatPlans() {
+  // opts.legacyRenames (classic apply only, T-0026) also stamps legacySizeRenames; with no argument the
+  // output is unchanged, which is how _figmaChangedCount and app.js call it.
+  _figmaFloatPlans(opts = {}) {
     const sys = this.exportSystems || {};
     const halves = [];
     const add = (make) => { try { const ix = make(); if (ix && validateModeInterchange(ix).length === 0) halves.push(ix); } catch { /* skip a malformed system */ } };
@@ -285,9 +291,12 @@ export class ApplyGateMixinImpl {
       // The ADR-016 var map derives from the LIVE plan's names (kebabWaveVarRenames reverses each to
       // its frozen pre-wave form), so custom voices/steps are covered without a hand list.
       const plans = applyRenameMigrations(modeApplyPlan(ix), FIGMA_MIGRATIONS.floats);
+      const mdCell = opts.legacyRenames === true ? sizeAnchor(this._geomScaleFor("base"), "MD").name : null;
       for (const p of plans) {
-        const waveVars = kebabWaveVarRenames(p.variables.map((v) => v.name));
-        if (Object.keys(waveVars).length) p.renames = { ...waveVars, ...(p.renames || {}) };
+        const planNames = p.variables.map((v) => v.name);
+        const waveVars = kebabWaveVarRenames(planNames);
+        const legacy = opts.legacyRenames === true ? legacySizeRenames(planNames, mdCell) : {};
+        if (Object.keys(waveVars).length || Object.keys(legacy).length) p.renames = { ...waveVars, ...legacy, ...(p.renames || {}) };
       }
       // TKT-0018: the TKT-0009 retirement rule (the merged Geometry collection supersedes the old
       // two-collection era's "Typography" once it actually lands type/ variables) is pure + unit-tested

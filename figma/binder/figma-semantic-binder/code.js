@@ -208,7 +208,7 @@ async function applyFloatPlans(plans, opts) {
       Object.assign(combinedAliasMap, expandGeometryAliasMap(oldStepHeights, sizeGeo.currentStepHeights, sizeGeo.fields, GEOMETRY_FIELD_RENAME_MAP));
     }
     const liveAliasTargets = liveAliasTargetsByNameVM(existingNames, plan.defaultMode, liveVarsByName, idToName);
-    const report = libraryModeReportVM(plan, liveVarsByName, combinedAliasMap, liveAliasTargets);
+    const report = libraryModeReportVM(plan, liveVarsByName, combinedAliasMap, liveAliasTargets, undefined, idToName);
     const wantedNames = plan.variables.map((v) => v.name);
 
     const current = new Set();
@@ -440,8 +440,16 @@ function libraryReconcile(existingNames, wantedNames, aliasMap, liveAliasTargets
   return { toAlias: toAlias, toDeprecate: toDeprecate };
 }
 
-function valueChangedVM(liveValuesByModeName, planVar) {
-  if (planVar.type === "ALIAS") return true;
+function valueChangedVM(liveValuesByModeName, planVar, idToName) {
+  if (planVar.type === "ALIAS") {
+    if (!Array.isArray(planVar.values) || !idToName) return true;
+    for (const pair of planVar.values) {
+      const live = (liveValuesByModeName || {})[pair.mode];
+      if (!live || typeof live !== "object" || live.type !== "VARIABLE_ALIAS") return true;
+      if (idToName[live.id] !== pair.value) return true;
+    }
+    return false;
+  }
   for (const pair of (planVar.values || [])) {
     if (!(pair.mode in (liveValuesByModeName || {}))) return true;
     const live = liveValuesByModeName[pair.mode];
@@ -465,7 +473,7 @@ function readLiveValuesByName(byName, modeId) {
   return out;
 }
 
-function libraryModeReportVM(plan, liveVarsByName, aliasMap, liveAliasTargets, extraWantedNames) {
+function libraryModeReportVM(plan, liveVarsByName, aliasMap, liveAliasTargets, extraWantedNames, idToName) {
   const live = liveVarsByName || {};
   const wantedNames = plan.variables.map((v) => v.name).concat(extraWantedNames || []);
   const renamesMap = plan.renames || {};
@@ -488,7 +496,7 @@ function libraryModeReportVM(plan, liveVarsByName, aliasMap, liveAliasTargets, e
   const valueUpdates = [];
   for (const v of plan.variables) {
     if (!(v.name in effective)) { adds.push(v.name); continue; }
-    if (valueChangedVM(effective[v.name], v)) valueUpdates.push(v.name);
+    if (valueChangedVM(effective[v.name], v, idToName)) valueUpdates.push(v.name);
   }
   const rec = libraryReconcile(Object.keys(effective), wantedNames, aliasMap || {}, liveAliasTargets);
   return { renames: renamed, adds: adds.sort(), valueUpdates: valueUpdates.sort(), aliases: rec.toAlias, deprecates: rec.toDeprecate };
