@@ -1,5 +1,102 @@
 # CHANGELOG
 
+Entries 1.69 to 1.73 were written after 1.68, for changes that landed between 1.66 and 1.67; each
+carries its landing date.
+
+## 1.73 - 2026-10-08 - container components compose by the half law, and shell controls read one set of cell roles (#818)
+
+**The half law (ADR-033).** Each geometry cell gains `partHeight = height - inset` and
+`partInset = inset / 2` (kebab `part-height`, `part-inset`; roles `--control-part-height` and
+`--control-part-inset`, unprefixed). A cell carries 16 fields and the resolver 15 roles; Figma emits
+432 `size/` FLOATs and 144 `control/` ALIASes per Geometry collection. A control-sized container pads
+by `partInset` and keeps `radiusControl`; each repeated part is `partHeight` tall and takes
+`radiusInset`, so the corners stay concentric. CSS, DTCG, Figma, the Brand-Kit MCP and the consumer
+skill `geometry-tokens` carry the two fields.
+
+**The shell.** `.segmented`, `.figma-files` and `.radix-files` share one compound rule; `btn()` and
+`paneToggle` emit `icon-only`, borderless control-height squares. Shell control rules read their font
+size and padding from the `--sh-*` aliases, gated by `test/repo/control-text.mjs`; the `--hh` and
+`--ch` bands grow with the control height. Also: `icon()` honors an explicit `size`,
+`_applyShellGeometry` scopes its injected CSS to its own host (a keyed `ut-geometry-roles-<key>`
+style), and `typeTokensBreakpointCSS` writes `:where(:root)` as `geomTokensBreakpointCSS` does.
+
+## 1.72 - 2026-10-08 - Figma apply keeps the legacy `size/*` variables and their bindings on an existing file (#817)
+
+Classic apply (Published library off, the default) never reached the alias path, so the first apply on
+a file made before the Maison ladder pruned every `size/{xs..2xl}/*` variable and the retired non-md
+`type/ui-control|ui-widget` steps and detached every bound layer and text style. `legacySizeRenames`
+(`figma/binder/migrations.mjs`) builds an id-preserving rename map from each legacy `size/{step}/{field}`
+to `size/{cell}/{field}`, which `_figmaFloatPlans` stamps onto the Geometry plan on a classic apply only;
+fields with no cell target and the retired UI steps rename under `_deprecated/` in both modes.
+`valueChanged` and `libraryModeReport` compare an ALIAS variable by its live target name, so a re-apply
+to an unchanged file reports 0 Geometry changes. ADR-032 carries the amendment.
+
+## 1.71 - 2026-10-07 - the Color inspector has no Palette | Global switch; the selection picks the context (#809)
+
+Selecting a palette (a canvas row, a rail row, the arrow keys) shows the palette inspector; with nothing
+selected, which is how a document opens and where Esc or a click on empty canvas returns, the Global
+inspector shows, with the set's Story at its foot. Undo and redo keep the current context, and the `1`
+and `2` keys no longer switch panels. Typography and Geometry keep their own inspector tabs.
+
+## 1.70 - 2026-10-07 - Geometry adopts the Maison ui-kit ladder (#813, ADR-032)
+
+A kit is `{ tier, scale, radius, spaceBase }` over 27 fixed cells keyed `{tier}-{scale}-{size}`
+(`TIERS`, the 25-row `LADDER_ROWS`, four `RADIUS_MODES`), default `product/md/round/4`. Each cell carried
+14 fields on `inset = (height - icon) / 2` (16 since 1.73). Control text per height moved into the type
+engine as `UI_TEXT` and `uiText(height)`, so UI-control and UI-widget keep one step, MD. The CSS export
+carries the `--size-{cell}-{field}` primitives and a context resolver (`geomResolverCSS`) that turns the
+`data-tier`, `data-scale`, `data-size` and `data-radius` attributes into the `--control-*`, `--chip-*` and
+`--radius-*` roles, unprefixed under any scheme. Retired: `baseHeight`, `rampContrast`, the five
+treatments, per-cell height `tokenOverrides`, `linear4`. Persist schema 9: `migrateGeometry` maps a
+saved kit's legacy md height to the nearest tier and scale and reports every dropped key through
+`DROPPED_KEYS`. The export schema does not move.
+
+## 1.69 - 2026-10-07 - the Hue space toggle applies to anchored palettes (#810, ADR-031)
+
+The hue space names the space in which an anchor's own hue is held constant: `oklch` holds its OKLCH hue,
+`cam16` its CAM16 hue, and the anchor pixel (ramp stop 500, prime rung 3, the key tile at Prime chroma
+100) is verbatim in both. The anchored prime ladder and the key tile below Prime chroma 100 solve under
+`oklch` (`solveCam16Hue`), and the anchored perceptual and peak ramps solve under `cam16`
+(`solveOkhslHueForCam16`); the even ramp already held both. Measured over 3,796 palettes
+(`docs/reports/2026-10-07-hue-space-anchored.md`): ramps and key tiles move 0 cells at the default
+space, 3,147 prime strips move, and the default kit's outer-rung OKLCH hue drift from the anchor falls
+from 0.41 to 7.97 degrees to 0.12 to 0.65; under `cam16` the anchored perceptual and peak ramps move at
+most 0.0164 and 0.0169 OKLab dE. No schema bump.
+
+## 1.68 - 2026-10-08 - a document pins its compute-layer versions and every export stamps them; export schema 7 (#788)
+
+**Pins.** A document carries `layers: { [id]: version }`, one pin per compute layer. `compute` and
+`model.mjs`'s type and geometry evaluators (`runOf`) run the pinned version. The pin rule is
+`pinsOf` in `src/engine/layer-pins.mjs` (rounded, clamped to `[1, latest]`, unknown ids dropped and
+reported). Persist schema 10: a doc saved before pins is stamped with every layer at version 1 by
+the `stampLayers` `RENAME_MAPS` entry; a new doc (`defaultDocument()`) and a preset opened through
+`presetDoc` (`src/ui/persist.js`) pin the latest. Earlier layer versions are frozen as
+`src/engine/layers/<id>@<n>.mjs`, hash-gated by `FROZEN.json`; only the test-only `test-layer@1`
+and `@2` live there, so every shipped layer is still at version 1.
+
+**Stamps.** `EXPORT_SCHEMA_VERSION` 6 to 7. Comment formats carry line 2
+`/* ultimate-tokens layers controls@1 ramp@1 prime@1 roles@1 type@1 geometry@1 */`; JSON
+`meta.layers`, DTCG `$extensions["com.ultimate-tokens"].layers`, UI3 and DS `tokens.json`
+`$layers`. Brand kit `ultimate-tokens-brand-kit/7`, MCP server 0.7.0, Adia artifacts oklch 2.2.0 and
+radix 1.5.0 (stamp only). No token value moves. ADR-034 carries the amendment.
+
+## 1.67 - 2026-10-08 - the canvas and every export read one evaluation of six versioned compute layers (#788)
+
+**One resolver, one registry, one evaluator.** `src/engine/controls.mjs` `resolveControls` replaces
+the two `controlsOf` copies in `src/ui/model.mjs` and `src/engine/exports.js`. `src/engine/layers.mjs`
+registers six layers, `controls`, `ramp`, `prime`, `roles`, `type` and `geometry`, each
+`{ id, version: 1, inputs, outputs, run }` with `run` the engine function it already was; there is no
+`group-chroma` layer, retired by ADR-030. `compute(doc)` walks the colour layers once (ramp and prime
+chroma from `resolve.mjs`, the 25-stop ramp, the prime swatches, the whole role chain in
+`resolveRoles`), and `projectView` and `derivedAll` are both views over that one result. Type and
+geometry stay evaluated per breakpoint mode in `model.mjs`.
+
+**Records.** Byte-neutral: `scripts/report-compute-neutral.mjs --base 1d2bf23f` renders the default
+kit and 343 presets through `projectView`, `figmaBundle`, `brandKit` and the three design-system
+bundles on both trees, 0 of 44,267,992 cells differ. The one move: a raw state with no `hueSpace`
+sent straight to an exporter renders as `oklch` (was `cam16`). ADR-034 records the layer model; its
+R102 (drop the cam16 branch and the `baseIntensity` name) is superseded by ADR-031.
+
 ## 1.66 - 2026-10-07 - chroma controls are per-palette Base chroma times two global k factors; the anchor follows Prime chroma (#804)
 
 **The group chroma layer is gone.** Each palette carries its own Base chroma (`palette.baseChroma`,

@@ -1,6 +1,6 @@
 # site
 
-Describe what this topic covers.
+Design specs for the hosted surfaces: licensing and identity, storage and sync, MCP hosting and the Describe-palette service.
 
 <!-- sdlc-lite:managed:start v1 sha256:7a9d5026498b -->
 ## Documents

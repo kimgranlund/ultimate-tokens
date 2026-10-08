@@ -226,7 +226,7 @@ if (applyBundle) {
   // root key, so the stamp is inert to the reader, this proves that, rather than assuming it).
   for (const file of ["palette.tokens.json", "Light_tokens.json", "Dark_tokens.json"]) {
     const ext = bundle[file].$extensions && bundle[file].$extensions["com.ultimate-tokens"];
-    if (!ext || ext.schemaVersion !== 6) FAIL("apply", `bundle["${file}"] missing root $extensions["com.ultimate-tokens"].schemaVersion=6 (got ${JSON.stringify(ext)})`);
+    if (!ext || ext.schemaVersion !== 7) FAIL("apply", `bundle["${file}"] missing root $extensions["com.ultimate-tokens"].schemaVersion=7 (got ${JSON.stringify(ext)})`);
   }
 
   try {

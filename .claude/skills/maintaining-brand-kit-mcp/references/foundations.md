@@ -10,7 +10,7 @@ probably fighting one of these. The user-facing contract is owned by `mcp/README
   `brand-kit.json`. It is engine-aware (it reads `projectView(doc)`'s resolved palettes/roles, and the base-mode
   `typeScaleFor`/`geomScaleFor` scales), it is where every value the server can serve comes from. Shape:
   ```
-  { $schema: "ultimate-tokens-brand-kit/6", name, generator: "Ultimate Tokens", icons, motion, constants, controls,
+  { $schema: "ultimate-tokens-brand-kit/7", name, generator: "Ultimate Tokens", icons, motion, constants, controls,
     stops:    [50, 100, …, 950],                       # the stop numbers (color only; on[0].ramp's stops)
     palettes: [ { name, slug, key, group, ramp: [ {stop, hex} ], prime } ],   # prime: { brightest, brighter,
                                                        #   bright, prime, dim, dimmer, dimmest }, each { hex, oklch }
@@ -37,9 +37,9 @@ probably fighting one of these. The user-facing contract is owned by `mcp/README
   Cloudflare Worker (spec: `docs/specs/site/mcp-hosting-spec.md`) imports the SAME core, so the downloaded
   and hosted surfaces can't drift; `test/mcp/core.mjs` locks the parity.
 
-Two version numbers live here and are unrelated: `kit.$schema = "ultimate-tokens-brand-kit/6"` (the data shape) and
+Two version numbers live here and are unrelated: `kit.$schema = "ultimate-tokens-brand-kit/7"` (the data shape) and
 `PROTOCOL_VERSION = "2025-06-18"` (the MCP wire protocol the `initialize` reply advertises). `SERVER =
-{ name: "ultimate-tokens-brand-kit", version: "0.6.0" }`. Don't conflate the schema and the protocol version.
+{ name: "ultimate-tokens-brand-kit", version: "0.7.0" }`. Don't conflate the schema and the protocol version.
 
 Neither digit is free-standing. The `/N` in `$schema` IS `EXPORT_SCHEMA_VERSION`
 (`src/engine/exports.js`), interpolated by `brandKit` in `src/ui/model.mjs`. Read the constant,
@@ -139,7 +139,7 @@ paragraphIndent }`, and the box voices (`Kicker`, `UI-control`, `UI-widget`) add
 `{ tier, scale, radius, spaceBase, cells, cell, radii, space, insets, gaps, borders, focus }`. `cells` holds
 all 27 ladder cells keyed `{tier}-{scale}-{size}` (content, product, micro × sm, md, lg × sm, md, lg); each is
 `{ height, inset, text, icon, captionText, chipHeight, chipInset, chipText, iconRatio, minWidth,
-radiusControl, radiusMark, radiusInset, radiusCard }`. `cell` is the kit default (`{tier}-{scale}-md`) with
+partHeight, partInset, radiusControl, radiusMark, radiusInset, radiusCard }` (16 fields). `cell` is the kit default (`{tier}-{scale}-md`) with
 its `name`. `radii` is the ladder `{ none, xs, sm, md, lg, xl, full }`; `space` is the spacing scale.
 
 The key composition facts the test pins: the served ladder has 27 cells and no `sizes` key, a cell's

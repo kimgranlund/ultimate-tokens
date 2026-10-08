@@ -60,7 +60,7 @@ collection → index its vars by name → create/find `Color Roles` with Light +
 `PALETTES`, for each role in `roleTable(n)`, resolve `rawVars["{n}/{refKey(ref)}"]` for light and dark →
 `createVariableAlias(rawVar)` into each mode via `setValueForMode`. Reports `bound` + any `missing` raw
 targets. The grammar `"{n}/{refKey(ref)}"` is load-bearing: every emitted target is GUARANTEED to be a
-canonical raw-colors name (solid → pad3 `"50"→"050"`; scrim → `"500-{step}"` verbatim).
+canonical raw-colors name (solid → pad3 `"50"→"050"`; scrim → nested, `"scrim/{step}"` for the 500 base, ADR-016).
 
 **App apply path** (grep `src/ui/app.js`): the buttons call `requestApplyToFigma(rebuild)` →
 `renderApplyGate()` (a consent road-block: *back up your file first*; normal apply is cookieable via a

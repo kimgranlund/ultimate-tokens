@@ -1,6 +1,6 @@
 # archive
 
-Describe what this topic covers.
+Superseded and retired documents kept for history: the closed plans and the pre-2026-07-17 file tickets. Each carries `status:` and `superseded-by:` front matter.
 
 <!-- sdlc-lite:managed:start v1 sha256:3642dacf3b48 -->
 ## Documents

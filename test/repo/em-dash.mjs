@@ -296,7 +296,7 @@ const PUNCT_END_RE = /[.,;:!?]$/;
 
 // -- The positive guard (plan revision 11) ----------------------------------------------------
 // Five passes grew R0 one lettered construct at a time, and the re-diagnosis
-// (`.sdlc/plans/rule-gates-U3-rediagnosis.md` §1) showed the list was still open: a legend
+// (`.sdlc/plans/archive/rule-gates-U3-rediagnosis.md` §1) showed the list was still open: a legend
 // naming the glyph, a drawn chart line, a heading in an exported string, a question label, a
 // glued field name, an aligned comment column and a status mark all slipped through revision 10.
 // The owner ruled B: flip the guard from a negative list of what `--fix` must not touch to a
@@ -332,7 +332,7 @@ function guardAfterHolds(line, idx) {
 
 function isMd(rel) { return rel.endsWith(".md"); }
 
-// -- E1/E2/E3/E4 (#747, `.sdlc/plans/rule-gates-U4-rediagnosis.md` §1) -------------------------
+// -- E1/E2/E3/E4 (#747, `.sdlc/plans/archive/rule-gates-U4-rediagnosis.md` §1) -------------------------
 // A label separator (a heading or a bold bullet label) embedded in a STRING LITERAL of a non-`.md`
 // file -- a JS string that renders as Markdown, a UI title -- reads the same as a real heading or
 // bullet once rendered, so it earns R2/R3's colon instead of R8's blind comma (E1, E2). E3 and E4
@@ -784,7 +784,7 @@ function selftest() {
     { name: "R0(g) JS comment marker", md: false, line: `// ${DASH} see applyFloatPlans below`, expectRule: "R0" },
     { name: "R0(g) YAML/shell comment marker", md: false, line: `# ${DASH} an automatic deploy in flight.`, expectRule: "R0" },
     { name: "R0(g) blockquote sign-off", md: true, line: `> ${DASH} Ultimate Tokens`, expectRule: "R0" },
-    // Revision 11, the re-diagnosis's four further constructs (`.sdlc/plans/rule-gates-U3-rediagnosis.md`
+    // Revision 11, the re-diagnosis's four further constructs (`.sdlc/plans/archive/rule-gates-U3-rediagnosis.md`
     // §1): none of them fail because of a lettered rule any pass named -- each fails the guard.
     { name: "guard: legend naming the glyph", md: false, line: `// (✓ match / ✗ drifted / ${DASH} absent)`, expectRule: "R0" },
     { name: "guard: glued field name", md: false, line: `//   relTrackEm${DASH} tracking as em`, expectRule: "R0" },
@@ -946,7 +946,7 @@ function selftest() {
 
   // A stray, genuinely unbalanced backtick (an authoring slip, not a real wrap) must not carry
   // "open" past one line and hide an unrelated dash three lines later (found in the wild in the
-  // same pass 2 review pass: .sdlc/plans/rule-gates.md:163 to :236). The middle line here neither
+  // same pass 2 review pass: .sdlc/plans/archive/rule-gates.md:163 to :236). The middle line here neither
   // closes the phantom span nor opens a new one (an even count), so the cap must have reset by the
   // third line and the dash there must be fixed normally, not swallowed.
   const bogus = [

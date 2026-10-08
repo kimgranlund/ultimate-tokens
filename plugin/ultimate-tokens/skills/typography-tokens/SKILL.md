@@ -105,7 +105,7 @@ merely LOOKS technical. Don't reach for a `-mono` voice just because the surroun
    hand. `sub-heading` and `kicker` are uppercase by treatment, don't `text-transform`
    them yourself, and don't uppercase a voice that isn't.
 6. **Responsive is per-breakpoint modes, not `clamp()` or `vw`.** If the kit exports breakpoint
-   modes, the `--type-*` vars are re-declared inside `@media (min-width: …)` blocks, the same class
+   modes, the `--type-*` vars are re-declared inside `@media` blocks (one file per mode), the same class
    restyles automatically. Don't write fluid `clamp()` type or manual `@media` font-size overrides;
    the modes already did it (see [`references/responsive.md`](references/responsive.md)).
 7. **The text-rendering baseline is always on.** Include it once in the app's global CSS, it is part

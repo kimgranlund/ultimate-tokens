@@ -55,8 +55,8 @@ Tailwind + ShadCN addition.
   strings.
 - **Type/geom formats skip `exportAll` and the model.** They are generated on demand by the drawer's
   `SYSTEM_CODE` map (+ a `SYSTEM_LABEL`) and bundled by the `sys.type` / `sys.geometry` branch of
-  `downloadAllZip`. Don't add them to `exportAll`, that bundle is color-only by contract (its 7 keys:
-  css/oklch/json/dtcg/ui3/tailwind/shadcn).
+  `downloadAllZip`. Don't add them to `exportAll`, that bundle is color-only by contract (its 10 keys:
+  css/oklch/json/dtcg/ui3/tailwind/shadcn/panda/radix/radixRef).
 - **`geomTokensFigma` is the unitless one.** When adding a Figma-variable variant, emit `$type:"number"` with a
   bare numeric `$value` (no `px`) and wrap it in a named collection (`{ Geometry: {…} }`). Mirror the DTCG
   sibling exactly, minus the unit, `geomTokensFigma` is the template.

@@ -316,15 +316,7 @@ export class TypeSectionImpl {
         { cls: "canvas-seg", ariaLabel: "Type specimen mode", role: "group", idPrefix: "tspec" },
       ),
       this.typeModeControl(),
-      h("div", { class: "spacer" }),
-      btn(icon("crosshair"), {
-        title: "Fit: reset the canvas view to centre at 100%",
-        ariaLabel: "Fit: reset the canvas view to centre at 100%",
-        onclick: () => { this.fit(); this.render(); },
-      }),
-      btn(icon("minus"), { ariaLabel: "Zoom out", onclick: () => this.zoomBy(-1) }),
-      h("span", { class: "zoom-readout", role: "status", "aria-live": "polite", "aria-label": "Zoom level" }, Math.round(this.viewport.zoom * 100) + "%"),
-      btn(icon("plus"), { ariaLabel: "Zoom in", onclick: () => this.zoomBy(1) }),
+      ...this.canvasTools(), // spacer · fit · zoom, or the overflow menu when they do not fit
       !this.panesRight ? this.paneToggle("right") : false,
     );
   }

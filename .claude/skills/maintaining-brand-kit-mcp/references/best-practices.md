@@ -50,10 +50,11 @@ addition history.
 ### Serve verbatim; don't reshape
 
 - **`get_type` returns `kit.type` and `get_geometry` returns `kit.geometry` as-is**: the shape is owned by
-  `typeScale`/`geomScale`. `kit.type.categories` carries **seven** voices (Display, Heading/Sub-heading/
-  Kicker, Body, UI, Code); `kit.geometry.cells` holds the 27 ladder cells (`{height, inset, text, icon,
-  captionText, chipHeight, chipInset, chipText, iconRatio, minWidth, radiusControl, radiusMark,
-  radiusInset, radiusCard}`) with the kit default `cell`, the top-level `radii` ladder + `space` scale. Don't pluck or rename
+  `typeScale`/`geomScale`. `kit.type.categories` carries **fifteen** voices (Display, Headline, Sub-heading, Title, Sub-title,
+  Lead, Body, Body-mono, Label, Label-mono, Kicker, Tiny, Tiny-mono, UI-control, UI-widget);
+  `kit.geometry.cells` holds the 27 ladder cells (16 fields, `{height, inset, text, icon,
+  captionText, chipHeight, chipInset, chipText, iconRatio, minWidth, partHeight, partInset,
+  radiusControl, radiusMark, radiusInset, radiusCard}`) with the kit default `cell`, the top-level `radii` ladder + `space` scale. Don't pluck or rename
   fields in the server; an agent and the test rely on the full shape (the test reads `ty.categories.Body`,
   `ty.uiText[32]`, `geo.cells["product-md-md"].inset/height/icon/text`).
 - **The geometry cell `text` is composed from the type UI text table.** The test pins
@@ -70,10 +71,10 @@ addition history.
 
 ### Versions and identity
 
-- **Two version numbers, unrelated:** `kit.$schema` (`"ultimate-tokens-brand-kit/6"`, the data shape) vs
+- **Two version numbers, unrelated:** `kit.$schema` (`"ultimate-tokens-brand-kit/7"`, the data shape) vs
   `PROTOCOL_VERSION` (`"2025-06-18"`, the MCP wire version in the `initialize` reply). Bump the schema only when
   `brandKit`'s output shape changes; bump the protocol only to track an MCP spec revision. The test asserts
-  `kit.$schema === "ultimate-tokens-brand-kit/6"` and `serverInfo.name === "ultimate-tokens-brand-kit"`.
+  `kit.$schema === "ultimate-tokens-brand-kit/7"` and `serverInfo.name === "ultimate-tokens-brand-kit"`.
 - **The schema digit is not a literal to keep by hand.** It is `EXPORT_SCHEMA_VERSION`
   (`src/engine/exports.js`), interpolated by `brandKit`; check the constant rather than trusting a number
   written in prose. A bump there also moves `SERVER.version` in `mcp/brand-kit-core.mjs` and, by

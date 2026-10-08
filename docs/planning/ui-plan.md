@@ -1,3 +1,6 @@
+---
+status: accepted
+---
 # Ultimate Tokens: UI Plan
 
 > The front-end plan for the tool whose engine/semantic/export logic the spec defines. Reasoned
@@ -49,7 +52,7 @@ right inspector.
 |---|---|---|---|
 | Color | `canvasView` of Palettes, Scrims, Mapping (the semantic-mapping table, the only table view) or Radix; the scene always renders twice side by side, a Light and a Dark column, through `renderCompareArea`, except in the Mapping view, whose table has no scheme and renders once | no tabs: the selection picks the context, the palette inspector while a palette is selected and the Global inspector otherwise (a Back-to-Global button in the pane header and Esc return), with the curated story at the foot of Global when the document carries one (the per-role table is the Mapping canvas view; the Roles tab was retired, T-0016) | the original surface of Revision A |
 | Typography | a `typeSpecMode` segment of `specimen` or `tokens`, and `typeMode` breakpoint modes (base plus each mode, `compare` labeled All; Tablet and Mobile are live from `typeEffectiveModes` until a mode is materialized) | `typeSegment` of scale, fonts and specimen, in `renderTypeInspector` | the Specimen view renders each step in the real face |
-| Geometry | a `geomSpecMode` segment of `controls` or `tokens`, and `geomMode` breakpoint modes (base plus each mode, `compare` labeled All; Tablet and Mobile are live from `geomEffectiveModes` until a mode is materialized) | `renderGeomInspector` with ramp, `radius` and space tabs | per-step text size composes from the Type scale, except in the ladder prototype ramp, which derives its own text size from each step height |
+| Geometry | a `geomSpecMode` segment of `controls` or `tokens`, and `geomMode` breakpoint modes (base plus each mode, `compare` labeled All; Tablet and Mobile are live from `geomEffectiveModes` until a mode is materialized) | `renderGeomInspector` with Ladder (`ramp`), `radius` and space tabs | every cell's text size composes from the Type scale's `UI_TEXT` table, with no exception; Controls shows the 27 ladder cells |
 
 Both breakpoint-mode sets sit beside Compare, which shows every breakpoint side by side and hides the
 section's whole canvas segment (`specimen` or `tokens` in Typography, `controls` or `tokens` in Geometry). Each section also has left analysis cards, routed by `renderLeftPane`. The engines
@@ -89,7 +92,7 @@ tasks:
   T8 export:           10 formats (color), plus type, geometry, design-system and config outputs
   T9 browse-sets:      the home gallery (your sets, search, color categories)
   T10 tune-type:       the Typography section: scale, fonts, specimen
-  T11 tune-geometry:   the Geometry section: ramp, radius, space
+  T11 tune-geometry:   the Geometry section: ladder, radius, space
   T12 manage-modes:    add or edit breakpoint modes for Typography and Geometry
   T13 compare:         all breakpoints (Typography, Geometry), each in Light and Dark; Color always shows Light and Dark
 

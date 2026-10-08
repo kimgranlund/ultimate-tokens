@@ -38,8 +38,8 @@ the UI directly, same as the type/geometry emitters).
 
 ## The format model (depth in `references/foundations.md`)
 
-`derivePalette(palette, controls, overrides)` (exports.js) computes everything an emitter needs ONCE per
-enabled palette, the slug, the solid stops, the scrims, and the resolved semantic roles (the exact return
+`derivePalette(entry)` (exports.js, over one palette's `compute(state)` entry from layers.mjs) builds everything an emitter needs ONCE per
+enabled palette, the slug, the solid stops, the scrims, the resolved semantic roles, the canvas group and the prime swatches (the exact return
 tuple + the resolved-role shape: `references/foundations.md` §1). **There is NO resolver in the returned
 object**, `resolveRef` is a local closure that runs at derivation time, so the roles arrive pre-resolved:
 emitters read `r.light`/`r.dark` for a color and use `refKey(r.lightRef)` only for the raw var-NAME fragment,
@@ -105,7 +105,8 @@ fragment, emitters use it to build a NAME, never to re-resolve a ref to a color.
 7. **Bump rule: `EXPORT_SCHEMA_VERSION` (SPEC 0.3.0 RP-8, ticket #577).** `exports.js` exports one
    `EXPORT_SCHEMA_VERSION` constant, stamped on every surface that can carry it, JSON `meta.schemaVersion`;
    DTCG `$extensions["com.ultimate-tokens"].schemaVersion` at the root of all 3 files; the UI3 `$schema`
-   suffix; a first-line `/* ultimate-tokens export schema N */` comment on CSS/OKLCH/Tailwind/ShadCN; the DS
+   suffix; a first-line `/* ultimate-tokens export schema N */` comment on CSS/OKLCH/Tailwind/ShadCN and the
+   Panda/Radix modules, with the layer pins (`layerPinsLine(docPins(state))`, ADR-034) as line 2; the DS
    bundle's `tokens.json` `$schemaVersion` + DESIGN.md frontmatter `tokensSchema`; the brand-kit `$schema`
    (`src/ui/model.mjs`'s `brandKit()`) and the brand-kit MCP server's own `SERVER.version`
    (`mcp/brand-kit-core.mjs`, a hand-kept sibling literal, that file ships standalone, no cross-file import).

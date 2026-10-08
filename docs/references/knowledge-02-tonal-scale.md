@@ -262,16 +262,17 @@ variables, Figma paths, the role table, or MCP output.
 Since #804 (ADR-030) a group carries no chroma value: it is canvas grouping metadata only.
 
 **Base chroma is each palette's own ramp damper, times one global k (#785 R94, #804).** For a palette
-`p`, the pure resolver `rampChromaOf(palette, controls)` (`src/engine/resolve.mjs`, imported
-identically by `src/ui/model.mjs`'s `projectView` and `src/engine/exports.js`'s `derivePalette` so the
-canvas and every export format can never disagree; the doc-shaped wrapper `rampChromaOf(p, doc)` in
+`p`, the pure resolver `rampChromaOf(palette, controls)` (`src/engine/resolve.mjs`, called once per
+palette by `src/engine/layers.mjs`'s `compute`, the one evaluation both `src/ui/model.mjs`'s
+`projectView` and `src/engine/exports.js`'s `derivedAll` read, so the canvas and every export format
+can never disagree, ADR-034; the doc-shaped wrapper `rampChromaOf(p, doc)` in
 `model.mjs` renames the document's `baseIntensity` to `baseChroma` at that one boundary) computes:
 
 ```
 rampChromaOf(p, doc) = (p.baseChroma ?? 100) * (doc.baseIntensity ?? 100) / 100
 ```
 
-and the model hands the resolved number to `paletteStops` AS the palette's own
+and `compute` hands the resolved number to `paletteStops` AS the palette's own
 `chroma` (`paletteStops({ ...p, chroma: rampChromaOf(p, doc) }, controls, stops)`), it REPLACES
 `palette.chroma` for ramp purposes. Inside `paletteStops` that value `g` is one damper on the whole
 ramp: every path renders its stops exactly as at `g = 100` (every floor, cap, tone hold and gamut
@@ -320,9 +321,9 @@ unchanged and roles never alias prime tokens (knowledge-03 §3).
 |---------|-------|---------|---------|
 | `primeChroma` (UI "Prime chroma", global) | 0–100 | 100 | the one global k `primeChromaOf` (§8.2) returns, on every rung of every palette, the anchored `prime` rung included; was `keyIntensity` through schema v2, renamed at v3 (REQ-011, R4) |
 
-`primeSwatches` stays group-unaware: its caller (`src/ui/model.mjs`'s `projectView`,
-`src/engine/exports.js`'s `derivePalette`) resolves `primeChromaOf(p, doc)` (§8.2) FIRST and calls
-`primeSwatches({ ...p, primeChroma: undefined }, { ...controls, primeChroma: primeChromaResolved })`,
+`primeSwatches` stays group-unaware: its caller (`src/engine/layers.mjs`'s `compute`, read by both
+`projectView` and `derivedAll`) resolves `primeChromaOf(p, controls)` (§8.2) FIRST and calls
+`primeSwatches({ ...p, primeChroma: undefined }, { ...controls, primeChroma })`,
 and `primeSwatches(palette, controls)` (REQ-050..053a, REQ-056; #537 ruling) reads the k from
 `controls.primeChroma` alone:
 
@@ -400,9 +401,9 @@ than 54. Anchored, the shipped default-kit Primary (`anchor #0C5DCC`, `skew -20`
 57.9296 #4D88F8 · 48.5072 #2E6FDE · [prime] · 30.4587 #00439B · 22.1378 #003276 · 14.6366 #002256`,
 span exactly 54. The SPEC's EX-4/EX-4b/EX-5 carry the full tables.
 
-### 8.4 Migration (schema v8)
+### 8.4 Migration (schema v10)
 
-`CURRENT_SCHEMA_VERSION` is 8 (`src/ui/persist.js`). v5 added `palette.anchor`/`sourceAnchor` (#681
+`CURRENT_SCHEMA_VERSION` is 10 (`src/ui/persist.js`). v5 added `palette.anchor`/`sourceAnchor` (#681
 U1) and v6 added `palette.preDetachHue`/`preDetachChroma`/`preDetachLift` (#681 U2), brand-new
 optional fields with no `RENAME_MAPS` entry. v7 rewrites a kit saved on the Material preset's old
 export prefix triple to `md-color` / `md-typescale` / `md` once, on a document stamped below v7
@@ -413,6 +414,13 @@ without a numeric `baseChroma` takes its group's stored base chroma (written onl
 default) to 50. Each drop and each reset of a value other than 100 is reported through
 `DROPPED_KEYS` (TKT-0455, loud not silent). A saved prime value below 100 is not kept: the 343
 Neutral strips at the retired Material 60 and Adia Primary at 99 move once, by user decision.
+v9 (T-0017, #803, ADR-032) runs `migrateGeometry` on a document stamped below v9: geometry becomes the
+Maison ladder `{ tier, scale, radius, spaceBase }`, the legacy md height picks the nearest tier and
+scale, and every retired key (`treatment`, `baseHeight`, `rampContrast`, `ramp`, geometry
+`tokenOverrides`, type overrides on retired UI steps) is reported through `DROPPED_KEYS`. v10 (#788,
+ADR-034) runs `stampLayers` on a document that has no `layers` map: every registered compute layer
+is pinned at version 1 before the clamp, and `pinsOf` (`src/engine/layer-pins.mjs`) then clamps each
+pin to `[1, latest]`.
 
 Hydrating below v4 deletes `palette.intensity` from every palette and reports it through
 `DROPPED_KEYS`. `palette.group` is never written by any migration: an old document derives its

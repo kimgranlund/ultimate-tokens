@@ -8,8 +8,9 @@ assumes.
 
 ### 1. One derivation, every emitter: `derivePalette` / `derivedAll`
 
-`derivePalette(palette, controls, overrides)` (in `src/engine/exports.js`) computes, ONCE per palette,
-everything any color format needs and RETURNS `{ name, n, hue, stops, byStop, scrims, roles, keyColors }`:
+`derivePalette(entry)` (in `src/engine/exports.js`) reads one palette's `compute(state)` entry
+(`src/engine/layers.mjs`: the 25-stop ramp, the prime swatches, the role refs) and builds, ONCE per palette,
+everything any color format needs; it RETURNS `{ name, n, hue, group, stops, byStop, scrims, roles, keyColors, prime }`:
 
 - `n`: the `slug(name)` token namespace (`"On Surface"` → `"on-surface"`).
 - `stops`: `{ [pad3]: { rgb, hex, tone, chroma } }`, the 25 `EXPORT_STOPS` solids, keys 3-digit padded.
@@ -21,6 +22,10 @@ everything any color format needs and RETURNS `{ name, n, hue, stops, byStop, sc
   closure. `frac === 1` for a solid; `frac < 1` for a scrim-backed role (e.g. an outline/container on the
   500 ramp).
 - `keyColors`: retained brand colors passed through verbatim (exact OKLCH), present only when set.
+- `group`: the palette's resolved canvas group (`paletteGroupOf`), metadata an emitter may surface (JSON
+  `group`, DTCG `$extensions`, a CSS comment line), never a token name.
+- `prime`: `{ [step]: swatch }`, the seven prime identity swatches from compute's `prime` layer,
+  mode-independent.
 
 **There is no resolver in the returned object.** `resolveRef` is a closure inside `derivePalette`; it runs
 at derivation time so the roles arrive pre-resolved. An emitter does NOT resolve refs itself, it reads
@@ -28,9 +33,10 @@ at derivation time so the roles arrive pre-resolved. An emitter does NOT resolve
 needs the raw var-name fragment to point a semantic var at a raw one (CSS/OKLCH `light-dark(var,var)`, UI3
 in-file aliases, DTCG `aliasData`).
 
-`derivedAll(state)` runs `controlsOf(state)` (which threads the tonal + distribution controls), filters to
-`enabledPalettes(state)` (`p.on !== false`), and maps `derivePalette` (passing `state.roleOverrides`) in
-State order. **Every color emitter opens with `const palettes = derivedAll(state)` and loops.** The
+`derivedAll(state)` runs `src/engine/layers.mjs`'s `compute` over `enabledPalettes(state)` (`p.on !== false`),
+which resolves the controls once through `src/engine/controls.mjs`'s `resolveControls` (the one resolver
+`src/ui/model.mjs` also uses; it threads the tonal + distribution controls) and runs the role chain with
+`state.roleOverrides`, then maps `derivePalette` over the entries in State order. **Every color emitter opens with `const palettes = derivedAll(state)` and loops.** The
 disabled-palette filter therefore applies to every format with zero per-format code, that is why
 `exportTailwind(oneOff)` already omits a disabled palette and the test only has to confirm it.
 

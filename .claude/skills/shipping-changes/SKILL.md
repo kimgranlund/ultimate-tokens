@@ -24,8 +24,8 @@ the smoke leg is Chrome-only. Landing under sdlc composes this procedure with `a
 
 | Gate | What it runs | Needs | Run it when |
 |---|---|---|---|
-| `npm test` | `gen:figma-assets`+`gen:mcp-assets`+`gen:categories`+`bundle`+`gen:figma-ui` then `node test/run.mjs` | nothing (no browser, no `node_modules`, pure engine + a custom DOM shim) | every change |
-| `npm run build` | `gen:figma-assets`+`gen:mcp-assets`+`gen:categories` → `tsc` → `vite build` → `bundle` → `gen:figma-ui` | `node_modules` (vite/tsc) | only if you touched the build chain (TS, vite config, `scripts/`, bundled fonts) |
+| `npm test` | `gen:figma-assets`+`gen:mcp-assets`+`gen:categories`+`gen:adia-exports`+`bundle`+`gen:figma-ui` then `node test/run.mjs` | nothing (no browser, no `node_modules`, pure engine + a custom DOM shim) | every change |
+| `npm run build` | `gen:figma-assets`+`gen:mcp-assets`+`gen:categories`+`gen:adia-exports` → `tsc` → `vite build` → `bundle` → `gen:figma-ui` | `node_modules` (vite/tsc) | only if you touched the build chain (TS, vite config, `scripts/`, bundled fonts) |
 
 `npm test` regenerates the committed artifacts (`figma/plugin/ui.html`, `src/ui/figma-plugin-assets.js`,
 `src/ui/mcp-assets.js`) as its first act, so a green `npm test` also leaves them in sync with source.

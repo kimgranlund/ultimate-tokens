@@ -816,21 +816,9 @@ export class ColorSectionImpl {
             { cls: "canvas-seg", ariaLabel: "Ramp stops", role: "group", idPrefix: "stops" },
           )
         : false,
-      // trailing tool group, right-aligned: fit · zoom · + Palette.
-      h("div", { class: "spacer" }),
-      // fit/orient, reset the canvas view to centre at 100% (icon-only).
-      btn(icon("crosshair"), {
-        title: "Fit: reset the canvas view to centre at 100%",
-        ariaLabel: "Fit: reset the canvas view to centre at 100%",
-        onclick: () => {
-          this.fit();
-          this.render();
-        },
-      }),
-      btn(icon("minus"), { ariaLabel: "Zoom out", onclick: () => this.zoomBy(-1) }),
-      h("span", { class: "zoom-readout", role: "status", "aria-live": "polite", "aria-label": "Zoom level" }, Math.round(this.viewport.zoom * 100) + "%"),
-      btn(icon("plus"), { ariaLabel: "Zoom in", onclick: () => this.zoomBy(1) }),
-      btn([icon("plus"), "Palette"], { cls: "add-pal-btn", title: "Create a new palette, derive it from your palette set, or pick one custom", onclick: () => this.openNewPalette() }),
+      // trailing tool group, right-aligned: fit · zoom · + Palette. Inline while it fits the column,
+      // otherwise one overflow menu (canvasTools + _fitCanvasHeader).
+      ...this.canvasTools({ addPalette: true }),
       // when the RIGHT pane is collapsed its toggle pops here, at the canvas's right edge.
       !this.panesRight ? this.paneToggle("right") : false,
     );

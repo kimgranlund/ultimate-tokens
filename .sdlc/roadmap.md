@@ -24,7 +24,7 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 | T-0018 | [gh-786](gh-786/handoff.md) | Arrow-stepping and palette add/duplicate/delete must keep the current right-pane tab (gh 786) | bug | L1 | P2 | none | 🟢 done |
 | T-0019 | [gh-811](gh-811/handoff.md) | Describe eval scores 0/15: score by perceptual distance (#811) | bug | L2 | P2 | none | 🟢 done |
 | T-0020 | [gh-809](gh-809/handoff.md) | Color inspector: drop the Palette\|Global switch, show context by selection (#809) | feature | L2 | P2 | none | 🟢 done |
-| T-0021 | [gh-788](gh-788/handoff.md) | Compute layers: rebase U1-U3 onto main, then U4 pins and U5 ramp@2 on schema v9 (#788) | feature | L4 | P2 | none | 🔵 ready |
+| T-0021 | [gh-788](gh-788/handoff.md) | Compute layers: rebase U1-U3 onto main, then U4 pins and U5 ramp@2 on schema v9 (#788) | feature | L4 | P2 | none | 🟢 done |
 | T-0022 | [gh-811b](gh-811b/handoff.md) | Describe eval runner: parse the leading JSON object of a string-typed families (Haiku 5.5 appends trailing text) | bug | L1 | P2 | none | 🟢 done |
 | T-0023 | [geometry-tokens-snapshot](geometry-tokens-snapshot/handoff.md) | Retire docs/assets/geometry-tokens.json, the frozen six-size snapshot (T-0017 follow-up) | chore | L2 | P2 | none | 🟢 done |
 | T-0024 | [gate-a-narrowing](gate-a-narrowing/handoff.md) | Gate A narrowing from #807: can the chroma-envelope gate cover stops where OKHSL keyS reads above 1? | spike | L1 | P2 | none | 🔵 ready |
@@ -34,3 +34,8 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 | T-0028 | [settings-nav-focus](settings-nav-focus/handoff.md) | Settings overlay: the Mapping nav item takes focus whenever any page is clicked | bug | L1 | P2 | none | 🟢 done |
 | T-0029 | [native-dom-charts](native-dom-charts/handoff.md) | Rebuild the app's analysis charts as native DOM (HTML/CSS marks) following /Users/kimgranlund/Projects/nonoun/native-dom-charts | feature | L4 | P2 | none | 🔵 ready |
 | T-0030 | [gate-a-basis](gate-a-basis/handoff.md) | Chroma-envelope Gate A: record the OKHSL basis so rule 2 covers every uncapped stop (#807 follow-up) | chore | L2 | P2 | none | 🟢 done |
+| T-0031 | [header-tools-fit](header-tools-fit/handoff.md) | Canvas header trailing tools collapse into a menu when they do not fit (content-lg clipping) | feature | L2 | P2 | none | 🟢 done |
+| T-0032 | [hue-constancy-gate](hue-constancy-gate/handoff.md) | Add the hue constancy gate to test/engine/anchor.mjs (PR #810 review Major) | chore | L1 | P2 | none | 🟢 done |
+| T-0033 | [docs-facts-sweep](docs-facts-sweep/handoff.md) | Docs, specs and skills: repair stale facts after T-0015/17/21/27 | chore | L2 | P2 | none | 🟢 done |
+| T-0034 | [docs-structure-sweep](docs-structure-sweep/handoff.md) | Docs structure: indexes, placeholders, ADR map, plan archive, notes cleanup | chore | L2 | P2 | none | 🟢 done |
+| T-0035 | [header-fit-ci](header-fit-ci/handoff.md) | Header tools fit smoke fails on CI Chrome at content-lg (typography 896 > 850, geometry 880 > 850) | bug | L2 | P2 | none | 🟢 done |

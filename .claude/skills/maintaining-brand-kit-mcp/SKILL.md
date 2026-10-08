@@ -61,9 +61,9 @@ in/out; omitted/undefined → **all three** (the back-compat default). `buildSur
 - **Geometry** (`kit.geometry` present) → tool `ultimate-tokens-brand-kit:get_geometry`; resource `brand://geometry`. The Maison
   ladder (ADR-032): the kit axes `{ tier, scale, radius, spaceBase }`, all 27 `cells` keyed
   `{tier}-{scale}-{size}`, the kit default `cell` (`{ name, ...fields }`), the M3 `radii` ladder
-  (`none/xs/sm/md/lg/xl/full`), the `space` scale and the container groups. Each cell carries `{ height,
-  inset, text, icon, captionText, chipHeight, chipInset, chipText, iconRatio, minWidth, radiusControl,
-  radiusMark, radiusInset, radiusCard }`; the centering law is **`inset === (height − icon) / 2`**.
+  (`none/xs/sm/md/lg/xl/full`), the `space` scale and the container groups. Each cell carries 16 fields, `{ height,
+  inset, text, icon, captionText, chipHeight, chipInset, chipText, iconRatio, minWidth, partHeight,
+  partInset, radiusControl, radiusMark, radiusInset, radiusCard }`; the centering law is **`inset === (height − icon) / 2`**.
 - **Always** → resource `brand://kit` (full JSON) + `brand://guide` (markdown), and prompt **`apply_brand`**
   (surfaces from `*/surface*`, accents from a palette's prime role, text from `*/on*`, never raw values).
 
