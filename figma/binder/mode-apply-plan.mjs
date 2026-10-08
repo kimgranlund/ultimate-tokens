@@ -481,19 +481,31 @@ export function libraryModeReconcile(existingNames, wantedNames, aliasMap, liveA
   return { toAlias, toDeprecate };
 }
 
-// valueChanged(liveValuesByModeName, planVar), PURE: does ANY of the plan variable's per-mode values
-// differ from what the LIVE variable already holds at that mode (matched by MODE NAME, dry-run runs
-// before any mode ids for a NEW mode would even exist)? `liveValuesByModeName` = {modeName: value};
+// valueChanged(liveValuesByModeName, planVar, idToName), PURE: does ANY of the plan variable's per-mode
+// values differ from what the LIVE variable already holds at that mode (matched by MODE NAME, dry-run
+// runs before any mode ids for a NEW mode would even exist)? `liveValuesByModeName` = {modeName: value};
 // `planVar` = a plan variable entry, either modeApplyPlan's `{name, type, values: [{mode,value},…]}`
 // (Geometry; its `control/` variables are per-mode ALIAS, each value the target variable's name) or
 // style-plan.mjs's primitivesModesApplyPlan `{name, type:"ALIAS", target}` shape (Font/Type Primitives).
-// An ALIAS entry, of either shape, is reported "changed" unconditionally, matching the
-// executor's own unconditional every-mode alias write (never skipped for an "unchanged" target, see
-// applyFontPrimitivesModes' own header comment for why). Numeric comparison for FLOATs (tolerates a
-// live read that's already a JS number); strict-equal otherwise. A mode the live variable has no value
-// for yet (e.g. a breakpoint just added) counts as changed, there is a real value to WRITE.
-export function valueChanged(liveValuesByModeName, planVar) {
-  if (planVar.type === "ALIAS") return true;
+// A `values`-shaped ALIAS with an `idToName` ({variableId: name}, the live read-back) compares each
+// mode's live VARIABLE_ALIAS target by name: changed when a mode's live value is missing, is not an
+// alias, or names a different variable, so a re-apply of an unchanged plan reports no `control/`
+// update. The `{target}` shape, and any call without `idToName`, is reported "changed"
+// unconditionally, matching the executor's own unconditional every-mode alias write (never skipped
+// for an "unchanged" target, see applyFontPrimitivesModes' own header comment for why). Numeric
+// comparison for FLOATs (tolerates a live read that's already a JS number); strict-equal otherwise. A
+// mode the live variable has no value for yet (e.g. a breakpoint just added) counts as changed, there
+// is a real value to WRITE.
+export function valueChanged(liveValuesByModeName, planVar, idToName) {
+  if (planVar.type === "ALIAS") {
+    if (!Array.isArray(planVar.values) || !idToName) return true;
+    for (const { mode, value } of planVar.values) {
+      const live = (liveValuesByModeName || {})[mode];
+      if (!live || typeof live !== "object" || live.type !== "VARIABLE_ALIAS") return true;
+      if (idToName[live.id] !== value) return true;
+    }
+    return false;
+  }
   for (const { mode, value } of (planVar.values || [])) {
     if (!(mode in (liveValuesByModeName || {}))) return true;
     const live = liveValuesByModeName[mode];
@@ -503,7 +515,7 @@ export function valueChanged(liveValuesByModeName, planVar) {
   return false;
 }
 
-// libraryModeReport(plan, liveVarsByName, aliasMap, liveAliasTargets, extraWantedNames), PURE: the FULL
+// libraryModeReport(plan, liveVarsByName, aliasMap, liveAliasTargets, extraWantedNames, idToName), PURE: the FULL
 // "published library" action list for ONE collection's plan, every rename (from `plan.renames`,
 // TKT-0012's EXISTING mechanism)/add/value-update/alias/deprecate this apply will make, computed ONCE so
 // the dry-run report and the real apply can never disagree (code.js's library-mode branch calls this,
@@ -518,7 +530,9 @@ export function valueChanged(liveValuesByModeName, planVar) {
 // cross-collection alias map in the first place, and so already knows exactly which foreign names it
 // resolved against real, existing live variables) supplies them here to be treated as wanted too, for
 // this reconcile only, they never affect `adds`/`valueUpdates` (both scoped to `plan.variables` alone).
-export function libraryModeReport(plan, liveVarsByName, aliasMap, liveAliasTargets, extraWantedNames) {
+// `idToName` (optional) is passed straight through to valueChanged, so an ALIAS whose live targets
+// already match is no value update.
+export function libraryModeReport(plan, liveVarsByName, aliasMap, liveAliasTargets, extraWantedNames, idToName) {
   const live = liveVarsByName || {};
   const wantedNames = plan.variables.map((v) => v.name).concat(extraWantedNames || []);
   const renamesMap = plan.renames || {};
@@ -540,7 +554,7 @@ export function libraryModeReport(plan, liveVarsByName, aliasMap, liveAliasTarge
   const valueUpdates = [];
   for (const v of plan.variables) {
     if (!(v.name in effective)) { adds.push(v.name); continue; }
-    if (valueChanged(effective[v.name], v)) valueUpdates.push(v.name);
+    if (valueChanged(effective[v.name], v, idToName)) valueUpdates.push(v.name);
   }
   const { toAlias, toDeprecate } = libraryModeReconcile(Object.keys(effective), wantedNames, aliasMap || {}, liveAliasTargets);
   return { renames: renamed, adds: adds.sort(), valueUpdates: valueUpdates.sort(), aliases: toAlias, deprecates: toDeprecate };

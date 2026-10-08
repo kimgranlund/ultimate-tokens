@@ -24,9 +24,9 @@ same principle that already justified model.mjs.
 - `typeAnalysisCards(view)` (typography.js:16), comment explicitly: "`view` is accepted for dispatch parity but unused (typography is doc-driven...)". Reads `this._activeTypeScale()`.
 - Canvas (`renderTypographyScene`, typography.js:529), `this._activeType()`/`this._activeTypeScale()`.
 - Right (`renderTypeInspector`, typography.js:593+), binds `this.doc.type`.
-- Exports, `_typeScaleFor("base")` / `_typeModeScales()` (drawer.js:47,67,363-395; apply-gate.js:112,204,278,333).
+- Exports, `_typeScaleFor("base")` / `_typeModeScales()` (drawer.js:47,67,363-395; apply-gate.js:116,208,284,342).
 
-**Geometry**: mirrors Typography exactly, method-for-method: `geomAnalysisCards(view)` (geometry.js:442, same "unused view" comment) → `this._activeGeomScale()`; `renderGeomInspector` (geometry.js:569) binds `this.doc.geometry`; exports via `_geomScaleFor("base")`/`_geomModeScales()` (drawer.js:48,69,398-419; apply-gate.js:279).
+**Geometry**: mirrors Typography exactly, method-for-method: `geomAnalysisCards(view)` (geometry.js:442, same "unused view" comment) → `this._activeGeomScale()`; `renderGeomInspector` (geometry.js:569) binds `this.doc.geometry`; exports via `_geomScaleFor("base")`/`_geomModeScales()` (drawer.js:48,69,398-419; apply-gate.js:285).
 
 `renderCenter`/`renderLeftPane`/`renderRightPane` (app.js:1697,1527,1923) are thin routers in app.js, exactly per SKILL.md step 1; every actual body method lives in its own section file (color.js/typography.js/geometry.js), verified no leakage.
 
