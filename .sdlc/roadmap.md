@@ -36,5 +36,5 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 | T-0030 | [gate-a-basis](gate-a-basis/handoff.md) | Chroma-envelope Gate A: record the OKHSL basis so rule 2 covers every uncapped stop (#807 follow-up) | chore | L2 | P2 | none | 🟢 done |
 | T-0031 | [header-tools-fit](header-tools-fit/handoff.md) | Canvas header trailing tools collapse into a menu when they do not fit (content-lg clipping) | feature | L2 | P2 | none | 🔵 ready |
 | T-0032 | [hue-constancy-gate](hue-constancy-gate/handoff.md) | Add the hue constancy gate to test/engine/anchor.mjs (PR #810 review Major) | chore | L1 | P2 | none | 🟢 done |
-| T-0033 | [docs-facts-sweep](docs-facts-sweep/handoff.md) | Docs, specs and skills: repair stale facts after T-0015/17/21/27 | chore | L2 | P2 | none | 🔵 ready |
+| T-0033 | [docs-facts-sweep](docs-facts-sweep/handoff.md) | Docs, specs and skills: repair stale facts after T-0015/17/21/27 | chore | L2 | P2 | none | 🟢 done |
 | T-0034 | [docs-structure-sweep](docs-structure-sweep/handoff.md) | Docs structure: indexes, placeholders, ADR map, plan archive, notes cleanup | chore | L2 | P2 | none | 🔵 ready |

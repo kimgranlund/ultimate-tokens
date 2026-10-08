@@ -2,7 +2,7 @@
 id: T-0033
 title: "Docs, specs and skills: repair stale facts after T-0015/17/21/27"
 type: chore           # feature | bug | chore | spike | idea
-status: ready     # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: done     # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: L2             # L1 | L2 | L3 | L4 (L5 reserved)
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -56,3 +56,7 @@ Facts only: verify each against code before editing; if a defect is not real, sa
 - (red) `! grep -n "brand-kit/1" docs/specs/site/describe-palette-spec.md && ! grep -n "schema v8" docs/references/knowledge-02-tonal-scale.md`
 - (red) `test "$(grep -c '#818\|#817\|#813\|#810' CHANGELOG.md)" -ge 4 && grep -q '#809' docs/references/changelog.md`
 - (red) `! grep -n "b7b0360f\|geometry-tokens.json\|0.733 0.1374" .sdlc/notes.md`
+
+## Closed
+
+2026-10-08: delivered by the solo agent (level L2); one independent batched verifier passed before the merge
