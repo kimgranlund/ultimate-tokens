@@ -67,9 +67,9 @@ Canonical specs + rubrics: `docs/specs/` and `docs/references/`; runtime-read da
   Unquoted, WebKit/Safari drops the declaration (the digit is invalid); Chrome tolerates it.
 - **SVG line charts set `fill: none`** on the path (an open `<path>` fills by closing → wedge artifacts);
   qualify the rule (`.an-svg .x-line`) so a shared series-color class can't override it.
-- **The `html:` SVG-chart exception: 12 live attributes.** `src/ui/sections/{color,geometry,typography}.js`
-  pass an SVG string to `h("div", { class: "an-svg", html: svg })`, which sets `innerHTML` (`app-helpers.mjs`);
-  a new one is fine, a count drift means the ratified exception moved and this line needs updating with it.
+- **Analysis charts are native DOM**, built with `renderChart(spec)` from `src/ui/charts/render.mjs` over the
+  pure `src/ui/charts/core.mjs`. The section functions still on SVG strings (`html:`) are the `ALLOW` list in
+  `test/repo/dom-charts.mjs`; the list only shrinks, never add a name.
 - **`node_modules` is NOT tracked** (`npm install`/`npm ci` is the source of truth); never re-add it.
 
 ## Testing
