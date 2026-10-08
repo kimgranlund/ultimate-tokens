@@ -72,6 +72,20 @@ body {
 }
 
 ultimate-tokens { display: block; height: 100vh; }
+/* Shell geometry aliases: the host carries [data-tier/scale/radius/size] (app.js _applyShellGeometry),
+   so the resolved --control-* / --chip-* / --radius-* roles land here. Fallbacks are the product-md-md
+   round cell. The chrome heights (--hh/--ch/--fh) and --r-sm/--r/--r-lg stay literal. */
+ultimate-tokens {
+  --sh-control-height: var(--control-height, 32px);
+  --sh-control-inset: var(--control-inset, 8px);
+  --sh-control-text: var(--control-text, 14px);
+  --sh-control-icon: var(--control-icon, 16px);
+  --sh-control-radius: var(--radius-control, 14px);
+  --sh-radius-inset: var(--radius-inset, 10px);
+  --sh-chip-height: var(--chip-height, 24px);
+  --sh-chip-inset: var(--chip-inset, 5.5px);
+  --sh-chip-text: var(--chip-text, 12px);
+}
 ultimate-tokens[data-theme="system"] { color-scheme: light dark; } /* follow the OS preference */
 ultimate-tokens[data-theme="light"]  { color-scheme: light; }
 ultimate-tokens[data-theme="dark"]   { color-scheme: dark; }

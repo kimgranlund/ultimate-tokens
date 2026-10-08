@@ -153,6 +153,39 @@ flushRaf();
 ok(app.view === "editor", "openSet entered editor view");
 ok(app.doc && app.doc.palettes.length === DEFAULT_PALETTES, `doc has ${DEFAULT_PALETTES} palettes`);
 
+// ── (shg) the shell receives the geometry roles: host [data-tier/scale/size/radius] + one head <style> ──
+{
+  const hostGeom = () => [app.dataset.tier, app.dataset.scale, app.dataset.size, app.dataset.radius].join(",");
+  const fkBtn = (fk) => { let f = null; const w = (n) => { if (f || !n) return; if (n.attrs && n.attrs["data-fk"] === fk) { f = n; return; } (n.children || []).forEach(w); }; w(app); return f; };
+  ok(app.shellGeometry === null && hostGeom() === "product,md,md,round", `(shg1) a fresh doc's host carries product, md, md, round (got ${hostGeom()})`);
+  app.commit((d) => { d.geometry = { ...d.geometry, tier: "content", scale: "lg", radius: "pill" }; }); flushRaf();
+  ok(hostGeom() === "content,lg,md,pill", `(shg2) a doc.geometry commit updates the host attributes (got ${hostGeom()})`);
+  app.undo(); flushRaf();
+  ok(hostGeom() === "product,md,md,round", `(shg2) undoing the commit restores them (got ${hostGeom()})`);
+  // Settings › Appearance › Shell geometry: Custom seeds from the kit, then a tier/scale/radius pick wins over the doc
+  app.openSettings(); app.settingsSection = "appearance"; app.render(); flushRaf();
+  const custom = fkBtn("setshellgeom:custom");
+  ok(!!custom, "(shg3) the Shell geometry row renders a Custom option");
+  if (custom) custom.click();
+  flushRaf();
+  for (const fk of ["setshelltier:micro", "setshellscale:sm", "setshellradius:sharp"]) { const b = fkBtn(fk); ok(!!b, `(shg3) the Custom row renders ${fk}`); if (b) b.click(); flushRaf(); }
+  app.commit((d) => { d.geometry = { ...d.geometry, tier: "content", scale: "lg", radius: "pill" }; }); flushRaf();
+  ok(hostGeom() === "micro,sm,md,sharp", `(shg3) a Settings override wins over the doc (got ${hostGeom()})`);
+  const saved = JSON.parse(localStorage.getItem("ultimate-tokens-app-prefs-v1") || "{}");
+  ok(saved.shellGeometry && saved.shellGeometry.tier === "micro" && saved.shellGeometry.radius === "sharp", "(shg3) the override persists with the app prefs");
+  const follow = fkBtn("setshellgeom:kit");
+  if (follow) follow.click();
+  flushRaf();
+  ok(app.shellGeometry === null && hostGeom() === "content,lg,md,pill", `(shg3) Follow kit drops the override and the host follows the doc again (got ${hostGeom()})`);
+  app.undo(); app.closeSettings(); app.settingsSection = "mapping"; flushRaf();
+  ok(hostGeom() === "product,md,md,round", `(shg3) state restored for the groups below (got ${hostGeom()})`);
+  const st = app._geomRolesStyle;
+  ok(!!st && st.id === "ut-geometry-roles" && st.parentNode === document.head, "(shg4) app._geomRolesStyle is <style id=\"ut-geometry-roles\"> in document.head");
+  const css = (st && st.textContent) || "";
+  ok(/(^|[;{\s])--control-height:/.test(css) && css.includes("--size-product-md-md-height:"), "(shg4) the style holds the unprefixed --control-height role and the --size-product-md-md-height: primitive");
+  ok(document.head.children.filter((c) => c.id === "ut-geometry-roles").length === 1, "(shg4) re-renders reuse the one style element");
+}
+
 // ── (a) undo/redo + slider drag = ONE step ────────────────────────────────────────
 const hue0 = app.doc.palettes[0].hue;
 app.commit((d) => (d.palettes[0].hue = (hue0 + 40) % 360));

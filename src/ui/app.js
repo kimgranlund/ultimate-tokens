@@ -42,7 +42,7 @@ import { TYPE_FONTS_CSS } from "./type-fonts.js";
 import { CATEGORY_INDEX, loadCategory } from "./categories/index.js";
 import { deriveNeutral, deriveRelative, RELATIONSHIPS } from "../engine/derive.mjs";
 import { typeScale, typeTokensCSS, typeTokensBreakpointCSS, typeTokensDTCG, typeTokensFigmaModes, TYPE_TREATMENTS, DEFAULT_TYPE, BUNDLED_FONTS, genericFor, siblingWeightDefaults, WEIGHT_NAMES, resolvedFontFor } from "../engine/type.mjs";
-import { geomScale, geomTokensCSS, geomTokensBreakpointCSS, geomTokensDTCG, geomTokensFigma, geomTokensFigmaModes, DEFAULT_GEOMETRY } from "../engine/geometry.mjs";
+import { geomScale, geomTokensCSS, geomTokensBreakpointCSS, geomTokensDTCG, geomTokensFigma, geomTokensFigmaModes, geomTokensSizesCSS, geomResolverCSS, DEFAULT_GEOMETRY, TIERS, SCALES, RADIUS_MODES } from "../engine/geometry.mjs";
 import { zipStore } from "./zip.mjs";
 import { modeApplyPlan, validateModeInterchange, mergeModeInterchanges, applyRenameMigrations } from "../../figma/binder/mode-apply-plan.mjs";
 import { FIGMA_MIGRATIONS, kebabWaveVarRenames, kebabWaveColorRenames } from "../../figma/binder/migrations.mjs";
@@ -106,7 +106,9 @@ class HctApp extends HTMLElement {
     this.theme = "system"; // app chrome color scheme: system (follows OS) | light | dark
     this.motion = "system"; // animation preference: system (respect prefers-reduced-motion) | reduced (always minimal), app pref
     this.fontMode = "premium"; // rendering-reliability pref: premium (as-designed families) | google (every family google-fonts-safe, per src/engine/font-fallbacks.mjs), app pref, NOT doc-bound
-    this._loadAppPrefs(); // persisted APP prefs (theme/motion/fontMode), loaded before setColorScheme below
+    this.shellGeometry = null; // the editor chrome's own { tier, scale, radius }: null follows the kit's doc.geometry, app pref, NOT doc-bound
+    this._geomRolesStyle = null; // the one <style id="ut-geometry-roles"> in document.head (the shell's --control-* roles), created on first render
+    this._loadAppPrefs(); // persisted APP prefs (theme/motion/fontMode/shellGeometry), loaded before setColorScheme below
     this.exportOpen = false;
     this.exportTab = "css";
     // which token SYSTEMS the Download-All .zip + the Brand-Kit MCP bundle (export-time opt-in, all on
@@ -187,6 +189,7 @@ class HctApp extends HTMLElement {
     if (this._toastT) { clearTimeout(this._toastT); this._toastT = null; }
     if (this._activeDragCleanup) this._activeDragCleanup(); // an in-flight slider drag's window pointermove/up/cancel listeners
     if (this._applyTimeoutTimer) { clearTimeout(this._applyTimeoutTimer); this._applyTimeoutTimer = null; } // #465
+    if (this._geomRolesStyle) { this._geomRolesStyle.remove(); this._geomRolesStyle = null; } // the head <style> render() created
   }
 
 
@@ -581,6 +584,7 @@ class HctApp extends HTMLElement {
     this.replaceChildren(this.view === "gallery" ? this.renderGallery() : this.renderEditor());
     this.dataset.theme = this.theme;
     this.dataset.motion = this.motion; // styles.css gates transitions/animations on [data-motion]
+    this._applyShellGeometry();
     // TKT-0004: the Apply-to-Figma busy indicator, Figma-plugin-embed only (the web-app preview has
     // no Apply-to-Figma action, so this is never set there even if _applyBusy were somehow true).
     // ALSO stamped on the open export .drawer <dialog>: it's a native top-layer dialog (showModal()),
@@ -2292,7 +2296,7 @@ class HctApp extends HTMLElement {
     this.render();
   }
 
-  // ── persisted APP prefs (theme · motion · font mode), per-USER, not doc-bound →
+  // ── persisted APP prefs (theme · motion · font mode · shell geometry), per-USER, not doc-bound →
   // localStorage, versioned like the apply consent. Absent/invalid keys keep the constructor
   // defaults, so a fresh profile (or Figma's session-scoped iframe storage) boots identically to
   // pre-prefs builds.
@@ -2307,17 +2311,56 @@ class HctApp extends HTMLElement {
       if (scheme(p.theme)) this.theme = p.theme;
       if (p.motion === "reduced" || p.motion === "system") this.motion = p.motion;
       if (p.fontMode === "premium" || p.fontMode === "google") this.fontMode = p.fontMode;
+      const sg = p.shellGeometry;
+      if (sg && Object.prototype.hasOwnProperty.call(TIERS, sg.tier) && SCALES.includes(sg.scale) && Object.prototype.hasOwnProperty.call(RADIUS_MODES, sg.radius)) {
+        this.shellGeometry = { tier: sg.tier, scale: sg.scale, radius: sg.radius };
+      }
     } catch { /* storage unavailable / corrupt record → defaults */ }
   }
 
+  // shellGeometry is written only when set, so a record that follows the kit keeps the three chrome keys.
   _saveAppPrefs() {
-    try { localStorage.setItem(this._appPrefsKey(), JSON.stringify({ theme: this.theme, motion: this.motion, fontMode: this.fontMode })); } catch { /* storage unavailable */ }
+    const rec = { theme: this.theme, motion: this.motion, fontMode: this.fontMode, ...(this.shellGeometry ? { shellGeometry: this.shellGeometry } : {}) };
+    try { localStorage.setItem(this._appPrefsKey(), JSON.stringify(rec)); } catch { /* storage unavailable */ }
+  }
+
+  // _effectiveShellGeometry(), the chrome's { tier, scale, radius }: the Settings override, else the
+  // kit's doc.geometry, else the default (the gallery has no doc).
+  _effectiveShellGeometry() {
+    const g = this.shellGeometry || (this.doc && this.doc.geometry) || DEFAULT_GEOMETRY;
+    return {
+      tier: Object.prototype.hasOwnProperty.call(TIERS, g.tier) ? g.tier : DEFAULT_GEOMETRY.tier,
+      scale: SCALES.includes(g.scale) ? g.scale : DEFAULT_GEOMETRY.scale,
+      radius: Object.prototype.hasOwnProperty.call(RADIUS_MODES, g.radius) ? g.radius : DEFAULT_GEOMETRY.radius,
+    };
+  }
+
+  // _applyShellGeometry(), called from render(): stamps the host's [data-tier/scale/radius/size] (the
+  // resolver's context selectors) and refreshes the one head <style> holding the kit's cell primitives +
+  // resolver, unprefixed. Held on the instance, never looked up by id (the headless shim's getElementById
+  // returns null).
+  _applyShellGeometry() {
+    const g = this._effectiveShellGeometry();
+    this.dataset.tier = g.tier;
+    this.dataset.scale = g.scale;
+    this.dataset.radius = g.radius;
+    this.dataset.size = "md";
+    if (!this._geomRolesStyle) {
+      const el = document.createElement("style");
+      el.id = "ut-geometry-roles";
+      document.head.appendChild(el);
+      this._geomRolesStyle = el;
+    }
+    const sc = this.doc ? this._geomScaleFor("base") : geomScale(DEFAULT_GEOMETRY);
+    const css = geomTokensSizesCSS(sc) + "\n" + geomResolverCSS(sc);
+    if (this._geomRolesStyle.textContent !== css) this._geomRolesStyle.textContent = css;
   }
 
   _resetAppPrefs() {
     this.theme = "system";
     this.motion = "system";
     this.fontMode = "premium";
+    this.shellGeometry = null;
     try { localStorage.removeItem(this._appPrefsKey()); } catch { /* storage unavailable */ }
     this.dataset.theme = this.theme;
     setColorScheme(this.theme);
