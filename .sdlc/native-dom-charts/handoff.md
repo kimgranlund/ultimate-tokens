@@ -24,3 +24,4 @@ User ruling 2026-10-08: "for charts and graphs, you can learn how to do them pro
 
 ## Plan review
 scope widened: step 2: scripts/bundle.mjs added to the scope criterion (MODS and KEY entries for src/ui/charts/core.mjs and render.mjs); the tree keeps the blocked attempt work uncommitted
+plan defect: step 2 needed scripts/bundle.mjs (MODS and KEY entries for src/ui/charts/core.mjs and render.mjs); it was added by scope widening and is committed (6445ea08). Replan steps 3 to 5 only: every later step that adds an import of src/ui/charts/ to a module the bundler lists must name scripts/bundle.mjs in Do and scope, or state why it stays untouched (core.mjs and render.mjs are already registered). Steps 1 and 2 are done.
