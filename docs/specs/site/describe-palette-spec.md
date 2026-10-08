@@ -336,7 +336,7 @@ images) + an image block (the PNG swatch board)**.
 
 | field | contents |
 |---|---|
-| `kit` | the resolved `brand-kit.json`, the exact shape `brandKit(doc, systems)` produces (`$schema: "ultimate-tokens-brand-kit/1"`; palettes + ramps, 53 roles light+dark per palette, constants, motion, icons) |
+| `kit` | the resolved `brand-kit.json`, the exact shape `brandKit(doc, systems)` produces (`$schema: "ultimate-tokens-brand-kit/${EXPORT_SCHEMA_VERSION}"`, /7 today; palettes + ramps, 53 roles light+dark per palette, constants, motion, icons) |
 | `doc` | the app-doc JSON (the persist-shaped State), the **open-in-app off-ramp** for hand-tuning; the exact import path is #369's open item (§12) |
 | `lint` | the advice array (§6.3) |
 | `meta` | the reproducibility stamp (§6.4) |
@@ -405,7 +405,7 @@ only, matching its own stated header comment.
 meta: {
   generator:     "Ultimate Tokens",
   engineVersion: <package.json version>,
-  kitSchema:     "ultimate-tokens-brand-kit/1",
+  kitSchema:     kit.$schema,   // "ultimate-tokens-brand-kit/${EXPORT_SCHEMA_VERSION}", /7 today
   briefSchema:   "ultimate-tokens-palette-brief/1",
   brief:         <the originating brief, verbatim as received>
 }

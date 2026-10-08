@@ -45,6 +45,8 @@ The derived fields (`buildCell`):
 | `chipHeight`, `chipInset` | min(compact height, height); the compact inset |
 | `iconRatio` | icon / height, unitless, unrounded |
 | `minWidth` | height |
+| `partHeight` | height − inset |
+| `partInset` | inset / 2 |
 | `radiusControl` | text · k.text + height · k.height |
 | `radiusMark` | radiusControl · iconRatio |
 | `radiusInset` | max(0, radiusControl − inset / 2) |
@@ -83,16 +85,18 @@ row.
 4. `:where([data-radius="X"])`: the radius pair.
 5. `:where(*, :host)`: each role a `calc` sum over the nine cells of `cell · scale-indicator ·
    size-indicator` (each term falls back to the kit default), then the four radius roles from
-   `--control-text`, `--control-height`, `--control-icon-ratio` and `--control-inset`.
+   `--control-text`, `--control-height`, `--control-icon-ratio` and `--control-inset`, then the two
+   part roles as plain `calc()` lines, `--control-part-height` (`--control-height - --control-inset`)
+   and `--control-part-inset` (`--control-inset / 2`). That is 15 roles: 9 summed, 4 radius, 2 part.
 
 The nine resolved fields map to `--control-height/-inset/-text/-icon/-caption-text/-icon-ratio` and
 `--chip-height/-inset/-text`. No `--g-micro-*` equivalent (scoped out, ADR-032). The roles and every
 `--ctx-*` name are never prefixed; the prefix reaches only the primitives the `--ctx-cell-*` reassignments
 point at.
 
-Breakpoints: `geomTokensBreakpointCSS(modes)` emits one file per mode whose `:root` sets only the
-`--ctx-scale-*` indicators for that mode's `scale.scale`, bounded on its outward edge so ranges never
-overlap. With no modes configured, `geomModeScales` synthesizes Desktop Lg (1728, lg), Desktop Xl (2560,
+Breakpoints: `geomTokensBreakpointCSS(modes)` emits one file per mode, an `@media` block holding a
+`:where(:root)` rule that sets only the `--ctx-scale-*` indicators for that mode's `scale.scale`,
+bounded on its outward edge so ranges never overlap (a wide mode's file loads after the base). With no modes configured, `geomModeScales` synthesizes Desktop Lg (1728, lg), Desktop Xl (2560,
 lg), Tablet (992, sm) and Mobile (476, sm).
 
 ### 6. The container tier
