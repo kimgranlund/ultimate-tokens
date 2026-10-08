@@ -26,6 +26,8 @@ on it to step it up or down. Icon color is color-tokens (icons inherit their tex
 
 - A **badge** is `calc(var(--control-height) - var(--control-inset))` tall with `--radius-inset`.
 - A **tag** is full `--control-height` with `--radius-inset`.
+- A **segment** of a segmented control is `--control-part-height` tall with `--control-part-inset` inline
+  and `--radius-inset`; see the compound recipe in [`controls.md`](controls.md).
 - A **chip** (kbd, tooltip, stepper marker, breadcrumb separator, inline code, OTP cell) is the
   compact row: `block-size: var(--chip-height); padding-inline: var(--chip-inset);
   font-size: var(--chip-text)`.

@@ -48,7 +48,7 @@ generator asserts it); the `anatomy` group of `test/engine/geometry.mjs` checks 
 25 rows. The glyph rules that live in consumer CSS, not in tokens: an indicator is text-sized inside the
 icon box, the icon-to-label gap is inset / 2, an icon-only control is a height square (`min-width`).
 
-## THE CELL: 14 fields, one builder
+## THE CELL: 16 fields, one builder
 
 `buildCell` (in `geometry.mjs`) derives every field from the ladder row, the text lookup and the radius
 mode's `{ text, height }` coefficient pair (`RADIUS_MODES`: default 0.5, round 1, sharp 0.25 on text; pill
@@ -60,6 +60,10 @@ mode's `{ text, height }` coefficient pair (`RADIUS_MODES`: default 0.5, round 1
 - `iconRatio` = icon / height (unitless, unrounded); `minWidth` = height.
 - `radiusControl` = text · k.text + height · k.height; `radiusMark` = radiusControl · iconRatio;
   `radiusInset` = max(0, radiusControl − inset / 2); `radiusCard` = radiusControl + inset / 2.
+- The compound law (ADR-033): `partHeight` = height − inset; `partInset` = inset / 2. A control-sized
+  container pads `partInset` and keeps `radiusControl`; each repeated part is `partHeight` tall, keeps
+  `partInset` inline and takes `radiusInset`, so the corners stay concentric. Unlike the chip, which snaps
+  to a ladder row, the part is exact.
 
 ## THE RESOLVER: attributes in, roles out
 
@@ -68,8 +72,8 @@ them. `:where(:root)` sets the kit default context; `[data-tier]` reassigns the 
 cells to that tier's primitives; `[data-scale]`, `[data-size]` and `[data-radius]` set 0/1 indicators
 (`--ctx-scale-*`, `--ctx-size-*`) and the radius pair (`--ctx-radius-text/-height`); `:where(*, :host)`
 resolves the roles as a sum of products over the nine cells. The roles are `--control-height/-inset/
--text/-icon/-caption-text/-icon-ratio`, `--chip-height/-inset/-text` and `--radius-control/-mark/-inset/
--card`. Nearest ancestor wins per axis, so one page can mix sizes.
+-text/-icon/-caption-text/-icon-ratio`, `--chip-height/-inset/-text`, `--control-part-height/-inset` and
+`--radius-control/-mark/-inset/-card`. Nearest ancestor wins per axis, so one page can mix sizes.
 
 **The prefix contract.** The `prefix` option goes through `ns()` and renames only the cell primitives
 (`--{pfx}-size-{cell}-{field}`) and the container ladders. The roles and `--ctx-*` are **never
@@ -100,12 +104,12 @@ scale at every mode, because the Figma cells are mode-constant; a mode changes o
 | `LADDER_ROWS` / `ladderRow` / `cellHeight` | Maison's ladder and height formula; off-table throws |
 | `geomScale(config, opts={typeScale})` | the resolved scale `{ tier, scale, radius, spaceBase, cells, cell, radii, space, insets, gaps, borders, focus }`; unknown ids fall back to `DEFAULT_GEOMETRY` |
 | `orderedSizeNames` / `sizeAnchor` / `mdAnchor` / `LEGACY_SIZE_CELLS` | cell order (Maison's geometryRows order, never `Object.keys`), and legacy t-shirt names to cells (MD is the kit default cell; XS product-sm-sm, SM product-md-sm, LG product-lg-md, XL content-md-md, 2XL content-lg-md) |
-| `geomTokensCSS` | the 27 × 14 primitives, the container lines, then the resolver |
+| `geomTokensCSS` | the 27 × 16 primitives, the container lines, then the resolver |
 | `geomTokensSizesCSS` | the primitives alone (issue #487), no container tier and no resolver |
 | `geomResolverCSS` | the context resolver only (the app shell injects primitives + resolver) |
 | `geomTokensBreakpointCSS` | one file per mode, setting only the `--ctx-scale-*` indicators |
 | `geomTokensDTCG` / `geomTokensFigma` | a `size` group keyed by cell (kebab fields; `icon-ratio` a `number`), radius/space/container groups |
-| `geomTokensFigmaModes` | the Geometry collection: 27 × 14 mode-constant FLOAT `size/{cell}/{field}` and 9 × 14 per-mode ALIAS `control/{tier}/{size}/{field}` |
+| `geomTokensFigmaModes` | the Geometry collection: 27 × 16 mode-constant FLOAT `size/{cell}/{field}` and 9 × 16 per-mode ALIAS `control/{tier}/{size}/{field}` |
 
 The container tier is a separate concern from control geometry and derives from `spaceBase` alone: the
 fixed M3 corner scale (`none 0 · xs 4 · sm 8 · md 12 · lg 16 · xl 28 · full 9999`), `SPACE_STEPS ×

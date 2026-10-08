@@ -2,7 +2,7 @@
 // dimension-parity.mjs, the DRIFT GATE between geometry-tokens and the product's geometry engine.
 // Every --size-* cell primitive, every resolved role (--control-* / --chip-* / --radius-control…) and
 // every --radius-* / --space-* / --inset-* / --gap-* / --border-* / --focus-* token named in the skill
-// must be a REAL dimension the engine emits (the 27 cells x 14 fields, the 13 roles, the container
+// must be a REAL dimension the engine emits (the 27 cells x 16 fields, the 15 roles, the container
 // tier). The engine emits no utility classes, so a concrete `.control-*` class is an error. A
 // `## Migrating …` section names retired tokens on purpose and is exempt. Runs in the product repo's
 // npm test; outside the repo it exits 0. Sibling of color-tokens' role-parity + type's voice-parity,
@@ -20,7 +20,7 @@ const { geomScale, geomResolverCSS } = await import(ENGINE);
 const s = geomScale({});
 const camel = (k) => k.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
 const CELLS = Object.keys(s.cells); // the 27 `{tier}-{scale}-{size}` cells
-const FIELDS = new Set(Object.keys(s.cell).filter((k) => k !== "name").map(camel)); // the 14 per-cell fields
+const FIELDS = new Set(Object.keys(s.cell).filter((k) => k !== "name").map(camel)); // the 16 per-cell fields
 // the resolved roles, read off the resolver the CSS export ships (never a hand list)
 const ROLES = new Set([...geomResolverCSS(s).matchAll(/^\s*(--(?:control|chip|radius)-[a-z-]+):/gm)].map((m) => m[1]));
 const RADII = new Set(Object.keys(s.radii)); // none xs sm md lg xl full
