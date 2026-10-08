@@ -3,7 +3,7 @@
 ## Breakpoint modes change the scale axis
 
 The 27 cells are the same at every width. What a breakpoint changes is the **scale** axis: each
-breakpoint file is one `@media` block whose `:root` flips the resolver's `--ctx-scale-*` indicators,
+breakpoint file is one `@media` block whose `:where(:root)` flips the resolver's `--ctx-scale-*` indicators,
 and every role (`--control-*`, `--chip-*`, `--radius-control…`) re-resolves from it. The standard set
 (synthesized when the designer configured none) keeps the kit's scale on Desktop (1280 to 1727),
 moves to `lg` on Desktop Lg (1728 to 2559) and Desktop Xl (2560 and up), and to `sm` on Tablet

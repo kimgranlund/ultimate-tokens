@@ -60,10 +60,57 @@ const ok = (c, m) => { if (!c) fails.push(m); };
   // a cell never resolves to a pre-wave name: a later "modernization" of the frozen OLD_FIELD table
   // (which would mint never-shipped rename keys like size/PRODUCT-MD-MD/inset) is caught here.
   const cellNames = names.filter(isCellName);
-  ok(cellNames.length === 378 && cellNames.every((n) => M.kebabWaveOldName(n) === null), `kebabWaveOldName: ${cellNames.length} size/{cell}/{field} names (want 378 = 27 cells x 14 fields), every one must resolve to null (cells have no pre-wave name)`);
+  ok(cellNames.length === 432 && cellNames.every((n) => M.kebabWaveOldName(n) === null), `kebabWaveOldName: ${cellNames.length} size/{cell}/{field} names (want 432 = 27 cells x 16 fields), every one must resolve to null (cells have no pre-wave name)`);
   // frozen-table spot checks: the legacy step grammar still reverses exactly as it shipped.
   ok(M.kebabWaveOldName("size/xs/padding-wide") === "size/XS/paddingWide", `kebabWaveOldName("size/xs/padding-wide") = ${M.kebabWaveOldName("size/xs/padding-wide")}, want size/XS/paddingWide (frozen OLD_FIELD)`);
   ok(M.kebabWaveOldName("size/2xl/icon-gap") === "size/2XL/gap", `kebabWaveOldName("size/2xl/icon-gap") = ${M.kebabWaveOldName("size/2xl/icon-gap")}, want size/2XL/gap (frozen OLD_FIELD)`);
+}
+
+// ── legacySizeRenames (T-0026): the classic-mode id-preserving map for the pre-T-0017 legacy size/{step}/*
+//    fields and the retired UI voice steps. 240 = (6 steps x 10 fields + 2 voices x 5 steps x 6 props),
+//    each in its kebab and pre-ADR-016 spelling. Expected pairs are a hand table. ──
+{
+  const ix = A.mergeModeInterchanges(
+    T.typeTokensFigmaModes(T.typeScale({ treatment: "product", bodyBase: 16 }), []),
+    G.geomTokensFigmaModes(G.geomScale({}), []),
+  );
+  const names = A.modeApplyPlan(ix)[0].variables.map((v) => v.name);
+  const want = new Set(names);
+  const mdCell = G.sizeAnchor(G.geomScale({}), "MD").name;
+  ok(mdCell === "product-md-md", `legacySizeRenames fixture: the default kit's MD cell is ${mdCell}, want product-md-md`);
+  const r = M.legacySizeRenames(names, mdCell);
+  const keys = Object.keys(r);
+  ok(keys.length === 240, `legacySizeRenames: ${keys.length} entries for the default merged plan, want 240`);
+  ok(!keys.some((n) => want.has(n)), "legacySizeRenames: never renames a name the plan still wants");
+  ok(Object.values(r).every((v) => v.startsWith("_deprecated/") || want.has(v)), "legacySizeRenames: every target is a wanted name or under _deprecated/");
+  const spot = {
+    "size/md/height": "size/product-md-md/height",
+    "size/MD/height": "size/product-md-md/height",
+    "size/xs/padding-narrow": "size/product-sm-sm/inset",
+    "size/2xl/pill-radius": "size/content-lg-md/radius-control",
+    "size/lg/min-width": "size/product-lg-md/min-width",
+    "size/sm/icon": "size/product-md-sm/icon",
+    "size/xl/caret": "_deprecated/size/xl/caret",
+    "size/XS/paddingWide": "_deprecated/size/XS/paddingWide",
+    "type/ui-control/xs/size": "_deprecated/type/ui-control/xs/size",
+    "type/UI-widget/2XL/singleLineHeight": "_deprecated/type/UI-widget/2XL/singleLineHeight",
+  };
+  for (const [from, to] of Object.entries(spot)) ok(r[from] === to, `legacySizeRenames["${from}"] = ${r[from]}, want ${to}`);
+  ok(!("type/ui-control/md/size" in r), "legacySizeRenames: the kept UI step (md) is never renamed");
+  // MD claims its cell first: a clash with XS's cell gives MD the cell and deprecates XS.
+  const clash = M.legacySizeRenames(names, "product-sm-sm");
+  ok(clash["size/md/height"] === "size/product-sm-sm/height" && clash["size/xs/height"] === "_deprecated/size/xs/height", `legacySizeRenames MD-first clash: md -> ${clash["size/md/height"]}, xs -> ${clash["size/xs/height"]}`);
+  // a null mdCell deprecates MD and leaves the other steps on their cells.
+  const noMd = M.legacySizeRenames(names, null);
+  ok(noMd["size/md/height"] === "_deprecated/size/md/height" && noMd["size/xs/height"] === "size/product-sm-sm/height", `legacySizeRenames null mdCell: md -> ${noMd["size/md/height"]}, xs -> ${noMd["size/xs/height"]}`);
+  // a plan with no size/ names (geometry off) has no cell to land on: every legacy step deprecates.
+  const noGeo = M.legacySizeRenames(names.filter((n) => !n.startsWith("size/")), mdCell);
+  ok(noGeo["size/xs/height"] === "_deprecated/size/xs/height" && Object.values(noGeo).every((v) => v.startsWith("_deprecated/")), "legacySizeRenames: a plan with no size/ names deprecates every legacy name");
+  // every frozen legacy field has a pre-ADR-016 spelling for a legacy step, and both spellings are mapped.
+  for (const f of M.LEGACY_SIZE_FIELDS) {
+    const pre = M.kebabWaveOldName(`size/lg/${f}`);
+    ok(pre && pre in r && r[pre] === r[`size/lg/${f}`].replace(`size/lg/${f}`, pre), `legacySizeRenames: LEGACY_SIZE_FIELDS "${f}" resolves through kebabWaveOldName (got ${pre}) and maps like its kebab spelling`);
+  }
 }
 
 // ── FIGMA_MIGRATIONS: the static collection-rename maps name the right old collections ──

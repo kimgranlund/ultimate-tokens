@@ -43,6 +43,8 @@ roots too (the resolver also matches `:host`).
 | `--control-caption-text` | the font-size of a caption or note under a choice control |
 | `--control-icon-ratio` | `icon / height`, unitless; the resolver uses it to form `--radius-mark` |
 | `--chip-height` / `--chip-inset` / `--chip-text` | the compact row inside the control: kbd, tooltip, stepper markers, inline code, OTP cells |
+| `--control-part-height` | `height − inset`: a repeated part (segment, tab, option) inside a control-sized container |
+| `--control-part-inset` | `inset / 2`: the container's padding and the part's own inline inset |
 | `--radius-control` | the control's corner (follows `data-radius`) |
 | `--radius-mark` | the corner of a checkbox, switch thumb, legend swatch |
 | `--radius-inset` | the corner of a badge or tag nested in the control |
@@ -67,6 +69,53 @@ border `--border-thin` (color from color-tokens), radius `--radius-control`, val
 `font-size: var(--control-text)`.
 
 **Tag / badge / kbd**: see [`detail.md`](detail.md).
+
+## Compound containers: segmented controls, tabs, listboxes, menus
+
+A container of repeated parts takes half of the part's inset, and the part gives up the same half, so
+the part's content and the container's outer size stay where a lone control would put them. The radius
+composes the same way: the container keeps `--radius-control`, the part takes `--radius-inset` (the
+control radius minus that half), so the two corners stay concentric.
+
+```css
+.segmented {
+  display: inline-flex;
+  min-block-size: var(--control-height);
+  padding: calc(var(--control-part-inset) - var(--border-thin));
+  border: var(--border-thin) solid;
+  border-radius: var(--radius-control);
+}
+.segmented > .segment {
+  block-size: var(--control-part-height);
+  padding-inline: var(--control-part-inset);
+  font-size: var(--control-text);
+  border-radius: var(--radius-inset);
+}
+.listbox {
+  padding: var(--control-part-inset);
+  border-radius: var(--radius-card);
+}
+.listbox > [role="option"] {
+  min-block-size: var(--control-height);
+  padding-inline: var(--control-inset);
+  border-radius: var(--radius-control);
+}
+.icon-button {
+  inline-size: var(--control-height);
+  block-size: var(--control-height);
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+}
+```
+
+A listbox or menu wrap goes the other way round: its options are full controls, so the wrap takes
+`--radius-card` (the control radius plus half the inset) around `--radius-control` options.
+
+`--chip-*` is a different thing. The chip snaps to a ladder row at or below `height − inset`, so it is
+a real row of the table; the part is exact arithmetic on the cell. On the three smallest micro cells no
+ladder row sits that low, so the chip is taller than the part there; size a segment from the part,
+never from the chip.
 
 ## Radius modes
 

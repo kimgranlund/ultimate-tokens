@@ -14,7 +14,7 @@ import * as GEOM from "../../src/engine/geometry.mjs";
 import { exportDTCG } from "../../src/engine/exports.js";
 import { modeApplyPlan, mergeModeInterchanges, libraryModeReconcile, libraryModeReport, valueChanged, nearestStepByHeight, geometryCellOrder, geometrySizeAliasMap, resolveLiteralHeight, liveAliasTargetsByName, priorLibraryUplift, pruneCandidates, parseOldTypeStepName, typeStepAliasMap, typeWeightAliasMap, TYPE_STEP_FIELD_MAP } from "../../figma/binder/mode-apply-plan.mjs";
 import { stylePlans, primitivesModesApplyPlan } from "../../figma/binder/style-plan.mjs";
-import { LIBRARY_TYPE_VOICE_MAP, GEOMETRY_FIELD_RENAME_MAP } from "../../figma/binder/migrations.mjs";
+import { LIBRARY_TYPE_VOICE_MAP, GEOMETRY_FIELD_RENAME_MAP, LEGACY_SIZE_FIELDS, legacySizeRenames } from "../../figma/binder/migrations.mjs";
 import { googleSafeFontFor } from "../../src/engine/font-fallbacks.mjs";
 import { gateReport } from "../gate-report.mjs";
 
@@ -1839,6 +1839,43 @@ if (applyFontPrimitivesModes) {
   if (mjsReport2.aliases.length) FAIL("libraryparity", `libraryModeReport must omit an already-correctly-aliased name (idempotency fix), got ${JSON.stringify(mjsReport2.aliases)}`);
   if (mjsReport2.deprecates.length) FAIL("libraryparity", `libraryModeReport must not deprecate an already-correctly-aliased name, got ${JSON.stringify(mjsReport2.deprecates)}`);
 
+  // valueChanged's 3rd arg (T-0026): a `values`-shaped ALIAS (Geometry's control/ roles) compares each
+  // mode's live VARIABLE_ALIAS target by name through idToName. Matching target -> unchanged; drifted
+  // target, literal live value, or no idToName -> changed; the `{target}` shape stays unconditional.
+  const ctlVar = { name: "control/x", type: "ALIAS", values: [{ mode: "Base", value: "size/a/height" }] };
+  const ctlSame = { Base: { type: "VARIABLE_ALIAS", id: "x1" } };
+  const ctlCases = [
+    [ctlSame, ctlVar, { x1: "size/a/height" }, false],
+    [ctlSame, ctlVar, { x1: "size/b/height" }, true],
+    [{ Base: 4 }, ctlVar, { x1: "size/a/height" }, true],
+    [ctlSame, ctlVar, undefined, true],
+    [{}, aliasVar, { x1: "family/x" }, true],
+  ];
+  for (const [live, planVar, idToName, want] of ctlCases) {
+    const mjsV = valueChanged(live, planVar, idToName);
+    const vmV = vmValueChanged ? vmValueChanged(live, planVar, idToName) : null;
+    if (mjsV !== vmV) FAIL("libraryparity", `valueChanged (3-arg) disagree for ${JSON.stringify({ live, planVar, idToName })}: mjs=${mjsV} vm=${vmV}`);
+    if (mjsV !== want) FAIL("libraryparity", `valueChanged (3-arg) for ${JSON.stringify({ live, planVar, idToName })} = ${mjsV}, want ${want}`);
+  }
+  const ctlPlan = { variables: [ctlVar] };
+  const ctlMap = { x1: "size/a/height" };
+  const mjsReport3 = libraryModeReport(ctlPlan, { "control/x": ctlSame }, {}, {}, [], ctlMap);
+  const vmReport3 = vmLibraryModeReport ? vmLibraryModeReport(ctlPlan, { "control/x": ctlSame }, {}, {}, [], ctlMap) : null;
+  if (!vmReport3) FAIL("libraryparity", "code.js exported no libraryModeReportVM (6-arg form)");
+  else if (JSON.stringify(mjsReport3) !== JSON.stringify(vmReport3)) FAIL("libraryparity", `libraryModeReport/libraryModeReportVM (6-arg) disagree: mjs=${JSON.stringify(mjsReport3)} vm=${JSON.stringify(vmReport3)}`);
+  if (mjsReport3.valueUpdates.length) FAIL("libraryparity", `libraryModeReport must not report a value update for an ALIAS whose live targets already match, got ${JSON.stringify(mjsReport3.valueUpdates)}`);
+
+  // End to end (T-0026): re-applying the unchanged merged default plan on a classic file reports no
+  // valueUpdates, so the control/ ALIAS roles no longer read as changed on every apply.
+  const FVU = mockFigma();
+  const avu = new Function("figma", "__html__", "module", code + "\nreturn { applyFloatPlans };")(FVU.figma, "<html>", undefined).applyFloatPlans;
+  const vuPlans = modeApplyPlan(mergeModeInterchanges(TYPE.typeTokensFigmaModes(TYPE.typeScale({ treatment: "product", bodyBase: 16 }), []), GEOM.geomTokensFigmaModes(GEOM.geomScale({}), [])));
+  await avu(vuPlans, { libraryMode: false });
+  const vuRes = await avu(vuPlans, { libraryMode: false });
+  const vuRep = (vuRes.libraryReports || [])[0];
+  if (!vuRep) FAIL("libraryparity", "re-apply of the merged default plan returned no libraryReports[0]");
+  else if (vuRep.valueUpdates.length) FAIL("libraryparity", `re-apply of the unchanged merged default plan reported ${vuRep.valueUpdates.length} valueUpdates (e.g. ${vuRep.valueUpdates.slice(0, 3).join(", ")}), want 0`);
+
   // priorLibraryUplift / priorLibraryUpliftVM (#635, tightened in review round 1), the gate's "already
   // uplifted" evidence rule: an existing name NOT in wantedNames that carries a live alias target OR sits
   // under "_deprecated/". A wanted name's alias (the plan's own ALIAS variables) is NOT evidence.
@@ -1979,6 +2016,43 @@ if (applyFloatPlans) {
   } catch (e) { FAIL("geom-alias-apply", "applyFloatPlans (Geometry ALIAS leg) threw: " + e.message); }
 } else {
   FAIL("geom-alias-apply", "code.js exported no applyFloatPlans");
+}
+
+// ── legacy-renames (T-0026): a CLASSIC apply (libraryMode false) onto a file carrying the 120 pre-T-0017
+//    kebab legacy vars (size/{xs..2xl}/* and the retired type/ui-control|ui-widget/{non-md}/*) loses no
+//    id once legacySizeRenames is stamped: MD lands on the kit default cell, a field with no cell target
+//    and every retired UI step go under _deprecated/. Negative control: the same apply without the
+//    stamp prunes all 120. A pre-wave spelling (size/MD/height) renames the same way. ──
+if (applyFloatPlans) {
+  try {
+    const legacy = [];
+    for (const [s, ht] of Object.entries({ xs: 20, sm: 24, md: 28, lg: 36, xl: 48, "2xl": 64 })) for (const f of LEGACY_SIZE_FIELDS) legacy.push({ name: `size/${s}/${f}`, type: "FLOAT", values: [{ mode: "Base", value: f === "height" ? ht : 5 }] });
+    for (const v of ["ui-control", "ui-widget"]) for (const s of ["xs", "sm", "lg", "xl", "2xl"]) for (const p of ["size", "line-height", "letter-spacing", "weight", "paragraph-spacing", "single-line-height"]) legacy.push({ name: `type/${v}/${s}/${p}`, type: "FLOAT", values: [{ mode: "Base", value: 12 }] });
+    if (legacy.length !== 120) FAIL("legacy-renames", `fixture: want 120 legacy vars, got ${legacy.length}`);
+    const run = async (fixture, stamp) => {
+      const F = mockFigma();
+      const L = new Function("figma", "__html__", "module", code + "\nreturn { applyFloatPlans };")(F.figma, "<html>", undefined);
+      await L.applyFloatPlans([{ collection: "Geometry", modes: ["Base"], defaultMode: "Base", addModes: [], variables: fixture }]);
+      const coll = F.collections.find((c) => c.name === "Geometry");
+      const idOf = Object.fromEntries(F.variables.filter((v) => v.variableCollectionId === coll.id).map((v) => [v.name, v.id]));
+      const plans = modeApplyPlan(mergeModeInterchanges(TYPE.typeTokensFigmaModes(TYPE.typeScale({ treatment: "product", bodyBase: 16 }), []), GEOM.geomTokensFigmaModes(GEOM.geomScale({}), [])));
+      if (stamp) plans[0].renames = { ...(plans[0].renames || {}), ...legacySizeRenames(plans[0].variables.map((v) => v.name), GEOM.sizeAnchor(GEOM.geomScale({}), "MD").name) };
+      await L.applyFloatPlans(plans, { libraryMode: false });
+      const nameOf = Object.fromEntries(F.variables.filter((v) => v.variableCollectionId === coll.id).map((v) => [v.id, v.name]));
+      return { lost: fixture.filter((v) => !(idOf[v.name] in nameOf)).length, renamed: (n) => nameOf[idOf[n]] };
+    };
+    const off = await run(legacy, false);
+    if (off.lost !== 120) FAIL("legacy-renames", `negative control: an unstamped classic apply lost ${off.lost} legacy ids, want 120 (else this leg proves nothing)`);
+    const on = await run(legacy, true);
+    if (on.lost !== 0) FAIL("legacy-renames", `a stamped classic apply lost ${on.lost} legacy ids, want 0`);
+    for (const [from, to] of [["size/md/height", "size/product-md-md/height"], ["size/xs/caret", "_deprecated/size/xs/caret"], ["type/ui-widget/lg/weight", "_deprecated/type/ui-widget/lg/weight"], ["type/ui-control/2xl/size", "_deprecated/type/ui-control/2xl/size"]]) {
+      if (on.renamed(from) !== to) FAIL("legacy-renames", `${from}'s id is now ${on.renamed(from)}, want ${to}`);
+    }
+    const pre = await run([{ name: "size/MD/height", type: "FLOAT", values: [{ mode: "Base", value: 28 }] }], true);
+    if (pre.lost !== 0 || pre.renamed("size/MD/height") !== "size/product-md-md/height") FAIL("legacy-renames", `pre-wave size/MD/height's id is now ${pre.renamed("size/MD/height")}, want size/product-md-md/height`);
+  } catch (e) { FAIL("legacy-renames", "applyFloatPlans (legacy renames leg) threw: " + e.message); }
+} else {
+  FAIL("legacy-renames", "code.js exported no applyFloatPlans");
 }
 
 // ── librarymode (#495): "published library" mode, the ADIA-file scenario, mirrored: an 11-voice
@@ -2311,7 +2385,7 @@ if (applyFloatPlans) {
 // declared list here so there is a single printed set. gateReport() also runs the report-static
 // self-check: a declared name with no FAIL(...) call site, or a call site whose name is not
 // declared, fails loudly on its own (report-static).
-const DECLARED = ["manifest", "offline", "vmsyntax", "ui", "parse", "apply", "cascade", "idempotent", "prune", "themes", "collnames", "floatapply", "floatidem", "floatprune", "floatprov", "floatretire", "floatlibrary", "renamecap", "colorprov", "colorlibrary", "staleskip", "staleskipfloat", "staleskipfontprim", "staleskipnotice", "colorrenamecap", "applysys", "applydone", "config", "read", "fonts", "resolveface", "sweep", "compliance", "regroup", "primevalue", "readfloat", "styles", "fontmodes", "libraryparity", "legacy-cell-map", "geom-alias-apply", "librarymode", "adoptconsent", "librarygrammar", "fontprimslibrary", "report-static"];
+const DECLARED = ["manifest", "offline", "vmsyntax", "ui", "parse", "apply", "cascade", "idempotent", "prune", "themes", "collnames", "floatapply", "floatidem", "floatprune", "floatprov", "floatretire", "floatlibrary", "renamecap", "colorprov", "colorlibrary", "staleskip", "staleskipfloat", "staleskipfontprim", "staleskipnotice", "colorrenamecap", "applysys", "applydone", "config", "read", "fonts", "resolveface", "sweep", "compliance", "regroup", "primevalue", "readfloat", "styles", "fontmodes", "libraryparity", "legacy-cell-map", "geom-alias-apply", "legacy-renames", "librarymode", "adoptconsent", "librarygrammar", "fontprimslibrary", "report-static"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)\n  ` + fails.join("\n  ")); process.exit(1); }
 console.log("\nPASS: figma-plugin-app, manifest + offline code.js + bridged ui.html + the figmaBundle→variables cascade + the Type/Geometry breakpoint-mode apply + the styles apply (bound paints/texts, registry prune)");

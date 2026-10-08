@@ -397,14 +397,19 @@ export const swatch = (hex, { size = 16, alpha = false, cls = "", title } = {}) 
 // buttons that bring their own, e.g. copy-float / map-reset). Anything position- or
 // layout-specific (add-pal-btn, figma-plugin-btn, …) is an extra `cls`, NOT a variant,
 // that separation is the whole point (it un-pollutes the variant axis). Icon-only buttons
-// MUST pass `ariaLabel`. `children` is a node or an array of nodes.
+// MUST pass `ariaLabel`. `children` is a node or an array of nodes. A default (ghost) button whose
+// only child is one `.ic` icon becomes `icon-only` instead: square, borderless, ghost until hover.
 export const BTN_VARIANT = { ghost: "ghost", primary: "primary", danger: "ghost danger", bare: "" };
+const isIconOnly = (children) => {
+  const kids = Array.isArray(children) ? children : [children];
+  return kids.length === 1 && /(^|\s)ic(\s|$)/.test(kids[0]?.className ?? "");
+};
 export const btn = (children, { variant = "ghost", cls = "", title, ariaLabel, ariaPressed, onclick, type = "button", disabled } = {}) =>
   h(
     "button",
     {
       type,
-      class: [BTN_VARIANT[variant] ?? "ghost", cls].filter(Boolean).join(" "),
+      class: [variant === "ghost" && isIconOnly(children) ? "icon-only" : (BTN_VARIANT[variant] ?? "ghost"), cls].filter(Boolean).join(" "),
       title,
       "aria-label": ariaLabel,
       "aria-pressed": ariaPressed,

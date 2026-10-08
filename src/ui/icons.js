@@ -41,14 +41,19 @@ export const ICONS = {
   "calendar-blank": "<path d=\"M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32Zm0,16V80H48V48ZM48,208V96H208V208Z\"/>",
 };
 
+// An explicit `size` sizes the svg by its attributes alone, so it holds and a stylesheet rule can still
+// override it; without one the svg follows the shell's --sh-control-icon role.
 export function icon(name, opts = {}) {
   const { size = 16, cls = "" } = opts;
   const el = document.createElement("span");
   el.className = "ic" + (cls ? " " + cls : "");
   el.setAttribute("aria-hidden", "true");
   const path = ICONS[name];
+  const sizing = Object.prototype.hasOwnProperty.call(opts, "size")
+    ? `width="${size}" height="${size}"`
+    : `width="${size}" height="${size}" style="width:var(--sh-control-icon, 16px);height:var(--sh-control-icon, 16px)"`;
   el.innerHTML = path
-    ? `<svg viewBox="0 0 256 256" width="${size}" height="${size}" style="width:var(--sh-control-icon, ${size}px);height:var(--sh-control-icon, ${size}px)" fill="currentColor" aria-hidden="true">${path}</svg>`
+    ? `<svg viewBox="0 0 256 256" ${sizing} fill="currentColor" aria-hidden="true">${path}</svg>`
     : "";
   return el;
 }

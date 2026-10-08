@@ -237,7 +237,7 @@ ok(T.typeScale({ treatment: "nope" }).treatment === T.TYPE_TREATMENTS[0].id, "un
 
   const solo = T.typeTokensBreakpointCSS([{ name: "Mobile", minWidth: 768, scale: mobile }, { name: "NoWidth", scale: mobile }]);
   ok(solo.length === 1 && solo[0].name === "Mobile", "a mode WITHOUT a minWidth is skipped (preview-only, mirrors the DTCG files)");
-  ok(/@media \(max-width: 1279px\) \{\s*:root \{[^}]*--type-body-md-size: 13px/.test(solo[0].css) && !/min-width/.test(solo[0].css), "a lone mode is the NARROWEST too: open-ended below, bounded above by desktopMinWidth-1 (default 1280), no min-width");
+  ok(/@media \(max-width: 1279px\) \{\s*:where\(:root\) \{[^}]*--type-body-md-size: 13px/.test(solo[0].css) && !/min-width/.test(solo[0].css), "a lone mode is the NARROWEST too: open-ended below, bounded above by desktopMinWidth-1 (default 1280), no min-width");
   ok(T.typeTokensBreakpointCSS([]).length === 0, "no modes → no files");
 
   const two = T.typeTokensBreakpointCSS([{ name: "Tablet", minWidth: 992, scale: tablet }, { name: "Mobile", minWidth: 476, scale: mobile }]);

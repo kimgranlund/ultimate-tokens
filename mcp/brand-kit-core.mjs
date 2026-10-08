@@ -84,8 +84,8 @@ export function buildSurface(kit) {
       `- Each voice's step carries \`size\`, \`lineHeight\`, \`letterSpacing\`, \`weight\`, apply them together; don't hand-pick sizes.\n\n`;
     if (kit.geometry) g +=
       `## Geometry\n` +
-      `- \`get_geometry\` / \`brand://geometry\` → the tier × scale × size ladder (27 \`cells\` keyed \`{tier}-{scale}-{size}\`, the kit default \`cell\`) + radius ladder + spacing scale. In CSS, \`data-tier\` / \`data-scale\` / \`data-size\` / \`data-radius\` resolve the roles \`--control-*\`, \`--chip-*\` and \`--radius-control\` / \`-mark\` / \`-inset\` / \`-card\`.\n` +
-      `- Size a control by its cell's \`height\`; **inset = (height − icon) / 2** (the centering law), every glyph in the \`icon\` box, label gap = inset / 2. Use \`radiusControl\` for the control corner and \`space\` for layout.\n`;
+      `- \`get_geometry\` / \`brand://geometry\` → the tier × scale × size ladder (27 \`cells\` keyed \`{tier}-{scale}-{size}\`, the kit default \`cell\`) + radius ladder + spacing scale. In CSS, \`data-tier\` / \`data-scale\` / \`data-size\` / \`data-radius\` resolve the roles \`--control-*\` (incl. \`--control-part-height\` / \`-part-inset\`), \`--chip-*\` and \`--radius-control\` / \`-mark\` / \`-inset\` / \`-card\`.\n` +
+      `- Size a control by its cell's \`height\`; **inset = (height − icon) / 2** (the centering law), every glyph in the \`icon\` box, label gap = inset / 2. Use \`radiusControl\` for the control corner and \`space\` for layout. A segmented or listbox container pads \`partInset\` (part-inset, inset / 2); each repeated part is \`partHeight\` (part-height, height − inset) tall with \`radiusInset\`, so corners stay concentric.\n`;
     return g;
   };
 
@@ -126,7 +126,7 @@ export function buildSurface(kit) {
       inputSchema: { type: "object", properties: {} }, run: () => kit.type },
   );
   if (kit.geometry) TOOLS.push(
-    { name: "get_geometry", description: "The brand's geometry: the tier × scale × size ladder, 27 cells keyed {tier}-{scale}-{size} (height · inset · text · icon · chip · radius control/mark/inset/card) plus the kit default cell, the radius ladder, and the spacing scale; the CSS export resolves them to the --control-*, --chip-* and --radius-* roles.",
+    { name: "get_geometry", description: "The brand's geometry: the tier × scale × size ladder, 27 cells keyed {tier}-{scale}-{size} (height · inset · text · icon · chip · radius control/mark/inset/card · part-height · part-inset) plus the kit default cell, the radius ladder, and the spacing scale; the CSS export resolves them to the --control-*, --chip-* and --radius-* roles.",
       inputSchema: { type: "object", properties: {} }, run: () => kit.geometry },
   );
 

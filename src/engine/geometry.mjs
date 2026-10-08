@@ -20,11 +20,21 @@
 //   radiusControl = text · k.text + height · k.height, k = RADIUS_MODES[the kit's radius mode]
 //   radiusMark    = radiusControl · iconRatio
 //   radiusInset   = max(0, radiusControl − inset / 2);   radiusCard = radiusControl + inset / 2
+//   partHeight    = height − inset;   partInset = inset / 2
+//
+// THE COMPOUND LAW, for a container of repeated parts (segmented control, listbox, menu): half the
+// part's inset moves to the container, so the part's content and the outer size stay where they were.
+// A control-sized container pads by partInset and keeps radiusControl. Its repeated part is partHeight
+// tall, keeps partInset inline, and takes radiusInset, so the two corners stay concentric. A wrap
+// around full-height controls (listbox, menu, card) takes radiusCard outside and radiusControl inside.
+// The chip snaps to a ladder row and the part is exact. On the three micro cells where no ladder row
+// fits under height − inset (micro-sm-sm, micro-sm-md, micro-md-sm), the chip falls back to the 12px
+// row and is taller than the part.
 //
 // The CSS export adds Maison's context RESOLVER in our names: `data-tier` / `data-scale` / `data-size`
 // / `data-radius` set 0/1 indicators (`--ctx-*`), and the roles (`--control-*`, `--chip-*`,
-// `--radius-control/-mark/-inset/-card`) are a calc sum of products over the nine cells of the
-// active tier. The roles equal Maison's per-instance override hooks, so they are never prefixed.
+// `--radius-control/-mark/-inset/-card`, `--control-part-height/-inset`) are a calc sum of products
+// over the nine cells of the active tier, or derived from those sums. The roles equal Maison's per-instance override hooks, so they are never prefixed.
 // The CONTAINER tier (the M3 radius ladder, space, insets, gaps, borders, focus) is a separate concern
 // from control geometry: it derives from `spaceBase` alone.
 
@@ -129,6 +139,8 @@ function buildCell(height, k, textAt) {
     chipText,
     iconRatio,
     minWidth: height, // the 1:1 floor, an icon-only control is at least square
+    partHeight: height - row.inset, // the compound law: a repeated part inside a control-sized container
+    partInset: row.inset / 2,
     radiusControl,
     radiusMark: radiusControl * iconRatio,
     radiusInset: Math.max(0, radiusControl - row.inset / 2),
@@ -198,12 +210,12 @@ const ns = (pfx, name) => (pfx ? `${pfx}-${name}` : name);
 // camelCase → kebab-case for the container-tier token names (controlGroup → control-group).
 const camelKebab = (s) => s.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
 
-// CELL_FIELDS, the 14 per-cell token fields [emitted kebab name, cell key], in emit order. icon-ratio
+// CELL_FIELDS, the 16 per-cell token fields [emitted kebab name, cell key], in emit order. icon-ratio
 // is the one unitless field (a plain number on every surface).
-const CELL_FIELDS = [
+export const CELL_FIELDS = [
   ["height", "height"], ["inset", "inset"], ["text", "text"], ["icon", "icon"],
   ["caption-text", "captionText"], ["chip-height", "chipHeight"], ["chip-inset", "chipInset"], ["chip-text", "chipText"],
-  ["icon-ratio", "iconRatio"], ["min-width", "minWidth"],
+  ["icon-ratio", "iconRatio"], ["min-width", "minWidth"], ["part-height", "partHeight"], ["part-inset", "partInset"],
   ["radius-control", "radiusControl"], ["radius-mark", "radiusMark"], ["radius-inset", "radiusInset"], ["radius-card", "radiusCard"],
 ];
 const UNITLESS = new Set(["icon-ratio"]);
@@ -275,12 +287,14 @@ export function geomResolverCSS(scale, { unit = "px", prefix = "" } = {}) {
       "--radius-mark: calc(var(--radius-control) * var(--control-icon-ratio));",
       "--radius-inset: max(0px, calc(var(--radius-control) - var(--control-inset) / 2));",
       "--radius-card: calc(var(--radius-control) + var(--control-inset) / 2);",
+      "--control-part-height: calc(var(--control-height) - var(--control-inset));",
+      "--control-part-inset: calc(var(--control-inset) / 2);",
     ]),
   ];
   return out.join("");
 }
 
-// geomTokensCSS, the full geometry stylesheet: one `:root` block of the 27 × 14 cell primitives and
+// geomTokensCSS, the full geometry stylesheet: one `:root` block of the 27 × 16 cell primitives and
 // the container lines (the radius ladder, the space scale, insets, gaps, borders, focus), then the
 // context resolver (geomResolverCSS) that turns them into the `--control-*` / `--chip-*` /
 // `--radius-control…` roles.
@@ -297,7 +311,7 @@ export function geomTokensSizesCSS(scale, { unit = "px", prefix = "" } = {}) {
 }
 
 // geomTokensBreakpointCSS, ONE self-contained override file PER breakpoint mode. The cells are the same
-// at every width; what a breakpoint changes is the SCALE axis, so each file's `:root` sets only the
+// at every width; what a breakpoint changes is the SCALE axis, so each file's `:where(:root)` sets only the
 // `--ctx-scale-*` indicators for that mode's `scale.scale`, and the resolver in the base file does the
 // rest. `desktopMinWidth` (default 1280, this app's Desktop anchor) splits `modes` into NARROW
 // (< desktopMinWidth, Tablet/Mobile) and WIDE (≥ desktopMinWidth, e.g. Desktop Lg/Xl). Each side is
@@ -321,7 +335,7 @@ export function geomTokensBreakpointCSS(modes = [], { desktopMinWidth = 1280 } =
     const cond = widest ? `(min-width: ${lower}px)` : `(min-width: ${lower}px) and (max-width: ${upper}px)`;
     out.push({
       name, minWidth: lower,
-      css: `/* ${name}, ${widest ? `${lower}px+` : `${lower}–${upper}`}px, load AFTER the Desktop base file */\n@media ${cond} {\n  :root {\n${scaleLine(m)}\n  }\n}\n`,
+      css: `/* ${name}, ${widest ? `${lower}px+` : `${lower}–${upper}`}px, load AFTER the Desktop base file */\n@media ${cond} {\n  :where(:root) {\n${scaleLine(m)}\n  }\n}\n`,
     });
   });
   narrow.forEach((m, i) => {
@@ -332,14 +346,14 @@ export function geomTokensBreakpointCSS(modes = [], { desktopMinWidth = 1280 } =
     const cond = narrowest ? `(max-width: ${upper}px)` : `(min-width: ${lower}px) and (max-width: ${upper}px)`;
     out.push({
       name, minWidth: lower,
-      css: `/* ${name}, ${narrowest ? `≤${upper}` : `${lower}–${upper}`}px */\n@media ${cond} {\n  :root {\n${scaleLine(m)}\n  }\n}\n`,
+      css: `/* ${name}, ${narrowest ? `≤${upper}` : `${lower}–${upper}`}px */\n@media ${cond} {\n  :where(:root) {\n${scaleLine(m)}\n  }\n}\n`,
     });
   });
   return out;
 }
 
 // geomTokensDTCG, the geometry as DTCG tokens: a `size` group keyed by cell (`{tier}-{scale}-{size}`)
-// with the 14 kebab fields as `dimension` tokens (`icon-ratio` is a `number`), plus the radius ladder,
+// with the 16 kebab fields as `dimension` tokens (`icon-ratio` is a `number`), plus the radius ladder,
 // space scale and container groups as `dimension` tokens.
 export function geomTokensDTCG(scale, { unit = "px" } = {}) {
   const dim = (px) => ({ $type: "dimension", $value: dimUnit(px, unit) });
@@ -377,8 +391,8 @@ export function geomTokensFigma(scale) {
 // geomTokensFigmaModes, the geometry as a single Figma-variable COLLECTION ("Geometry") with one MODE per
 // breakpoint (a "Base" mode + one per supplied breakpoint mode). The same primitives-to-roles cascade the
 // color binder uses:
-//   size/{cell}/{field}            FLOAT, MODE-CONSTANT (27 × 14): the base scale's cells in every mode
-//   control/{tier}/{size}/{field}  ALIAS, PER MODE (9 × 14): `values[mode]` names the
+//   size/{cell}/{field}            FLOAT, MODE-CONSTANT (27 × 16): the base scale's cells in every mode
+//   control/{tier}/{size}/{field}  ALIAS, PER MODE (9 × 16): `values[mode]` names the
 //                                  `size/{tier}-{modeScale}-{size}/{field}` variable, modeScale = that
 //                                  mode's `scale.scale`
 //   radius/ space/ inset/ gap/ border/ focus   FLOAT, written per mode from that mode's scale.

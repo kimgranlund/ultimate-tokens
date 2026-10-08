@@ -21,7 +21,7 @@ import { motionTokens, MOTION_EASING, MOTION_DURATION, MOTION_NEVER } from "./mo
 import { oklchToSrgb8, hexToSrgb8, pyRound, dsBundleGates } from "./ds-gates.js"; // §8 carrier primitives + the gate itself, the receipt cites the SAME run the gate measures
 import { resolvedFontFor } from "./type.mjs"; // per-voice font resolution (TKT-0002), a voice's own override, else its role's shared default
 import { googleSafeFontFor } from "./font-fallbacks.mjs"; // the google-fonts-safe substitute lookup, for dsFontStack's optional fontMode
-import { mdAnchor, sizeAnchor, orderedSizeNames } from "./geometry.mjs"; // the cell anchors (legacy step names to ladder cells) + the canonical cell order (T-0017)
+import { mdAnchor, sizeAnchor, orderedSizeNames, CELL_FIELDS } from "./geometry.mjs"; // the cell anchors (legacy step names to ladder cells) + the canonical cell order (T-0017) + the one per-cell field list
 import { derivedAll, roleOklch, hexOf, hex8, relLumExp, cssPrefixOf, dialogBackdropOklch, whiteOklch, blackOklch, exportShadcn, isDataPalette, oklchStr, EXPORT_SCHEMA_VERSION } from "./exports.js";
 import { docPins } from "./layers.mjs"; // the state's compute-layer pins, stamped as tokens.json $layers (ADR-033, #788)
 import { PRIME_STEPS, primeSlug } from "./prime.mjs"; // the seven step names, brightest..dimmest (REQ-050/054)
@@ -605,7 +605,7 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
 
   // 6. Tabs & Menu, the navigation group (resolved as one combined card, per "tabs/menu").
   //    AdiaUI parity (#480, gen-ui-kit main @ f43853d): the menu popover is a card-tier surface (radius lg, not md) with a
-  //    tighter 4px padding; its item radius is CONCENTRIC, the popover's own radius minus its
+  //    tight padding, the kit default cell's partInset (the compound law, 4px at product-md-md); its item radius is CONCENTRIC, the popover's own radius minus its
   //    padding, so nested corners share a center, computed here from our own rLg, never copied
   //    as a literal. The tabs strip gap is tightened to match. The Delete item's danger color is
   //    the family's own BASE/fill token used as accent TEXT (never a "-bg"-suffixed role, our
@@ -613,7 +613,7 @@ export function exportDesignSystemComponents(state, typeSc, geomSc) {
   //    own spec flags on its danger menu item (their fg reads their own `-bg` role).
   {
     const dangerFam = intents.find((f) => /danger/.test(f));
-    const menuPad = 4;
+    const menuPad = mdCell ? mdCell.partInset : 4;
     const menuItemRadius = Math.max(0, rLg - menuPad);
     const navCss = `.tabs{display:flex;gap:12px;border-bottom:1px solid ${V(cn + "-outline-variant")};margin-bottom:20px}.tab{padding-bottom:10px;${uiFont};color:${V(cn + "-on-surface-variant")};border-bottom:2px solid transparent}.tab--active{color:${V(cn + "-on-surface")};border-bottom-color:${V(brand)}}.menu{background:${V(cn + "-surface-high")};border:1px solid ${V(cn + "-outline-variant")};border-radius:${rLg}px;padding:${menuPad}px;width:220px}.menu-item{padding:6px 8px;border-radius:${menuItemRadius}px;color:${V(cn + "-on-surface")};${uiFont};}.menu-item--hover{background:${has(cn + "-hover") ? V(cn + "-hover") : V(cn + "-surface-dim")}}.menu-divider{height:1px;background:${V(cn + "-outline-variant")};margin:4px 0}`;
     const deleteStyle = dangerFam ? ` style="color:${V(dangerFam)}"` : "";
@@ -1543,14 +1543,6 @@ function dsMakeButtonMd() {
   ].join("\n") + "\n";
 }
 
-// DS_CELL_FIELDS, a ladder cell's 14 token fields [emitted kebab name, cell key], in geometry.mjs's emit order.
-const DS_CELL_FIELDS = [
-  ["height", "height"], ["inset", "inset"], ["text", "text"], ["icon", "icon"],
-  ["caption-text", "captionText"], ["chip-height", "chipHeight"], ["chip-inset", "chipInset"], ["chip-text", "chipText"],
-  ["icon-ratio", "iconRatio"], ["min-width", "minWidth"],
-  ["radius-control", "radiusControl"], ["radius-mark", "radiusMark"], ["radius-inset", "radiusInset"], ["radius-card", "radiusCard"],
-];
-
 // exportDesignSystemMakeBundle, the design-system-for-figma-make/ folder: `guidelines/` (the routed
 // dsFullLayersCss, the FULL token layers appended to the Make `styles.css` BELOW the shadcn projection
 // (which stays the consumption mapping the guidelines teach). Color rides the kit's `.dark`-class
@@ -1592,7 +1584,7 @@ export function dsFullLayersCss(state, typeSc, geomSc) {
     // geometry export (iconRatio unitless).
     for (const name of orderedSizeNames(geomSc)) {
       const c = geomSc.cells[name];
-      dims.push("  " + DS_CELL_FIELDS.map(([f, k]) => `--${basePfx}-size-${name}-${f}: ${c[k]}${f === "icon-ratio" ? "" : "px"};`).join(" "));
+      dims.push("  " + CELL_FIELDS.map(([f, k]) => `--${basePfx}-size-${name}-${f}: ${c[k]}${f === "icon-ratio" ? "" : "px"};`).join(" "));
     }
     if (geomSc.radii) for (const [k, v] of Object.entries(geomSc.radii)) dims.push(`  --${basePfx}-radius-${k}: ${v}px;`);
     if (geomSc.space) Object.keys(geomSc.space).sort((a, b) => a - b).forEach((k, i) => dims.push(`  --${basePfx}-space-${i}: ${geomSc.space[k]}px;`));
