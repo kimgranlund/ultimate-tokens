@@ -1220,6 +1220,35 @@ Format: Context → Decision → Rationale → Consequences → Status.
 - **Status.** PROPOSED 2026-10-08 (T-0027). Ratification is the owner's: the owner edits this line to
   DECIDED, or amends the text under the file's amendment shape.
 
+## ADR-035: Analysis charts are native DOM marks; the html: SVG exception is retired
+- **Context.** T-0029. The analysis charts in the Color, Typography and Geometry sections were SVG
+  strings set through `h("div", { html: svg })`, a ratified exception that wrote `innerHTML` from 12
+  call sites and carried its own CSS traps (an open `<path>` fills into a wedge unless a qualified
+  rule sets it unfilled). The user ruled on 2026-10-08: "for charts and graphs, you can learn how to do
+  them properly here /Users/kimgranlund/Projects/nonoun/native-dom-charts", and chose "Rebuild charts as
+  native DOM". That project is a reference for the technique only; nothing is imported from it.
+- **Decision.** Charts are native DOM marks: HTML elements styled by CSS, with no SVG, no canvas and no
+  markup strings. Two layers: the pure `src/ui/charts/core.mjs` (`scaleLinear`, runs, ribbons, bands,
+  polar, `resolveChart`) resolves a spec with no DOM, and `src/ui/charts/render.mjs` (`renderChart`)
+  turns it into `h()` nodes. A spec is a box in nominal px; the renderer sets it as an `aspect-ratio`
+  box and places every mark in percent inside it, with lines and areas as `clip-path` polygons. Cards
+  are the snapshot tier: no tooltip and no keyboard path, and the data rides in a visually hidden
+  source table. Each series is coloured by `--series` on its class; a dashed curve is a `--dash` mask
+  (`mask-image` with `-webkit-mask-image`), since a border cannot dash a curve. The four geometric
+  drawings (the hue wheel, the hue/chroma disc, the centering-law cell and the tier-ladder overlays) are
+  ported to the same circle, dot, rect and rule marks rather than kept as SVG. `h()` no longer takes
+  `html`. Icons (`src/ui/icons.js`) are not charts and keep their own `innerHTML`.
+- **Rejected.** Keeping the four geometric drawings as SVG under a narrowed exception (they need only
+  primitives the Cartesian charts already use, and keeping them keeps the `html:` path, the `h()` branch
+  and the SVG CSS). Canvas (no CSS theming, no DOM to test). Importing the reference project (a runtime
+  dependency, against the zero-dependency rule).
+- **Consequences.** `test/repo/dom-charts.mjs` gates zero `html:` attributes and zero `<svg` strings in
+  `src/ui/sections/*.js`, no `innerHTML` in `src/ui/app-helpers.mjs`, and none in `src/ui/charts/*.mjs`.
+  The `fill: none` rule and the `.an-svg` classes are gone; a new chart is a `renderChart` spec. Smoke
+  covers the chart cards in light and dark for all three sections.
+- **Status.** PROPOSED 2026-10-08 (T-0029). Ratification is the owner's: the owner edits this line to
+  DECIDED, or amends the text under the file's amendment shape.
+
 ## Quick map: decisions an enhancing agent is most likely to "fix" (don't)
 | ADR | Looks wrong because… | But it's intentional because… |
 |-----|----------------------|-------------------------------|
@@ -1243,3 +1272,4 @@ Format: Context → Decision → Rationale → Consequences → Status.
 | ADR-030 | the canvas groups carry no chroma, and an anchored palette's prime middle leaves its stored hex below Prime chroma 100 | chroma is per-palette Base chroma times two global k factors, formed once in `resolve.mjs`; a group layer made the globals dead, and the anchor is verbatim exactly at the default k 100 |
 | ADR-031 | the Hue space toggle moves an anchored palette's prime ladder but its perceptual and peak ramps by at most 0.02 OKLab dE, and the anchored ladder solves a hue per rung | the hue space is hue constancy through the anchor: the anchor stays verbatim and the toggle picks which hue (OKLCH or CAM16) is held along the line through it; the two lines differ by little on the OKHSL ramps, and a ramp re-seeded to move more would kink at stop 500 |
 | ADR-032 | Geometry has no height knob or treatment, the roles `--control-*` and `--ctx-*` ignore the export prefix, and ladder cells have no kebab-wave old name | the ladder is Maison's validated 27-cell standard, so a continuous knob would ship unvalidated sizes; unprefixed roles are Maison's own override hooks, so Maison component CSS binds with no translation; cells post-date the ADR-016 wave, so `OLD_FIELD` stays frozen |
+| ADR-035 | the analysis charts are stacks of divs with `clip-path` polygons, not SVG, and `h()` refuses `html` | the user ruled charts native DOM on 2026-10-08; an `html:` SVG string writes `innerHTML` and brings back the wedge-fill CSS trap, and `test/repo/dom-charts.mjs` fails the build if one returns |

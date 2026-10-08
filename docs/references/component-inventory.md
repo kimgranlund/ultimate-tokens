@@ -19,7 +19,7 @@
   forced_colors · owns_outer_margin`) plus inventory fields (**surface · call-sites · CSS classes ·
   native-vs-custom · a11y · geometry · flags**).
 - **Surfaces.** `S1` = editor (`src/ui/app.js` + `src/ui/styles.css`). `S2` = Figma plugin. `S3` =
-  data-viz marks (SVG/CSS in the analysis rail + canvas).
+  data-viz marks (native DOM/CSS in the analysis rail + canvas: `.an-chart` from `renderChart`, no SVG).
 - **Citations** are `file:line`.
 
 ## The architecture finding (read first)
@@ -40,7 +40,7 @@ It builds every control inline with a single hyperscript helper `h(tag, attrs, .
 - **No native-replacement layer + no FACE.** Controls are a mix of *native* elements (`<input
   type=range/text/search/checkbox>`, `<select>`) and *custom `<div>`/`<button>` widgets*, none are
   form-associated custom elements. The native ones inherit native a11y for free; the custom ones
-  (`.toggle`, `segmented()`) are built on real `<button>`s with ARIA roles (`switchControl`, `app-helpers.mjs:364`;
+  (`.toggle`, `segmented()`) are built on real `<button>`s with ARIA roles (`switchControl`, `app-helpers.mjs:363`;
   `segmented`, `app.js:1650`), so they keep focus and keyboard.
 - **Forced-colors support is one pass**, the `@media (forced-colors: active)` block at
   `styles.css:1629`; custom-painted controls outside it still flatten in Windows High Contrast.
@@ -92,10 +92,10 @@ incrementally.
 | 11 | **Swatch / color-cell** | primitive | custom `<i>`/`<span>` | ~6 (ramp · scrim · map · dot · roles · footer) | many | `.ramp-strip i`, `.scrim-cell`, `.map-swatch`, `.swatch-dot`, `.sw` | n/a (decorative; hover outline) | 6 sizes/idioms of one concept |
 | 12 | **Set-tile** | component (composition) | custom `<button>` | 2 (set · preset) | 2 builders | `.set-tile`, `.set-thumb`, `.tile-tag`, `.del` | tile is a `<button>`; nested `.del` is a nested click | nested interactive in a button |
 | 13 | **Ramp-row** | component (composition) | custom `<div>` | 1 | 2 scenes | `.ramp-row`, `.enable`, `.drag-handle`, `.ramp-name`, `.ramp-strip` | partial, selectable/draggable row; `.enable`/`.drag-handle` are `<div>`s | rich interaction, weak semantics |
-| 14 | **Contrast bar** | data-viz | SVG/CSS | 1 | 1 | `.an-bar`, `.an-track`, `.an-fill`, `.an-thresh` | n/a | none |
-| 15 | **Hue wheel** | data-viz | SVG | 1 | 1 | `.hw-circle`, `.hw-dot`, `.hw-ring` | n/a | none |
-| 16 | **Tone / lightness curve** | data-viz | SVG | 1 | 1 | `.lc-axis`, `.lc-ceiling`, `.lc-toneline`, `.lc-applied`, `.lc-dot` | n/a | none |
-| 17 | **Damping graph** | data-viz | SVG | 1 | 1 | `.damp-graph`, `.dg-unity` | n/a | none |
+| 14 | **Contrast bar** | data-viz | CSS | 1 | 1 | `.an-bar`, `.an-track`, `.an-fill`, `.an-thresh` | n/a | none |
+| 15 | **Hue wheel** | data-viz | native DOM | 1 | 1 | `.an-chart.hw`, `.ch-circle.hw-circle`, `.ch-dot.hw-dot`, `.ch-ring` | n/a | none |
+| 16 | **Tone / lightness curve** | data-viz | native DOM | 1 | 1 | `.an-chart`, `.ch-rule.lc-axis`, `.ch-band.lc-ceiling`, `.ch-ribbon.lc-toneline`, `.ch-ribbon.lc-applied`, `.ch-dot` | n/a | none |
+| 17 | **Damping graph** | data-viz | native DOM | 1 | 1 | `.damp-graph`, `.an-chart`, `.ch-rule.dg-unity`, `.ch-ribbon` | n/a | none |
 | 18 | **Graph legend** | data-viz | CSS | 1 | 1 | `.an-legend`, `.an-leg`, `.an-leg-mark` | n/a | none |
 | none | **Radio** | none | **ABSENT** | none | 0 | none | none | deliberate: covered by segmented + select |
 | none | **Drawer / Toast** | overlay | custom | 1 each | 1 each | `.drawer`, `.drawer-scrim`, `.toast` | drawer has no focus-trap/Esc story | overlays, not primitives, noted below |
@@ -109,18 +109,18 @@ incrementally.
 - **Surface** S1 (+ S2 instances). **Sites** ~20 `h("button"…)`; 85+ refs.
 - **Anatomy** `[ icon? · label? ]`, no caret variant. Icon-only used for zoom (`zoomBy()`, `sections/color.js:833/835`),
   drawer close (`_drawerHead()`, `overlays/drawer.js:132-138`). `btn()` emits `icon-only` in place of `ghost`
-  when its only child is one `.ic` icon (`isIconOnly`, `app-helpers.mjs:403`); the two pane toggles carry
+  when its only child is one `.ic` icon (`isIconOnly`, `app-helpers.mjs:402`); the two pane toggles carry
   `icon-only pane-toggle` (`paneToggle`, `app.js:1510`).
 - **API** classes-as-variant: `.primary` (`styles.css:191`), `.ghost` (`styles.css:197`), `.icon-only` (a square
   control-height box, icon centered, borderless and transparent until hover, `button.icon-only`, `styles.css:201`),
-  `.danger` (modifier on `.ghost`, `app-helpers.mjs:401`), `.add-pal-btn` (dashed, `styles.css:559`),
+  `.danger` (modifier on `.ghost`, `app-helpers.mjs:400`), `.add-pal-btn` (dashed, `styles.css:559`),
   `.ex-btn` (preview, `cursor:default`, non-interactive, `styles.css:951-954`), `.copy-float` (`styles.css:1140`),
   `.map-reset` (borderless icon, `styles.css:786`), `.pane-toggle` (color only on an icon-only button, `styles.css:438`),
   `.figma-plugin-btn`, `.undo-btn`/`.redo-btn` (`app.js:1454/1455`).
 - **States** default · `hover` (`button:hover` `styles.css:190`) · `focus-visible` (`styles.css:208`) ·
   `disabled` (`styles.css:217`) · toggle-pressed (`.on` + `aria-pressed`, 7 sites in `src/ui/`: the `btn()` and
   `chip()` primitives plus five inline buttons:
-  `aria-pressed` at `app-helpers.mjs:415/542`, `app.js:1511/1667`, `sections/color.js:515/934/1157`).
+  `aria-pressed` at `app-helpers.mjs:414/541`, `app.js:1511/1667`, `sections/color.js:515/934/1157`).
 - **a11y** ✓ `:focus-visible` ring; ✓ `aria-pressed` on toggle-buttons; ✓ `aria-label` on icon-only
   (`sections/color.js:833`). ✗ no `forced_colors`.
 - **Geometry** the cell roles: `min-block-size: var(--sh-control-height)`, `padding-inline: var(--sh-control-inset)`,
@@ -144,7 +144,7 @@ incrementally.
   (`sections/color.js:2131`).
 - **Anatomy** `[ track (with ::after thumb) · label-span ]`. CSS `styles.css:990-1006`; the `.track`
   is 34×19 with a 15px ::after thumb that translates on `.on`.
-- **API** `switchControl({ on, onToggle, label, ariaLabel })` (`app-helpers.mjs:364`), a
+- **API** `switchControl({ on, onToggle, label, ariaLabel })` (`app-helpers.mjs:363`), a
   `<button type=button class="toggle" role="switch">` with `aria-checked` mirroring `on`, `aria-label`
   from `ariaLabel`, an `aria-hidden` track span and a visible `.toggle-label`. State = `aria-checked` +
   the `.on` class.
@@ -152,7 +152,7 @@ incrementally.
   ✓ `role="switch"` + `aria-checked`; ✓ `aria-label` carries the stable purpose ("Palette enabled" /
   "Chroma basis: gamut when on, peak when off"). The palette site sits in a bare `field` div with no `<label>` at all
   (`sections/color.js:1727`); the Chroma basis site goes through `field()`, which also associates a
-  `label[for]` (`app-helpers.mjs:552`).
+  `label[for]` (`app-helpers.mjs:551`).
 - **Geometry** ad-hoc (34×19 track / 15px thumb).
 
 ```json
@@ -240,7 +240,7 @@ incrementally.
 - **a11y** ✓ native keyboard/picker; ✓ `aria-label` on `.map-raw-select` (`sections/color.js:1279-1281`);
   ✓ Distribution/Curve are built through `field()` (`sections/color.js:2032/2057`), which stamps an `id`
   on the `<select>`, associates the `<label for>` with it and adds a fallback `aria-label`
-  (`app-helpers.mjs:552-560`) → the visible label is the accessible name.
+  (`app-helpers.mjs:551-559`) → the visible label is the accessible name.
 - **Flag** none; the two naming paths (`field()` vs inline `aria-label`) both yield a name.
 
 ```json
@@ -256,7 +256,7 @@ incrementally.
   free-text token editor (`sections/color.js:1275`, `.ov` override state).
 - **a11y** ✓ `.map-raw-input` has `aria-label` (`sections/color.js:1275-1279`); ✓ **Name** is a
   `field()` row (`sections/color.js:1689`): the `<label for>` is associated with the input's stamped
-  `id` and a fallback `aria-label` is set by `field()` (`app-helpers.mjs:552-560`) → named to SR.
+  `id` and a fallback `aria-label` is set by `field()` (`app-helpers.mjs:551-559`) → named to SR.
 - **Behaviour** both debounce into one undo step (`editDrag`) and survive re-render without losing
   focus/caret (partial `liveRefresh`, documented `sections/color.js:1695-1699`).
 
@@ -336,7 +336,7 @@ Three unrelated "pill" stylings, a naming/coherence drift, not one primitive:
 
 ## Contract cards: Data-viz marks (S3)
 
-These are non-interactive SVG/CSS marks (hover-outline at most). Cards are lighter, anatomy +
+These are non-interactive native DOM/CSS marks (hover-outline at most); the charts are `.an-chart` boxes from `renderChart` (`src/ui/charts/render.mjs`), each series coloured by `--series`. Cards are lighter, anatomy +
 classes + flags.
 
 ### 11 · Swatch / color-cell  ★ most-duplicated primitive
@@ -378,18 +378,19 @@ the source row's column `color-scheme` (`_schemeOfColumn`), not the chrome's.
 
 ### 15 · Hue wheel
 
-`.hw-circle` (axis) · `.hw-ring` (accent ring) · `.hw-dot` (per-stop dots), SVG polar plot
-(`styles.css:542-543`).
+`.ch-circle.hw-circle` (axis) · `.ch-dot.hw-dot` (one dot per palette) · `.ch-ring` (accent ring on the
+selected palette), native DOM polar plot in an `.an-chart.hw` box (`styles.css:541-544`).
 
 ### 16 · Tone / lightness curve
 
-`.lc-axis` · `.lc-ceiling` (gamut fill) · `.lc-toneline` (dashed reference) · `.lc-applied` (accent
-curve) · `.lc-dot`, SVG L* curve (`styles.css:878-885`).
+`.ch-rule.lc-axis` · `.ch-band.lc-ceiling` (gamut fill) · `.ch-ribbon.lc-toneline` (dashed reference, a
+`--dash` mask) · `.ch-ribbon.lc-applied` (accent curve) · `.ch-dot`, native DOM L* curve in an `.an-chart`
+box; each series rule sets `--series`, from `.lc-axis` to `.lc-dot` (`styles.css:878-885`).
 
 ### 17 · Damping graph
 
-`.damp-graph` container + `.dg-unity` (dashed identity line, `styles.css:875-876`), the differential-damping falloff
-curve (`graphDamping()` `sections/color.js:197`).
+`.damp-graph` container + `.ch-rule.dg-unity` (dashed identity line, `styles.css:875-876`), the differential-damping falloff
+curve as a `.ch-ribbon` in an `.an-chart` box (`graphDamping()` `sections/color.js:197`).
 
 ### 18 · Graph legend
 
