@@ -2,7 +2,7 @@
 id: T-0021
 title: "Compute layers: rebase U1-U3 onto main, then U4 pins and U5 ramp@2 on schema v9 (#788)"
 type: feature
-status: ready
+status: done
 size: L4
 priority: P2
 depends: []

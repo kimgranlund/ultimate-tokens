@@ -1,4 +1,4 @@
-<!-- sdlc-lite:managed:start v1 sha256:ad3c18d8a88f -->
+<!-- sdlc-lite:managed:start v1 sha256:42696b5b4d24 -->
 # Work records
 
 This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and `config`. `tickets.py roadmap` (also run by `new` and `close`) generates this block: do not edit inside it; change a ticket's `handoff.md` front matter and rerun `roadmap`. `roadmap.md` lists every ticket in dependency order. Closed `.NNNN-*` folders are history: open one only when asked.
@@ -10,12 +10,11 @@ This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and
 ## Stages
 
 - proposed: 0
-- ready: 3
-  - T-0021 Compute layers: rebase U1-U3 onto main, then U4 pins and U5 ramp@2 on schema v9 (#788) (gh-788)
+- ready: 2
   - T-0024 Gate A narrowing from #807: can the chroma-envelope gate cover stops where OKHSL keyS reads above 1? (gate-a-narrowing)
   - T-0029 Rebuild the app's analysis charts as native DOM (HTML/CSS marks) following /Users/kimgranlund/Projects/nonoun/native-dom-charts (native-dom-charts)
 - blocked: 0
-- done: 26
+- done: 27
 - dropped: 0
 
 ## Procedures
