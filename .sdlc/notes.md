@@ -13,3 +13,9 @@
 - note: `docs/assets/geometry-tokens.json` is the frozen six-size (XS to 2XL) snapshot, still carrying retired fields such as `caret`. Nothing reads it, so regenerate it from the 27 cells or retire it.
 - note: `panda-smoke` runs only in CI. Check that CI leg on the PR, since no local run covers it.
 - note: main carries `b7b0360f` (#812, describe-eval only), which is not in the lane. Sync the branch with main before opening the PR.
+
+## PR #810 review follow-ups (2026-10-08, held until T-0021 lands: they edit tonal.js, prime.mjs and model.mjs)
+- decide: add a constancy gate to `test/engine/anchor.mjs`: oklch ladder rung hue within tol of the anchor OKLCH hue (shift 0) and cam16 perceptual stops with C >= 5 within tol of `anchor.cam.hue`, counting solver fallbacks (reviewer's Major: today no gate proves the solves hit their targets; fixtures were re-captured from the same engine).
+- note: `rungHue` in `src/engine/prime.mjs` is not memoized (up to 90 x 6 solves in the widening loop) and the cam16 solve in `tonal.js` runs up to about 81 probes per stop: memoize per distinct lightness inside one `primeSwatches` call and time a near-bound anchor while dragging a slider.
+- note: `solveOkhslHueForCam16` uses an achromatic cutoff of C < 5 where `solveCam16Hue` uses 0.4, and drops a valid bracket when one bisection midpoint is achromatic; pale stops can jump from the CAM16 hue line to the OKLCH one. A grey anchor targets the residue hue with no #739 guard (`prime.mjs`, `model.mjs`), where ramps use `palette.hue`.
+- note: the Hue space label title in `src/ui/sections/color.js` promises "at most 0.02 OKLab dE", measured only on the corpus; a large `hueShift` can exceed it. Reword to "barely visible" or gate a hueShift subject. ADR-031 decision (3) overstates the legacy cam16 change (only perceptual and peak ramps move, within 0.02).
