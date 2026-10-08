@@ -99,9 +99,13 @@ Since T-0017 (ADR-032) the editor chrome sizes its controls from the Geometry la
   `_effectiveShellGeometry`: the app pref `this.shellGeometry` (null follows the kit), else
   `doc.geometry`, else `DEFAULT_GEOMETRY`. The pref is set in Settings (`_shellGeometryRows` in
   `src/ui/overlays/settings.js`, Follow kit or Custom) and persisted with the other app prefs.
-- **One head style.** The same call refreshes `this._geomRolesStyle`, a `<style id="ut-geometry-roles">`
-  in `document.head` holding `geomTokensSizesCSS(sc) + geomResolverCSS(sc)`, unprefixed. It is held on the
-  instance, never looked up by id (the shim's `getElementById` returns null), and removed on disconnect.
+- **One head style.** The same call refreshes `this._geomRolesStyle`, a `<style id="ut-geometry-roles-<key>">`
+  in `document.head`, where `<key>` is the host's `data-ut-geom` (the module counter `geomHostSeq`, kept as
+  `this._geomKey` from the constructor, stamped at render). It holds `geomTokensSizesCSS(sc) +
+  geomResolverCSS(sc)` passed through `scopeGeomCSS`, which scopes `:root`, `:where(:root)`,
+  `:where([data-A="V"])` and `:where(*, :host)` to `ultimate-tokens[data-ut-geom="<key>"]`, so two hosts on
+  one page never share roles. It is held on the instance, never looked up by id (the shim's
+  `getElementById` returns null), and removed on disconnect.
 - **Aliases.** `src/ui/styles.css` declares one alias block on the `ultimate-tokens` selector, because the
   host carries the attributes: `--sh-control-height/-inset/-text/-icon`, `--sh-control-radius`
   (`--radius-control`), `--sh-radius-inset`, `--sh-chip-height/-inset/-text`, each falling back to the

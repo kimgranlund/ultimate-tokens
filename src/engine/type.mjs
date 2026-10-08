@@ -652,7 +652,7 @@ export function typeTokensBreakpointCSS(modes = [], { unit = "px", prefix = "typ
     const cond = widest ? `(min-width: ${lower}px)` : `(min-width: ${lower}px) and (max-width: ${upper}px)`;
     out.push({
       name, minWidth: lower,
-      css: `/* ${name}, ${widest ? `${lower}px+` : `${lower}–${upper}`}px, load AFTER the Desktop base file */\n@media ${cond} {\n  :root {\n${typeVarLines(m.scale, "    ", unit, prefix)}\n  }\n}\n`,
+      css: `/* ${name}, ${widest ? `${lower}px+` : `${lower}–${upper}`}px, load AFTER the Desktop base file */\n@media ${cond} {\n  :where(:root) {\n${typeVarLines(m.scale, "    ", unit, prefix)}\n  }\n}\n`,
     });
   });
   narrow.forEach((m, i) => {
@@ -663,7 +663,7 @@ export function typeTokensBreakpointCSS(modes = [], { unit = "px", prefix = "typ
     const cond = narrowest ? `(max-width: ${upper}px)` : `(min-width: ${lower}px) and (max-width: ${upper}px)`;
     out.push({
       name, minWidth: lower,
-      css: `/* ${name}, ${narrowest ? `≤${upper}` : `${lower}–${upper}`}px */\n@media ${cond} {\n  :root {\n${typeVarLines(m.scale, "    ", unit, prefix)}\n  }\n}\n`,
+      css: `/* ${name}, ${narrowest ? `≤${upper}` : `${lower}–${upper}`}px */\n@media ${cond} {\n  :where(:root) {\n${typeVarLines(m.scale, "    ", unit, prefix)}\n  }\n}\n`,
     });
   });
   return out;

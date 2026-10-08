@@ -1193,6 +1193,33 @@ Format: Context → Decision → Rationale → Consequences → Status.
   nearest-by-height alias path: stamping renames there would turn every alias into a rename,
   because renames run before the reconcile.
 
+## ADR-033: Compound containers take half the part's inset and compose radius concentrically
+- **Context.** T-0027. A segmented control, a tab row, a listbox and a menu are containers of repeated
+  parts, and the geometry engine had no rule for them, so the shell's `.segmented` padded by eye. The
+  user ruled on 2026-10-08: "I usually take half of the composed component and remove it (segment or
+  button/option/trigger/etc) and give it to the container so the net effect and alignment is held. This
+  also needs to be factored in to how radius composes."
+- **Decision.** The half law. Each cell gains two fields: `partHeight = height - inset` and
+  `partInset = inset / 2` (kebab `part-height`, `part-inset`; roles `--control-part-height` and
+  `--control-part-inset`, unprefixed like every role). A control-sized container pads `partInset` and
+  keeps `radiusControl`; each repeated part is `partHeight` tall, keeps `partInset` inline and takes
+  `radiusInset`, so the part's content and the outer size stay where a lone control puts them and the
+  two corners stay concentric. A wrap around full-height parts (listbox, menu, popover) takes
+  `radiusCard` around `radiusControl` options. No new radius field: the existing
+  `radiusInset = max(0, radiusControl - inset / 2)` and `radiusCard = radiusControl + inset / 2`
+  already encode the half. Maison's listbox matches the half law; its segmented control uses a quarter
+  (`padding: inset / 4`, item `height - inset / 2`), which this record does not match.
+- **Rejected.** Resolver-only fields (a role with no cell primitive breaks the `CELL_FIELDS` lockstep
+  and the Figma cells). A `radius-part` field (it would duplicate `radius-inset`). `data-size` on the
+  shell's `.seg-sm` (it changes the whole cell, not the compound split).
+- **Consequences.** The cell carries 16 fields and the resolver 15 roles (superseding ADR-032's 14 and
+  13); Figma emits 432 `size/` FLOATs and 144 `control/` ALIASes per Geometry collection. The chip
+  stays separate: it snaps to a ladder row, the part is exact, and on the three micro cells where no
+  ladder row sits at or below `height - inset` the chip is taller than the part. CSS, DTCG, Figma, MCP
+  and the consumer skill `geometry-tokens` carry the two fields.
+- **Status.** PROPOSED 2026-10-08 (T-0027). Ratification is the owner's: the owner edits this line to
+  DECIDED, or amends the text under the file's amendment shape.
+
 ## Quick map: decisions an enhancing agent is most likely to "fix" (don't)
 | ADR | Looks wrong because… | But it's intentional because… |
 |-----|----------------------|-------------------------------|

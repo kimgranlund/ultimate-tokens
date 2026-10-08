@@ -2,7 +2,7 @@
 id: T-0027
 title: "Compound insets and radius composition for container components (segmented, listbox), square ghost icon buttons, unstyled palette name input"
 type: feature        # feature | bug | chore | spike | idea
-status: ready     # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: done     # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: L4
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -27,3 +27,8 @@ User request 2026-10-08, with two screenshots (a segmented control, "Mode | Sing
 
 ## Added requirement (user, 2026-10-08, screenshot of the Color Global inspector)
 Button, trigger and control text sizes need to follow common rules. In the screenshot the segmented controls ("OKLCH | CAM16", "Fixed | Contrast") use one text size while the wide buttons ("Add data palettes (8)", "Re-derive data hues") render noticeably larger and wrap onto two lines inside a one-line-height control, with their icon floating mid-box. Required: every control family (button, segmented segment, select/trigger, input, listbox option, chip) takes its text size, line height, inset and radius from the same cell roles (`--control-text`, `--control-height`, `--control-inset`, `--chip-*`), so the same cell gives the same text size everywhere; control labels never wrap (single line, `white-space: nowrap`, ellipsis, or the control grows by an explicit multi-line rule, never by accident); icon plus label align on the cell's icon box and gap. Add a smoke or headless check that no `button`, `.segmented button` or `select` in the shell computes a different `font-size` from its cell's text size, and name the offenders found by a repo search (`src/ui/styles.css` rules that set `font-size` on button-like elements).
+
+## Plan review
+plan defect: step 4 criterion 2 requires the gate on $SDLC_BASE_SHA styles.css to print `.figma-files button`, but step 3 already folded that rule into the segmented rule, so it is flagged only at fe7c9cf6. Swap the negative control for `.app-header button` or `.map-head .ghost` (flagged at 40bcf50b). Also export SDLC_BASE_SHA in every criterion.
+plan defect: smoke offenders the plan does not cover for step 6: button.pane-back 12px (.pane-head .pane-back), button.toggle 13px (font: inherit), button.key-slot.empty (swatch slots, likely an exclusion), button.tyi-voice-name x15 13px. Assign each a fix or an exclusion. Step 4 work is done and uncommitted in the tree; keep it.
+plan defect: step 5 item 4 asserts the corpus count of spec palettes carrying `geometry` is above 0, but the count is 0 (Adia's `{ramp:"linear4"}` was removed in e084b9f0, #813), so the pass-through leg is vacuous. Conductor direction: option (b), prove the pass-through with a synthetic fixture through the real `buildCategory` + `hydrate` (as `(groups-discriminate)` does) and report the corpus count rather than assert it; no content change. Rewrite only step 5 item 4 and its criterion 4. Items 1-3 are built and green in the tree, keep them.

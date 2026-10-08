@@ -60,7 +60,7 @@ const ok = (c, m) => { if (!c) fails.push(m); };
   // a cell never resolves to a pre-wave name: a later "modernization" of the frozen OLD_FIELD table
   // (which would mint never-shipped rename keys like size/PRODUCT-MD-MD/inset) is caught here.
   const cellNames = names.filter(isCellName);
-  ok(cellNames.length === 378 && cellNames.every((n) => M.kebabWaveOldName(n) === null), `kebabWaveOldName: ${cellNames.length} size/{cell}/{field} names (want 378 = 27 cells x 14 fields), every one must resolve to null (cells have no pre-wave name)`);
+  ok(cellNames.length === 432 && cellNames.every((n) => M.kebabWaveOldName(n) === null), `kebabWaveOldName: ${cellNames.length} size/{cell}/{field} names (want 432 = 27 cells x 16 fields), every one must resolve to null (cells have no pre-wave name)`);
   // frozen-table spot checks: the legacy step grammar still reverses exactly as it shipped.
   ok(M.kebabWaveOldName("size/xs/padding-wide") === "size/XS/paddingWide", `kebabWaveOldName("size/xs/padding-wide") = ${M.kebabWaveOldName("size/xs/padding-wide")}, want size/XS/paddingWide (frozen OLD_FIELD)`);
   ok(M.kebabWaveOldName("size/2xl/icon-gap") === "size/2XL/gap", `kebabWaveOldName("size/2xl/icon-gap") = ${M.kebabWaveOldName("size/2xl/icon-gap")}, want size/2XL/gap (frozen OLD_FIELD)`);

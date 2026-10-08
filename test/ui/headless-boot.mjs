@@ -181,10 +181,24 @@ ok(app.doc && app.doc.palettes.length === DEFAULT_PALETTES, `doc has ${DEFAULT_P
   app.undo(); app.closeSettings(); app.settingsSection = "mapping"; flushRaf();
   ok(hostGeom() === "product,md,md,round", `(shg3) state restored for the groups below (got ${hostGeom()})`);
   const st = app._geomRolesStyle;
-  ok(!!st && st.id === "ut-geometry-roles" && st.parentNode === document.head, "(shg4) app._geomRolesStyle is <style id=\"ut-geometry-roles\"> in document.head");
+  const key = app.dataset.utGeom;
+  ok(!!key && !!st && st.id === `ut-geometry-roles-${key}` && st.parentNode === document.head, `(shg4) app._geomRolesStyle is <style id="ut-geometry-roles-<key>"> in document.head, keyed by the host's data-ut-geom (key ${key}, id ${st && st.id})`);
   const css = (st && st.textContent) || "";
   ok(/(^|[;{\s])--control-height:/.test(css) && css.includes("--size-product-md-md-height:"), "(shg4) the style holds the unprefixed --control-height role and the --size-product-md-md-height: primitive");
-  ok(document.head.children.filter((c) => c.id === "ut-geometry-roles").length === 1, "(shg4) re-renders reuse the one style element");
+  ok(document.head.children.filter((c) => c.id === `ut-geometry-roles-${key}`).length === 1, "(shg4) re-renders reuse the one style element");
+  // (shg5) the injected roles are scoped to this host: no document-level selector survives the rewrite
+  const blocks = css.split("\n").filter((l) => /\{\s*$/.test(l));
+  ok(!/^:root \{/m.test(css) && !css.includes(":where(:root)") && !css.includes(":where(*, :host)"), "(shg5) the style text has no :root {, :where(:root) or :where(*, :host) block");
+  ok(blocks.length === 16 && blocks.every((l) => l.includes(`ultimate-tokens[data-ut-geom="${key}"]`)), `(shg5) all 16 block selectors name the host's data-ut-geom (got ${blocks.length}: ${blocks.filter((l) => !l.includes("data-ut-geom")).join(" | ")})`);
+  // (shg6) a second instance gets its own key and its own style element
+  const app2 = new App();
+  app2.classList = new ClassList(); app2.dataset = {}; app2.style = new CSSStyleDeclaration(); app2._children = [];
+  app2.shellGeometry = null; app2.doc = null;
+  app2._applyShellGeometry();
+  const st2 = app2._geomRolesStyle;
+  ok(!!app2.dataset.utGeom && app2.dataset.utGeom !== key && !!st2 && st2 !== st && st2.id === `ut-geometry-roles-${app2.dataset.utGeom}` && st2.parentNode === document.head, `(shg6) a second instance gets key ${app2.dataset.utGeom} (first ${key}) and its own style element (${st2 && st2.id})`);
+  ok(st2 && st2.textContent.includes(`ultimate-tokens[data-ut-geom="${app2.dataset.utGeom}"]`) && !st2.textContent.includes(`data-ut-geom="${key}"`), "(shg6) the second style names only its own host");
+  if (st2) st2.remove();
 }
 
 // ── (a) undo/redo + slider drag = ONE step ────────────────────────────────────────
@@ -2229,6 +2243,15 @@ ok(hasSvgIcon(findFk("pane-left")), "(ic) the pane toggle renders an inline-SVG 
 ok(hasSvgIcon(app.querySelector(".app-header")), "(ic) the app-header controls (Undo/Redo/Export/theme) carry registry icons");
 ok(hasSvgIcon(app.querySelector(".canvas-header")), "(ic) the canvas-header controls (Fit/zoom/+Palette) carry registry icons");
 
+// ── (ics) icon sizing: no size follows the shell's --sh-control-icon; an explicit size holds by attributes ──
+{
+  const { icon: iconICS } = await import("../../src/ui/icons.js");
+  const plain = iconICS("x").innerHTML;
+  ok(plain.includes("var(--sh-control-icon, 16px)"), `(ics1) icon("x")'s svg style follows var(--sh-control-icon, 16px) (got ${plain.slice(0, 160)})`);
+  const sized = iconICS("x", { size: 13 }).innerHTML;
+  ok(/<svg[^>]* width="13"/.test(sized) && !sized.includes("--sh-control-icon") && !/<svg[^>]* style=/.test(sized), `(ics2) icon("x", { size: 13 })'s svg has width="13" and no --sh-control-icon style (got ${sized.slice(0, 160)})`);
+}
+
 // ── (mig) storage-key migration: BOTH pre-rename generations forward-migrate into the new namespace ──
 // The chain is ultimate-tokens ← nonoun-color-tokens ← hct-palette-state-v1 (newest legacy wins).
 const setsBlob = (id) => JSON.stringify({ sets: [{ id, name: id, doc: {}, updated: 1 }] });
@@ -2945,7 +2968,8 @@ ok(!!app.querySelector(".insp-title"), "(geo) the right pane shows the Geometry 
   const st0 = (ctlEl && ctlEl.getAttribute("style")) || "";
   ok([`height:${c0.height}px`, `font-size:${c0.text}px`, `padding-inline:${c0.inset}px`, `border-radius:${c0.radiusControl}px`].every((s) => st0.includes(s)), `(geo-row) the first (content-sm-sm) control = height ${c0.height} · text ${c0.text} · inset ${c0.inset} · radius ${c0.radiusControl} (got "${st0}")`);
   const glyphEl = app.querySelector(".geom-glyph");
-  ok(!!glyphEl && (glyphEl.getAttribute("style") || "").includes(`width:${c0.icon}px`), `(geo-row) the first control's glyph box is the cell's icon (${c0.icon}px, got "${glyphEl && glyphEl.getAttribute("style")}")`);
+  const glyphSvg = (glyphEl && glyphEl.children[0] && glyphEl.children[0].innerHTML) || "";
+  ok(new RegExp(`<svg[^>]* width="${c0.icon}"`).test(glyphSvg) && !glyphSvg.includes("--sh-control-icon"), `(geo-row) the first control's glyph svg is the cell's icon (${c0.icon}px, got "${glyphSvg.slice(0, 160)}")`);
 }
 const { geomScale: gScale, DEFAULT_GEOMETRY: GEOM_DEFAULT, orderedSizeNames: geoOrder } = await import("../../src/engine/geometry.mjs");
 const { brandKit: bkGeo, geometryScale: geoScaleOf } = await import("../../src/ui/model.mjs");
@@ -3021,12 +3045,12 @@ app._setActiveGeomScaleId("lg"); flushRaf();
 app.commit((d) => { delete d.geometry.modes; delete d.geometry.baseName; }); flushRaf();
 app.geomMode = "base"; app.render(); flushRaf();
 // the canvas Controls·Tokens toggle flips the canvas to the read-only cell token TABLE (a real <table>) in the
-// scrolling .is-table shell, rows = the 27 cells in orderedSizeNames order, columns = the 14 fields, sticky names.
+// scrolling .is-table shell, rows = the 27 cells in orderedSizeNames order, columns = the 16 fields, sticky names.
 app.setGeomSpecMode("tokens"); flushRaf();
 ok(!!app.querySelector(".tok-table") && !app.querySelector(".geom-spec"), "(geo-tok) the Controls·Tokens toggle renders the token table (no controls scene)");
 ok(!!app.querySelector(".is-table") && !!app.querySelector(".is-table").querySelector(".tok-table"), "(geo-tok) the token table lives in the scrolling .is-table canvas shell (no pan/zoom)");
 ok(app.querySelectorAll(".tok-row").length === GEOM_SIZES, `(geo-tok) one row per cell (${GEOM_SIZES}) (got ${app.querySelectorAll(".tok-row").length})`);
-ok(app.querySelectorAll(".tok-col").length === 14, `(geo-tok) one column per cell field (14) (got ${app.querySelectorAll(".tok-col").length})`);
+ok(app.querySelectorAll(".tok-col").length === 16, `(geo-tok) one column per cell field (16) (got ${app.querySelectorAll(".tok-col").length})`);
 ok(txtOf(app.querySelectorAll(".tok-name")[1] || {}) === "--size-content-sm-sm", `(geo-tok) the first (sticky) token name is --size-content-sm-sm (orderedSizeNames order) (got ${txtOf(app.querySelectorAll(".tok-name")[1] || {})})`);
 {
   const kitRow = walk(app, (e) => e.classList.contains("tok-row") && e.classList.contains("is-kit"));
@@ -4586,6 +4610,69 @@ app.setSection("color"); app.render(); flushRaf();
   // a stepped palette stays the SELECTED one, then Esc returns to Global
   fireKey("Escape"); flushRaf();
   ok(app.sel.kind === "none" && ctx786() === "global", `(g786) Esc after stepping returns to the Global inspector (got ${ctx786()})`);
+}
+
+// ── (cpd) compound insets: icon-only buttons (btn() + paneToggle) and the .segmented / button.icon-only rules ──
+// The shim has no computed styles, so sizes are the smoke's job (smoke.mjs "compound at"); here the
+// classes the helper emits, and a text check of the two rules with negative controls on mutated copies.
+{
+  const { btn: btnCPD } = await import("../../src/ui/app-helpers.mjs");
+  const { icon: iconCPD } = await import("../../src/ui/icons.js");
+  const { readFileSync: rfCPD } = await import("node:fs");
+  app.doc = defaultDocumentDPA();
+  app.history = []; app.future = [];
+  app.section = "color"; app.panesLeft = true; app.panesRight = true;
+  app._deselect(); app.render(); flushRaf();
+  const cls = (e) => (e && e.className) || "";
+  const isIconOnly = (e) => !!e && e.classList.contains("icon-only") && !e.classList.contains("ghost");
+  const byLabel = (label) => walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute("aria-label") === label)[0];
+  const toggles = walk(app, (e) => e.tagName === "BUTTON" && e.classList.contains("pane-toggle"));
+  ok(toggles.length === 2 && toggles.every(isIconOnly), `(cpd1) both pane toggles carry icon-only and not ghost (got ${toggles.map(cls).join(" | ")})`);
+  const named = ["Zoom in", "Undo", "Settings"].map((l) => [l, byLabel(l)]);
+  ok(named.every(([, b]) => isIconOnly(b)), `(cpd2) the Zoom in, Undo and Settings buttons carry icon-only and not ghost (got ${named.map(([l, b]) => l + ": " + cls(b)).join(" | ")})`);
+  const addData = walk(app, (e) => e.tagName === "BUTTON" && txtOf(e).includes("Add data palettes (8)"))[0];
+  ok(!!addData && addData.classList.contains("ghost") && !addData.classList.contains("icon-only"), `(cpd3) the "Add data palettes (8)" icon + label button stays ghost, not icon-only (got ${cls(addData)})`);
+  const bare = btnCPD(iconCPD("x"), { variant: "bare", cls: "key-act", ariaLabel: "Remove" });
+  const bareArr = btnCPD([iconCPD("x")], { variant: "bare", ariaLabel: "Remove" });
+  const ghostArr = btnCPD([iconCPD("x")], { ariaLabel: "Close" });
+  ok(!bare.classList.contains("icon-only") && !bareArr.classList.contains("icon-only") && isIconOnly(ghostArr), `(cpd4) a variant "bare" icon button carries no icon-only; a default one-item array does (got ${cls(bare)} | ${cls(bareArr)} | ${cls(ghostArr)})`);
+  // the rules, parsed from the real stylesheet text; a selector matches when it is one item of the rule's list
+  const rulesOk = (text) => {
+    const c = text.replace(/\/\*[\s\S]*?\*\//g, "");
+    const R = [...c.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => [m[1].trim().split(/\s*,\s*/), m[2]]);
+    const body = (s) => R.filter(([sel]) => sel.includes(s)).map((r) => r[1]).join(";");
+    const seg = body(".segmented"), part = body(".segmented button"), io = body("button.icon-only");
+    const literalPad = /(^|;)\s*padding[a-z-]*\s*:\s*[^;]*\b[1-9][0-9.]*px/.test(seg.split(";").filter((d) => !/var\(/.test(d)).join(";"));
+    const need = [
+      [seg, "block-size: var(--sh-control-height)"], [seg, "padding: calc(var(--sh-part-inset) - 1px)"],
+      [seg, "border-radius: var(--sh-control-radius)"], [seg, "gap: 0"],
+      [part, "min-block-size: var(--sh-part-height)"], [part, "padding-inline: var(--sh-part-inset)"], [part, "border-radius: var(--sh-radius-inset)"],
+      [io, "inline-size: var(--sh-control-height)"], [io, "block-size: var(--sh-control-height)"], [io, "padding: 0"],
+      [io, "justify-content: center"], [io, "border-color: transparent"], [io, "background: transparent"],
+    ];
+    return need.every(([t, s]) => t.includes(s)) && !literalPad && !/border-color:\s*var\(--line\)/.test(io);
+  };
+  const cssCPD = rfCPD("src/ui/styles.css", "utf8");
+  ok(rulesOk(cssCPD), "(cpd5) styles.css: .segmented is one control height with a part-inset pad and the control radius; button.icon-only is square, unpadded, borderless and transparent");
+  const segPad = cssCPD.replace("padding: calc(var(--sh-part-inset) - 1px)", "padding: 2px");
+  const ioLine = cssCPD.replace(/(button\.icon-only \{[^}]*?)border-color: transparent/, "$1border-color: var(--line)");
+  ok(segPad !== cssCPD && !rulesOk(segPad), "(cpd5) negative control: a copy with padding: 2px restored on .segmented fails the check");
+  ok(ioLine !== cssCPD && !rulesOk(ioLine), "(cpd5) negative control: a copy with border-color: var(--line) on button.icon-only fails the check");
+  // the narrow-viewport header rule: inside @media (max-width: 1240px) a header button rule must skip
+  // .icon-only and touch only the inline axis, so the square icon button and the part height still win
+  const narrowOk = (text) => {
+    const c = text.replace(/\/\*[\s\S]*?\*\//g, "");
+    const at = c.indexOf("@media (max-width: 1240px)");
+    if (at === -1) return false;
+    const block = c.slice(at, c.indexOf("\n}", at));
+    const R = [...block.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => [m[1].trim().replace(/^@media[^{]*$/, "").split(/\s*,\s*/), m[2]]);
+    const head = R.filter(([sel]) => sel.some((s) => /^\.(app|canvas)-header button/.test(s)));
+    return head.length > 0 && head.every(([sel, b]) => sel.every((s) => s.endsWith("button:not(.icon-only)")) && !/(^|;)\s*padding(-block)?\s*:/.test(b))
+      && head.some(([, b]) => b.includes("padding-inline: calc(var(--sh-control-inset) / 2)"));
+  };
+  ok(narrowOk(cssCPD), "(cpd6) styles.css: at max-width 1240px the header button rule skips button.icon-only and sets padding-inline only");
+  const narrowOld = cssCPD.replace(".app-header button:not(.icon-only), .canvas-header button:not(.icon-only) { padding-inline: calc(var(--sh-control-inset) / 2); }", ".app-header button, .canvas-header button { padding: 4px 7px; }");
+  ok(narrowOld !== cssCPD && !narrowOk(narrowOld), "(cpd6) negative control: a copy with the old .app-header button, .canvas-header button { padding: 4px 7px; } fails the check");
 }
 
 // ── report ──────────────────────────────────────────────────────────────────────────

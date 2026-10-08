@@ -112,7 +112,7 @@ Sibling weights: `doc.type.voices[v].weights`, edited in the per-voice panel (Su
 → `receiveLiveVariables` feeds the drift diff. Geometry rides the `Geometry` collection of Figma NUMBER (FLOAT) vars via `geomTokensFigma` (`src/engine/geometry.mjs`).
 
 **Geometry cells (T-0017, ADR-032).** `geomTokensFigmaModes` (`src/engine/geometry.mjs`) emits the Maison
-ladder as 27 × 14 mode-constant FLOAT `size/{tier}-{scale}-{size}/{field}` cell variables plus 9 × 14
+ladder as 27 × 16 mode-constant FLOAT `size/{tier}-{scale}-{size}/{field}` cell variables plus 9 × 16
 per-mode ALIAS variables `control/{tier}/{size}/{field}`, each mode naming the
 `size/{tier}-{modeScale}-{size}/{field}` cell for that mode's scale. `validateModeInterchange`
 (`figma/binder/mode-apply-plan.mjs`) accepts an ALIAS only when every mode names a literal variable of the

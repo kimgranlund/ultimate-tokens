@@ -2124,7 +2124,6 @@ export class ColorSectionImpl {
                 ariaLabel: "Hue space",
                 role: "group",
                 idPrefix: "huespace",
-                cls: "seg-sm",
               },
             ),
           ),
@@ -2136,7 +2135,7 @@ export class ColorSectionImpl {
               [{ id: "fixed", label: "Fixed" }, { id: "contrast", label: "Contrast" }],
               d.onColorMode === "contrast" ? "contrast" : "fixed",
               (id) => this.commit((doc) => (doc.onColorMode = id)),
-              { ariaLabel: "On-colors", role: "group", idPrefix: "oncolor", cls: "seg-sm" },
+              { ariaLabel: "On-colors", role: "group", idPrefix: "oncolor" },
             ),
           ),
         );

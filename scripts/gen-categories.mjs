@@ -220,9 +220,9 @@ const CURVE_OVERRIDE_KEYS = ["damp", "dampCurve", "dampAmp", "dampBias", "lmin",
 // (persist.js), the SAME bounds hydrate()'s clampNumber enforces on a live document, so this can
 // never drift from the actual hydrate() clamp.
 const CURVE_RANGE_KEYS = ["lmin", "lmax"];
-// per-entry GEOMETRY config (#485), opt-in, currently only Adia's "brands" entry: a spec palette may
-// carry a `geometry` object (the same shape doc.geometry takes, e.g. `{ "ramp": "linear4" }` to opt
-// that ONE preset into the linear-ladder ramp, issue #483/#484) that passes straight through to the
+// per-entry GEOMETRY config (#485), opt-in, no corpus entry carries one today (#813 removed Adia's): a spec palette may
+// carry a `geometry` object (the same shape doc.geometry takes, the v9 `{ tier, scale, radius, spaceBase }`
+// kit axes, e.g. `{ "tier": "content", "radius": "pill" }`) that passes straight through to the
 // generated preset verbatim, no register-mapping needed (unlike `type`, geometry has no spec-vocabulary
 // translation layer, it's already in the engine's own config shape). `hydrate()` re-validates/clamps it
 // the same as any other doc.geometry when the preset is opened, so gen-time does no sanitizing of its
@@ -442,9 +442,9 @@ export function buildCategory(doc) {
         // Absent when the spec palette has no `type` (falls back to the global default treatment).
         ...(typeCfg ? { type: typeCfg } : {}),
         // per-preset GEOMETRY (#485), same opening path (openConfigAsSet → hydrate → clampGeometry)
-        // carries this palette's geometry config, so ramp/treatment/baseHeight choices survive into
+        // carries this palette's geometry config, so its tier/scale/radius/spaceBase choices survive into
         // the opened doc's every export. Absent when the spec palette has no `geometry` (falls back to
-        // the global default ramp, the identity gate every other preset still gets).
+        // the default kit geometry, the identity gate every other preset still gets).
         ...(geomCfg ? { geometry: geomCfg } : {}),
         // neutral first (derived from the character palettes' key colors), then the named families,
         // unless `direct` supplies the full array itself (verbatim, in its own authored order).

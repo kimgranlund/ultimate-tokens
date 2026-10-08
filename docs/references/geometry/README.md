@@ -47,6 +47,8 @@ The law holds on every ladder row (Maison's generator asserts it, and `test/engi
 | `radius-mark` | radius-control · icon-ratio |
 | `radius-inset` | max(0, radius-control − inset / 2) |
 | `radius-card` | radius-control + inset / 2 |
+| `part-height` | height − inset: a repeated part (segment, option) inside a control-sized container (the compound law, ADR-033) |
+| `part-inset` | inset / 2: the container's padding and the part's own inline inset |
 
 Radius modes (`RADIUS_MODES`): `default` (k.text 0.5), `round` (1, the default), `sharp` (0.25),
 `pill` (k.height 0.5).
@@ -55,7 +57,7 @@ Radius modes (`RADIUS_MODES`): `default` (k.text 0.5), `round` (1, the default),
 
 | Top-level key | What it is |
 |---|---|
-| `size` | one group per cell (`content-sm-sm` to `micro-lg-lg`) with the 14 kebab fields above, `dimension` tokens (`icon-ratio` is a `number`) |
+| `size` | one group per cell (`content-sm-sm` to `micro-lg-lg`) with the 16 kebab fields above, `dimension` tokens (`icon-ratio` is a `number`) |
 | `radius` | the **Material 3 shape-corner scale**, `none 0 · xs 4 · sm 8 · md 12 · lg 16 · xl 28 · full 9999`; the control corner is the per-cell `radius-control`, a separate value |
 | `space` | the `--space-*` layout scale (`SPACE_STEPS × spaceBase`), the space **between** components, a separate concern from control geometry |
 | `inset` | the CONTAINER tier's padding, `control-group · card · panel · dialog · page`, each a named `space` rung |
@@ -65,11 +67,11 @@ Radius modes (`RADIUS_MODES`): `default` (k.text 0.5), `round` (1, the default),
 
 ## The CSS resolver
 
-`geomTokensCSS` emits the 27 × 14 primitives (`--size-{tier}-{scale}-{size}-{field}`), the container
+`geomTokensCSS` emits the 27 × 16 primitives (`--size-{tier}-{scale}-{size}-{field}`), the container
 lines, then the resolver (`geomResolverCSS`). The resolver reads four attributes on any ancestor,
 nearest value wins: `data-tier`, `data-scale`, `data-size`, `data-radius`. It resolves them to the roles
-`--control-height/-inset/-text/-icon/-caption-text/-icon-ratio`, `--chip-height/-inset/-text` and
-`--radius-control/-mark/-inset/-card`, through the context hooks `--ctx-cell-*`, `--ctx-scale-*`,
+`--control-height/-inset/-text/-icon/-caption-text/-icon-ratio`, `--chip-height/-inset/-text`,
+`--control-part-height/-inset` and `--radius-control/-mark/-inset/-card`, through the context hooks `--ctx-cell-*`, `--ctx-scale-*`,
 `--ctx-size-*` and `--ctx-radius-text/-height`. An export prefix renames the primitives and container
 ladders only; roles and `--ctx-*` are never prefixed (ADR-032 holds the Maison-to-ours name map).
 
@@ -90,8 +92,8 @@ engine, and the app resolves geometry with `geomScale(doc.geometry, { typeScale 
 
 ## Figma variables
 
-`geomTokensFigmaModes` emits one Geometry collection: 27 × 14 mode-constant FLOAT `size/{cell}/{field}`
-variables, 9 × 14 per-mode ALIAS variables `control/{tier}/{size}/{field}` (each mode names the
+`geomTokensFigmaModes` emits one Geometry collection: 27 × 16 mode-constant FLOAT `size/{cell}/{field}`
+variables, 9 × 16 per-mode ALIAS variables `control/{tier}/{size}/{field}` (each mode names the
 `size/{tier}-{modeScale}-{size}/{field}` cell for that mode's scale), and the radius, space, inset, gap,
 border and focus FLOATs. `geomTokensFigma` emits the flat unitless shape.
 

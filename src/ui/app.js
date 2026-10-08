@@ -58,7 +58,26 @@ import { DrawerMixin } from "./overlays/drawer.js";
 import { ApplyGateMixin } from "./overlays/apply-gate.js";
 import { SettingsMixin } from "./overlays/settings.js";
 
+let geomHostSeq = 0; // per-instance keys for the host-scoped geometry roles (_applyShellGeometry)
+
+// scopeGeomCSS, rewrites the engine's document-level geometry CSS (geomTokensSizesCSS + geomResolverCSS)
+// onto one host: the :root primitives and default context land on the keyed host, a [data-A="V"] context
+// block matches the host or a descendant carrying it, and the per-element resolver covers the host's
+// subtree. Zero specificity throughout, like the engine's :where() blocks. The exported CSS is unchanged.
+function scopeGeomCSS(css, key) {
+  const host = `ultimate-tokens[data-ut-geom="${key}"]`;
+  return css
+    .replace(/^(?::root|:where\(:root\)) \{$/gm, `:where(${host}) {`)
+    .replace(/^:where\(\[(data-[a-z-]+="[^"]*")\]\) \{$/gm, (_, attr) => `:where(${host}[${attr}], ${host} [${attr}]) {`)
+    .replace(/^:where\(\*, :host\) \{$/gm, `:where(${host}, ${host} *) {`);
+}
+
 class HctApp extends HTMLElement {
+  constructor() {
+    super();
+    this._geomKey = String(++geomHostSeq); // stamped as [data-ut-geom] at render (a constructor must not add attributes)
+  }
+
   connectedCallback() {
     ensureAppTheme(); // inject the generated --c-* design tokens once, globally
     migrateStorageKeys(); // copy any pre-rename saved sets/config into the new key namespace
@@ -106,7 +125,7 @@ class HctApp extends HTMLElement {
     this.motion = "system"; // animation preference: system (respect prefers-reduced-motion) | reduced (always minimal), app pref
     this.fontMode = "premium"; // rendering-reliability pref: premium (as-designed families) | google (every family google-fonts-safe, per src/engine/font-fallbacks.mjs), app pref, NOT doc-bound
     this.shellGeometry = null; // the editor chrome's own { tier, scale, radius }: null follows the kit's doc.geometry, app pref, NOT doc-bound
-    this._geomRolesStyle = null; // the one <style id="ut-geometry-roles"> in document.head (the shell's --control-* roles), created on first render
+    this._geomRolesStyle = null; // this host's <style id="ut-geometry-roles-<key>"> in document.head (the shell's --control-* roles), created on first render
     this._loadAppPrefs(); // persisted APP prefs (theme/motion/fontMode/shellGeometry), loaded before setColorScheme below
     this.exportOpen = false;
     this.exportTab = "css";
@@ -1492,7 +1511,7 @@ class HctApp extends HTMLElement {
     const left = side === "left";
     const shown = left ? this.panesLeft : this.panesRight;
     return h("button", {
-      class: "ghost pane-toggle pane-toggle-" + side + (shown ? " on" : ""),
+      class: "icon-only pane-toggle pane-toggle-" + side + (shown ? " on" : ""),
       "data-fk": "pane-" + side,
       title: (shown ? "Collapse" : "Show") + (left ? " the analysis pane ([)" : " the inspector pane (])"),
       "aria-label": (shown ? "Collapse" : "Show") + (left ? " left analysis pane" : " right inspector pane"),
@@ -2375,24 +2394,26 @@ class HctApp extends HTMLElement {
     };
   }
 
-  // _applyShellGeometry(), called from render(): stamps the host's [data-tier/scale/radius/size] (the
-  // resolver's context selectors) and refreshes the one head <style> holding the kit's cell primitives +
-  // resolver, unprefixed. Held on the instance, never looked up by id (the headless shim's getElementById
-  // returns null).
+  // _applyShellGeometry(), called from render(): stamps the host's [data-ut-geom] key and
+  // [data-tier/scale/radius/size] (the resolver's context selectors) and refreshes this host's head
+  // <style> holding the kit's cell primitives + resolver, unprefixed and scoped to the host (so two
+  // instances, or a page that loads its own exported geometry.css, never share or clobber the roles).
+  // Held on the instance, never looked up by id (the headless shim's getElementById returns null).
   _applyShellGeometry() {
     const g = this._effectiveShellGeometry();
+    this.dataset.utGeom = this._geomKey;
     this.dataset.tier = g.tier;
     this.dataset.scale = g.scale;
     this.dataset.radius = g.radius;
     this.dataset.size = "md";
     if (!this._geomRolesStyle) {
       const el = document.createElement("style");
-      el.id = "ut-geometry-roles";
+      el.id = `ut-geometry-roles-${this._geomKey}`;
       document.head.appendChild(el);
       this._geomRolesStyle = el;
     }
     const sc = this.doc ? this._geomScaleFor("base") : geomScale(DEFAULT_GEOMETRY);
-    const css = geomTokensSizesCSS(sc) + "\n" + geomResolverCSS(sc);
+    const css = scopeGeomCSS(geomTokensSizesCSS(sc) + "\n" + geomResolverCSS(sc), this._geomKey);
     if (this._geomRolesStyle.textContent !== css) this._geomRolesStyle.textContent = css;
   }
 
