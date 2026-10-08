@@ -3,7 +3,7 @@
 import * as U from "../../src/ui/persist.js";
 import * as X from "../../src/engine/exports.js";   // theme-invariance tests the exporters against state.theme
 import * as Ty from "../../src/engine/type.mjs";     // allowlist-parity: canonical TYPE_TREATMENTS ids + voice set
-import * as Ge from "../../src/engine/geometry.mjs"; // allowlist-parity: canonical GEOMETRY_TREATMENTS ids
+import * as Ge from "../../src/engine/geometry.mjs"; // allowlist-parity: canonical TIERS/SCALES/SIZES/RADIUS_MODES ids
 
 let _s = 0x1234abcd >>> 0;
 const rnd = () => { _s = (Math.imul(_s, 1103515245) + 12345) >>> 0; return _s / 0x100000000; };
@@ -31,14 +31,14 @@ const inDomainState = () => {
   const roleOverrides = {};
   for (const [k, v] of [["onSurface", { light: "900", dark: "100" }], ["primary", { light: "500-300" }], ["outline", { dark: "550" }]])
     if (rnd() > 0.5) roleOverrides[k] = v;
-  // per-cell SIZE/HEIGHT token overrides (Tokens-matrix Phase 3): a random in-domain subset. Keys carry
-  // the modeKey suffix; values are in-domain integers so they must round-trip byte-for-byte when present.
+  // per-cell SIZE token overrides (Tokens-matrix Phase 3): a random in-domain subset. Keys carry the
+  // modeKey suffix; values are in-domain integers so they must round-trip byte-for-byte when present.
+  // Geometry has none since schema v9 (T-0017): its doc is the four ladder axes plus optional modes.
   const tyTok = {}; for (const [k, v] of [["Body|MD|base", 40], ["Display|XL|base", 90], ["Label|SM|base", 13]]) if (rnd() > 0.5) tyTok[k] = v;
-  const geTok = {}; for (const [k, v] of [["MD|base", 30], ["2XL|base", 72], ["XS|base", 18]]) if (rnd() > 0.5) geTok[k] = v;
   return { curve: pick(["linear", "sine", "cubic", "logistic", "exp"]), tension: rnd() * 100, lmin: rnd() * 40, lmax: 60 + rnd() * 40,
     damp: rnd() * 100, dampCurve: 0.5 + rnd() * 3.5, dampAmp: rnd() * 100, dampBias: -100 + rnd() * 200,
     baseIntensity: rnd() * 100, primeChroma: rnd() * 100,
-    hueSpace: pick(["cam16", "oklch"]), relChroma: rnd() > 0.5, chromaFloor: rnd() * 100, toneMode: pick(["even", "perceptual", "peak"]), vibrancy: rnd() * 100, onColorMode: pick(["fixed", "contrast"]), accentRef: pick(["mode", "single"]), type: { treatment: pick(["product", "luxury", "editorial", "technical", "statement"]), bodyBase: 10 + Math.floor(rnd() * 22), ...(rnd() > 0.5 ? { modes: [{ id: "tm-" + Math.floor(rnd() * 1e6).toString(36), name: pick(["Mobile", "Desktop", "Mode 2"]), bodyBase: 10 + Math.floor(rnd() * 22), ...(rnd() > 0.5 ? { minWidth: 320 + Math.floor(rnd() * 1200) } : {}) }] } : {}), ...(Object.keys(tyTok).length ? { tokenOverrides: tyTok } : {}) }, geometry: { treatment: pick(["comfortable", "compact", "spacious", "touch", "pill"]), baseHeight: 20 + Math.floor(rnd() * 29), ...(rnd() > 0.5 ? { ramp: "linear4" } : {}), ...(rnd() > 0.5 ? { rampContrast: Math.round(rnd() * 95) / 100 } : {}), ...(rnd() > 0.5 ? { modes: [{ id: "gm-" + Math.floor(rnd() * 1e6).toString(36), name: pick(["Mobile", "Desktop", "Mode 2"]), baseHeight: 20 + Math.floor(rnd() * 29), ...(rnd() > 0.5 ? { minWidth: 320 + Math.floor(rnd() * 1200) } : {}), ...(rnd() > 0.5 ? { rampContrast: Math.round(rnd() * 95) / 100 } : {}) }] } : {}), ...(Object.keys(geTok).length ? { tokenOverrides: geTok } : {}) }, theme: pick(["auto", "light", "dark"]), selected: Math.floor(rnd() * n), roleOverrides, palettes };
+    hueSpace: pick(["cam16", "oklch"]), relChroma: rnd() > 0.5, chromaFloor: rnd() * 100, toneMode: pick(["even", "perceptual", "peak"]), vibrancy: rnd() * 100, onColorMode: pick(["fixed", "contrast"]), accentRef: pick(["mode", "single"]), type: { treatment: pick(["product", "luxury", "editorial", "technical", "statement"]), bodyBase: 10 + Math.floor(rnd() * 22), ...(rnd() > 0.5 ? { modes: [{ id: "tm-" + Math.floor(rnd() * 1e6).toString(36), name: pick(["Mobile", "Desktop", "Mode 2"]), bodyBase: 10 + Math.floor(rnd() * 22), ...(rnd() > 0.5 ? { minWidth: 320 + Math.floor(rnd() * 1200) } : {}) }] } : {}), ...(Object.keys(tyTok).length ? { tokenOverrides: tyTok } : {}) }, geometry: { tier: pick(["content", "product", "micro"]), scale: pick(["sm", "md", "lg"]), radius: pick(["default", "round", "sharp", "pill"]), spaceBase: 1 + Math.floor(rnd() * 16), ...(rnd() > 0.5 ? { modes: [{ id: "gm-" + Math.floor(rnd() * 1e6).toString(36), name: pick(["Mobile", "Desktop", "Mode 2"]), scale: pick(["sm", "md", "lg"]), ...(rnd() > 0.5 ? { minWidth: 320 + Math.floor(rnd() * 1200) } : {}) }] } : {}) }, theme: pick(["auto", "light", "dark"]), selected: Math.floor(rnd() * n), roleOverrides, palettes };
 };
 
 // ── hpg-persistence-roundtrip: in-domain identity ─────────────────────────────────────────
@@ -322,10 +322,8 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   // an in-domain map round-trips byte-for-byte (covered broadly by the fuzz above; spot-checked here).
   const S = inDomainState();
   S.type = { treatment: "product", bodyBase: 16, tokenOverrides: { "Body|MD|base": 40, "Label|SM|tm-x": 13 } };
-  S.geometry = { treatment: "comfortable", baseHeight: 28, tokenOverrides: { "MD|base": 30, "2XL|gm-y": 72 } };
   const R = U.hydrate(U.serialize(S));
   if (!deepEq(R.type.tokenOverrides, S.type.tokenOverrides)) FAIL("token-overrides", `type tokenOverrides did not round-trip: ${JSON.stringify(R.type.tokenOverrides)}`);
-  if (!deepEq(R.geometry.tokenOverrides, S.geometry.tokenOverrides)) FAIL("token-overrides", `geom tokenOverrides did not round-trip: ${JSON.stringify(R.geometry.tokenOverrides)}`);
   // per-role custom font overrides round-trip; junk role keys / blank families drop.
   const Rf = U.hydrate(U.serialize({ ...inDomainState(), type: { treatment: "luxury", bodyBase: 16, fonts: { body: "Custom Sans", ui: "My Mono", bogus: "x", display: "  " } } }));
   if (!deepEq(Rf.type.fonts, { body: "Custom Sans", ui: "My Mono" })) FAIL("type-fonts", `type.fonts did not round-trip / didn't drop junk: ${JSON.stringify(Rf.type.fonts)}`);
@@ -366,33 +364,27 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   const Ri4 = U.hydrate(U.serialize({ ...inDomainState(), icons: { id: "custom", name: "  Streamline  ", variantName: " Core " } }));
   if (!deepEq(Ri4.icons, { id: "custom", name: "Streamline", variantName: "Core" })) FAIL("icons", `custom name/variant did not round-trip trimmed: ${JSON.stringify(Ri4.icons)}`);
 
-  // OUT-OF-RANGE values clamp to the nearest bound (type size [1,512], geom height [8,256]).
+  // OUT-OF-RANGE values clamp to the nearest bound (type size [1,512]).
   const C = U.hydrate(U.serialize({ ...inDomainState(),
-    type: { treatment: "product", bodyBase: 16, tokenOverrides: { "Body|MD|base": 9999, "Body|SM|base": 0.4 } },
-    geometry: { treatment: "comfortable", baseHeight: 28, tokenOverrides: { "MD|base": 9999, "XS|base": 2 } } }));
+    type: { treatment: "product", bodyBase: 16, tokenOverrides: { "Body|MD|base": 9999, "Body|SM|base": 0.4 } } }));
   if (C.type.tokenOverrides["Body|MD|base"] !== 512) FAIL("token-overrides", `type size 9999 -> ${C.type.tokenOverrides["Body|MD|base"]}, want 512`);
   if (C.type.tokenOverrides["Body|SM|base"] !== 1) FAIL("token-overrides", `type size 0.4 -> ${C.type.tokenOverrides["Body|SM|base"]}, want 1 (floor)`);
-  if (C.geometry.tokenOverrides["MD|base"] !== 256) FAIL("token-overrides", `geom height 9999 -> ${C.geometry.tokenOverrides["MD|base"]}, want 256`);
-  if (C.geometry.tokenOverrides["XS|base"] !== 8) FAIL("token-overrides", `geom height 2 -> ${C.geometry.tokenOverrides["XS|base"]}, want 8 (floor)`);
 
   // INVALID entries (NaN / non-number / ≤0) are DROPPED; if nothing valid remains the key is ABSENT.
   const D = U.hydrate(U.serialize({ ...inDomainState(),
-    type: { treatment: "product", bodyBase: 16, tokenOverrides: { "Body|MD|base": "nope", "Body|LG|base": -7, "Body|XL|base": 0 } },
-    geometry: { treatment: "comfortable", baseHeight: 28, tokenOverrides: { "MD|base": NaN } } }));
+    type: { treatment: "product", bodyBase: 16, tokenOverrides: { "Body|MD|base": "nope", "Body|LG|base": -7, "Body|XL|base": 0 } } }));
   if (D.type.tokenOverrides !== undefined && Object.keys(D.type.tokenOverrides).length !== 0) FAIL("token-overrides", `invalid type overrides not dropped: ${JSON.stringify(D.type.tokenOverrides)}`);
   if ("tokenOverrides" in D.type) FAIL("token-overrides", "an all-invalid type tokenOverrides must hydrate ABSENT (not an empty object)");
-  if ("tokenOverrides" in D.geometry) FAIL("token-overrides", "an all-invalid geom tokenOverrides must hydrate ABSENT (not an empty object)");
 
-  // MALFORMED keys are DROPPED defensively (type requires 3 "|"-segments, geom 2, non-empty modeKey), a
-  // valid sibling key survives, proving only the junk is stripped (forward-safe persisted maps).
+  // MALFORMED keys are DROPPED defensively (type requires 3 "|"-segments, non-empty modeKey), a valid
+  // sibling key survives, proving only the junk is stripped (forward-safe persisted maps).
   const M = U.hydrate(U.serialize({ ...inDomainState(),
-    type: { treatment: "product", bodyBase: 16, tokenOverrides: { "Body|MD|base": 40, "Body|MD": 30, "too|many|parts|here": 22, "Body|MD|": 18 } },
-    geometry: { treatment: "comfortable", baseHeight: 28, tokenOverrides: { "MD|base": 30, "MD": 24, "MD|sm|extra": 26, "MD|": 20 } } }));
+    type: { treatment: "product", bodyBase: 16, tokenOverrides: { "Body|MD|base": 40, "Body|MD": 30, "too|many|parts|here": 22, "Body|MD|": 18 } } }));
   if (!deepEq(M.type.tokenOverrides, { "Body|MD|base": 40 })) FAIL("token-overrides", `malformed type keys not dropped (kept only the well-formed): ${JSON.stringify(M.type.tokenOverrides)}`);
-  if (!deepEq(M.geometry.tokenOverrides, { "MD|base": 30 })) FAIL("token-overrides", `malformed geom keys not dropped (kept only the well-formed): ${JSON.stringify(M.geometry.tokenOverrides)}`);
 
-  // ABSENT stays absent, a config without tokenOverrides round-trips identically (the identity gate).
-  const A = U.hydrate(U.serialize({ ...inDomainState(), type: { treatment: "product", bodyBase: 16 }, geometry: { treatment: "comfortable", baseHeight: 28 } }));
+  // ABSENT stays absent, a config without tokenOverrides round-trips identically (the identity gate),
+  // and geometry never carries one since schema v9 (T-0017).
+  const A = U.hydrate(U.serialize({ ...inDomainState(), type: { treatment: "product", bodyBase: 16 } }));
   if ("tokenOverrides" in A.type || "tokenOverrides" in A.geometry) FAIL("token-overrides", "absent tokenOverrides must stay absent after hydrate");
 }
 
@@ -407,18 +399,57 @@ if (!deepEq(hyd2.palettes[0].chroma, base.palettes[0].chroma)) FAIL("clamp", "cl
   if (long.type.voices.Display.styleName.length !== 60) FAIL("voice-style", "styleName caps at 60 chars");
 }
 
-// ── geometry rampContrast (the responsive-ramp knob): <1 persists (2-decimal), 1/absent/invalid drop ──
+// ── geometry-migrate (T-0017, schema v9): a pre-v9 treatment/baseHeight lands on the (tier, scale) whose
+// md cell is nearest its legacy MD height (ties: product > content > micro, then md > sm > lg), with the
+// treatment's radius mode and spaceBase; each mode's baseHeight becomes a scale within that tier; the
+// retired keys are dropped and reported; a v9 doc round-trips byte-identical and is never migrated. ──
 {
-  const seed = inDomainState();
-  const R = U.hydrate(U.serialize({ ...seed, geometry: { treatment: "comfortable", baseHeight: 24, rampContrast: 0.5,
-    modes: [{ id: "gm-rc", name: "1540", baseHeight: 28, minWidth: 1540, rampContrast: 1 }, { id: "gm-rc2", name: "992", baseHeight: 26, minWidth: 992, rampContrast: 0.25 }] } }));
-  if (R.geometry.rampContrast !== 0.5) FAIL("ramp-contrast", `doc-level rampContrast 0.5 must round-trip (got ${R.geometry.rampContrast})`);
-  if ("rampContrast" in R.geometry.modes[0]) FAIL("ramp-contrast", "a mode's rampContrast of 1 (the default) must be DROPPED on persist");
-  if (R.geometry.modes[1].rampContrast !== 0.25) FAIL("ramp-contrast", `a mode's rampContrast 0.25 must round-trip (got ${R.geometry.modes[1].rampContrast})`);
-  const N = U.hydrate(U.serialize({ ...seed, geometry: { treatment: "comfortable", baseHeight: 28 } }));
-  if ("rampContrast" in N.geometry) FAIL("ramp-contrast", "absent rampContrast must stay absent (the identity gate)");
-  const X = U.hydrate(U.serialize({ ...seed, geometry: { treatment: "comfortable", baseHeight: 28, rampContrast: "nope" } }));
-  if ("rampContrast" in X.geometry) FAIL("ramp-contrast", "a non-numeric rampContrast must drop");
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    const dk = (h) => h[U.DROPPED_KEYS].map((d) => `${d.facet}:${d.key}`);
+    const geoOf = (geometry, extra = {}) => U.hydrate({ schemaVersion: 8, palettes: [], ...extra, geometry });
+    // every treatment at its own height.
+    const byTreatment = { comfortable: "product,sm,default,4", compact: "product,sm,sharp,4", spacious: "product,md,round,8", touch: "product,lg,default,8", pill: "product,sm,pill,4" };
+    for (const [t, want] of Object.entries(byTreatment)) {
+      const g = geoOf({ treatment: t }).geometry;
+      if ([g.tier, g.scale, g.radius, g.spaceBase].join() !== want || Object.keys(g).join() !== "tier,scale,radius,spaceBase") FAIL("geometry-migrate", `treatment ${t} -> ${JSON.stringify(g)}, want ${want}`);
+    }
+    // baseHeight wins over the treatment height, read through the pre-v9 clamp (20..48); 30 and 34 tie
+    // inside product (md wins), 36 ties product-lg with content-sm (product wins), 42 ties three ways.
+    const byHeight = [[10, "micro,lg"], [22, "micro,lg"], [24, "product,sm"], [30, "product,md"], [34, "product,md"], [36, "product,lg"], [42, "product,lg"], [44, "content,md"], [100, "content,md"]];
+    for (const [h, want] of byHeight) {
+      const g = geoOf({ treatment: "spacious", baseHeight: h }).geometry;
+      if (`${g.tier},${g.scale}` !== want || g.spaceBase !== 8) FAIL("geometry-migrate", `baseHeight ${h} -> ${g.tier},${g.scale} (spaceBase ${g.spaceBase}), want ${want} (spaceBase 8)`);
+    }
+    // the full v8 fixture: modes map within the migrated tier, every retired key is dropped and reported,
+    // and the UI-control/UI-widget type overrides on steps other than MD go with them.
+    const v8 = geoOf({ treatment: "compact", baseHeight: 46, ramp: "linear4", rampContrast: 0.5, tokenOverrides: { "MD|base": 30, "2XL|gm-a": 72 },
+      modes: [{ id: "gm-a", name: "Mobile", minWidth: 476, baseHeight: 40, rampContrast: 0.25 }, { id: "gm-b", name: "Wide", baseHeight: 60 }] },
+      { type: { treatment: "product", bodyBase: 16, tokenOverrides: { "UI-control|SM|base": 13, "UI-control|MD|base": 15, "UI-widget|LG|gm-a": 12, "Body|SM|base": 14 } } });
+    const wantGeo = { tier: "content", scale: "md", radius: "sharp", spaceBase: 4, modes: [{ id: "gm-a", name: "Mobile", scale: "sm", minWidth: 476 }, { id: "gm-b", name: "Wide", scale: "md" }] };
+    if (JSON.stringify(v8.geometry) !== JSON.stringify(wantGeo)) FAIL("geometry-migrate", `v8 fixture geometry ${JSON.stringify(v8.geometry)}, want ${JSON.stringify(wantGeo)}`);
+    if (!deepEq(v8.type.tokenOverrides, { "UI-control|MD|base": 15, "Body|SM|base": 14 })) FAIL("geometry-migrate", `UI-control/UI-widget overrides off MD must drop, others stay (got ${JSON.stringify(v8.type.tokenOverrides)})`);
+    const got = dk(v8);
+    for (const want of ["geometry:treatment", "geometry:baseHeight", "geometry:ramp", "geometry:rampContrast", "geometry.tokenOverrides:MD|base", "geometry.tokenOverrides:2XL|gm-a", "geometry.modes:gm-a.baseHeight", "geometry.modes:gm-a.rampContrast", "geometry.modes:gm-b.baseHeight", "type.tokenOverrides:UI-control|SM|base", "type.tokenOverrides:UI-widget|LG|gm-a"])
+      if (!got.includes(want)) FAIL("geometry-migrate", `DROPPED_KEYS must name ${want} (got ${JSON.stringify(got)})`);
+    if (got.length !== 11) FAIL("geometry-migrate", `the v8 fixture reports exactly its 11 removals, got ${got.length}: ${JSON.stringify(got)}`);
+    // the migration runs once: the migrated doc re-serializes at v9 and hydrates identically.
+    const again = U.hydrate(U.serialize(v8));
+    if (!deepEq(again, v8) || again[U.DROPPED_KEYS].length) FAIL("geometry-migrate", "re-hydrating a migrated doc must be the identity and report nothing");
+    // a pre-v9 doc without treatment or baseHeight keeps its axes (a curated preset carries no schemaVersion).
+    const kept = U.hydrate({ palettes: [], geometry: { tier: "content", scale: "lg", radius: "pill", spaceBase: 8 } });
+    if (JSON.stringify(kept.geometry) !== JSON.stringify({ tier: "content", scale: "lg", radius: "pill", spaceBase: 8 }) || kept[U.DROPPED_KEYS].length) FAIL("geometry-migrate", `a pre-v9 doc in the v9 shape must hydrate unchanged (got ${JSON.stringify(kept.geometry)})`);
+    // a v9 doc round-trips byte-identical, every optional field present.
+    const v9 = U.serialize({ ...inDomainState(), geometry: { tier: "micro", scale: "lg", radius: "pill", spaceBase: 6, modes: [{ id: "gm-c", name: "Mobile", scale: "sm", minWidth: 476 }, { id: "gm-d", name: "Wide", scale: "lg" }], baseName: "Desktop" } });
+    if (v9.schemaVersion !== 9 || JSON.stringify(U.hydrate(v9).geometry) !== JSON.stringify(v9.geometry)) FAIL("geometry-migrate", `a v9 geometry must round-trip byte-identical (got ${JSON.stringify(U.hydrate(v9).geometry)})`);
+    // a v9 snapshot is never migrated: its stray legacy keys are reported, never read.
+    const stray = U.hydrate({ schemaVersion: 9, palettes: [], geometry: { treatment: "touch", baseHeight: 36, tier: "content" } });
+    if (stray.geometry.tier !== "content" || stray.geometry.scale !== "md" || stray.geometry.spaceBase !== 4) FAIL("geometry-migrate", `a v9 snapshot must not be migrated (got ${JSON.stringify(stray.geometry)})`);
+    if (!["geometry:treatment", "geometry:baseHeight"].every((k) => dk(stray).includes(k))) FAIL("geometry-migrate", `stray legacy keys on a v9 snapshot must be reported (got ${JSON.stringify(dk(stray))})`);
+  } finally {
+    console.warn = warn;
+  }
 }
 
 // ── huespace-default (OKLCH-native flip): a doc PERSISTED with hueSpace:"cam16" round-trips as cam16
@@ -526,9 +557,6 @@ if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs ac
   if (!eqSet(U.TYPE_TREATMENTS, engineTypeIds))
     FAIL("allowlist-parity", `persist.js TYPE_TREATMENTS ${JSON.stringify(sorted(U.TYPE_TREATMENTS))} != type.mjs TYPE_TREATMENTS ids ${JSON.stringify(sorted(engineTypeIds))}`);
 
-  const engineGeomIds = Ge.GEOMETRY_TREATMENTS.map((t) => t.id);
-  if (!eqSet(U.GEOMETRY_TREATMENTS, engineGeomIds))
-    FAIL("allowlist-parity", `persist.js GEOMETRY_TREATMENTS ${JSON.stringify(sorted(U.GEOMETRY_TREATMENTS))} != geometry.mjs GEOMETRY_TREATMENTS ids ${JSON.stringify(sorted(engineGeomIds))}`);
 
   // the voice set: every treatment's `categories` carries the same 15 keys (asserted in test/engine/
   // type.mjs), so any one treatment's categories is the canonical voice list.
@@ -536,38 +564,35 @@ if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs ac
   if (!eqSet(U.VOICES, engineVoices))
     FAIL("allowlist-parity", `persist.js VOICES ${JSON.stringify(sorted(U.VOICES))} != type.mjs voice set ${JSON.stringify(sorted(engineVoices))}`);
 
-  // GEOMETRY_SIZES (TKT-0455, extended TKT-0483/issue #483), the leading segment of a geom
-  // tokenOverrides key; must track the UNION of geometry.mjs's SIZE_KEYS (the default ramp's six) and
-  // LADDER_SIZE_KEYS (the linear ladder's seven, "2XS" included) the same way VOICES tracks type.mjs's
-  // voice set, a size the ladder can expose but SIZE_KEYS alone doesn't carry must still round-trip.
-  const engineAllSizeKeys = [...new Set([...Ge.SIZE_KEYS, ...Ge.LADDER_SIZE_KEYS])];
-  if (!eqSet(U.GEOMETRY_SIZES, engineAllSizeKeys))
-    FAIL("allowlist-parity", `persist.js GEOMETRY_SIZES ${JSON.stringify(sorted(U.GEOMETRY_SIZES))} != geometry.mjs SIZE_KEYS ∪ LADDER_SIZE_KEYS ${JSON.stringify(sorted(engineAllSizeKeys))}`);
-
-  // GEOMETRY_RAMPS (issue #483), the opt-in ramp ids; must track geometry.mjs's own GEOMETRY_RAMPS.
-  if (!eqSet(U.GEOMETRY_RAMPS, Ge.GEOMETRY_RAMPS))
-    FAIL("allowlist-parity", `persist.js GEOMETRY_RAMPS ${JSON.stringify(sorted(U.GEOMETRY_RAMPS))} != geometry.mjs GEOMETRY_RAMPS ${JSON.stringify(sorted(Ge.GEOMETRY_RAMPS))}`);
+  // the geometry axes (T-0017): persist.js's hand-tracked lists must equal the engine's TIERS, SCALES,
+  // SIZES and RADIUS_MODES ids, IN ORDER (the ladder's own cell order reads them).
+  for (const [name, mine, engine] of [["GEOMETRY_TIERS", U.GEOMETRY_TIERS, Object.keys(Ge.TIERS)], ["GEOMETRY_SCALES", U.GEOMETRY_SCALES, Ge.SCALES], ["GEOMETRY_SIZES", U.GEOMETRY_SIZES, Object.keys(Ge.SIZES)], ["GEOMETRY_RADIUS", U.GEOMETRY_RADIUS, Object.keys(Ge.RADIUS_MODES)]])
+    if (JSON.stringify(mine) !== JSON.stringify(engine)) FAIL("allowlist-parity", `persist.js ${name} ${JSON.stringify(mine)} != geometry.mjs ${JSON.stringify(engine)}`);
 }
 
-// ── geometry ramp (the opt-in linear-ladder prototype, issue #483): a known id persists; absent stays
-// absent (the default ramp round-trips identical, the identity gate); an unknown id drops + reports ──
+// ── geometry-clamp (T-0017): each axis to a known id (an unknown one is reported and falls back to the
+// default), spaceBase to an integer 1..16 (absent or non-numeric reads 4), a mode's missing or unknown
+// scale reads md; absent modes/baseName stay absent (the identity gate). ──
 {
-  const seed = inDomainState();
-  const R = U.hydrate(U.serialize({ ...seed, geometry: { treatment: "comfortable", baseHeight: 28, ramp: "linear4" } }));
-  if (R.geometry.ramp !== "linear4") FAIL("ramp", `geometry.ramp "linear4" must round-trip (got ${JSON.stringify(R.geometry.ramp)})`);
-  const N = U.hydrate(U.serialize({ ...seed, geometry: { treatment: "comfortable", baseHeight: 28 } }));
-  if ("ramp" in N.geometry) FAIL("ramp", "absent geometry.ramp must stay absent (the identity gate)");
-  const X = U.hydrate(U.serialize({ ...seed, geometry: { treatment: "comfortable", baseHeight: 28, ramp: "bogus-ramp" } }));
-  if ("ramp" in X.geometry) FAIL("ramp", "an unknown geometry.ramp id must drop");
-  if (!X[U.DROPPED_KEYS].some((d) => d.facet === "geometry.ramp" && d.key === "bogus-ramp")) FAIL("ramp", `an unknown geometry.ramp id must be reported in DROPPED_KEYS (got ${JSON.stringify(X[U.DROPPED_KEYS])})`);
-
-  // the ladder's numbered steps ("0".."9", issue #483's final mapping ruling) are valid tokenOverrides
-  // leading segments even though none of them exist on the default ramp, GEOMETRY_SIZES must accept
-  // a purely-numeric segment (clampTokenOverrides only ever does a plain string `.includes()` check,
-  // so this is really pinning the allowlist content, not new parsing logic).
-  const S2 = U.hydrate(U.serialize({ ...seed, geometry: { treatment: "comfortable", baseHeight: 28, ramp: "linear4", tokenOverrides: { "0|base": 22, "3|base": 34 } } }));
-  if (!S2.geometry.tokenOverrides || S2.geometry.tokenOverrides["0|base"] !== 22) FAIL("ramp", `a "0|base" tokenOverrides key must round-trip when the ladder is active (got ${JSON.stringify(S2.geometry.tokenOverrides)})`);
-  if (S2.geometry.tokenOverrides["3|base"] !== 34) FAIL("ramp", "a sibling 3|base override must survive alongside the 0 one");
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    const seed = inDomainState();
+    const geo = (geometry) => U.hydrate(U.serialize({ ...seed, geometry }));
+    const d = geo({});
+    if (JSON.stringify(d.geometry) !== JSON.stringify(Ge.DEFAULT_GEOMETRY)) FAIL("geometry-clamp", `an empty geometry must hydrate to DEFAULT_GEOMETRY (got ${JSON.stringify(d.geometry)})`);
+    if (d[U.DROPPED_KEYS].length) FAIL("geometry-clamp", "absent axes must default silently");
+    const bad = geo({ tier: "giant", scale: "xl", radius: "blob", spaceBase: 99 });
+    if ([bad.geometry.tier, bad.geometry.scale, bad.geometry.radius, bad.geometry.spaceBase].join() !== "product,md,round,16") FAIL("geometry-clamp", `unknown axes fall back and spaceBase clamps to 16 (got ${JSON.stringify(bad.geometry)})`);
+    const facets = bad[U.DROPPED_KEYS].map((x) => `${x.facet}:${x.key}`);
+    for (const want of ["geometry.tier:giant", "geometry.scale:xl", "geometry.radius:blob"]) if (!facets.includes(want)) FAIL("geometry-clamp", `an unknown axis must be reported as ${want} (got ${JSON.stringify(facets)})`);
+    if (geo({ spaceBase: 0.2 }).geometry.spaceBase !== 1 || geo({ spaceBase: 5.6 }).geometry.spaceBase !== 6 || geo({ spaceBase: "nope" }).geometry.spaceBase !== 4) FAIL("geometry-clamp", "spaceBase clamps to an integer 1..16, a non-number reads 4");
+    const m = geo({ modes: [{ id: "gm-x", name: "X", scale: "huge" }, { id: "gm-y" }, { name: "no id" }] }).geometry.modes;
+    if (JSON.stringify(m) !== JSON.stringify([{ id: "gm-x", name: "X", scale: "md" }, { id: "gm-y", name: "Mode", scale: "md" }])) FAIL("geometry-clamp", `a mode's unknown or missing scale reads md, an id-less mode drops (got ${JSON.stringify(m)})`);
+    if ("modes" in d.geometry || "baseName" in d.geometry) FAIL("geometry-clamp", "absent modes/baseName must stay absent (the identity gate)");
+  } finally {
+    console.warn = warn;
+  }
 }
 
 // ── dropped-keys (TKT-0455): a stored voice/treatment/tokenOverrides key unknown to the current
@@ -590,8 +615,8 @@ if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs ac
     if (withBogusTreatment.type.treatment !== "product") FAIL("dropped-keys", "an unknown type treatment must still fall back to its default");
     if (!withBogusTreatment[U.DROPPED_KEYS].some((d) => d.facet === "type.treatment" && d.key === "bogus-treatment")) FAIL("dropped-keys", `an unknown type treatment must be reported in DROPPED_KEYS (got ${JSON.stringify(withBogusTreatment[U.DROPPED_KEYS])})`);
 
-    const withBogusGeomTreatment = U.hydrate(U.serialize({ ...seed, geometry: { treatment: "bogus-geom", baseHeight: 28 } }));
-    if (!withBogusGeomTreatment[U.DROPPED_KEYS].some((d) => d.facet === "geometry.treatment" && d.key === "bogus-geom")) FAIL("dropped-keys", `an unknown geometry treatment must be reported in DROPPED_KEYS (got ${JSON.stringify(withBogusGeomTreatment[U.DROPPED_KEYS])})`);
+    const withBogusGeomTier = U.hydrate(U.serialize({ ...seed, geometry: { tier: "bogus-geom" } }));
+    if (!withBogusGeomTier[U.DROPPED_KEYS].some((d) => d.facet === "geometry.tier" && d.key === "bogus-geom")) FAIL("dropped-keys", `an unknown geometry tier must be reported in DROPPED_KEYS (got ${JSON.stringify(withBogusGeomTier[U.DROPPED_KEYS])})`);
 
     // an unknown voice/size segment on a tokenOverrides key is DROPPED and reported, not silently
     // surviving forever as an inert orphan (persist.js:425-436's documented §B5 gap, now closed).
@@ -600,9 +625,10 @@ if (!(oL === oD && oD === oA)) FAIL("theme-invariant", "export output differs ac
     if (withBogusTov.type.tokenOverrides["Body|MD|base"] !== 40) FAIL("dropped-keys", "a valid sibling tokenOverrides key must survive dropping the unknown one");
     if (!withBogusTov[U.DROPPED_KEYS].some((d) => d.facet === "type.tokenOverrides" && d.key === "Bogus|MD|base")) FAIL("dropped-keys", `an unknown tokenOverrides voice segment must be reported (got ${JSON.stringify(withBogusTov[U.DROPPED_KEYS])})`);
 
-    const withBogusGeomTov = U.hydrate(U.serialize({ ...seed, geometry: { treatment: "comfortable", baseHeight: 28, tokenOverrides: { "XXL|base": 40, "MD|base": 30 } } }));
-    if ("XXL|base" in (withBogusGeomTov.geometry.tokenOverrides || {})) FAIL("dropped-keys", "a geom tokenOverrides key with an unknown leading size segment must drop");
-    if (!withBogusGeomTov[U.DROPPED_KEYS].some((d) => d.facet === "geometry.tokenOverrides" && d.key === "XXL|base")) FAIL("dropped-keys", `an unknown geom tokenOverrides size segment must be reported (got ${JSON.stringify(withBogusGeomTov[U.DROPPED_KEYS])})`);
+    // a geometry tokenOverrides map on a v9+ snapshot is a stray (retired at v9): never copied, reported.
+    const withStrayGeomTov = U.hydrate(U.serialize({ ...seed, geometry: { tier: "product", tokenOverrides: { "MD|base": 30 } } }));
+    if ("tokenOverrides" in withStrayGeomTov.geometry) FAIL("dropped-keys", "a stray geometry tokenOverrides on a v9 snapshot must not survive");
+    if (!withStrayGeomTov[U.DROPPED_KEYS].some((d) => d.facet === "geometry" && d.key === "tokenOverrides")) FAIL("dropped-keys", `a stray geometry tokenOverrides must be reported (got ${JSON.stringify(withStrayGeomTov[U.DROPPED_KEYS])})`);
 
     // a stray keyIntensity on a doc that already claims schemaVersion 3+ predates no rename (REQ-011),
     // it's a leftover, not a legacy doc, so it must be reported loudly rather than silently vanish.
@@ -797,10 +823,10 @@ import { gateReport } from "../gate-report.mjs";
 // The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
 // call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
 // below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row.
-// "export", "type-fonts", "type-voices", "icons", "voice-style" and "ramp-contrast" were live
-// holes (#699): all 6 had real call sites above but were never declared, so a FAIL under any of
-// them used to exit 1 with no named row.
-const DECLARED = ["roundtrip", "clamp", "field-default", "token-overrides", "huespace-default", "schema-rename", "theme-invariant", "allowlist-parity", "ramp", "dropped-keys", "export", "type-fonts", "type-voices", "icons", "voice-style", "ramp-contrast", "report-static", "stored-anchors", "gallery-reach"];
+// "export", "type-fonts", "type-voices", "icons" and "voice-style" were live holes (#699): each had
+// real call sites above but was never declared, so a FAIL under any of them used to exit 1 with no
+// named row. "geometry-migrate" and "geometry-clamp" replaced "ramp-contrast" and "ramp" (T-0017).
+const DECLARED = ["roundtrip", "clamp", "field-default", "token-overrides", "huespace-default", "schema-rename", "theme-invariant", "allowlist-parity", "geometry-clamp", "dropped-keys", "export", "type-fonts", "type-voices", "icons", "voice-style", "geometry-migrate", "report-static", "stored-anchors", "gallery-reach"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }
 console.log("\nPASS: ui-persistence clears all [gate] predicates");
