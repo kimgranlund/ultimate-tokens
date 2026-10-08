@@ -885,7 +885,9 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
   border-radius: var(--r); padding: 2px; flex: none;
 }
 .segmented button {
-  flex: 1; border: none; border-radius: var(--r-sm); padding: 6px 8px;
+  flex: 1; border: none; border-radius: var(--sh-radius-inset);
+  min-block-size: calc(var(--sh-control-height) - 6px); padding-block: 0;
+  padding-inline: var(--sh-control-inset); font-size: var(--sh-control-text);
   color: var(--ink-dim); font-weight: 550; justify-content: center;
 }
 .segmented button.on {
@@ -898,8 +900,8 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 .global-seg-row { display: flex; gap: 12px; }
 .global-seg-row .field { flex: 1; min-width: 0; }
 .global-seg-row .segmented { width: 100%; }
-.segmented.seg-sm button { padding: 5px 6px; font-size: 12px; }
-.canvas-seg button { flex: 0 0 auto; padding: 5px 14px; }
+.segmented.seg-sm button { min-block-size: var(--sh-chip-height); padding-block: 0; padding-inline: var(--sh-chip-inset); font-size: var(--sh-chip-text); }
+.canvas-seg button { flex: 0 0 auto; padding-block: 0; padding-inline: calc(var(--sh-control-inset) * 2); }
 .seg-body { flex: 1; overflow: auto; padding: 14px; }
 /* live component preview, pinned below the panel on every tab, painted from the
    selected palette's semantic roles (surface / onSurface / onSurfaceVariant / primary). */
@@ -1357,7 +1359,7 @@ a.account-manage:hover { text-decoration: underline; }
 /* ── Typography SECTION (the editor section: switcher · specimen canvas · analysis · inspector) ── */
 /* editor-section switcher, the centered « Color · Typography · Geometry » tablist in the app-header */
 .app-header .section-seg { margin: 0; }
-.app-header .section-seg button { flex: 0 0 auto; padding: 5px 16px; }
+.app-header .section-seg button { flex: 0 0 auto; padding-block: 0; padding-inline: calc(var(--sh-control-inset) * 2); }
 
 /* Typography specimen, the full 21-step scale as a pannable canvas scene (parallel to .ramp-stack).
    Lives inside .canvas-scene, so it pans/zooms with the viewport. Colors resolve via --ink* against the
