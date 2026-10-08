@@ -1,4 +1,4 @@
-<!-- sdlc-lite:managed:start v1 sha256:8327a464d4b5 -->
+<!-- sdlc-lite:managed:start v1 sha256:94b140024051 -->
 # Work records
 
 This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and `config`. `tickets.py roadmap` (also run by `new` and `close`) generates this block: do not edit inside it; change a ticket's `handoff.md` front matter and rerun `roadmap`. `roadmap.md` lists every ticket in dependency order. Closed `.NNNN-*` folders are history: open one only when asked.
@@ -10,7 +10,7 @@ This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and
 ## Stages
 
 - proposed: 0
-- ready: 9
+- ready: 10
   - T-0021 Compute layers: rebase U1-U3 onto main, then U4 pins and U5 ramp@2 on schema v9 (#788) (gh-788)
   - T-0022 Describe eval runner: parse the leading JSON object of a string-typed families (Haiku 5.5 appends trailing text) (gh-811b)
   - T-0023 Retire docs/assets/geometry-tokens.json, the frozen six-size snapshot (T-0017 follow-up) (geometry-tokens-snapshot)
@@ -20,6 +20,7 @@ This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and
   - T-0027 Compound insets and radius composition for container components (segmented, listbox), square ghost icon buttons, unstyled palette name input (geometry-compound-insets)
   - T-0028 Settings overlay: the Mapping nav item takes focus whenever any page is clicked (settings-nav-focus)
   - T-0029 Rebuild the app's analysis charts as native DOM (HTML/CSS marks) following /Users/kimgranlund/Projects/nonoun/native-dom-charts (native-dom-charts)
+  - T-0030 Chroma-envelope Gate A: record the OKHSL basis so rule 2 covers every uncapped stop (#807 follow-up) (gate-a-basis)
 - blocked: 0
 - done: 19
 - dropped: 0

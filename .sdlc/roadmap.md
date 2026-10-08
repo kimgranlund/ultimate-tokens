@@ -33,3 +33,4 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 | T-0027 | [geometry-compound-insets](geometry-compound-insets/handoff.md) | Compound insets and radius composition for container components (segmented, listbox), square ghost icon buttons, unstyled palette name input | feature | L2 | P2 | none | 🔵 ready |
 | T-0028 | [settings-nav-focus](settings-nav-focus/handoff.md) | Settings overlay: the Mapping nav item takes focus whenever any page is clicked | bug | L1 | P2 | none | 🔵 ready |
 | T-0029 | [native-dom-charts](native-dom-charts/handoff.md) | Rebuild the app's analysis charts as native DOM (HTML/CSS marks) following /Users/kimgranlund/Projects/nonoun/native-dom-charts | feature | L2 | P2 | none | 🔵 ready |
+| T-0030 | [gate-a-basis](gate-a-basis/handoff.md) | Chroma-envelope Gate A: record the OKHSL basis so rule 2 covers every uncapped stop (#807 follow-up) | chore | L2 | P2 | none | 🔵 ready |
