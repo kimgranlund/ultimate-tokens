@@ -270,15 +270,15 @@ try {
   // stays out of it. Expected values are the engine's cells at that radius mode.
   const geomCases = Object.keys(TIERS).flatMap((tier) => SCALES.flatMap((scale) => Object.keys(SIZES).flatMap((size) => Object.keys(RADIUS_MODES).map((radius) => {
     const c = geomScale({ radius }).cells[`${tier}-${scale}-${size}`];
-    return { tier, scale, size, radius, height: c.height, radiusControl: c.radiusControl };
+    return { tier, scale, size, radius, height: c.height, radiusControl: c.radiusControl, partHeight: c.partHeight, partInset: c.partInset };
   }))));
-  const geomDoc = `<!doctype html><style>${geomTokensCSS(geomScale({}))}</style>` + geomCases.map((c, i) => `<div data-tier="${c.tier}" data-size="lg" data-radius="${c.radius}"><div data-scale="${c.scale}"><div data-size="${c.size}"><i id="g${i}" style="display:block;width:100px;height:var(--control-height);border-top-left-radius:var(--radius-control)"></i></div></div></div>`).join("");
-  const geomGot = await evalJS(`(async()=>{const f=document.createElement("iframe");f.style.cssText="position:fixed;left:0;top:0;width:200px;height:200px;visibility:hidden";await new Promise((r)=>{f.onload=r;f.srcdoc=${JSON.stringify(geomDoc)};document.body.appendChild(f);});const d=f.contentDocument,w=f.contentWindow;const out=[];for(let i=0;i<${geomCases.length};i++){const cs=w.getComputedStyle(d.getElementById("g"+i));out.push([parseFloat(cs.height),parseFloat(cs.borderTopLeftRadius)]);}f.remove();return out;})()`, true);
-  const geomBad = geomCases.map((c, i) => ({ c, got: (geomGot || [])[i] || [NaN, NaN] }))
-    .filter(({ c, got }) => !(Math.abs(got[0] - c.height) < 0.01 && Math.abs(got[1] - c.radiusControl) < 0.01))
-    .map(({ c, got }) => `${c.tier}-${c.scale}-${c.size}/${c.radius}: --control-height ${got[0]} (want ${c.height}), --radius-control ${got[1]} (want ${c.radiusControl})`);
+  const geomDoc = `<!doctype html><style>${geomTokensCSS(geomScale({}))}</style>` + geomCases.map((c, i) => `<div data-tier="${c.tier}" data-size="lg" data-radius="${c.radius}"><div data-scale="${c.scale}"><div data-size="${c.size}"><i id="g${i}" style="display:block;width:100px;height:var(--control-height);border-top-left-radius:var(--radius-control);min-height:var(--control-part-height);padding-left:var(--control-part-inset)"></i></div></div></div>`).join("");
+  const geomGot = await evalJS(`(async()=>{const f=document.createElement("iframe");f.style.cssText="position:fixed;left:0;top:0;width:200px;height:200px;visibility:hidden";await new Promise((r)=>{f.onload=r;f.srcdoc=${JSON.stringify(geomDoc)};document.body.appendChild(f);});const d=f.contentDocument,w=f.contentWindow;const out=[];for(let i=0;i<${geomCases.length};i++){const cs=w.getComputedStyle(d.getElementById("g"+i));out.push([parseFloat(cs.height),parseFloat(cs.borderTopLeftRadius),parseFloat(cs.minHeight),parseFloat(cs.paddingLeft)]);}f.remove();return out;})()`, true);
+  const geomBad = geomCases.map((c, i) => ({ c, got: (geomGot || [])[i] || [NaN, NaN, NaN, NaN] }))
+    .filter(({ c, got }) => !(Math.abs(got[0] - c.height) < 0.01 && Math.abs(got[1] - c.radiusControl) < 0.01 && Math.abs(got[2] - c.partHeight) < 0.01 && Math.abs(got[3] - c.partInset) < 0.01))
+    .map(({ c, got }) => `${c.tier}-${c.scale}-${c.size}/${c.radius}: --control-height ${got[0]} (want ${c.height}), --radius-control ${got[1]} (want ${c.radiusControl}), --control-part-height ${got[2]} (want ${c.partHeight}), --control-part-inset ${got[3]} (want ${c.partInset})`);
   geomBad.slice(0, 8).forEach((m) => console.log("    " + m));
-  ok(geomCases.length === 108 && Array.isArray(geomGot) && geomGot.length === 108 && geomBad.length === 0, `geometry.css resolver: all 108 nested cases (27 cells x 4 radius modes) resolve --control-height and --radius-control to the engine's cell values${geomBad.length ? ` (${geomBad.length} off)` : ""}`);
+  ok(geomCases.length === 108 && Array.isArray(geomGot) && geomGot.length === 108 && geomBad.length === 0, `geometry.css resolver: all 108 nested cases (27 cells x 4 radius modes) resolve --control-height, --radius-control, --control-part-height and --control-part-inset to the engine's cell values${geomBad.length ? ` (${geomBad.length} off)` : ""}`);
   await evalJS(`${el}.setSection("color")`); await sleep(120);
 
   const shot = await send("Page.captureScreenshot", { format: "png" });

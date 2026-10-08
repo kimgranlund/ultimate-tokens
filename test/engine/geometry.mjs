@@ -111,18 +111,37 @@ const base = G.geomScale({});
   ok(g, G.orderedSizeNames(base).length === 27 && J(G.orderedSizeNames(undefined)) === "[]", "orderedSizeNames: 27 names, [] for no scale");
 }
 
+// ── compound-law: the part fields come from Maison's rows (part = height - inset, pad = inset / 2) ──
+{
+  const g = "compound-law";
+  for (const r of FIX.rows) {
+    const c = base.cells[nameOf(r)];
+    ok(g, c.partHeight === r.height - r.inset, `${nameOf(r)} partHeight = ${r.height} - ${r.inset} (got ${c.partHeight})`);
+    ok(g, c.partInset === r.inset / 2, `${nameOf(r)} partInset = ${r.inset} / 2 (got ${c.partInset})`);
+  }
+  // the chip snaps to a ladder row and fits under the part, except on the three micro cells where no
+  // ladder row fits under height - inset (the chip falls back to the 12px row there)
+  const CHIP_OVER_PART = ["micro-sm-sm", "micro-sm-md", "micro-md-sm"];
+  for (const [n, c] of Object.entries(base.cells)) {
+    if (CHIP_OVER_PART.includes(n)) ok(g, c.chipHeight === 12 && c.chipHeight > c.partHeight, `${n} chip falls back to the 12px row, over its ${c.partHeight}px part (got ${c.chipHeight})`);
+    else ok(g, c.chipHeight <= c.partHeight, `${n} chipHeight ${c.chipHeight} <= partHeight ${c.partHeight}`);
+  }
+  ok(g, Object.keys(base.cells).length - CHIP_OVER_PART.length === 24, "the chip fits under the part on 24 cells");
+}
+
 // ── emitters: CSS primitives + resolver (and the prefix contract), DTCG, Figma, Figma modes ──
 {
   const g = "emitters";
   const css = G.geomTokensCSS(base);
   const PRIM = /--size-(content|product|micro)-(sm|md|lg)-(sm|md|lg)-[a-z-]+: /g;
-  ok(g, (css.match(PRIM) || []).length === 27 * 14, `CSS declares 27 × 14 cell primitives (got ${(css.match(PRIM) || []).length})`);
+  ok(g, (css.match(PRIM) || []).length === 27 * 16, `CSS declares 27 × 16 cell primitives (got ${(css.match(PRIM) || []).length})`);
   ok(g, css.includes("--size-product-md-md-height: 32px;") && css.includes("--size-content-lg-lg-height: 72px;") && css.includes("--size-product-md-md-icon-ratio: 0.5;") && css.includes("--size-product-md-md-radius-control: 14px;"), "CSS primitives carry the cell values (icon-ratio unitless)");
   for (const sel of ['[data-tier="content"]', '[data-tier="product"]', '[data-tier="micro"]', '[data-scale="sm"]', '[data-scale="md"]', '[data-scale="lg"]', '[data-size="sm"]', '[data-size="md"]', '[data-size="lg"]', '[data-radius="default"]', '[data-radius="round"]', '[data-radius="sharp"]', '[data-radius="pill"]', ":where(:root)", ":where(*, :host)"])
     ok(g, css.includes(sel), `CSS resolver carries ${sel}`);
-  for (const role of ["--control-height:", "--control-inset:", "--control-text:", "--control-icon:", "--control-caption-text:", "--control-icon-ratio:", "--chip-height:", "--chip-inset:", "--chip-text:", "--radius-control:", "--radius-mark:", "--radius-inset:", "--radius-card:"])
+  for (const role of ["--control-height:", "--control-inset:", "--control-text:", "--control-icon:", "--control-caption-text:", "--control-icon-ratio:", "--chip-height:", "--chip-inset:", "--chip-text:", "--radius-control:", "--radius-mark:", "--radius-inset:", "--radius-card:", "--control-part-height:", "--control-part-inset:"])
     ok(g, css.includes(role), `CSS resolver defines ${role}`);
   ok(g, css.includes("--radius-inset: max(0px, calc(var(--radius-control) - var(--control-inset) / 2));") && css.includes("--radius-mark: calc(var(--radius-control) * var(--control-icon-ratio));"), "the radius roles follow Maison's formulas");
+  ok(g, css.includes("--control-part-height: calc(var(--control-height) - var(--control-inset));") && css.includes("--control-part-inset: calc(var(--control-inset) / 2);"), "the compound part roles derive from the resolved control height and inset");
   ok(g, !/caret|icon-gap|padding-wide|\.control-|--density|--radius-default|--g-|--r-|--m-/.test(css), "CSS carries no retired field, class, density, radius-default, or Maison-namespace token");
   // :where(:root) is the KIT default context
   const rootBlock = (s) => s.slice(s.indexOf(":where(:root) {"), s.indexOf("}", s.indexOf(":where(:root) {")));
@@ -163,7 +182,7 @@ const base = G.geomScale({});
   ok(g, Object.keys(d.size).length === 27 && J(Object.keys(d.size)) === J(FIX.rows.map(nameOf)), "DTCG size group is keyed by the 27 cells in order");
   ok(g, d.size["content-lg-lg"].height.$value === "72px" && d.size["product-md-md"]["chip-height"].$value === "24px" && d.size["product-md-md"]["radius-card"].$type === "dimension", "DTCG cell fields are dimensions");
   ok(g, d.size["product-md-md"]["icon-ratio"].$type === "number" && d.size["product-md-md"]["icon-ratio"].$value === 0.5, "DTCG icon-ratio is a unitless number");
-  ok(g, Object.values(d.size).every((c) => Object.keys(c).length === 14), "every DTCG cell carries the 14 fields");
+  ok(g, Object.values(d.size).every((c) => Object.keys(c).length === 16), "every DTCG cell carries the 16 fields");
   ok(g, G.geomTokensDTCG(base, { unit: "rem" }).size["product-md-md"].height.$value === "2rem", "DTCG carries the unit");
   // Figma (flat)
   const f = G.geomTokensFigma(base);
@@ -174,7 +193,7 @@ const base = G.geomScale({});
   const vars = col.variables;
   const keys = Object.keys(vars);
   ok(g, J(col.modes) === J(["Base", "Mobile", "Desktop Xl"]), `modes [Base, Mobile, Desktop Xl] (got ${J(col.modes)})`);
-  ok(g, keys.filter((k) => k.startsWith("size/")).length === 378 && keys.filter((k) => k.startsWith("control/")).length === 126, "378 size/ + 126 control/ variables");
+  ok(g, keys.filter((k) => k.startsWith("size/")).length === 432 && keys.filter((k) => k.startsWith("control/")).length === 144, "432 size/ + 144 control/ variables");
   ok(g, keys.filter((k) => k.startsWith("size/")).every((k) => vars[k].type === "FLOAT" && new Set(col.modes.map((m) => vars[k].values[m])).size === 1), "size/ variables are FLOAT and mode-constant");
   const cv = vars["control/product/md/height"];
   ok(g, cv && cv.type === "ALIAS" && cv.values.Base === "size/product-md-md/height" && cv.values.Mobile === "size/product-sm-md/height" && cv.values["Desktop Xl"] === "size/product-lg-md/height", `control/product/md/height aliases each mode's scale (got ${J(cv)})`);
@@ -205,5 +224,5 @@ const base = G.geomScale({});
 }
 
 if (fails.length) { console.error(`geometry FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
-console.log("geometry PASS, the Maison ladder (27 cells vs the vendored fixture), anatomy, 108 radius cases, anchors, emitters + the prefix contract, container identity");
+console.log("geometry PASS, the Maison ladder (27 cells vs the vendored fixture), anatomy, 108 radius cases, anchors, the compound law, emitters + the prefix contract, container identity");
 process.exit(0);

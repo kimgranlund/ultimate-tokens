@@ -3001,12 +3001,12 @@ app._setActiveGeomScaleId("lg"); flushRaf();
 app.commit((d) => { delete d.geometry.modes; delete d.geometry.baseName; }); flushRaf();
 app.geomMode = "base"; app.render(); flushRaf();
 // the canvas Controls·Tokens toggle flips the canvas to the read-only cell token TABLE (a real <table>) in the
-// scrolling .is-table shell, rows = the 27 cells in orderedSizeNames order, columns = the 14 fields, sticky names.
+// scrolling .is-table shell, rows = the 27 cells in orderedSizeNames order, columns = the 16 fields, sticky names.
 app.setGeomSpecMode("tokens"); flushRaf();
 ok(!!app.querySelector(".tok-table") && !app.querySelector(".geom-spec"), "(geo-tok) the Controls·Tokens toggle renders the token table (no controls scene)");
 ok(!!app.querySelector(".is-table") && !!app.querySelector(".is-table").querySelector(".tok-table"), "(geo-tok) the token table lives in the scrolling .is-table canvas shell (no pan/zoom)");
 ok(app.querySelectorAll(".tok-row").length === GEOM_SIZES, `(geo-tok) one row per cell (${GEOM_SIZES}) (got ${app.querySelectorAll(".tok-row").length})`);
-ok(app.querySelectorAll(".tok-col").length === 14, `(geo-tok) one column per cell field (14) (got ${app.querySelectorAll(".tok-col").length})`);
+ok(app.querySelectorAll(".tok-col").length === 16, `(geo-tok) one column per cell field (16) (got ${app.querySelectorAll(".tok-col").length})`);
 ok(txtOf(app.querySelectorAll(".tok-name")[1] || {}) === "--size-content-sm-sm", `(geo-tok) the first (sticky) token name is --size-content-sm-sm (orderedSizeNames order) (got ${txtOf(app.querySelectorAll(".tok-name")[1] || {})})`);
 {
   const kitRow = walk(app, (e) => e.classList.contains("tok-row") && e.classList.contains("is-kit"));

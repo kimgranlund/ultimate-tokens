@@ -67,6 +67,6 @@ for (const f of files) {
   each(text, /\.control-([a-z0-9{}-]+)/g, (m) => err(f, m[0], "the engine emits no .control-* class (bind the --control-* roles)"));
 }
 
-if (ROLES.size !== 13) err("engine", `${ROLES.size} roles`, "expected the 13 resolver roles (control x6, chip x3, radius x4)");
+if (ROLES.size !== 15) err("engine", `${ROLES.size} roles`, "expected the 15 resolver roles (control x8, chip x3, radius x4)");
 console.log(failed ? "dimension-parity FAIL" : `dimension-parity PASS, every dimension token in ${files.length} files matches the engine (${CELLS.length} cells x ${FIELDS.size} fields, ${ROLES.size} roles)`);
 process.exit(failed ? 1 : 0);

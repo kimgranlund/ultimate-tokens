@@ -85,7 +85,7 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
 - `_schemeOverride` never declared in the constructor while its two mirrors are (02; declared at the app.js constructor since #467), declare it. Resolved by pane-context U4, which removed the override mechanism for `_columnScheme`.
 - `this.view` (route string) vs local `view` (`projectView` result) one underscore apart at app.js:292 (documented at app.js:623-625), rename the route field (e.g. `this.route`) or the locals.
 - `disconnectedCallback` teardown set asymmetric with what connectedCallback registers (`_liveRaf`, `_dragTimer`, `_toastT`, window-level drag listeners), inert for a page-lifetime singleton; either complete the inventory or comment why it's deliberately partial (01 §B6, 04 §D).
-- Stale copy in `graphGeomComposition` (geometry.js:554) contradicts its own card title, font DOES still compose from Type's UI-control voice (02 §B6).
+- Stale copy in `graphGeomComposition` (geometry.js:547) contradicts its own card title, font DOES still compose from Type's UI-control voice (02 §B6).
 - `okhslLAt` (`src/engine/tonal.js:1096`) lost its module-level `_okL` memo Map, the one true exception to "engines are pure, no module state" this review found - deleted at #738, measured not load-bearing (0.40-0.90 us per uncached call on a quiet host, median 1.54 us at load 67); the function is now plain and pure like its siblings, and the comment above it says why no memo sits there.
 
 ## Deliberately fine: do not "fix"

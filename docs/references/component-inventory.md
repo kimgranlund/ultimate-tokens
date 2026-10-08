@@ -159,12 +159,12 @@ incrementally.
 ### 3 · Segmented control
 
 - **Surface** S1. **Sites** 14 static `segmented()` calls: section switcher `app.js:1448`; inspector
-  tabs `sections/typography.js:604`, `sections/geometry.js:584` (the Color inspector lost its
+  tabs `sections/typography.js:604`, `sections/geometry.js:577` (the Color inspector lost its
   `[Palette|Global]` switch in #809: the selection picks the context); new-palette mode
   `sections/color.js:522`; canvas view `sections/color.js:799`; canvas stops `sections/color.js:814`;
   hue space `sections/color.js:2096`; on-colors `sections/color.js:2135`; breakpoint mode
-  `sections/typography.js:177`, `sections/geometry.js:168`; specimen mode `sections/typography.js:308`,
-  `sections/geometry.js:297`; Figma files `overlays/drawer.js:214`; and one settings-row call
+  `sections/typography.js:177`, `sections/geometry.js:161`; specimen mode `sections/typography.js:308`,
+  `sections/geometry.js:290`; Figma files `overlays/drawer.js:214`; and one settings-row call
   `overlays/settings.js:30` inside the settingRow helper, one live instance per settings row, called
   from 10 call sites (11-12 live rows) across `overlays/settings.js`. **Variants** as found, four stylings of one idea; today two
   base stylings plus four modifiers remain:
@@ -173,7 +173,7 @@ incrementally.
   - **Canvas view** `.canvas-seg` `[Palettes|Scrims|Mapping|Radix]`, `role=tablist` (`sections/color.js:799-809`).
   - **Canvas stops** `.canvas-seg` `role=group` (`sections/color.js:814-822`); the Typography and Geometry
     breakpoint-mode and specimen-mode segments reuse the same modifier: `sections/typography.js:177`,
-    `sections/typography.js:308`, `sections/geometry.js:168`, `sections/geometry.js:297`.
+    `sections/typography.js:308`, `sections/geometry.js:161`, `sections/geometry.js:290`.
   - **New-palette mode** `.newpal-seg` `role=group`, `sections/color.js:522`, `styles.css:1171`.
   - **Settings rows** `.settings-seg` `role=group`, one live instance per row, `overlays/settings.js:30`,
     `styles.css:1291`.
