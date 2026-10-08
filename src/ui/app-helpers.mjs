@@ -184,7 +184,7 @@ export function licenseInstanceName() {
 // so it's not a toggle). Each writes profile.flagOverrides via setProfile, handy for exercising a gate.
 export const DEV_FLAG_TOGGLES = [
   { key: "proExport", label: "Pro export formats", desc: "Force the Pro-only export formats on or off." },
-  { key: "advancedTreatments", label: "Advanced treatments", desc: "Force the advanced type/geometry treatments." },
+  { key: "advancedTreatments", label: "Advanced treatments", desc: "Force the advanced type treatments and the Geometry tier, scale and radius picks." },
   { key: "hostedMcp", label: "Hosted MCP", desc: "Force the hosted Brand-Kit MCP capability." },
 ];
 

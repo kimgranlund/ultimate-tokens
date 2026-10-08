@@ -42,7 +42,7 @@ import { TYPE_FONTS_CSS } from "./type-fonts.js";
 import { CATEGORY_INDEX, loadCategory } from "./categories/index.js";
 import { deriveNeutral, deriveRelative, RELATIONSHIPS } from "../engine/derive.mjs";
 import { typeScale, typeTokensCSS, typeTokensBreakpointCSS, typeTokensDTCG, typeTokensFigmaModes, TYPE_TREATMENTS, DEFAULT_TYPE, BUNDLED_FONTS, genericFor, siblingWeightDefaults, WEIGHT_NAMES, resolvedFontFor } from "../engine/type.mjs";
-import { geomScale, geomTokensCSS, geomTokensBreakpointCSS, geomTokensDTCG, geomTokensFigma, geomTokensFigmaModes, GEOMETRY_TREATMENTS, DEFAULT_GEOMETRY } from "../engine/geometry.mjs";
+import { geomScale, geomTokensCSS, geomTokensBreakpointCSS, geomTokensDTCG, geomTokensFigma, geomTokensFigmaModes, DEFAULT_GEOMETRY } from "../engine/geometry.mjs";
 import { zipStore } from "./zip.mjs";
 import { modeApplyPlan, validateModeInterchange, mergeModeInterchanges, applyRenameMigrations } from "../../figma/binder/mode-apply-plan.mjs";
 import { FIGMA_MIGRATIONS, kebabWaveVarRenames, kebabWaveColorRenames } from "../../figma/binder/migrations.mjs";
@@ -137,11 +137,10 @@ class HctApp extends HTMLElement {
     this._applyTimeoutTimer = null;
     this.settingsOpen = false; // the Settings page (token-mapping + app prefs)
     this.settingsSection = "mapping"; // which Settings nav item is active (left-nav page layout)
-    this.geomSpecMode = "controls"; // geometry canvas: controls (live mock controls on the ramp) | tokens (editable token matrix: Base + breakpoints), geom-section sub-state
+    this.geomSpecMode = "controls"; // geometry canvas: controls (the 27 ladder cells as live mock controls) | tokens (the cell token table), geom-section sub-state
     this.geomMode = "base"; // active Geometry breakpoint mode: "base" | a doc.geometry.modes[].id | "compare" (Phase 5/5.3), ui-session
     this._geomModeOverride = null; // a Compare column forces its breakpoint mode ("base"|id) while its scene builds (mirrors _typeModeOverride), transient
-    this.geomSegment = "ramp"; // right-pane Geometry inspector tab: ramp | radius | space (ui-session)
-    this.geomSize = null; // the selected size in the ramp tab (null = none expanded), drives per-size Height tuning (the geometry analog of typeVoice)
+    this.geomSegment = "ramp"; // right-pane Geometry inspector tab: ramp (the Ladder tab) | radius | space (ui-session)
     this.typeSegment = "scale"; // right-pane Typography inspector tab: scale | fonts | specimen (ui-session)
     this.typeVoice = null; // the selected voice in the Scale tab (null = none expanded), drives per-voice tuning
     this.examplesExpanded = false; // right-pane preview gallery: collapsed to the first artifact until expanded (ui-session)
@@ -1262,19 +1261,20 @@ class HctApp extends HTMLElement {
   }
 
 
-  // _treatmentLocked(id, defaultId), true when a NON-default treatment is Pro-gated and the plan doesn't
-  // unlock it (advancedTreatments). Free keeps the default (Product type / Comfortable geometry). NO-OP until
-  // go-live (flagOf("advancedTreatments") is unlocked while TIERS_ENFORCED is off).
+  // _treatmentLocked(id, defaultId), true when a NON-default treatment or Geometry kit axis is Pro-gated and the
+  // plan doesn't unlock it (advancedTreatments). Free keeps the defaults (Product type; the product tier, md scale
+  // and round radius in Geometry). NO-OP until go-live (flagOf("advancedTreatments") is unlocked while
+  // TIERS_ENFORCED is off).
   _treatmentLocked(id, defaultId) {
     return id !== defaultId && !this.flagOf("advancedTreatments");
   }
 
 
   // _treatmentBlocked(id, defaultId), if picking `id` is Pro-gated, notify + route to Pro (web) + re-render
-  // to REVERT the <select> back to the committed treatment, and return true so the caller skips the commit.
+  // to REVERT the <select> back to the committed pick, and return true so the caller skips the commit.
   _treatmentBlocked(id, defaultId) {
     if (!this._treatmentLocked(id, defaultId)) return false;
-    this.toast("That treatment is a Pro feature, upgrade for the full set.");
+    this.toast("That option is a Pro feature, upgrade for the full set.");
     if (this.inFigma) this.render(); else { this.settingsSection = "account"; this.openSettings(); }
     return true;
   }
@@ -1286,9 +1286,12 @@ class HctApp extends HTMLElement {
   }
 
 
-  _pickGeomTreatment(id) {
-    if (this._treatmentBlocked(id, "comfortable")) return;
-    this.commit((d) => { d.geometry = { ...(d.geometry || DEFAULT_GEOMETRY), treatment: id, baseHeight: (GEOMETRY_TREATMENTS.find((x) => x.id === id) || GEOMETRY_TREATMENTS[0]).baseHeight }; });
+  // _pickGeomAxis(key, id), the Geometry kit's tier / scale / radius pick (T-0017, the Maison ladder's three
+  // axes), Pro-gated like the type treatments: each axis's DEFAULT_GEOMETRY id is free, any other is Pro.
+  _pickGeomAxis(key, id) {
+    if (!["tier", "scale", "radius"].includes(key)) return;
+    if (this._treatmentBlocked(id, DEFAULT_GEOMETRY[key])) return;
+    this.commit((d) => { d.geometry = { ...(d.geometry || DEFAULT_GEOMETRY), [key]: id }; });
   }
 
 

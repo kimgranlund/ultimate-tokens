@@ -437,15 +437,15 @@ export class DrawerMixinImpl {
       modesHalves.push(typeTokensFigmaModes(tsc, this._typeModeScales(), this._typeBaseOpts()));
     }
     if (sys.geometry) {
-      const gsc = this._geomScaleFor("base"); // composed with the type scale (the per-step `font` is shared); override-aware (Phase 3)
+      const gsc = this._geomScaleFor("base"); // composed with the type scale (each cell's `text` is Typography's UI text at its height)
       const gDtcg = JSON.stringify(geomTokensDTCG(gsc, u), null, 2); // the chosen unit, for the geometry/ folder
       const gCssOpts = { ...u, prefix: this._geomPrefix() };
       files.push(
         // SEPARATE files (mirrors typography/ above): geometry.css alone is a complete, Desktop-anchored
         // stylesheet; geometry-tablet.css / geometry-mobile.css are optional bolt-ons. geometry-sizes.css
         // (issue #487, gen-ui-kit's own request) is a SIZE-ONLY slice of the SAME base file, just the
-        // --{pfx}-size-{step}-* :root block, no radius/space/inset/gap/border/focus tokens or
-        // .{pfx}-control-{step} class rules, for a consumer that only binds size fields and doesn't want
+        // --{pfx}-size-{cell}-* :root block, no radius/space/inset/gap/border/focus tokens and no
+        // context resolver, for a consumer that only binds cell fields and doesn't want
         // to vendor a slice of the full file itself. No breakpoint bolt-on siblings for this one (out of
         // scope for the ticket, a consumer needing per-breakpoint sizes-only files can request it).
         // (a user-named custom breakpoint mode literally called "Sizes" would slug-collide with this
@@ -527,7 +527,7 @@ export class DrawerMixinImpl {
       );
     }
     if (sys.type) rows.push("| `typography/` | The fifteen-voice type scale, `type.css` (Desktop, complete on its own) + optional `type-tablet.css` / `type-mobile.css` bolt-ons + DTCG, incl. per-breakpoint files |");
-    if (sys.geometry) rows.push("| `geometry/` | The dimensional system, control ramp, radii, spacing, container tier, `geometry.css` (Desktop) + `geometry-sizes.css` (the same file's `--size-*` block alone, no radius/space/container/class rules) + optional `geometry-tablet.css` / `geometry-mobile.css` + DTCG |");
+    if (sys.geometry) rows.push("| `geometry/` | The dimensional system, the 27-cell control ladder, radii, spacing, container tier, `geometry.css` (Desktop, with the context resolver) + `geometry-sizes.css` (the same file's `--size-*` block alone, no radius/space/container tokens or resolver) + optional `geometry-tablet.css` / `geometry-mobile.css` + DTCG |");
     rows.push(`| \`ultimate-tokens-${s}-config.json\` | The re-importable parametric config, open it in Ultimate Tokens to edit this kit |`);
     return [
       `# ${name}: Ultimate Tokens export`, "",

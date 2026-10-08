@@ -820,7 +820,7 @@ app.exportSystems = { color: true, type: true, geometry: true };
 app.exportTab = "type-css"; app.render(); flushRaf();
 ok((txtOf(app.querySelector(".drawer-pre")) || "").includes(".type-"), "(mc8) the Type·CSS format tab previews the type tokens");
 app.exportTab = "geom-css"; app.render(); flushRaf();
-ok((txtOf(app.querySelector(".drawer-pre")) || "").includes(".control-"), "(mc9) the Geometry·CSS format tab previews the geometry tokens");
+ok((txtOf(app.querySelector(".drawer-pre")) || "").includes("--control-height"), "(mc9) the Geometry·CSS format tab previews the geometry tokens");
 // the Design System tab previews the composed tokens.json (grammar-named colours + type/spacing/radii)
 app.exportTab = "ds-tokens"; app.render(); flushRaf();
 { const cdTxt = txtOf(app.querySelector(".drawer-pre")) || ""; let cdJson = null; try { cdJson = JSON.parse(cdTxt); } catch {}
@@ -1759,16 +1759,16 @@ const wantPaths = ["css-hex/", "css-oklch/", "json/", "dtcg/", "figma/Light_toke
   "typography/type.css", "typography/type.tokens.json", "figma/type.tokens.json", "figma/tokens.modes.variables.json", "figma/typography.primitives.variables.json", "geometry/geometry.css", "geometry/geometry-sizes.css", "geometry/geometry.tokens.json", "figma/dimension.variables.json"];
 ok(wantPaths.every((p) => zipText.includes(p)), "(ee) every colour format + typography/ + geometry/ + the moded Figma-variable files + the config + the figma-aliased/ cascade variant is present in the archive");
 // geometry-sizes.css (#487) carries ONLY the --size-* :root block, no density/radius/space/inset/gap/
-// border/focus tokens, no .control-* class rules, extracted from the zip's raw text between its own
+// border/focus tokens, no resolver roles, extracted from the zip's raw text between its own
 // local-file-header filename and the next one, so this pins the ACTUAL zipped bytes, not a re-derivation.
 {
   const sizesStart = zipText.indexOf("geometry/geometry-sizes.css");
   const afterHeader = zipText.indexOf(":root", sizesStart);
   const sizesEnd = zipText.indexOf("PK\x03\x04", afterHeader); // the next local-file-header signature
   const sizesFileText = zipText.slice(afterHeader, sizesEnd);
-  ok(/--size-md-height:\s*\d+px/.test(sizesFileText), "(ee) geometry-sizes.css carries the size fields");
+  ok(/--size-product-md-md-height:\s*\d+px/.test(sizesFileText), "(ee) geometry-sizes.css carries the cell fields");
   ok(!/--density/.test(sizesFileText) && !/--radius-/.test(sizesFileText) && !/--space-/.test(sizesFileText) && !/--inset-/.test(sizesFileText) && !/--gap-/.test(sizesFileText) && !/--border-/.test(sizesFileText) && !/--focus-/.test(sizesFileText), "(ee) geometry-sizes.css carries NOTHING but size tokens");
-  ok(!/\.control-/.test(sizesFileText), "(ee) geometry-sizes.css carries no .control-* class rules");
+  ok(!/--control-height/.test(sizesFileText) && !/--ctx-/.test(sizesFileText), "(ee) geometry-sizes.css carries no resolver roles or --ctx-* indicators");
 }
 // the Figma dimension file is NUMBER-typed (FLOAT variables), not the px dimension strings, so Figma imports it as number variables
 ok(zipText.includes("dimension.variables.json") && /"\$type":\s*"number"/.test(zipText) && zipText.includes('"Geometry"'), "(ee) figma/dimension.variables.json is a Geometry collection of number ($type number) variables");
@@ -1889,7 +1889,7 @@ app.exportOpen = true; app.exportTab = "radix"; app.radixFile = "values"; app.re
   const rxrStray = rxrMdZip.match(/--md-(?!(?:color|typescale|size|radius|space|inset|focus|border|gap|font)-|density\b)[a-z0-9][a-z0-9-]*/g);
   ok(rxrMdZip.includes("--md-color-") && !rxrStray, `(rxr4) the Material preset's colour CSS carries --md-color-* and every --md-* in the zip opens with an owned family (stray: ${JSON.stringify(rxrStray && rxrStray.slice(0, 3))})`);
   ok(rxrMdZip.includes("--md-typescale-display-weight-medium:"), "(rxr4) the Material preset's type CSS declares --md-typescale-display-weight-medium:");
-  ok(rxrMdZip.includes("--md-size-md-height:") && rxrMdZip.includes(".md-control-md {"), "(rxr4) the Material preset's geometry CSS declares --md-size-md-height: and .md-control-md {");
+  ok(rxrMdZip.includes("--md-size-product-md-md-height:") && rxrMdZip.includes("--control-height: calc("), "(rxr4) the Material preset's geometry CSS declares --md-size-product-md-md-height: and the bare --control-height resolver role");
   app._setNamingScheme("ultimate"); flushRaf();
   app.render(); flushRaf();
   const rxrDefNote = txtOf(app.querySelector(".radix-note")) || "";
@@ -2532,7 +2532,8 @@ const _mplan = _fplans[0];
 ok(_mplan && _mplan.modes[0] === "Base" && _mplan.defaultMode === "Base", `(ty-fig) the type half's configured shape leads: Base is the default mode (got ${_mplan && _mplan.modes.join()})`);
 ok(_mplan && ["Desktop", "Desktop Lg", "Desktop Xl", "Tablet", "Mobile"].every((m) => _mplan.modes.includes(m)) && _mplan.modes.length === 7, `(ty-fig) the merged plan unions the 768 breakpoint with geometry's INTRINSIC Desktop·Desktop Lg·Desktop Xl·Tablet·Mobile set (got ${_mplan && _mplan.modes.join()})`);
 ok(_mplan && _mplan.variables.some((v) => v.name.startsWith("type/")) && _mplan.variables.some((v) => v.name.startsWith("size/")), "(ty-fig) the merged plan carries both the type/ half and the box-geometry half");
-ok(_fplans.every((p) => p.variables.length > 0 && p.variables.every((v) => v.type === "FLOAT" && v.values.length === p.modes.length && v.values.every((x) => Number.isFinite(x.value)))), "(ty-fig) every emitted plan is value-complete (FLOAT, one finite value per mode), the merge back-fill + validateModeInterchange gate held");
+// T-0017: the geometry half carries per-mode control/ ALIASes beside its size/ FLOATs (the mode-apply.mjs shape).
+ok(_fplans.every((p) => { const floats = new Set(p.variables.filter((v) => v.type === "FLOAT").map((v) => v.name)); return p.variables.length > 0 && p.variables.some((v) => v.type === "ALIAS") && p.variables.every((v) => (v.type === "FLOAT" || v.type === "ALIAS") && v.values.length === p.modes.length && v.values.every((x) => (v.type === "ALIAS" ? typeof x.value === "string" && floats.has(x.value) : Number.isFinite(x.value)))); }), "(ty-fig) every emitted plan is value-complete (one value per mode: FLOAT finite, ALIAS naming a size/ FLOAT of the plan), the merge back-fill + validateModeInterchange gate held");
 ok(_mplan && JSON.stringify(_mplan.retire) === JSON.stringify(["Typography"]), "(ty-fig) the merged plan carrying type/ variables retires the two-collection era's Typography collection");
 // the apply payload RESPECTS the export-system toggles: a toggled-off system is not in floatPlans (the bug).
 app.exportSystems = { color: true, type: false, geometry: true };
@@ -2645,16 +2646,18 @@ app.commit((d) => { d.type = { treatment: "product", bodyBase: 16 }; }); // rest
 app.setSection("color"); flushRaf();
 ok(app.section === "color" && !app.querySelector(".type-spec") && !!app.querySelector(".canvas-scene") && app.canvasView === "palettes", "(ty) returning to Color restores the ramp canvas (color untouched)");
 
-// ── (geo) Geometry SECTION: the switcher flips this.section → the full dimensional dataset (the 6-size
-// control ramp + radius + space) on the canvas + left analysis rail + right inspector + token download ──
+// ── (geo) Geometry SECTION: the switcher flips this.section → the full dimensional dataset (the 27
+// ladder cells + radius + space) on the canvas + left analysis rail + right inspector ──
 app.setSection("geometry"); flushRaf();
 ok(app.section === "geometry" && !!app.querySelector(".geom-spec"), "(geo) the section switcher enters Geometry (the canvas dataset renders)");
-ok(inLight(".geom-spec-line").length === GEOM_SIZES, `(geo) the canvas shows the ${GEOM_SIZES}-step control ramp (XS..2XL) (got ${inLight(".geom-spec-line").length})`);
-// control ramp order: LARGEST → smallest (the first token in the document is the 2XL control)
-ok(txtOf(app.querySelectorAll(".geom-spec-token")[0] || {}) === "--size-2xl", `(geo) the control ramp lists largest→smallest (first token is --size-2xl, got ${txtOf(app.querySelectorAll(".geom-spec-token")[0] || {})})`);
+ok(inLight(".geom-spec-line").length === GEOM_SIZES, `(geo) the canvas shows the ${GEOM_SIZES}-cell ladder (got ${inLight(".geom-spec-line").length})`);
+ok(inLight(".geom-spec-row").length === 9 && inLight(".geom-spec-row").every((r) => r.children.filter((c) => c.classList && c.classList.contains("geom-spec-line")).length === 3), `(geo) the cells sit in nine tier × scale rows of three sizes each (got ${inLight(".geom-spec-row").length} rows)`);
+// cell order: orderedSizeNames (content, product, micro; then scale sm, md, lg; then size), so the first cell is content-sm-sm
+ok(txtOf(app.querySelectorAll(".geom-spec-token")[0] || {}) === "content-sm-sm", `(geo) the ladder lists cells in orderedSizeNames order (first is content-sm-sm, got ${txtOf(app.querySelectorAll(".geom-spec-token")[0] || {})})`);
+ok(walk(colCol(0), (e) => e.classList.contains("geom-spec-line") && e.classList.contains("is-kit")).map((e) => e.getAttribute("data-cell")).join() === "product-md-md", "(geo) the kit default cell (product-md-md) is marked, once per column");
 ok(app.querySelectorAll(".an-card").length >= 4, `(geo) the left rail shows the geometry analysis cards (got ${app.querySelectorAll(".an-card").length})`);
-ok(!!app.querySelector(".tyi-voices") || !!app.querySelector(".insp-title"), "(geo) the right pane shows the Geometry inspector");
-// (geo-palette) the canvas ramp's mock control AND the pinned inspector example are painted with the
+ok(!!app.querySelector(".insp-title"), "(geo) the right pane shows the Geometry inspector");
+// (geo-palette) the canvas ladder's mock control AND the pinned inspector example are painted with the
 // SELECTED palette's own resolved roles (real hex), not a generic fixed accent, both must agree.
 {
   const { projectView: pvGeo } = await import("../../src/ui/model.mjs");
@@ -2668,125 +2671,120 @@ ok(!!app.querySelector(".tyi-voices") || !!app.querySelector(".insp-title"), "(g
   const mainHex = hexOfGeo(roles.find((r) => r.suffix === ""));
   const containerHighHex = hexOfGeo(byKeyGeo.containerHigh);
   const ctlEl = app.querySelector(".geom-ctl");
-  ok(!!ctlEl && (ctlEl.getAttribute("style") || "").includes(`background:${mainHex}`), `(geo-palette) the canvas ramp's mock control is painted with the selected palette's own resolved color (${mainHex}, got "${ctlEl && ctlEl.getAttribute("style")}")`);
+  ok(!!ctlEl && (ctlEl.getAttribute("style") || "").includes(`background:${mainHex}`), `(geo-palette) the canvas ladder's mock control is painted with the selected palette's own resolved color (${mainHex}, got "${ctlEl && ctlEl.getAttribute("style")}")`);
   const exCtl = app.querySelector(".geom-ex-ctl");
-  ok(!!exCtl && (exCtl.getAttribute("style") || "").includes(`background:${mainHex}`), "(geo-palette) the pinned inspector example agrees with the canvas ramp's color");
+  ok(!!exCtl && (exCtl.getAttribute("style") || "").includes(`background:${mainHex}`), "(geo-palette) the pinned inspector example agrees with the canvas ladder's color");
   const exChip = app.querySelector(".geom-ex-chip");
   ok(!!exChip && !!containerHighHex && (exChip.getAttribute("style") || "").includes(`background:${containerHighHex}`), `(geo-palette) the Chip is painted with the palette's containerHigh tone (${containerHighHex}, got "${exChip && exChip.getAttribute("style")}")`);
-  ok(!!app.querySelector(".geom-ex-input"), "(geo-palette) the pinned example now shows Button + Chip + Input, not just Button");
-  // (geo-row) every size row renders Button + Select + Switch side by side; the switch's thumb is
-  // the glyph cell (diameter = icon, right-inset = paddingNarrow, the centering law, literally).
-  ok(inLight(".geom-select").length === GEOM_SIZES && inLight(".geom-switch").length === GEOM_SIZES, `(geo-row) each of the ${GEOM_SIZES} size rows carries a Select + Switch alongside the Button (got ${inLight(".geom-select").length}/${inLight(".geom-switch").length})`);
-  const swEl = app.querySelector(".geom-switch");
-  ok(!!swEl && (swEl.getAttribute("style") || "").includes(`background:${mainHex}`), "(geo-row) the switch track is painted with the palette's own resolved color");
-  const gsMD = app._activeGeomScale().sizes["2XL"];
-  const thumbEl = app.querySelector(".geom-switch-thumb");
-  ok(!!thumbEl && (thumbEl.getAttribute("style") || "").includes(`width:${gsMD.icon}px`) && (thumbEl.getAttribute("style") || "").includes(`right:${gsMD.paddingNarrow}px`), `(geo-row) the first (2XL) switch thumb = icon ${gsMD.icon} inset paddingNarrow ${gsMD.paddingNarrow} (got "${thumbEl && thumbEl.getAttribute("style")}")`);
+  ok(!!app.querySelector(".geom-ex-input"), "(geo-palette) the pinned example shows Button + Chip + Input, not just Button");
+  // (geo-row) each cell's mock control is drawn from the cell's own height, text, inset, icon and control radius.
+  const c0 = app._activeGeomScale().cells["content-sm-sm"];
+  const st0 = (ctlEl && ctlEl.getAttribute("style")) || "";
+  ok([`height:${c0.height}px`, `font-size:${c0.text}px`, `padding-inline:${c0.inset}px`, `border-radius:${c0.radiusControl}px`].every((s) => st0.includes(s)), `(geo-row) the first (content-sm-sm) control = height ${c0.height} · text ${c0.text} · inset ${c0.inset} · radius ${c0.radiusControl} (got "${st0}")`);
+  const glyphEl = app.querySelector(".geom-glyph");
+  ok(!!glyphEl && (glyphEl.getAttribute("style") || "").includes(`width:${c0.icon}px`), `(geo-row) the first control's glyph box is the cell's icon (${c0.icon}px, got "${glyphEl && glyphEl.getAttribute("style")}")`);
 }
-const { geomScale: gScale } = await import("../../src/engine/geometry.mjs");
+const { geomScale: gScale, DEFAULT_GEOMETRY: GEOM_DEFAULT, orderedSizeNames: geoOrder } = await import("../../src/engine/geometry.mjs");
 const { brandKit: bkGeo, geometryScale: geoScaleOf } = await import("../../src/ui/model.mjs");
 const { typeScale: tScaleGeo } = await import("../../src/engine/type.mjs");
-app.commit((d) => { d.geometry = { treatment: "spacious", baseHeight: 40 }; }); flushRaf();
+app.commit((d) => { d.geometry = { tier: "content", scale: "lg", radius: "pill", spaceBase: 8 }; }); flushRaf();
 const gsc = gScale(app.doc.geometry);
-ok(gsc.treatment === "spacious" && gsc.baseHeight === 40, `(geo) treatment + base apply (treatment ${gsc.treatment}, base ${gsc.baseHeight})`);
-ok(gsc.sizes.MD.paddingNarrow === (gsc.sizes.MD.height - gsc.sizes.MD.icon) / 2, "(geo) the centering law holds on the resolved scale (paddingNarrow = (h−icon)/2)");
-ok(hydSet(serSet(app.doc)).geometry.treatment === "spacious" && hydSet(serSet(app.doc)).geometry.baseHeight === 40, "(geo) the geometry config round-trips through persist");
-ok(bkGeo(app.doc).geometry && bkGeo(app.doc).geometry.sizes && bkGeo(app.doc).geometry.treatment === "spacious", "(geo) brandKit carries the geometry scale (the MCP serves it)");
-// CONTROL TEXT (TKT-0008): geometry's per-step `font` composes from the type scale's UI-CONTROL voice
-// at SM/MD/LG (rerouted off Label 2026-07-16), a bigger type bodyBase flows into control text.
+ok(gsc.tier === "content" && gsc.scale === "lg" && gsc.radius === "pill" && gsc.spaceBase === 8 && gsc.cell.name === "content-lg-md", `(geo) tier + scale + radius + spaceBase apply (kit ${gsc.cell.name}, ${gsc.radius}, space ${gsc.spaceBase})`);
+ok(Object.keys(gsc.cells).length === GEOM_SIZES && Object.values(gsc.cells).every((c) => c.inset === (c.height - c.icon) / 2), "(geo) the centering law holds on every resolved cell (inset = (h−icon)/2)");
+ok(gsc.cell.radiusControl === gsc.cell.height / 2, `(geo) the pill radius mode follows the height (radius ${gsc.cell.radiusControl}, height ${gsc.cell.height})`);
+{
+  const rt = hydSet(serSet(app.doc)).geometry;
+  ok(rt.tier === "content" && rt.scale === "lg" && rt.radius === "pill" && rt.spaceBase === 8, `(geo) the geometry config (tier, scale, radius, spaceBase) round-trips through persist (got ${JSON.stringify(rt)})`);
+  const bk = bkGeo(app.doc).geometry;
+  ok(!!bk && !!bk.cells && Object.keys(bk.cells).length === GEOM_SIZES && bk.tier === "content" && bk.cell.name === "content-lg-md", "(geo) brandKit carries the 27 cells and the kit cell (the MCP serves them)");
+}
+// CONTROL TEXT (T-0017): each cell's text composes from the type scale's height-indexed UI text table; the
+// UI-control voice reads the same table at 32px, which is product-md-md, so the two agree there.
 {
   app.commit((d) => { d.type = { treatment: "luxury", bodyBase: 20 }; }); flushRaf();
   const composed = geoScaleOf(app.doc);
   const uc = tScaleGeo(app.doc.type).categories["UI-control"];
-  ok(composed.sizes.MD.font === uc.MD.size, `(geo) the composed geometry font = type UI-control MD size (${composed.sizes.MD.font} = ${uc.MD.size})`);
-  ok(bkGeo(app.doc).geometry.sizes.MD.font === uc.MD.size, "(geo) brandKit's geometry shares the UI-control font (one source of truth)");
+  ok(uc.MD.size !== gScale({}).cells["product-md-md"].text, `(geo) fixture: a bodyBase-20 type scale moves the UI-control size off the default (${uc.MD.size})`);
+  ok(composed.cells["product-md-md"].text === uc.MD.size, `(geo) the composed product-md-md text = type UI-control MD size (${composed.cells["product-md-md"].text} = ${uc.MD.size})`);
+  ok(bkGeo(app.doc).geometry.cells["product-md-md"].text === uc.MD.size, "(geo) brandKit's cells share the UI-control text (one source of truth)");
   app.commit((d) => { d.type = { treatment: "product", bodyBase: 16 }; }); // restore
 }
-// (geo-ramp) the opt-in linear-ladder toggle (issue #483, prototyping AdiaUI's scale-ladder): the
-// checkbox in the Ramp tab writes doc.geometry.ramp, flows into the resolved scale + brandKit, persists,
-// and clearing it restores the byte-identical default ramp. Expected ladder values are computed via the
-// engine directly (geomScale is pinned exactly in test/engine/geometry.mjs) rather than hardcoded, since
-// the active geometry config (spacious·40 from the (geo) block above) isn't this block's concern.
+app.commit((d) => { d.geometry = { ...GEOM_DEFAULT }; }); flushRaf();
+// ── (gml1) the light column renders 27 DISTINCT Geometry cells, each a .geom-spec-line carrying its
+// data-cell, counted with the tree-walk helper (the shim's querySelectorAll has no attribute selectors) ──
+app.setSection("geometry"); app.geomMode = "base"; app.geomSpecMode = "controls"; app.render(); flushRaf();
 {
-  const { RAMP_LADDER: RL, LADDER_MD_STEP: MD3 } = await import("../../src/engine/geometry.mjs");
-  app.setSection("geometry"); app.geomSegment = "ramp"; app.render(); flushRaf();
-  const rampCb = app.querySelector(".geom-ramp-check");
-  ok(!!rampCb, "(geo-ramp) the Ramp tab shows the linear-ladder prototype checkbox");
-  const rampInput = rampCb.children.find((c) => c.tagName === "INPUT");
-  ok(!!rampInput && rampInput.checked !== true, "(geo-ramp) the checkbox starts unchecked (the default ramp)");
-  const beforeMD = app._activeGeomScale().sizes.MD.font;
-  rampInput.dispatch("change", { target: { checked: true } });
-  ok(app.doc.geometry.ramp === RL, "(geo-ramp) checking the box writes doc.geometry.ramp = RAMP_LADDER");
-  const afterScale = app._activeGeomScale();
-  const expectLadder = gScale(app.doc.geometry).sizes[MD3]; // the engine's own answer for THIS doc's treatment/baseHeight, step "3" (the ladder's MD-equivalent, numbered steps, issue #483)
-  ok(afterScale.ramp === RL && afterScale.sizes[MD3].font === expectLadder.font && afterScale.sizes[MD3].icon === expectLadder.icon, `(geo-ramp) the resolved scale switches to the ladder (step ${MD3} font ${afterScale.sizes[MD3].font} = ${expectLadder.font}, icon ${afterScale.sizes[MD3].icon} = ${expectLadder.icon})`);
-  ok(afterScale.sizes[MD3].font !== beforeMD, `(geo-ramp) the ladder's font differs from the composed default (ladder ${afterScale.sizes[MD3].font} vs default ${beforeMD})`);
-  // mapping ruling (2026-09-02, final: the full 10-step table, NUMBERED "0".."9"), the canvas
-  // Controls scene must render all ten numbered rows, not the default ramp's six t-shirt-named ones.
-  ok(Object.keys(afterScale.sizes).length === 10 && "0" in afterScale.sizes && "9" in afterScale.sizes && !("MD" in afterScale.sizes), `(geo-ramp) the resolved ladder scale carries the full 10 numbered steps, no t-shirt names (got ${Object.keys(afterScale.sizes)})`);
-  app.render(); flushRaf();
-  ok(inLight(".geom-spec-line").length === 10, `(geo-ramp) the canvas shows the 10-step ladder ramp with the checkbox on (got ${inLight(".geom-spec-line").length})`);
-  ok(txtOf(app.querySelectorAll(".geom-spec-token")[0] || {}) === "--size-9" && txtOf(app.querySelectorAll(".geom-spec-token")[9] || {}) === "--size-0", `(geo-ramp) the ladder canvas still lists largest→smallest, --size-9 (56px) through --size-0 (20px) (first ${txtOf(app.querySelectorAll(".geom-spec-token")[0] || {})}, last ${txtOf(app.querySelectorAll(".geom-spec-token")[9] || {})})`);
-  ok(bkGeo(app.doc).geometry.ramp === RL, "(geo-ramp) brandKit carries the ladder too (the MCP serves it)");
-  ok(Object.keys(bkGeo(app.doc).geometry.sizes).length === 10, "(geo-ramp) brandKit's geometry also carries all 10 ladder steps");
-  ok(hydSet(serSet(app.doc)).geometry.ramp === RL, "(geo-ramp) the ladder choice round-trips through persist");
-  rampInput.dispatch("change", { target: { checked: false } });
-  ok(!("ramp" in app.doc.geometry), "(geo-ramp) unchecking clears doc.geometry.ramp entirely (back to the default ramp)");
-  ok(app._activeGeomScale().sizes.MD.font === beforeMD, "(geo-ramp) the resolved scale reverts to the original composed default");
-  app.render(); flushRaf();
-  ok(inLight(".geom-spec-line").length === GEOM_SIZES, `(geo-ramp) the canvas reverts to the default ramp's ${GEOM_SIZES}-step ramp with the checkbox off (got ${inLight(".geom-spec-line").length})`);
+  const lines = walk(colCol(0), (e) => e.classList.contains("geom-spec-line"));
+  const cells = new Set(lines.map((e) => e.getAttribute("data-cell")).filter(Boolean));
+  ok(lines.length === GEOM_SIZES && cells.size === GEOM_SIZES, `(gml1) the light column carries ${GEOM_SIZES} distinct data-cell values (got ${cells.size} over ${lines.length} lines)`);
+  ok(JSON.stringify(lines.map((e) => e.getAttribute("data-cell"))) === JSON.stringify(geoOrder(app._activeGeomScale())), "(gml1) the cells render in orderedSizeNames order");
+  ok(lines.every((e) => walk(e, (x) => x.classList.contains("geom-ctl")).length === 1), "(gml1) every cell carries exactly one .geom-ctl mock control");
+  console.log(`  (gml1) ${cells.size} distinct Geometry cells render on the canvas`);
 }
-// (gsz) ramp-tab per-size HEIGHT tuning, the geometry analog of (tyv): select a size → its Height slider
-// expands; _setGeomSize writes the per-size override (the SAME store the token matrix uses) + persists; reset clears.
-app.setSection("geometry"); app.geomSegment = "ramp"; app.geomSize = null; app.render(); flushRaf();
-ok(app.querySelectorAll(".tyi-voice").length === GEOM_SIZES && !app.querySelector(".tyi-voice-edit"), `(gsz) the ramp tab lists the ${GEOM_SIZES} sizes, none expanded by default (got ${app.querySelectorAll(".tyi-voice").length})`);
-app.geomSize = "MD"; app.render(); flushRaf();
-ok(!!app.querySelector(".tyi-voice-edit") && !!app.querySelector(".is-sel"), "(gsz) selecting a size expands its Height slider (is-sel + .tyi-voice-edit)");
-app._setGeomSize("MD", 52); flushRaf();
-ok(app.doc.geometry.tokenOverrides && app.doc.geometry.tokenOverrides["MD|base"] === 52 && app._geomScaleFor("base").sizes.MD.height === 52, "(gsz) a per-size Height override writes doc.geometry.tokenOverrides[size|base] + flows into the resolved scale");
-ok(hydSet(serSet(app.doc)).geometry.tokenOverrides["MD|base"] === 52, "(gsz) the per-size Height override round-trips through persist");
-app.clearGeomTokenOverride("MD", "base"); flushRaf();
-ok(!app.doc.geometry.tokenOverrides || !("MD|base" in app.doc.geometry.tokenOverrides), "(gsz) reset clears the per-size override (back to the derived height)");
-app.geomSize = null; app.render(); flushRaf(); // leave the section in Geometry for the following legs
-// the canvas Controls·Tokens toggle flips the canvas to the READ-ONLY token MATRIX (a real <table>) in the
-// scrolling .is-table shell, rows = the 6 control sizes, columns = Base (+ each breakpoint), sticky names.
+// ── (gml2) the inspector's tier / scale / radius selects and the space-base control write doc.geometry ──
+app.geomSegment = "ramp"; app.render(); flushRaf();
+{
+  const sel = (key) => walk(app, (e) => e.tagName === "SELECT" && e.getAttribute("data-fk") === "gi:" + key)[0];
+  ok(!!sel("tier") && !!sel("scale") && !!sel("radius"), "(gml2) the Ladder tab shows the tier, scale and radius selects");
+  sel("tier").dispatch("change", { target: { value: "micro" } }); flushRaf();
+  sel("scale").dispatch("change", { target: { value: "lg" } }); flushRaf();
+  sel("radius").dispatch("change", { target: { value: "sharp" } }); flushRaf();
+  ok(app.doc.geometry.tier === "micro" && app.doc.geometry.scale === "lg" && app.doc.geometry.radius === "sharp", `(gml2) the selects write doc.geometry.tier / scale / radius (got ${JSON.stringify(app.doc.geometry)})`);
+  ok(app._activeGeomScale().cell.name === "micro-lg-md" && app._activeGeomScale().radius === "sharp", `(gml2) the resolved kit follows the picks (got ${app._activeGeomScale().cell.name})`);
+  const sp8 = walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute("data-fk") === "gi-space:8")[0];
+  if (sp8) sp8.click(); flushRaf();
+  ok(app.doc.geometry.spaceBase === 8 && app._activeGeomScale().space[1] === 8, "(gml2) the space-base control writes doc.geometry.spaceBase (space-1 = 8)");
+  const rt = hydSet(serSet(app.doc)).geometry;
+  ok(rt.tier === "micro" && rt.scale === "lg" && rt.radius === "sharp" && rt.spaceBase === 8, "(gml2) the picks round-trip through persist");
+}
+app.commit((d) => { d.geometry = { ...GEOM_DEFAULT }; }); flushRaf();
+// ── (gml3) _setActiveGeomScaleId writes the ACTIVE breakpoint mode's scale (modes[].scale); a first write on
+// a not-yet-materialized Standard-set rung materializes BOTH rungs in one commit, at the rungs' own scales ──
+ok(!app.doc.geometry.modes, "(gml3) fresh doc has no materialized modes yet");
+app.geomMode = "std-tablet";
+app._setActiveGeomScaleId("lg"); flushRaf();
+{
+  const ms = app.doc.geometry.modes || [];
+  ok(ms.length === 2 && ms.some((m) => m.id === "std-tablet") && ms.some((m) => m.id === "std-mobile"), "(gml3) the first scale write on std-tablet materializes BOTH Standard-set rungs");
+  ok(ms.find((m) => m.id === "std-tablet").scale === "lg" && ms.find((m) => m.id === "std-mobile").scale === "sm" && app.doc.geometry.scale === "md", `(gml3) _setActiveGeomScaleId("lg") writes modes[].scale on the active mode only (got ${JSON.stringify(ms.map((m) => m.scale))}, base ${app.doc.geometry.scale})`);
+  ok(app._activeGeomScale().scale === "lg" && app._activeGeomScale().cell.name === "product-lg-md", "(gml3) the active mode resolves at its own scale");
+  ok(hydSet(serSet(app.doc)).geometry.modes.find((m) => m.id === "std-tablet").scale === "lg", "(gml3) modes[].scale round-trips through persist");
+  app.render(); flushRaf();
+  const segSm = walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute("data-fk") === "gmode-scale:sm")[0];
+  ok(!!segSm, "(gml3) the mode editor shows the active mode's sm/md/lg segmented control");
+  if (segSm) segSm.click(); flushRaf();
+  ok(app.doc.geometry.modes.find((m) => m.id === "std-tablet").scale === "sm", "(gml3) the segmented control writes the same modes[].scale");
+}
+app.commit((d) => { delete d.geometry.modes; delete d.geometry.baseName; }); flushRaf();
+app.geomMode = "base"; app.render(); flushRaf();
+// the canvas Controls·Tokens toggle flips the canvas to the read-only cell token TABLE (a real <table>) in the
+// scrolling .is-table shell, rows = the 27 cells in orderedSizeNames order, columns = the 14 fields, sticky names.
 app.setGeomSpecMode("tokens"); flushRaf();
-ok(!!app.querySelector(".tok-table") && !app.querySelector(".geom-spec"), "(geo-tok) the Controls·Tokens toggle renders the token matrix table (no controls scene)");
+ok(!!app.querySelector(".tok-table") && !app.querySelector(".geom-spec"), "(geo-tok) the Controls·Tokens toggle renders the token table (no controls scene)");
 ok(!!app.querySelector(".is-table") && !!app.querySelector(".is-table").querySelector(".tok-table"), "(geo-tok) the token table lives in the scrolling .is-table canvas shell (no pan/zoom)");
-ok(walk(app, (e) => e.classList && e.classList.contains("tok-col") && txtOf(e).includes("Desktop")).length === 1 && walk(app, (e) => e.classList && e.classList.contains("tok-col") && txtOf(e).includes("Base")).length === 0, "(geo-tok) the base column header reads Desktop (the designed scale, the intrinsic anchor, no 'Base' column)");
-ok(app._geomTokenColumns().length === 3 && app._geomTokenColumns()[1].id === "std-tablet" && app._geomTokenColumns()[2].id === "std-mobile", "(geo-tok) Base + the Standard-set Tablet/Mobile columns render LIVE before any breakpoint is materialized");
-ok(app.querySelectorAll(".tok-row").length === GEOM_SIZES, `(geo-tok) one row per control size (${GEOM_SIZES}) (got ${app.querySelectorAll(".tok-row").length})`);
-ok(txtOf(app.querySelectorAll(".tok-name")[1] || {}) === "--size-2xl", `(geo-tok) the first (sticky) token name is --size-2xl (largest→smallest) (got ${txtOf(app.querySelectorAll(".tok-name")[1] || {})})`);
+ok(app.querySelectorAll(".tok-row").length === GEOM_SIZES, `(geo-tok) one row per cell (${GEOM_SIZES}) (got ${app.querySelectorAll(".tok-row").length})`);
+ok(app.querySelectorAll(".tok-col").length === 14, `(geo-tok) one column per cell field (14) (got ${app.querySelectorAll(".tok-col").length})`);
+ok(txtOf(app.querySelectorAll(".tok-name")[1] || {}) === "--size-content-sm-sm", `(geo-tok) the first (sticky) token name is --size-content-sm-sm (orderedSizeNames order) (got ${txtOf(app.querySelectorAll(".tok-name")[1] || {})})`);
+{
+  const kitRow = walk(app, (e) => e.classList.contains("tok-row") && e.classList.contains("is-kit"));
+  const kitTd = kitRow.length ? kitRow[0].children.filter((c) => c.tagName === "TD") : [];
+  ok(kitRow.length === 1 && kitRow[0].getAttribute("data-cell") === "product-md-md" && txtOf(kitTd[0] || {}) === "32", `(geo-tok) the kit row (product-md-md) is marked and reads its height 32 (got ${kitRow.length} rows, ${txtOf(kitTd[0] || {})})`);
+}
 app.setGeomSpecMode("controls"); flushRaf();
 ok(!!app.querySelector(".geom-spec") && !app.querySelector(".tok-table"), "(geo-tok) toggling back to Controls restores the live controls scene (token table gone)");
-// (geo-slider-automat) mirror of (ty-slider-automat): the inspector's Base-height/Ramp-contrast sliders
-// are a SEPARATE write path from the tokens-matrix cell and must ALSO materialize on first touch.
-ok(!app.doc.geometry.modes, "(geo-slider-automat) fresh doc has no materialized modes yet");
-app.geomMode = "std-tablet";
-app._setActiveGeomBaseHeight(24); app.commitDrag?.(); flushRaf();
-ok(Array.isArray(app.doc.geometry.modes) && app.doc.geometry.modes.length === 2 && app.doc.geometry.modes.some((m) => m.id === "std-tablet") && app.doc.geometry.modes.some((m) => m.id === "std-mobile"), "(geo-slider-automat) dragging Base-height on std-tablet materializes BOTH Standard-set rungs");
-ok(app.doc.geometry.modes.find((m) => m.id === "std-tablet").baseHeight === 24, "(geo-slider-automat) the slider's edit itself is written, not silently dropped");
-app.commit((d) => { delete d.geometry.modes; delete d.geometry.tokenOverrides; }); flushRaf(); // reset before (geo-tok-automat) below
-// (geo-tok-automat) mirror of (ty-tok-automat): editing a cell under a not-yet-materialized Standard-set
-// rung materializes BOTH rungs in ONE commit, using the SAME stable ids the preview used.
-ok(!app.doc.geometry.modes, "(geo-tok-automat) fresh doc has no materialized modes yet");
-app.setGeomTokenOverride("MD", "std-tablet", 26); flushRaf();
-ok(Array.isArray(app.doc.geometry.modes) && app.doc.geometry.modes.length === 2 && app.doc.geometry.modes.some((m) => m.id === "std-tablet") && app.doc.geometry.modes.some((m) => m.id === "std-mobile"), "(geo-tok-automat) the first edit against std-tablet materializes BOTH Standard-set rungs in one commit");
-ok(app.doc.geometry.tokenOverrides["MD|std-tablet"] === 26, "(geo-tok-automat) the override that triggered materialization is itself written correctly");
-ok(app._geomScaleFor("std-tablet").sizes.MD.height === 26, "(geo-tok-automat) the materialized mode still resolves through _geomScaleFor by its stable id");
-// (geo-bp) below fully replaces d.geometry, so the modes/overrides just materialized here don't leak forward.
-// ── (geo-bp) Geometry breakpoint MODES (Phase 5), mirror of (ty-bp): add/switch/edit/delete a baseHeight variant ──
-app.commit((d) => { d.geometry = { treatment: "comfortable", baseHeight: 28 }; }); flushRaf();
+// ── (geo-bp) Geometry breakpoint MODES (Phase 5), mirror of (ty-bp): add/switch/edit/delete a scale variant ──
+app.commit((d) => { d.geometry = { ...GEOM_DEFAULT }; }); flushRaf();
 app.addGeomMode(); flushRaf();
-ok(Array.isArray(app.doc.geometry.modes) && app.doc.geometry.modes.length === 1 && app.geomMode === app.doc.geometry.modes[0].id, "(geo-bp) addGeomMode adds a mode + switches to it");
+ok(Array.isArray(app.doc.geometry.modes) && app.doc.geometry.modes.length === 1 && app.geomMode === app.doc.geometry.modes[0].id && app.doc.geometry.modes[0].scale === "md", "(geo-bp) addGeomMode adds a mode at the kit's scale + switches to it");
 ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && /^gmode:/.test(e.getAttribute("data-fk") || "")).length >= 2, "(geo-bp) the canvas header Mode control shows Base + the new breakpoint");
 const _gbpId = app.doc.geometry.modes[0].id;
-app._setActiveGeomBaseHeight(40); app.commitDrag?.(); flushRaf();
-ok(app.doc.geometry.modes[0].baseHeight === 40 && app.doc.geometry.baseHeight === 28, "(geo-bp) the base-height slider edits the ACTIVE mode, not Base");
-ok(app._activeGeometry().baseHeight === 40 && app._activeGeomScale().baseHeight === 40, "(geo-bp) the active mode drives the resolved geometry scale (baseHeight = the mode's)");
+app._setActiveGeomScaleId("sm"); flushRaf();
+ok(app.doc.geometry.modes[0].scale === "sm" && app.doc.geometry.scale === "md", "(geo-bp) the scale pick edits the ACTIVE mode, not Base");
+ok(app._activeGeometry().scale === "sm" && app._activeGeomScale().cell.name === "product-sm-md", "(geo-bp) the active mode drives the resolved geometry scale (kit product-sm-md)");
+ok(JSON.stringify(app._geomScaleFor(_gbpId).cells) === JSON.stringify(app._geomScaleFor("base").cells), "(geo-bp) a breakpoint moves only the kit along the scale axis, the 27 cells are mode-constant");
 app.setGeomModeMinWidth(_gbpId, 600); flushRaf();
 ok(app.doc.geometry.modes[0].minWidth === 600 && app._geomModeScales()[0].minWidth === 600, "(geo-bp) setGeomModeMinWidth persists + flows to the responsive-export mode scales (→ @media min-width)");
-ok(app._geomModeDTCGFiles().length === 1 && app._geomModeDTCGFiles()[0].name === "geometry.600.tokens.json" && JSON.parse(app._geomModeDTCGFiles()[0].data).size, "(geo-bp) the breakpoint emits a per-mode DTCG file keyed by width");
+ok(app._geomModeDTCGFiles().length === 1 && app._geomModeDTCGFiles()[0].name === "geometry.600.tokens.json" && JSON.parse(app._geomModeDTCGFiles()[0].data).size["product-md-md"], "(geo-bp) the breakpoint emits a per-mode DTCG file keyed by width");
 // Phase 2: the same common-breakpoint quick-picks under the geom min-width field. 600 is custom → none active.
 const gPresets = () => walk(app, (e) => e.classList && e.classList.contains("mode-preset"));
 ok(gPresets().length === 5, `(geo-bp) the breakpoint editor offers the 5 standard width quick-picks (got ${gPresets().length})`);
@@ -2794,51 +2792,10 @@ ok(gPresets().filter((e) => e.classList.contains("on")).length === 0, "(geo-bp) 
 const g1280 = gPresets().find((e) => txtOf(e) === "1280");
 if (g1280) g1280.click(); flushRaf();
 ok(app.doc.geometry.modes[0].minWidth === 1280, "(geo-bp) clicking a quick-pick chip sets the active mode's min-width");
-app.setGeomModeMinWidth(_gbpId, 600); flushRaf(); // restore for the matrix assertion below
-// the token MATRIX gains a column for the new breakpoint (Base + the ≥600px mode = 2 value columns)
-app.setGeomSpecMode("tokens"); flushRaf();
-ok(app._geomTokenColumns().length === 2 && app._geomTokenColumns()[0].id === "base" && app._geomTokenColumns()[1].minWidth === 600, "(geo-tok) the matrix has a column per breakpoint, Base + the ≥600px mode (sorted by minWidth)");
-ok(walk(app, (e) => e.classList && e.classList.contains("tok-col-bp") && txtOf(e).includes("600")).length === 1, "(geo-tok) the breakpoint column header shows its ≥600px min-width");
-// CRITICAL: geomMode is STILL the breakpoint (baseHeight 40) here. The Base column must show the DOCUMENT
-// base (28), NOT the active mode, and the breakpoint column carries the mode's 40.
-ok(app._geomTokenColumns()[0].scale.baseHeight === 28 && app._geomTokenColumns()[1].scale.baseHeight === 40, `(geo-tok) the Base column is pinned to the document base (28), not the active mode (40) (got Base=${app._geomTokenColumns()[0].scale.baseHeight}, bp=${app._geomTokenColumns()[1].scale.baseHeight})`);
-// ── (geo-tok-ov) Phase 3, the value cell is an EDITABLE HEIGHT input; editing writes a per-cell override
-// that re-derives icon/font/pad/radius via the laws, persists, reflects in the column + exports, ↺ resets. ──
-const gCellInput = (fk) => walk(app, (e) => e.tagName === "INPUT" && e.getAttribute && e.getAttribute("data-fk") === fk)[0];
-ok(!!gCellInput("geotok:MD:base"), "(geo-tok-ov) each value cell is an editable height input (data-fk = size:modeKey)");
-const gIn = gCellInput("geotok:MD:base"); gIn.value = "50"; gIn.dispatch("change", {}); flushRaf();
-ok(app.doc.geometry.tokenOverrides && app.doc.geometry.tokenOverrides["MD|base"] === 50, "(geo-tok-ov) editing a cell writes doc.geometry.tokenOverrides[<size>|<modeKey>]");
-{
-  const md = app._geomScaleFor("base").sizes.MD;
-  ok(md.height === 50 && md.paddingNarrow === (md.height - md.icon) / 2, "(geo-tok-ov) the override re-derives the frame via the laws (height = override, paddingNarrow = (h−icon)/2)");
-}
-ok(app._geomTokenColumns()[0].scale.sizes.MD.height === 50, "(geo-tok-ov) the matrix Base column reflects the override");
-ok(hydSet(serSet(app.doc)).geometry.tokenOverrides["MD|base"] === 50, "(geo-tok-ov) the override survives serialize → hydrate (persists)");
-// (geo-tok-clamp) MAJOR 4, the live setter CLAMPS to [8,256]. A sub-floor edit (3) would otherwise yield
-// NEGATIVE padding ((h−icon)/2 < 0); it stores the floor (8) live, matching the input min + persist range.
-app.setGeomTokenOverride("XS", "base", 3); flushRaf();
-ok(app.doc.geometry.tokenOverrides["XS|base"] === 8, `(geo-tok-clamp) a sub-floor geom edit (3) is clamped to 8 LIVE (got ${app.doc.geometry.tokenOverrides["XS|base"]})`);
-ok(app._geomScaleFor("base").sizes.XS.paddingNarrow >= 0, "(geo-tok-clamp) the clamped height keeps padding non-negative (no negative ½(h−icon))");
-ok(hydSet(serSet(app.doc)).geometry.tokenOverrides["XS|base"] === 8, "(geo-tok-clamp) the clamped live value equals the persisted value (live === persist)");
-app.setGeomTokenOverride("XS", "base", 9999); flushRaf();
-ok(app.doc.geometry.tokenOverrides["XS|base"] === 256, `(geo-tok-clamp) an over-max geom edit (9999) is clamped to 256 LIVE (got ${app.doc.geometry.tokenOverrides["XS|base"]})`);
-app.clearGeomTokenOverride("XS", "base"); flushRaf();
-{
-  const { geomTokensCSS: gcss } = await import("../../src/engine/geometry.mjs");
-  const css = gcss(app._geomScaleFor("base"));
-  ok(/--size-md-height: 50px/.test(css), "(geo-tok-ov) the base CSS export carries the overridden Base height (50px)");
-}
-// a per-MODE override reaches that mode's DTCG file too.
-app.setGeomTokenOverride("MD", _gbpId, 44); flushRaf();
-ok(app.doc.geometry.tokenOverrides["MD|" + _gbpId] === 44 && JSON.parse(app._geomModeDTCGFiles()[0].data).size.md.height.$value === "44px", "(geo-tok-ov) a per-breakpoint override reaches that mode's DTCG export (44px)");
-app.clearGeomTokenOverride("MD", _gbpId); flushRaf();
-app.clearGeomTokenOverride("MD", "base"); flushRaf();
-ok(!app.doc.geometry.tokenOverrides, "(geo-tok-ov) ↺ reset clears the override (and drops the now-empty tokenOverrides)");
-ok(app._geomScaleFor("base").sizes.MD.height === 28, "(geo-tok-ov) after reset the cell returns to the derived height (28)");
-app.setGeomSpecMode("controls"); flushRaf();
+app.setGeomModeMinWidth(_gbpId, 600); flushRaf();
 app.geomMode = "base"; flushRaf();
-ok(app._activeGeomScale().baseHeight === 28, "(geo-bp) switching back to Base resolves the base height");
-// ── (geo-cmp) Phase 5.3, per-mode COMPARE: one control-ramp column per breakpoint mode (Base + each mode),
+ok(app._activeGeomScale().scale === "md", "(geo-bp) switching back to Base resolves the base scale");
+// ── (geo-cmp) Phase 5.3, per-mode COMPARE: one ladder column per breakpoint mode (Base + each mode),
 // side by side in one pannable scene (mirror of (ty-cmp)). _geomModeOverride forces each column's mode. ──
 ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && e.getAttribute("data-fk") === "gmode:compare").length === 1, "(geo-cmp) the Mode control offers a Compare item when ≥1 breakpoint mode exists");
 app.geomMode = "compare"; app.render(); flushRaf();
@@ -2849,24 +2806,20 @@ app.geomMode = "compare"; app.render(); flushRaf();
   ok(cols.slice(0, nG).every((c) => app._schemeOfColumn(c) === "light") && cols.slice(nG).every((c) => app._schemeOfColumn(c) === "dark"), "(geo-cmp) the light columns come first, then the dark ones");
   ok(!!app.querySelector(".canvas-compare") && !!app.querySelector(".compare"), "(geo-cmp) Compare uses the shared .canvas-compare / .canvas-scene.compare shell");
   ok(/^Base/.test(txtOf(app.querySelectorAll(".compare-col-label")[0] || {})) && /Light/.test(txtOf(app.querySelectorAll(".compare-col-label")[0] || {})), "(geo-cmp) the first column is labelled Base, Light");
-  ok(app.querySelectorAll(".geom-spec-line").length === GEOM_SIZES * cols.length, `(geo-cmp) every column renders the full ${GEOM_SIZES}-step control ramp (got ${app.querySelectorAll(".geom-spec-line").length} lines across ${cols.length} cols)`);
+  ok(app.querySelectorAll(".geom-spec-line").length === GEOM_SIZES * cols.length, `(geo-cmp) every column renders the full ${GEOM_SIZES}-cell ladder (got ${app.querySelectorAll(".geom-spec-line").length} lines across ${cols.length} cols)`);
+  ok(walk(cols[1], (e) => e.classList.contains("is-kit")).map((e) => e.getAttribute("data-cell")).join() === "product-sm-md", "(geo-cmp) the breakpoint column marks its own kit cell (product-sm-md)");
   ok(app._geomModeOverride === null, "(geo-cmp) the transient _geomModeOverride is cleared after each column builds (never leaks)");
-  // MAJOR: the inspector base-height slider edits the BASE scale in Compare (it shows Base), not a no-op.
-  app._setActiveGeomBaseHeight(40); app.commitDrag?.(); flushRaf();
-  ok(app.doc.geometry.baseHeight === 40, `(geo-cmp) the base-height slider edits doc.geometry.baseHeight while in Compare (got ${app.doc.geometry.baseHeight})`);
+  // the inspector's scale pick edits the BASE scale in Compare (it shows Base), not a per-mode no-op.
+  app._setActiveGeomScaleId("lg"); flushRaf();
+  ok(app.doc.geometry.scale === "lg" && app.doc.geometry.modes[0].scale === "sm", `(geo-cmp) the scale pick edits doc.geometry.scale while in Compare (got ${app.doc.geometry.scale})`);
 }
 app.geomMode = "base"; app.render(); flushRaf();
-ok(app.querySelectorAll(".compare-col").length === 2 && inLight(".geom-spec-line").length === GEOM_SIZES, "(geo-cmp) leaving Compare restores the Light and Dark pair, one controls ramp each");
-// (geo-tok-orphan) MAJOR 5, deleting a mode STRIPS that mode's per-cell overrides (no orphaned "...|<id>"
-// keys survive serialize→hydrate forever). Set a per-mode override, delete the mode, assert the key is gone.
-app.setGeomTokenOverride("MD", _gbpId, 40); flushRaf();
-ok(app.doc.geometry.tokenOverrides && app.doc.geometry.tokenOverrides["MD|" + _gbpId] === 40, "(geo-tok-orphan) a per-mode override is set before deletion");
+ok(app.querySelectorAll(".compare-col").length === 2 && inLight(".geom-spec-line").length === GEOM_SIZES, "(geo-cmp) leaving Compare restores the Light and Dark pair, one ladder each");
 app.geomMode = "compare"; app.render(); flushRaf(); // delete the LAST mode WHILE in Compare → must fall back to Base
 app.deleteGeomMode(_gbpId); flushRaf();
 ok(!app.doc.geometry.modes && app.geomMode === "base", "(geo-cmp) deleting the last mode while in Compare drops it + falls back to Base (no orphaned compare-of-one)");
 ok(walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute && e.getAttribute("data-fk") === "gmode:compare").length === 1, "(geo-cmp-present) the Compare/All item stays present after deleting the last real mode, the Standard-set fallback keeps Tablet/Mobile visible");
-ok(!app.doc.geometry.tokenOverrides, "(geo-tok-orphan) deleting the mode strips its per-cell override AND drops the now-empty tokenOverrides map");
-app.commit((d) => { d.geometry = { treatment: "comfortable", baseHeight: 28 }; }); // restore default
+app.commit((d) => { d.geometry = { ...GEOM_DEFAULT }; }); // restore default
 app.setSection("color"); flushRaf();
 ok(app.section === "color" && !app.querySelector(".geom-spec") && !!app.querySelector(".canvas-scene") && app.canvasView === "palettes", "(geo) returning to Color restores the ramp canvas (color untouched)");
 
@@ -2913,24 +2866,37 @@ app.createSet(); flushRaf();
 ok(app.sets.length === atCap + 1, "(cap) raising the cap re-enables createSet");
 app.setProfile({ flagOverrides: {} }); flushRaf(); // restore unlimited
 
-// ── (at) advancedTreatments gate, only the default treatment (Product type / Comfortable geometry) is free;
-// every other is Pro. NO-OP until TIERS_ENFORCED (flagOf unlocked); simulate the enforced free plan via override. ──
+// ── (at) advancedTreatments gate, only the defaults (Product type; the product tier, md scale and round radius
+// in Geometry) are free; every other pick is Pro. NO-OP until TIERS_ENFORCED (flagOf unlocked); simulate the
+// enforced free plan via override. ──
 app.openSet(app.sets[0].id); flushRaf();
 app._pickTypeTreatment("editorial"); flushRaf();
 ok(app.doc.type && app.doc.type.treatment === "editorial", "(at) advancedTreatments unlocked → a non-default type treatment applies");
-app._pickGeomTreatment("compact"); flushRaf();
-ok(app.doc.geometry && app.doc.geometry.treatment === "compact", "(at) advancedTreatments unlocked → a non-default geometry treatment applies");
+app._pickGeomAxis("tier", "content"); app._pickGeomAxis("scale", "lg"); app._pickGeomAxis("radius", "pill"); flushRaf();
+ok(app.doc.geometry && app.doc.geometry.tier === "content" && app.doc.geometry.scale === "lg" && app.doc.geometry.radius === "pill", "(at) advancedTreatments unlocked → non-default geometry tier, scale and radius picks apply");
 app.setProfile({ flagOverrides: { advancedTreatments: false } }); flushRaf(); // simulate the enforced free plan
-app._pickTypeTreatment("product"); app._pickGeomTreatment("comfortable"); flushRaf(); // the defaults still apply
-ok(app.doc.type.treatment === "product" && app.doc.geometry.treatment === "comfortable", "(at) the default treatments still apply at Free");
+app._pickTypeTreatment("product"); app._pickGeomAxis("tier", "product"); app._pickGeomAxis("scale", "md"); app._pickGeomAxis("radius", "round"); flushRaf(); // the defaults still apply
+ok(app.doc.type.treatment === "product" && app.doc.geometry.tier === "product" && app.doc.geometry.scale === "md" && app.doc.geometry.radius === "round", "(at) the default picks still apply at Free");
 app.closeSettings(); flushRaf();
 app._pickTypeTreatment("luxury"); flushRaf();
 ok(app.doc.type.treatment === "product", "(at) Free → a Pro type treatment (luxury) is blocked (stays on the default)");
 ok(app.settingsOpen === true && app.settingsSection === "account", "(at) blocking a Pro treatment routes a web user to Account");
 app.closeSettings(); flushRaf();
-app._pickGeomTreatment("spacious"); flushRaf();
-ok(app.doc.geometry.treatment === "comfortable", "(at) Free → a Pro geometry treatment (spacious) is blocked");
+for (const [key, id] of [["tier", "micro"], ["scale", "sm"], ["radius", "sharp"]]) {
+  app._pickGeomAxis(key, id); flushRaf();
+  ok(app.doc.geometry[key] === GEOM_DEFAULT[key], `(at) Free → a Pro geometry ${key} (${id}) is blocked (stays ${GEOM_DEFAULT[key]}, got ${app.doc.geometry[key]})`);
+  ok(app.settingsOpen === true && app.settingsSection === "account", `(at) blocking a Pro geometry ${key} routes a web user to Account`);
+  app.closeSettings(); flushRaf();
+}
+app.geomMode = "base"; app._setActiveGeomScaleId("lg"); flushRaf();
+ok(app.doc.geometry.scale === "md", "(at) Free → the Base scale pick through _setActiveGeomScaleId is gated too (stays md)");
 app.closeSettings(); flushRaf();
+app.setSection("geometry"); app.geomSegment = "ramp"; app.render(); flushRaf();
+{
+  const tierOpts = walk(app, (e) => e.tagName === "OPTION" && e.parentNode && e.parentNode.getAttribute && e.parentNode.getAttribute("data-fk") === "gi:tier");
+  ok(tierOpts.length === 3 && tierOpts.filter((o) => txtOf(o).endsWith(" · Pro")).length === 2, `(at) the Ladder tab labels the two locked tiers " · Pro" (got ${tierOpts.map(txtOf).join(" | ")})`);
+}
+app.setSection("color"); flushRaf();
 app.setProfile({ flagOverrides: {} }); flushRaf(); // restore unlocked
 
 // ── (acct) Settings « Account » (item 7, Layer 3), plan badge · license seam · offline-hidden entry ──
@@ -3087,19 +3053,20 @@ app.addStandardTypeModes(); flushRaf();
   ok(bodyLGMDSM(cols[0].scale) === "18/16/14" && bodyLGMDSM(cols[1].scale) === "18/16/14" && bodyLGMDSM(cols[2].scale) === "18/16/14", `(std) Body LG/MD/SM is FROZEN: Desktop ${bodyLGMDSM(cols[0].scale)}, Tablet ${bodyLGMDSM(cols[1].scale)}, Mobile ${bodyLGMDSM(cols[2].scale)} (want 18/16/14 across all three)`);
   ok(labelLGMDSM(cols[0].scale) === "14/13/12" && labelLGMDSM(cols[1].scale) === "13/12/11" && labelLGMDSM(cols[2].scale) === "12/11/10", `(std) Label LG/MD/SM steps down: Desktop ${labelLGMDSM(cols[0].scale)}, Tablet ${labelLGMDSM(cols[1].scale)}, Mobile ${labelLGMDSM(cols[2].scale)}`);
 }
-const stdBH = (app.doc.geometry && app.doc.geometry.baseHeight) ?? 28;
+const stdScale = (app.doc.geometry && app.doc.geometry.scale) || "md";
+ok(stdScale === "md", `(std) fixture: the doc's kit scale is the default md (got ${stdScale})`);
 app.addStandardGeomModes(); flushRaf();
 {
   const g = app.doc.geometry, ms = (g.modes || []);
   ok(ms.length === 2 && JSON.stringify(ms.map((m) => m.minWidth)) === JSON.stringify([992, 476]), `(std) Standard set materializes Tablet(992) + Mobile(476) geometry modes (got ${JSON.stringify(ms.map((m) => m.minWidth))})`);
-  ok(g.baseHeight === stdBH && g.baseName === "Desktop", `(std) the designed ramp is UNTOUCHED and named Desktop (baseHeight ${stdBH}, got ${g.baseHeight}, ${g.baseName})`);
-  ok(ms[0].name === "Tablet" && ms[0].baseHeight === Math.max(20, stdBH - 2) && ms[1].name === "Mobile" && ms[1].baseHeight === Math.max(20, stdBH - 4), "(std) geometry modes derive DOWN (Tablet −2 · Mobile −4, floor 20)");
-  ok(app.geomMode === "base", "(std) the control stays on the base (the designed ramp)");
-  // the resolved columns: base(Desktop) = the original full ramp; Mobile strictly below it per step.
-  const hcol = (k) => ["XS", "SM", "MD", "LG", "XL", "2XL"].map((n) => app._geomScaleFor(k).sizes[n].height);
-  if (stdBH === 28) ok(JSON.stringify(hcol("base")) === JSON.stringify([20, 24, 28, 36, 48, 64]), `(std) the Desktop base keeps the original full ramp (got ${hcol("base")})`);
-  const mobCol = hcol(ms[1].id), deskCol = hcol("base");
-  ok(mobCol.every((h, i) => h <= deskCol[i]) && mobCol.some((h, i) => h < deskCol[i]), `(std) the Mobile ramp sits at-or-below Desktop per step (${mobCol.join("·")} vs ${deskCol.join("·")})`);
+  ok(g.scale === stdScale && g.baseName === "Desktop", `(std) the designed kit is UNTOUCHED and named Desktop (scale ${stdScale}, got ${g.scale}, ${g.baseName})`);
+  ok(ms[0].name === "Tablet" && ms[0].scale === "sm" && ms[1].name === "Mobile" && ms[1].scale === "sm", "(std) geometry modes move the kit DOWN the scale axis (Tablet sm · Mobile sm)");
+  ok(app.geomMode === "base", "(std) the control stays on the base (the designed kit)");
+  // the resolved kit cell: base(Desktop) = product-md-md (32); Mobile = product-sm-md (28), strictly below it.
+  // The 27 cells themselves are mode-constant (the Figma size/{cell}/{field} variables).
+  const kit = (k) => app._geomScaleFor(k).cell;
+  ok(kit("base").name === "product-md-md" && kit("base").height === 32, `(std) the Desktop base keeps the designed kit cell (got ${kit("base").name} ${kit("base").height})`);
+  ok(kit(ms[1].id).name === "product-sm-md" && kit(ms[1].id).height < kit("base").height, `(std) the Mobile kit cell sits below Desktop (${kit(ms[1].id).name} ${kit(ms[1].id).height} vs ${kit("base").height})`);
   // the Figma float plans emit the desktop-first moded collections: Desktop (the designed scale) leads
   // as the base = Figma's default mode; Tablet · Mobile follow.
   const plans = app._figmaFloatPlans();
@@ -3912,7 +3879,7 @@ flushRaf();
   const typeEmpty = app.graphTypeScale([]);
   ok(typeEmpty.classList.contains("an-empty") && typeEmpty.children[0] && typeEmpty.children[0].textContent === "n/a", `(na) typography.js .an-empty reads "n/a" (got ${typeEmpty.children[0] && typeEmpty.children[0].textContent})`);
 
-  const geomEmpty = app.graphGeomPower({ sizes: {} });
+  const geomEmpty = app.graphGeomPower({ cells: {} });
   ok(geomEmpty.classList.contains("an-empty") && geomEmpty.children[0] && geomEmpty.children[0].textContent === "n/a", `(na) geometry.js .an-empty reads "n/a" (got ${geomEmpty.children[0] && geomEmpty.children[0].textContent})`);
 
   // pin app.js:765: buildPresetTiles' volume label falls back to "n/a" for a preset with no

@@ -11,6 +11,8 @@
 // `maxSets` is VALUED (the free brand-kit cap); the rest are boolean capability gates. `describePalette`
 // (#379, ruled 2026-07-18) gates the describe-palette generator (both the local and hosted flavors),
 // a premium, recurring-revenue-adjacent capability, not bundled with the free downloadable brand kit.
+// `advancedTreatments` gates the non-default type treatments and the non-default Geometry tier, scale and
+// radius picks (T-0017); the defaults (Product type; product tier, md scale, round radius) stay free.
 export const FLAG_KEYS = ["maxSets", "proExport", "advancedTreatments", "hostedMcp", "describePalette"];
 
 export const TIER_FLAGS = {
