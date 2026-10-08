@@ -1,3 +1,6 @@
+---
+status: accepted
+---
 # Ultimate Tokens: UI Plan
 
 > The front-end plan for the tool whose engine/semantic/export logic the spec defines. Reasoned

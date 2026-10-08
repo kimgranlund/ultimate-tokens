@@ -1,6 +1,6 @@
 # rubrics
 
-Describe what this topic covers.
+Rubrics and checklists that judge work: acceptance criteria, the parity checklist, the quality rubric and the type rubric.
 
 <!-- sdlc-lite:managed:start v1 sha256:020209df9759 -->
 ## Documents

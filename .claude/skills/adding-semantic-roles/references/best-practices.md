@@ -31,7 +31,7 @@ The non-obvious do/don'ts (each one is a real trap in this repo), then a worked 
   `docs/references/rubrics/parity-checklist.md` (P1: `semanticRoles('primary').length === 53`), and `CLAUDE.md`
   (the "53 semantic roles" mentions), plus the `src/ui/sections/color.js` inspector label (grep `semantic roles`).
 - **LEAVE historical counts untouched:** the "36 vs 37" `surfaceHighest`-divergence anecdote in knowledge-03
-  and `references/decomposition.md`; `docs/references/changelog.md` entries (which say "37"); OD/ADR
+  and `docs/planning/decomposition.md`; `docs/references/changelog.md` entries (which say "37"); OD/ADR
   decision records ("37 (not 51)"); and color-data files (e.g. `nature.json`). Those record what WAS true at
   a point in time. Bumping them rewrites history and destroys the cautionary tale.
 - **Stale comment drift is real and is NOT a gate.** The per-palette role count is repeated in PROSE across

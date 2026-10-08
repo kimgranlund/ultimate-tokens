@@ -2,6 +2,7 @@
 doc-type: plan
 id: plan-2026-09-export-schema-revision
 status: complete        # active | complete | abandoned (the PLAN enum; the rulings below are ratified, see `ratified:`)
+superseded-by: none
 ratified: 2026-09-11    # H-1..H-4 ruled by the owner via team-lead; the plan is approved to build
 date: 2026-09-11
 owner: Kim Granlund

@@ -156,7 +156,7 @@ config), **Import** (a config `.json`) and **+ New** sit in the header. Detail: 
 **Color.** The canvas shows Palettes (the ramps), Scrims, Mapping (the semantic-role table) or Radix
 (the 12-step ladder). Every canvas draws Light and Dark side by side, except Mapping, whose table already
 shows both; Typography and Geometry do the same, and **Compare** adds a pair per breakpoint. The left pane holds palette analysis
-cards; the right pane is the inspector. Detail: `docs/references/ui-plan.md` (Revision B).
+cards; the right pane is the inspector. Detail: `docs/planning/ui-plan.md` (Revision B).
 
 **Typography.** The canvas is a Specimen (each step in its real face) or a Tokens matrix (Base plus each
 breakpoint). Breakpoint modes sit beside it, Tablet and Mobile by default, and an **All** button shows

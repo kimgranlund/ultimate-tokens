@@ -99,7 +99,7 @@ Grades per R92 (no Fable): every unit runs reviewer-l3 then verifier-l2; the pre
 - [x] U1 (S) one `resolveControls` in `src/engine/controls.mjs`, default `"oklch"`, both drivers import it (C1.1 to C1.4)
 - [x] U2 (S) `LAYERS` registry at version 1 with named engine `run`s and its graph test (C2.1 to C2.4)
 - [x] U3 (M) `compute(doc)`; `projectView` and `derivedAll` become views over it (C3.1 to C3.3); after #785 U2 and #766 U2 land
-- [ ] U4 (L) doc pins, pre-pin docs at version 1, presets at latest, frozen-module mechanism and hash gate, export stamps at the merge-base schema plus 1 (C4.1 to C4.6)
+- [x] U4 (L) doc pins, pre-pin docs at version 1, presets at latest, frozen-module mechanism and hash gate, export stamps at the merge-base schema plus 1 (C4.1 to C4.6)
 - [ ] U5 (M) freeze `ramp@1`, `ramp@2` without the cam16 branch, `baseIntensity` renamed at schema 7 (C5.1 to C5.6)
 
 Order: U1, U2, U3, U4, U5 serial.
@@ -122,6 +122,7 @@ Order: U1, U2, U3, U4, U5 serial.
 | # | Date | Change |
 |---|---|---|
 | 0 | 2026-10-03 | draft from R99, R98 and the read-only survey at add40292 |
+| 7 | 2026-10-08 | closed by the T-0034 docs structure sweep and archived. U4 shipped as T-0021 (#819: `layer-pins.mjs`, `layers/FROZEN.json`, the pin hash gate). U5 did not ship: no `ramp@1` or `ramp@2` layer file exists and ADR-031 supersedes R102's `baseIntensity` rename (see the ADR-034 Quick map row); it is not carried to a new ticket here and stays open for the owner |
 | 6 | 2026-10-04 | C3.3 control scaled by `0.95 *` not `1.05 *` (the cap at 100 hides an increase; measured 880 cells by the U3 builder). C5.6 carries the same `1.05` shape: U5 re-measures it. Orchestrator wording authority under owner rule R3 | `.sdlc/handoffs/compute-layers-U3.md`, `.sdlc/questions/ceremony-policy.md` |
 | 5 | 2026-10-03 | Owner option A (`.sdlc/questions/compute-layers-ident-control.md`, a007fd1d): U1's verdict Finding 1 found `IDENT` cannot see the resolver default, so C3.3 and C5.6 ("as C1.4") carried a dead control. Their control columns now name a live one: scale the chroma `rampChromaOf` in `src/engine/resolve.mjs` returns (C3.3) or `ramp@2`'s output (C5.6) by `1.05`, and `IDENT --only default-kit` prints `117 differing cells`. The resolver default stays pinned by C1.2 in `npm test`. No criteria added, no engine work |
 | 4 | 2026-10-03 | C4.5 schema made relative: prime-name #789 lands first and takes 4 (owner: first to land takes 4), so U4 expects the merge-base value plus 1; the CSS stamp line reads the constant; section 1, the phase table, U4 and the ADR draft item 4 and R101 line follow |

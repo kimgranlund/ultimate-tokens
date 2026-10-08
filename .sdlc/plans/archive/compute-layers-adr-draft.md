@@ -1,9 +1,9 @@
 ---
-status: accepted as ADR-028 (appended to docs/reference/references/decision-records.md by U1; this draft is history)
+status: accepted as ADR-034 (appended to docs/references/decision-records.md by T-0021; this draft is history)
 written: 2026-10-03
 head: add40292 (`main`)
 drivers: R99 (verbatim: "Ultimate Tokens ultimately should be a system of versioned algorithms and compute layers that are chained together in various ways"), R98 (computation first, no overrides or legacy support layers), R100 ("Old versions stay runnable, but all our presets use the upgraded latest versions"), R101 (exports stamp pins, schema v4), R102 (remove the cam16 branch and `baseIntensity`), all 2026-10-03
-plan: .sdlc/plans/compute-layers.md
+plan: .sdlc/plans/archive/compute-layers.md
 ---
 
 # ADR draft: compute layers, versioned pure functions chained into a brand kit

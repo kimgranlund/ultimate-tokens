@@ -2,6 +2,7 @@
 doc-type: plan
 id: plan-2026-09-adia-derived-export-artifacts
 status: complete        # active | complete | abandoned
+superseded-by: none
 date: 2026-09-13
 owner: Kim Granlund
 review-cadence: weekly
