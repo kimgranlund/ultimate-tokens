@@ -473,8 +473,6 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
   font-size: 10.5px; font-weight: 600; color: var(--ink-dim);
   margin-bottom: 4px;
 }
-.an-svg { display: flex; justify-content: center; }
-.an-svg svg { display: block; max-width: 100%; height: auto; }
 .an-empty { color: var(--ink-faint); padding: 14px 0; text-align: center; font-size: 11px; }
 
 /* native DOM charts (renderChart, src/ui/charts/render.mjs): marks are absolutely placed elements in
@@ -868,7 +866,6 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 .ramp-name.off { text-decoration: line-through; color: var(--ink-faint); }
 .ramp-name small { color: var(--ink-dim); font-weight: 400; margin-left: 6px; }
 
-/* shared analysis-graph SVG styles (left-pane graphs) */
 /* differential damping controls + curve (Global tab) */
 .sub-head { font-size: 10px; font-weight: 600; color: var(--ink-dim); margin: 0; text-transform: uppercase; letter-spacing: .05em; }
 .mini-check { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-dim); margin: 0; cursor: pointer; }
@@ -876,9 +873,9 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 .damp-presets { display: flex; flex-wrap: wrap; gap: 4px; }
 /* the preset buttons are chips (.chip.on), see the chip primitive above. */
 .damp-graph { padding: 6px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--panel-2); }
-.dg-unity { stroke: var(--ink-faint); stroke-width: 1; stroke-dasharray: 2 2; --series: var(--ink-faint); --rule-style: dashed; }
+.dg-unity { --series: var(--ink-faint); --rule-style: dashed; }
 
-.lc-axis { stroke: var(--line); stroke-width: 1; --series: var(--line); }
+.lc-axis { --series: var(--line); }
 .lc-ceiling { --series: color-mix(in srgb, var(--accent) 16%, transparent); }
 .lc-toneline {
   --series: var(--ink-faint); --rule-style: dashed;
@@ -886,7 +883,6 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 }
 .lc-applied { --series: var(--accent); }
 .lc-dot { --series: var(--accent); }
-.an-svg text { fill: var(--ink-dim); font-size: 9px; font-family: var(--sans); }
 
 .canvas-footer, .app-footer {
   display: flex; align-items: center; gap: 14px;
@@ -1568,16 +1564,13 @@ a.account-manage:hover { text-decoration: underline; }
 .geom-space-bar { height: 10px; background: var(--accent); border-radius: 2px; display: inline-block; opacity: .7; }
 
 /* geometry analysis rail, the centering-law diagram, the power-law curves, the band ramp, composition */
-.gc-cell { fill: none; stroke: var(--line); stroke-width: 1.5; }
-.gc-glyph { fill: color-mix(in srgb, var(--accent) 24%, transparent); stroke: var(--accent); stroke-width: 1.5; }
-.gc-pad { stroke: var(--ink-faint); stroke-width: 3; stroke-linecap: round; }
+.gc-cell { border: 1.5px solid var(--line); border-radius: 2px; }
+.gc-glyph { background: color-mix(in srgb, var(--accent) 24%, transparent); border: 1.5px solid var(--accent); border-radius: 2px; }
+.gc-pad { --series: var(--ink-faint); --chart-ref: 3px; }
 .geom-an-cap { text-align: center; color: var(--ink-dim); font-size: 10.5px; font-variant-numeric: tabular-nums; margin-top: 4px; }
-.an-svg .gp-ref { fill: none; stroke: var(--ink-faint); stroke-width: 1; stroke-dasharray: 3 3; }
-.an-svg .gp-icon { fill: none; stroke: var(--accent); stroke-width: 1.5; }
-.an-svg .gp-font { fill: none; stroke: color-mix(in srgb, var(--ink) 55%, var(--accent)); stroke-width: 1.5; }
-.gp-dot { stroke: none; }
-.gp-dot-icon { fill: var(--accent); }
-.gp-dot-font { fill: color-mix(in srgb, var(--ink) 55%, var(--accent)); }
+.gp-ref { --series: var(--ink-faint); --dash: repeating-linear-gradient(90deg, #000 0 3px, transparent 3px 6px); }
+.gp-icon { --series: var(--accent); }
+.gp-font { --series: color-mix(in srgb, var(--ink) 55%, var(--accent)); }
 .an-leg-mark.gp.ref { background: var(--ink-faint); }
 .an-leg-mark.gp.icon { background: var(--accent); }
 .an-leg-mark.gp.font { background: color-mix(in srgb, var(--ink) 55%, var(--accent)); }

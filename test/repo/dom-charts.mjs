@@ -38,7 +38,7 @@ const FAIL = (msg) => { failed++; console.log(`FAIL ${msg}`); };
 // (a) the allowlist: per section file, the chart functions still on SVG strings
 const ALLOW = {
   "src/ui/sections/color.js": [],
-  "src/ui/sections/geometry.js": ["graphGeomCentering", "graphGeomPower", "graphGeomBands"],
+  "src/ui/sections/geometry.js": [],
   "src/ui/sections/typography.js": [],
 };
 const HEADER = /^  (?:async\s+)?([A-Za-z_$][\w$]*)\s*\(.*\)\s*\{\s*$/;

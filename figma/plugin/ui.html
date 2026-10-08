@@ -488,8 +488,6 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
   font-size: 10.5px; font-weight: 600; color: var(--ink-dim);
   margin-bottom: 4px;
 }
-.an-svg { display: flex; justify-content: center; }
-.an-svg svg { display: block; max-width: 100%; height: auto; }
 .an-empty { color: var(--ink-faint); padding: 14px 0; text-align: center; font-size: 11px; }
 
 /* native DOM charts (renderChart, src/ui/charts/render.mjs): marks are absolutely placed elements in
@@ -883,7 +881,6 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 .ramp-name.off { text-decoration: line-through; color: var(--ink-faint); }
 .ramp-name small { color: var(--ink-dim); font-weight: 400; margin-left: 6px; }
 
-/* shared analysis-graph SVG styles (left-pane graphs) */
 /* differential damping controls + curve (Global tab) */
 .sub-head { font-size: 10px; font-weight: 600; color: var(--ink-dim); margin: 0; text-transform: uppercase; letter-spacing: .05em; }
 .mini-check { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-dim); margin: 0; cursor: pointer; }
@@ -891,9 +888,9 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 .damp-presets { display: flex; flex-wrap: wrap; gap: 4px; }
 /* the preset buttons are chips (.chip.on), see the chip primitive above. */
 .damp-graph { padding: 6px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--panel-2); }
-.dg-unity { stroke: var(--ink-faint); stroke-width: 1; stroke-dasharray: 2 2; --series: var(--ink-faint); --rule-style: dashed; }
+.dg-unity { --series: var(--ink-faint); --rule-style: dashed; }
 
-.lc-axis { stroke: var(--line); stroke-width: 1; --series: var(--line); }
+.lc-axis { --series: var(--line); }
 .lc-ceiling { --series: color-mix(in srgb, var(--accent) 16%, transparent); }
 .lc-toneline {
   --series: var(--ink-faint); --rule-style: dashed;
@@ -901,7 +898,6 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 }
 .lc-applied { --series: var(--accent); }
 .lc-dot { --series: var(--accent); }
-.an-svg text { fill: var(--ink-dim); font-size: 9px; font-family: var(--sans); }
 
 .canvas-footer, .app-footer {
   display: flex; align-items: center; gap: 14px;
@@ -1583,16 +1579,13 @@ a.account-manage:hover { text-decoration: underline; }
 .geom-space-bar { height: 10px; background: var(--accent); border-radius: 2px; display: inline-block; opacity: .7; }
 
 /* geometry analysis rail, the centering-law diagram, the power-law curves, the band ramp, composition */
-.gc-cell { fill: none; stroke: var(--line); stroke-width: 1.5; }
-.gc-glyph { fill: color-mix(in srgb, var(--accent) 24%, transparent); stroke: var(--accent); stroke-width: 1.5; }
-.gc-pad { stroke: var(--ink-faint); stroke-width: 3; stroke-linecap: round; }
+.gc-cell { border: 1.5px solid var(--line); border-radius: 2px; }
+.gc-glyph { background: color-mix(in srgb, var(--accent) 24%, transparent); border: 1.5px solid var(--accent); border-radius: 2px; }
+.gc-pad { --series: var(--ink-faint); --chart-ref: 3px; }
 .geom-an-cap { text-align: center; color: var(--ink-dim); font-size: 10.5px; font-variant-numeric: tabular-nums; margin-top: 4px; }
-.an-svg .gp-ref { fill: none; stroke: var(--ink-faint); stroke-width: 1; stroke-dasharray: 3 3; }
-.an-svg .gp-icon { fill: none; stroke: var(--accent); stroke-width: 1.5; }
-.an-svg .gp-font { fill: none; stroke: color-mix(in srgb, var(--ink) 55%, var(--accent)); stroke-width: 1.5; }
-.gp-dot { stroke: none; }
-.gp-dot-icon { fill: var(--accent); }
-.gp-dot-font { fill: color-mix(in srgb, var(--ink) 55%, var(--accent)); }
+.gp-ref { --series: var(--ink-faint); --dash: repeating-linear-gradient(90deg, #000 0 3px, transparent 3px 6px); }
+.gp-icon { --series: var(--accent); }
+.gp-font { --series: color-mix(in srgb, var(--ink) 55%, var(--accent)); }
 .an-leg-mark.gp.ref { background: var(--ink-faint); }
 .an-leg-mark.gp.icon { background: var(--accent); }
 .an-leg-mark.gp.font { background: color-mix(in srgb, var(--ink) 55%, var(--accent)); }
@@ -18600,6 +18593,8 @@ const { STANDARD_GEOM_RUNGS, geomEffectiveModes, geomModeScales, geomScaleFor, s
 const { CELL_FIELDS, DEFAULT_GEOMETRY, RADIUS_MODES, SCALES, TIERS, mdAnchor, orderedSizeNames, geomTokensDTCG } = __M.geometry;
 const { icon } = __M.icons;
 const { btn, ensureTypeFonts, field, h } = __M.appHelpers;
+const { renderChart } = __M.chartsRender;
+const { STROKE } = __M.chartsCore;
 
 // The Maison ladder's three kit axes (T-0017), labelled for the inspector; ids are the engine's own.
 const TIER_LABEL = { content: "Content", product: "Product", micro: "Micro" };
@@ -19036,7 +19031,7 @@ class GeomSectionImpl {
 
   // ── Geometry analysis (left rail, READ-ONLY) ──────────────────────────────────────────
   // The geometry analog of analysisCards(): diagrams of the resolved dimensional system, pure functions
-  // of geometryScale(doc), no inputs. Reuses .an-card / .an-svg / legend(). `view` is accepted for dispatch
+  // of geometryScale(doc), no inputs. Reuses .an-card / .an-chart / legend(). `view` is accepted for dispatch
   // parity but unused (geometry is doc-driven, not palette-view-driven).
   geomAnalysisCards(view) {
     const scale = this._activeGeomScale();
@@ -19059,25 +19054,29 @@ class GeomSectionImpl {
     const x0 = (W - side) / 2, y0 = (H - side) / 2;
     const g = side * (s.icon / s.height); // glyph drawn proportional to icon/height
     const gx = x0 + (side - g) / 2, gy = y0 + (side - g) / 2;
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <rect class="gc-cell" x="${x0}" y="${y0}" width="${side}" height="${side}" rx="2"/>
-        <rect class="gc-glyph" x="${gx.toFixed(1)}" y="${gy.toFixed(1)}" width="${g.toFixed(1)}" height="${g.toFixed(1)}" rx="2"/>
-        <line class="gc-pad" x1="${x0}" y1="${gy.toFixed(1)}" x2="${gx.toFixed(1)}" y2="${gy.toFixed(1)}"/>
-        <line class="gc-pad" x1="${(gx + g).toFixed(1)}" y1="${(gy + g).toFixed(1)}" x2="${(x0 + side).toFixed(1)}" y2="${(gy + g).toFixed(1)}"/>
-      </svg>`;
+    const chart = renderChart({
+      W, H,
+      rects: [
+        { cls: "gc-cell", x: x0, y: y0, w: side, h: side },
+        { cls: "gc-glyph", x: gx, y: gy, w: g, h: g },
+      ],
+      rules: [
+        { cls: "gc-pad", x1: x0, y1: gy, x2: gx, y2: gy },
+        { cls: "gc-pad", x1: gx + g, y1: gy + g, x2: x0 + side, y2: gy + g },
+      ],
+    });
     // the caption reads the cell's own inset (the ladder row's), which equals ½(height − icon) on every row.
     return h(
       "div",
       {},
-      h("div", { class: "an-svg", html: svg }),
+      chart,
       h("div", { class: "geom-an-cap" }, `${name} · cell ${s.height} · icon ${s.icon} · inset ½(${s.height}−${s.icon}) = ${s.inset}`),
     );
   }
 
 
   // icon & text vs control height across the ladder's distinct cell heights (15 of them over the 27 cells),
-  // ascending, against the faint height diagonal. fill:none on the lines. The empty check runs before any
+  // ascending, against the faint height diagonal. The empty check runs before any
   // cell read, so a scale with no cells renders "n/a".
   graphGeomPower(scale) {
     const names = orderedSizeNames(scale);
@@ -19090,22 +19089,28 @@ class GeomSectionImpl {
     const maxV = Math.max(...rows.map((s) => Math.max(s.icon, s.text, s.height))) * 1.05;
     const X = (hh) => pad + (hh / maxH) * (W - pad - 8);
     const Y = (v) => (H - pad + 8) - (v / maxV) * (H - pad - 8);
-    const path = (key) => "M" + rows.map((s) => `${X(s.height).toFixed(1)},${Y(s[key]).toFixed(1)}`).join(" L");
-    const dots = (key, cls) => rows.map((s) => `<circle class="${cls}" cx="${X(s.height).toFixed(1)}" cy="${Y(s[key]).toFixed(1)}" r="1.8"/>`).join("");
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        <path class="gp-ref" d="${path("height")}"/>
-        <path class="gp-icon" d="${path("icon")}"/>${dots("icon", "gp-dot gp-dot-icon")}
-        <path class="gp-font" d="${path("text")}"/>${dots("text", "gp-dot gp-dot-font")}
-        <text x="2" y="14">px</text>
-        <text x="${W - 44}" y="${H - pad + 18}">height→</text>
-      </svg>`;
+    const points = (key) => rows.map((s) => ({ x: X(s.height), y: Y(s[key]), v: [s.height, s[key]] }));
+    const chart = renderChart({
+      W, H,
+      series: [
+        { cls: "gp-ref", label: "height", stroke: STROKE.ref, points: points("height") },
+        { cls: "gp-icon", label: "icon", dot: 1.8, points: points("icon") },
+        { cls: "gp-font", label: "text", dot: 1.8, points: points("text") },
+      ],
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+      ],
+      labels: [
+        { text: "px", x: 2, y: 14 },
+        { text: "height→", x: W - 44, y: H - pad + 18 },
+      ],
+      columns: ["series", "height px", "px"],
+    });
     return h(
       "div",
       {},
-      h("div", { class: "an-svg", html: svg }),
+      chart,
       this.legend([{ mark: "gp ref", label: "height" }, { mark: "gp icon", label: "icon (ladder row)" }, { mark: "gp font", label: "text (UI text table)" }]),
     );
   }
@@ -19113,7 +19118,7 @@ class GeomSectionImpl {
 
   // control height per cell for each tier: the nine (scale, size) cells sm-sm … lg-lg on the x axis, one
   // line per tier (the kit's tier solid with dots, the other two dashed), so the three tier ladders and
-  // where the kit sits on them read at a glance. fill:none on the lines.
+  // where the kit sits on them read at a glance.
   graphGeomBands(scale) {
     const names = orderedSizeNames(scale);
     const tiers = Object.keys(TIERS).map((t) => [t, names.filter((n) => n.startsWith(t + "-"))]).filter(([, ns]) => ns.length > 1);
@@ -19122,21 +19127,24 @@ class GeomSectionImpl {
     const maxH = Math.max(...names.map((n) => scale.cells[n].height)) * 1.05;
     const X = (i, len) => pad + (i / (len - 1)) * (W - pad - 8);
     const Y = (hh) => (H - pad + 8) - (hh / maxH) * (H - pad - 8);
-    const line = ([t, ns]) => {
-      const d = "M" + ns.map((n, i) => `${X(i, ns.length).toFixed(1)},${Y(scale.cells[n].height).toFixed(1)}`).join(" L");
-      if (t !== scale.tier) return `<path class="gp-ref" d="${d}"/>`;
-      const dots = ns.map((n, i) => `<circle class="gp-dot gp-dot-font" cx="${X(i, ns.length).toFixed(1)}" cy="${Y(scale.cells[n].height).toFixed(1)}" r="1.9"/>`).join("");
-      return `<path class="gp-font" d="${d}"/>${dots}`;
-    };
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        ${tiers.map(line).join("")}
-        <text x="2" y="14">px</text>
-        <text x="${W - 62}" y="${H - pad + 18}">sm-sm→lg-lg</text>
-      </svg>`;
-    return h("div", { class: "an-svg", html: svg });
+    const line = ([t, ns]) => ({
+      label: t,
+      ...(t === scale.tier ? { cls: "gp-font", dot: 1.9 } : { cls: "gp-ref", stroke: STROKE.ref }),
+      points: ns.map((n, i) => ({ x: X(i, ns.length), y: Y(scale.cells[n].height), v: [n, scale.cells[n].height] })),
+    });
+    return renderChart({
+      W, H,
+      series: tiers.map(line),
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+      ],
+      labels: [
+        { text: "px", x: 2, y: 14 },
+        { text: "sm-sm→lg-lg", x: W - 62, y: H - pad + 18 },
+      ],
+      columns: ["tier", "cell", "height px"],
+    });
   }
 
 
