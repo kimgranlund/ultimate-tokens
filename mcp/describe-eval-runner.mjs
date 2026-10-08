@@ -85,7 +85,7 @@ function printReport(model, summary) {
     if (s.passed) { console.log(`  ✓ ${s.id}`); continue; }
     console.log(`  ✗ ${s.id}`);
     for (const m of s.misses) {
-      const detail = m.got !== undefined ? ` (got ${m.got}, want ${m.want}, off by ${m.distance})` : m.want !== undefined ? ` (want ${JSON.stringify(m.want)})` : "";
+      const detail = m.got !== undefined ? ` (got ${JSON.stringify(m.got)}, want ${JSON.stringify(m.want)}, OKLab distance ${m.distance})` : m.want !== undefined ? ` (want ${JSON.stringify(m.want)})` : "";
       console.log(`      - ${m.family ?? "(entry)"}: ${m.reason}${detail}`);
     }
   }
