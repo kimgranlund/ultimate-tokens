@@ -359,7 +359,8 @@ try {
 
   // Control polish (T-0036): at the same two shell geometries, every visible select drops the native look and draws
   // its chevron with room reserved for it, every range input has a track and thumb sized from the control icon role,
-  // the palette inspector has no Back-to-Global button, and each prime swatch strip is gapless with equal swatches
+  // the palette inspector has no Back-to-Global button (a Chrome computed style cannot read ::-webkit-slider-thumb, so the thumb size is
+  // the --ctl-range-thumb role the thumb rule reads, measured on a probe; test/repo/ui-polish.mjs pins that both thumb rules use it), and each prime swatch strip is gapless with equal swatches
   // filling the card width. The bad() negative control feeds each measure a value that must fail.
   for (const [tier, scale, png] of [["product", "md", "polish-product-md.png"], ["content", "lg", "polish-content-lg.png"]]) {
     const cell = geomScale({ tier, scale, radius: "round" }).cells[`${tier}-${scale}-md`];
@@ -369,7 +370,7 @@ try {
       await evalJS(`(()=>{${el}.shellGeometry={tier:"${tier}",scale:"${scale}",radius:"round"};${el}.setSection("color");${el}.setCanvasView("palettes");${go}${el}.render();})()`); await sleep(300);
       const got = await evalJS(`(()=>{const vis=(e)=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0};const R=${el};
         const selects=[...R.querySelectorAll("select")].filter((e)=>vis(e)&&!e.closest(".canvas-scene, .seg-example, .example-scheme")).map((e)=>{const cs=getComputedStyle(e);return {cls:e.className,ap:cs.appearance,bg:cs.backgroundImage,pl:parseFloat(cs.paddingLeft),pr:parseFloat(cs.paddingRight)}});
-        const ranges=[...R.querySelectorAll('.right-pane input[type="range"]')].filter(vis).map((e)=>{const t=getComputedStyle(e,"::-webkit-slider-thumb");return {h:e.getBoundingClientRect().height,tw:parseFloat(t.width),th:parseFloat(t.height)}});
+        const ranges=[...R.querySelectorAll('.right-pane input[type="range"]')].filter(vis).map((e)=>{const pr=document.createElement("i");pr.style.cssText="position:absolute;visibility:hidden;width:var(--ctl-range-thumb);height:var(--ctl-range-thumb)";e.parentNode.appendChild(pr);const b=pr.getBoundingClientRect();pr.remove();return {h:e.getBoundingClientRect().height,tw:b.width,th:b.height}});
         const strips=[...R.querySelectorAll(".canvas-scene .prime-strip")].filter(vis).slice(0,4).map((s)=>{const sw=[...s.querySelectorAll(".prime-swatch")].map((e)=>e.getBoundingClientRect());const ramp=s.parentNode.querySelector(".ramp-strip");const cs=getComputedStyle(s);
           return {gap:parseFloat(cs.columnGap)||0,n:sw.length,w:sw.map((r)=>r.width),total:s.getBoundingClientRect().width,rampW:ramp?ramp.getBoundingClientRect().width:0,x0:sw[0]?sw[0].left:0,x1:sw.length?sw[sw.length-1].right:0,sx0:s.getBoundingClientRect().left,sx1:s.getBoundingClientRect().right}});
         const back=R.querySelectorAll(".pane-back").length+[...R.querySelectorAll(".right-pane button")].filter((b)=>/^\\s*Global\\s*$/.test(b.textContent)).length;
@@ -381,7 +382,7 @@ try {
         if (!(s.pr > s.pl)) bad.push(`select.${s.cls} end padding ${s.pr} does not reserve the chevron lane (start ${s.pl})`);
       }
       for (const r of got.ranges) {
-        if (r.tw < cell.icon - 0.5 || r.th < cell.icon - 0.5) bad.push(`range thumb ${r.tw}x${r.th} (want at least the ${cell.icon}px icon role)`);
+        if (r.tw < cell.icon - 0.5 || r.th < cell.icon - 0.5) bad.push(`range thumb role ${r.tw}x${r.th} (want at least the ${cell.icon}px icon role)`);
         if (r.h < cell.icon * 0.4 - 0.5) bad.push(`range track ${r.h} (want at least ${cell.icon * 0.4})`);
       }
       for (const s of got.strips) {
