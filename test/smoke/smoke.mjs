@@ -364,7 +364,7 @@ try {
   // swatch-only chips: no inline text, the palette name lives in the title (hover tooltip).
   ok(await evalJS(`(()=>{const c=${el}.querySelector(".newpal-chip");return !!c.getAttribute("title") && c.textContent.trim()===""})()`), "context chips are swatch-only (name in title)");
   // two-column previews: left = hue circle + chroma curve; right = the proposed-palette ramp.
-  ok(await evalJS(`!!${el}.querySelector(".newpal-hc svg") && ${el}.querySelectorAll(".newpal-diagram").length === 2 && ${el}.querySelector(".newpal-ramp").children.length >= ${CORE_RAMP_STOPS}`), "Relative tab renders hue circle + chroma curve + ramp preview");
+  ok(await evalJS(`!!${el}.querySelector(".newpal-hc .ch-dot") && ${el}.querySelectorAll(".newpal-diagram").length === 2 && ${el}.querySelector(".newpal-ramp").children.length >= ${CORE_RAMP_STOPS}`), "Relative tab renders hue circle + chroma curve + ramp preview");
   // priority order: the Dominant changes per relationship, the Primary (the anchor it pivots on) does NOT.
   const swAt = (rel) => evalJS(`(()=>{${el}.newPalRel="${rel}";${el}.render();const s=${el}.querySelectorAll(".newpal-pp-sw");return [s[0]&&s[0].getAttribute("style"), s[1]&&s[1].getAttribute("style")]})()`);
   const swAnchor = await swAt("anchor"), swContrast = await swAt("contrast");

@@ -37,7 +37,7 @@ const FAIL = (msg) => { failed++; console.log(`FAIL ${msg}`); };
 
 // (a) the allowlist: per section file, the chart functions still on SVG strings
 const ALLOW = {
-  "src/ui/sections/color.js": ["graphLC", "graphTone", "graphChroma", "graphDamping", "graphHueWheel", "_hueCircle"],
+  "src/ui/sections/color.js": [],
   "src/ui/sections/geometry.js": ["graphGeomCentering", "graphGeomPower", "graphGeomBands"],
   "src/ui/sections/typography.js": ["graphTypeScale", "graphTypeTracking", "graphTypeLeading"],
 };

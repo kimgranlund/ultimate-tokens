@@ -475,8 +475,41 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 }
 .an-svg { display: flex; justify-content: center; }
 .an-svg svg { display: block; max-width: 100%; height: auto; }
-.an-svg.hw { padding-top: 2px; }
 .an-empty { color: var(--ink-faint); padding: 14px 0; text-align: center; font-size: 11px; }
+
+/* native DOM charts (renderChart, src/ui/charts/render.mjs): marks are absolutely placed elements in
+   percent of an aspect-ratio box. A mark paints with --series; a ribbon is masked by --dash when its
+   series is dashed; a rule's border style reads --rule-style. */
+.an-chart {
+  position: relative; width: 100%; margin-inline: auto;
+  --chart-ref: 1px; --chart-label: 9px; --series: var(--ink-faint);
+}
+.ch-marks { position: absolute; inset: 0; }
+.ch-ribbon, .ch-band { position: absolute; inset: 0; background: var(--series); }
+.ch-ribbon { mask-image: var(--dash, none); -webkit-mask-image: var(--dash, none); }
+.ch-rule { position: absolute; }
+.ch-rule.ch-h { border-top: var(--chart-ref) var(--rule-style, solid) var(--series); transform: translateY(-50%); }
+.ch-rule.ch-v { border-left: var(--chart-ref) var(--rule-style, solid) var(--series); transform: translateX(-50%); }
+.ch-dot {
+  position: absolute; width: calc(var(--r) * 2); height: calc(var(--r) * 2);
+  transform: translate(-50%, -50%); border-radius: 50%; background: var(--series);
+}
+.ch-dot.ch-ring { box-shadow: 0 0 0 2px var(--panel), 0 0 0 3.5px var(--accent); }
+.ch-rect { position: absolute; }
+.ch-circle { position: absolute; border: var(--chart-ref) solid var(--series); border-radius: 50%; }
+/* a label's point is its baseline, as an SVG <text> was; ch-a-* is its text-anchor */
+.ch-label {
+  position: absolute; font: var(--chart-label)/1 var(--sans); color: var(--ink-dim);
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.ch-label.ch-a-start { transform: translate(0, -80%); }
+.ch-label.ch-a-middle { transform: translate(-50%, -80%); }
+.ch-label.ch-a-end { transform: translate(-100%, -80%); }
+/* visually hidden: the chart's data table stays in the accessibility tree */
+.vh {
+  position: absolute; width: 1px; height: 1px;
+  clip-path: inset(50%); overflow: hidden; white-space: nowrap;
+}
 
 /* graph legend (keys the overlaid series) */
 .an-legend { display: flex; flex-wrap: wrap; gap: 3px 10px; margin-top: 5px; font-size: 9.5px; color: var(--ink-dim); }
@@ -507,10 +540,10 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 .an-bar b.fail { color: var(--warn); }
 
 /* hue wheel */
-.hw-circle { fill: none; stroke: var(--line); stroke-width: 1.5; }
-.hw-dot { stroke: var(--panel); stroke-width: 1.5; }
-.hw-ring { fill: none; stroke: var(--accent); stroke-width: 1.5; }
-.an-svg.hw text { fill: var(--ink-faint); font-size: 9px; font-family: var(--sans); }
+.an-chart.hw { margin-top: 2px; }
+.hw-circle { --series: var(--line); --chart-ref: 1.5px; }
+.hw-dot:not(.ch-ring) { box-shadow: 0 0 0 1.5px var(--panel); }
+.hw-tick { color: var(--ink-faint); }
 
 /* center column = canvas-header / canvas-area / canvas-footer */
 .center {
@@ -843,13 +876,16 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 .damp-presets { display: flex; flex-wrap: wrap; gap: 4px; }
 /* the preset buttons are chips (.chip.on), see the chip primitive above. */
 .damp-graph { padding: 6px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--panel-2); }
-.dg-unity { stroke: var(--ink-faint); stroke-width: 1; stroke-dasharray: 2 2; }
+.dg-unity { stroke: var(--ink-faint); stroke-width: 1; stroke-dasharray: 2 2; --series: var(--ink-faint); --rule-style: dashed; }
 
-.lc-axis { stroke: var(--line); stroke-width: 1; }
-.lc-ceiling { fill: color-mix(in srgb, var(--accent) 16%, transparent); stroke: none; }
-.an-svg .lc-toneline { stroke: var(--ink-faint); stroke-width: 1; stroke-dasharray: 3 3; fill: none; }
-.an-svg .lc-applied { stroke: var(--accent); stroke-width: 1.5; fill: none; }
-.lc-dot { fill: var(--accent); }
+.lc-axis { stroke: var(--line); stroke-width: 1; --series: var(--line); }
+.lc-ceiling { --series: color-mix(in srgb, var(--accent) 16%, transparent); }
+.lc-toneline {
+  --series: var(--ink-faint); --rule-style: dashed;
+  --dash: repeating-linear-gradient(90deg, #000 0 3px, transparent 3px 6px);
+}
+.lc-applied { --series: var(--accent); }
+.lc-dot { --series: var(--accent); }
 .an-svg text { fill: var(--ink-dim); font-size: 9px; font-family: var(--sans); }
 
 .canvas-footer, .app-footer {
@@ -1190,11 +1226,11 @@ dialog.newpal::backdrop { background: rgba(10,14,22,.34); }
 /* LEFT, diagrams */
 .newpal-diagram { margin-bottom: 16px; }
 .newpal-diagram-title { font-size: 11px; color: var(--ink-dim); font-weight: 600; margin-bottom: 6px; }
-.newpal-hc svg { display: block; width: 100%; height: auto; max-width: 300px; margin: 0 auto; }
-.hc-rim { fill: none; stroke: var(--line-2); stroke-width: 1; }
-.hc-axis { fill: var(--ink-dim); font-size: 11px; font-variant-numeric: tabular-nums; }
-.hc-dot { stroke: rgba(0,0,0,.28); stroke-width: 1; }
-.hc-ring { fill: none; stroke: var(--accent); stroke-width: 2.5; }
+.newpal-hc { max-width: 300px; margin-inline: auto; }
+.hc-rim { --series: var(--line-2); }
+.hc-axis { --chart-label: 11px; color: var(--ink-dim); }
+.hc-dot:not(.ch-ring) { box-shadow: inset 0 0 0 1px rgba(0,0,0,.28); }
+.hc-dot.ch-ring { box-shadow: inset 0 0 0 1px rgba(0,0,0,.28), 0 0 0 1.75px var(--panel), 0 0 0 4.25px var(--accent); }
 /* RIGHT, relationship radios (single column inside the right pane) */
 .newpal-rels { display: grid; grid-template-columns: 1fr; gap: 8px; }
 .newpal-rel {
@@ -1614,6 +1650,8 @@ a.account-manage:hover { text-decoration: underline; }
   input[type="range"] { background: ButtonText; }
   input[type="range"]::-webkit-slider-thumb { background: Highlight; border: 1px solid ButtonText; }
   input[type="range"]::-moz-range-thumb { background: Highlight; border: 1px solid ButtonText; }
+  /* the chart marks are data colors (palette hexes, series tints), not UI chrome: keep them. */
+  .an-chart .ch-marks { forced-color-adjust: none; }
 }
 
 

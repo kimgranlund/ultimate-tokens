@@ -47,6 +47,8 @@ const MODS = [
   // mixin below import from, dependency order: after model/icons (which it also imports), before every
   // mixin AND before app (which imports the mixins to compose them onto HctApp.prototype).
   ["appHelpers", "src/ui/app-helpers.mjs"],
+  ["chartsCore", "src/ui/charts/core.mjs"],
+  ["chartsRender", "src/ui/charts/render.mjs"],
   ["colorSection", "src/ui/sections/color.js"],
   ["typeSection", "src/ui/sections/typography.js"],
   ["geomSection", "src/ui/sections/geometry.js"],
@@ -57,7 +59,7 @@ const MODS = [
 ];
 const KEY = { "hct.js": "hct", "okhsl.js": "okhsl", "semantic.js": "semantic", "tonal.js": "tonal", "derive.mjs": "derive", "font-fallbacks.mjs": "fontFallbacks", "type.mjs": "type", "geometry.mjs": "geometry", "flags.js": "flags", "persist.js": "persist",
   "ds-gates.js": "dsGates", "exports.js": "exports", "ds-export.js": "dsExport", "figma-plugin-assets.js": "figmaPlugin", "mcp-assets.js": "mcpAssets", "describe-mcp-assets.js": "describeMcpAssets", "type-fonts.js": "typeFonts", "zip.mjs": "zip", "mode-apply-plan.mjs": "modeApplyPlan", "migrations.mjs": "figmaMigrations", "live-diff.mjs": "liveDiff", "collections.js": "collections", "style-plan.mjs": "stylePlan", "icon-systems.mjs": "iconSystems", "motion.mjs": "motion", "icons.js": "icons", "data-hues.mjs": "dataHues", "prime.mjs": "prime", "resolve.mjs": "resolve", "model.mjs": "model",
-  "app-helpers.mjs": "appHelpers", "color.js": "colorSection", "typography.js": "typeSection", "geometry.js": "geomSection",
+  "app-helpers.mjs": "appHelpers", "core.mjs": "chartsCore", "render.mjs": "chartsRender", "color.js": "colorSection", "typography.js": "typeSection", "geometry.js": "geomSection",
   "drawer.js": "drawerMixin", "apply-gate.js": "applyGateMixin", "settings.js": "settingsMixin",
   ...Object.fromEntries(CATEGORY_FILES.map((f) => [f, categoryKey(f)])) };
 

@@ -16,8 +16,8 @@ same principle that already justified model.mjs.
 ## (A) Data-source map
 
 **Color**: view-driven throughout, exactly per canon:
-- Canvas (`renderCanvasArea`/`renderRampsScene`, color.js:850/887) and Left (`analysisCards`, color.js:14) read only `view` (projectView output).
-- Right (`renderPaletteInspector` color.js:1670, `renderGlobalInspector` color.js:2029, `renderRolesInspector` (removed with the Roles tab, #806), `renderStoryInspector` color.js:1594): writable controls bind `this.doc.palettes[i]` raw params (hue/chroma/skew/lift/name/on/hueShift/cuspPull); resolved display (ramp swatch, colorName/description) reads `view.palettes[i]`. This doc+view mix is the canon-sanctioned "writable=doc, derived=view" pattern, not a violation; verified at color.js:1670-1874.
+- Canvas (`renderCanvasArea`/`renderRampsScene`, color.js:844/881) and Left (`analysisCards`, color.js:16) read only `view` (projectView output).
+- Right (`renderPaletteInspector` color.js:1664, `renderGlobalInspector` color.js:2023, `renderRolesInspector` (removed with the Roles tab, #806), `renderStoryInspector` color.js:1588): writable controls bind `this.doc.palettes[i]` raw params (hue/chroma/skew/lift/name/on/hueShift/cuspPull); resolved display (ramp swatch, colorName/description) reads `view.palettes[i]`. This doc+view mix is the canon-sanctioned "writable=doc, derived=view" pattern, not a violation; verified at color.js:1664-1868.
 - Exports: drawer.js's "Colors" format group reads straight off `view.exports` (the `view` param passed into `renderDrawer(view)`).
 
 **Typography**: doc-driven throughout, `view` accepted but genuinely unused (self-documented):

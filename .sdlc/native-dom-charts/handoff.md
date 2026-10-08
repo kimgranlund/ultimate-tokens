@@ -21,3 +21,6 @@ User ruling 2026-10-08: "for charts and graphs, you can learn how to do them pro
 
 ## Constraints
 - Zero runtime deps, engines pure and DOM-free, vanilla web component, `h()` hyperscript, no framework, light DOM. No U+2014. Quote interpolated font-family names with digits or spaces (Safari). Never hand-edit generated files. `npm test`, `npm run build`, `npm run smoke`; `gate:sweeps` as its eight legs.
+
+## Plan review
+scope widened: step 2: scripts/bundle.mjs added to the scope criterion (MODS and KEY entries for src/ui/charts/core.mjs and render.mjs); the tree keeps the blocked attempt work uncommitted

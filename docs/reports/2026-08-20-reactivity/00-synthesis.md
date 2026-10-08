@@ -73,7 +73,7 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
 
 | # | Finding | Evidence | Fix shape |
 |---|---|---|---|
-| H1 | `_onReorderUp()` hand-rolls the commit ladder | 01 §B2; color.js:1535-1590 (fixed in #462) | route through `this.commit(fn)` |
+| H1 | `_onReorderUp()` hand-rolls the commit ladder | 01 §B2; color.js:1529-1584 (fixed in #462) | route through `this.commit(fn)` |
 | H2 | `mixinInto` has no method-collision guard (zero collisions today, verified; nothing catches the first one) | 01 §B3, 04 §C; app.js:2650-2668 (guard added in #462) | throw on duplicate own-property name during composition |
 | H3 | Gallery crash vector: set records never shape-validated; `buildTiles` search does `s.name.toLowerCase()` unguarded | 03 §C; app.js:721-723, `sanitizeSetRecords` app-helpers.mjs:104-109 (fixed in #468) | per-record shape check in `loadSets`/`receiveStoredSets` (or a `String(s.name||"")` guard) |
 | H4 | `tokenOverrides` keys never validated against voice/step domains → typo'd/retired keys accumulate as permanent inert orphans | 03 §B5; persist.js:787-798 (`validLead`, fixed in #461) | drop unknown-voice/step keys in `clampTokenOverrides` (RENAME_MAPS already translates legitimate renames) |
