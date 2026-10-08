@@ -54,8 +54,9 @@ ok(callTool("nearest_token", { hex: exact }).distance === 0, "nearest_token of a
 ok(typeof callTool("get_semantic", { scheme: "dark" })["primary/surface"] === "string", "get_semantic flattens to palette/role hexes");
 const ty = callTool("get_type", {});
 const geo = callTool("get_geometry", {});
-ok(ty.categories && ty.categories.Body && geo.sizes && geo.sizes.MD.paddingNarrow === (geo.sizes.MD.height - geo.sizes.MD.icon) / 2, "get_type + get_geometry serve the scales (the centering law holds)");
-ok(geo.sizes.MD.font !== ty.categories.Label.MD.size && geo.sizes.MD.font === 15, `the served geometry font is the DECOUPLED control-text ramp (15 at bh28, 2026-07-16, not the Label size ${ty.categories.Label.MD.size})`);
+const md = geo.cells && geo.cells["product-md-md"];
+ok(ty.categories && ty.categories.Body && md && md.inset === (md.height - md.icon) / 2, "get_type + get_geometry serve the scales (the centering law holds on product-md-md)");
+ok(md.text === 14 && md.text === ty.uiText[32], `the served cell text is the type scale's UI text at its height (14 at 32, T-0017; got ${md.text})`);
 
 // resources/read + prompts/get
 ok((req("resources/read", { uri: "brand://guide" }).result.contents[0].text || "").length > 50, "resources/read brand://guide → the usage guide");

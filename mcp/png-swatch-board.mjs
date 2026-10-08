@@ -3,7 +3,7 @@
 // scope: flat-color shapes need no real compression, and staying this minimal keeps the encoder auditable
 // in one file. The board is TWO stacked scheme blocks (light on top, dark below, #395), each the same
 // 4×2 family grid (gapped, on that scheme's own surface color) plus a mock CONTROL STRIP, Button ·
-// Select · Switch, flat shapes sized from the kit's own geometry LG tokens and painted from its real
+// Select · Switch, flat shapes sized from the kit's own LG geometry cell and painted from its real
 // semantic roles (the PNG sibling of the app's Geometry ramp mocks, #383). Two blocks because the
 // `contrast` lint (spec §6.3) checks the prime/on-prime pairing in BOTH schemes, a light-only board was
 // blind to a dark-mode-only finding it might be warning about. The swatch grid itself is scheme-agnostic
@@ -12,6 +12,10 @@
 // the urge to add text, gradients, anti-aliasing, or real compression, the zero-dep constraint is
 // load-bearing (spec §13). Deterministic: the same kit always encodes to byte-identical PNG bytes (no
 // timestamps, no randomness, no ancillary chunks), spec §6.4's "byte-identical PNG" replay guarantee.
+
+// The one engine import: the LG cell lookup, so the board never re-implements the geometry ladder. A
+// sibling source file (shipped beside this one in the describe-MCP package), not a package dependency.
+import { sizeAnchor } from "../src/engine/geometry.mjs";
 
 // ── CRC-32 (IEEE 802.3 / zlib's polynomial), every PNG chunk is trailed by one ──
 const CRC_TABLE = (() => {
@@ -117,7 +121,7 @@ function encodePNG(pixels, width, height) {
 // (the 4 brand-ish families, Neutral/Primary/Secondary/Tertiary, top row; the 4 status families bottom
 // row). MARGIN pads the whole board, GAP separates swatches, CONTROL_STRIP_H reserves a fixed-height band
 // under the grid for the mock controls (fixed so the board's dimensions never depend on the kit's
-// geometry treatment). Named constants so a future build can retune the board without hunting literals.
+// geometry). Named constants so a future build can retune the board without hunting literals.
 export const SWATCH_SIZE = 80;
 export const GRID_COLS = 4;
 export const GRID_ROWS = 2;
@@ -154,20 +158,6 @@ function fillRoundRect(px, W, x, y, w, h, rad, [r, g, b]) {
   }
 }
 
-function fillCircle(px, W, cx, cy, radius, [r, g, b]) {
-  const x0 = Math.floor(cx - radius), x1 = Math.ceil(cx + radius);
-  const y0 = Math.floor(cy - radius), y1 = Math.ceil(cy + radius);
-  for (let j = y0; j <= y1; j++) {
-    for (let i = x0; i <= x1; i++) {
-      const dx = i + 0.5 - cx, dy = j + 0.5 - cy;
-      if (dx * dx + dy * dy <= radius * radius) {
-        const o = (j * W + i) * 3;
-        px[o] = r; px[o + 1] = g; px[o + 2] = b;
-      }
-    }
-  }
-}
-
 // fillCaretDown, the select's disclosure triangle: rows of shrinking half-width, apex at the bottom.
 function fillCaretDown(px, W, cx, top, w, h, rgb) {
   for (let t = 0; t < h; t++) {
@@ -179,28 +169,25 @@ function fillCaretDown(px, W, cx, top, w, h, rgb) {
 
 // boardLayout(kit), every rect the renderer paints, shared with the verifier so the test samples the
 // exact geometry the renderer used (colors stay independently resolved from the kit). The control strip's
-// mocks are sized from the kit's OWN geometry LG tokens, height, pill radius, icon (the switch thumb,
-// per the app's centering law: inset = paddingNarrow), caret, so the preview shows the kit's real
-// geometry, not an invented one; the SAME geometry drives both scheme blocks (geometry has no light/dark
-// axis). Widths derive from the remaining row space so any treatment fits. Returns { width, height,
+// mocks are sized from the kit's OWN LG cell (sizeAnchor's "LG", product-lg-md): its height, control
+// radius, icon (the switch thumb, cornered at the mark radius and inset per the centering law,
+// inset = (height − icon) / 2) and text (the select's caret, an indicator sized like the text), so the
+// preview shows the kit's real geometry, not an invented one; the SAME geometry drives both scheme
+// blocks (geometry has no light/dark axis). Widths derive from the remaining row space so any treatment fits. Returns { width, height,
 // light, dark }, `light`/`dark` each carry their OWN { swatch(i), button, select, switchCtl,
 // blockTop, blockBottom } at that block's own Y origin; every rect's SHAPE is identical between the two,
 // only the Y offset differs, since only COLOR (resolved separately, per scheme) is meant to vary.
 export function boardLayout(kit) {
   const width = MARGIN * 2 + GRID_COLS * SWATCH_SIZE + (GRID_COLS - 1) * GAP;
   const gridH = GRID_ROWS * SWATCH_SIZE + (GRID_ROWS - 1) * GAP;
-  // the opt-in linear-ladder ramp (ultimate-tokens issue #483) names its steps numerically ("0".."9"),
-  // no "LG" key at all, a bare `.sizes.LG` silently resolved to {} for a ladder-active kit and the
-  // control strip fell to the hardcoded defaults below instead of following the kit's real geometry.
-  // LG's ladder-equivalent is step "4" (mirrors geometry.mjs's sizeAnchor, reimplemented inline here
-  // rather than imported: this module is intentionally zero-dependency, spec §13).
-  const lgKey = kit.geometry && kit.geometry.ramp === "linear4" ? "4" : "LG";
-  const g = (kit.geometry && kit.geometry.sizes && kit.geometry.sizes[lgKey]) || {};
+  // a kit without geometry (a color-only kit) falls to the hardcoded defaults below.
+  const g = (kit.geometry && sizeAnchor(kit.geometry, "LG").size) || {};
   const ctlH = Math.min(Math.round(g.height || 36), CONTROL_STRIP_H);
-  const radius = Math.round(g.radiusPill != null ? Math.min(g.radiusPill, ctlH / 2) : ctlH / 2);
+  const radius = Math.round(g.radiusControl != null ? Math.min(g.radiusControl, ctlH / 2) : ctlH / 2);
   const thumb = Math.min(Math.round(g.icon || 20), ctlH - 2);
-  const inset = Math.max(1, Math.round(g.paddingNarrow != null ? g.paddingNarrow : (ctlH - thumb) / 2));
-  const caretW = Math.round(g.caret || 14);
+  const thumbR = Math.round(g.radiusMark != null ? Math.min(g.radiusMark, thumb / 2) : thumb / 2);
+  const inset = Math.max(1, Math.round(g.inset != null ? g.inset : (ctlH - thumb) / 2));
+  const caretW = Math.round(g.text || 14);
 
   const gapX = GAP * 2;
   const innerW = width - MARGIN * 2;
@@ -227,7 +214,7 @@ export function boardLayout(kit) {
     select.caret = { cx: select.x + selW - pad - caretW / 2, top: ctlY + Math.round((ctlH - caretH) / 2), w: caretW, h: caretH };
 
     const switchCtl = { x: select.x + selW + gapX, y: ctlY, w: swW, h: ctlH, r: Math.floor(ctlH / 2) };
-    switchCtl.thumb = { cx: switchCtl.x + swW - inset - thumb / 2, cy: ctlY + ctlH / 2, d: thumb };
+    switchCtl.thumb = { cx: switchCtl.x + swW - inset - thumb / 2, cy: ctlY + ctlH / 2, d: thumb, r: thumbR };
 
     const swatch = (i) => ({
       x: MARGIN + (i % GRID_COLS) * (SWATCH_SIZE + GAP),
@@ -294,11 +281,12 @@ function paintBlock(pixels, width, kit, familyNames, block, scheme) {
   fillRoundRect(pixels, width, s.bar.x, s.bar.y, s.bar.w, s.bar.h, 3, C.placeholder);
   fillCaretDown(pixels, width, s.caret.cx, s.caret.top, s.caret.w, s.caret.h, C.onSurface);
 
-  // Switch (ON), primary track, onPrimary thumb inset per the centering law (thumb = icon, inset =
-  // paddingNarrow, the same literal rendering the app's Geometry ramp shows).
+  // Switch (ON), primary track, onPrimary thumb inset per the centering law (thumb = the cell's icon
+  // box, cornered at its mark radius, inset = the cell's inset).
   const w = block.switchCtl;
   fillRoundRect(pixels, width, w.x, w.y, w.w, w.h, w.r, C.prime);
-  fillCircle(pixels, width, w.thumb.cx, w.thumb.cy, w.thumb.d / 2, C.onPrime);
+  const td = w.thumb.d;
+  fillRoundRect(pixels, width, Math.round(w.thumb.cx - td / 2), Math.round(w.thumb.cy - td / 2), td, td, w.thumb.r, C.onPrime);
 }
 
 // swatchBoardPNG(kit, familyNames) → a Buffer (the PNG bytes). Two stacked scheme blocks (light on top,

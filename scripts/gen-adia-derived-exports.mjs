@@ -12,9 +12,9 @@
 //
 // WHY `projectView(doc).exports` AND NOT bare `exportOKLCH(state)` / `exportRadix(state)`:
 //   src/ui/model.mjs is the one place the app assembles every export, and it calls
-//   `exportRadix(state, { geometry: geomScaleFor(state, "base") })`. Adia's document carries
-//   `geometry: { ramp: "linear4" }`, so the drawer's Radix module includes a `tokens.radii` block;
-//   a bare `exportRadix(state)` silently omits it and produces DIFFERENT bytes. These artifacts are
+//   `exportRadix(state, { geometry: geomScaleFor(state, "base") })` for every document, so the
+//   drawer's Radix module includes a `tokens.radii` block; a bare `exportRadix(state)` silently
+//   omits it and produces DIFFERENT bytes. These artifacts are
 //   meant to be exactly what a user downloads from the export drawer, so they come from the drawer's
 //   own assembly path, never a hand-rolled shortcut. (For OKLCH the two paths are byte-identical,
 //   `exportOKLCH` takes no opts, so nothing is lost by being consistent.)

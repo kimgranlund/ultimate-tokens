@@ -84,8 +84,8 @@ export function buildSurface(kit) {
       `- Each voice's step carries \`size\`, \`lineHeight\`, \`letterSpacing\`, \`weight\`, apply them together; don't hand-pick sizes.\n\n`;
     if (kit.geometry) g +=
       `## Geometry\n` +
-      `- \`get_geometry\` / \`brand://geometry\` → the size ramp + radius ladder + spacing scale.\n` +
-      `- Size a control by its \`height\`; **edge padding = (height − glyph) / 2** (the centering law). Use \`gap\`, \`radius\` (pill = height/2), and \`space\` for layout.\n`;
+      `- \`get_geometry\` / \`brand://geometry\` → the tier × scale × size ladder (27 \`cells\` keyed \`{tier}-{scale}-{size}\`, the kit default \`cell\`) + radius ladder + spacing scale. In CSS, \`data-tier\` / \`data-scale\` / \`data-size\` / \`data-radius\` resolve the roles \`--control-*\`, \`--chip-*\` and \`--radius-control\` / \`-mark\` / \`-inset\` / \`-card\`.\n` +
+      `- Size a control by its cell's \`height\`; **inset = (height − icon) / 2** (the centering law), every glyph in the \`icon\` box, label gap = inset / 2. Use \`radiusControl\` for the control corner and \`space\` for layout.\n`;
     return g;
   };
 
@@ -126,7 +126,7 @@ export function buildSurface(kit) {
       inputSchema: { type: "object", properties: {} }, run: () => kit.type },
   );
   if (kit.geometry) TOOLS.push(
-    { name: "get_geometry", description: "The brand's geometry/dimensional scale, the XS–2XL size ramp (height · icon · font · padding · radius), the radius ladder, and the spacing scale.",
+    { name: "get_geometry", description: "The brand's geometry: the tier × scale × size ladder, 27 cells keyed {tier}-{scale}-{size} (height · inset · text · icon · chip · radius control/mark/inset/card) plus the kit default cell, the radius ladder, and the spacing scale; the CSS export resolves them to the --control-*, --chip-* and --radius-* roles.",
       inputSchema: { type: "object", properties: {} }, run: () => kit.geometry },
   );
 
