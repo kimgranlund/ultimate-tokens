@@ -2532,6 +2532,26 @@ app.openSet(app.sets[0].id); flushRaf();
 app.openSettings(); flushRaf();
 ok(app.settingsOpen === true && !!app.querySelector(".settings"), "(set) openSettings shows the Settings <dialog>");
 ok(app.querySelectorAll(".settings-row").length >= 2, "(set) Settings has the token-mapping rows (accent + on-colors)");
+// (setfocus) T-0028: a page click must not leave focus on the first nav item (Mapping). The shim has no
+// showModal, so simulate the browser: it focuses the first focusable descendant of the opened dialog.
+{
+  El.prototype.showModal = function () {
+    if (!this.classList.contains("settings")) return;
+    this.open = true;
+    const first = (n) => { for (const c of n.children || []) { if (c.tagName === "BUTTON") return c; const f = first(c); if (f) return f; } return null; };
+    const f = first(this); if (f) f.focus();
+  };
+  const tx = (n) => (n._text || "") + (n.children || []).map(tx).join("");
+  const navBtn = (label) => app.querySelectorAll(".settings-nav-item").find((b) => tx(b) === label);
+  app.closeSettings(); flushRaf(); app.settingsSection = "appearance"; document.activeElement = null; app.openSettings(); flushRaf();
+  ok(document.activeElement === navBtn("Appearance"), "(setfocus) first open focuses the selected page's nav item, not the first (Mapping)");
+  const acct = navBtn("Account"); acct.focus(); acct.click(); flushRaf();
+  ok(app.settingsSection === "account", "(setfocus) clicking Account selects it");
+  ok(document.activeElement !== navBtn("Mapping"), "(setfocus) Mapping does not take focus after clicking Account");
+  ok(document.activeElement === navBtn("Account"), "(setfocus) focus stays on the clicked nav item");
+  delete El.prototype.showModal;
+  app.closeSettings(); flushRaf(); app.settingsSection = "mapping"; app.openSettings(); flushRaf();
+}
 // left-nav page layout: grouped section nav + a page header reflecting the active section
 const txtOfSet = (n) => (n._text || "") + (n.children || []).map(txtOfSet).join("");
 ok(app.querySelectorAll(".settings-nav-item").length >= 3, `(set) Settings has the left section-nav (Mapping/Appearance/About) (got ${app.querySelectorAll(".settings-nav-item").length})`);

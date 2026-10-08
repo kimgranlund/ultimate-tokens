@@ -624,11 +624,11 @@ class HctApp extends HTMLElement {
     // "view"s one underscore apart: `this.view` is the ROUTE ("gallery"|"editor"), `this._view`
     // is the projectView() RESULT paintAppFooter actually consumes, don't conflate them.
     if (this.view === "editor") this.paintAppFooter(this._view);
+    this._syncSettings(); // before the focus restore: showModal() focuses the first control, the restore must win
     this._restoreFocus(focus);
     this._syncDrawer(); // (re)open/close the native <dialog> to match exportOpen (top layer)
     this._syncNewPal(); // same, for the New-Palette modal
     this._syncApplyGate(); // same, for the Apply-to-Figma consent gate
-    this._syncSettings(); // same, for the Settings modal
   }
 
 
