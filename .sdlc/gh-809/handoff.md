@@ -2,7 +2,7 @@
 id: T-0020
 title: "Color inspector: drop the Palette|Global switch, show context by selection (#809)"
 type: feature
-status: ready
+status: done
 size: L2
 priority: P2
 depends: []
@@ -32,3 +32,7 @@ User ruling 2026-10-07: when the user selects a palette item on the canvas, the 
 - `node test/ui/headless-boot.mjs` exits 0 and its new group `(ic)` asserts (a) fresh doc, no selection, Global inspector and zero switch markup, (b) selected palette, palette inspector, (c) Esc and empty-canvas click return to Global, (d) no segment state, `1` / `2` inert, undo keeps Global. Control (ic0) builds the retired switch with `app.segmented` and shows the detector finds it, and the group was red against the pre-change `src/` (11 failures) before the edit. Group `(g786)` is rewritten to assert every step path lands on the palette inspector; `(o4)` asserts the Color panel is no `tabpanel`.
 - `docs/specs/app-shell.md` (SPEC-R11, LLD-C7, the `this.sel` row, the no-story failure row, the SPEC-R3/R4 rows), `docs/references/component-inventory.md` (segmented site count 15 to 14, inspector-tab bullet), `docs/references/glossary.md` (Inspector) and `docs/references/ui-plan.md` (amendment) describe the context inspector; `CHANGELOG.md` has an entry. Every line-number citation shifted by the `src/ui/app.js`, `src/ui/sections/color.js`, `src/ui/styles.css` and `test/ui/headless-boot.mjs` edits was remapped from the exact git hunks, and `node test/repo/citations.mjs` is green.
 - `scripts/gate_lock.py run --name npm-test -- npm test` is green (all 54 files, including `repo/citations.mjs` and `repo/em-dash.mjs`); the regenerated `figma/plugin/ui.html` is committed. No file under `src/engine/` or `figma/` other than that generated bundle changed. `npm run build` (needs `npm ci`) and `npm run smoke` (needs Chrome) were not run in this lane; smoke asserts nothing about the Color inspector tabs.
+
+## Closed
+
+2026-10-07: delivered by the solo agent (level L2); one independent batched verifier passed before the merge
