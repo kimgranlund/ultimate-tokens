@@ -2,7 +2,7 @@
 id: T-0019
 title: "Describe eval scores 0/15: score by perceptual distance (#811)"
 type: bug
-status: ready
+status: done
 size: L2
 priority: P2
 depends: []
@@ -33,3 +33,7 @@ User ruling 2026-10-07: score by perceptual distance.
 - `docs/specs/site/describe-palette-spec.md` section 10 (eval bullet and the new perceptual-scoring bullet), the section 11 quality-gate row, and the section 12 item 6 amendment describe the perceptual scorer and no longer cite the +-30 degree / +-20 chroma bands.
 - `npm test` green through `gate_lock.py run --name npm-test` (54 of 54 files, tree clean after), including `repo/em-dash.mjs`, `repo/citations.mjs` and `repo/doc-mutation-lane.mjs`.
 - No provider call was made and no file outside `mcp/describe-eval.mjs`, `mcp/describe-eval-runner.mjs`, `test/mcp/describe-eval.mjs` and `docs/specs/site/describe-palette-spec.md` (plus this handoff) changed. The 2026-10-07 Haiku 4.5 and 5.5 runs are NOT re-scored: their raw per-case briefs were not kept. The comment on `DISTANCE_THRESHOLD` replays the issue's reported miss sizes (hue 30 to 177 degrees, chroma 20 to 76) against the 59 golden seeds instead; rerunning the runner under the new scorer is the user's paid action.
+
+## Closed
+
+2026-10-07: delivered by the solo agent (level L2); one independent batched verifier passed before the merge
