@@ -24,3 +24,23 @@
 - Major 1 and minor 8 (Figma legacy size renames, alias changed-count): ticket T-0026, planner running.
 - Held until T-0025 lands (they edit `src/ui/app.js`, `styles.css`, `icons.js`): major 2 (`icons.js:48` inline `width:var(--sh-control-icon, Npx)` overrides every explicit `icon(name,{size})` and the geometry specimen glyph sizes; the `geo-row` headless check reads the span not the svg), major 3 (`app.js` ~:2334-2342 injects unscoped `:where(:root)` and `:where(*, :host)` role rules into `document.head`; scope them to `:where(ultimate-tokens)`; two instances share style ids), minor 6 (`geometry.mjs:314` breakpoint CSS uses `:root`, use `:where(:root)`), minor 7 (`test/engine/categories.mjs:266-272` pass-through leg vacuous and still checks `doc.geometry.ramp`; stale comments in `categories.mjs:6`, `gen-categories.mjs:224,445`, `mode-apply-plan.mjs:250`). Fold into the T-0027 UI steps together with the pixel-review defects (chrome overflow at larger tiers, Settings segmented label wrap, faint light-theme headings, geometry canvas icon sizes, micro-sm switch, geometry inspector chip wraps).
 - Held until T-0021 lands (`persist.js`): minor 4 (pre-v9 geometry with neither treatment nor baseHeight lands on 32px default, not 28) and minor 5 (mode migration collapses a materialized 28/26/24 set to sm/sm/sm with no warning).
+
+## T-0026: Figma apply must not prune legacy size/* variables on an existing file (PR #813 review, major 1) (2026-10-08)
+
+- decide: when both the kebab name and its pre-wave spelling (`size/MD/height`) exist in one file, both map to the same target. The rename loop renames the first and skips the second, because the target already exists, so the second is pruned. Decide whether that is acceptable or needs a guard or a disclosure.
+- note: no run exercised a live Figma file; checks used mock and VM plans only. Run the `figma-file-migration` skill against a real previously applied file to confirm the bindings survive.
+- note: the retired `type/ui-control|ui-widget/{xs,sm,lg,xl,2xl}/*` variables deprecate with ids kept rather than map to `md`. Layers bound to them keep a deprecated variable, not an md one.
+
+## T-0027: Compound insets and radius composition for container components (segmented, listbox), square ghost icon buttons, unstyled palette name input (2026-10-08)
+
+- decide: the canvas header clips its trailing tools (recenter, zoom, "+ Palette") at content-lg, seen in `smoke-out/compound-content-lg.png`. It needs a choice between wrapping, scrolling and collapsing, and no gate checks horizontal fit.
+- decide: the palette Name field (`input[data-fk="pname"]`) is item 1 of the ticket. No artifact shows a dedicated style change for it, and the only evidence is that the `control text at` smoke covers it in Chrome. Confirm it looks right in Safari, or say what is still missing.
+- fix-now: at viewport widths up to 1240px, `.app-header button, .canvas-header button { padding: 4px 7px; }` in `src/ui/styles.css` (~:1579) ties `button.icon-only` on specificity and comes later. Header icon buttons get padding back, and `.canvas-seg button` can grow past the part height. Smoke runs at 1440x900, so it misses this.
+- fix-now: `typeTokensBreakpointCSS` in `src/engine/type.mjs` still writes `:root {` while `geomTokensBreakpointCSS` now writes `:where(:root) {`.
+- fix-now: the stale `ramp` comment at `figma/binder/mode-apply-plan.mjs:250` was left for T-0026.
+- note: Safari is unproven for the compound insets, the control text sizes and the square icon buttons. Smoke runs in Chrome only, and the user previews in Safari.
+- note: the three micro cells (micro-sm-sm, micro-sm-md, micro-md-sm) have a chip taller than the part. The step 1 test names them literally as exceptions to the compound law.
+- note: `.account-license-input`, `.tok-input`, `.settings-nav-item` and `.linklike` sit outside the selector list in `test/repo/control-text.mjs`, by design.
+- note: step 5 moved 93 `src/ui/app.js` doc cites by number, so a concurrent lane that edits `src/ui/app.js` will conflict on them at merge.
+- note: two PR #813 pixel-review items stay open in `.sdlc/notes.md`, the faint light-theme headings and the micro-sm switch, because no record says what was seen.
+- note: `panda-smoke` runs only in CI, so it has not been seen green for this branch.

@@ -11,6 +11,7 @@
 // variable, collection, or style name adds its map HERE in the same change.
 
 import { semanticRoles } from "../../src/engine/semantic.js";
+import { LEGACY_SIZE_CELLS } from "../../src/engine/geometry.mjs";
 
 // ── the ADR-016 kebab wave (TKT-0013, 2026-07-17) ────────────────────────────────────────────────
 
@@ -120,3 +121,54 @@ export const LIBRARY_TYPE_VOICE_MAP = { heading: "headline", ui: "ui-control", c
 // step, md, so a live file's type/ui-control/{xs,sm,lg,xl,2xl}/* and type/ui-widget/{xs,sm,lg,xl,2xl}/*
 // variables and their text styles have no rename target here and deprecate, id-preserving.
 export const GEOMETRY_FIELD_RENAME_MAP = { "padding-narrow": "inset", padding: "inset", font: "text", "pill-radius": "radius-control", radius: "radius-control", minWidth: "min-width" };
+
+// ── classic-mode legacy size renames (T-0026, PR #813 review) ────────────────────────────────────
+
+// frozen pre-T-0017 tables: the ten kebab size/{step}/* fields the engine emitted over the steps
+// xs, sm, md, lg, xl, 2xl, and the UI voice steps T-0017 retired (UI-control and UI-widget keep md).
+export const LEGACY_SIZE_FIELDS = ["height", "icon", "caret", "icon-gap", "padding-narrow", "padding-wide", "padding-narrow-compact", "padding-wide-compact", "pill-radius", "min-width"];
+const RETIRED_UI_VOICES = ["ui-control", "ui-widget"];
+const RETIRED_UI_STEPS = ["xs", "sm", "lg", "xl", "2xl"];
+const RETIRED_UI_PROPS = ["size", "line-height", "letter-spacing", "weight", "paragraph-spacing", "single-line-height"];
+
+// legacySizeRenames(currentNames, mdCell) → { oldName: newName }, the id-preserving rename map CLASSIC
+// apply stamps onto a Geometry plan so the prune never reaches a live file's legacy variables (the
+// renames run before the reconcile and the prune, and both prunes skip _deprecated/ names). Library
+// mode keeps ADR-032's nearest-by-height alias path and never gets this map. Each legacy step renames
+// onto its LEGACY_SIZE_CELLS cell, MD onto mdCell (the kit default cell, sizeAnchor(scale, "MD").name),
+// claimed in that order so MD wins a shared cell; a step whose cell is taken, empty, or not in the
+// plan deprecates. A field keeps its spelling when the cell carries it, else bridges through
+// GEOMETRY_FIELD_RENAME_MAP, else deprecates. Both the kebab name and its pre-ADR-016 spelling
+// (kebabWaveOldName) are covered. The retired UI-control and UI-widget steps deprecate rather than
+// map to md: the SAME scope decision as size/{step}/font (see GEOMETRY_FIELD_RENAME_MAP's header).
+export function legacySizeRenames(currentNames, mdCell) {
+  const wanted = new Set(currentNames || []);
+  const out = {};
+  const put = (oldName, target) => {
+    if (wanted.has(oldName)) return;
+    out[oldName] = target && wanted.has(target) ? target : "_deprecated/" + oldName;
+  };
+  const claimed = new Set();
+  for (const [step, cell] of [["MD", mdCell], ...Object.entries(LEGACY_SIZE_CELLS)]) {
+    const owns = !!cell && !claimed.has(cell) && wanted.has(`size/${cell}/height`);
+    if (owns) claimed.add(cell);
+    for (const field of LEGACY_SIZE_FIELDS) {
+      let target = null;
+      if (owns) {
+        const f = wanted.has(`size/${cell}/${field}`) ? field : GEOMETRY_FIELD_RENAME_MAP[field];
+        if (f) target = `size/${cell}/${f}`;
+      }
+      const kebab = `size/${step.toLowerCase()}/${field}`;
+      put(kebab, target);
+      const pre = kebabWaveOldName(kebab);
+      if (pre) put(pre, target);
+    }
+  }
+  for (const voice of RETIRED_UI_VOICES) for (const step of RETIRED_UI_STEPS) for (const prop of RETIRED_UI_PROPS) {
+    const kebab = `type/${voice}/${step}/${prop}`;
+    put(kebab, null);
+    const pre = kebabWaveOldName(kebab);
+    if (pre) put(pre, null);
+  }
+  return out;
+}

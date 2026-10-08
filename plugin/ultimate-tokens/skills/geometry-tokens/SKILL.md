@@ -29,7 +29,7 @@ pick the context and bind the role.
    exists, stop and ask, do not hardcode dimensions.
 2. **Read the prefix.** The default is native (`--size-*`, `--radius-md`, `--space-*`). A Material
    scheme or a brand prefix namespaces the cell primitives and the container tier under one root,
-   `--md-size-*` / `--md-radius-md` / `--md-space-*`. The 13 resolved roles (`--control-*`, `--chip-*`,
+   `--md-size-*` / `--md-radius-md` / `--md-space-*`. The 15 resolved roles (`--control-*`, `--chip-*`,
    `--radius-control/-mark/-inset/-card`) and the resolver's `--ctx-*` hooks are **never prefixed**, so
    component CSS reads the same names under every export.
 3. **Know the context axes.** Four attributes pick the geometry for a subtree, and the **nearest
@@ -42,9 +42,10 @@ pick the context and bind the role.
    Unset axes fall back to the kit default (the kit's tier and scale, size `md`, the kit's radius mode).
 4. **Know the grammar.** Cell primitives: `--size-{tier}-{scale}-{size}-{field}`, field ∈ `height ·
    inset · text · icon · caption-text · chip-height · chip-inset · chip-text · icon-ratio · min-width ·
-   radius-control · radius-mark · radius-inset · radius-card`. Resolved roles: `--control-height`,
+   radius-control · radius-mark · radius-inset · radius-card · part-height · part-inset`. Resolved roles: `--control-height`,
    `--control-inset`, `--control-text`, `--control-icon`, `--control-caption-text`,
-   `--control-icon-ratio`, `--chip-height`, `--chip-inset`, `--chip-text`, `--radius-control`,
+   `--control-icon-ratio`, `--chip-height`, `--chip-inset`, `--chip-text`, `--control-part-height`,
+   `--control-part-inset`, `--radius-control`,
    `--radius-mark`, `--radius-inset`, `--radius-card`. Container tier: the Material 3 corner ladder
    `--radius-{none|xs|sm|md|lg|xl|full}`, `--space-{0…9}`,
    `--inset-{control-group|card|panel|dialog|page}`,

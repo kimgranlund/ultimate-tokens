@@ -11,7 +11,7 @@ is checked against that fixture, not against a second copy of the engine's formu
 { tier, scale, radius, spaceBase }      (DEFAULT_GEOMETRY = product / md / round / 4)
    │  cellHeight(tier, scale, size) for all 27 cells, each a LADDER_ROWS lookup
    ▼
-cells (27 × 14 fields) + cell (the kit default, {tier}-{scale}-md)
+cells (27 × 16 fields) + cell (the kit default, {tier}-{scale}-md)
    │  + the container tier from spaceBase (radii, space, insets, gaps, borders, focus)
    ▼
 geomTokensCSS (primitives + container + resolver) · geomTokensDTCG · geomTokensFigma · geomTokensFigmaModes
@@ -111,7 +111,7 @@ and Figma groups. The `container-identity` group pins them to the pre-ADR-032 va
 
 ### 7. The emitters: same numbers, several shapes
 
-`CELL_FIELDS` is the single field list (14 kebab names with their cell keys) every emitter reads, so a new
+`CELL_FIELDS` is the single field list (16 kebab names with their cell keys) every emitter reads, so a new
 field lands everywhere at once. CSS carries units (`px`, or rem/em via `dimUnit`); `icon-ratio` is
 unitless on every surface. DTCG carries `dimension` tokens (`number` for `icon-ratio`); Figma carries
 unitless numbers. `geomTokensFigmaModes` writes `size/{cell}/{field}` FLOATs with the same value in every

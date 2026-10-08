@@ -55,7 +55,9 @@ text row: control text per height is one table, `UI_TEXT` in type.mjs.
 Every emitter iterates `CELL_FIELDS`; a new field added there reaches CSS, DTCG, Figma and the Figma
 modes at once. A field the resolver should expose also joins `RESOLVER_FIELDS` and gets a role name from
 the ADR-032 map. Then update the fixture-backed test, the consumer skill
-(`plugin/ultimate-tokens/skills/geometry-tokens/`) and its parity script.
+(`plugin/ultimate-tokens/skills/geometry-tokens/`) and its parity script. The cell carries 16 fields since ADR-033
+added `part-height` and `part-inset` (roles `--control-part-height/-inset`, our names; Maison has no
+part role).
 
 ### Figma ALIAS variables are per-mode names
 

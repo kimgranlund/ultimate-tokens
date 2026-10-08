@@ -1150,13 +1150,14 @@ Format: Context → Decision → Rationale → Consequences → Status.
     variables plus 9 x 14 per-mode ALIAS variables `control/{tier}/{size}/{field}`, each naming
     `size/{tier}-{modeScale}-{size}/{field}` for that mode's scale. `validateModeInterchange` accepts
     an ALIAS whose every mode names a literal variable of the same collection, and `applyFloatPlans`
-    writes the aliases after the literals. A live file's old `size/{XS..2XL}` and `size/{0..9}`
-    variables alias to cells by their live heights through `geometrySizeAliasMap`, whose tiebreak is
+    writes the aliases after the literals. In published-library mode, a live file's old
+    `size/{XS..2XL}` and `size/{0..9}` variables alias to cells by their live heights through
+    `geometrySizeAliasMap`, whose tiebreak is
     `geometryCellOrder` (product before content before micro, then size md, sm, lg, then scale md,
     sm, lg), never the shared `nearestStepByHeight`. `GEOMETRY_FIELD_RENAME_MAP` maps the old fields
     that have a cell target (padding to inset, font to text, pill-radius and radius to
     radius-control, minWidth to min-width); caret, gap, icon-gap and the wide and compact pads
-    deprecate id-preserving.
+    deprecate id-preserving. Classic mode is the amendment below.
   - Ladder cells have no pre-ADR-016 kebab-wave name: `kebabWaveOldName` returns null for any
     `size/{tier}-{scale}-{size}/*` variable, and `OLD_FIELD` stays frozen as the pre-wave grammar
     exactly as it shipped. A cell's real predecessors are the legacy `size/{step}` variables above.
@@ -1179,6 +1180,45 @@ Format: Context → Decision → Rationale → Consequences → Status.
   the prefix contract; the real-browser smoke renders the 108 nested resolver cases (CI only).
 - **Status.** PROPOSED 2026-10-07 (T-0017, #803). Ratification is the owner's: the owner edits this
   line to DECIDED, or amends the text under the file's amendment shape.
+- **Amendment (2026-10-08).** `legacySizeRenames` (`figma/binder/migrations.mjs`, T-0026, from the
+  PR #813 review). Classic apply (Published library off, the default) never reached the alias path
+  above, so the first apply on an existing file pruned every legacy `size/{xs..2xl}/*` and retired
+  `type/ui-control|ui-widget/{non-md}/*` variable and detached every bound layer and text style.
+  `legacySizeRenames` builds an id-preserving rename map that `_figmaFloatPlans` stamps onto the
+  Geometry plan on a classic apply only. It renames the legacy `size/{xs..2xl}/*` fields and their
+  pre-ADR-016 spellings onto the `LEGACY_SIZE_CELLS` cells, with MD going to the kit default cell
+  through `sizeAnchor`; a field keeps its name when the cell carries it, else bridges through
+  `GEOMETRY_FIELD_RENAME_MAP`. Fields with no cell target, and the retired UI-control and UI-widget
+  steps, rename under `_deprecated/` in both modes, so nothing is pruned. Library mode keeps the
+  nearest-by-height alias path: stamping renames there would turn every alias into a rename,
+  because renames run before the reconcile.
+
+## ADR-033: Compound containers take half the part's inset and compose radius concentrically
+- **Context.** T-0027. A segmented control, a tab row, a listbox and a menu are containers of repeated
+  parts, and the geometry engine had no rule for them, so the shell's `.segmented` padded by eye. The
+  user ruled on 2026-10-08: "I usually take half of the composed component and remove it (segment or
+  button/option/trigger/etc) and give it to the container so the net effect and alignment is held. This
+  also needs to be factored in to how radius composes."
+- **Decision.** The half law. Each cell gains two fields: `partHeight = height - inset` and
+  `partInset = inset / 2` (kebab `part-height`, `part-inset`; roles `--control-part-height` and
+  `--control-part-inset`, unprefixed like every role). A control-sized container pads `partInset` and
+  keeps `radiusControl`; each repeated part is `partHeight` tall, keeps `partInset` inline and takes
+  `radiusInset`, so the part's content and the outer size stay where a lone control puts them and the
+  two corners stay concentric. A wrap around full-height parts (listbox, menu, popover) takes
+  `radiusCard` around `radiusControl` options. No new radius field: the existing
+  `radiusInset = max(0, radiusControl - inset / 2)` and `radiusCard = radiusControl + inset / 2`
+  already encode the half. Maison's listbox matches the half law; its segmented control uses a quarter
+  (`padding: inset / 4`, item `height - inset / 2`), which this record does not match.
+- **Rejected.** Resolver-only fields (a role with no cell primitive breaks the `CELL_FIELDS` lockstep
+  and the Figma cells). A `radius-part` field (it would duplicate `radius-inset`). `data-size` on the
+  shell's `.seg-sm` (it changes the whole cell, not the compound split).
+- **Consequences.** The cell carries 16 fields and the resolver 15 roles (superseding ADR-032's 14 and
+  13); Figma emits 432 `size/` FLOATs and 144 `control/` ALIASes per Geometry collection. The chip
+  stays separate: it snaps to a ladder row, the part is exact, and on the three micro cells where no
+  ladder row sits at or below `height - inset` the chip is taller than the part. CSS, DTCG, Figma, MCP
+  and the consumer skill `geometry-tokens` carry the two fields.
+- **Status.** PROPOSED 2026-10-08 (T-0027). Ratification is the owner's: the owner edits this line to
+  DECIDED, or amends the text under the file's amendment shape.
 
 ## Quick map: decisions an enhancing agent is most likely to "fix" (don't)
 | ADR | Looks wrong because… | But it's intentional because… |

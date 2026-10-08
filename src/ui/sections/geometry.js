@@ -1,5 +1,5 @@
 import { STANDARD_GEOM_RUNGS, geomEffectiveModes, geomModeScales, geomScaleFor, slug } from "../model.mjs";
-import { DEFAULT_GEOMETRY, RADIUS_MODES, SCALES, TIERS, mdAnchor, orderedSizeNames, geomTokensDTCG } from "../../engine/geometry.mjs";
+import { CELL_FIELDS, DEFAULT_GEOMETRY, RADIUS_MODES, SCALES, TIERS, mdAnchor, orderedSizeNames, geomTokensDTCG } from "../../engine/geometry.mjs";
 import { icon } from "../icons.js";
 import { btn, ensureTypeFonts, field, h } from "../app-helpers.mjs";
 
@@ -8,13 +8,6 @@ const TIER_LABEL = { content: "Content", product: "Product", micro: "Micro" };
 const SCALE_LABEL = { sm: "Small", md: "Medium", lg: "Large" };
 const RADIUS_LABEL = { default: "Default", round: "Round", sharp: "Sharp", pill: "Pill" };
 const SPACE_BASES = [4, 8];
-// the 14 per-cell token fields the tokens table lists, [token suffix, cell key], in the engine's emit order.
-const TABLE_FIELDS = [
-  ["height", "height"], ["inset", "inset"], ["text", "text"], ["icon", "icon"],
-  ["caption-text", "captionText"], ["chip-height", "chipHeight"], ["chip-inset", "chipInset"], ["chip-text", "chipText"],
-  ["icon-ratio", "iconRatio"], ["min-width", "minWidth"],
-  ["radius-control", "radiusControl"], ["radius-mark", "radiusMark"], ["radius-inset", "radiusInset"], ["radius-card", "radiusCard"],
-];
 // a readout number: the radius and ratio fields keep full float precision in the engine, the UI shows 2 places.
 const num = (v) => String(Math.round(v * 100) / 100);
 // cellRows(scale), the 27 cells grouped into the nine tier × scale rows, each [rowName, [sm, md, lg]], in
@@ -64,8 +57,8 @@ export class GeomSectionImpl {
   }
 
   // renderGeomTokensTable, the Geometry token TABLE: one row per cell (the 27 cells in orderedSizeNames
-  // order, the token NAME --size-{tier}-{scale}-{size} in the sticky first column) × the 14 per-cell
-  // fields. Read-only: the cells are one fixed ladder, the same in every breakpoint mode (a mode moves
+  // order, the token NAME --size-{tier}-{scale}-{size} in the sticky first column) × the engine's
+  // CELL_FIELDS, the 16 per-cell fields. Read-only: the cells are one fixed ladder, the same in every breakpoint mode (a mode moves
   // the kit along the scale axis instead); the kit default cell is marked.
   renderGeomTokensTable() {
     const scale = this._geomScaleFor("base");
@@ -73,23 +66,23 @@ export class GeomSectionImpl {
     const kit = scale.cell.name;
     const { baseName: bn } = this._geomBaseOpts();
     const modes = [[bn, scale.scale], ...this._geomEffectiveModes().map((m) => [m.name || "Mode", m.scale])];
-    const headCells = TABLE_FIELDS.map(([f]) => h("th", { class: "tok-col", scope: "col" }, h("span", { class: "tok-col-name" }, f)));
+    const headCells = CELL_FIELDS.map(([f]) => h("th", { class: "tok-col", scope: "col" }, h("span", { class: "tok-col-name" }, f)));
     const rows = [];
     rows.push(h("tr", { class: "tok-group" },
-      h("th", { class: "tok-grouphead", colspan: String(TABLE_FIELDS.length + 1), scope: "colgroup" },
+      h("th", { class: "tok-grouphead", colspan: String(CELL_FIELDS.length + 1), scope: "colgroup" },
         h("b", {}, "Cells"), h("small", {}, "tier × scale × size"), h("span", { class: "tok-group-count" }, `${names.length} cells`))));
     for (const name of names) {
       const c = scale.cells[name];
       rows.push(h("tr", { class: "tok-row" + (name === kit ? " is-kit" : ""), "data-cell": name },
         h("th", { class: "tok-name", scope: "row" }, h("code", {}, `--size-${name}`), name === kit ? h("small", { class: "tok-col-bp" }, " kit") : false),
-        ...TABLE_FIELDS.map(([, key]) => h("td", { class: "tok-cell" }, num(c[key])))));
+        ...CELL_FIELDS.map(([, key]) => h("td", { class: "tok-cell" }, num(c[key])))));
     }
     return h(
       "div",
       { class: "tok-wrap" },
       h("div", { class: "tok-head" },
         h("b", {}, "Geometry tokens"),
-        h("small", {}, `${names.length} cells · ${TABLE_FIELDS.length} fields · kit ${kit}`),
+        h("small", {}, `${names.length} cells · ${CELL_FIELDS.length} fields · kit ${kit}`),
         h("small", { class: "tok-hint" }, `The cells are one fixed ladder, the same at every breakpoint; a breakpoint moves the kit along the scale axis (${modes.map(([n, s]) => `${n} ${s}`).join(" · ")}).`)),
       h(
         "table",
@@ -298,7 +291,7 @@ export class GeomSectionImpl {
       this.geomMode === "compare" ? false : this.segmented(
         [
           { id: "controls", label: "Controls", title: "Live mock controls: render each of the 27 cells as a real box" },
-          { id: "tokens", label: "Tokens", title: "Token table: every cell × its 14 fields" },
+          { id: "tokens", label: "Tokens", title: `Token table: every cell × its ${CELL_FIELDS.length} fields` },
         ],
         this.geomSpecMode,
         (id) => this.setGeomSpecMode(id),
