@@ -1492,7 +1492,7 @@ class HctApp extends HTMLElement {
     const left = side === "left";
     const shown = left ? this.panesLeft : this.panesRight;
     return h("button", {
-      class: "ghost pane-toggle pane-toggle-" + side + (shown ? " on" : ""),
+      class: "icon-only pane-toggle pane-toggle-" + side + (shown ? " on" : ""),
       "data-fk": "pane-" + side,
       title: (shown ? "Collapse" : "Show") + (left ? " the analysis pane ([)" : " the inspector pane (])"),
       "aria-label": (shown ? "Collapse" : "Show") + (left ? " left analysis pane" : " right inspector pane"),

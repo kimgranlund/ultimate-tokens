@@ -4568,6 +4568,54 @@ app.setSection("color"); app.render(); flushRaf();
   ok(app.sel.kind === "none" && ctx786() === "global", `(g786) Esc after stepping returns to the Global inspector (got ${ctx786()})`);
 }
 
+// ── (cpd) compound insets: icon-only buttons (btn() + paneToggle) and the .segmented / button.icon-only rules ──
+// The shim has no computed styles, so sizes are the smoke's job (smoke.mjs "compound at"); here the
+// classes the helper emits, and a text check of the two rules with negative controls on mutated copies.
+{
+  const { btn: btnCPD } = await import("../../src/ui/app-helpers.mjs");
+  const { icon: iconCPD } = await import("../../src/ui/icons.js");
+  const { readFileSync: rfCPD } = await import("node:fs");
+  app.doc = defaultDocumentDPA();
+  app.history = []; app.future = [];
+  app.section = "color"; app.panesLeft = true; app.panesRight = true;
+  app._deselect(); app.render(); flushRaf();
+  const cls = (e) => (e && e.className) || "";
+  const isIconOnly = (e) => !!e && e.classList.contains("icon-only") && !e.classList.contains("ghost");
+  const byLabel = (label) => walk(app, (e) => e.tagName === "BUTTON" && e.getAttribute("aria-label") === label)[0];
+  const toggles = walk(app, (e) => e.tagName === "BUTTON" && e.classList.contains("pane-toggle"));
+  ok(toggles.length === 2 && toggles.every(isIconOnly), `(cpd1) both pane toggles carry icon-only and not ghost (got ${toggles.map(cls).join(" | ")})`);
+  const named = ["Zoom in", "Undo", "Settings"].map((l) => [l, byLabel(l)]);
+  ok(named.every(([, b]) => isIconOnly(b)), `(cpd2) the Zoom in, Undo and Settings buttons carry icon-only and not ghost (got ${named.map(([l, b]) => l + ": " + cls(b)).join(" | ")})`);
+  const addData = walk(app, (e) => e.tagName === "BUTTON" && txtOf(e).includes("Add data palettes (8)"))[0];
+  ok(!!addData && addData.classList.contains("ghost") && !addData.classList.contains("icon-only"), `(cpd3) the "Add data palettes (8)" icon + label button stays ghost, not icon-only (got ${cls(addData)})`);
+  const bare = btnCPD(iconCPD("x"), { variant: "bare", cls: "key-act", ariaLabel: "Remove" });
+  const bareArr = btnCPD([iconCPD("x")], { variant: "bare", ariaLabel: "Remove" });
+  const ghostArr = btnCPD([iconCPD("x")], { ariaLabel: "Close" });
+  ok(!bare.classList.contains("icon-only") && !bareArr.classList.contains("icon-only") && isIconOnly(ghostArr), `(cpd4) a variant "bare" icon button carries no icon-only; a default one-item array does (got ${cls(bare)} | ${cls(bareArr)} | ${cls(ghostArr)})`);
+  // the rules, parsed from the real stylesheet text; a selector matches when it is one item of the rule's list
+  const rulesOk = (text) => {
+    const c = text.replace(/\/\*[\s\S]*?\*\//g, "");
+    const R = [...c.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => [m[1].trim().split(/\s*,\s*/), m[2]]);
+    const body = (s) => R.filter(([sel]) => sel.includes(s)).map((r) => r[1]).join(";");
+    const seg = body(".segmented"), part = body(".segmented button"), io = body("button.icon-only");
+    const literalPad = /(^|;)\s*padding[a-z-]*\s*:\s*[^;]*\b[1-9][0-9.]*px/.test(seg.split(";").filter((d) => !/var\(/.test(d)).join(";"));
+    const need = [
+      [seg, "block-size: var(--sh-control-height)"], [seg, "padding: calc(var(--sh-part-inset) - 1px)"],
+      [seg, "border-radius: var(--sh-control-radius)"], [seg, "gap: 0"],
+      [part, "min-block-size: var(--sh-part-height)"], [part, "padding-inline: var(--sh-part-inset)"], [part, "border-radius: var(--sh-radius-inset)"],
+      [io, "inline-size: var(--sh-control-height)"], [io, "block-size: var(--sh-control-height)"], [io, "padding: 0"],
+      [io, "justify-content: center"], [io, "border-color: transparent"], [io, "background: transparent"],
+    ];
+    return need.every(([t, s]) => t.includes(s)) && !literalPad && !/border-color:\s*var\(--line\)/.test(io);
+  };
+  const cssCPD = rfCPD("src/ui/styles.css", "utf8");
+  ok(rulesOk(cssCPD), "(cpd5) styles.css: .segmented is one control height with a part-inset pad and the control radius; button.icon-only is square, unpadded, borderless and transparent");
+  const segPad = cssCPD.replace("padding: calc(var(--sh-part-inset) - 1px)", "padding: 2px");
+  const ioLine = cssCPD.replace(/(button\.icon-only \{[^}]*?)border-color: transparent/, "$1border-color: var(--line)");
+  ok(segPad !== cssCPD && !rulesOk(segPad), "(cpd5) negative control: a copy with padding: 2px restored on .segmented fails the check");
+  ok(ioLine !== cssCPD && !rulesOk(ioLine), "(cpd5) negative control: a copy with border-color: var(--line) on button.icon-only fails the check");
+}
+
 // ── report ──────────────────────────────────────────────────────────────────────────
 if (fails.length) {
   console.error("HEADLESS BOOT FAIL:");

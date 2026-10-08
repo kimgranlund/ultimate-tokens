@@ -93,6 +93,8 @@ ultimate-tokens {
   --sh-control-icon: var(--control-icon, 16px);
   --sh-control-radius: var(--radius-control, 14px);
   --sh-radius-inset: var(--radius-inset, 10px);
+  --sh-part-height: var(--control-part-height, 24px);
+  --sh-part-inset: var(--control-part-inset, 4px);
   --sh-chip-height: var(--chip-height, 24px);
   --sh-chip-inset: var(--chip-inset, 5.5px);
   --sh-chip-text: var(--chip-text, 12px);
@@ -205,6 +207,15 @@ button.primary {
 button.primary:hover { filter: brightness(1.07); }
 button.ghost { border-color: var(--line); }
 button.ghost:hover { background: var(--line-2); }
+/* icon-only: a square control (side = control height, the icon centered), borderless and ghost until
+   hover (the base button:hover fill); pressed reads as the accent glyph alone. */
+button.icon-only {
+  inline-size: var(--sh-control-height); min-inline-size: var(--sh-control-height);
+  block-size: var(--sh-control-height); padding: 0; justify-content: center;
+  border-color: transparent; background: transparent;
+}
+button.icon-only:hover { background: var(--line-2); }
+button.icon-only[aria-pressed="true"] { color: var(--accent); }
 button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 /* SVG icon registry (icons.js): an inline-flex span carrying a currentColor <svg>; it inherits the
    surrounding color and centers on the text line, so an icon matches its button/label exactly. The
@@ -435,11 +446,8 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 .app-header .spacer { flex: 1; }
 /* pane-collapse toggles, one per side. While its pane is OPEN the toggle sits in that
    pane's own header (accented via .on); once collapsed it pops to the canvas-header. */
-.pane-toggle {
-  padding: 3px 8px; color: var(--ink-dim); flex: none;
-  font-size: 12px; line-height: 1; letter-spacing: -.04em;
-}
-.pane-toggle.on { color: var(--accent); border-color: var(--accent); }
+.pane-toggle { color: var(--ink-dim); flex: none; }
+.pane-toggle.on { color: var(--accent); }
 
 /* left pane = ANALYSIS rail (stacked, scrollable graphs for the selected palette) */
 .left-pane {
@@ -544,7 +552,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 .canvas-header .add-pal-btn:hover { border-color: var(--accent); color: var(--accent); }
 /* Typography breakpoint Mode control (canvas header), the Base/modes segment + a "+" to add one */
 .mode-control { display: inline-flex; align-items: center; gap: 4px; }
-.mode-control .mode-add { flex: none; padding: 4px 6px; }
+.mode-control .mode-add { flex: none; }
 /* the inspector mode editor: rename + delete the active breakpoint */
 .mode-editor { margin: 8px 0 2px; }
 .mode-editor-label { display: block; font-size: 11px; color: var(--ink-dim); margin-bottom: 4px; }
@@ -898,19 +906,24 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 .pane-head .pane-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 /* the palette inspector's way back to Global (keyboard-reachable, unlike the ramp rows) */
 .pane-head .pane-back { flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; font-size: 12px; line-height: 1; }
-.segmented {
+/* compound container (ADR-033): the container pads by the part inset (the 1px border sits inside it),
+   so the outer box is one control height; each segment is a part (partHeight tall, partInset inline,
+   radiusInset corners), concentric with the container's radiusControl. The drawer's Figma + Radix file
+   pickers are the same segmented() control under their own baseClass. */
+.segmented, .figma-files, .radix-files {
   /* no self-margin, the parent owns spacing (.pane-head provides it; .canvas-seg sits inline) */
-  display: flex; gap: 2px;
+  display: flex; gap: 0; box-sizing: border-box;
   background: var(--panel-2); border: 1px solid var(--line);
-  border-radius: var(--r); padding: 2px; flex: none;
+  block-size: var(--sh-control-height); padding: calc(var(--sh-part-inset) - 1px);
+  border-radius: var(--sh-control-radius); flex: none;
 }
-.segmented button {
+.segmented button, .figma-files button, .radix-files button {
   flex: 1; border: none; border-radius: var(--sh-radius-inset);
-  min-block-size: calc(var(--sh-control-height) - 6px); padding-block: 0;
-  padding-inline: var(--sh-control-inset); font-size: var(--sh-control-text);
+  min-block-size: var(--sh-part-height); padding-block: 0;
+  padding-inline: var(--sh-part-inset); font-size: var(--sh-control-text);
   color: var(--ink-dim); font-weight: 550; justify-content: center;
 }
-.segmented button.on {
+.segmented button.on, .figma-files button.on, .radix-files button.on {
   background: var(--accent); color: var(--accent-ink); box-shadow: var(--shadow);
 }
 .segmented button:not(.on):hover { background: var(--line-2); color: var(--ink); }
@@ -920,7 +933,6 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 .global-seg-row { display: flex; gap: 12px; }
 .global-seg-row .field { flex: 1; min-width: 0; }
 .global-seg-row .segmented { width: 100%; }
-.segmented.seg-sm button { min-block-size: var(--sh-chip-height); padding-block: 0; padding-inline: var(--sh-chip-inset); font-size: var(--sh-chip-text); }
 .canvas-seg button { flex: 0 0 auto; padding-block: 0; padding-inline: calc(var(--sh-control-inset) * 2); }
 .seg-body { flex: 1; overflow: auto; padding: 14px; }
 /* live component preview, pinned below the panel on every tab, painted from the
@@ -1106,16 +1118,10 @@ dialog.drawer::backdrop { background: rgba(10,14,22,.34); }
 /* Figma sub-bar: the import hint on its own row, then [mode-file segmented | Binder plugin] below. */
 .figma-bar { display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
 .figma-bar-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.figma-files { display: flex; gap: 2px; background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 2px; }
-.figma-files button { border-radius: var(--r-sm); padding: 4px 10px; font-size: 11.5px; font-weight: 550; color: var(--ink-dim); }
-.figma-files button.on { background: var(--accent); color: var(--accent-ink); }
 .figma-note { color: var(--ink-dim); font-size: 11px; line-height: 1.5; }
 /* Radix sub-bar (#638): the Values/References preset-file picker, same shape as .figma-bar above. */
 .radix-bar { display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
 .radix-bar-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.radix-files { display: flex; gap: 2px; background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 2px; }
-.radix-files button { border-radius: var(--r-sm); padding: 4px 10px; font-size: 11.5px; font-weight: 550; color: var(--ink-dim); }
-.radix-files button.on { background: var(--accent); color: var(--accent-ink); }
 .radix-note { color: var(--ink-dim); font-size: 11px; line-height: 1.5; }
 .figma-plugin-btn { white-space: nowrap; }
 /* Config sub-bar: the project source-of-truth actions sit ABOVE the code (not in the footer). */
@@ -1586,8 +1592,7 @@ a.account-manage:hover { text-decoration: underline; }
 @media (max-width: 1240px) { /* tighten the fixed-height header toolbars so buttons still fit */
   .app-header, .canvas-header { gap: 6px; }
   .app-header button, .canvas-header button { padding: 4px 7px; }
-  .canvas-seg button { padding: 5px 10px; }
-  .segmented button { padding: 5px 8px; }
+  .canvas-seg button { padding-inline: var(--sh-control-inset); }
 }
 
 .toast {
@@ -14549,14 +14554,19 @@ const swatch = (hex, { size = 16, alpha = false, cls = "", title } = {}) =>
 // buttons that bring their own, e.g. copy-float / map-reset). Anything position- or
 // layout-specific (add-pal-btn, figma-plugin-btn, …) is an extra `cls`, NOT a variant,
 // that separation is the whole point (it un-pollutes the variant axis). Icon-only buttons
-// MUST pass `ariaLabel`. `children` is a node or an array of nodes.
+// MUST pass `ariaLabel`. `children` is a node or an array of nodes. A default (ghost) button whose
+// only child is one `.ic` icon becomes `icon-only` instead: square, borderless, ghost until hover.
 const BTN_VARIANT = { ghost: "ghost", primary: "primary", danger: "ghost danger", bare: "" };
+const isIconOnly = (children) => {
+  const kids = Array.isArray(children) ? children : [children];
+  return kids.length === 1 && /(^|\s)ic(\s|$)/.test(kids[0]?.className ?? "");
+};
 const btn = (children, { variant = "ghost", cls = "", title, ariaLabel, ariaPressed, onclick, type = "button", disabled } = {}) =>
   h(
     "button",
     {
       type,
-      class: [BTN_VARIANT[variant] ?? "ghost", cls].filter(Boolean).join(" "),
+      class: [variant === "ghost" && isIconOnly(children) ? "icon-only" : (BTN_VARIANT[variant] ?? "ghost"), cls].filter(Boolean).join(" "),
       title,
       "aria-label": ariaLabel,
       "aria-pressed": ariaPressed,
@@ -17146,7 +17156,6 @@ class ColorSectionImpl {
                 ariaLabel: "Hue space",
                 role: "group",
                 idPrefix: "huespace",
-                cls: "seg-sm",
               },
             ),
           ),
@@ -17158,7 +17167,7 @@ class ColorSectionImpl {
               [{ id: "fixed", label: "Fixed" }, { id: "contrast", label: "Contrast" }],
               d.onColorMode === "contrast" ? "contrast" : "fixed",
               (id) => this.commit((doc) => (doc.onColorMode = id)),
-              { ariaLabel: "On-colors", role: "group", idPrefix: "oncolor", cls: "seg-sm" },
+              { ariaLabel: "On-colors", role: "group", idPrefix: "oncolor" },
             ),
           ),
         );
@@ -22113,7 +22122,7 @@ class HctApp extends HTMLElement {
     const left = side === "left";
     const shown = left ? this.panesLeft : this.panesRight;
     return h("button", {
-      class: "ghost pane-toggle pane-toggle-" + side + (shown ? " on" : ""),
+      class: "icon-only pane-toggle pane-toggle-" + side + (shown ? " on" : ""),
       "data-fk": "pane-" + side,
       title: (shown ? "Collapse" : "Show") + (left ? " the analysis pane ([)" : " the inspector pane (])"),
       "aria-label": (shown ? "Collapse" : "Show") + (left ? " left analysis pane" : " right inspector pane"),

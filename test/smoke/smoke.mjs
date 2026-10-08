@@ -285,6 +285,39 @@ try {
   writeFileSync(resolve(OUT, "editor.png"), Buffer.from(shot.data, "base64"));
   console.log("  · screenshot → smoke-out/editor.png");
 
+  // Compound insets (T-0027): at two shell geometries the shell's segmented controls are one control height
+  // with part-height segments and concentric corners, and every icon-only button outside the canvas scene
+  // is a borderless control-height square. Expected values are the engine's md cell at that tier + scale.
+  for (const [tier, scale, png] of [["product", "md", "compound-product-md.png"], ["content", "lg", "compound-content-lg.png"]]) {
+    const cell = geomScale({ tier, scale, radius: "round" }).cells[`${tier}-${scale}-md`];
+    await evalJS(`(()=>{${el}.shellGeometry={tier:"${tier}",scale:"${scale}",radius:"round"};${el}.setSection("color");${el}._deselect();${el}.render();})()`); await sleep(300);
+    const cpd = await evalJS(`(()=>{const vis=(e)=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0};const px=(e,p)=>parseFloat(getComputedStyle(e)[p]);
+      const segs=[...${el}.querySelectorAll(".segmented")].filter(vis).map((s)=>({h:s.getBoundingClientRect().height,r:px(s,"borderTopLeftRadius"),btn:[...s.querySelectorAll("button")].filter(vis).map((b)=>({h:b.getBoundingClientRect().height,r:px(b,"borderTopLeftRadius")}))}));
+      const icons=[...${el}.querySelectorAll("button.icon-only")].filter((b)=>vis(b)&&!b.closest(".canvas-scene")).map((b)=>{const r=b.getBoundingClientRect();return {w:r.width,h:r.height,bc:getComputedStyle(b).borderTopColor,label:b.getAttribute("aria-label")}});
+      return {segs,icons};})()`);
+    const near = (a, b) => Math.abs(a - b) <= 0.5;
+    const clear = (c) => /rgba\(\s*0,\s*0,\s*0,\s*0\s*\)|transparent/.test(c);
+    const bad = [];
+    (cpd.segs || []).forEach((s, i) => {
+      if (!near(s.h, cell.height)) bad.push(`segmented ${i} outer ${s.h} (want ${cell.height})`);
+      if (!near(s.r, cell.radiusControl)) bad.push(`segmented ${i} radius ${s.r} (want ${cell.radiusControl})`);
+      s.btn.forEach((b, j) => {
+        if (!near(b.h, cell.partHeight)) bad.push(`segmented ${i} button ${j} ${b.h} (want ${cell.partHeight})`);
+        if (!near(b.r, cell.radiusInset)) bad.push(`segmented ${i} button ${j} radius ${b.r} (want ${cell.radiusInset})`);
+      });
+    });
+    (cpd.icons || []).forEach((b) => {
+      if (!near(b.w, cell.height) || !near(b.h, cell.height)) bad.push(`icon-only "${b.label}" ${b.w}x${b.h} (want ${cell.height})`);
+      if (!clear(b.bc)) bad.push(`icon-only "${b.label}" border-top-color ${b.bc} (want transparent)`);
+    });
+    bad.slice(0, 8).forEach((m) => console.log("    " + m));
+    ok((cpd.segs || []).length > 0 && (cpd.icons || []).length > 0 && bad.length === 0, `compound at ${tier}-${scale}: segmented outer = control height, segments = part height, concentric corners, icon-only buttons square and borderless${bad.length ? ` (${bad.length} off)` : ""}`);
+    const cpdShot = await send("Page.captureScreenshot", { format: "png" });
+    writeFileSync(resolve(OUT, png), Buffer.from(cpdShot.data, "base64"));
+    console.log(`  · screenshot → smoke-out/${png}`);
+  }
+  await evalJS(`(()=>{${el}.shellGeometry=null;${el}.render();})()`); await sleep(200);
+
   // New-Palette modal: a CENTERED top-layer <dialog> with the "Derive from" strip + the 3 tabs.
   await evalJS(`${el}.openNewPalette()`); await sleep(400);
   ok(await evalJS(`(()=>{const d=${el}.querySelector("dialog.newpal");if(!d||!d.open)return false;const r=d.getBoundingClientRect();return Math.abs((r.left+r.right)/2 - innerWidth/2) < 2 && Math.abs((r.top+r.bottom)/2 - innerHeight/2) < 2})()`), "New-Palette modal opens centered in the top layer");
