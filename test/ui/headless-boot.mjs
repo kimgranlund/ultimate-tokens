@@ -303,12 +303,6 @@ fireKey("ArrowUp");
 ok(app.selectedIndex() === 0, "ArrowUp selects prev palette");
 fireKey("ArrowUp"); // wrap to last
 ok(app.selectedIndex() === app.doc.palettes.length - 1, "ArrowUp wraps to last");
-fireKey("2");
-ok(app.segment === "global", "key '2' -> Global segment");
-fireKey("3");
-ok(app.segment === "global", "key '3' is unbound (the Roles inspector tab is gone, the Mapping canvas view lists every role)");
-fireKey("1");
-ok(app.segment === "palette", "key '1' -> Palette segment");
 app.toggleDrawer(true);
 ok(app.exportOpen, "drawer opened");
 fireKey("Escape");
@@ -317,18 +311,13 @@ ok(!app.exportOpen, "Esc closes the open drawer");
 app.selectPalette(2);
 fireKey("Escape");
 ok(app.sel.kind === "none", "Esc with no drawer deselects");
-// (b2) pane-context U1: Esc lands on Global; the tabs still win while the selection is unchanged.
-ok(app.segment === "global", `(b2) Esc deselect lands the right pane on segment "global" (got ${app.segment})`);
-app.selectPalette(2);
-app.setSegment("global"); app.render(); flushRaf();
-ok(app.sel.kind === "palette" && app.segment === "global", `(b2) setSegment("global") with a palette selected survives a second render (got ${app.segment})`);
+// (the Esc -> Global inspector landing is asserted in the (ic) group)
 
 // (e) typing in an input must NOT trigger shortcuts
 app.selectPalette(0);
-const segBefore = app.segment;
 const fakeInput = new El("input"); fakeInput.type = "text";
-doc.dispatch("keydown", { key: "2", target: fakeInput });
-ok(app.segment === segBefore, "key '2' in a text input does NOT switch segment");
+doc.dispatch("keydown", { key: "Escape", target: fakeInput });
+ok(app.sel.kind === "palette", "Esc in a text input does NOT deselect");
 doc.dispatch("keydown", { key: "ArrowDown", target: fakeInput });
 ok(app.selectedIndex() === 0, "ArrowDown in a text input does NOT move selection");
 // but undo/redo DO work from inside an input (standard editor behavior)
@@ -424,7 +413,7 @@ const isText = (e) => e.tagName === "INPUT" && (e.attrs.type === "text" || e.get
 
 app.openSet(app.sets[0].id); // fresh doc + clean stacks
 flushRaf();
-app.setSegment("palette");
+app.selectPalette(app.selectedIndex());
 app.selectPalette(0);
 app.render();
 flushRaf();
@@ -480,7 +469,7 @@ ok(app.doc.palettes[sel].hue === hueStart, "(d) that one undo reverts the WHOLE 
 
 // ── (g) same for a GLOBAL slider (Tension) ───────────────────────────────────────────
 app.doc.toneMode = "even"; // Tension is an even-mode control, make it visible (direct set: no undo step)
-app.setSegment("global");
+app._deselect();
 app.render();
 flushRaf();
 const sceneG0 = app.querySelector(".canvas-scene");
@@ -504,7 +493,7 @@ tensionInput.dispatch("change", {});
 ok(app.history.length - tHistPre === 1, `(g) the global drag is ONE undo step (got ${app.history.length - tHistPre})`);
 
 // ── (h) palette-NAME input: typing must NOT replace the input (focus/caret survive) ──
-app.setSegment("palette");
+app.selectPalette(app.selectedIndex());
 app.selectPalette(0);
 app.render();
 flushRaf();
@@ -531,18 +520,51 @@ ok(app.history.length - nHistPre === 1, `(h) the whole rename is ONE undo step (
 // ── (i) NON-drag edits + UI still do a FULL render (regression guard) ─────────────────
 app.openSet(app.sets[0].id);
 flushRaf();
-// (rt) T-0016: the Roles inspector tab is retired (the Mapping canvas view lists every role); the right pane offers
-// Palette + Global (+ Story), and a stale "roles" segment falls back to Palette instead of an empty panel.
+// (ic) #809: the Color right inspector is context-driven by the selection, no Palette | Global switch. No selection (fresh
+// doc, Esc, empty-canvas click) shows the Global inspector; a selected palette shows the palette inspector. The Roles tab
+// (T-0016) stays retired, and a Story now lives in the Global inspector (st6).
 {
-  const keepSel = app.sel, keepSeg = app.segment, keepDocSel = app.doc.selected;
-  const inspTabs = () => { const out = []; const w = (n) => { for (const c of n.children || []) { const fk = c.dataset && c.dataset.fk; if (fk && fk.startsWith("tab:")) out.push({ id: fk.slice(4), on: c.classList.contains("on") }); w(c); } }; w(app); return out; };
+  const keepSel = app.sel, keepDocSel = app.doc.selected;
+  const rp = () => app.querySelector(".right-pane");
+  const hasFk = (k) => !!findIn(rp(), (e) => e.dataset && e.dataset.fk === k);
+  const textOf = (n) => (n._text || "") + (n.children || []).map(textOf).join(""); // the shim's textContent is own-text only
+  const title = () => { const t = findIn(rp(), (e) => e.classList.contains("insp-title")); return t ? textOf(t) : ""; };
+  // the switch markup: a tablist, an "Inspector" labelled control, or any tab:* focus key (the Palette / Global / Story buttons).
+  const isSwitch = (e) => e.getAttribute("role") === "tablist" || e.getAttribute("aria-label") === "Inspector" || /^tab:/.test((e.dataset && e.dataset.fk) || "");
+  const switches = () => walk(rp(), isSwitch);
+  // negative control: the detector bites on the retired control (a real app.segmented built the old way is found)
+  const probe = app.segmented([{ id: "palette", label: "Palette" }, { id: "global", label: "Global" }], "palette", () => {}, { ariaLabel: "Inspector", idPrefix: "tab", controls: "seg-panel" });
+  ok(walk({ children: [probe] }, isSwitch).length >= 1, "(ic0) negative control: the switch detector finds a Palette | Global segmented control when one is present");
+  app.canvasView = "palettes";
+  app.openSet(app.sets[0].id); flushRaf();
+  // (a) a fresh doc with nothing selected: the Global inspector, no switch
+  ok(app.sel.kind === "none", `(ica) a freshly opened doc has no selection (got ${app.sel.kind})`);
+  ok(title() === "Global controls" && hasFk("slider:Prime chroma") && !hasFk("slider:Chroma"), `(ica) no selection renders the Global inspector (title "${title()}")`);
+  ok(switches().length === 0, `(ica) no Palette | Global switch in the right pane (got ${switches().length})`);
+  // (b) selecting a palette shows the palette inspector (an app.selectPalette call, the canvas / rail click path)
   app.selectPalette(2); flushRaf();
-  ok(inspTabs().map((t) => t.id).join() === "palette,global" || inspTabs().map((t) => t.id).join() === "palette,global,story", `(rt) the inspector tabs are Palette, Global (+ Story), no Roles (got ${inspTabs().map((t) => t.id).join()})`);
-  app.segment = "roles"; app.render(); flushRaf();
-  const staleTabs = inspTabs();
-  ok(staleTabs.filter((t) => t.on).map((t) => t.id).join() === "palette", `(rt) a stale "roles" segment falls back to the Palette tab (on: ${staleTabs.filter((t) => t.on).map((t) => t.id).join()})`);
-  ok(!!app.querySelector(".seg-body") && !app.querySelector(".roles-table"), "(rt) the stale-segment panel renders the Palette inspector body, no roles table");
-  app.sel = keepSel; app.segment = keepSeg; app.doc.selected = keepDocSel; app.render(); flushRaf();
+  ok(app.sel.kind === "palette" && app.sel.id === 2, "(icb) selectPalette(2) selects palette 2");
+  ok(title() === "Palette" && hasFk("slider:Chroma") && !hasFk("slider:Prime chroma"), `(icb) a selected palette renders the palette inspector (title "${title()}")`);
+  ok(switches().length === 0, `(icb) still no switch with a palette selected (got ${switches().length})`);
+  // a second select moves the palette inspector to the new palette, it does not bounce through Global
+  app.selectPalette(3); flushRaf();
+  ok(app.sel.kind === "palette" && title() === "Palette" && hasFk("slider:Chroma"), "(icb) selecting another palette stays on the palette inspector");
+  // (c) deselect returns to Global: Esc, and a click on empty canvas
+  fireKey("Escape"); flushRaf();
+  ok(app.sel.kind === "none" && title() === "Global controls" && hasFk("slider:Prime chroma"), "(icc) Esc with a palette selected returns to the Global inspector");
+  app.selectPalette(1); flushRaf();
+  const areaIc = app.querySelector(".canvas-area");
+  areaIc.dispatch("click", { target: areaIc }); flushRaf();
+  ok(app.sel.kind === "none" && title() === "Global controls", "(icc) a click on empty canvas returns to the Global inspector");
+  // the retired switch leaves no session state or entry point behind
+  ok(app.segment === undefined && typeof app.setSegment === "undefined", "(icd) no segment state or setSegment() remains");
+  const before = app.sel.kind;
+  fireKey("1"); fireKey("2");
+  ok(app.sel.kind === before && title() === "Global controls", "(icd) keys 1 and 2 no longer switch the inspector");
+  // undo / redo restores a doc snapshot and must keep the current context (it used to force a palette selection)
+  app.commit((d) => (d.vibrancy = 40)); app.undo(); flushRaf();
+  ok(app.sel.kind === "none" && title() === "Global controls", "(ice) undo from the Global inspector stays on Global");
+  app.sel = keepSel; app.doc.selected = keepDocSel; app.render(); flushRaf();
 }
 const palCount0 = app.doc.palettes.length;
 app.addPalette(); // commit() path → full render
@@ -551,9 +573,9 @@ ok(app.doc.palettes.length === palCount0 + 1, "add palette (full-render path) st
 const newPal = app.doc.palettes[app.doc.palettes.length - 1];
 ok(newPal.skew === 0 && newPal.lift === 0 && (newPal.hueShift ?? 0) === 0 && newPal.hueSameDir !== true,
   `(add) a new palette resets all shaping config to neutral (got skew ${newPal.skew}, lift ${newPal.lift}, hueShift ${newPal.hueShift}, sameDir ${newPal.hueSameDir})`);
-app.setSegment("global");
-ok(app.segment === "global" && !!app.querySelector(".insp-body"), "segmented control still switches panels (full render)");
-app.setSegment("palette");
+app._deselect();
+ok(app.sel.kind === "none" && !!app.querySelector(".insp-body"), "deselecting still re-renders the inspector (full render)");
+app.selectPalette(app.selectedIndex());
 
 // ── (j) canvas backdrop = the SELECTED palette's NEAR-EDGE color (125 light / 875 dark), one per scheme column ───
 const { projectView: _pvJ } = await import("../../src/ui/model.mjs");
@@ -588,13 +610,13 @@ const _selBg = bgIn("light");
 const _areaJ = app.querySelector(".canvas-area");
 _areaJ.dispatch("click", { target: _areaJ });            // target = the area itself = empty canvas
 ok(app.sel.kind === "none", "(j6) clicking empty canvas clears the palette selection (kind:none)");
-ok(app.segment === "global" && !!findIn(app.querySelector(".right-pane"), (e) => e.dataset && e.dataset.fk === "slider:Prime chroma"), `(j6-seg) empty-canvas click lands on segment "global" and the right pane carries a [data-fk="slider:Prime chroma"] (got ${app.segment})`);
+ok(!!findIn(app.querySelector(".right-pane"), (e) => e.dataset && e.dataset.fk === "slider:Prime chroma"), `(j6-seg) empty-canvas click shows the Global inspector, the right pane carries a [data-fk="slider:Prime chroma"]`);
 const _deBg = bgIn("light");
 ok(/^#([0-9A-F]{2})\1\1$/.test(_deBg) && _deBg !== _selBg, `(j6b) deselected → default neutral gray backdrop (got ${_deBg}, was ${_selBg})`);
 // (j7) selecting a palette again restores its near-edge backdrop.
 app.selectPalette(0); app.render(); flushRaf();
 ok(bgIn("light") === edgeHex("light"), `(j7) re-selecting restores the palette near-edge backdrop (got ${bgIn("light")})`);
-ok(app.segment === "palette" && !!findIn(app.querySelector(".right-pane"), (e) => e.dataset && e.dataset.fk === "slider:Chroma"), `(j7b) selectPalette(0) from deselected lands on segment "palette" with the Chroma slider (got ${app.segment})`);
+ok(app.sel.kind === "palette" && !!findIn(app.querySelector(".right-pane"), (e) => e.dataset && e.dataset.fk === "slider:Chroma"), `(j7b) selectPalette(0) from deselected shows the palette inspector with the Chroma slider (got ${app.sel.kind})`);
 // (j8) each palette ROW container is tinted with that palette's OWN stop, 75 in the light column,
 //      925 in the dark one (symmetric, so the var(--ink) name text stays readable on it). 75/925
 //      are EXPORT-only half-steps → read from fullRamp, not the 19-stop display ramp.
@@ -614,7 +636,8 @@ const surfaceOf = (pal, d) => { const r = pal.roles.find((x) => x.key === "surfa
 app.render(); flushRaf();
 const exW = (i) => app.querySelectorAll(".example-scheme")[i];
 for (const seg of ["palette", "global"]) {
-  app.setSegment(seg); flushRaf();
+  if (seg === "palette") app.selectPalette(app.selectedIndex()); else app._deselect();
+  flushRaf();
   ok(!!app.querySelector(".seg-example") && !!app.querySelector(".example-card"), `(k1:${seg}) example card present on the ${seg} tab`);
   // the pinned preview is COLLAPSED to the first artifact (the role card) per scheme wrapper by default, the native slider +
   // form (.ex-artifact, the .ex-range) are hidden behind the ONE .ex-collapse-toggle until expanded.
@@ -697,7 +720,7 @@ ok(Math.abs(cBefore.x - cAfter.x) < 1e-6 && Math.abs(cBefore.y - cAfter.y) < 1e-
 
 // ── (m) full render() preserves focus + caret (durable replaceChildren hardening) ─────
 const findFk = (fk) => { const w = (n) => { for (const c of n.children || []) { if (c.dataset && c.dataset.fk === fk) return c; const f = w(c); if (f) return f; } return null; }; return w(app); };
-app.openSet(app.sets[0].id); flushRaf(); app.setSegment("palette"); flushRaf();
+app.openSet(app.sets[0].id); flushRaf(); app.selectPalette(app.selectedIndex()); flushRaf();
 const nameI = findFk("pname");
 ok(!!nameI, "(m0) palette name input carries a data-fk");
 nameI.focus(); nameI.selectionStart = 2; nameI.selectionEnd = 2;
@@ -708,7 +731,7 @@ ok(nameI2 && nameI2 !== nameI, "(m1) render rebuilt the name input (a genuinely 
 ok(document.activeElement === nameI2, "(m2) focus restored to the rebuilt input");
 ok(nameI2.selectionStart === 2 && nameI2.selectionEnd === 2, `(m3) caret position restored (got ${nameI2.selectionStart})`);
 // a focused slider survives a full render too (keyed by its label).
-app.setSegment("global"); flushRaf();
+app._deselect(); flushRaf();
 const sl = findFk("slider:Tension") || findFk("slider:Damp");
 ok(!!sl, "(m4) global sliders carry a data-fk");
 sl.focus(); app.render();
@@ -721,15 +744,15 @@ ok(app.viewport.panX === 0 && app.viewport.panY === 0 && app.viewport.zoom === 1
 
 // ── (o) accessibility: roles, aria-labels, keyboard-operable controls ─────────────────
 const walkOne = (pred) => { const w = (n) => { for (const c of n.children || []) { if (c.getAttribute && pred(c)) return c; const f = w(c); if (f) return f; } return null; }; return w(app); };
-app.openSet(app.sets[0].id); flushRaf(); app.setSegment("global"); flushRaf();
+app.openSet(app.sets[0].id); flushRaf(); app._deselect(); flushRaf();
 const slA = findFk("slider:Tension") || findFk("slider:Damp");
 ok(slA && slA.getAttribute("aria-label") === slA.dataset.fk.split(":")[1], "(o1) sliders carry an aria-label matching their control");
 const tablist = app.querySelector(".segmented");
 ok(tablist && tablist.getAttribute("role") === "tablist", "(o2) .segmented is role=tablist");
 ok(!!walkOne((c) => c.getAttribute("role") === "tab" && c.getAttribute("aria-selected") === "true"), "(o3) the active tab has aria-selected=true");
-ok(app.querySelector(".seg-body").getAttribute("role") === "tabpanel", "(o4) the inspector panel is role=tabpanel");
+ok(app.querySelector(".seg-body").getAttribute("role") !== "tabpanel", "(o4) the Color inspector panel is no tabpanel, no tab controls it since the Palette | Global switch is gone (#809)");
 ok(!!walkOne((c) => c.getAttribute("aria-label") === "Zoom in") && !!walkOne((c) => c.getAttribute("aria-label") === "Zoom out"), "(o5) icon-only zoom +/- buttons have aria-labels");
-app.setSegment("palette"); flushRaf();
+app.selectPalette(app.selectedIndex()); flushRaf();
 const enable = app.querySelector(".enable");
 ok(enable && enable.getAttribute("role") === "button" && enable.getAttribute("tabindex") === "0" && enable.getAttribute("aria-pressed") != null, "(o6) ●/○ enable toggle has button role + tabindex + aria-pressed");
 const onBefore = app.doc.palettes.filter((p) => p.on !== false).length;
@@ -744,7 +767,7 @@ ok(app.querySelectorAll(".an-leg-mark").length >= 4, `(p2) legend chips present 
 ok(app.querySelectorAll(".an-thresh").length === 3, `(p3) each contrast bar shows the 4.5:1 threshold line (got ${app.querySelectorAll(".an-thresh").length})`);
 
 // ── (q) differential damping: controls, live curve graph, real effect ─────────────────
-app.openSet(app.sets[0].id); flushRaf(); app.setSegment("global"); flushRaf();
+app.openSet(app.sets[0].id); flushRaf(); app._deselect(); flushRaf();
 ok(!!findFk("slider:Falloff") && !!findFk("slider:Amplify") && !!findFk("slider:Bias"), "(q1) Global tab has Falloff/Amplify/Bias sliders");
 ok(!!app.querySelector(".damp-graph"), "(q2) the damping-curve graph is present in the Global tab");
 const dgBefore = app.querySelector(".damp-graph").children[0]?.innerHTML || "";
@@ -759,7 +782,7 @@ const cDefault = _pv({ ...app.doc, dampAmp: 0, dampBias: 0, dampCurve: 1.5 });
 ok(cDefault.exports.css.length > 0, "(q5) default differential params produce a valid export (legacy-equivalent)");
 
 // ── (r) damping presets: one click sets all four knobs + highlights the active chip ───
-app.openSet(app.sets[0].id); flushRaf(); app.setSegment("global"); flushRaf();
+app.openSet(app.sets[0].id); flushRaf(); app._deselect(); flushRaf();
 // damping presets are now the shared chip() primitive (.chip), the Global tab's only chips.
 const presets = app.querySelectorAll(".chip");
 ok(presets.length >= 5, `(r1) the Global tab shows damping preset chips (got ${presets.length})`);
@@ -771,7 +794,7 @@ if (vivid) vivid.click();
 ok(app.doc.dampAmp === 55 && app.doc.damp === 70 && app.doc.dampBias === 0, `(r3) clicking a preset sets all four knobs (amp=${app.doc.dampAmp}, damp=${app.doc.damp})`);
 ok(app.history.length - presetHist === 1, "(r4) a preset is ONE undo step");
 // the now-matching chip is marked active
-app.setSegment("global"); flushRaf();
+app._deselect(); flushRaf();
 const onChip = app.querySelectorAll(".chip").filter((b) => b.classList.contains("on") && !b.classList.contains("sys-chip"));
 ok(onChip.length === 1 && (onChip[0].getAttribute("title") || "").includes("amplify 55"), `(r5) exactly the matching preset chip is highlighted (got ${onChip.length})`);
 
@@ -899,7 +922,7 @@ app.downloadBytes = realDBdesc;
 app.exportOpen = false; app.render(); flushRaf();
 
 // ── (u) per-palette edge hue rotation slider + engine effect ──────────────────────────
-app.openSet(app.sets[0].id); flushRaf(); app.setSegment("palette"); flushRaf();
+app.openSet(app.sets[0].id); flushRaf(); app.selectPalette(app.selectedIndex()); flushRaf();
 ok(!!findFk("slider:Edge hue"), "(u1) the palette inspector has an Edge hue slider");
 const uIdx = app.selectedIndex();
 app.doc.palettes[uIdx].hueShift = 0;
@@ -914,7 +937,7 @@ const mid0 = ramp0.find((s) => s.stop === 500).hex, midR = rampR.find((s) => s.s
 ok(mid0 === midR, "(u3) the rotation pivots on the centre stop (500 unchanged)");
 
 // ── (v) edge-hue same-direction toggle ────────────────────────────────────────────────
-app.openSet(app.sets[0].id); flushRaf(); app.setSegment("palette"); flushRaf();
+app.openSet(app.sets[0].id); flushRaf(); app.selectPalette(app.selectedIndex()); flushRaf();
 ok(!!app.querySelector(".mini-check"), "(v1) the palette inspector has the same-direction mini-checkbox");
 const vIdx = app.selectedIndex();
 app.doc.palettes[vIdx].hueShift = 40; app.doc.palettes[vIdx].hueSameDir = false;
@@ -2054,7 +2077,7 @@ const app2d = bootFresh();
 ok(app2d.sets.some((s) => s.id === "current") && !app2d.sets.some((s) => s.id === "stale"), "(mig) a present new-namespace key is never overwritten by a legacy one");
 
 // ── (gc) Global inspector HIDES the CIELAB-only controls (Curve / Chroma basis) outside "even" mode ──
-app.openSet(app.sets[0].id); app.setSegment("global"); flushRaf();
+app.openSet(app.sets[0].id); app._deselect(); flushRaf();
 const gcText = () => { const r = app.querySelector(".right-pane"); const w = (n) => (n._text || "") + (n.children || []).map(w).join(""); return r ? w(r) : ""; };
 app.commit((doc) => (doc.toneMode = "even")); flushRaf();
 ok(/Curve/.test(gcText()) && /Distribution/.test(gcText()), "(gc) 'even' mode shows the Curve control (+ Distribution)");
@@ -2062,7 +2085,7 @@ app.commit((doc) => (doc.toneMode = "perceptual")); flushRaf();
 const _gct = gcText();
 ok(/Distribution/.test(_gct) && !/Curve/.test(_gct) && !/Chroma basis/.test(_gct), "(gc) the OKHSL modes HIDE Curve + Chroma basis entirely (not shown disabled)");
 // the Palette inspector likewise hides Skew + Lift (CIELAB tone-curve controls) outside "even".
-app.setSegment("palette");
+app.selectPalette(app.selectedIndex());
 app.doc.toneMode = "even"; app.render(); flushRaf();
 ok(/Skew/.test(gcText()) && /Lift/.test(gcText()), "(gc) 'even' mode shows the per-palette Skew + Lift");
 app.doc.toneMode = "perceptual"; app.render(); flushRaf();
@@ -2071,7 +2094,7 @@ ok(/Hue/.test(_gcp) && !/Skew/.test(_gcp) && !/Lift/.test(_gcp), "(gc) the OKHSL
 
 // (gc) Hue space + On-colors are side-by-side SEGMENTED controls (not toggles): both options shown, and the
 // active segment reflects the doc value (its "on" button's data-fk). Selection commits via that data-fk wiring.
-app.setSegment("global"); app.doc.hueSpace = "cam16"; app.doc.onColorMode = "contrast"; app.render(); flushRaf();
+app._deselect(); app.doc.hueSpace = "cam16"; app.doc.onColorMode = "contrast"; app.render(); flushRaf();
 const segRow = app.querySelector(".global-seg-row");
 const segTxt = (() => { const w = (n) => (n._text || "") + (n.children || []).map(w).join(""); return segRow ? w(segRow) : ""; })();
 ok(!!segRow && /OKLCH/.test(segTxt) && /CAM16/.test(segTxt) && /Fixed/.test(segTxt) && /Contrast/.test(segTxt), "(gc) Hue space + On-colors render as a side-by-side segmented row showing both options");
@@ -2102,23 +2125,23 @@ const findByFk = (root, fk) => {
 const { defaultDocument: defaultDocumentHS, projectView: projectViewHSE } = await import("../../src/ui/model.mjs");
 app.sets.push({ id: "hs-test-set", name: "hs-test", doc: defaultDocumentHS(), updated: Date.now() });
 app.openSet("hs-test-set");
-app.setSegment("global"); flushRaf();
+app._deselect(); flushRaf();
 const allAnchoredHSE = () => app.doc.palettes.length > 0 && app.doc.palettes.every((p) => p.anchor);
 const isEnabledSeg = (b) => !!b && b.disabled !== true && b.getAttribute("aria-disabled") !== "true";
 const hueSpaceDocEnabled = () => isEnabledSeg(findByFk(app, "huespace:oklch"));
 const hseModes = [["perceptual", "(hse1)"], ["peak", "(hse2)"], ["even", "(hse3)"]];
 const hseReasonSeen = [];
 for (const [mode, label] of hseModes) {
-  app.setSegment("global"); flushRaf();
+  app._deselect(); flushRaf();
   app.commit((doc) => (doc.toneMode = mode)); flushRaf();
   ok(allAnchoredHSE() && hueSpaceDocEnabled(), `${label} doc-level Hue space is enabled in ${mode} with every palette anchored (untouched default kit)`);
   if (findByFk(app, "huespace-doc-reason") || findByFk(app, "huespace-palette-reason")) hseReasonSeen.push(mode + "/global");
-  app.setSegment("palette"); app.selectPalette(0); flushRaf();
+  app.selectPalette(app.selectedIndex()); app.selectPalette(0); flushRaf();
   if (findByFk(app, "huespace-doc-reason") || findByFk(app, "huespace-palette-reason")) hseReasonSeen.push(mode + "/palette");
 }
 ok(hseReasonSeen.length === 0, `(hse4) no huespace-doc-reason or huespace-palette-reason node renders in the Global or palette inspector in perceptual, peak, or even (seen: ${hseReasonSeen.join() || "none"})`);
 
-app.setSegment("global"); flushRaf();
+app._deselect(); flushRaf();
 app.commit((doc) => (doc.toneMode = "perceptual")); flushRaf();
 const hseLabel = (() => {
   const row = app.querySelector(".global-seg-row");
@@ -2154,7 +2177,7 @@ app.sets = app.sets.filter((s) => s.id !== "hs-test-set");
 app.openSet(app.sets[0].id); flushRaf();
 
 // ── (px) primitive a11y contracts, the refactor's guarantees (component-inventory.md) ──
-app.openSet(app.sets[0].id); app.commit((doc) => (doc.toneMode = "even")); app.setSegment("global"); flushRaf();
+app.openSet(app.sets[0].id); app.commit((doc) => (doc.toneMode = "even")); app._deselect(); flushRaf();
 
 // switchControl: a real <button role=switch> with aria-checked, the old .toggle was a
 // <div onclick> (no role, no focus, no keyboard).
@@ -2224,12 +2247,12 @@ ok(storyPreset.palettes.some((q) => q.colorName && q.colorRole && q.description)
 // open a story preset → its story round-trips through hydrate, and the Story tab renders
 app.openConfigAsSet(storyPreset, "story"); flushRaf();
 ok(app.doc.story && app.doc.story.title === storyPreset.story.title, "(st5) opening a story preset keeps doc.story (round-trips through hydrate)");
-app.setSegment("story"); flushRaf();
-ok(!!app.querySelector(".story-pane"), "(st6) the Story tab renders for a set with a story");
-ok(app.querySelectorAll(".story-color").length >= 1, "(st7) the Story tab lists the curated colors");
+app._deselect(); flushRaf();
+ok(!!app.querySelector(".story-pane"), "(st6) the Global inspector renders the Story for a set with a story");
+ok(app.querySelectorAll(".story-color").length >= 1, "(st7) the Story lists the curated colors");
 // the Palette tab shows the per-color story line, select a CURATED palette (primary, now at
 // index 1 after the derived neutral; the neutral carries no curated story line of its own).
-app.setSegment("palette"); app.selectPalette(1); flushRaf();
+app.selectPalette(app.selectedIndex()); app.selectPalette(1); flushRaf();
 ok(!!app.querySelector(".color-story"), "(st8) the Palette tab shows the curated color's story line");
 // a category page groups its presets by volume
 app.toGallery(); app.search = ""; await app.openCategory("travel"); flushRaf();
@@ -3127,7 +3150,7 @@ app.addStandardGeomModes(); flushRaf();
 // U8's own scope; #804 two-layer model). There is NO "Intensity" slider any more (REQ-032), the
 // ramp's chroma damper (#785) is the palette's own Base chroma times the global k. ─────────────
 app.openSet(app.sets[0].id); flushRaf();
-app.setSegment("global"); app.render(); flushRaf();
+app._deselect(); app.render(); flushRaf();
 const baseChromaInput = findFk("slider:Base chroma");
 const primeChromaInput = findFk("slider:Prime chroma");
 ok(!!baseChromaInput && !!primeChromaInput, "(bpc1) Global tab has Base chroma + Prime chroma sliders");
@@ -3142,7 +3165,7 @@ primeChromaInput.value = "70"; primeChromaInput.dispatch("input", {});
 ok(app.doc.primeChroma === 70, `(bpc4) the global Prime chroma slider writes doc.primeChroma (got ${app.doc.primeChroma})`);
 app.doc.baseIntensity = 100; app.doc.primeChroma = 100; // restore the k-100 defaults (REQ-007)
 
-app.setSegment("palette"); app.selectPalette(0); app.render(); flushRaf();
+app.selectPalette(app.selectedIndex()); app.selectPalette(0); app.render(); flushRaf();
 ok(!findFk("slider:Intensity"), "(bpc5) the palette inspector has NO Intensity slider, in any group (REQ-032)");
 const bpcSel = app.selectedIndex();
 
@@ -3234,7 +3257,7 @@ const { mintDataPalettes: mintDataPalettesDPA, defaultDocument: defaultDocumentD
 app.doc = defaultDocumentDPA();
 app.sel = { kind: "palette", id: 0 };
 app.history = []; app.future = [];
-app.setSegment("global"); app.render(); flushRaf();
+app._deselect(); app.render(); flushRaf();
 const dpaBtn = (label) => walk(app, (e) => e.tagName === "BUTTON" && txtOf(e).includes(label))[0];
 ok(!!dpaBtn("Add data palettes (8)") && !!dpaBtn("Re-derive data hues"), "(dpa1) the Global tab has both data-palette action buttons");
 
@@ -3253,7 +3276,7 @@ ok(app.doc.palettes.length === dpaLenBefore, `(dpa4) Add is a no-op once 8 Data 
 const dpaDataBefore = app.doc.palettes.filter((p) => p.name.startsWith("Data "));
 app.commit((d) => { d.palettes.find((p) => p.name === "Primary").hue = (d.palettes.find((p) => p.name === "Primary").hue + 40) % 360; });
 flushRaf();
-app.setSegment("global"); app.render(); flushRaf();
+app._deselect(); app.render(); flushRaf();
 dpaBtn("Re-derive data hues").click();
 const dpaDataAfter = app.doc.palettes.filter((p) => p.name.startsWith("Data "));
 ok(dpaDataAfter.length === 8, `(dpa5) Re-derive keeps exactly 8 Data N palettes (got ${dpaDataAfter.length})`);
@@ -3270,7 +3293,7 @@ ok(dpaDataAfter.every((p, i) => Math.abs(p.hue - dpaExpected[i].hue) < 1e-6), `(
 // strip Data N off the current doc, leaving the 8 brand families.
 app.commit((d) => { d.palettes = d.palettes.filter((p) => !p.name.startsWith("Data ")); });
 flushRaf();
-app.setSegment("global"); app.render(); flushRaf();
+app._deselect(); app.render(); flushRaf();
 ok(app.doc.palettes.length === 8, `(dpa9) test setup: stripped to 8 brand palettes (got ${app.doc.palettes.length})`);
 ok(dpaBtn("Add data palettes (8)").disabled !== true, "(dpa10) Add is enabled once the document has no Data N palettes");
 ok(dpaBtn("Re-derive data hues").disabled === true, "(dpa11) Re-derive is disabled when the document has no Data N palettes");
@@ -3290,7 +3313,7 @@ const dpaPrimaryChroma = app.doc.palettes.find((p) => p.name === "Primary").chro
 ok(dpaAdded.every((p) => p.chroma === dpaPrimaryChroma), "(dpa15) each minted data palette's chroma follows the Primary's chroma (REQ-022/H4)");
 
 // clicking Add again now that 8 exist is a no-op (AC-032), mirrors dpa4 for the freshly-minted set.
-app.setSegment("global"); app.render(); flushRaf();
+app._deselect(); app.render(); flushRaf();
 ok(dpaBtn("Add data palettes (8)").disabled === true, "(dpa16) Add is disabled again once 8 Data N palettes exist");
 dpaBtn("Add data palettes (8)").click();
 ok(app.doc.palettes.length === 16, `(dpa17) Add stays a no-op once 8 already exist (got ${app.doc.palettes.length})`);
@@ -3300,7 +3323,7 @@ ok(app.doc.palettes.length === 16, `(dpa17) Add stays a no-op once 8 already exi
 // mintDataPalettes(doc) has no Primary hue to anchor the derivation on, and it toasts.
 app.commit((d) => { d.palettes = d.palettes.filter((p) => p.name !== "Primary" && !p.name.startsWith("Data ")); });
 flushRaf();
-app.setSegment("global"); app.render(); flushRaf();
+app._deselect(); app.render(); flushRaf();
 ok(dpaBtn("Add data palettes (8)").disabled !== true, "(dpa18) Add is enabled with zero Data N palettes even when there's no Primary either");
 const dpaLenBefore3 = app.doc.palettes.length;
 app.toastEl.textContent = ""; // clear any earlier toast text before asserting this click's own
@@ -3355,7 +3378,7 @@ ok(JSON.stringify(dpaPresetData.map((p) => p.name)) === JSON.stringify(["Data 1"
 // the "Add data palettes (8)" button's existing show/disable logic still behaves correctly
 // against a document that ALREADY has 8 from AUTO-mint (no dead/duplicate-mint button state),
 // checked while app.doc is still this just-opened, auto-minted preset copy.
-app.setSegment("global"); app.render(); flushRaf();
+app._deselect(); app.render(); flushRaf();
 ok(dpaBtn("Add data palettes (8)").disabled === true, "(dpa23b) Add is disabled against a doc auto-minted with 8 Data-N palettes at creation");
 ok(dpaBtn("Re-derive data hues").disabled !== true, "(dpa23b) Re-derive is enabled against a doc auto-minted with 8 Data-N palettes at creation");
 const dpaLenBefore4 = app.doc.palettes.length;
@@ -3414,7 +3437,7 @@ app.createSet(); flushRaf();
 // app.sets[0]'s stored doc, e.g. (dpa) removed Primary/Data N) mints a genuinely pristine
 // defaultDocument(): 16 palettes spanning all 4 groups.
 app.createSet();
-app.canvasView = "palettes"; app.setSegment("palette"); app.render(); flushRaf();
+app.canvasView = "palettes"; app.selectPalette(app.selectedIndex()); app.render(); flushRaf();
 
 const cgWalk = (n) => (n._text || "") + (n.children || []).map(cgWalk).join("");
 
@@ -3551,7 +3574,7 @@ flushRaf();
     app.createSet(); flushRaf();
     const nI = app.doc.palettes.findIndex((p) => p.name === "Neutral");
     const s500Before = pvGID(app.doc).palettes[nI].fullRamp.find((s) => s.stop === 500).hex;
-    app.setSegment("palette"); app.selectPalette(nI); app.render(); flushRaf();
+    app.selectPalette(app.selectedIndex()); app.selectPalette(nI); app.render(); flushRaf();
     const neutralBaseInput = findFk("slider:Base chroma");
     neutralBaseInput.value = "60"; neutralBaseInput.dispatch("input", {});
     app.commitDrag(); app.render(); flushRaf();
@@ -3585,7 +3608,7 @@ flushRaf();
   const { paletteGroup: pgPBC, projectView: pvPBC } = await import("../../src/ui/model.mjs");
   app.createSet(); flushRaf();
   const dIdx = app.doc.palettes.findIndex((p) => pgPBC(p) === "data");
-  app.setSegment("palette"); app.selectPalette(dIdx); app.render(); flushRaf();
+  app.selectPalette(app.selectedIndex()); app.selectPalette(dIdx); app.render(); flushRaf();
   const dataBase = findFk("slider:Base chroma");
   ok(dIdx >= 0 && !!dataBase && !findFk("slider:Prime chroma"), `(pbc1) a Data palette's inspector shows slider:Base chroma and no slider:Prime chroma (palette ${dIdx})`);
   const before = pvPBC(app.doc);
@@ -3597,7 +3620,7 @@ flushRaf();
   const movedRamps = before.palettes.map((_, k) => k).filter((k) => rampOf(before, k) !== rampOf(after, k));
   ok(movedRamps.length === 1 && movedRamps[0] === dIdx, `(pbc3) only that palette's ramp moves (moved: ${JSON.stringify(movedRamps)}, want [${dIdx}])`);
   ok(JSON.stringify(before.palettes[dIdx].prime) === JSON.stringify(after.palettes[dIdx].prime), "(pbc4) its prime strip stays (Base chroma never reaches the prime system)");
-  app.setSegment("global"); app.render(); flushRaf();
+  app._deselect(); app.render(); flushRaf();
   ok(!findIn(app.querySelector(".right-pane"), (e) => e.dataset && "group-row" in e.dataset), "(pbc5) the Global tab carries no [data-group-row]");
   const globalBase = findFk("slider:Base chroma");
   const beforeK = pvPBC(app.doc);
@@ -3618,7 +3641,7 @@ flushRaf();
   app.createSet(); flushRaf();
   const pIdx = app.doc.palettes.findIndex((p) => p.name === "Primary");
   const anchorPCM = String(app.doc.palettes[pIdx]?.anchor || "").toUpperCase();
-  app.setSegment("global"); app.render(); flushRaf();
+  app._deselect(); app.render(); flushRaf();
   const globalPrime = findFk("slider:Prime chroma");
   globalPrime.value = "50"; globalPrime.dispatch("input", {});
   app.commitDrag(); app.render(); flushRaf();
@@ -4226,7 +4249,7 @@ flushRaf();
   app.setSection("color");
   for (const v of ["palettes", "scrims", "radix", "mapping"]) {
     app.setCanvasView(v); app.render(); flushRaf();
-    for (const seg of ["palette", "global"]) { app.setSegment(seg); flushRaf(); }
+    for (const seg of ["palette", "global"]) { if (seg === "palette") app.selectPalette(app.selectedIndex()); else app._deselect(); flushRaf(); }
   }
   app.setCanvasView("palettes");
   app.setSection("typography"); flushRaf();
@@ -4296,7 +4319,7 @@ app.setSection("color"); app.render(); flushRaf();
 {
   const valOf = (n) => n.value || n.getAttribute("value") || ""; // the shim keeps a freshly built input's value in its attribute until a property write
   const sl = (v) => v.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-  app.setSection("color"); app.openSet(app.sets[0].id); flushRaf(); app.setSegment("palette"); flushRaf();
+  app.setSection("color"); app.openSet(app.sets[0].id); flushRaf(); app.selectPalette(app.selectedIndex()); flushRaf();
   const idx = 1;
   app.selectPalette(idx); app.render(); flushRaf();
   const owner = app.doc.palettes[0].name;
@@ -4327,28 +4350,35 @@ app.setSection("color"); app.render(); flushRaf();
   ok(added === `Palette ${nextN + 1}`, `(sc7) + Palette skips "Palette ${nextN}" while "Palette ${nextN} hover" is taken (got "${added}")`);
 }
 
-// ── (g786) palette stepping / add / duplicate / delete keep the current right-pane tab ──
+// ── (g786) palette stepping / add / duplicate / delete land on the palette inspector (#809: the selection picks the context) ──
 {
   app.section = "color"; app.render(); flushRaf();
-  for (const tab of ["palette", "global", "story"]) {
-    app.selectPalette(0, { tab: true });
-    app.setSegment(tab);
-    fireKey("ArrowDown");
-    ok(app.segment === tab, `(g786) ArrowDown keeps the "${tab}" tab (got ${app.segment})`);
-    fireKey("ArrowUp");
-    ok(app.segment === tab, `(g786) ArrowUp keeps the "${tab}" tab (got ${app.segment})`);
-    app.addPalette();
-    ok(app.segment === tab, `(g786) addPalette keeps the "${tab}" tab (got ${app.segment})`);
-    app.duplicatePalette(app.selectedIndex());
-    ok(app.segment === tab, `(g786) duplicatePalette keeps the "${tab}" tab (got ${app.segment})`);
-    app.deletePalette(app.selectedIndex());
-    ok(app.segment === tab, `(g786) deletePalette keeps the "${tab}" tab (got ${app.segment})`);
-    app.deletePalette(app.doc.palettes.length - 1); // undo the add so the loop is size-neutral
+  const ctx786 = () => {
+    const rp = app.querySelector(".right-pane");
+    const has = (k) => !!findIn(rp, (e) => e.dataset && e.dataset.fk === k);
+    return has("slider:Chroma") && !has("slider:Prime chroma") ? "palette" : has("slider:Prime chroma") && !has("slider:Chroma") ? "global" : "unknown";
+  };
+  const steps = [
+    ["ArrowDown", () => fireKey("ArrowDown")],
+    ["ArrowUp", () => fireKey("ArrowUp")],
+    ["addPalette", () => app.addPalette()],
+    ["duplicatePalette", () => app.duplicatePalette(app.selectedIndex())],
+    ["deletePalette", () => app.deletePalette(app.selectedIndex())],
+  ];
+  for (const from of ["global", "palette"]) {
+    for (const [name, run] of steps) {
+      if (from === "palette") app.selectPalette(1); else app._deselect();
+      flushRaf();
+      ok(ctx786() === from, `(g786) precondition: the ${from} inspector is showing before ${name} (got ${ctx786()})`);
+      const hist786 = app.history.length;
+      run(); flushRaf();
+      ok(app.sel.kind === "palette" && ctx786() === "palette", `(g786) ${name} from the ${from} inspector lands on the palette inspector (got sel ${app.sel.kind}, ${ctx786()})`);
+      while (app.history.length > hist786) app.undo(); // keep the loop size-neutral: undo the add / duplicate / delete
+    }
   }
-  // a row click is the only caller that switches to the Palette tab
-  app.setSegment("global");
-  app.selectPalette(1, { tab: true });
-  ok(app.segment === "palette", `(g786) a row click (tab: true) switches to Palette (got ${app.segment})`);
+  // a stepped palette stays the SELECTED one, then Esc returns to Global
+  fireKey("Escape"); flushRaf();
+  ok(app.sel.kind === "none" && ctx786() === "global", `(g786) Esc after stepping returns to the Global inspector (got ${ctx786()})`);
 }
 
 // ── report ──────────────────────────────────────────────────────────────────────────

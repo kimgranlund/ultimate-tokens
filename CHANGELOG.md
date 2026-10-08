@@ -11,6 +11,12 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 ### 2026-10-07
 
 #### Changed
+- **The Color inspector has no Palette | Global switch; the selection picks the context** (#809).
+  Selecting a palette (a canvas row, a rail row, the arrow keys) shows the palette inspector;
+  with nothing selected, which is how a document opens and where Esc or a click on empty canvas
+  returns, the Global inspector shows. A set's Story now sits at the foot of the Global inspector
+  instead of in a third tab. Undo and redo keep the current context. The `1` and `2` keys no
+  longer switch panels. Typography and Geometry keep their own inspector tabs.
 - **Chroma controls are per-palette Base chroma times two global factors; the anchored prime middle
   follows Prime chroma** (#804, ADR-030). Each palette now has its own Base chroma slider (its ramp
   damper), and the per-group Base chroma and Prime chroma sliders and the per-palette Prime chroma

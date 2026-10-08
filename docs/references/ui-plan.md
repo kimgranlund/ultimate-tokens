@@ -20,6 +20,7 @@ the arrangement moved). Supersedes the "3 lenses on one canvas" decision:
 - **right-pane → segmented `[ Palette │ Global │ Roles ]`** (was a single inspector), Palette = selected
   palette's controls; Global = global controls; Roles = the 53-role table + a small semantic preview.
 - **Amended 2026-10-07 (T-0016):** the Roles tab was retired; the right pane is `[ Palette │ Global ]` (+ `Story`), and the 53-role table lives in the Mapping canvas view.
+- **Amended 2026-10-07 (#809):** the Color `[ Palette │ Global ]` switch is gone. The selection picks the context: a selected palette shows the palette inspector, nothing selected (a fresh doc, Esc, a click on empty canvas) shows the Global inspector, which also carries the set's Story. Typography and Geometry keep their own inspector tabs.
 - **Bugs fixed:** gallery search no longer steals focus on type (the `<input>` is stable; only the tile
   grid re-renders); canvas pan now works (pointer-capture `translate()`, origin-centered, a 4px drag
   threshold keeps a pan from firing row-select, wheel zoom about the cursor).

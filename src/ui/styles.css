@@ -861,7 +861,7 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 .app-footer .saved { color: var(--ok); }
 .app-footer .warn { color: var(--warn); }
 
-/* right-pane = segmented inspector [ Palette | Global ] (+ Story when the palette has one) */
+/* right-pane = the context inspector: the palette inspector while a palette is selected, the Global inspector otherwise (#809) */
 .right-pane {
   grid-area: right;
   border-left: 1px solid var(--line);
@@ -869,13 +869,14 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
   overflow: hidden;
   display: flex; flex-direction: column;
 }
-/* right-pane header row: the right toggle (when open) + the Inspector segmented control */
+/* right-pane header row: the right toggle (when open) + the Color Inspector title (Typography / Geometry put their tab control here) */
 .pane-head {
   display: flex; align-items: center; gap: 8px;
   height: var(--ch); flex: none; padding: 0 12px;
   border-bottom: 1px solid var(--line); /* match the canvas-header band */
 }
-.pane-head .segmented { flex: 1; margin: 0; }
+.pane-head .segmented { flex: 1; margin: 0; } /* the Typography + Geometry inspectors still switch their tabs here */
+.pane-head .pane-title { flex: 1; font-size: 12px; font-weight: 600; color: var(--ink-dim); }
 .segmented {
   /* no self-margin, the parent owns spacing (.pane-head provides it; .canvas-seg sits inline) */
   display: flex; gap: 2px;
@@ -1017,7 +1018,7 @@ input[type="range"]::-moz-range-thumb {
 .color-role { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); flex: none; }
 .color-story-note { margin: 4px 0 0; font-size: 11.5px; line-height: 1.45; color: var(--ink-dim); }
 
-/* ── Story tab (holistic concept view) ───────────────────────────────────────────── */
+/* ── Story card (holistic concept view, in the Global inspector)───────────────────────────────────────────── */
 .story-pane { font-size: 12.5px; }
 .story-kicker { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-faint); }
 .story-title { font-family: Georgia, "Times New Roman", serif; font-size: 17px; font-weight: 600; line-height: 1.25; margin: 5px 0 0; }
