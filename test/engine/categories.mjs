@@ -3,11 +3,13 @@
 // `type.registers`, ADR-022) and it survives the APPLY path (openConfigAsSet → hydrate → clampType →
 // typeScale) so opening a palette dresses the doc in its designed fonts, guards the seam the "every
 // palette still shows Inter" bug lived in. The (geometry) block near the end of the main loop pins the
-// smaller, verbatim `geometry` pass-through (#485, currently only Adia's `{ramp:"linear4"}`) the same way,
+// smaller, verbatim `geometry` pass-through (#485, the v9 `{tier, scale, radius, spaceBase}` shape) the same way,
 // and the (groups) block pins the per-palette `baseChroma` pass-through (#804, currently only Adia's
 // direct palettes) the same way again, plus a standalone (groups-discriminate) synthetic-fixture check
 // proving the value actually changes the derived ramp-chroma value (the damper, #785), not just that
-// it round-trips inertly, and (groups-validate) proving the generator's tripwire fires.
+// it round-trips inertly, and (groups-validate) proving the generator's tripwire fires. No corpus
+// palette carries a `geometry` today, so a standalone (geometry-discriminate) synthetic fixture proves
+// that pass-through the same way (the ladder cell height moves with it).
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -16,6 +18,7 @@ import { hydrate, DOMAINS } from "../../src/ui/persist.js";
 import { projectView } from "../../src/ui/model.mjs";
 import { rampChromaOf } from "../../src/engine/resolve.mjs";
 import { paletteStops, STOPS, DEFAULT_CONTROLS } from "../../src/engine/tonal.js";
+import { DEFAULT_GEOMETRY, geomScale } from "../../src/engine/geometry.mjs";
 import { buildCategory } from "../../scripts/gen-categories.mjs";
 import { gateReport } from "../gate-report.mjs";
 
@@ -83,6 +86,7 @@ const sameKeys = (a, b) => { const ka = Object.keys(a || {}).sort(), kb = Object
 const sameVoices = (a, b) => sameKeys(a, b) && Object.keys(a || {}).every((v) => sameKeys(a[v], b[v]) && Object.keys(a[v]).every((k) => eq(a[v][k], b[v][k])));
 
 let totalPresets = 0, totalTyped = 0;
+let geomSpecCount = 0;
 for (const slug of CATS) {
   const { PRESETS } = await import(`../../src/ui/categories/${slug}.js`);
   const spec = JSON.parse(readFileSync(join(SPECDIR, `${slug}.json`), "utf8"));
@@ -264,14 +268,19 @@ for (const slug of CATS) {
     if (!sameVoices(doc.type.voices, t.voices)) FAIL("apply", `${slug}[${i}] hydrate mutated in-range voice params`);
 
     // (geometry) per-preset GEOMETRY pass-through (#485), the same opt-in, verbatim shape as `type`
-    // above, but with no register-mapping layer: a spec palette's `geometry` object (currently only
-    // Adia's `{ ramp: "linear4" }`) must survive generate → hydrate unmodified, and a palette with NO
-    // `geometry` key must carry no `geometry` field on its generated preset at all (the byte-identity
-    // every other preset in every other category still gets).
+    // above, but with no register-mapping layer: a spec palette's `geometry` object (the v9
+    // `{ tier, scale, radius, spaceBase }` shape, T-0017) must survive generate → hydrate with every
+    // key it sets unmodified and no retired `ramp`, and a palette with NO `geometry` key must carry no
+    // `geometry` field on its generated preset at all (the byte-identity every other preset in every
+    // other category still gets).
     const sg = specPals[i]?.geometry;
     if (sg) {
+      geomSpecCount++;
       if (!eq(p.geometry, sg)) FAIL("geometry", `${slug}[${i}] the generated preset's geometry ${JSON.stringify(p.geometry)} != the spec's ${JSON.stringify(sg)}`);
-      if (!eq(doc.geometry.ramp, sg.ramp)) FAIL("geometry", `${slug}[${i}] hydrate lost/changed geometry.ramp (spec ${sg.ramp}, doc ${doc.geometry.ramp})`);
+      for (const k of ["tier", "scale", "radius", "spaceBase"]) {
+        if (sg[k] !== undefined && !eq(doc.geometry[k], sg[k])) FAIL("geometry", `${slug}[${i}] hydrate lost/changed geometry.${k} (spec ${JSON.stringify(sg[k])}, doc ${JSON.stringify(doc.geometry[k])})`);
+      }
+      if ("ramp" in doc.geometry) FAIL("geometry", `${slug}[${i}] hydrate kept the retired geometry ramp key`);
     } else if ("geometry" in p) {
       FAIL("geometry", `${slug}[${i}] carries a generated "geometry" field with no matching spec key, the opt-in must be byte-identical-absent by default`);
     }
@@ -486,6 +495,58 @@ const makeDirectDoc = (slugName, palette) => ({
   if (okResult && (okResult.presets[0].lmin !== 3 || okResult.presets[0].lmax !== 95))
     FAIL("curve-validate", "a valid lmin/lmax override was not passed through verbatim");
 }
+
+// (geometry-discriminate) #485's DISCRIMINATING control: no corpus palette carries a `geometry`
+// today, so the main loop's (geometry) leg never runs. Runs buildCategory() and hydrate() (the REAL
+// generator and open path) on a synthetic doc, as (groups-discriminate) and (curve-discriminate) do,
+// and proves the spec geometry reaches the ladder: a pass-through that dropped it would read the
+// default cell height for both fixtures. Fails under the existing `geometry` gate.
+{
+  const makeGeometryDoc = (geometry) => ({
+    slug: "synthetic-geometry-fixture",
+    volumes: [{
+      roman: "I",
+      h1: "Synthetic",
+      preface: [],
+      palettes: [{
+        kicker: "Synthetic",
+        title: "Synthetic",
+        source: "",
+        refuses: "",
+        hierarchy: {},
+        dominantHex: "#335577",
+        palettes: [{ name: "Primary", hue: 250, chroma: 60, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true, group: "brand" }],
+        ...(geometry ? { geometry } : {}),
+      }],
+    }],
+  });
+
+  const SPEC_GEOM = { tier: "content", scale: "lg", radius: "pill", spaceBase: 6 };
+  const withGeom = buildCategory(makeGeometryDoc(SPEC_GEOM)).presets[0];
+  const withoutGeom = buildCategory(makeGeometryDoc(null)).presets[0];
+
+  if (!eq(withGeom.geometry, SPEC_GEOM)) FAIL("geometry", `synthetic fixture: buildCategory did not pass geometry through verbatim (got ${JSON.stringify(withGeom.geometry)})`);
+  if ("geometry" in withoutGeom) FAIL("geometry", `synthetic fixture: a palette with no geometry got a generated "geometry" field ${JSON.stringify(withoutGeom.geometry)}`);
+
+  const docWith = hydrate(withGeom);
+  const docWithout = hydrate(withoutGeom);
+  if (!eq(docWith.geometry, SPEC_GEOM)) FAIL("geometry", `synthetic fixture: hydrate changed the spec geometry (got ${JSON.stringify(docWith.geometry)})`);
+  if (!eq(docWithout.geometry, DEFAULT_GEOMETRY)) FAIL("geometry", `synthetic fixture: hydrate of a geometry-less preset is not DEFAULT_GEOMETRY (got ${JSON.stringify(docWithout.geometry)})`);
+
+  const hWith = geomScale(docWith.geometry).cell.height;
+  const hWithout = geomScale(docWithout.geometry).cell.height;
+  if (hWith !== 64) FAIL("geometry", `synthetic fixture: content/lg geometry should resolve a 64px ladder cell, got ${hWith}`);
+  if (hWithout !== 32) FAIL("geometry", `synthetic fixture: the default geometry should resolve a 32px ladder cell, got ${hWithout}`);
+  if (hWith === hWithout) FAIL("geometry", "the geometry pass-through does not discriminate, with/without a spec geometry resolved the same ladder cell height");
+
+  // a retired v8 `ramp` key is dropped at hydrate (one expected [persist] warning), the v9 keys it
+  // travels with survive.
+  const retired = hydrate(buildCategory(makeGeometryDoc({ tier: "content", ramp: "linear4" })).presets[0]).geometry;
+  if ("ramp" in retired) FAIL("geometry", "synthetic fixture: hydrate kept the retired geometry ramp key");
+  if (retired.tier !== "content") FAIL("geometry", `synthetic fixture: dropping the retired ramp key lost tier (got ${JSON.stringify(retired.tier)})`);
+}
+if (!fails.some((f) => f.startsWith("geometry:")))
+  console.log(`  (geometry: ${geomSpecCount} corpus palettes carry a spec geometry; the (geometry-discriminate) fixture proves the pass-through)`);
 
 // (g) NEGATIVE control: an un-typed palette still yields the global product default (fallback intact)
 const noType = hydrate({ palettes: [{ name: "x", hue: 200, chroma: 60, on: true }] });

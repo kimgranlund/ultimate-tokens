@@ -25,9 +25,9 @@
 ## The architecture finding (read first)
 
 There is **no component library**. The entire UI is one autonomous web component,
-`ultimate-tokens` (`customElements.define` at `app.js:2686`), whose class is assembled from
+`ultimate-tokens` (`customElements.define` at `app.js:2707`), whose class is assembled from
 `src/ui/app.js` (~2,580 lines: state, render dispatch, the frame) plus the section and overlay
-mixins in `src/ui/sections/` and `src/ui/overlays/` (~5,600 lines, `mixinInto` at `app.js:2680`).
+mixins in `src/ui/sections/` and `src/ui/overlays/` (~5,600 lines, `mixinInto` at `app.js:2701`).
 It builds every control inline with a single hyperscript helper `h(tag, attrs, ...kids)`
 (`app-helpers.mjs:319`), across ~39 `render*()` methods. Styling is ~705 class-led selector lines in
 `src/ui/styles.css` (~1,600 lines; count: `grep -cE '^\s*\.' src/ui/styles.css`, 544 unique class names). Consequences that recur in every card below:
@@ -35,13 +35,13 @@ It builds every control inline with a single hyperscript helper `h(tag, attrs, .
 - **S2 is not a second surface.** `scripts/gen-figma-ui.mjs` bundles the *same* compiled app
   (`dist/ultimate-tokens.html`) and injects a postMessage bridge that flips `inFigma`
   (`markInFigma()`, `gen-figma-ui.mjs:23-33`). So **S2 reuses S1's primitives verbatim**; the only S2-specific
-  *instances* are `inFigma`-gated buttons ("Read live" `sections/color.js:1338`, "Read approx →" (`readFromFigmaVariables()`, `app.js:1242`),
+  *instances* are `inFigma`-gated buttons ("Read live" `sections/color.js:1338`, "Read approx →" (`readFromFigmaVariables()`, `app.js:1261`),
   `.figma-plugin-btn` `overlays/drawer.js:224`) and the `.figma-files` mode segment (`overlays/drawer.js:221`).
 - **No native-replacement layer + no FACE.** Controls are a mix of *native* elements (`<input
   type=range/text/search/checkbox>`, `<select>`) and *custom `<div>`/`<button>` widgets*, none are
   form-associated custom elements. The native ones inherit native a11y for free; the custom ones
   (`.toggle`, `segmented()`) are built on real `<button>`s with ARIA roles (`switchControl`, `app-helpers.mjs:364`;
-  `segmented`, `app.js:1631`), so they keep focus and keyboard.
+  `segmented`, `app.js:1650`), so they keep focus and keyboard.
 - **Forced-colors support is one pass**, the `@media (forced-colors: active)` block at
   `styles.css:1600`; custom-painted controls outside it still flatten in Windows High Contrast.
 - **Geometry is ad-hoc, off any ramp.** Buttons are `padding: 4px 9px` (`styles.css before ADR-032`), the range
@@ -85,7 +85,7 @@ incrementally.
 | 4 | **Slider / range** | component | native `<input type=range>` | 1 (via `slider()` helper) | 1 helper, ~14 instances | `input[type=range]`, `.field` | partial, `aria-label` set (label sibling NOT associated, noted in code `app.js:2093-2096`); no forced-colors | custom thumb only; consistent, the model primitive |
 | 5 | **Select** | component | native `<select>` | 1 + `.map-raw-select` | 3 | `select`, `.map-raw-select` | ✓ `.map-raw-select` has `aria-label`; Distribution/Curve are `field()` rows (label[for] + fallback aria-label) | two naming paths |
 | 6 | **Text input** | component | native `<input type=text>` | 2 (`.field` name · `.map-raw-input`) | 2 | `input[type=text]`, `.map-raw-input` | ✓ map-raw-input has `aria-label`; Name is a `field()` row (label[for] + fallback aria-label) | two naming paths |
-| 7 | **Search input** | component | native `<input type=search>` | 1 | 1 (singleton, reused) | `input[type=search]` | good, `aria-label` + placeholder | reused node (`ensureSearchInput`, `app.js:889-892`) to preserve focus |
+| 7 | **Search input** | component | native `<input type=search>` | 1 | 1 (singleton, reused) | `input[type=search]` | good, `aria-label` + placeholder | reused node (`ensureSearchInput`, `app.js:908-911`) to preserve focus |
 | 8 | **Checkbox** | component | native `<input type=checkbox>` | 1 | 1 | `.mini-check` | good, label-wrapped (associated), `accent-color` | only one instance |
 | 9 | **Chip / pill** | component | custom span/button | 3 (tile-tag · preset · drift-sum) | ~6 | `.tile-tag`, `.damp-presets .preset`, `.map-drift-sum` | n/a (status) / preset is a clickable `<button>` | 3 unrelated "pill" stylings |
 | 10 | **Field wrapper** | primitive (layout) | custom `<div>` | 1 | ~7 | `.field`, `.field > label` | n/a, wraps label + control | the only true layout primitive |
@@ -110,17 +110,17 @@ incrementally.
 - **Anatomy** `[ icon? · label? ]`, no caret variant. Icon-only used for zoom (`zoomBy()`, `sections/color.js:839/841`),
   drawer close (`_drawerHead()`, `overlays/drawer.js:132-138`). `btn()` emits `icon-only` in place of `ghost`
   when its only child is one `.ic` icon (`isIconOnly`, `app-helpers.mjs:403`); the two pane toggles carry
-  `icon-only pane-toggle` (`paneToggle`, `app.js:1491`).
+  `icon-only pane-toggle` (`paneToggle`, `app.js:1510`).
 - **API** classes-as-variant: `.primary` (`styles.css:191`), `.ghost` (`styles.css:197`), `.icon-only` (a square
   control-height box, icon centered, borderless and transparent until hover, `button.icon-only`, `styles.css:201`),
   `.danger` (modifier on `.ghost`, `app-helpers.mjs:401`), `.add-pal-btn` (dashed, `styles.css:528`),
   `.ex-btn` (preview, `cursor:default`, non-interactive, `styles.css:919-922`), `.copy-float` (`styles.css:1108`),
   `.map-reset` (borderless icon, `styles.css:755`), `.pane-toggle` (color only on an icon-only button, `styles.css:438`),
-  `.figma-plugin-btn`, `.undo-btn`/`.redo-btn` (`app.js:1435/1436`).
+  `.figma-plugin-btn`, `.undo-btn`/`.redo-btn` (`app.js:1454/1455`).
 - **States** default · `hover` (`button:hover` `styles.css:190`) · `focus-visible` (`styles.css:208`) ·
   `disabled` (`styles.css:217`) · toggle-pressed (`.on` + `aria-pressed`, 7 sites in `src/ui/`: the `btn()` and
   `chip()` primitives plus five inline buttons:
-  `aria-pressed` at `app-helpers.mjs:415/542`, `app.js:1492/1648`, `sections/color.js:513/940/1163`).
+  `aria-pressed` at `app-helpers.mjs:415/542`, `app.js:1511/1667`, `sections/color.js:513/940/1163`).
 - **a11y** ✓ `:focus-visible` ring; ✓ `aria-pressed` on toggle-buttons; ✓ `aria-label` on icon-only
   (`sections/color.js:839`). ✗ no `forced_colors`.
 - **Geometry** the cell roles: `min-block-size: var(--sh-control-height)`, `padding-inline: var(--sh-control-inset)`,
@@ -164,7 +164,7 @@ incrementally.
 
 ### 3 · Segmented control
 
-- **Surface** S1. **Sites** 14 static `segmented()` calls: section switcher `app.js:1448`; inspector
+- **Surface** S1. **Sites** 14 static `segmented()` calls: section switcher `app.js:1467`; inspector
   tabs `sections/typography.js:604`, `sections/geometry.js:577` (the Color inspector lost its
   `[Palette|Global]` switch in #809: the selection picks the context); new-palette mode
   `sections/color.js:522`; canvas view `sections/color.js:799`; canvas stops `sections/color.js:814`;
@@ -175,7 +175,7 @@ incrementally.
   from 10 call sites (11-12 live rows) across `overlays/settings.js`. **Variants** as found, four stylings of one idea; today one
   compound styling (`.segmented`, `.figma-files`, `.radix-files` share one rule) plus three modifiers remain:
   - **Inspector tabs** `.segmented` in the Typography and Geometry inspectors, `role=tablist`/`tab`, roving
-    tabindex, ArrowLeft/ArrowRight (`app.js:1623-1656`). *Well-built.*
+    tabindex, ArrowLeft/ArrowRight (`app.js:1642-1675`). *Well-built.*
   - **Canvas view** `.canvas-seg` `[Palettes|Scrims|Mapping|Radix]`, `role=tablist` (`sections/color.js:799-809`).
   - **Canvas stops** `.canvas-seg` `role=group` (`sections/color.js:814-822`); the Typography and Geometry
     breakpoint-mode and specimen-mode segments reuse the same modifier: `sections/typography.js:177`,
@@ -269,8 +269,8 @@ incrementally.
 
 ### 7 · Search input
 
-- **Surface** S1 (gallery). **Sites** 1, `this._searchInput` (`ensureSearchInput()`, `app.js:890-892`), **created once and
-  reused** across renders so typing never loses focus (the documented bug-fix at `app.js:889-890`).
+- **Surface** S1 (gallery). **Sites** 1, `this._searchInput` (`ensureSearchInput()`, `app.js:909-911`), **created once and
+  reused** across renders so typing never loses focus (the documented bug-fix at `app.js:908-909`).
 - **a11y** ✓ `aria-label` "Search palette sets" + placeholder. Native clear/keyboard.
 - **Style** shares the `input[type="text"], input[type="search"], select` base (`styles.css:221`); width pinned in the
   `.gallery-title` selector (`styles.css:294`).
@@ -353,7 +353,7 @@ cell *shapes* still differ per idiom; `swatch()` covers the dot and the roles-ta
 ### 12 · Set-tile (composition)
 
 `.set-tile` → `.set-thumb` `[ .strip i[] · .tile-tag×2 · .del ]` + `.set-meta` (`styles.css:271-315`;
-built by `buildTiles()` `app.js:699` / `buildPresetTiles()` `app.js:783`). **Flag (as-found):** the tile was
+built by `buildTiles()` `app.js:718` / `buildPresetTiles()` `app.js:802`). **Flag (as-found):** the tile was
 a `<button>` with a clickable `.del` **`<span>`** inside it, *not* a button-in-button (so valid HTML),
 but the delete was mouse-only (a span with `onclick`, no keyboard). **→ Fixed:** the editable tile is now
 a `<div role=button>` (Enter/Space) so `.del` is a real, focusable `<button>`. (Preset tiles stay plain

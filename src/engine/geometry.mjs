@@ -311,7 +311,7 @@ export function geomTokensSizesCSS(scale, { unit = "px", prefix = "" } = {}) {
 }
 
 // geomTokensBreakpointCSS, ONE self-contained override file PER breakpoint mode. The cells are the same
-// at every width; what a breakpoint changes is the SCALE axis, so each file's `:root` sets only the
+// at every width; what a breakpoint changes is the SCALE axis, so each file's `:where(:root)` sets only the
 // `--ctx-scale-*` indicators for that mode's `scale.scale`, and the resolver in the base file does the
 // rest. `desktopMinWidth` (default 1280, this app's Desktop anchor) splits `modes` into NARROW
 // (< desktopMinWidth, Tablet/Mobile) and WIDE (≥ desktopMinWidth, e.g. Desktop Lg/Xl). Each side is
@@ -335,7 +335,7 @@ export function geomTokensBreakpointCSS(modes = [], { desktopMinWidth = 1280 } =
     const cond = widest ? `(min-width: ${lower}px)` : `(min-width: ${lower}px) and (max-width: ${upper}px)`;
     out.push({
       name, minWidth: lower,
-      css: `/* ${name}, ${widest ? `${lower}px+` : `${lower}–${upper}`}px, load AFTER the Desktop base file */\n@media ${cond} {\n  :root {\n${scaleLine(m)}\n  }\n}\n`,
+      css: `/* ${name}, ${widest ? `${lower}px+` : `${lower}–${upper}`}px, load AFTER the Desktop base file */\n@media ${cond} {\n  :where(:root) {\n${scaleLine(m)}\n  }\n}\n`,
     });
   });
   narrow.forEach((m, i) => {
@@ -346,7 +346,7 @@ export function geomTokensBreakpointCSS(modes = [], { desktopMinWidth = 1280 } =
     const cond = narrowest ? `(max-width: ${upper}px)` : `(min-width: ${lower}px) and (max-width: ${upper}px)`;
     out.push({
       name, minWidth: lower,
-      css: `/* ${name}, ${narrowest ? `≤${upper}` : `${lower}–${upper}`}px */\n@media ${cond} {\n  :root {\n${scaleLine(m)}\n  }\n}\n`,
+      css: `/* ${name}, ${narrowest ? `≤${upper}` : `${lower}–${upper}`}px */\n@media ${cond} {\n  :where(:root) {\n${scaleLine(m)}\n  }\n}\n`,
     });
   });
   return out;

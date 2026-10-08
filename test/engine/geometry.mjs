@@ -171,7 +171,7 @@ const base = G.geomScale({});
   const sm = G.geomScale({ scale: "sm" }), lg = G.geomScale({ scale: "lg" });
   const solo = G.geomTokensBreakpointCSS([{ name: "Mobile", minWidth: 476, scale: sm }, { name: "NoWidth", scale: sm }]);
   ok(g, solo.length === 1 && solo[0].name === "Mobile", "a mode without a minWidth is skipped");
-  ok(g, /@media \(max-width: 1279px\) \{\s*:root \{\s*--ctx-scale-sm: 1; --ctx-scale-md: 0; --ctx-scale-lg: 0;\s*\}\s*\}/.test(solo[0].css), `a narrow mode file sets only its scale indicators (got ${J(solo[0].css)})`);
+  ok(g, /@media \(max-width: 1279px\) \{\s*:where\(:root\) \{\s*--ctx-scale-sm: 1; --ctx-scale-md: 0; --ctx-scale-lg: 0;\s*\}\s*\}/.test(solo[0].css), `a narrow mode file sets only its scale indicators (got ${J(solo[0].css)})`);
   ok(g, !/--size-|--control-|--ctx-size-|--ctx-cell-/.test(solo[0].css), "a mode file never re-declares primitives, roles, size or cell hooks");
   const two = G.geomTokensBreakpointCSS([{ name: "Mobile", minWidth: 476, scale: sm }, { name: "Tablet", minWidth: 992, scale: sm }, { name: "Desktop Xl", minWidth: 1440, scale: lg }]);
   ok(g, J(two.map((m) => m.name)) === J(["Desktop Xl", "Tablet", "Mobile"]), `wide first, then narrow descending (got ${two.map((m) => m.name)})`);

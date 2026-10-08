@@ -181,10 +181,24 @@ ok(app.doc && app.doc.palettes.length === DEFAULT_PALETTES, `doc has ${DEFAULT_P
   app.undo(); app.closeSettings(); app.settingsSection = "mapping"; flushRaf();
   ok(hostGeom() === "product,md,md,round", `(shg3) state restored for the groups below (got ${hostGeom()})`);
   const st = app._geomRolesStyle;
-  ok(!!st && st.id === "ut-geometry-roles" && st.parentNode === document.head, "(shg4) app._geomRolesStyle is <style id=\"ut-geometry-roles\"> in document.head");
+  const key = app.dataset.utGeom;
+  ok(!!key && !!st && st.id === `ut-geometry-roles-${key}` && st.parentNode === document.head, `(shg4) app._geomRolesStyle is <style id="ut-geometry-roles-<key>"> in document.head, keyed by the host's data-ut-geom (key ${key}, id ${st && st.id})`);
   const css = (st && st.textContent) || "";
   ok(/(^|[;{\s])--control-height:/.test(css) && css.includes("--size-product-md-md-height:"), "(shg4) the style holds the unprefixed --control-height role and the --size-product-md-md-height: primitive");
-  ok(document.head.children.filter((c) => c.id === "ut-geometry-roles").length === 1, "(shg4) re-renders reuse the one style element");
+  ok(document.head.children.filter((c) => c.id === `ut-geometry-roles-${key}`).length === 1, "(shg4) re-renders reuse the one style element");
+  // (shg5) the injected roles are scoped to this host: no document-level selector survives the rewrite
+  const blocks = css.split("\n").filter((l) => /\{\s*$/.test(l));
+  ok(!/^:root \{/m.test(css) && !css.includes(":where(:root)") && !css.includes(":where(*, :host)"), "(shg5) the style text has no :root {, :where(:root) or :where(*, :host) block");
+  ok(blocks.length === 16 && blocks.every((l) => l.includes(`ultimate-tokens[data-ut-geom="${key}"]`)), `(shg5) all 16 block selectors name the host's data-ut-geom (got ${blocks.length}: ${blocks.filter((l) => !l.includes("data-ut-geom")).join(" | ")})`);
+  // (shg6) a second instance gets its own key and its own style element
+  const app2 = new App();
+  app2.classList = new ClassList(); app2.dataset = {}; app2.style = new CSSStyleDeclaration(); app2._children = [];
+  app2.shellGeometry = null; app2.doc = null;
+  app2._applyShellGeometry();
+  const st2 = app2._geomRolesStyle;
+  ok(!!app2.dataset.utGeom && app2.dataset.utGeom !== key && !!st2 && st2 !== st && st2.id === `ut-geometry-roles-${app2.dataset.utGeom}` && st2.parentNode === document.head, `(shg6) a second instance gets key ${app2.dataset.utGeom} (first ${key}) and its own style element (${st2 && st2.id})`);
+  ok(st2 && st2.textContent.includes(`ultimate-tokens[data-ut-geom="${app2.dataset.utGeom}"]`) && !st2.textContent.includes(`data-ut-geom="${key}"`), "(shg6) the second style names only its own host");
+  if (st2) st2.remove();
 }
 
 // ── (a) undo/redo + slider drag = ONE step ────────────────────────────────────────
@@ -2209,6 +2223,15 @@ ok(hasSvgIcon(findFk("pane-left")), "(ic) the pane toggle renders an inline-SVG 
 ok(hasSvgIcon(app.querySelector(".app-header")), "(ic) the app-header controls (Undo/Redo/Export/theme) carry registry icons");
 ok(hasSvgIcon(app.querySelector(".canvas-header")), "(ic) the canvas-header controls (Fit/zoom/+Palette) carry registry icons");
 
+// ── (ics) icon sizing: no size follows the shell's --sh-control-icon; an explicit size holds by attributes ──
+{
+  const { icon: iconICS } = await import("../../src/ui/icons.js");
+  const plain = iconICS("x").innerHTML;
+  ok(plain.includes("var(--sh-control-icon, 16px)"), `(ics1) icon("x")'s svg style follows var(--sh-control-icon, 16px) (got ${plain.slice(0, 160)})`);
+  const sized = iconICS("x", { size: 13 }).innerHTML;
+  ok(/<svg[^>]* width="13"/.test(sized) && !sized.includes("--sh-control-icon") && !/<svg[^>]* style=/.test(sized), `(ics2) icon("x", { size: 13 })'s svg has width="13" and no --sh-control-icon style (got ${sized.slice(0, 160)})`);
+}
+
 // ── (mig) storage-key migration: BOTH pre-rename generations forward-migrate into the new namespace ──
 // The chain is ultimate-tokens ← nonoun-color-tokens ← hct-palette-state-v1 (newest legacy wins).
 const setsBlob = (id) => JSON.stringify({ sets: [{ id, name: id, doc: {}, updated: 1 }] });
@@ -2925,7 +2948,8 @@ ok(!!app.querySelector(".insp-title"), "(geo) the right pane shows the Geometry 
   const st0 = (ctlEl && ctlEl.getAttribute("style")) || "";
   ok([`height:${c0.height}px`, `font-size:${c0.text}px`, `padding-inline:${c0.inset}px`, `border-radius:${c0.radiusControl}px`].every((s) => st0.includes(s)), `(geo-row) the first (content-sm-sm) control = height ${c0.height} · text ${c0.text} · inset ${c0.inset} · radius ${c0.radiusControl} (got "${st0}")`);
   const glyphEl = app.querySelector(".geom-glyph");
-  ok(!!glyphEl && (glyphEl.getAttribute("style") || "").includes(`width:${c0.icon}px`), `(geo-row) the first control's glyph box is the cell's icon (${c0.icon}px, got "${glyphEl && glyphEl.getAttribute("style")}")`);
+  const glyphSvg = (glyphEl && glyphEl.children[0] && glyphEl.children[0].innerHTML) || "";
+  ok(new RegExp(`<svg[^>]* width="${c0.icon}"`).test(glyphSvg) && !glyphSvg.includes("--sh-control-icon"), `(geo-row) the first control's glyph svg is the cell's icon (${c0.icon}px, got "${glyphSvg.slice(0, 160)}")`);
 }
 const { geomScale: gScale, DEFAULT_GEOMETRY: GEOM_DEFAULT, orderedSizeNames: geoOrder } = await import("../../src/engine/geometry.mjs");
 const { brandKit: bkGeo, geometryScale: geoScaleOf } = await import("../../src/ui/model.mjs");
