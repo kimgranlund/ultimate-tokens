@@ -3,9 +3,8 @@
 The geometry engine (`src/engine/geometry.mjs`) is the spatial analog of the color and type engines:
 a few discrete axes, a fixed ladder, derived control geometry, then [DTCG](https://tr.designtokens.org/)
 `dimension` tokens, CSS custom properties with a context resolver, and Figma variables. Since ADR-032
-(T-0017) it is the **Maison ui-kit ladder** in our token names. `docs/assets/geometry-tokens.json` is a
-frozen snapshot of the retired six-size ramp, kept for history; the live shape is
-`geomTokensDTCG(geomScale({}))`.
+(T-0017) it is the **Maison ui-kit ladder** in our token names. The live shape is
+`geomTokensDTCG(geomScale({}))`; the retired six-size ramp (XS to 2XL) has no file in the tree.
 
 ## The ladder: three axes, 27 cells
 
