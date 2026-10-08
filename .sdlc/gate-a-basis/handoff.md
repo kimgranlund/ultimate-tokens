@@ -22,3 +22,14 @@ Implement the architect's design in `.sdlc/gate-a-narrowing/architect-L1.md` (sp
 
 ## Constraints
 - Zero runtime deps, engines pure. No U+2014. `npm test`, `npm run build`, and the eight `gate:*` sweep legs through `scripts/gate_lock.py run --name <leg> -- npm run gate:<leg>` with `SDLC_GATE_WORKERS=10` (do not run `gate:sweeps` as one command, it exceeds the foreground limit); `chroma-envelope` and `corpus-anchor` are the legs that matter most. Files: `src/engine/tonal.js`, `test/engine/chroma-envelope-gate.mjs`, `docs/references/decision-records.md`, generated bundles, `.sdlc/gate-a-basis/` records.
+
+## Acceptance criteria
+- The three OKHSL stop records carry `basis` (`anchor.okhsl.s` at the verbatim stop 500 and the built record, `keyS` at the unanchored record) and no other `src/engine/tonal.js` line differs: `git diff <merge-base> -- src/engine/tonal.js` shows exactly three changed lines, each a pure `, basis: ...` addition.
+- Rule 2' replaces rule 2 in `test/engine/chroma-envelope-gate.mjs` (no `model/model500` comparison remains, no second gate on the property) and `npm run gate:chroma-envelope` ends `pass  chroma-envelope` and prints a `rule 2'` line covering 286043 stops (280203 on the clamped basis form plus 5840 anchored stop 500s, the architect's 280,337 + 5,706 verbatim), with the stop 500 vacuity guards live.
+- Negative control 1 (`--engine-dir` scratch copy, `basis: keyS * 1.01` at the unanchored record): exit 1, `curve perceptual` and `curve peak` red, rule 1 (`env` exact to 1e-12) at 0 stops off, residue at 0 outside TOL.
+- Negative control 2 (`const intendedS = anchor.okhsl.s * (1 + 0.05 * Math.abs(sp))` with `basis: intendedS` threaded out of `preCap`): exit 1, `curve perceptual` and `curve peak` red with the constant-basis witness (`basis X vs stop 500 basis Y`), rule 1 at 0 stops off.
+- `docs/references/decision-records.md` has an `- **Amendment (2026-10-08, T-0024).**` bullet immediately before ADR-029's Status line, and ADR-029 stays PROPOSED.
+- Byte-neutral: `node scripts/report-preset-fidelity.mjs --identity-control --base $(git merge-base origin/main HEAD)` and the same with `--authored` both end `0 differing cells`.
+- `npm test` ends `all 54 test files passed` with only the two regenerated bundles (`figma/plugin/ui.html`, `src/ui/describe-mcp-assets.js`) and the ADR changed, both committed; `npm run build` exit 0; the eight `gate:*` legs through `scripts/gate_lock.py run --name <leg> -- npm run gate:<leg>` exit 0.
+
+verifier: L3
