@@ -1474,7 +1474,7 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
       return {
         stop, tone: anchor.lstar, chroma: anchor.cam.chroma,
         maxc: maxChromaInGamut(anchor.cam.hue, anchor.lstar), rgb: anchor.rgb, hex: anchor.hex, inGamut: true,
-        toneTarget: anchor.lstar, toneHeld: anchor.lstar, env: 1, model: anchor.okhsl.s,
+        toneTarget: anchor.lstar, toneHeld: anchor.lstar, env: 1, model: anchor.okhsl.s, basis: anchor.okhsl.s,
       };
     }
     let { hue, s, l, rgb, chroma, toneTarget, toneHeld, env } = preCap(stop);
@@ -1482,7 +1482,7 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
     if (capPeak && chroma > ceiling + 1e-6) ({ rgb, chroma, capped } = capChromaAtHeldTone(hue, s, l, rgb, chroma, ceiling, null, true));
     const tone = lstarFromRgb(rgb);
     const hex = "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
-    return { stop, tone, chroma, maxc: maxChromaInGamut(anchor.cam.hue, tone), rgb, hex, inGamut: true, capped, toneTarget, toneHeld, env, model: s };
+    return { stop, tone, chroma, maxc: maxChromaInGamut(anchor.cam.hue, tone), rgb, hex, inGamut: true, capped, toneTarget, toneHeld, env, model: s, basis: anchor.okhsl.s };
   });
   enforceMonotonePixelL(built);
   return built;
@@ -1583,7 +1583,7 @@ function okhslStops(palette, controls, stops, mode) {
     const hex = "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
     // chroma/maxc reported (measured) for the analysis graphs; OKHSL is in-gamut by construction (the
     // HCT fallback above is validated in-gamut too, per its own engine contract).
-    return { stop, tone, chroma, maxc: maxChromaInGamut(baseHue, tone), rgb, hex, inGamut: true, capped, toneTarget: hold.target, toneHeld: hold.held, env: envelopeAt.get(stop), model: hold.s };
+    return { stop, tone, chroma, maxc: maxChromaInGamut(baseHue, tone), rgb, hex, inGamut: true, capped, toneTarget: hold.target, toneHeld: hold.held, env: envelopeAt.get(stop), model: hold.s, basis: keyS };
   });
 }
 

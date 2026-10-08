@@ -9,8 +9,12 @@
 //   curve) and never read from the engine; the only engine import is `liftStop`, from this file's own
 //   tree. A planted engine constant therefore reds this leg; a gate derived from the exported constants
 //   would pass it. Per stop: the record's `env` equals the spec curve to 1e-12; on perceptual and peak
-//   the record's `model` over stop 500's equals `env` to 1e-9 (where stop 500's model is above 0, both
-//   models are under the s clamp at 1 before the group damper, and the stop is not `capped`); on even `model` equals
+//   (rule 2', T-0030) the record's `basis` (the OKHSL s the envelope multiplies: the anchor's own s, or
+//   the unanchored key colour's) is constant across the ramp, and at every stop that is not `capped`
+//   `model / (damper ?? 1)` equals min(1, max(0, basis * env)) to 1e-9, the s clamp at 1 holdTone
+//   applies before the group damper scales it; the anchored path's stop 500 is the anchor itself, so
+//   there `model / (damper ?? 1)` equals `basis` (the verbatim anchor) or min(1, basis) (a clamped
+//   pivot); on even `model` equals
 //   min(maxc, max(min(basis*env, maxc), floor), anchorCap) to 1e-9 relative (at stops not `refined`,
 //   not damped by the group, and not the anchored path's stop 500, which is the anchor itself).
 // - Gate B (residue): every emitted pixel reads back within TOL of its stop's `model` (`residueOf`;
@@ -87,7 +91,7 @@ console.log(`chroma-envelope-gate${engineDir !== null ? ` --engine-dir ${engineD
 console.log(`  spec: ${Object.entries(SPEC).map(([k, v]) => `${k} ${v}`).join(", ")}`);
 
 const fmt = (x) => (Number.isFinite(x) ? x.toFixed(9) : String(x));
-let curveBad = 0, curveTotal = 0, residueBad = 0, residueTotal = 0;
+let curveBad = 0, curveTotal = 0, residueBad = 0, residueTotal = 0, rule2Clamped = 0, rule2Pivot = 0;
 const curveModes = [], residueModes = [];
 for (const mode of MODES) {
   let bad = 0, total = 0;
@@ -101,14 +105,30 @@ for (const mode of MODES) {
       const env = specEnvelope(rec.stop, r.pal.lift ?? 0, r.controls);
       if (!(Math.abs(rec.env - env) <= 1e-12)) why.push(`env ${fmt(rec.env)} vs spec ${fmt(env)}`);
       if (mode !== "even") {
-        const model500 = r.ramp.find((x) => x.stop === 500)?.model;
-        // the s clamp at 1 holds on stop 500 too (a basis above 1, a key colour reading s 1.0000001,
-        // clamps there and not at the damped stops), and it is read before the group damper, which
-        // scales a clamped model by `damper` (dampStops): the ratio is only exact under the clamp
+        // rule 2': the OKHSL records carry the `basis` they multiply by `env`, so the model is asserted
+        // exactly, with no ratio to stop 500 and no stop dropped for a clamp. holdTone reads
+        // min(1, max(0, basis * env)) (OKHSL's s = 1 is an approximate gamut boundary, so a boundary
+        // key colour reads 1 plus or minus round-off and the clamp is part of the model), and the
+        // group damper scales that by `damper` after (dampStops), hence the division. `basis` is
+        // constant across the ramp (R69: no climb toward the group), the property the old ratio rule
+        // checked implicitly. A capped stop's model is the pre-cap request, so it is not compared.
         const r100 = rec.damper ?? 1;
-        const clampFree = model500 / r100 < 1 - 1e-12 && rec.model / r100 < 1 - 1e-12;
-        if (model500 > 0 && clampFree && !rec.capped && !(Math.abs(rec.model / model500 - rec.env) <= 1e-9)) {
-          why.push(`model/model500 ${fmt(rec.model / model500)} vs env ${fmt(rec.env)}`);
+        const basis500 = r.ramp.find((x) => x.stop === 500)?.basis;
+        if (!Number.isFinite(rec.basis)) why.push(`basis ${rec.basis} is not a number`);
+        else if (!(Math.abs(rec.basis - basis500) <= 1e-12)) why.push(`basis ${fmt(rec.basis)} vs stop 500 basis ${fmt(basis500)}`);
+        else if (pathName === "anchored" && rec.stop === 500) {
+          // the anchor itself: a verbatim stop 500 stores the raw anchor s, a clamped pivot renders
+          // through the clamp
+          const got = rec.model / r100;
+          if (!(Math.abs(got - rec.basis) <= 1e-9 || Math.abs(got - Math.min(1, rec.basis)) <= 1e-9)) {
+            why.push(`model ${fmt(got)} vs basis ${fmt(rec.basis)} or its clamp ${fmt(Math.min(1, rec.basis))}`);
+          }
+          rule2Pivot++;
+        } else if (!rec.capped) {
+          const got = rec.model / r100;
+          const want = Math.min(1, Math.max(0, rec.basis * rec.env));
+          if (!(Math.abs(got - want) <= 1e-9)) why.push(`model ${fmt(got)} vs clamped basis * env ${fmt(want)}`);
+          rule2Clamped++;
         }
       } else if (!rec.refined && !((rec.damper ?? 1) < 1) && !(pathName === "anchored" && rec.stop === 500)) {
         const want = Math.min(rec.maxc, Math.max(Math.min(rec.basis * rec.env, rec.maxc), rec.floor), rec.anchorCap ?? Infinity);
@@ -162,6 +182,8 @@ const vacuity = [];
 for (const mode of MODES) for (const s of REPORT_STOPS) if (!(m.results[mode][s].n > 0)) vacuity.push(`direction ${mode} ${s} n ${m.results[mode][s].n}`);
 if (!(curveTotal > 0)) vacuity.push("curve read 0 stops");
 if (!(residueTotal > 0)) vacuity.push("residue read 0 stops");
+if (!(rule2Clamped > 0)) vacuity.push("rule 2' read 0 stops under the clamped basis form");
+if (!(rule2Pivot > 0)) vacuity.push("rule 2' read 0 anchored stop 500 pivots");
 for (const v of vacuity) console.log(`    vacuity: ${v}`);
 
 if (curveBad || residueBad || dirFails.length || vacuity.length) {
@@ -173,4 +195,5 @@ if (curveBad || residueBad || dirFails.length || vacuity.length) {
   console.log(`  FAIL  chroma-envelope: ${parts.join("; ")}`);
   process.exit(1);
 }
+console.log(`  rule 2' (perceptual, peak): ${rule2Clamped + rule2Pivot} stops covered (${rule2Clamped} on the clamped basis form, ${rule2Pivot} anchored stop 500s on the anchor itself), capped stops excluded, basis constant across every ramp`);
 console.log(`  pass  chroma-envelope: curve exact at ${curveTotal} stops; residue within TOL at ${residueTotal} stops; direction holds in ${MODES.length} modes`);
