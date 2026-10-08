@@ -11,7 +11,7 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 ### 2026-10-08
 
 #### Changed
-- **The canvas and every export read one evaluation of six named compute layers** (#788, ADR-033).
+- **The canvas and every export read one evaluation of six named compute layers** (#788, ADR-034).
   The controls, ramp, prime, roles, type and geometry stages are registered as versioned pure
   functions in `src/engine/layers.mjs`, and `compute()` evaluates the colour layers once for the
   editor canvas and every export format, so the two can no longer resolve a palette differently.
@@ -20,7 +20,7 @@ they landed on `main` and reference the squash-merged PR that introduced them.
   straight to an exporter (the MCP server or a hand-built caller) now renders as OKLCH, the editor's
   default, instead of CAM16; a document saved by the app always carries its hue space.
 - **Every export records the compute-layer versions that produced it; export schema 7** (#788,
-  ADR-033). A document now carries a `layers` map, the version of each compute layer (`controls`,
+  ADR-034). A document now carries a `layers` map, the version of each compute layer (`controls`,
   `ramp`, `prime`, `roles`, `type`, `geometry`) it renders with, and every export stamps it: line 2
   of the CSS, OKLCH, Tailwind, ShadCN, Panda and Radix outputs reads `/* ultimate-tokens layers
   controls@1 ramp@1 prime@1 roles@1 type@1 geometry@1 */` under the unchanged schema line; JSON

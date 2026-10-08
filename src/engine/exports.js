@@ -49,12 +49,12 @@ export const relLumExp = relLum;
 // Bump rule (adding-export-formats/SKILL.md carries the same note): any additive or shape change
 // to an emitted format bumps this ONE constant, once, across every surface, in the same PR; a
 // value-only change (e.g. a chroma default) never bumps it.
-// 7 (#788, compute-layers, ADR-033): every format also records the compute-layer pins the kit was
+// 7 (#788, compute-layers, ADR-034): every format also records the compute-layer pins the kit was
 // made with (layerPinsLine / the `layers` field below), so a reader can tell which layer versions
 // produced the values.
 export const EXPORT_SCHEMA_VERSION = 7;
 
-// ── Layer pins (#788, compute-layers, ADR-033) ─────────────────────────────────────
+// ── Layer pins (#788, compute-layers, ADR-034) ─────────────────────────────────────
 // Every export records `docPins(state)`, the version of each compute layer the values came from
 // (the same pins compute ran). Comment-stamped formats (CSS/OKLCH/Tailwind/ShadCN/Panda/Radix)
 // carry layerPinsLine as their second line, right under the schema stamp; JSON formats carry the
@@ -215,7 +215,7 @@ function enabledPalettes(state) {
 // (layers.mjs: the 25-stop ramp, the prime swatches, the resolved role refs): the slug, the 25
 // solid stops keyed by pad3, a stop->rgb lookup, the 11 scrims, the 53 roles with each ref resolved
 // to a color, and the prime swatches by step. The canvas (model.mjs projectView) reads the SAME
-// compute entry, so the two can never resolve a chroma, a ramp or a role differently (ADR-033).
+// compute entry, so the two can never resolve a chroma, a ramp or a role differently (ADR-034).
 function derivePalette({ palette, n, stops: stopList, prime: primeList, roles: roleRefs }) {
   // stop (number) -> rgb int triple, for ref resolution.
   const byStop = new Map();

@@ -5,7 +5,7 @@
 // (ui/model.mjs: projectView, stateOf, paletteKeyColors) and every exporter (exports.js:
 // derivedAll, through layers.mjs's compute) resolve through this one function, so a control is
 // defaulted in exactly one place and the two paths can never disagree about what an absent field
-// means (ADR-033).
+// means (ADR-034).
 //
 // Names are the exporter-facing ones: `baseChroma`, not the document's own field (AC-004 bars the
 // retired name from src/engine in any form). model.mjs renames the document's field onto

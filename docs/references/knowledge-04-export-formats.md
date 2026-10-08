@@ -402,7 +402,7 @@ wherever a surface has a slot for it; absence on an older export meant v1:
 | DS bundle | Claude Design profile: `tokens.json`'s own `$schemaVersion` (`exportDesignSystemTokens`) and DESIGN.md frontmatter's `tokensSchema` (`exportDesignSystemSpine`). Stitch ships the same DESIGN.md (so inherits `tokensSchema`) but no `tokens.json`, no `$schemaVersion` there. Figma Make ships neither `DESIGN.md` nor `tokens.json` (its own `guidelines/` tree + `styles.css` + `README.md`), its `styles.css` is `exportShadcn()`'s own output, so it INHERITS that format's `/* ultimate-tokens export schema N */` first-line comment for free; the figma-make profile's `README.md` receipt (`exportDesignSystemReceipt`) cites that same comment verbatim as its own "Schema stamp" line (ticket #607) so the stamp is explicit and gated (`hpg-export-schema-stamp`), not merely incidental |
 | Panda CSS / Radix | the module wrappers (`exportPandaModule`, `exportRadixModule`) open with the same first-line comment (ticket #606); the preset object itself carries no stamp |
 
-**The layer pins** (compute layers, #788, ADR-033, schema 7), the version of each compute layer
+**The layer pins** (compute layers, #788, ADR-034, schema 7), the version of each compute layer
 (`controls`, `ramp`, `prime`, `roles`, `type`, `geometry`) the values came from, read
 off the document by `docPins` (`src/engine/layers.mjs`), stamped beside the schema stamp:
 

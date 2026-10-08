@@ -1,4 +1,4 @@
-// layer-pins.mjs, a document's compute-layer pins (ADR-033, compute-layers #788; vanilla ESM, pure,
+// layer-pins.mjs, a document's compute-layer pins (ADR-034, compute-layers #788; vanilla ESM, pure,
 // no imports, no DOM).
 //
 // A document records, per layer id, the version of that layer it was made with: `doc.layers =

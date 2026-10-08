@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// layers.mjs, the compute-layer registry (compute-layers #788, ADR-033).
+// layers.mjs, the compute-layer registry (compute-layers #788, ADR-034).
 //
 // src/engine/layers.mjs's LAYERS names the six pipeline stages, and compute(doc) walks the colour ones.
 // There is no `group-chroma` layer: group chroma was retired by #804 (ADR-030).

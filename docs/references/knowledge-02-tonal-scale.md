@@ -265,7 +265,7 @@ Since #804 (ADR-030) a group carries no chroma value: it is canvas grouping meta
 `p`, the pure resolver `rampChromaOf(palette, controls)` (`src/engine/resolve.mjs`, called once per
 palette by `src/engine/layers.mjs`'s `compute`, the one evaluation both `src/ui/model.mjs`'s
 `projectView` and `src/engine/exports.js`'s `derivedAll` read, so the canvas and every export format
-can never disagree, ADR-033; the doc-shaped wrapper `rampChromaOf(p, doc)` in
+can never disagree, ADR-034; the doc-shaped wrapper `rampChromaOf(p, doc)` in
 `model.mjs` renames the document's `baseIntensity` to `baseChroma` at that one boundary) computes:
 
 ```

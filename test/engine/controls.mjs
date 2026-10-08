@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// controls.mjs, the one controls resolver (compute-layers U1, #788, ADR-033).
+// controls.mjs, the one controls resolver (compute-layers U1, #788, ADR-034).
 //
 // engine/controls.mjs's resolveControls is the only place a missing control is defaulted: the canvas
 // (ui/model.mjs: projectView, stateOf) and every exporter (exports.js: derivedAll) resolve through it.

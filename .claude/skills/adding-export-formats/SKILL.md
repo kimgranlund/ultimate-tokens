@@ -106,7 +106,7 @@ fragment, emitters use it to build a NAME, never to re-resolve a ref to a color.
    `EXPORT_SCHEMA_VERSION` constant, stamped on every surface that can carry it, JSON `meta.schemaVersion`;
    DTCG `$extensions["com.ultimate-tokens"].schemaVersion` at the root of all 3 files; the UI3 `$schema`
    suffix; a first-line `/* ultimate-tokens export schema N */` comment on CSS/OKLCH/Tailwind/ShadCN and the
-   Panda/Radix modules, with the layer pins (`layerPinsLine(docPins(state))`, ADR-033) as line 2; the DS
+   Panda/Radix modules, with the layer pins (`layerPinsLine(docPins(state))`, ADR-034) as line 2; the DS
    bundle's `tokens.json` `$schemaVersion` + DESIGN.md frontmatter `tokensSchema`; the brand-kit `$schema`
    (`src/ui/model.mjs`'s `brandKit()`) and the brand-kit MCP server's own `SERVER.version`
    (`mcp/brand-kit-core.mjs`, a hand-kept sibling literal, that file ships standalone, no cross-file import).

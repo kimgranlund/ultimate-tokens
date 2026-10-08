@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// report-compute-neutral.mjs, the byte-neutrality report for the compute-layers refactor (#788, ADR-033).
+// report-compute-neutral.mjs, the byte-neutrality report for the compute-layers refactor (#788, ADR-034).
 //
 //   node scripts/report-compute-neutral.mjs --base <rev> [--only <category>|default-kit] [--perturb] [--migrate]
 //

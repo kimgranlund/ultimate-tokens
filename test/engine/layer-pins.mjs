@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// layer-pins.mjs, document pins of the compute-layer versions (compute-layers #788, ADR-033, R100, R101).
+// layer-pins.mjs, document pins of the compute-layer versions (compute-layers #788, ADR-034, R100, R101).
 //
 // (C4.1) serialize(defaultDocument()).layers is { [id]: latest } over the shipped LAYERS, and the
 //        LATEST table persist.js pins against (src/engine/layer-pins.mjs) is latestOf(REGISTRY);

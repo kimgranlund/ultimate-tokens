@@ -1,4 +1,4 @@
-// layers.mjs, the compute-layer registry (ADR-033, compute-layers #788; vanilla ESM, pure, no DOM).
+// layers.mjs, the compute-layer registry (ADR-034, compute-layers #788; vanilla ESM, pure, no DOM).
 //
 // A layer is a named, versioned, pure stage of the brand-kit pipeline: { id, version, inputs,
 // outputs, run }. `run` is the engine function that stage already is, strict-equal to its export, so

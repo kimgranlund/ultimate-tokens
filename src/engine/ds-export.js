@@ -23,7 +23,7 @@ import { resolvedFontFor } from "./type.mjs"; // per-voice font resolution (TKT-
 import { googleSafeFontFor } from "./font-fallbacks.mjs"; // the google-fonts-safe substitute lookup, for dsFontStack's optional fontMode
 import { mdAnchor, sizeAnchor, orderedSizeNames, CELL_FIELDS } from "./geometry.mjs"; // the cell anchors (legacy step names to ladder cells) + the canonical cell order (T-0017) + the one per-cell field list
 import { derivedAll, roleOklch, hexOf, hex8, relLumExp, cssPrefixOf, dialogBackdropOklch, whiteOklch, blackOklch, exportShadcn, isDataPalette, oklchStr, EXPORT_SCHEMA_VERSION } from "./exports.js";
-import { docPins } from "./layers.mjs"; // the state's compute-layer pins, stamped as tokens.json $layers (ADR-033, #788)
+import { docPins } from "./layers.mjs"; // the state's compute-layer pins, stamped as tokens.json $layers (ADR-034, #788)
 import { PRIME_STEPS, primeSlug } from "./prime.mjs"; // the seven step names, brightest..dimmest (REQ-050/054)
 
 // ══════════════════════════════════════════════════════════════════════════════

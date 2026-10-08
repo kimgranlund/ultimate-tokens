@@ -15,7 +15,7 @@ and `@2` live there, so every shipped layer is still at version 1.
 `/* ultimate-tokens layers controls@1 ramp@1 prime@1 roles@1 type@1 geometry@1 */`; JSON
 `meta.layers`, DTCG `$extensions["com.ultimate-tokens"].layers`, UI3 and DS `tokens.json`
 `$layers`. Brand kit `ultimate-tokens-brand-kit/7`, MCP server 0.7.0, Adia artifacts oklch 2.2.0 and
-radix 1.5.0 (stamp only). No token value moves. ADR-033 carries the amendment.
+radix 1.5.0 (stamp only). No token value moves. ADR-034 carries the amendment.
 
 ## 1.67 - 2026-10-08 - the canvas and every export read one evaluation of six versioned compute layers (#788)
 
@@ -31,7 +31,7 @@ geometry stay evaluated per breakpoint mode in `model.mjs`.
 **Records.** Byte-neutral: `scripts/report-compute-neutral.mjs --base 1d2bf23f` renders the default
 kit and 343 presets through `projectView`, `figmaBundle`, `brandKit` and the three design-system
 bundles on both trees, 0 of 44,267,992 cells differ. The one move: a raw state with no `hueSpace`
-sent straight to an exporter renders as `oklch` (was `cam16`). ADR-033 records the layer model; its
+sent straight to an exporter renders as `oklch` (was `cam16`). ADR-034 records the layer model; its
 R102 (drop the cam16 branch and the `baseIntensity` name) is superseded by ADR-031.
 
 ## 1.66 - 2026-10-07 - chroma controls are per-palette Base chroma times two global k factors; the anchor follows Prime chroma (#804)
