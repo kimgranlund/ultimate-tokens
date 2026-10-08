@@ -2,7 +2,7 @@
 id: T-0030
 title: "Chroma-envelope Gate A: record the OKHSL basis so rule 2 covers every uncapped stop (#807 follow-up)"
 type: chore           # feature | bug | chore | spike | idea
-status: ready     # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: done     # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: L2             # L1 | L2 | L3 | L4 (L5 reserved)
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -33,3 +33,7 @@ Implement the architect's design in `.sdlc/gate-a-narrowing/architect-L1.md` (sp
 - `npm test` ends `all 54 test files passed` with only the two regenerated bundles (`figma/plugin/ui.html`, `src/ui/describe-mcp-assets.js`) and the ADR changed, both committed; `npm run build` exit 0; the eight `gate:*` legs through `scripts/gate_lock.py run --name <leg> -- npm run gate:<leg>` exit 0.
 
 verifier: L3
+
+## Closed
+
+2026-10-08: delivered by the solo agent (level L2); one independent batched verifier passed before the merge
