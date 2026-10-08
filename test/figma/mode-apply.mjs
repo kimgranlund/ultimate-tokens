@@ -22,12 +22,20 @@ ok(tp[0].variables.every((v) => v.type === "FLOAT" && J(v.values.map((x) => x.mo
 const bodySize = tp[0].variables.find((v) => v.name === "type/body/md/size");
 ok(bodySize && bodySize.values[0].value !== bodySize.values[1].value, "plan: per-mode values differ (Base bodyBase 16 vs Mobile 13)");
 
-// ── a real GEOMETRY interchange (Base + Desktop) → plan ──
-const geomIx = G.geomTokensFigmaModes(G.geomScale({ treatment: "comfortable", baseHeight: 28 }), [{ name: "Desktop", scale: G.geomScale({ treatment: "comfortable", baseHeight: 40 }) }]);
-ok(A.validateModeInterchange(geomIx).length === 0, "validate: a real Geometry interchange is sound");
+// ── a real GEOMETRY interchange (Base + Desktop) → plan: mode-constant size/ FLOATs + per-mode control/ ALIASes ──
+const geomIx = G.geomTokensFigmaModes(G.geomScale({}), [{ name: "Desktop", scale: G.geomScale({ scale: "lg" }) }]);
+ok(A.validateModeInterchange(geomIx).length === 0, "validate: a real Geometry interchange is sound (" + A.validateModeInterchange(geomIx).join("; ") + ")");
 const gp = A.modeApplyPlan(geomIx);
 ok(gp.length === 1 && gp[0].collection === "Geometry" && J(gp[0].modes) === J(["Base", "Desktop"]), "plan: the Geometry collection, modes [Base,Desktop]");
-ok(gp[0].variables.every((v) => v.values.length === 2 && v.values.every((x) => Number.isFinite(x.value))), "plan: every Geometry variable is value-complete across both modes");
+const gFloat = new Set(gp[0].variables.filter((v) => v.type === "FLOAT" && v.name.startsWith("size/")).map((v) => v.name));
+ok(gp[0].variables.every((v) => v.values.length === 2 && v.values.every((x) => (v.type === "ALIAS" ? typeof x.value === "string" && x.value.startsWith("size/") && gFloat.has(x.value) : Number.isFinite(x.value)))), "plan: every Geometry variable is value-complete across both modes (FLOAT finite, ALIAS names a size/ FLOAT)");
+const gCtl = gp[0].variables.find((v) => v.name === "control/product/md/height");
+ok(gCtl && gCtl.type === "ALIAS" && J(gCtl.values) === J([{ mode: "Base", value: "size/product-md-md/height" }, { mode: "Desktop", value: "size/product-lg-md/height" }]), `plan: a control/ ALIAS carries each mode's target name (got ${J(gCtl)})`);
+{
+  const bad = JSON.parse(J(geomIx));
+  bad.collections.Geometry.variables["control/product/md/height"].values.Desktop = "size/missing/height";
+  ok(A.validateModeInterchange(bad).some((s) => /control\/product\/md\/height: ALIAS target "size\/missing\/height" for mode "Desktop" is not a literal variable of this collection/.test(s)), "validate: an ALIAS to a missing variable → reported");
+}
 
 // ── identity: no breakpoints ⇒ a single Base mode, addModes empty ──
 const idn = A.modeApplyPlan(T.typeTokensFigmaModes(T.typeScale({ treatment: "product" }), []));
@@ -50,12 +58,12 @@ ok(dSize && dSize.values[2].value < dSize.values[0].value, "plan: the Mobile (ba
 const collide = T.typeTokensFigmaModes(T.typeScale({ treatment: "product" }), [{ name: "Mobile", scale: T.typeScale({ treatment: "product", bodyBase: 13 }) }], { baseName: "Mobile", baseLast: true });
 ok(J(collide.collections.Geometry.modes) === J(["Mobile 2", "Mobile"]), `emit: a breakpoint named like the base disambiguates ("Mobile 2"), got ${J(collide.collections.Geometry.modes)}`);
 // geometry mirrors the same opts
-const gdtm = G.geomTokensFigmaModes(G.geomScale({ treatment: "comfortable", baseHeight: 24 }), [{ name: "Desktop", scale: G.geomScale({ treatment: "comfortable", baseHeight: 28 }) }], { baseName: "Mobile", baseLast: true });
+const gdtm = G.geomTokensFigmaModes(G.geomScale({ scale: "sm" }), [{ name: "Desktop", scale: G.geomScale({}) }], { baseName: "Mobile", baseLast: true });
 ok(J(gdtm.collections.Geometry.modes) === J(["Desktop", "Mobile"]) && A.validateModeInterchange(gdtm).length === 0, "emit: Geometry honors baseName/baseLast and stays plan-sound");
 
 // ── mergeModeInterchanges: the two halves land as ONE "Geometry" collection (TKT-0009, the executor
 // prunes variables per collection, so two plans on one collection would delete each other's halves) ──
-const geomIx2 = G.geomTokensFigmaModes(G.geomScale({ treatment: "comfortable", baseHeight: 28 }), [{ name: "Mobile", scale: G.geomScale({ treatment: "comfortable", baseHeight: 24 }) }]);
+const geomIx2 = G.geomTokensFigmaModes(G.geomScale({}), [{ name: "Mobile", scale: G.geomScale({ scale: "sm" }) }]);
 const merged = A.mergeModeInterchanges(typeIx, geomIx2);
 ok(merged && Object.keys(merged.collections).length === 1 && !!merged.collections.Geometry, "merge: type + geometry halves yield ONE Geometry collection");
 ok(A.validateModeInterchange(merged).length === 0, "merge: the merged interchange is sound (" + A.validateModeInterchange(merged).join("; ") + ")");
@@ -68,15 +76,15 @@ ok(Object.keys(A.mergeModeInterchanges(typeIx).collections.Geometry.variables).e
 // MISMATCHED mode lists (type [Base,Mobile] beside geometry [Base,Tablet]) union, and each half
 // BACK-FILLS the modes it doesn't define with its OWN default-mode value (a system that doesn't vary
 // at a breakpoint = its base values there), so the merged interchange stays plan-sound.
-const gTab = G.geomTokensFigmaModes(G.geomScale({ treatment: "comfortable", baseHeight: 28 }), [{ name: "Tablet", scale: G.geomScale({ treatment: "comfortable", baseHeight: 26 }) }]);
+const gTab = G.geomTokensFigmaModes(G.geomScale({}), [{ name: "Tablet", scale: G.geomScale({ scale: "sm" }) }]);
 const mismatch = A.mergeModeInterchanges(typeIx, gTab);
 ok(J(mismatch.collections.Geometry.modes) === J(["Base", "Mobile", "Tablet"]), `merge: mismatched mode lists union in first-writer order (got ${J(mismatch.collections.Geometry.modes)})`);
 ok(A.validateModeInterchange(mismatch).length === 0, "merge: the back-filled mismatch interchange is plan-sound (never half-applied)");
 const mmType = mismatch.collections.Geometry.variables["type/body/md/size"];
-const mmGeom = mismatch.collections.Geometry.variables["size/md/height"];
+const mmGeom = mismatch.collections.Geometry.variables["control/product/md/height"]; // per-mode ALIAS: Base product-md-md, Tablet product-sm-md
 ok(mmType.values.Tablet === mmType.values.Base && mmType.values.Mobile !== mmType.values.Base, "merge: the type half back-fills Tablet (its undefined mode) from Base, keeps its own Mobile value");
 ok(mmGeom.values.Mobile === mmGeom.values.Base && mmGeom.values.Tablet !== mmGeom.values.Base, "merge: the geometry half back-fills Mobile from Base, keeps its own Tablet value");
-ok(gTab.collections.Geometry.variables["size/md/height"].values.Mobile === undefined, "merge: back-fill CLONES values, the emitter's own interchange is never mutated");
+ok(gTab.collections.Geometry.variables["control/product/md/height"].values.Mobile === undefined, "merge: back-fill CLONES values, the emitter's own interchange is never mutated");
 
 // ── applyRenameMigrations (TKT-0012): pure stamping of the id-preserving rename fields ──
 {

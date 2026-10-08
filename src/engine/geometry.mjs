@@ -1,303 +1,179 @@
 // geometry.mjs, the GEOMETRY / dimensional engine: the spatial analog of the color & type engines.
-// A few parameters → a systematic size ramp → derived control geometry → DTCG / CSS tokens. Pure, no DOM.
+// A few discrete axes → a fixed ladder → derived control geometry → DTCG / CSS / Figma tokens. Pure, no DOM.
 //
-// It encodes ONE law (the centering law) and TWO families, distilled from the external agent-ui
-// dimensional spec (geometry, geometry-sizing-spec, dimensional-standard):
+// The Maison ui-kit geometry system (T-0017, user decision 2026-10-07), in our token names. Maison's
+// geometry is not a ramp with a height knob: it is a FIXED 25-row ladder (height → inset, icon; the
+// text column lives in type.mjs as UI_TEXT, so control text per height is one table) addressed by
+// three discrete axes, tier × scale × size:
 //
-//   THE CENTERING LAW, edge padding for a glyph = (height − glyph) / 2. Every glyph centers in a square
-//   cell of side = the control height; block-size is the vertical lever, padding-block is 0.
+//   height = TIERS[tier].base + TIERS[tier].offsets[scale] + SIZES[size] · TIERS[tier].step
 //
-//   THE TWO FAMILIES,
-//     • Frame  ∝ height : icon, slot, inline-pad, min-inline-size, pill radius (= height/2).
-//     • Rhythm          : gap = the hand-CALIBRATED GAP_UNIT per size × baseHeight/28 (TKT-0010, was
-//       font/2). Density multiplies the RHYTHM only (never the frame, scaling
-//       the frame un-centers the glyph and breaks the square).
+// 27 cells (3 tiers × 3 scales × 3 sizes), every one on-table. Each cell reads its ladder row, then:
 //
-// The six-size ramp (XS·SM·MD·LG·XL·2XL) is two bands that change gear at the MD|LG seam (compact +4
-// linear; expressive ×4/3 geometric). The glyphs scale SUBLINEARLY, a power law of height, exponent < 1
-// (the optical correction: a glyph occupies a shrinking fraction of the box as it grows):
+//   THE CENTERING LAW, inset = (height − icon) / 2, holds on every ladder row (Maison's generator
+//   asserts it too): every glyph sits in one square icon box, centered in a control of side = height.
+//   text          = type's UI text at the height (opts.typeScale.uiText when supplied, else uiText)
+//   compact row   = the first ladder row, in descending height, with height ≤ height − inset
+//                   (else the smallest row); captionText = chipText = its text, chipInset = its inset,
+//                   chipHeight = min(its height, height)
+//   iconRatio     = icon / height (unitless, unrounded)
+//   radiusControl = text · k.text + height · k.height, k = RADIUS_MODES[the kit's radius mode]
+//   radiusMark    = radiusControl · iconRatio
+//   radiusInset   = max(0, radiusControl − inset / 2);   radiusCard = radiusControl + inset / 2
 //
-//   icon = 2.49·h^0.58   (round to nearest even)        caret = 3.5·h^0.39   (round to nearest int)
-//   font = CONTROL_FONT[step] · (baseHeight/28)          (the ratified control-text ramp, 2026-07-16)
-//
-// caret got its OWN power law (2026-07-15, at request, retired the old v4 "caret = font" rule): a
-// gentler exponent means the affordance mark grows SLOWER than the text at the top of the ramp.
-// font is the ratified control-text table (2026-07-16, TKT-0008, 12·13·15·16·18·20 at the canonical
-// baseHeight): EVERY step composes from the type scale's UI-CONTROL voice when one is supplied (the
-// voice rides the full XS..2XL ramp since the same day, value-neutral at defaults, the voice carries
-// the same rows, but voice tuning flows into control boxes); standalone (or for a step the voice
-// lacks), the table × baseHeight/28. Control text is DECOUPLED from Label (~2px larger by
-// design), and the ramp's MD kink fits no power law, hand-authored IS the law, like type's SIZES.
-// icon/caret remain rule-derived, they reproduce the hand-tuned reference ramp (20·24·28·36·48·64)
-// to ±1px and generalize to any scaled baseHeight.
+// The CSS export adds Maison's context RESOLVER in our names: `data-tier` / `data-scale` / `data-size`
+// / `data-radius` set 0/1 indicators (`--ctx-*`), and the roles (`--control-*`, `--chip-*`,
+// `--radius-control/-mark/-inset/-card`) are a calc sum of products over the nine cells of the
+// active tier. The roles equal Maison's per-instance override hooks, so they are never prefixed.
+// The CONTAINER tier (the M3 radius ladder, space, insets, gaps, borders, focus) is a separate concern
+// from control geometry: it derives from `spaceBase` alone.
 
 import { COLLECTIONS } from "./collections.js";
+import { uiText } from "./type.mjs";
 
-const round = (v) => Math.round(v);
-const roundEven = (v) => 2 * Math.round(v / 2);
+const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 
-// The six reference sizes and their canonical control heights (component-sizes.md, the authority).
-// `baseHeight` (the MD height) scales the whole ramp by baseHeight/28, the dimensional analog of the
-// type engine's `bodyBase`, so the entire spatial system grows/shrinks together while keeping its shape.
-const SIZES = [
-  ["XS", 20], ["SM", 24], ["MD", 28], ["LG", 36], ["XL", 48], ["2XL", 64],
+// TIERS, Maison's definition.mjs verbatim: each tier is a base height, a per-scale offset and the
+// per-size step. SIZES is the size axis as a step multiplier; SCALES the scale axis in order.
+export const TIERS = {
+  content: { base: 48, offsets: { sm: -12, md: 0, lg: 16 }, step: 8 },
+  product: { base: 32, offsets: { sm: -4, md: 0, lg: 4 }, step: 8 },
+  micro: { base: 16, offsets: { sm: -2, md: 0, lg: 2 }, step: 2 },
+};
+export const SCALES = ["sm", "md", "lg"];
+export const SIZES = { sm: -1, md: 0, lg: 1 };
+const SIZE_IDS = Object.keys(SIZES);
+
+// RADIUS_MODES, Maison's radius k table (scripts/generate.mjs:58): the control corner is
+// text · k.text + height · k.height, so default/round/sharp follow the text and pill follows the height.
+export const RADIUS_MODES = {
+  default: { text: 0.5, height: 0 },
+  round: { text: 1, height: 0 },
+  sharp: { text: 0.25, height: 0 },
+  pill: { text: 0, height: 0.5 },
+};
+
+export const DEFAULT_GEOMETRY = { tier: "product", scale: "md", radius: "round", spaceBase: 4 };
+
+// LADDER_ROWS, Maison's component-geometry.csv (height, inset, icon), in its own descending order,
+// which the compact-row rule depends on. The text column is type.mjs's UI_TEXT.
+export const LADDER_ROWS = [
+  { height: 96, inset: 24, icon: 48 }, { height: 92, inset: 23, icon: 46 }, { height: 88, inset: 22, icon: 44 },
+  { height: 84, inset: 21, icon: 42 }, { height: 80, inset: 20, icon: 40 }, { height: 76, inset: 19, icon: 38 },
+  { height: 72, inset: 18, icon: 36 }, { height: 68, inset: 17, icon: 34 }, { height: 64, inset: 16, icon: 32 },
+  { height: 60, inset: 15, icon: 30 }, { height: 56, inset: 14, icon: 28 }, { height: 52, inset: 13, icon: 26 },
+  { height: 48, inset: 12, icon: 24 }, { height: 44, inset: 11, icon: 22 }, { height: 40, inset: 10, icon: 20 },
+  { height: 36, inset: 9, icon: 18 }, { height: 32, inset: 8, icon: 16 }, { height: 28, inset: 7, icon: 14 },
+  { height: 24, inset: 5.5, icon: 13 }, { height: 22, inset: 5, icon: 12 }, { height: 20, inset: 4.5, icon: 11 },
+  { height: 18, inset: 4, icon: 10 }, { height: 16, inset: 3.5, icon: 9 }, { height: 14, inset: 3, icon: 8 },
+  { height: 12, inset: 2.5, icon: 7 },
 ];
-const CANON_MD = 28;
-// SIZE_KEYS, the six canonical size names alone, exported so persist.js's GEOMETRY_SIZES allowlist
-// (used to validate the leading segment of a tokenOverrides key) can be parity-gated against this,
-// the actual source, the same way TYPE_TREATMENTS/GEOMETRY_TREATMENTS/VOICES already are (TKT-0017).
-export const SIZE_KEYS = SIZES.map(([name]) => name);
 
-// The FIXED control-text ramp (the ratified magnitude table's `controls` row, 2026-07-16), per-step
-// literal px at the canonical baseHeight 28, scaled by baseHeight/28 in geomScale. Deliberately kinked
-// at MD (13→15) and capped at 20, which no power law fits, hand-authored is the law, like type's SIZES.
-const CONTROL_FONT = { XS: 12, SM: 13, MD: 15, LG: 16, XL: 18, "2XL": 20 };
+// ladderRow(height), the ladder row at an exact height; off-table is a RangeError, never a nearest
+// match (a continuous knob over a discrete standard is the drift the 27-cell validation prevents).
+export function ladderRow(height) {
+  const row = LADDER_ROWS.find((r) => r.height === height);
+  if (!row) throw new RangeError(`ladderRow: no ladder row for height ${height}`);
+  return row;
+}
 
-// A "treatment" seeds the spatial feel, exactly as the type "treatment" seeds the type params. Each is a
-// density + a default radius ladder + a layout-spacing base. Fonts/sizes are universal; the FEEL is the
-// product. `density` multiplies the rhythm (gap) only, comfortable 1 · compact 0.75 · spacious 1.25.
-export const GEOMETRY_TREATMENTS = [
-  { id: "comfortable", label: "Comfortable", note: "Balanced default, generous touch targets, soft corners, 4px spacing rhythm.",
-    density: 1, radiusStyle: "soft", baseHeight: 28, spaceBase: 4 },
-  { id: "compact", label: "Compact / Dense", note: "Data-dense UI, tighter heights, sharp corners, the rhythm pulled in (×0.75).",
-    density: 0.75, radiusStyle: "sharp", baseHeight: 24, spaceBase: 4 },
-  { id: "spacious", label: "Spacious / Airy", note: "Editorial calm, taller controls, rounder corners, the rhythm opened up (×1.25), 8px spacing.",
-    density: 1.25, radiusStyle: "round", baseHeight: 32, spaceBase: 8 },
-  { id: "touch", label: "Touch / Mobile", note: "Thumb-first, 36px+ targets, soft corners, 8px spacing for fat-finger comfort.",
-    density: 1.1, radiusStyle: "soft", baseHeight: 36, spaceBase: 8 },
-  { id: "pill", label: "Pill / Rounded", note: "Fully-rounded controls, every box a pill (radius = height/2), soft inner corners.",
-    density: 1, radiusStyle: "pill", baseHeight: 28, spaceBase: 4 },
-];
+// cellHeight(tier, scale, size), Maison's height formula; an unknown axis id is a RangeError.
+export function cellHeight(tier, scale, size) {
+  if (!has(TIERS, tier) || !SCALES.includes(scale) || !has(SIZES, size)) throw new RangeError(`cellHeight: unknown cell ${tier}-${scale}-${size}`);
+  const t = TIERS[tier];
+  return t.base + t.offsets[scale] + SIZES[size] * t.step;
+}
 
-export const DEFAULT_GEOMETRY = { treatment: "comfortable", baseHeight: 28 };
+// CELL_NAMES, every cell `{tier}-{scale}-{size}` in Maison's geometryRows order (content, product,
+// micro; then scale sm, md, lg; then size sm, md, lg). The one place cell order is authored.
+const CELL_NAMES = Object.keys(TIERS).flatMap((tier) => SCALES.flatMap((scale) => SIZE_IDS.map((size) => `${tier}-${scale}-${size}`)));
+
+// LEGACY_SIZE_CELLS, the cell that holds each legacy t-shirt step's pixels (XS 20, SM 24, LG 36,
+// XL 48, 2XL 64; where a height is shared, product > content > micro, then md > sm > lg). Read by
+// sizeAnchor; there is no MD key because MD is the kit default cell.
+export const LEGACY_SIZE_CELLS = { XS: "product-sm-sm", SM: "product-md-sm", LG: "product-lg-md", XL: "content-md-md", "2XL": "content-lg-md" };
+
+// orderedSizeNames(scale), the scale's cell names in CELL_NAMES order, never `Object.keys` order.
+export function orderedSizeNames(scale) {
+  const cells = (scale && scale.cells) || {};
+  return CELL_NAMES.filter((n) => has(cells, n));
+}
+// sizeAnchor(scale, name), the resolved { name, size } for a legacy step name: MD is the kit default
+// cell, the other five come from LEGACY_SIZE_CELLS, and a cell name passes through.
+export function sizeAnchor(scale, name) {
+  const n = name === "MD" ? (scale && scale.cell && scale.cell.name) : (has(LEGACY_SIZE_CELLS, name) ? LEGACY_SIZE_CELLS[name] : name);
+  return { name: n, size: scale && scale.cells && scale.cells[n] };
+}
+// mdAnchor(scale), sizeAnchor's MD case, kept as its own export since it's the single most common one.
+export function mdAnchor(scale) {
+  return sizeAnchor(scale, "MD");
+}
+
+// buildCell, one cell's full geometry from its height, the radius k pair and the text lookup
+// (Maison scripts/generate.mjs:36,47-52,70-73).
+function buildCell(height, k, textAt) {
+  const row = ladderRow(height);
+  const compact = LADDER_ROWS.find((r) => r.height <= height - row.inset) || LADDER_ROWS[LADDER_ROWS.length - 1];
+  const text = textAt(height);
+  const chipText = textAt(compact.height);
+  const iconRatio = row.icon / height;
+  const radiusControl = text * k.text + height * k.height;
+  return {
+    height,
+    inset: row.inset,
+    text,
+    icon: row.icon,
+    captionText: chipText,
+    chipHeight: Math.min(compact.height, height),
+    chipInset: compact.inset,
+    chipText,
+    iconRatio,
+    minWidth: height, // the 1:1 floor, an icon-only control is at least square
+    radiusControl,
+    radiusMark: radiusControl * iconRatio,
+    radiusInset: Math.max(0, radiusControl - row.inset / 2),
+    radiusCard: radiusControl + row.inset / 2,
+  };
+}
 
 // The radius ladder = Material 3's shape-corner scale, verbatim (0·4·8·12·16·28 + full pill). M3 uses
-// ONE fixed shape scale (it does not vary corners by density), so we adopt it as-is across every
-// treatment, the alignment the GAP-01 analysis called for. `full` is the CSS-pill 9999; the control's
-// own corner is still the per-size `radiusPill` (height/2), a separate size-linked value.
+// ONE fixed shape scale, so we adopt it as-is; `exports.js` seeds Tailwind/shadcn/Panda/Radix from it.
+// The control's own corner is the per-cell radiusControl, a separate, text-linked value.
 const M3_CORNERS = { none: 0, xs: 4, sm: 8, md: 12, lg: 16, xl: 28, full: 9999 };
-// A treatment's radius FEEL is its default corner LEVEL (the M3 way, pick a level from the one scale,
-// don't rescale it): sharp favours a tight corner, round a generous one, pill fully round.
-const RADIUS_DEFAULT = { sharp: "sm", soft: "md", round: "lg", pill: "full" };
 
 // the layout-spacing scale (--space-*): page gutters, card/stack gaps, section rhythm. A SEPARATE concern
 // from control geometry (the law above), the space BETWEEN components, not the padding inside one. A
 // roughly-geometric ladder of `spaceBase` multiples (0·1·2·3·4·6·8·12·16·24).
 const SPACE_STEPS = [0, 1, 2, 3, 4, 6, 8, 12, 16, 24];
 
-// GAP_UNIT, the hand-CALIBRATED icon↔label gap per size at the canonical baseHeight (TKT-0010,
-// 2026-07-16, reporter table, retired the old `font/2` rhythm law): the gap reads as a fixed unit
-// per step, scaled by baseHeight/28 and multiplied by density (still the only thing density touches).
-// Like CONTROL_FONT, hand-authored IS the law; per-breakpoint hand columns ride opts.gapOverrides.
-const GAP_UNIT = { XS: 3, SM: 3, MD: 4, LG: 6, XL: 6, "2XL": 8 };
-
-// ── THE LINEAR LADDER (issue #483, opt-in prototype) ─────────────────────────────────────────────
-// A SECOND, alternate ramp shape prototyping AdiaUI's scale-ladder-10step.csv (Kim's live exploration
-// upstream, not yet ratified there), so it can be rendered across every export and evaluated before
-// anything is ratified. `config.ramp === RAMP_LADDER` opts in; absent/anything else is BYTE-IDENTICAL
-// to the hand-authored default ramp above (the identity gate), this block changes nothing about it.
-//
-// The ladder's own formulas (verbatim off the CSV, h = the resolved control height, step 0..9 = 20+4·step):
-//   inset = h/4 − 3            → paddingNarrow (the icon/slot edge)      container = h/2 + 6  (intermediate)
-//   label_only_side = 2·inset  → paddingWide (the caret/bare edge)      icon = container − 2
-//   text = (h−20)/4 + 11 = h/4 + 6   → font (unless fontOverrides wins) AND caret ("caret = text",
-//                                       the ladder's OWN rule verbatim off the CSV, RULED
-//                                       INTENTIONAL, not a placeholder (owner ruling on issue #483,
-//                                       2026-09-02). caret never reads fontOverrides, same as the
-//                                       default ramp's caret is never composed.)
-//   icon_label_gap = 1 + inset → gap (unless gapOverrides wins)
-// NOTE: this is NOT the centering law above, 2·inset + container = h (the ladder's OWN icon-only
-// square identity) holds, but paddingNarrow ≠ (height − icon)/2 (off by a constant 1px, since icon
-// sits 1px inset from `container`, not centered directly in the full height). The two ramps' anatomies
-// are not required to share one law, only the same field VOCABULARY, so every downstream consumer
-// (the CSS/DTCG/Figma emitters, ds-export, @dsCard previews) needs no changes to render either ramp.
-// paddingNarrowCompact/paddingWideCompact have no ladder-authored formula, mechanically re-derived
-// the SAME way the default ramp derives them (the gap absorbed into the frame edge), not a CSV value.
-// COMPOSITION is intentionally NOT applied here: the type engine's UI-control voice ratifies its own
-// control-text sizes (e.g. 15px at MD/28px), which conflicts with the ladder's own text formula (13px
-// at the same height), see Findings on issue #483 for why the ladder's own numbers win while it's
-// active (the point of the prototype is to evaluate the ladder AS AUTHORED); switch the toggle off to
-// see the composed/brand voice again. `rampContrast` is a no-op on this ramp, it blends the DEFAULT
-// ramp's own gear change at the MD|LG seam, and the ladder has no gear to lose (it's already one line).
-export const RAMP_LADDER = "linear4";
-export const GEOMETRY_RAMPS = [RAMP_LADDER];
-// LADDER_SIZES, canonical (unscaled, factor=1) heights: the FULL TEN-step ladder, steps 0..9 (heights
-// 20·24·28·32·36·40·44·48·52·56, every CSV row). Owner ruling (issue #483, 2026-09-02, superseding
-// BOTH the interim 7-name 0..6 mapping AND the t-shirt names it used): gen-ui-kit binds its content
-// tiers to this engine's --size-* CSS export and needs the 48/52/56 rungs, so the ladder exposes the
-// WHOLE table; and the steps are named NUMERICALLY ("0".."9"), not with t-shirt letters, exported
-// tokens read `--{pfx}-size-{0..9}-{field}` (e.g. `--md-size-3-height: 32px`). Step "3" (32px) is
-// the MD-equivalent anchor, see LADDER_MD_STEP below. The default ramp's six t-shirt names are
-// UNCHANGED (SIZES/SIZE_KEYS above still name exactly XS·SM·MD·LG·XL·2XL at 20·24·28·36·48·64,
-// byte-identical), the two ramps use ENTIRELY DIFFERENT naming schemes, not overlapping strings.
-const LADDER_SIZES = [["0", 20], ["1", 24], ["2", 28], ["3", 32], ["4", 36], ["5", 40], ["6", 44], ["7", 48], ["8", 52], ["9", 56]];
-// LADDER_SIZE_KEYS, the ten ladder-only step names ("0".."9"), exported so persist.js's
-// GEOMETRY_SIZES allowlist can be parity-gated against the UNION of this and SIZE_KEYS (mirrors the
-// SIZE_KEYS rationale above, TKT-0017 generalized, TKT-0483/issue #483). NEVER iterate an object
-// keyed by these, JS forces integer-like string keys ("0".."9") into ascending numeric enumeration
-// order regardless of insertion order (a real trap once the ladder's names stopped being t-shirt
-// letters), so this ARRAY (not `Object.keys(scale.sizes)`) is the one place ordering is authored.
-// `orderedSizeNames`/`mdAnchor` below are the two helpers every ordering- or MD-anchor-sensitive
-// consumer (ds-export, the Geometry section UI) must route through instead of trusting key order.
-export const LADDER_SIZE_KEYS = LADDER_SIZES.map(([name]) => name);
-// LADDER_ANCHOR, the ladder step "equivalent" to each of the default ramp's six t-shirt names: the
-// ladder's extra step "0" (a 2XS-equivalent with no default-ramp counterpart) shifts every OTHER name
-// up by exactly one step index, so XS→"1", SM→"2", MD→"3", LG→"4", XL→"5", 2XL→"6" (steps "7"-"9",
-// the 3XL/4XL/5XL-equivalent rungs gen-ui-kit's content tiers need, have no default-ramp counterpart
-// either). Fixed regardless of baseHeight (baseHeight scales every step uniformly via `factor`, never
-// reassigns which STEP a name anchors to).
-const LADDER_ANCHOR = { XS: "1", SM: "2", MD: "3", LG: "4", XL: "5", "2XL": "6" };
-// LADDER_MD_STEP, kept as its own export (several call sites already name it directly), "3".
-export const LADDER_MD_STEP = LADDER_ANCHOR.MD;
-// sizeAnchor(scale, tshirtName), the resolved { name, size } for one of the default ramp's six named
-// sizes, on EITHER ramp: the literal t-shirt name on the default ramp, its LADDER_ANCHOR-mapped
-// numbered step on the ladder. The one correct way to find "the SM row" (or MD, or LG, …) without
-// assuming a ramp's naming scheme, `.sizes.SM`/`.sizes.LG`/etc. simply don't exist on the ladder
-// (numeric names only), and a blind `Object.values(scale.sizes)[0]` fallback (a real bug this fixed at
-// three call sites, and again at a fourth beyond this module, issue #483) silently lands on step "0"
-// (the SMALLEST control) instead, because JS forces integer-like keys into ascending enumeration order.
-export function sizeAnchor(scale, tshirtName) {
-  const name = scale && scale.ramp === RAMP_LADDER ? (LADDER_ANCHOR[tshirtName] || tshirtName) : tshirtName;
-  return { name, size: scale && scale.sizes && scale.sizes[name] };
-}
-// mdAnchor(scale), sizeAnchor's MD case, kept as its own export since it's the single most common one.
-export function mdAnchor(scale) {
-  return sizeAnchor(scale, "MD");
-}
-// orderedSizeNames(scale), every size name in CANONICAL step order, EXPLICIT, never
-// `Object.keys(scale.sizes)` (JS forces integer-like keys like the ladder's into ascending NUMERIC
-// order regardless of insertion order, a real trap the moment a ramp's names stop being non-numeric
-// strings) and never a sort BY RESOLVED HEIGHT either (a per-step height OVERRIDE that breaks
-// monotonicity, e.g. an authored MD taller than LG, must not reorder the list; canonical step
-// POSITION, not the live height, is the ordering key, on either ramp). Sorts by each name's index in
-// LADDER_SIZE_KEYS (the ladder) or SIZE_KEYS (the default ramp), the one array where insertion order
-// IS the authored, canonical order.
-export function orderedSizeNames(scale) {
-  const canonical = scale && scale.ramp === RAMP_LADDER ? LADDER_SIZE_KEYS : SIZE_KEYS;
-  return Object.keys((scale && scale.sizes) || {}).sort((a, b) => canonical.indexOf(a) - canonical.indexOf(b));
-}
-
-function buildSizeLadder(rawHeight, fontOverride, gapOverride) {
-  const height = roundEven(rawHeight);
-  const inset = height / 4 - 3; // EXACT, never rounded, mirrors the default ramp's pad doctrine
-  const container = height / 2 + 6; // intermediate only, never its own exported field
-  const icon = roundEven(container - 2);
-  const ladderText = round(height / 4 + 6); // = round((height−20)/4 + 11)
-  const font = (typeof fontOverride === "number" && Number.isFinite(fontOverride) && fontOverride > 0) ? round(fontOverride) : ladderText;
-  const caret = ladderText; // the ladder's own "caret = text" rule, never affected by fontOverrides
-  const gap = (typeof gapOverride === "number" && Number.isFinite(gapOverride) && gapOverride > 0) ? round(gapOverride) : Math.max(1, round(1 + inset));
-  return {
-    height, icon, caret, font, gap,
-    paddingNarrow: inset,
-    paddingWide: 2 * inset,
-    paddingNarrowCompact: (height - gap - icon) / 2,
-    paddingWideCompact: (height - gap - caret) / 2,
-    radiusPill: round(height / 2),
-    minWidth: height,
-  };
-}
-
-// buildSize, derive the full geometry of one size row from its (scaled) control height + the density.
-// Everything below the height is DERIVED, icon/caret by their power laws, the pads by the centering law.
-// `font` and `gap` arrive PRE-RESOLVED from geomScale (per-mode override → composition/calibration →
-// law-fallback precedence; TKT-0008/TKT-0010).
-// THE FOUR PADS (TKT-0010, renamed + reformulated from padding/edgePadding; EXACT halves ratified,
-// never rounded, 7.5px is a real CSS/Figma value and the law stays pure):
-//   paddingNarrow        = (h − icon)/2, the centering law, a SLOT edge (icon side)
-//   paddingWide          = (h − caret)/2, the caret/bare edge (was edgePadding = h/2)
-//   paddingNarrowCompact = (h − gap − icon)/2, the slot edge, gap absorbed (dense layouts)
-//   paddingWideCompact   = (h − gap − caret)/2, the caret edge, gap absorbed
-function buildSize(rawHeight, density, font, gap) {
-  const height = roundEven(rawHeight);
-  const icon = roundEven(2.49 * height ** 0.58); // frame family, the leading content-icon / slot side
-  // caret has its OWN power law off height (2026-07-15), independent of the text size.
-  const caret = round(3.5 * height ** 0.39);
-  return {
-    height,
-    icon,
-    caret,
-    font,
-    gap,
-    paddingNarrow: (height - icon) / 2,
-    paddingWide: (height - caret) / 2,
-    paddingNarrowCompact: (height - gap - icon) / 2,
-    paddingWideCompact: (height - gap - caret) / 2,
-    radiusPill: round(height / 2), // the one size-linked radius, a fully-round control is a pill
-    minWidth: height, // the 1:1 floor, an icon-only control is at least square
-  };
-}
-
-// geomScale, the resolved geometry for a config { treatment, baseHeight }. `baseHeight` (the MD control
-// height) uniformly scales the whole ramp; the treatment seeds density + the radius ladder + spacing.
-//
-// CONTROL TEXT (2026-07-16, TKT-0008): each size's `font` composes from the type scale's UI-CONTROL
-// voice (`opts.typeScale`) at EVERY step, the voice rides the full XS..2XL ramp, and its Desktop
-// sizes equal the ratified control table's rows, so the composition is value-neutral at defaults and
-// exists so voice-level tuning flows into control boxes; a step the voice lacks (and the standalone,
-// no-opts form) falls back to the fixed CONTROL_FONT ramp × (baseHeight/28). The old Label composition
-// is retired, control text reads ~2px larger than Label by design. The control-text sizes surface as
-// the type/UI-control · type/UI-widget variables in the merged breakpoint-moded "Geometry" Figma
-// collection (TKT-0009), geometry's own emitters carry no font rows.
-// `opts.overrides` (optional), a flat per-size HEIGHT override map keyed "<sizeName>", already mode-selected
-// by the caller. When a positive number exists for a size, it REPLACES the scaled rawHeight fed to buildSize,
-// so icon/pad/radius/caret/gap ALL re-derive via the laws. Absent / non-positive ⇒ no effect, so the scale
-// is byte-identical (the identity gate).
-// `opts.fontOverrides` (optional), the same shape for the per-size CONTROL TEXT size; wins over the
-// composition. Absent ⇒ the UI-control composition (all steps), then the CONTROL_FONT×factor law
-// for a step the voice lacks.
-// `opts.gapOverrides` (optional), the same shape for the per-size GAP (the breakpoint tiers' ratified
-// hand columns, TKT-0010); a valid override is the FINAL gap (density already baked into the hand
-// value). Absent ⇒ the GAP_UNIT calibration × factor × density.
-// `config.rampContrast` (optional, 0…1, default 1), the RESPONSIVE ramp knob: how hard the expressive
-// band (LG·XL·2XL) changes gear at the MD|LG seam. At 1 (or absent, the identity gate) the band is
-// today's ×4/3 geometric ramp. At 0 the gear change disappears: the band continues the compact band's
-// +4px linear step past MD (LG = bh+4, XL = bh+8, 2XL = bh+12), the compressed ramp small screens
-// want (at bh 24 that's exactly 18·20·24·28·32·36; at bh 28 + contrast 1, the canonical
-// 20·24·28·36·48·64). Between, the band blends linearly, so per-breakpoint modes can step contrast
-// with width. The compact band (XS·SM·MD) never changes, small controls have no gear to lose.
+// geomScale, the resolved geometry for a config { tier, scale, radius, spaceBase }. An unknown id or
+// key falls back to DEFAULT_GEOMETRY. `cells` holds all 27 cells (the kit's radius mode applies to
+// every one); `cell` is the kit default `{tier}-{scale}-md`. `opts.typeScale` (optional) composes each
+// cell's text from the type scale's height-indexed UI text table, value-neutral at defaults.
 export function geomScale(config = {}, opts = {}) {
-  const t = GEOMETRY_TREATMENTS.find((x) => x.id === config.treatment) || GEOMETRY_TREATMENTS[0];
-  const baseHeight = Number(config.baseHeight) || t.baseHeight;
-  const factor = baseHeight / CANON_MD;
-  const c = Number(config.rampContrast);
-  const rampContrast = Number.isFinite(c) ? Math.max(0, Math.min(1, c)) : 1;
-  // ladder, opt-in ONLY (issue #483): any value other than the exact RAMP_LADDER string (including
-  // absent) takes the default ramp below untouched, so the identity gate holds byte-for-byte.
-  const ladder = config.ramp === RAMP_LADDER;
-  const overrides = opts.overrides && typeof opts.overrides === "object" ? opts.overrides : null;
-  const fontOverrides = opts.fontOverrides && typeof opts.fontOverrides === "object" ? opts.fontOverrides : null;
-  const gapOverrides = opts.gapOverrides && typeof opts.gapOverrides === "object" ? opts.gapOverrides : null;
-  const uiSteps = opts.typeScale && opts.typeScale.categories && opts.typeScale.categories["UI-control"];
-  const sizes = {};
-  let expr = 0; // 0 for the compact band, then 1·2·3 across LG·XL·2XL (the expressive band)
-  for (const [name, h] of (ladder ? LADDER_SIZES : SIZES)) {
-    const ovH = overrides && overrides[name];
-    const geoRaw = h * factor;
-    if (h > CANON_MD) expr += 1;
-    // full contrast (the default) takes the geometric path EXACTLY, no float blend on the identity path.
-    // the ladder has no gear change to blend (rampContrast is a no-op on it, see the block comment above).
-    const blended = ladder || rampContrast >= 1 || expr === 0 ? geoRaw : (baseHeight + 4 * expr) * (1 - rampContrast) + geoRaw * rampContrast;
-    const rawHeight = (typeof ovH === "number" && Number.isFinite(ovH) && ovH > 0) ? ovH : blended;
-    if (ladder) {
-      sizes[name] = buildSizeLadder(rawHeight, fontOverrides && fontOverrides[name], gapOverrides && gapOverrides[name]);
-      continue;
-    }
-    const ovF = fontOverrides && fontOverrides[name];
-    const composed = uiSteps && uiSteps[name] ? uiSteps[name].size : null;
-    const font = (typeof ovF === "number" && Number.isFinite(ovF) && ovF > 0) ? round(ovF) : (composed != null ? composed : round(CONTROL_FONT[name] * factor));
-    const ovG = gapOverrides && gapOverrides[name];
-    const gap = (typeof ovG === "number" && Number.isFinite(ovG) && ovG > 0) ? round(ovG) : Math.max(1, round(GAP_UNIT[name] * factor * t.density));
-    sizes[name] = buildSize(rawHeight, t.density, font, gap);
+  const c = config && typeof config === "object" ? config : {};
+  const tier = has(TIERS, c.tier) ? c.tier : DEFAULT_GEOMETRY.tier;
+  const scale = SCALES.includes(c.scale) ? c.scale : DEFAULT_GEOMETRY.scale;
+  const radius = has(RADIUS_MODES, c.radius) ? c.radius : DEFAULT_GEOMETRY.radius;
+  const sb = Number(c.spaceBase);
+  const spaceBase = Number.isFinite(sb) && sb > 0 ? sb : DEFAULT_GEOMETRY.spaceBase;
+  const ui = opts && opts.typeScale && opts.typeScale.uiText;
+  const textAt = (h) => (ui ? ui[h] : uiText(h));
+  const k = RADIUS_MODES[radius];
+  const cells = {};
+  for (const name of CELL_NAMES) {
+    const [t, s, z] = name.split("-");
+    cells[name] = buildCell(cellHeight(t, s, z), k, textAt);
   }
-  const radii = { ...M3_CORNERS }; // the fixed M3 shape-corner scale (treatment-independent)
-  const radiusDefault = RADIUS_DEFAULT[t.radiusStyle] || "md"; // the treatment's favoured corner level
+  const cellName = `${tier}-${scale}-md`;
+  const radii = { ...M3_CORNERS }; // the fixed M3 shape-corner scale
   const space = {};
-  SPACE_STEPS.forEach((m, i) => { space[i] = m * t.spaceBase; });
+  SPACE_STEPS.forEach((m, i) => { space[i] = m * spaceBase; });
   // The CONTAINER tier, semantic names over the space ladder, so a consumer never guesses a raw
   // `--space-N` rung. Insets pad INSIDE a container; gaps separate SIBLINGS within one. Each is a
   // named SPACE_STEPS rung × spaceBase (derived, not hand-picked), so the whole tier follows the
-  // treatment's rhythm and stays mode-independent like `space`. Control-INTERNAL geometry (the four
-  // pads, the icon↔label gap) lives on the size rows above, a different law (centering).
+  // spacing rhythm and stays mode-independent like `space`. Control-INTERNAL geometry (inset, the
+  // icon box, the chip) lives on the cells above, a different law (centering).
   const insets = { controlGroup: space[2], card: space[4], panel: space[5], dialog: space[6], page: space[7] };
   const gaps = { cluster: space[2], stackTight: space[3], stack: space[4], stackLoose: space[5], grid: space[4], section: space[7] };
   // Strokes, constants, not rhythm: borders don't scale with spacing (a hairline is a hairline at
@@ -305,98 +181,137 @@ export function geomScale(config = {}, opts = {}) {
   // clear of the control edge so it survives any radius).
   const borders = { thin: 1, thick: 2 };
   const focus = { ringWidth: 2, ringOffset: 2 };
-  // `ramp` surfaces ONLY when the ladder is active (undefined drops from JSON.stringify, so the
-  // identity gate holds byte-for-byte when it's absent, see the geometry engine test).
-  return { treatment: t.id, label: t.label, density: t.density, radiusStyle: t.radiusStyle, radiusDefault, baseHeight, rampContrast, ramp: ladder ? RAMP_LADDER : undefined, sizes, radii, space, insets, gaps, borders, focus };
+  return { tier, scale, radius, spaceBase, cells, cell: { name: cellName, ...cells[cellName] }, radii, space, insets, gaps, borders, focus };
 }
 
 // ── emitters ───────────────────────────────────────────────────────────────────────────────────
-const kebab = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-
-// geomTokensCSS, CSS custom properties (per-size height/icon/caret/font/gap + the FOUR pads
-// [-padding-narrow/-padding-wide/-padding-narrow-compact/-padding-wide-compact, TKT-0010] + radius,
-// the radius ladder, the space scale, the density) plus a `.control-{size}` utility class that
-// EMBODIES the law: block-size off the ramp, padding-block 0, inline padding = the wide (caret/bare)
-// edge, the pill radius.
-// the per-size `--size-*` custom-property lines (no :root), shared by the base export + the @media
-// overrides; only these scale with baseHeight (density/radii/space are treatment-derived, mode-independent).
 // dimUnit(px, unit), a px dimension in the chosen CSS export unit. rem/em = px÷16 (root-relative), stripped
-// of trailing zeros (clean thanks to the even-grid geometry); absent / "px" ⇒ `${px}px`. Mirrors type.mjs.
+// of trailing zeros; absent / "px" ⇒ `${px}px`. Mirrors type.mjs.
 const dimUnit = (px, unit) => (unit === "rem" || unit === "em" ? `${parseFloat((px / 16).toFixed(4))}${unit}` : `${px}px`);
 
 // ns(pfx, name), a geometry namespace token core: native `size`/`radius`/… by default, or
-// `{pfx}-size`/`{pfx}-radius`/… when a scheme prefix is set (so a Material scheme namespaces the whole
-// dimensional system under one root: `--md-size-*`, `--md-radius-*`, …). Empty pfx ⇒ native.
+// `{pfx}-size`/`{pfx}-radius`/… when a scheme prefix is set (so a Material scheme namespaces the cell
+// primitives and the container ladders under one root: `--md-size-*`, `--md-radius-*`, …). Empty pfx
+// ⇒ native. The resolver's roles and `--ctx-*` hooks never take it (Maison's control CSS reads them bare).
 const ns = (pfx, name) => (pfx ? `${pfx}-${name}` : name);
-
-function geomSizeVarLines(scale, indent = "  ", unit = "px", pfx = "") {
-  const size = ns(pfx, "size");
-  return orderedSizeNames(scale).map((name) => {
-    const s = scale.sizes[name];
-    const p = `--${size}-${kebab(name)}`;
-    return `${indent}${p}-height: ${dimUnit(s.height, unit)}; ${p}-icon: ${dimUnit(s.icon, unit)}; ${p}-caret: ${dimUnit(s.caret, unit)}; ${p}-font: ${dimUnit(s.font, unit)}; ${p}-gap: ${dimUnit(s.gap, unit)}; ${p}-padding-narrow: ${dimUnit(s.paddingNarrow, unit)}; ${p}-padding-wide: ${dimUnit(s.paddingWide, unit)}; ${p}-padding-narrow-compact: ${dimUnit(s.paddingNarrowCompact, unit)}; ${p}-padding-wide-compact: ${dimUnit(s.paddingWideCompact, unit)}; ${p}-radius: ${dimUnit(s.radiusPill, unit)}; ${p}-min: ${dimUnit(s.minWidth, unit)};`;
-  }).join("\n");
-}
 
 // camelCase → kebab-case for the container-tier token names (controlGroup → control-group).
 const camelKebab = (s) => s.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
 
-export function geomTokensCSS(scale, { unit = "px", prefix = "" } = {}) {
-  const p = prefix; // "" ⇒ native --size-/--radius-/… ; else --{p}-size-/…
-  const lines = [":root {", `  --${ns(p, "density")}: ${scale.density};`, geomSizeVarLines(scale, "  ", unit, p)];
+// CELL_FIELDS, the 14 per-cell token fields [emitted kebab name, cell key], in emit order. icon-ratio
+// is the one unitless field (a plain number on every surface).
+const CELL_FIELDS = [
+  ["height", "height"], ["inset", "inset"], ["text", "text"], ["icon", "icon"],
+  ["caption-text", "captionText"], ["chip-height", "chipHeight"], ["chip-inset", "chipInset"], ["chip-text", "chipText"],
+  ["icon-ratio", "iconRatio"], ["min-width", "minWidth"],
+  ["radius-control", "radiusControl"], ["radius-mark", "radiusMark"], ["radius-inset", "radiusInset"], ["radius-card", "radiusCard"],
+];
+const UNITLESS = new Set(["icon-ratio"]);
+const cellValue = (field, v, unit) => (UNITLESS.has(field) ? String(v) : dimUnit(v, unit));
+
+// the per-cell `--size-{cell}-{field}` primitive lines (no :root), one line per cell.
+function geomSizeVarLines(scale, indent = "  ", unit = "px", pfx = "") {
+  const size = ns(pfx, "size");
+  return orderedSizeNames(scale).map((name) => {
+    const c = scale.cells[name];
+    const p = `--${size}-${name}`;
+    return indent + CELL_FIELDS.map(([f, key]) => `${p}-${f}: ${cellValue(f, c[key], unit)};`).join(" ");
+  }).join("\n");
+}
+
+// the container-tier lines (radius ladder, space, insets, gaps, borders, focus), unchanged in shape.
+function geomContainerLines(scale, unit, p) {
+  const lines = [];
   for (const [k, v] of Object.entries(scale.radii)) lines.push(`  --${ns(p, "radius")}-${k}: ${dimUnit(v, unit)};`);
-  // the treatment's favoured corner level, aliased so a consumer can use one name and let the
-  // treatment decide (sharp→sm, soft→md, round→lg, pill→full), the M3 "pick a level" model.
-  if (scale.radiusDefault) lines.push(`  --${ns(p, "radius")}-default: var(--${ns(p, "radius")}-${scale.radiusDefault});`);
   for (const [k, v] of Object.entries(scale.space)) lines.push(`  --${ns(p, "space")}-${k}: ${dimUnit(v, unit)};`);
-  // the container tier + strokes (semantic names, see geomScale). Absent on a pre-tier scale.
   for (const [k, v] of Object.entries(scale.insets || {})) lines.push(`  --${ns(p, "inset")}-${camelKebab(k)}: ${dimUnit(v, unit)};`);
   for (const [k, v] of Object.entries(scale.gaps || {})) lines.push(`  --${ns(p, "gap")}-${camelKebab(k)}: ${dimUnit(v, unit)};`);
   for (const [k, v] of Object.entries(scale.borders || {})) lines.push(`  --${ns(p, "border")}-${camelKebab(k)}: ${dimUnit(v, unit)};`);
   for (const [k, v] of Object.entries(scale.focus || {})) lines.push(`  --${ns(p, "focus")}-${camelKebab(k)}: ${dimUnit(v, unit)};`);
-  lines.push("}");
-  const size = ns(p, "size"), control = ns(p, "control");
-  for (const name of orderedSizeNames(scale)) {
-    const s = kebab(name);
-    lines.push(`.${control}-${s} { box-sizing: border-box; block-size: var(--${size}-${s}-height); min-inline-size: var(--${size}-${s}-min); font-size: var(--${size}-${s}-font); padding-inline: var(--${size}-${s}-padding-wide); padding-block: 0; gap: var(--${size}-${s}-gap); border-radius: var(--${size}-${s}-radius); }`);
-  }
-  return lines.join("\n") + "\n";
+  return lines;
+}
+
+// RESOLVER_FIELDS, the nine fields the resolver reads per cell (Maison's resolvedFields); the chip
+// fields resolve to `--chip-*`, the rest to `--control-*`.
+const RESOLVER_FIELDS = ["height", "inset", "text", "icon", "caption-text", "icon-ratio", "chip-height", "chip-inset", "chip-text"];
+const roleOf = (f) => (f.startsWith("chip-") ? `--${f}` : `--control-${f}`);
+const cssBlock = (selector, decls) => `${selector} {\n${decls.map((d) => `  ${d}`).join("\n")}\n}\n`;
+const indicators = (axis, ids, on) => ids.map((id) => `--ctx-${axis}-${id}: ${id === on ? 1 : 0};`);
+
+// geomResolverCSS, Maison's context resolver in our names. It READS the primitives (it never declares
+// them): `:where(:root)` is the kit default context (the kit tier's cells as `--ctx-cell-*`, the kit
+// scale + size md indicators, the kit radius k pair); `[data-tier]` reassigns the ctx cells to that
+// tier's primitives; `[data-scale]`, `[data-size]` and `[data-radius]` set the indicators; and
+// `:where(*, :host)` resolves the roles as a sum of products over the nine cells (each term falls back
+// to the kit default, as Maison's do), then the four radius roles from them.
+export function geomResolverCSS(scale, { unit = "px", prefix = "" } = {}) {
+  const size = ns(prefix, "size");
+  const kitTier = has(TIERS, scale.tier) ? scale.tier : DEFAULT_GEOMETRY.tier;
+  const kitScale = SCALES.includes(scale.scale) ? scale.scale : DEFAULT_GEOMETRY.scale;
+  const k = RADIUS_MODES[has(RADIUS_MODES, scale.radius) ? scale.radius : DEFAULT_GEOMETRY.radius];
+  const ctxCells = (tier) => SCALES.flatMap((s) => SIZE_IDS.flatMap((z) => RESOLVER_FIELDS.map((f) => `--ctx-cell-${s}-${z}-${f}: var(--${size}-${tier}-${s}-${z}-${f});`)));
+  const fieldKey = Object.fromEntries(CELL_FIELDS);
+  const roles = RESOLVER_FIELDS.map((f) => {
+    const terms = SCALES.flatMap((s) => SIZE_IDS.map((z) => {
+      const fallback = cellValue(f, scale.cells[`${kitTier}-${s}-${z}`][fieldKey[f]], unit);
+      return `var(--ctx-cell-${s}-${z}-${f}, ${fallback}) * var(--ctx-scale-${s}, ${s === kitScale ? 1 : 0}) * var(--ctx-size-${z}, ${z === "md" ? 1 : 0})`;
+    }));
+    return `${roleOf(f)}: calc(${terms.join(" + ")});`;
+  });
+  const out = [
+    cssBlock(":where(:root)", [
+      ...indicators("scale", SCALES, kitScale),
+      ...indicators("size", SIZE_IDS, "md"),
+      `--ctx-radius-text: ${k.text};`, `--ctx-radius-height: ${k.height};`,
+      ...ctxCells(kitTier),
+    ]),
+    ...Object.keys(TIERS).map((t) => cssBlock(`:where([data-tier="${t}"])`, ctxCells(t))),
+    ...SCALES.map((s) => cssBlock(`:where([data-scale="${s}"])`, indicators("scale", SCALES, s))),
+    ...SIZE_IDS.map((z) => cssBlock(`:where([data-size="${z}"])`, indicators("size", SIZE_IDS, z))),
+    ...Object.entries(RADIUS_MODES).map(([id, m]) => cssBlock(`:where([data-radius="${id}"])`, [`--ctx-radius-text: ${m.text};`, `--ctx-radius-height: ${m.height};`])),
+    cssBlock(":where(*, :host)", [
+      ...roles,
+      "--radius-control: calc(var(--control-text) * var(--ctx-radius-text, 1) + var(--control-height) * var(--ctx-radius-height, 0));",
+      "--radius-mark: calc(var(--radius-control) * var(--control-icon-ratio));",
+      "--radius-inset: max(0px, calc(var(--radius-control) - var(--control-inset) / 2));",
+      "--radius-card: calc(var(--radius-control) + var(--control-inset) / 2);",
+    ]),
+  ];
+  return out.join("");
+}
+
+// geomTokensCSS, the full geometry stylesheet: one `:root` block of the 27 × 14 cell primitives and
+// the container lines (the radius ladder, the space scale, insets, gaps, borders, focus), then the
+// context resolver (geomResolverCSS) that turns them into the `--control-*` / `--chip-*` /
+// `--radius-control…` roles.
+export function geomTokensCSS(scale, { unit = "px", prefix = "" } = {}) {
+  const lines = [":root {", geomSizeVarLines(scale, "  ", unit, prefix), ...geomContainerLines(scale, unit, prefix), "}"];
+  return lines.join("\n") + "\n" + geomResolverCSS(scale, { unit, prefix });
 }
 
 // geomTokensSizesCSS, a SIZE-ONLY sibling of geomTokensCSS (issue #487, gen-ui-kit's own request):
-// just the `:root` `--{pfx}-size-{step}-*` block, no `--density`, no radius/space/inset/gap/border/
-// focus tokens, no `.{pfx}-control-{step}` class rules, so a consumer that only binds size fields
-// (gen-ui-kit's ADR-0109: height/font/caret/icon/padding-narrow) doesn't have to vendor a slice of the
-// full file itself. A SEPARATE emitter (not a flag on geomTokensCSS) because it returns a genuinely
-// different, smaller file shape, mirroring how geomTokensBreakpointCSS is already its own function
-// rather than an option, builder's call, per the ticket. Works for EITHER ramp (default or the
-// linear-ladder prototype, #483/#484): it iterates whatever `orderedSizeNames(scale)` returns, the
-// same size rows geomTokensCSS itself emits, so a ramp change needs no changes here. `density` is
-// deliberately excluded too, even though the ticket's own list doesn't name it, it isn't a
-// `--size-*` token, and "ONLY the size block" is the operative instruction.
+// just the `:root` block of `--{pfx}-size-{cell}-*` primitives, no container tier and no resolver, so a
+// consumer that only binds cell fields doesn't have to vendor a slice of the full file itself.
 export function geomTokensSizesCSS(scale, { unit = "px", prefix = "" } = {}) {
-  const p = prefix;
-  return [":root {", geomSizeVarLines(scale, "  ", unit, p), "}"].join("\n") + "\n";
+  return [":root {", geomSizeVarLines(scale, "  ", unit, prefix), "}"].join("\n") + "\n";
 }
 
-// geomTokensBreakpointCSS, ONE self-contained override file PER breakpoint mode, the geometry mirror of
-// type.mjs's typeTokensBreakpointCSS: `geomTokensCSS(baseScale)` is a complete, valid stylesheet on its
-// own (the DESIGNED, Desktop, ramp, unconditional `:root`), and each entry this returns is an
-// independent bolt-on. `desktopMinWidth` (default 1280, this app's Desktop anchor) splits `modes` into
-// NARROW (< desktopMinWidth, Tablet/Mobile) and WIDE (≥ desktopMinWidth, e.g. Desktop Lg/Xl, 2026-07-15).
-// Each side is bounded on its own outward-facing edge, narrow modes on the ceiling (pinned to
-// `desktopMinWidth - 1` for the widest narrow mode), open on the floor only for the NARROWEST; wide modes
-// mirror this on the floor, open on the ceiling only for the WIDEST. Interior modes on both sides are
-// bounded both ends, so ranges never overlap, unchanged from the pre-wide-mode shape whenever no mode
-// exceeds `desktopMinWidth`. **One real caveat for WIDE modes:** Desktop itself is the unconditional
-// `:root` block (no media query), a wide mode's bounded `@media` must load AFTER that base file to win
-// the cascade at its width; narrow modes stay load-order-independent as before. `modes` =
+// geomTokensBreakpointCSS, ONE self-contained override file PER breakpoint mode. The cells are the same
+// at every width; what a breakpoint changes is the SCALE axis, so each file's `:root` sets only the
+// `--ctx-scale-*` indicators for that mode's `scale.scale`, and the resolver in the base file does the
+// rest. `desktopMinWidth` (default 1280, this app's Desktop anchor) splits `modes` into NARROW
+// (< desktopMinWidth, Tablet/Mobile) and WIDE (≥ desktopMinWidth, e.g. Desktop Lg/Xl). Each side is
+// bounded on its own outward-facing edge, narrow modes on the ceiling (pinned to `desktopMinWidth - 1`
+// for the widest narrow mode), open on the floor only for the NARROWEST; wide modes mirror this on the
+// floor, open on the ceiling only for the WIDEST. Interior modes on both sides are bounded both ends, so
+// ranges never overlap. The indicators are never prefixed, so this file takes no prefix. `modes` =
 // [{ name, minWidth, scale }]; a mode without a positive minWidth is skipped (preview-only, mirrors the
 // DTCG files).
-export function geomTokensBreakpointCSS(modes = [], { unit = "px", prefix = "", desktopMinWidth = 1280 } = {}) {
+export function geomTokensBreakpointCSS(modes = [], { desktopMinWidth = 1280 } = {}) {
   const valid = (modes || []).filter((m) => m && m.scale && Number(m.minWidth) > 0);
   const narrow = valid.filter((m) => Number(m.minWidth) < desktopMinWidth).sort((a, b) => Number(b.minWidth) - Number(a.minWidth));
   const wide = valid.filter((m) => Number(m.minWidth) >= desktopMinWidth).sort((a, b) => Number(a.minWidth) - Number(b.minWidth));
+  const scaleLine = (m) => `    ${indicators("scale", SCALES, SCALES.includes(m.scale.scale) ? m.scale.scale : DEFAULT_GEOMETRY.scale).join(" ")}`;
   const out = [];
   wide.forEach((m, i) => {
     const lower = Math.round(m.minWidth);
@@ -406,7 +321,7 @@ export function geomTokensBreakpointCSS(modes = [], { unit = "px", prefix = "", 
     const cond = widest ? `(min-width: ${lower}px)` : `(min-width: ${lower}px) and (max-width: ${upper}px)`;
     out.push({
       name, minWidth: lower,
-      css: `/* ${name}, ${widest ? `${lower}px+` : `${lower}–${upper}`}px, load AFTER the Desktop base file */\n@media ${cond} {\n  :root {\n${geomSizeVarLines(m.scale, "    ", unit, prefix)}\n  }\n}\n`,
+      css: `/* ${name}, ${widest ? `${lower}px+` : `${lower}–${upper}`}px, load AFTER the Desktop base file */\n@media ${cond} {\n  :root {\n${scaleLine(m)}\n  }\n}\n`,
     });
   });
   narrow.forEach((m, i) => {
@@ -417,26 +332,21 @@ export function geomTokensBreakpointCSS(modes = [], { unit = "px", prefix = "", 
     const cond = narrowest ? `(max-width: ${upper}px)` : `(min-width: ${lower}px) and (max-width: ${upper}px)`;
     out.push({
       name, minWidth: lower,
-      css: `/* ${name}, ${narrowest ? `≤${upper}` : `${lower}–${upper}`}px */\n@media ${cond} {\n  :root {\n${geomSizeVarLines(m.scale, "    ", unit, prefix)}\n  }\n}\n`,
+      css: `/* ${name}, ${narrowest ? `≤${upper}` : `${lower}–${upper}`}px */\n@media ${cond} {\n  :root {\n${scaleLine(m)}\n  }\n}\n`,
     });
   });
   return out;
 }
 
-// geomTokensDTCG, the geometry as DTCG dimension tokens: a `size` group (one composite of dimensions per
-// ramp step), a `radius` ladder group, and a `space` scale group, all the W3C-DTCG `dimension` $type.
+// geomTokensDTCG, the geometry as DTCG tokens: a `size` group keyed by cell (`{tier}-{scale}-{size}`)
+// with the 14 kebab fields as `dimension` tokens (`icon-ratio` is a `number`), plus the radius ladder,
+// space scale and container groups as `dimension` tokens.
 export function geomTokensDTCG(scale, { unit = "px" } = {}) {
   const dim = (px) => ({ $type: "dimension", $value: dimUnit(px, unit) });
   const size = {};
   for (const name of orderedSizeNames(scale)) {
-    const s = scale.sizes[name];
-    // ADR-016: kebab field names, lowercase step keys, the icon-gap/pill-radius homonym renames.
-    size[name.toLowerCase()] = {
-      height: dim(s.height), icon: dim(s.icon), caret: dim(s.caret), font: dim(s.font),
-      "icon-gap": dim(s.gap), "padding-narrow": dim(s.paddingNarrow), "padding-wide": dim(s.paddingWide),
-      "padding-narrow-compact": dim(s.paddingNarrowCompact), "padding-wide-compact": dim(s.paddingWideCompact),
-      "pill-radius": dim(s.radiusPill), "min-width": dim(s.minWidth),
-    };
+    const c = scale.cells[name];
+    size[name] = Object.fromEntries(CELL_FIELDS.map(([f, key]) => [f, UNITLESS.has(f) ? { $type: "number", $value: c[key] } : dim(c[key])]));
   }
   const radius = {};
   for (const [k, v] of Object.entries(scale.radii)) radius[k] = dim(v);
@@ -448,22 +358,13 @@ export function geomTokensDTCG(scale, { unit = "px" } = {}) {
 
 // geomTokensFigma, the geometry as DTCG `number` tokens (UNITLESS values), the shape a Figma variable
 // importer turns into **FLOAT (number) variables**, a "Geometry" collection with size/radius/space groups
-// (px is 1:1 with Figma's unitless floats). Same numbers as the DTCG dimension export, minus the `px`
-// suffix, so height/icon/gap/pads/radius/space land as native number variables you can bind to
-// auto-layout, corner radius, gaps, and sizing. NO `font` rows (2026-07-16): control-text sizes moved to
-// the TYPOGRAPHY collection as UI-widget/UI-control size variables (typeTokensFigmaModes controlFonts),
-// the Geometry collection is box geometry only.
+// (px is 1:1 with Figma's unitless floats). Same numbers as the DTCG export, minus the `px` suffix.
 export function geomTokensFigma(scale) {
   const num = (v) => ({ $type: "number", $value: v });
   const size = {};
   for (const name of orderedSizeNames(scale)) {
-    const s = scale.sizes[name];
-    size[name.toLowerCase()] = {
-      height: num(s.height), icon: num(s.icon), caret: num(s.caret),
-      "icon-gap": num(s.gap), "padding-narrow": num(s.paddingNarrow), "padding-wide": num(s.paddingWide),
-      "padding-narrow-compact": num(s.paddingNarrowCompact), "padding-wide-compact": num(s.paddingWideCompact),
-      "pill-radius": num(s.radiusPill), "min-width": num(s.minWidth),
-    };
+    const c = scale.cells[name];
+    size[name] = Object.fromEntries(CELL_FIELDS.map(([f, key]) => [f, num(c[key])]));
   }
   const radius = {};
   for (const [k, v] of Object.entries(scale.radii)) radius[k] = num(v);
@@ -474,20 +375,17 @@ export function geomTokensFigma(scale) {
 }
 
 // geomTokensFigmaModes, the geometry as a single Figma-variable COLLECTION ("Geometry") with one MODE per
-// breakpoint (a "Base" mode + one per supplied breakpoint mode), mirroring the UI3 color shape
-// (`exportUI3`): `{ collections: { "Geometry": { modes:[…], variables: { "size/<NAME>/<field>": {
-// type:"FLOAT", values:{ Base:…, <modeName>:… } }, "radius/<k>", "space/<k>" } } } }`. So a Figma user
-// imports ONE breakpoint-moded collection instead of N separate per-width files. The size fields mirror
-// `geomTokensFigma` (height/icon/caret/gap/the four pads/radius/minWidth, NO font, 2026-07-16:
-// control text lives in the Typography collection as UI-widget/UI-control size vars). `modes` = the SAME
-// shape `_geomModeScales()` returns: [{ name, scale }] (minWidth, if present, is ignored, Figma modes are
-// named, not media-queried). IDENTITY: `modes = []` ⇒ a single base mode whose values equal the base.
-// `opts.baseName` (default "Base") NAMES the synthetic base layer (e.g. "Mobile", the standard set);
-// `opts.baseLast` (default false) places it AFTER the breakpoints (Figma's default mode = the FIRST mode).
-// ADR-016: emitted field names are kebab; the two homonyms rename at the leaf, `icon-gap` (the
-// control-internal icon↔label gap, vs the container gap/ scale) and `pill-radius` (the height-linked
-// pill corner, vs the radius/ ladder).
-const GEOM_SIZE_FIELDS = [["height", "height"], ["icon", "icon"], ["caret", "caret"], ["icon-gap", "gap"], ["padding-narrow", "paddingNarrow"], ["padding-wide", "paddingWide"], ["padding-narrow-compact", "paddingNarrowCompact"], ["padding-wide-compact", "paddingWideCompact"], ["pill-radius", "radiusPill"], ["min-width", "minWidth"]];
+// breakpoint (a "Base" mode + one per supplied breakpoint mode). The same primitives-to-roles cascade the
+// color binder uses:
+//   size/{cell}/{field}            FLOAT, MODE-CONSTANT (27 × 14): the base scale's cells in every mode
+//   control/{tier}/{size}/{field}  ALIAS, PER MODE (9 × 14): `values[mode]` names the
+//                                  `size/{tier}-{modeScale}-{size}/{field}` variable, modeScale = that
+//                                  mode's `scale.scale`
+//   radius/ space/ inset/ gap/ border/ focus   FLOAT, written per mode from that mode's scale.
+// `modes` = [{ name, scale }] (minWidth, if present, is ignored, Figma modes are named, not media-queried).
+// IDENTITY: `modes = []` ⇒ a single base mode. `opts.baseName` (default "Base") NAMES the synthetic base
+// layer (e.g. "Mobile", the standard set); `opts.baseLast` (default false) places it AFTER the
+// breakpoints (Figma's default mode = the FIRST mode).
 // Figma requires DISTINCT mode names per collection; the synthetic base layer (`baseName`) is reserved +
 // de-dup (case-insensitively) so a breakpoint sharing its name / two same-named modes can't collide on import.
 function disambiguateModeNames(names, baseName = "Base") {
@@ -501,20 +399,24 @@ function disambiguateModeNames(names, baseName = "Base") {
   });
 }
 export function geomTokensFigmaModes(baseScale, modes = [], { baseName = "Base", baseLast = false } = {}) {
-  const list = (Array.isArray(modes) ? modes : []).filter((m) => m && m.name && m.scale && m.scale.sizes);
+  const list = (Array.isArray(modes) ? modes : []).filter((m) => m && m.name && m.scale && m.scale.cells);
   const names = disambiguateModeNames(list.map((m) => m.name), baseName);
   const modeNames = baseLast ? [...names, baseName] : [baseName, ...names];
   const variables = {};
-  const set = (key, mode, value) => {
-    if (!variables[key]) variables[key] = { type: "FLOAT", values: {} };
+  const set = (key, mode, value, type = "FLOAT") => {
+    if (!variables[key]) variables[key] = { type, values: {} };
     variables[key].values[mode] = value;
   };
-  // for each mode (Base first), write size/<NAME>/<field>, radius/<k>, space/<k>. Only `sizes` scale with
-  // baseHeight; radii/space are treatment-derived (mode-independent), but we emit per-mode for completeness.
   const layer = (scale, mode) => {
-    for (const name of orderedSizeNames(scale)) {
-      const s = scale.sizes[name];
-      for (const [field, src] of GEOM_SIZE_FIELDS) set(`size/${name.toLowerCase()}/${field}`, mode, s[src]);
+    for (const name of orderedSizeNames(baseScale)) {
+      const c = baseScale.cells[name];
+      for (const [f, key] of CELL_FIELDS) set(`size/${name}/${f}`, mode, c[key]);
+    }
+    const modeScale = SCALES.includes(scale.scale) ? scale.scale : DEFAULT_GEOMETRY.scale;
+    for (const tier of Object.keys(TIERS)) {
+      for (const size of SIZE_IDS) {
+        for (const [f] of CELL_FIELDS) set(`control/${tier}/${size}/${f}`, mode, `size/${tier}-${modeScale}-${size}/${f}`, "ALIAS");
+      }
     }
     for (const [k, v] of Object.entries(scale.radii)) set(`radius/${k}`, mode, v);
     for (const [k, v] of Object.entries(scale.space)) set(`space/${k}`, mode, v);

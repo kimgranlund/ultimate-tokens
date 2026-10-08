@@ -7,6 +7,7 @@
 //
 // INPUT, the UI3 float interchange those producers return:
 //   { collections: { "<Name>": { modes: ["Base", <bp>…], variables: { "<key>": { type, values: { <mode>: n } } } } } }
+//   (an "ALIAS" variable's per-mode value is the NAME of the literal variable it aliases in that mode)
 //
 // OUTPUT, modeApplyPlan(interchange) → one entry per collection, a DETERMINISTIC, ordered description of the
 // Figma operations the plugin will run (no `figma` calls here, that lives in code.js, which MIRRORS this and
@@ -109,7 +110,9 @@ export function modeApplyPlan(interchange) {
 // (case-insensitive; Figma rejects duplicates) whose FIRST entry becomes the collection's default mode,
 // any name, not just "Base": the emitters may name the base layer (e.g. "Mobile") and order it last, making
 // a breakpoint (e.g. "Desktop") the default; every variable has a known type, a value for EVERY mode, and
-// FLOAT values that are finite numbers.
+// FLOAT values that are finite numbers. An "ALIAS" variable (Geometry's per-mode `control/` roles) is
+// sound when every mode's value names another variable of the SAME collection whose type is a literal
+// Figma type (one hop, never an ALIAS of an ALIAS).
 export function validateModeInterchange(interchange) {
   const out = [];
   const collections = interchange && typeof interchange === "object" ? interchange.collections : null;
@@ -131,11 +134,17 @@ export function validateModeInterchange(interchange) {
     if (Object.keys(vars).length === 0) out.push(`${name}: no variables`);
     for (const varName of Object.keys(vars)) {
       const v = vars[varName] || {};
-      if (!FIGMA_VAR_TYPES.has(v.type)) out.push(`${name}/${varName}: unknown variable type "${v.type}"`);
+      const alias = v.type === "ALIAS";
+      if (!alias && !FIGMA_VAR_TYPES.has(v.type)) out.push(`${name}/${varName}: unknown variable type "${v.type}"`);
       const values = v.values && typeof v.values === "object" ? v.values : {};
       for (const m of modes) {
         if (!(m in values)) { out.push(`${name}/${varName}: missing value for mode "${m}"`); continue; }
         if (v.type === "FLOAT" && !Number.isFinite(Number(values[m]))) out.push(`${name}/${varName}: non-finite FLOAT for mode "${m}" (${values[m]})`);
+        if (alias) {
+          const t = values[m];
+          const target = typeof t === "string" && Object.prototype.hasOwnProperty.call(vars, t) ? vars[t] : null;
+          if (!target || !FIGMA_VAR_TYPES.has(target.type)) out.push(`${name}/${varName}: ALIAS target "${t}" for mode "${m}" is not a literal variable of this collection`);
+        }
       }
     }
   }
@@ -455,9 +464,9 @@ export function libraryModeReconcile(existingNames, wantedNames, aliasMap, liveA
 // differ from what the LIVE variable already holds at that mode (matched by MODE NAME, dry-run runs
 // before any mode ids for a NEW mode would even exist)? `liveValuesByModeName` = {modeName: value};
 // `planVar` = a plan variable entry, either modeApplyPlan's `{name, type, values: [{mode,value},…]}`
-// (Geometry, `type` is never "ALIAS" here, style-plan.mjs's FIGMA_VAR_TYPES doesn't include it) or
-// style-plan.mjs's primitivesModesApplyPlan `{name, type:"ALIAS", target}` shape (Font/Type Primitives),
-// an ALIAS entry has no `.values` at all and is reported "changed" unconditionally, matching the
+// (Geometry; its `control/` variables are per-mode ALIAS, each value the target variable's name) or
+// style-plan.mjs's primitivesModesApplyPlan `{name, type:"ALIAS", target}` shape (Font/Type Primitives).
+// An ALIAS entry, of either shape, is reported "changed" unconditionally, matching the
 // executor's own unconditional every-mode alias write (never skipped for an "unchanged" target, see
 // applyFontPrimitivesModes' own header comment for why). Numeric comparison for FLOATs (tolerates a
 // live read that's already a JS number); strict-equal otherwise. A mode the live variable has no value
