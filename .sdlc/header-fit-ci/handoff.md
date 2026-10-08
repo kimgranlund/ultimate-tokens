@@ -2,7 +2,7 @@
 id: T-0035
 title: "Header tools fit smoke fails on CI Chrome at content-lg (typography 896 > 850, geometry 880 > 850)"
 type: bug             # feature | bug | chore | spike | idea
-status: ready     # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: done     # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: L2             # L1 | L2 | L3 | L4 (L5 reserved)
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -33,3 +33,7 @@ Right hypothesis: (2) plus (3). The UI font is `system-ui`, so no bundled font l
 - `npm run smoke` passes the `canvas header at content-lg` and `canvas header with a wider UI font` legs (CHROME_BIN set).
 - `npm test` and `npm run build` are green; `node scripts/audit-citations.mjs` exits 0.
 - With the `tools-tight` toggle removed from `_measureCanvasHeader`, the wider-UI-font smoke leg fails (6 off).
+
+## Closed
+
+2026-10-08: fixed by e9c9730c, verified L2 pass; follow-ups none

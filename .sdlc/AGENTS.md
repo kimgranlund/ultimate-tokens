@@ -1,4 +1,4 @@
-<!-- sdlc-lite:managed:start v1 sha256:f7b73e04d413 -->
+<!-- sdlc-lite:managed:start v1 sha256:4ca932a5fafb -->
 # Work records
 
 This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and `config`. `tickets.py roadmap` (also run by `new` and `close`) generates this block: do not edit inside it; change a ticket's `handoff.md` front matter and rerun `roadmap`. `roadmap.md` lists every ticket in dependency order. Closed `.NNNN-*` folders are history: open one only when asked.
@@ -9,13 +9,12 @@ This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and
 
 ## Stages
 
-- proposed: 1
-  - T-0035 Header tools fit smoke fails on CI Chrome at content-lg (typography 896 > 850, geometry 880 > 850) (header-fit-ci)
+- proposed: 0
 - ready: 2
   - T-0024 Gate A narrowing from #807: can the chroma-envelope gate cover stops where OKHSL keyS reads above 1? (gate-a-narrowing)
   - T-0029 Rebuild the app's analysis charts as native DOM (HTML/CSS marks) following /Users/kimgranlund/Projects/nonoun/native-dom-charts (native-dom-charts)
 - blocked: 0
-- done: 31
+- done: 32
 - dropped: 0
 
 ## Procedures

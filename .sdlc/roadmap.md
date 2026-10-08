@@ -38,4 +38,4 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 | T-0032 | [hue-constancy-gate](hue-constancy-gate/handoff.md) | Add the hue constancy gate to test/engine/anchor.mjs (PR #810 review Major) | chore | L1 | P2 | none | 🟢 done |
 | T-0033 | [docs-facts-sweep](docs-facts-sweep/handoff.md) | Docs, specs and skills: repair stale facts after T-0015/17/21/27 | chore | L2 | P2 | none | 🟢 done |
 | T-0034 | [docs-structure-sweep](docs-structure-sweep/handoff.md) | Docs structure: indexes, placeholders, ADR map, plan archive, notes cleanup | chore | L2 | P2 | none | 🟢 done |
-| T-0035 | [header-fit-ci](header-fit-ci/handoff.md) | Header tools fit smoke fails on CI Chrome at content-lg (typography 896 > 850, geometry 880 > 850) | bug | L1 | P2 | none | ⏳ proposed |
+| T-0035 | [header-fit-ci](header-fit-ci/handoff.md) | Header tools fit smoke fails on CI Chrome at content-lg (typography 896 > 850, geometry 880 > 850) | bug | L2 | P2 | none | 🟢 done |
