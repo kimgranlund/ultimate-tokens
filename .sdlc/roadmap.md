@@ -28,3 +28,4 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 | T-0022 | [gh-811b](gh-811b/handoff.md) | Describe eval runner: parse the leading JSON object of a string-typed families (Haiku 5.5 appends trailing text) | bug | L1 | P2 | none | 🔵 ready |
 | T-0023 | [geometry-tokens-snapshot](geometry-tokens-snapshot/handoff.md) | Retire docs/assets/geometry-tokens.json, the frozen six-size snapshot (T-0017 follow-up) | chore | L2 | P2 | none | 🔵 ready |
 | T-0024 | [gate-a-narrowing](gate-a-narrowing/handoff.md) | Gate A narrowing from #807: can the chroma-envelope gate cover stops where OKHSL keyS reads above 1? | spike | L1 | P2 | none | 🔵 ready |
+| T-0025 | [inspector-review-fixes](inspector-review-fixes/handoff.md) | Color inspector follow-ups from the PR #814 review (Mapping/Radix reachability, drag-reorder context flip, keyboard path back to Global) | bug | L2 | P2 | none | 🔵 ready |
