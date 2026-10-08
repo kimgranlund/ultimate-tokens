@@ -678,7 +678,9 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
    key) a single badge line and nothing else, read-only, no drag handle, no reorder. */
 .radix-scene { display: flex; flex-direction: column; gap: 12px; padding: 4px; }
 .radix-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; border: 1px solid transparent; }
+.radix-row { cursor: pointer; } /* a row click selects its palette (the Radix scene is otherwise read-only) */
 .radix-row:hover { border-color: var(--line); }
+.radix-row.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
 /* fixed name column so every ladder starts at the same x, the ramps scene stacks name ABOVE
    strip (column layout, alignment doesn't matter there); this row is a flex row, so without a
    width every ladder would start at a different offset depending on palette-name length. */
@@ -891,7 +893,11 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
   border-bottom: 1px solid var(--line); /* match the canvas-header band */
 }
 .pane-head .segmented { flex: 1; margin: 0; } /* the Typography + Geometry inspectors still switch their tabs here */
-.pane-head .pane-title { flex: 1; font-size: 12px; font-weight: 600; color: var(--ink-dim); }
+.pane-head .pane-title { flex: 1; min-width: 0; font-size: 12px; font-weight: 600; color: var(--ink-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* the Color inspector's context heading takes programmatic focus after a deselect (tabindex -1), show where it landed */
+.pane-head .pane-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+/* the palette inspector's way back to Global (keyboard-reachable, unlike the ramp rows) */
+.pane-head .pane-back { flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; font-size: 12px; line-height: 1; }
 .segmented {
   /* no self-margin, the parent owns spacing (.pane-head provides it; .canvas-seg sits inline) */
   display: flex; gap: 2px;
@@ -16041,6 +16047,8 @@ class ColorSectionImpl {
   // ladder, never re-derived and never cross-checked against radix-projection.json. This scene is
   // READ-ONLY (I1): no drag handle, no reorder wiring, no document mutation of any kind, it is
   // NOT one of the isGroupedView canvas views and adds no export affordance whatsoever (I6).
+  // A row click only SELECTS its palette (UI-session state, the same select the ramp rows do), so the palette
+  // inspector stays reachable from this view; that is not reorder wiring and not a document edit.
   //
   // Three states only (no fourth):
   //   - no-drivers (I9): view.radixPreset is the exportRadix no-driver sentinel STRING, the scene
@@ -16068,9 +16076,20 @@ class ColorSectionImpl {
         const paint = scheme === "dark" ? val._dark : val.base;
         steps.push(h("i", { class: "radix-step", style: `background:${paint}`, title: `${p.name} ${step}` }));
       }
+      // a row click SELECTS its palette (the palette inspector is otherwise unreachable from this view, #814 review):
+      // selection is UI-session state, not a document edit and not reorder wiring, so I1 (read-only) still holds.
+      // `idx` is the palette's index in doc.palettes (projectView is index-aligned), NOT its place in the filtered `enabled`.
+      const idx = view.palettes.indexOf(p);
+      const selected = this.sel.kind === "palette" && this.selectedIndex() === idx;
       return h(
         "div",
-        { class: collision ? "radix-row radix-collision" : "radix-row" },
+        {
+          class: "radix-row" + (collision ? " radix-collision" : "") + (selected ? " sel" : ""),
+          onclick: () => {
+            if (this._didDrag) { this._didDrag = false; return; } // a canvas pan-drag, not a click
+            if (!selected) this.selectPalette(idx);
+          },
+        },
         h("span", { class: "ramp-name" }, p.name),
         h("div", { class: "radix-ladder" }, ...steps),
         collision ? h("span", { class: "radix-badge" }, radixCollisionBadge(key)) : null,
@@ -16288,7 +16307,18 @@ class ColorSectionImpl {
       const overridden = !!(ov[r.key] && ov[r.key][mode] != null);
       return h(
         "tr",
-        { class: "map-row map-" + mode + (mode === "light" ? " map-role-top" : "") + (overridden ? " map-ov" : "") },
+        {
+          class: "map-row map-" + mode + (mode === "light" ? " map-role-top" : "") + (overridden ? " map-ov" : ""),
+          // a row click SELECTS the palette this table is showing, so the palette inspector is reachable from
+          // the Mapping view (#814 review). The row's own controls (the raw-token select / input, the reset
+          // button) keep their clicks: a re-render here would close an open select under the user's pointer.
+          onclick: (e) => {
+            for (let n = e && e.target; n && n !== e.currentTarget; n = n.parentNode)
+              if (n.tagName === "SELECT" || n.tagName === "INPUT" || n.tagName === "OPTION" || n.tagName === "BUTTON") return;
+            if (this._didDrag) { this._didDrag = false; return; } // a canvas pan-drag, not a click
+            if (this.sel.kind !== "palette") this.selectPalette(this.selectedIndex());
+          },
+        },
         h("td", { class: "map-mode" }, mode === "light" ? "Light" : "Dark"),
         h("td", { class: "map-sw" }, h("span", { class: "map-swatch" }, h("span", { class: "map-swatch-fill", style: `background:${hex}` }))),
         h("td", { class: "map-sem" }, h("code", {}, r.name)),
@@ -16558,9 +16588,15 @@ class ColorSectionImpl {
       const [moved] = doc.palettes.splice(from, 1);
       if (groupChanged) moved.group = targetGroup;
       doc.palettes.splice(to, 0, moved);
-      // keep `selected` on the SAME palette object (now at its new index)
+      // keep `selected` on the SAME palette object (now at its new index). The CONTEXT (sel.kind) is left
+      // as it was, as _restore does: a drop made from the Global inspector must stay on Global, not flip
+      // to a palette inspector the user never clicked. edit() mirrors sel.id into doc.selected only for
+      // kind "palette", so under Global the persisted pick is moved here (selectedIndex() reads it).
       const newSel = doc.palettes.indexOf(selPal);
-      if (newSel >= 0) this.sel = { kind: "palette", id: newSel };
+      if (newSel >= 0) {
+        this.sel = { kind: this.sel.kind, id: newSel };
+        doc.selected = newSel;
+      }
     });
     // safety net: if no stray click consumes the guard, clear it next tick.
     setTimeout(() => { this._reordering = false; }, 0);
@@ -16688,6 +16724,8 @@ class ColorSectionImpl {
           oninput: (e) => {
             if (paletteNameClash(e.target.value, this.doc.palettes, i)) return;
             this.editDrag((d) => (d.palettes[i].name = e.target.value));
+            const pt = this.querySelector(".pane-title"); // the context heading names the palette: keep it live with the typing
+            if (pt) pt.textContent = this.paneContextTitle();
           },
           onchange: (e) => {
             const clash = paletteNameClash(e.target.value, this.doc.palettes, i);
@@ -21055,6 +21093,15 @@ class HctApp extends HTMLElement {
 
     // Everything below is bare (no modifier) and must NOT fire while typing.
     if (meta || e.altKey) return;
+    // Esc in a focused inspector field (text, number, select) is a two-stage exit (#814 review): the first Esc
+    // blurs the field (so the arrows and the context keys work again), the second falls through and deselects.
+    // Without this the keyboard user is stuck in the field with no way back to Global. A field in a modal
+    // (drawer, settings) is outside the right pane and keeps its own Esc.
+    if (e.key === "Escape" && !this.exportOpen && this._isTextTarget(e.target) && this._inRightPane(e.target)) {
+      e.preventDefault();
+      if (typeof e.target.blur === "function") e.target.blur();
+      return;
+    }
     if (this._isTextTarget(e.target)) return;
 
     switch (e.key) {
@@ -21114,8 +21161,31 @@ class HctApp extends HTMLElement {
   // session as having no explicit pick (kind:"none") so nothing renders 'sel' and the right
   // pane shows the Global inspector (renderRightPane picks its context from sel.kind).
   _deselect() {
+    // the focused palette control disappears with the palette inspector and focus would fall to <body>
+    // (Esc from the pane, or an empty-canvas click whose mousedown already parked focus on <body>): hand it
+    // to the pane title (the context heading) instead, unless focus sat on some other control that survives.
+    const a = document.activeElement;
+    const moveFocus = this._inRightPane(a) || (this.sel.kind === "palette" && (!a || a === document.body));
     this.sel = { kind: "none", id: this.sel.id };
     this.render();
+    if (moveFocus) this._focusPaneTitle();
+  }
+
+
+  // _inRightPane, true when el sits inside the right pane (<aside class="right-pane">). Walks parentNode (not
+  // .closest) so it also holds under the headless DOM shim.
+  _inRightPane(el) {
+    for (let n = el; n; n = n.parentNode)
+      if (n.classList && n.classList.contains("right-pane")) return true;
+    return false;
+  }
+
+
+  // _focusPaneTitle, move focus to the right pane's context heading (tabindex -1, so it takes programmatic focus
+  // without joining the Tab order).
+  _focusPaneTitle() {
+    const t = this._walkFind((c) => c.dataset.fk === "pane-title");
+    if (t && typeof t.focus === "function") t.focus();
   }
 
 
@@ -22457,12 +22527,14 @@ class HctApp extends HTMLElement {
 
     // a plain click on EMPTY canvas clears the selection → canvasBg reverts to the default
     // neutral backdrop. A click inside a ramp-row is a SELECT (handled by the row's own onclick,
-    // which runs first); a pan-drag is not a click. We walk parentNode (not .closest) so this
-    // also holds under the headless DOM shim.
+    // which runs first); a pan-drag is not a click. The Mapping table (.map-wrap) and the Radix scene
+    // (.radix-scene) are content, not empty canvas: their rows select, and a click on a Mapping select / input
+    // under a selected palette must not drop the selection (#814 review). We walk parentNode (not .closest)
+    // so this also holds under the headless DOM shim.
     area.addEventListener("click", (e) => {
       if (this._didDrag) { this._didDrag = false; return; } // a pan, not a click
       for (let n = e.target; n && n !== area; n = n.parentNode)
-        if (n.classList && n.classList.contains("ramp-row")) return; // a row handled the selection
+        if (n.classList && (n.classList.contains("ramp-row") || n.classList.contains("map-wrap") || n.classList.contains("radix-scene"))) return; // content handled its own click
       if (this.sel.kind === "palette") this._deselect();
     });
   }
@@ -22515,20 +22587,40 @@ class HctApp extends HTMLElement {
     // body (below) is unchanged.
     if (this.section === "typography") return this.renderTypeInspector(view);
     if (this.section === "geometry") return this.renderGeomInspector(view);
-    const body = this.sel.kind === "palette" ? this.renderPaletteInspector(view) : this.renderGlobalInspector(view);
+    const inPalette = this.sel.kind === "palette";
+    const body = inPalette ? this.renderPaletteInspector(view) : this.renderGlobalInspector(view);
     return h(
       "aside",
-      { class: "right-pane" },
+      { class: "right-pane", "aria-label": "Inspector" },
       // header row: while OPEN the right toggle hugs the inner (canvas-side) edge, left of
-      // the title; once collapsed it is rendered in the canvas-header instead.
+      // the title; once collapsed it is rendered in the canvas-header instead. The title NAMES the context
+      // ("Palette: <name>" / "Global") and takes programmatic focus (tabindex -1) when a deselect removes the
+      // focused palette control; in a palette context a button returns to Global, the keyboard path back
+      // (a palette is otherwise left only by Esc, which a focused field swallows) (#814 review).
       h("div", { class: "pane-head" },
         this.panesRight ? this.paneToggle("right") : false,
-        h("span", { class: "pane-title" }, "Inspector")),
+        h("span", { class: "pane-title", tabindex: "-1", "data-fk": "pane-title" }, this.paneContextTitle()),
+        inPalette
+          ? btn([icon("caret-left", { size: 12 }), "Global"], {
+              cls: "pane-back",
+              title: "Back to the Global inspector (Esc)",
+              ariaLabel: "Back to the Global inspector",
+              onclick: () => this._deselect(),
+            })
+          : false),
       h("div", { class: "seg-body", "data-scroll": "seg-body" }, body),
       // Pinned below the panel in EVERY context: a live component preview wired to the
       // selected palette's roles (surface / onSurface / onSurfaceVariant + primary).
       h("div", { class: "seg-example" }, ...this.exampleArtifacts(view)),
     );
+  }
+
+
+  // paneContextTitle, the Color inspector's context heading: the accessible cue for which inspector is showing.
+  paneContextTitle() {
+    if (this.sel.kind !== "palette") return "Global";
+    const p = this.doc.palettes[this.selectedIndex()];
+    return p ? "Palette: " + p.name : "Global";
   }
 
 

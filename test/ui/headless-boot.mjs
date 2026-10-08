@@ -612,8 +612,9 @@ flushRaf();
   const selInRow = findIn(mapRows()[0], (e) => e.tagName === "SELECT");
   ok(!!selInRow, "(irb) precondition: a Mapping row holds the raw-token select");
   // negative control: a click that lands on the row's select does not select (a re-render would close the open dropdown)
+  const rpBeforeSel = rp(); // render() rebuilds the whole subtree, so the pane node's identity proves no render ran
   mapRows()[0].dispatch("click", { target: selInRow }); settle();
-  ok(app.sel.kind === "none" && globalInspector(), "(irb) control: a click on the Mapping row's select selects nothing and does not re-render");
+  ok(app.sel.kind === "none" && globalInspector() && rp() === rpBeforeSel, "(irb) control: a click on the Mapping row's select selects nothing and does not re-render (same right-pane node)");
   mapRows()[0].dispatch("click", { target: mapRows()[0] }); settle();
   ok(app.sel.kind === "palette" && app.sel.id === mapShown && palInspector(), `(irb) a Mapping row click selects the palette the table shows and the palette inspector appears (got ${app.sel.kind} ${app.sel.id})`);
   ok(paneTitle() === "Palette: " + nameOf(mapShown), `(irb) the pane title names it (got "${paneTitle()}")`);
@@ -679,9 +680,9 @@ flushRaf();
   app.selectPalette(1); settle();
   const bk = backBtn();
   ok(!!bk && bk.tagName === "BUTTON" && bk.getAttribute("tabindex") !== "-1" && !bk.disabled && !!bk.getAttribute("aria-label"), "(irf) the palette inspector header holds a focusable, labelled Back-to-Global <button>");
-  ok(bk.parentNode && bk.parentNode.classList.contains("pane-head"), "(irf) the back button lives in the .pane-head");
-  bk.focus();
-  bk.dispatch("click", { target: bk }); settle();
+  ok(!!bk && !!bk.parentNode && bk.parentNode.classList.contains("pane-head"), "(irf) the back button lives in the .pane-head");
+  if (bk) bk.focus();
+  if (bk) bk.dispatch("click", { target: bk }); settle();
   ok(globalInspector() && paneTitle() === "Global", "(irf) activating the back button returns to the Global inspector");
   ok(!backBtn(), "(irf) control: no back button in the Global context");
   app.selectPalette(1); settle();
@@ -719,7 +720,7 @@ flushRaf();
   findIn(rp(), (e) => e.dataset && e.dataset.fk === "slider:Chroma").focus();
   fireKey("Escape"); settle();
   ok(doc.activeElement && doc.activeElement.classList.contains("pane-title") && rp().children[0].children.includes(doc.activeElement), "(irg) Esc with a pane control focused moves focus to the pane title");
-  ok(doc.activeElement.getAttribute("tabindex") === "-1", "(irg) the pane title takes focus programmatically (tabindex -1, outside the Tab order)");
+  ok(!!doc.activeElement && doc.activeElement.getAttribute("tabindex") === "-1", "(irg) the pane title takes focus programmatically (tabindex -1, outside the Tab order)");
   app.selectPalette(1); settle();
   doc.activeElement = null; // a click on empty canvas has already parked focus on <body> by mousedown
   app.querySelector(".canvas-area").dispatch("click", { target: app.querySelector(".canvas-area") }); settle();
