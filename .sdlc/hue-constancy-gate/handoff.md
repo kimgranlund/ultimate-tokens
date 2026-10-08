@@ -2,7 +2,7 @@
 id: T-0032
 title: "Add the hue constancy gate to test/engine/anchor.mjs (PR #810 review Major)"
 type: chore           # feature | bug | chore | spike | idea
-status: ready     # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: done     # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: L1             # L1 | L2 | L3 | L4 (L5 reserved)
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -23,3 +23,7 @@ PR #810 review (the reviewer's Major, held in `.sdlc/notes.md` 'PR #810 review f
 
 ## Constraints
 Test-only. No engine or UI edits. No U+2014. `npm test` runs before done.
+
+## Closed
+
+2026-10-08: delivered by the solo agent (level L1); the ticket's own checks and the fanout gates passed
