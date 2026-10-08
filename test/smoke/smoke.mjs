@@ -316,7 +316,46 @@ try {
     writeFileSync(resolve(OUT, png), Buffer.from(cpdShot.data, "base64"));
     console.log(`  · screenshot → smoke-out/${png}`);
   }
-  await evalJS(`(()=>{${el}.shellGeometry=null;${el}.render();})()`); await sleep(200);
+
+  // Control text (T-0027 step 4): at the same two shell geometries every visible shell button, select and
+  // text input (the canvas scene, the example previews and the bare glyph buttons aside) computes the cell's
+  // text size and stays on one line, across the Global and palette inspectors, Typography and Geometry (the
+  // .key-slot add tiles are skipped too: they are dashed tiles with a filled swatch's footprint, not text controls). The
+  // palette Name field (data-fk="pname") and the header doc name also take the control radius and height.
+  for (const [tier, scale] of [["product", "md"], ["content", "lg"]]) {
+    const cell = geomScale({ tier, scale, radius: "round" }).cells[`${tier}-${scale}-md`];
+    const views = [
+      ["color", `${el}.setSection("color");${el}._deselect();`],
+      ["color palette", `${el}.setSection("color");${el}.selectPalette(0);`],
+      ["typography", `${el}.setSection("typography");`],
+      ["geometry", `${el}.setSection("geometry");`],
+    ];
+    let count = 0, sawName = false;
+    const bad = [];
+    for (const [view, go] of views) {
+      await evalJS(`(()=>{${el}.shellGeometry={tier:"${tier}",scale:"${scale}",radius:"round"};${go}${el}.render();})()`); await sleep(300);
+      const got = await evalJS(`(()=>{const vis=(e)=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0};
+        const skip=(e)=>!!e.closest(".canvas-scene, .seg-example, .example-scheme")||[...e.classList].some((c)=>c.includes("ex-"))||e.matches(".map-reset, .key-act, .tok-reset, .tyi-weight-del, .key-slot");
+        return [...${el}.querySelectorAll('button, select, input[type="text"], input[type="search"], input.tyi-font-input')].filter((e)=>vis(e)&&!skip(e)).map((e)=>{const cs=getComputedStyle(e);
+          return {tag:e.tagName.toLowerCase(),cls:e.className,fk:e.getAttribute("data-fk"),chip:e.matches(".map-raw-select, .map-raw-input, .chip"),fs:parseFloat(cs.fontSize),h:e.getBoundingClientRect().height,r:parseFloat(cs.borderTopLeftRadius),mh:parseFloat(cs.minHeight)}});})()`);
+      for (const c of got || []) {
+        const who = `${view}: ${c.tag}${c.cls ? "." + String(c.cls).trim().split(/\s+/).join(".") : ""}`;
+        const want = c.chip ? cell.chipText : cell.text;
+        if (Math.abs(c.fs - want) > 0.01) bad.push(`${who} font-size ${c.fs} (want ${want})`);
+        if (c.h > cell.height + 0.5) bad.push(`${who} height ${c.h} (want at most ${cell.height}, one line)`);
+        if (c.fk === "pname") {
+          sawName = true;
+          if (Math.abs(c.r - cell.radiusControl) > 0.01) bad.push(`${who} radius ${c.r} (want ${cell.radiusControl})`);
+          if (Math.abs(c.mh - cell.height) > 0.01) bad.push(`${who} min-height ${c.mh} (want ${cell.height})`);
+        }
+      }
+      count += (got || []).length;
+    }
+    if (!sawName) bad.push(`the palette Name field (input[data-fk="pname"]) was not found`);
+    bad.slice(0, 12).forEach((m) => console.log("    " + m));
+    ok(count > 0 && sawName && bad.length === 0, `control text at ${tier}-${scale}: ${count} controls, every shell button, select and text input computes the cell text size on one line${bad.length ? ` (${bad.length} off)` : ""}`);
+  }
+  await evalJS(`(()=>{${el}.shellGeometry=null;${el}.setSection("color");${el}._deselect();${el}.render();})()`); await sleep(200);
 
   // New-Palette modal: a CENTERED top-layer <dialog> with the "Derive from" strip + the 3 tabs.
   await evalJS(`${el}.openNewPalette()`); await sleep(400);

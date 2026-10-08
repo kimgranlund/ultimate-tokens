@@ -4614,6 +4614,21 @@ app.setSection("color"); app.render(); flushRaf();
   const ioLine = cssCPD.replace(/(button\.icon-only \{[^}]*?)border-color: transparent/, "$1border-color: var(--line)");
   ok(segPad !== cssCPD && !rulesOk(segPad), "(cpd5) negative control: a copy with padding: 2px restored on .segmented fails the check");
   ok(ioLine !== cssCPD && !rulesOk(ioLine), "(cpd5) negative control: a copy with border-color: var(--line) on button.icon-only fails the check");
+  // the narrow-viewport header rule: inside @media (max-width: 1240px) a header button rule must skip
+  // .icon-only and touch only the inline axis, so the square icon button and the part height still win
+  const narrowOk = (text) => {
+    const c = text.replace(/\/\*[\s\S]*?\*\//g, "");
+    const at = c.indexOf("@media (max-width: 1240px)");
+    if (at === -1) return false;
+    const block = c.slice(at, c.indexOf("\n}", at));
+    const R = [...block.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => [m[1].trim().replace(/^@media[^{]*$/, "").split(/\s*,\s*/), m[2]]);
+    const head = R.filter(([sel]) => sel.some((s) => /^\.(app|canvas)-header button/.test(s)));
+    return head.length > 0 && head.every(([sel, b]) => sel.every((s) => s.endsWith("button:not(.icon-only)")) && !/(^|;)\s*padding(-block)?\s*:/.test(b))
+      && head.some(([, b]) => b.includes("padding-inline: calc(var(--sh-control-inset) / 2)"));
+  };
+  ok(narrowOk(cssCPD), "(cpd6) styles.css: at max-width 1240px the header button rule skips button.icon-only and sets padding-inline only");
+  const narrowOld = cssCPD.replace(".app-header button:not(.icon-only), .canvas-header button:not(.icon-only) { padding-inline: calc(var(--sh-control-inset) / 2); }", ".app-header button, .canvas-header button { padding: 4px 7px; }");
+  ok(narrowOld !== cssCPD && !narrowOk(narrowOld), "(cpd6) negative control: a copy with the old .app-header button, .canvas-header button { padding: 4px 7px; } fails the check");
 }
 
 // ── report ──────────────────────────────────────────────────────────────────────────

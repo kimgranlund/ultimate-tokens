@@ -43,7 +43,7 @@ It builds every control inline with a single hyperscript helper `h(tag, attrs, .
   (`.toggle`, `segmented()`) are built on real `<button>`s with ARIA roles (`switchControl`, `app-helpers.mjs:364`;
   `segmented`, `app.js:1631`), so they keep focus and keyboard.
 - **Forced-colors support is one pass**, the `@media (forced-colors: active)` block at
-  `styles.css:1569`; custom-painted controls outside it still flatten in Windows High Contrast.
+  `styles.css:1600`; custom-painted controls outside it still flatten in Windows High Contrast.
 - **Geometry is ad-hoc, off any ramp.** Buttons are `padding: 4px 9px` (`styles.css before ADR-032`), the range
   thumb is 15px, the toggle track 34×19, none derived from a documented size ramp or the
   `(height − glyph)/2` law. Not wrong per se, but undocumented and unenforced.
@@ -69,7 +69,7 @@ Plus: a `@media (forced-colors:active)` pass; set-tile → `role=button` with a 
 drawer `role=dialog`; toast `aria-live`. `slider()` was already the model and is unchanged.
 
 **Since landed:** the `.field`/`.segmented` self-margins were removed after all:
-`.segmented` carries no self-margin (`styles.css:886`) and `.field { margin: 0; }` (`styles.css:947`);
+`.segmented` carries no self-margin (`styles.css:902`) and `.field { margin: 0; }` (`styles.css:963`);
 the parent owns spacing.
 **Still deferred (intentional):** a true drawer focus-trap; migrating the remaining uniform-`ghost`
 buttons + the composite swatch cells (ramp-strip/scrim/footer), all behavior-neutral, adoptable
@@ -79,9 +79,9 @@ incrementally.
 
 | # | Primitive | Layer | Native / Custom | Variants | Call-sites | Owning CSS | a11y | Flags |
 |---|---|---|---|---|---|---|---|---|
-| 1 | **Button** | component | native `<button>` | ~10 (primary · ghost · danger · undo/redo · add-pal · pane-toggle · pane-back · figma-plugin · ex-btn · copy-float · map-reset) | ~21 sites, 85+ refs | `button`, `.primary`, `.ghost`, `.danger`, `.ex-btn`, `.copy-float`, `.map-reset`, `.pane-toggle`, `.pane-back` | good (focus-visible, aria-pressed×7, aria-label on icon-only) | no forced-colors; variant sprawl via ad-hoc classes |
+| 1 | **Button** | component | native `<button>` | ~10 (primary · ghost · icon-only · danger · undo/redo · add-pal · pane-toggle · pane-back · figma-plugin · ex-btn · copy-float · map-reset) | ~21 sites, 85+ refs | `button`, `.primary`, `.ghost`, `.icon-only`, `.danger`, `.ex-btn`, `.copy-float`, `.map-reset`, `.pane-toggle`, `.pane-back` | good (focus-visible, aria-pressed×7, aria-label on icon-only) | no forced-colors; variant sprawl via ad-hoc classes |
 | 2 | **Toggle / switch** | component | custom `<button role=switch>` (`switchControl()`) | 1 | 2 | `.toggle`, `.track` | ✓ role=switch, aria-checked, aria-label, native focus + Space/Enter | palette site has no `<label>` |
-| 3 | **Segmented control** | component (composes buttons) | custom (`<button>`s via `segmented()`) | 2 base stylings (`.segmented` · `.figma-files`) + 4 modifiers (`.canvas-seg` · `.segmented.seg-sm` · `.newpal-seg` · `.settings-seg`) | 14 | `.segmented`, `.canvas-seg`, `.figma-files`, `.newpal-seg`, `.settings-seg` | ✓ one keyboard model: roving tabindex + arrows on every site; `role=tablist` or `group` | drawer format is a native `<select>` now, not a segment |
+| 3 | **Segmented control** | component (composes buttons) | custom (`<button>`s via `segmented()`) | 1 compound styling (`.segmented` · `.figma-files` · `.radix-files`, one rule) + 3 modifiers (`.canvas-seg` · `.newpal-seg` · `.settings-seg`) | 14 | `.segmented`, `.canvas-seg`, `.figma-files`, `.radix-files`, `.newpal-seg`, `.settings-seg` | ✓ one keyboard model: roving tabindex + arrows on every site; `role=tablist` or `group` | drawer format is a native `<select>` now, not a segment |
 | 4 | **Slider / range** | component | native `<input type=range>` | 1 (via `slider()` helper) | 1 helper, ~14 instances | `input[type=range]`, `.field` | partial, `aria-label` set (label sibling NOT associated, noted in code `app.js:2093-2096`); no forced-colors | custom thumb only; consistent, the model primitive |
 | 5 | **Select** | component | native `<select>` | 1 + `.map-raw-select` | 3 | `select`, `.map-raw-select` | ✓ `.map-raw-select` has `aria-label`; Distribution/Curve are `field()` rows (label[for] + fallback aria-label) | two naming paths |
 | 6 | **Text input** | component | native `<input type=text>` | 2 (`.field` name · `.map-raw-input`) | 2 | `input[type=text]`, `.map-raw-input` | ✓ map-raw-input has `aria-label`; Name is a `field()` row (label[for] + fallback aria-label) | two naming paths |
@@ -108,19 +108,25 @@ incrementally.
 
 - **Surface** S1 (+ S2 instances). **Sites** ~20 `h("button"…)`; 85+ refs.
 - **Anatomy** `[ icon? · label? ]`, no caret variant. Icon-only used for zoom (`zoomBy()`, `sections/color.js:839/841`),
-  drawer close (`_drawerHead()`, `overlays/drawer.js:132-138`).
-- **API** classes-as-variant: `.primary` (`styles.css:171`), `.ghost` (`styles.css:177`), `.danger`
-  (modifier on `.ghost`, `app-helpers.mjs:401`), `.add-pal-btn` (dashed, `styles.css:528`),
+  drawer close (`_drawerHead()`, `overlays/drawer.js:132-138`). `btn()` emits `icon-only` in place of `ghost`
+  when its only child is one `.ic` icon (`isIconOnly`, `app-helpers.mjs:403`); the two pane toggles carry
+  `icon-only pane-toggle` (`paneToggle`, `app.js:1491`).
+- **API** classes-as-variant: `.primary` (`styles.css:191`), `.ghost` (`styles.css:197`), `.icon-only` (a square
+  control-height box, icon centered, borderless and transparent until hover, `button.icon-only`, `styles.css:201`),
+  `.danger` (modifier on `.ghost`, `app-helpers.mjs:401`), `.add-pal-btn` (dashed, `styles.css:528`),
   `.ex-btn` (preview, `cursor:default`, non-interactive, `styles.css:919-922`), `.copy-float` (`styles.css:1108`),
-  `.map-reset` (borderless icon, `styles.css:742`), `.pane-toggle` (`styles.css:423`),
+  `.map-reset` (borderless icon, `styles.css:755`), `.pane-toggle` (color only on an icon-only button, `styles.css:438`),
   `.figma-plugin-btn`, `.undo-btn`/`.redo-btn` (`app.js:1435/1436`).
-- **States** default · `hover` (`button:hover` `styles.css:170`) · `focus-visible` (`styles.css:179`) ·
-  `disabled` (`styles.css:188`) · toggle-pressed (`.on` + `aria-pressed`, 7 sites in `src/ui/`: the `btn()` and
+- **States** default · `hover` (`button:hover` `styles.css:190`) · `focus-visible` (`styles.css:208`) ·
+  `disabled` (`styles.css:217`) · toggle-pressed (`.on` + `aria-pressed`, 7 sites in `src/ui/`: the `btn()` and
   `chip()` primitives plus five inline buttons:
-  `aria-pressed` at `app-helpers.mjs:410/537`, `app.js:1492/1648`, `sections/color.js:513/940/1163`).
+  `aria-pressed` at `app-helpers.mjs:415/542`, `app.js:1492/1648`, `sections/color.js:513/940/1163`).
 - **a11y** ✓ `:focus-visible` ring; ✓ `aria-pressed` on toggle-buttons; ✓ `aria-label` on icon-only
   (`sections/color.js:839`). ✗ no `forced_colors`.
-- **Geometry** `padding:4px 9px; border-radius:5px; gap:6px`, ad-hoc, not a ramp.
+- **Geometry** the cell roles: `min-block-size: var(--sh-control-height)`, `padding-inline: var(--sh-control-inset)`,
+  `font-size: var(--sh-control-text)`, `border-radius: var(--sh-control-radius)`, `line-height: 1` and
+  `white-space: nowrap`, so a label never wraps (`button`, `styles.css:173`). `test/repo/control-text.mjs` gates
+  every shell control rule against literal text sizes and paddings.
 
 ```json
 { "component":"button","layer":"component","role":"button","replaces_native":false,
@@ -166,8 +172,8 @@ incrementally.
   `sections/typography.js:177`, `sections/geometry.js:161`; specimen mode `sections/typography.js:308`,
   `sections/geometry.js:290`; Figma files `overlays/drawer.js:214`; and one settings-row call
   `overlays/settings.js:30` inside the settingRow helper, one live instance per settings row, called
-  from 10 call sites (11-12 live rows) across `overlays/settings.js`. **Variants** as found, four stylings of one idea; today two
-  base stylings plus four modifiers remain:
+  from 10 call sites (11-12 live rows) across `overlays/settings.js`. **Variants** as found, four stylings of one idea; today one
+  compound styling (`.segmented`, `.figma-files`, `.radix-files` share one rule) plus three modifiers remain:
   - **Inspector tabs** `.segmented` in the Typography and Geometry inspectors, `role=tablist`/`tab`, roving
     tabindex, ArrowLeft/ArrowRight (`app.js:1623-1656`). *Well-built.*
   - **Canvas view** `.canvas-seg` `[Palettes|Scrims|Mapping|Radix]`, `role=tablist` (`sections/color.js:799-809`).
@@ -181,10 +187,16 @@ incrementally.
     format is chosen with a native labelled `<select>` (`label[for=export-format]` + `aria-label`,
     `overlays/drawer.js:177-186`; `.drawer-format`, `styles.css:1089-1091`), so it is a select (card 5), not a
     segmented control.
-  - **Figma files** `.figma-files`, now a `segmented()` call with `baseClass: "figma-files"` and
-    `role=group` (`overlays/drawer.js:202-209`, `styles.css:1074-1076`), so it carries the same roving
-    tabindex + Arrow keys as every other `segmented()` site.
-- **Anatomy** `[ track (group) · segment (button)[] ]`; active = `.on` (`styles.css:898`).
+  - **Figma files** `.figma-files` (and the Radix picker `.radix-files`), now a `segmented()` call with
+    `baseClass: "figma-files"` and `role=group` (`overlays/drawer.js:221`), so it carries the same roving
+    tabindex + Arrow keys as every other `segmented()` site. Its own rules are gone: it takes the compound
+    rule below (`.segmented, .figma-files, .radix-files`, `styles.css:902`).
+- **Anatomy** `[ track (group) · segment (button)[] ]`; active = `.on` (`styles.css:915`).
+- **Geometry** the compound rule (ADR-033): the container is one control height with a part-inset pad and
+  the control radius (`.segmented, .figma-files, .radix-files`, `styles.css:902`); each segment is a part,
+  part height tall, part inset inline, inset radius, so its corner stays concentric with the container's
+  (`.segmented button, .figma-files button, .radix-files button`, `styles.css:909`). The small variant is
+  gone: every segment reads the control text size.
 - **a11y** ✓ every one of the 14 sites shares one keyboard model, set on each segment inside `segmented()`
   (`app.js:1605-1635`) regardless of role: roving `tabindex` and an ArrowLeft/ArrowRight `onkeydown`;
   `role=tablist` sites add `role=tab` + `aria-selected` + `aria-controls`, `role=group` sites add
@@ -196,7 +208,7 @@ incrementally.
 { "component":"segmented","layer":"component","role":"tablist|group","replaces_native":false,
   "parts":["track","segment"],"states":["on"],"keyboard":["ArrowLeft","ArrowRight"],
   "forced_colors":true,"owns_outer_margin":false,
-  "flags":["2 base stylings (.segmented, .figma-files) + 4 modifiers (.canvas-seg, .segmented.seg-sm, .newpal-seg, .settings-seg)","one segmented() helper backs every site (14 static call sites); drawer format is a native select now","no self-margin, the parent owns spacing: `segmented` (`styles.css:886-887`)"] }
+  "flags":["1 compound styling (.segmented, .figma-files, .radix-files) + 3 modifiers (.canvas-seg, .newpal-seg, .settings-seg)","one segmented() helper backs every site (14 static call sites); drawer format is a native select now","no self-margin, the parent owns spacing: `segmented` (`styles.css:886-887`)"] }
 ```
 
 ### 4 · Slider / range  ★ the model primitive
@@ -223,8 +235,8 @@ incrementally.
 
 - **Surface** S1. **Sites** 3: Distribution (`field()`, `sections/color.js:2037`), Curve (`sections/color.js:2061`),
   `.map-raw-select` raw token (`sections/color.js:1285`, with `.ov` override state).
-- **Anatomy** native `<select>` + `<option>[]`; `.map-raw-select` is a compact mono variant
-  (`styles.css:721-727`).
+- **Anatomy** native `<select>` + `<option>[]`; `.map-raw-select` is a compact mono variant on the
+  chip row of the cell (`styles.css:746-751`).
 - **a11y** ✓ native keyboard/picker; ✓ `aria-label` on `.map-raw-select` (`sections/color.js:1285-1287`);
   ✓ Distribution/Curve are built through `field()` (`sections/color.js:2038/2063`), which stamps an `id`
   on the `<select>`, associates the `<label for>` with it and adds a fallback `aria-label`
@@ -252,7 +264,7 @@ incrementally.
 { "component":"text-input","layer":"component","role":"textbox(native)","replaces_native":false,
   "parts":["input"],"states":["focus","ov(map only)"],"keyboard":["native"],
   "forced_colors":"native","owns_outer_margin":false,
-  "flags":["`input` (`styles.css:192`) shares its base style with select, across text/search variants"] }
+  "flags":["`input` (`styles.css:221`) shares its base style with select, across text/search variants"] }
 ```
 
 ### 7 · Search input
@@ -260,8 +272,8 @@ incrementally.
 - **Surface** S1 (gallery). **Sites** 1, `this._searchInput` (`ensureSearchInput()`, `app.js:890-892`), **created once and
   reused** across renders so typing never loses focus (the documented bug-fix at `app.js:889-890`).
 - **a11y** ✓ `aria-label` "Search palette sets" + placeholder. Native clear/keyboard.
-- **Style** shares the `input[type="text"], input[type="search"], select` base (`styles.css:192`); width pinned in the
-  `.gallery-title` selector (`styles.css:262`).
+- **Style** shares the `input[type="text"], input[type="search"], select` base (`styles.css:221`); width pinned in the
+  `.gallery-title` selector (`styles.css:294`).
 
 ```json
 { "component":"search-input","layer":"component","role":"searchbox(native)","replaces_native":false,
@@ -288,7 +300,7 @@ incrementally.
 ### 9 · Chip / pill
 
 Three unrelated "pill" stylings, a naming/coherence drift, not one primitive:
-- **`.tile-tag`** (`styles.css:291-302`), non-interactive status badge on gallery tiles: palette
+- **`.tile-tag`** (`styles.css:323-334`), non-interactive status badge on gallery tiles: palette
   count + "preset"/"ago" (`app.js:753/754/837/838`); `pointer-events:none`, absolute over the thumb.
 - **`.chip` interactive**, the damping presets: `chip(name, { mode: "interactive", on })` renders a
   `<button class="chip" aria-pressed>` inside the `.damp-presets` row (`chip()`, `sections/color.js:167`;
@@ -296,7 +308,7 @@ Three unrelated "pill" stylings, a naming/coherence drift, not one primitive:
   `.damp-presets` is now only the flex row (`styles.css:813`).
 - **`.chip` status**, the drift summary: `chip(text, { tone })` renders a `<span class="chip">`
   (`chip()`, `sections/color.js:1336`) with the
-  `.chip.in-sync` / `.chip.has-drift` tone classes (`styles.css:797-798`). The old `.map-drift-sum` selector is gone.
+  `.chip.in-sync` / `.chip.has-drift` tone classes (`styles.css:827-828`). The old `.map-drift-sum` selector is gone.
 
 ```json
 { "component":"chip","layer":"component","role":"status|button","replaces_native":false,
@@ -311,7 +323,7 @@ Three unrelated "pill" stylings, a naming/coherence drift, not one primitive:
 - **Anatomy** `.field` `[ label[ text · readout(<b>) ] · control ]`, label is `display:flex;
   justify-content:space-between` so the readout right-aligns, `styles.css:932-935`.
 - **Role** the one genuine layout primitive (token-only, no domain name). Owns no outer margin:
-  `.field { margin: 0; }` (`styles.css:947`), the parent provides spacing; the only scoped exception is
+  `.field { margin: 0; }` (`styles.css:963`), the parent provides spacing; the only scoped exception is
   `.newpal-custom .field { margin-bottom: 16px; }` (`styles.css:1199`).
 
 ```json
@@ -330,11 +342,11 @@ classes + flags.
 ### 11 · Swatch / color-cell  ★ most-duplicated primitive
 
 One concept, *a rectangle filled with a color, optionally over a transparency checkerboard*, in
-**six idioms**: `.ramp-strip i` (26×40 ramp cell + `.oog` out-of-gamut hatch + hover outline, `styles.css:619-626`),
-`.scrim-cell` + `.scrim-fill` (checkerboard, `styles.css:640-644`),
-`.map-swatch` + `.map-swatch-fill` (checkerboard token swatch, `styles.css:694-698`), `.swatch-dot`
+**six idioms**: `.ramp-strip i` (26×40 ramp cell + `.oog` out-of-gamut hatch + hover outline, `styles.css:644-651`),
+`.scrim-cell` + `.scrim-fill` (checkerboard, `styles.css:665-669`),
+`.map-swatch` + `.map-swatch-fill` (checkerboard token swatch, `styles.css:719-723`), `.swatch-dot`
 (now `swatch()`, `sections/color.js:1682`), `.roles-table .sw` (16px, now `swatch()` `.swatch`, `styles.css:704-705`), `.canvas-footer .sw` (12px,
-`styles.css:834-837`). The checkerboard background is defined **once**, one rule shared by
+`styles.css:864-867`). The checkerboard background is defined **once**, one rule shared by
 `.swatch.alpha, .scrim-cell, .map-swatch` (`styles.css:706-712`, sized by `--checker`). **Flag:** the
 cell *shapes* still differ per idiom; `swatch()` covers the dot and the roles-table cell only.
 
@@ -362,17 +374,17 @@ the source row's column `color-scheme` (`_schemeOfColumn`), not the chrome's.
 ### 14 · Contrast bar
 
 `.an-bar` `[ .an-bk label · .an-track[ .an-fill(.bad) · .an-thresh 4.5:1 line ] · b(pass/fail) ]`
-(`styles.css:466-478`). WCAG contrast viz with a fixed threshold line at 64.3%.
+(`styles.css:494-507`). WCAG contrast viz with a fixed threshold line at 64.3%.
 
 ### 15 · Hue wheel
 
 `.hw-circle` (axis) · `.hw-ring` (accent ring) · `.hw-dot` (per-stop dots), SVG polar plot
-(`styles.css:481-483`).
+(`styles.css:510-512`).
 
 ### 16 · Tone / lightness curve
 
 `.lc-axis` · `.lc-ceiling` (gamut fill) · `.lc-toneline` (dashed reference) · `.lc-applied` (accent
-curve) · `.lc-dot`, SVG L* curve (`styles.css:822-826`).
+curve) · `.lc-dot`, SVG L* curve (`styles.css:848-852`).
 
 ### 17 · Damping graph
 
