@@ -10,7 +10,6 @@
 ## T-0017: Geometry system adopts the Maison ui-kit ladder (tier x scale x size, --g-* and --r-* roles) (2026-10-07)
 
 - fix-now: `test/plugin/geometry-tokens.mjs` has a comment that still says ".control-* class it names must match"; reword it for the `--control-*` and `--chip-*` roles.
-- note: `docs/assets/geometry-tokens.json` is the frozen six-size (XS to 2XL) snapshot, still carrying retired fields such as `caret`. Nothing reads it, so regenerate it from the 27 cells or retire it.
 - note: `panda-smoke` runs only in CI. Check that CI leg on the PR, since no local run covers it.
 - note: main carries `b7b0360f` (#812, describe-eval only), which is not in the lane. Sync the branch with main before opening the PR.
 
@@ -47,9 +46,5 @@
 
 ## T-0021: Compute layers: rebase U1-U3 onto main, then U4 pins and U5 ramp@2 on schema v9 (#788) (2026-10-08)
 
-- fix-now: `docs/specs/lld-muted-base-key-spikes.md:50` still names `controlsOf` in `model.mjs`; re-point it to `resolveControls`.
-- fix-now: `.sdlc/plans/compute-layers.md` is stale after this lands (status approved, U4 unchecked, U5 open, ADR-028 numbering); update it at close.
 - fix-now: Restore the gated citation shape for the `layers.mjs` and `controls.mjs` paths in `.claude/skills/adding-export-formats/references/foundations.md` now that the files are tracked.
-- fix-now: Remove the leftover probe worktrees under `.worktrees/tmp/planner-L3-gh-788/` and `.worktrees/tmp/planner-L3-gh-788-2/`.
-- note: ADR-033 was numbered from the base. `plan/geometry-compound-insets` also writes `## ADR-033`, so whichever branch lands second must renumber its heading and Quick map row.
-- note: `docs/specs/` and the `.sdlc/plans/compute-layers-adr-draft.md` R102 text also asked for a `baseIntensity` rename. This plan treated the U5 ruling as closing that half, so `model.mjs` still reads `doc.baseIntensity` (`docControls` maps it to `baseChroma`).
+- note: `docs/specs/` and the `.sdlc/plans/archive/compute-layers-adr-draft.md` R102 text also asked for a `baseIntensity` rename. This plan treated the U5 ruling as closing that half, so `model.mjs` still reads `doc.baseIntensity` (`docControls` maps it to `baseChroma`).
