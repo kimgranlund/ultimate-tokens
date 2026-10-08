@@ -45,3 +45,14 @@ Docs
 
 ## Constraints
 Facts only: verify each against code before editing; if a defect is not real, say so in the report. Keep docs thin. `docs/archive/**`, finished run records and dated reports stay as written. `.claude/docs/other/` and `node_modules` never committed. Doc cites: `node scripts/audit-citations.mjs` and `node test/repo/citations.mjs` green. No U+2014. `npm test` before done.
+
+## Acceptance criteria
+- (red) `npm test` exits 0.
+- (red) `node scripts/audit-citations.mjs 2>&1 | grep -q 'STALE 0'` and `node test/repo/citations.mjs && node test/repo/em-dash.mjs`.
+- (red) `! grep -rn "seven voices" README.md .claude/skills plugin && ! grep -rn "_bodyMobileNudge" .claude plugin README.md`
+- (red) `test "$(grep -c part-inset mcp/README.md)" -ge 1 && grep -q partInset .claude/skills/maintaining-brand-kit-mcp/SKILL.md .claude/skills/maintaining-brand-kit-mcp/references/foundations.md .claude/skills/maintaining-brand-kit-mcp/references/best-practices.md`
+- (red) `grep -q compound-law .claude/skills/geometry-system/SKILL.md && grep -q partHeight .claude/skills/geometry-system/references/foundations.md`
+- (red) `! grep -n "GEOMETRY_TREATMENTS" docs/specs/marketing/fact-sheet.md README.md`
+- (red) `! grep -n "brand-kit/1" docs/specs/site/describe-palette-spec.md && ! grep -n "schema v8" docs/references/knowledge-02-tonal-scale.md`
+- (red) `test "$(grep -c '#818\|#817\|#813\|#810' CHANGELOG.md)" -ge 4 && grep -q '#809' docs/references/changelog.md`
+- (red) `! grep -n "b7b0360f\|geometry-tokens.json\|0.733 0.1374" .sdlc/notes.md`

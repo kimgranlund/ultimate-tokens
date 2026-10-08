@@ -30,6 +30,27 @@ they landed on `main` and reference the squash-merged PR that introduced them.
   10: a kit saved before this change loads pinned to version 1 of every layer, a new kit and an
   opened preset pin the latest. Every layer is at version 1 today, so no token value moves. The
   committed Adia artifacts are re-exported (oklch 2.2.0, radix 1.5.0) for the new stamp only.
+- **Container components compose by the half law, and shell controls read one set of cell roles**
+  (#818, T-0027, ADR-033). Each geometry cell gains `part-height` (`height - inset`) and `part-inset`
+  (`inset / 2`), so a cell now carries 16 fields and the resolver 15 roles, `--control-part-height`
+  and `--control-part-inset` being new. A control-sized container pads by `part-inset` and keeps
+  `--radius-control`; each repeated part is `part-height` tall and takes `--radius-inset`, so the two
+  corners stay concentric. CSS, DTCG, Figma (432 `size/` FLOATs and 144 `control/` ALIASes per
+  Geometry collection), the Brand-Kit MCP and the consumer skills carry the two fields. In the app,
+  segmented controls and the file pickers use the compound rule, icon-only buttons are borderless
+  squares at the control height, and button, segment, select and chip text sizes read the cell roles,
+  gated by `test/repo/control-text.mjs`. `icon()` honors an explicit size, the injected geometry roles
+  are scoped to their host, and the type breakpoint files use `:where(:root)` as the geometry ones do.
+
+#### Fixed
+- **Applying to an existing Figma file in classic mode keeps the legacy `size/*` variables and their
+  bindings** (#817, T-0026, from the #813 review). The first classic apply after the Maison ladder
+  pruned every `size/{step}/*` variable and the retired non-md `type/ui-control` and `type/ui-widget`
+  steps, which detached every bound layer and text style. It now renames each legacy
+  `size/{step}/{field}` onto its `size/{cell}/{field}` variable with the variable id kept; fields
+  with no cell target and the retired UI steps move under `_deprecated/`, ids also kept. Alias
+  variables are compared by their target, so a re-apply to an unchanged file reports 0 Geometry
+  changes. Published-library mode keeps its alias path.
 
 ### 2026-10-07
 
@@ -40,6 +61,27 @@ they landed on `main` and reference the squash-merged PR that introduced them.
   returns, the Global inspector shows. A set's Story now sits at the foot of the Global inspector
   instead of in a third tab. Undo and redo keep the current context. The `1` and `2` keys no
   longer switch panels. Typography and Geometry keep their own inspector tabs.
+- **Geometry adopts the Maison ui-kit ladder** (#813, T-0017, ADR-032). A kit is
+  `{ tier, scale, radius, spaceBase }` over 27 fixed cells keyed `{tier}-{scale}-{size}` (tier
+  content, product or micro; scale and size sm, md or lg), default `product/md/round/4`, with four
+  radius modes (default, round, sharp, pill). It replaces the XS to 2XL size ramp, the base height,
+  ramp contrast, the five treatments and per-cell height overrides. Each cell carried 14 fields (16
+  since #818) on the centering law `inset = (height - icon) / 2`, and control text per height is the
+  type engine's `UI_TEXT` table, so UI-control and UI-widget keep one step, MD. CSS carries the
+  `--size-{cell}-{field}` primitives plus a context resolver that turns `data-tier`, `data-scale`,
+  `data-size` and `data-radius` into the `--control-*`, `--chip-*` and `--radius-*` roles; DTCG,
+  Figma, the Brand-Kit MCP and the consumer skills carry the cells. The app shell sizes from the
+  same roles and Settings offers a shell-geometry override. Saved kits migrate at persist schema 9:
+  the legacy base height picks the nearest tier and scale, the treatment picks the radius mode, and
+  each dropped key is reported.
+- **The Hue space toggle applies to anchored palettes** (#810, T-0015, ADR-031). The hue space names
+  the space in which an anchor's own hue is held constant, `oklch` holding its OKLCH hue and `cam16`
+  its CAM16 hue, and the anchor pixel (ramp stop 500, prime rung 3, the key tile at Prime chroma
+  100) is verbatim in both. Under the default `oklch`, an anchored prime ladder's outer rungs move
+  (their OKLCH hue drift from the anchor falls from 0.41 to 7.97 degrees to 0.12 to 0.65) and the
+  exported `prime.*` tokens move with them; ramps and key tiles do not. Under `cam16` the anchored
+  perceptual and peak ramps move at most 0.017 OKLab dE. The control is live on every document, no
+  longer disabled when every palette is anchored, and there is no schema bump.
 - **Chroma controls are per-palette Base chroma times two global factors; the anchored prime middle
   follows Prime chroma** (#804, ADR-030). Each palette now has its own Base chroma slider (its ramp
   damper), and the per-group Base chroma and Prime chroma sliders and the per-palette Prime chroma

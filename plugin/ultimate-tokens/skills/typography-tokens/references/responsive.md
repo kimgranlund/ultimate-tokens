@@ -2,10 +2,12 @@
 
 ## Breakpoint modes (not `clamp()`, not `vw`)
 
-Every kit carries breakpoint modes, the `--type-*` variables are **re-declared inside
-`@media (min-width: …)` blocks**. The standard set (synthesized automatically when the designer
-configured none) is **Mobile ≤476 → Tablet (992) → Desktop (1280)**; a hand-configured kit may carry
-its own ladder, read the actual widths from the blocks. Because a `.type-{voice}-{step}` class reads
+Every kit carries breakpoint modes, the `--type-*` variables are **re-declared inside `@media`
+blocks**, one file per mode, each holding a `:where(:root)` rule. The standard set (synthesized
+automatically when the designer configured none) is **Desktop Lg 1728, Desktop Xl 2560, Tablet 992 and
+Mobile 476**. A narrow mode (Tablet, Mobile) is capped by a `max-width` and a wide mode (Lg, Xl) starts at a
+`min-width`; the unconditional `:root` of the base file is the designed Desktop scale. A hand-configured
+kit may carry its own ladder, read the actual widths from the blocks. Because a `.type-{voice}-{step}` class reads
 the *variables*, the same class restyles automatically at each breakpoint: you write `.type-body-md`
 once and it grows with the viewport.
 
@@ -19,8 +21,9 @@ heading that shrinks on mobile while body text doesn't, that asymmetry IS the sy
 - **Do not** author fluid `clamp()` type or `vw`-based font sizes, the modes are the responsive
   mechanism, and they land on the kit's exact quantized sizes at each breakpoint (no fractional px).
 - **Do not** hand-write `@media` font-size overrides, you'd fight the exported blocks.
-- The `:root` block (no media query) is the mobile scale; each `@media` block steps up. An export
-  with no `@media` blocks is from an old kit (pre-2026-07), regenerating it adds the standard set.
+- The base file's `:root` block (no media query) is the designed Desktop scale and carries no `@media`
+  block by design; each mode file steps down (Tablet, Mobile) or up (Desktop Lg, Xl), and a wide mode's
+  file must load after the base. Read the breakpoint widths from the mode files.
 
 ## Single-line vs multi-line height
 

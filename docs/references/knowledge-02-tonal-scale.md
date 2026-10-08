@@ -401,9 +401,9 @@ than 54. Anchored, the shipped default-kit Primary (`anchor #0C5DCC`, `skew -20`
 57.9296 #4D88F8 · 48.5072 #2E6FDE · [prime] · 30.4587 #00439B · 22.1378 #003276 · 14.6366 #002256`,
 span exactly 54. The SPEC's EX-4/EX-4b/EX-5 carry the full tables.
 
-### 8.4 Migration (schema v8)
+### 8.4 Migration (schema v10)
 
-`CURRENT_SCHEMA_VERSION` is 8 (`src/ui/persist.js`). v5 added `palette.anchor`/`sourceAnchor` (#681
+`CURRENT_SCHEMA_VERSION` is 10 (`src/ui/persist.js`). v5 added `palette.anchor`/`sourceAnchor` (#681
 U1) and v6 added `palette.preDetachHue`/`preDetachChroma`/`preDetachLift` (#681 U2), brand-new
 optional fields with no `RENAME_MAPS` entry. v7 rewrites a kit saved on the Material preset's old
 export prefix triple to `md-color` / `md-typescale` / `md` once, on a document stamped below v7
@@ -414,6 +414,13 @@ without a numeric `baseChroma` takes its group's stored base chroma (written onl
 default) to 50. Each drop and each reset of a value other than 100 is reported through
 `DROPPED_KEYS` (TKT-0455, loud not silent). A saved prime value below 100 is not kept: the 343
 Neutral strips at the retired Material 60 and Adia Primary at 99 move once, by user decision.
+v9 (T-0017, #803, ADR-032) runs `migrateGeometry` on a document stamped below v9: geometry becomes the
+Maison ladder `{ tier, scale, radius, spaceBase }`, the legacy md height picks the nearest tier and
+scale, and every retired key (`treatment`, `baseHeight`, `rampContrast`, `ramp`, geometry
+`tokenOverrides`, type overrides on retired UI steps) is reported through `DROPPED_KEYS`. v10 (#788,
+ADR-034) runs `stampLayers` on a document that has no `layers` map: every registered compute layer
+is pinned at version 1 before the clamp, and `pinsOf` (`src/engine/layer-pins.mjs`) then clamps each
+pin to `[1, latest]`.
 
 Hydrating below v4 deletes `palette.intensity` from every palette and reports it through
 `DROPPED_KEYS`. `palette.group` is never written by any migration: an old document derives its

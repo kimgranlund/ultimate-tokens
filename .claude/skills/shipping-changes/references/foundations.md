@@ -6,12 +6,12 @@ The load-bearing facts. If a ship feels wrong, one of these is being fought.
 
 `npm test` is the **zero-dependency** gate: it needs **no browser and no `node_modules`** for the
 engine/shim parts. Its first acts are the generators (`gen:figma-assets`, `gen:mcp-assets`,
-`gen:categories`), `bundle`, and `gen:figma-ui`, *then* `node test/run.mjs` (engine verifiers + a custom
+`gen:categories`, `gen:adia-exports`), `bundle`, and `gen:figma-ui`, *then* `node test/run.mjs` (engine verifiers + a custom
 headless-DOM **shim**, not jsdom, not a real browser). Because the generators run first, a green `npm test`
 also **leaves the committed artifacts in sync with source**, that is why you commit them after the gate
 and never hand-edit them.
 
-`npm run build` is the **build-chain** gate: `gen:figma-assets`+`gen:mcp-assets`+`gen:categories` → `tsc` →
+`npm run build` is the **build-chain** gate: `gen:figma-assets`+`gen:mcp-assets`+`gen:categories`+`gen:adia-exports` → `tsc` →
 `vite build` → `bundle` → `gen:figma-ui`. It **needs `node_modules`** (vite/tsc resolve from there). Run it
 only when you touched the build chain (TS sources, vite config, `scripts/` generators, bundled fonts), for
 a pure engine/UI-logic change, `npm test` is sufficient locally and CI runs the full build anyway.
@@ -25,7 +25,7 @@ dialog; it catches UI regressions the DOM shim can't. Screenshots land in `smoke
 upload as the `smoke-screenshots` artifact (`if: always()`).
 
 **`npm run smoke` force-rebuilds `dist/` before booting Chrome** (#564): the npm script is
-`npm run build && node test/smoke/smoke.mjs`, not a bare invocation of the test file. `dist/` is
+`npm run build && node test/smoke/launcher.mjs && node test/smoke/smoke.mjs`, not a bare invocation of the test file. `dist/` is
 gitignored, a fresh CI checkout never has one until the workflow's own `npm run build` step runs
 it, so this failure mode was always a **local/worktree** one: run `npm run build` once, keep editing
 source, then run `npm run smoke` alone later and it happily boots the now-stale `dist/ultimate-tokens.html`

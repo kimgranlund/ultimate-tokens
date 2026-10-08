@@ -39,7 +39,7 @@ the UI directly, same as the type/geometry emitters).
 ## The format model (depth in `references/foundations.md`)
 
 `derivePalette(entry)` (exports.js, over one palette's `compute(state)` entry from layers.mjs) builds everything an emitter needs ONCE per
-enabled palette, the slug, the solid stops, the scrims, and the resolved semantic roles (the exact return
+enabled palette, the slug, the solid stops, the scrims, the resolved semantic roles, the canvas group and the prime swatches (the exact return
 tuple + the resolved-role shape: `references/foundations.md` §1). **There is NO resolver in the returned
 object**, `resolveRef` is a local closure that runs at derivation time, so the roles arrive pre-resolved:
 emitters read `r.light`/`r.dark` for a color and use `refKey(r.lightRef)` only for the raw var-NAME fragment,

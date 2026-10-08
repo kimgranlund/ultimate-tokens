@@ -59,13 +59,15 @@ collections.
   **Config**, and a **Download-all `.zip`**. An **Include** toggle row picks which token systems, **Color · Typography ·
   Geometry**, ride the Download-All `.zip` and the Brand-Kit MCP.
 - **Typography.** The type analog of the color engine, a few params → a **systematic type scale** of
-  seven voices (Display · Heading · Sub-heading · Kicker · Body · UI · Code), with derived size (modular scale), optical
+  fifteen voices (Display · Headline · Sub-heading · Title · Sub-title · Lead · Body · Body-mono · Label ·
+  Label-mono · Kicker · Tiny · Tiny-mono · UI-control · UI-widget), with derived size (modular scale), optical
   letter-spacing, leading, and weight. Pick a **treatment** (Product, Luxury, Editorial, Technical,
   Brutalist), preview a live specimen, export **CSS + DTCG** type tokens.
-- **Geometry.** The spatial analog, a few params → a **systematic size ramp** (XS–2XL) → derived control
-  geometry on one **centering law** (edge padding = (height − glyph) / 2; the pill radius, the icon-only
-  square, and the slot paddings all fall out of it). Pick a **treatment** (Comfortable, Compact, Spacious,
-  Touch, Pill), preview a live size ramp, export **CSS + DTCG** `dimension` tokens.
+- **Geometry.** The spatial analog, a few axes → the **Maison ladder**: 27 control cells (tier Content ·
+  Product · Micro × scale sm · md · lg × size sm · md · lg), each with 16 derived fields on one
+  **centering law** (inset = (height − icon) / 2; the icon-only square, the chip sizes, the compound
+  container insets, and the radii all fall out of it). Pick a **radius mode** (Default, Round, Sharp,
+  Pill), preview the live ladder, export **CSS + DTCG** `dimension` tokens.
 - **Brand-Kit MCP.** Download a **zero-dependency MCP server** pre-filled with your tokens, point
   **Claude Code / Cursor / any MCP agent** at it (`node brand-kit-server.mjs`) and it serves the
   **systems you opted in** (palettes, ramps + the 53-role semantic layer in light + dark; the typography
@@ -119,7 +121,7 @@ figma/
   binder/   bind-plan.mjs · figma-semantic-binder/, the standalone Semantic Binder plugin
 scripts/    bundle.mjs · gen-categories.mjs · gen-figma-ui.mjs · gen-figma-assets.mjs · gen-preview.mjs ·
             gen-font-test.mjs
-docs/reference/  the product specification, the canonical data/role-table.json (the answer key),
+docs/reference/  runtime-read data only: the canonical data/role-table.json (the answer key),
             and colors/categories/*.json (the color-category source data gen-categories reads)
 test/       engine/ · ui/ · figma/ · run.mjs
 ```
@@ -161,10 +163,10 @@ breakpoint). Breakpoint modes sit beside it, Tablet and Mobile by default, and a
 every breakpoint side by side and hides the Specimen/Tokens switch. The inspector has Scale, Fonts and
 Specimen tabs; the left pane holds the type analysis cards.
 
-**Geometry.** The canvas is Controls (a mock control at each size step) or a Tokens matrix, with the
-same breakpoint modes and All button. The inspector has Ramp, Radius and Space tabs, and each step's
-text size composes from the Type scale (the ladder prototype ramp is the one exception). The left pane
-holds the geometry analysis cards.
+**Geometry.** The canvas is Controls (a live mock control for each of the 27 ladder cells) or a Tokens
+matrix (every cell by its 16 fields), with the same breakpoint modes and All button. The inspector has
+Ladder, Radius and Space tabs, and every cell's text size composes from the Type scale's UI text table.
+The left pane holds the geometry analysis cards.
 
 **Export drawer.** Five groups: Colors (ten formats), Typography (CSS, DTCG), Geometry (CSS, CSS sizes
 only, DTCG), Design System (`tokens.json`, `DESIGN.md`) and Project (Config).

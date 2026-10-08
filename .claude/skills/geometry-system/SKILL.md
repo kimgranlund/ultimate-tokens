@@ -130,7 +130,9 @@ seeds in `src/engine/exports.js` stable. Depth: `references/foundations.md` §5-
 3. **Keep the roles unprefixed and Maison-named.** A new role follows the name map in ADR-032; never
    route a role or `--ctx-*` through `ns()`.
 4. **Emitters in lockstep.** A new per-cell field goes into `CELL_FIELDS` (every emitter reads it), the
-   resolver's `RESOLVER_FIELDS` if it is a role, the fixture-backed test, the consumer skill
+   resolver's `RESOLVER_FIELDS` if it is a summed role (`partHeight` and `partInset` are in
+   `CELL_FIELDS` only; their two roles are derived `calc()` lines at the end of `geomResolverCSS`'s
+   `:where(*, :host)` block, 15 roles in all), the fixture-backed test, the consumer skill
    `plugin/ultimate-tokens/skills/geometry-tokens/` and its `scripts/dimension-parity.mjs`, and the
    Figma field map if a live file needs a rename.
 5. **Saved kits migrate.** A doc-shape change bumps the persist schema and adds a `RENAME_MAPS` entry;
@@ -140,7 +142,7 @@ seeds in `src/engine/exports.js` stable. Depth: `references/foundations.md` §5-
 ## Validate (the gate: draft → check → fix → re-check)
 
 ```
-node test/engine/geometry.mjs   # groups: maison-ladder · anatomy · radius-modes · anchors ·
+node test/engine/geometry.mjs   # groups: maison-ladder · anatomy · radius-modes · anchors · compound-law ·
                                 # emitters (incl. the prefix contract) · container-identity
 node test/figma/mode-apply.mjs  # the Geometry interchange (ALIAS variables) validates
 npm test                        # the above + ui/figma/exports/mcp (node test/run.mjs)
@@ -148,8 +150,8 @@ npm test                        # the above + ui/figma/exports/mcp (node test/ru
 
 On pass the verifier prints one summary line (`geometry PASS, the Maison ladder (27 cells vs the vendored
 fixture), ...`) and exits 0. The real-browser leg (`npm run smoke`, CI only) renders the 108 nested
-resolver cases (27 cells × 4 radius modes) and reads `--control-height` and `--radius-control` back with
-`getComputedStyle`. **Don't call it done until `node test/engine/geometry.mjs` AND `npm test` are green.**
+resolver cases (27 cells × 4 radius modes) and reads `--control-height`, `--radius-control`, `--control-part-height` and
+`--control-part-inset` back with `getComputedStyle`. **Don't call it done until `node test/engine/geometry.mjs` AND `npm test` are green.**
 
 ## References
 
