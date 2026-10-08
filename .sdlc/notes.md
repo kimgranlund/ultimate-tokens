@@ -30,3 +30,17 @@
 - decide: when both the kebab name and its pre-wave spelling (`size/MD/height`) exist in one file, both map to the same target. The rename loop renames the first and skips the second, because the target already exists, so the second is pruned. Decide whether that is acceptable or needs a guard or a disclosure.
 - note: no run exercised a live Figma file; checks used mock and VM plans only. Run the `figma-file-migration` skill against a real previously applied file to confirm the bindings survive.
 - note: the retired `type/ui-control|ui-widget/{xs,sm,lg,xl,2xl}/*` variables deprecate with ids kept rather than map to `md`. Layers bound to them keep a deprecated variable, not an md one.
+
+## T-0027: Compound insets and radius composition for container components (segmented, listbox), square ghost icon buttons, unstyled palette name input (2026-10-08)
+
+- decide: the canvas header clips its trailing tools (recenter, zoom, "+ Palette") at content-lg, seen in `smoke-out/compound-content-lg.png`. It needs a choice between wrapping, scrolling and collapsing, and no gate checks horizontal fit.
+- decide: the palette Name field (`input[data-fk="pname"]`) is item 1 of the ticket. No artifact shows a dedicated style change for it, and the only evidence is that the `control text at` smoke covers it in Chrome. Confirm it looks right in Safari, or say what is still missing.
+- fix-now: at viewport widths up to 1240px, `.app-header button, .canvas-header button { padding: 4px 7px; }` in `src/ui/styles.css` (~:1579) ties `button.icon-only` on specificity and comes later. Header icon buttons get padding back, and `.canvas-seg button` can grow past the part height. Smoke runs at 1440x900, so it misses this.
+- fix-now: `typeTokensBreakpointCSS` in `src/engine/type.mjs` still writes `:root {` while `geomTokensBreakpointCSS` now writes `:where(:root) {`.
+- fix-now: the stale `ramp` comment at `figma/binder/mode-apply-plan.mjs:250` was left for T-0026.
+- note: Safari is unproven for the compound insets, the control text sizes and the square icon buttons. Smoke runs in Chrome only, and the user previews in Safari.
+- note: the three micro cells (micro-sm-sm, micro-sm-md, micro-md-sm) have a chip taller than the part. The step 1 test names them literally as exceptions to the compound law.
+- note: `.account-license-input`, `.tok-input`, `.settings-nav-item` and `.linklike` sit outside the selector list in `test/repo/control-text.mjs`, by design.
+- note: step 5 moved 93 `src/ui/app.js` doc cites by number, so a concurrent lane that edits `src/ui/app.js` will conflict on them at merge.
+- note: two PR #813 pixel-review items stay open in `.sdlc/notes.md`, the faint light-theme headings and the micro-sm switch, because no record says what was seen.
+- note: `panda-smoke` runs only in CI, so it has not been seen green for this branch.
