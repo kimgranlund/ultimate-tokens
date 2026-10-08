@@ -516,6 +516,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 .center {
   grid-area: center;
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* the one track IS the column: an implicit auto track grew to the header's content and ran under the right pane */
   grid-template-rows: var(--ch) 1fr var(--fh);
   min-width: 0; min-height: 0;
   background: var(--bg);
@@ -539,6 +540,30 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 .canvas-header .spacer { flex: 1; }
 .canvas-header .add-pal-btn { border: 1px dashed var(--line); }
 .canvas-header .add-pal-btn:hover { border-color: var(--accent); color: var(--accent); }
+/* Trailing tools (app.js canvasTools): the Fit/zoom/+ Palette group sits inline while it fits the center
+   column, and behind one overflow trigger (.tools-more, a popover menu) once it does not. app.js
+   _fitCanvasHeader measures and flips .tools-collapsed; .tools-probe lays the inline group out for that
+   measurement alone (the class is added and removed in one task, so it never paints). */
+.canvas-tools { display: flex; align-items: center; gap: inherit; }
+.canvas-header .tools-more { display: none; }
+.canvas-header.tools-collapsed .tools-more { display: inline-flex; }
+.canvas-header.tools-collapsed:not(.tools-probe) .canvas-tools { display: none; }
+/* collapsed and still too wide (a tall control height with large text, e.g. content-lg): the view/mode
+   segments take one control inset of padding per side instead of two, as the narrow-window rule below does */
+.canvas-header.tools-compact .canvas-seg button { padding-inline: var(--sh-control-inset); }
+/* the menu is a top-layer popover (the header cannot clip it); app.js pins its top/right under the trigger on open */
+.tools-menu { position: fixed; inset: auto; margin: 0; }
+.tools-menu:popover-open {
+  display: flex; flex-direction: column; align-items: stretch; gap: var(--sh-part-inset);
+  inline-size: max-content;
+  padding: var(--sh-part-inset);
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: calc(var(--sh-control-radius) + var(--sh-part-inset)); /* concentric with the controls it holds */
+  box-shadow: var(--shadow-lg);
+}
+.tools-menu button:not(.icon-only) { justify-content: flex-start; }
+.tools-zoom { display: flex; align-items: center; justify-content: space-between; gap: var(--sh-part-inset); }
 /* Typography breakpoint Mode control (canvas header), the Base/modes segment + a "+" to add one */
 .mode-control { display: inline-flex; align-items: center; gap: 4px; }
 .mode-control .mode-add { flex: none; }

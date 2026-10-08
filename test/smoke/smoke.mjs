@@ -357,6 +357,71 @@ try {
   }
   await evalJS(`(()=>{${el}.shellGeometry=null;${el}.setSection("color");${el}._deselect();${el}.render();})()`); await sleep(200);
 
+  // Canvas header fit (T-0031): at the two shell geometries, in every section, no header control is clipped
+  // or hidden past the center column's edge: the header is the column's width, nothing in it reaches the
+  // right pane, and when the trailing tools do not fit they sit behind the overflow trigger instead. Real
+  // layout only: the headless shim has none. Expected states at the 1440px window: product-md leaves every
+  // tool inline; content-lg (64px controls, 22px text) cannot, so the tools collapse into the menu and the
+  // segments compact.
+  const headerFitExpr = `(()=>{const hd=${el}.querySelector(".canvas-header");const hr=hd.getBoundingClientRect();
+    const col=${el}.querySelector(".center").getBoundingClientRect();const rp=${el}.querySelector(".right-pane").getBoundingClientRect();
+    const vis=(e)=>!!e&&e.getBoundingClientRect().width>0&&e.getBoundingClientRect().height>0;
+    const out=[...hd.querySelectorAll("*")].filter((e)=>vis(e)&&!e.closest(".tools-menu")&&(e.getBoundingClientRect().right>hr.right+0.5||e.getBoundingClientRect().left<hr.left-0.5)).map((e)=>(e.getAttribute("data-fk")||e.getAttribute("aria-label")||e.className||e.tagName)+" "+Math.round(e.getBoundingClientRect().left)+"-"+Math.round(e.getBoundingClientRect().right));
+    return {cls:hd.className,sw:hd.scrollWidth,cw:hd.clientWidth,hdRight:Math.round(hr.right),colRight:Math.round(col.right),paneLeft:Math.round(rp.left),
+      inColumn:hr.right<=col.right+0.5&&hr.right<=rp.left+0.5,out,tools:vis(hd.querySelector(".canvas-tools")),trigger:vis(hd.querySelector(".tools-more")),
+      toolBtns:[...hd.querySelectorAll(".canvas-tools button")].filter(vis).length}})()`;
+  const headerFit = () => evalJS(headerFitExpr);
+  for (const [tier, scale] of [["product", "md"], ["content", "lg"]]) {
+    const want = tier === "content" ? "collapsed" : "inline";
+    const bad = [];
+    for (const section of ["color", "typography", "geometry"]) {
+      await evalJS(`(()=>{${el}.shellGeometry={tier:"${tier}",scale:"${scale}",radius:"round"};${el}.setSection("${section}");${el}._deselect();${el}.render();})()`); await sleep(300);
+      const f = await headerFit();
+      const state = f.trigger && !f.tools ? "collapsed" : (!f.trigger && f.tools ? "inline" : "both/neither");
+      if (f.sw > f.cw) bad.push(`${section}: header content ${f.sw} wider than its ${f.cw}`);
+      if (!f.inColumn) bad.push(`${section}: header right edge ${f.hdRight} past the column (${f.colRight}) or the right pane (${f.paneLeft})`);
+      if (f.out.length) bad.push(`${section}: outside the header: ${f.out.join(", ")}`);
+      if (state !== want) bad.push(`${section}: tools are ${state} (want ${want}; classes "${f.cls}")`);
+      if (want === "inline" && f.toolBtns < (section === "color" ? 4 : 3)) bad.push(`${section}: only ${f.toolBtns} inline tool buttons visible`);
+    }
+    bad.slice(0, 10).forEach((m) => console.log("    " + m));
+    ok(bad.length === 0, `canvas header at ${tier}-${scale}: Color, Typography and Geometry headers fit the center column with the tools ${want}${bad.length ? ` (${bad.length} off)` : ""}`);
+  }
+  // negative control: force the old layout (every tool inline) at content-lg and the same measures must fail,
+  // so the check above can tell the clipping this ticket fixed from a header that fits. Measured in the same
+  // task as the forcing: the header's ResizeObserver would otherwise re-collapse it a frame later.
+  const forced = await evalJS(`(()=>{${el}.shellGeometry={tier:"content",scale:"lg",radius:"round"};${el}.setSection("color");${el}._deselect();${el}.render();${el}.querySelector(".canvas-header").classList.remove("tools-collapsed","tools-compact");return ${headerFitExpr};})()`);
+  ok(forced.tools && (forced.sw > forced.cw || !forced.inColumn || forced.out.length > 0), `negative control: with the tools forced inline at content-lg the fit measures fail (content ${forced.sw} vs ${forced.cw}, ${forced.out.length} outside)`);
+
+  // the overflow menu at content-lg: a top-layer popover under the trigger holding Fit, zoom and + Palette,
+  // wholly inside the window; zoom keeps it open and moves the readout; Escape closes it and gives focus back
+  await evalJS(`(()=>{${el}.shellGeometry={tier:"content",scale:"lg",radius:"round"};${el}.setSection("color");${el}._deselect();${el}.render();${el}.fit();})()`); await sleep(300);
+  const menuJS = `(()=>{const t=${el}.querySelector(".tools-more"),m=${el}.querySelector(".tools-menu");const r=m.getBoundingClientRect();
+    const vis=(e)=>e.getBoundingClientRect().width>0&&e.getBoundingClientRect().height>0;
+    return {open:m.matches(":popover-open"),expanded:t.getAttribute("aria-expanded"),inView:r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight&&r.width>0,
+      items:[...m.querySelectorAll("button")].filter(vis).map((b)=>b.getAttribute("data-fk")),readout:[...m.querySelectorAll(".zoom-readout")].filter(vis).map((e)=>e.textContent).join(),
+      focus:document.activeElement&&document.activeElement.getAttribute&&document.activeElement.getAttribute("data-fk")}})()`;
+  await evalJS(`(()=>{const t=${el}.querySelector(".tools-more");t.focus();t.click();})()`); await sleep(200); // focus first: a mouse click focuses the button in Chrome, a bare .click() does not
+  const m1 = await evalJS(menuJS);
+  ok(m1.open && m1.expanded === "true" && m1.inView && ["menu-fit", "menu-zoom-out", "menu-zoom-in", "menu-add-palette"].every((k) => m1.items.includes(k)), `overflow menu at content-lg: the trigger opens a popover inside the window with Fit, Zoom out, Zoom in and + Palette (got open=${m1.open} expanded=${m1.expanded} inView=${m1.inView} items=${m1.items})`);
+  await evalJS(`${el}.querySelector('[data-fk="menu-zoom-in"]').click()`); await sleep(100);
+  const m2 = await evalJS(menuJS);
+  ok(m2.open && m2.readout === "115%" && m1.readout === "100%", `overflow menu: Zoom in keeps the menu open and moves its readout 100% to 115% (got ${m1.readout} then ${m2.readout}, open=${m2.open})`);
+  await evalJS(`${el}.querySelector('[data-fk="menu-zoom-out"]').focus()`); // focus inside the menu, as Tab would leave it
+  await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
+  await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 }); await sleep(200);
+  const m3 = await evalJS(menuJS);
+  ok(!m3.open && m3.expanded === "false" && m3.focus === "tools-menu", `overflow menu: Escape closes it and returns focus to the trigger (open=${m3.open} expanded=${m3.expanded} focus=${m3.focus})`);
+  await evalJS(`(()=>{const t=${el}.querySelector(".tools-more");t.focus();t.click();})()`); await sleep(150);
+  await evalJS(`${el}.querySelector('[data-fk="menu-fit"]').click()`); await sleep(300);
+  const m4 = await evalJS(menuJS);
+  ok(!m4.open && m4.focus === "tools-menu" && (await evalJS(`${el}.viewport.zoom`)) === 1, `overflow menu: Fit resets the zoom, closes the menu and returns focus to the trigger (open=${m4.open} focus=${m4.focus})`);
+  await evalJS(`${el}.querySelector(".tools-more").click()`); await sleep(200);
+  const menuShot = await send("Page.captureScreenshot", { format: "png" });
+  writeFileSync(resolve(OUT, "header-tools-menu.png"), Buffer.from(menuShot.data, "base64"));
+  console.log("  · screenshot → smoke-out/header-tools-menu.png");
+  await evalJS(`(()=>{${el}.shellGeometry=null;${el}.setSection("color");${el}._deselect();${el}.render();})()`); await sleep(200);
+
   // New-Palette modal: a CENTERED top-layer <dialog> with the "Derive from" strip + the 3 tabs.
   await evalJS(`${el}.openNewPalette()`); await sleep(400);
   ok(await evalJS(`(()=>{const d=${el}.querySelector("dialog.newpal");if(!d||!d.open)return false;const r=d.getBoundingClientRect();return Math.abs((r.left+r.right)/2 - innerWidth/2) < 2 && Math.abs((r.top+r.bottom)/2 - innerHeight/2) < 2})()`), "New-Palette modal opens centered in the top layer");
