@@ -514,10 +514,21 @@ not bundled with the free downloadable kit. Concretely:
   Bel Air Hotel Pool Party"* and *"Siberian Tigers on Parade"* (#370 acceptance).
 - The **golden-description eval set, BUILT (#375)**: `mcp/describe-eval.mjs` derives `GOLDEN_EVALS`
   directly from `describe-rubric.mjs`'s own `EXEMPLARS` (their `theme` + resolved `families` seeds),
-  descriptions → acceptable per-family hue/chroma bands (±30° hue, ±20 chroma), so rubric, exemplars,
-  and evals structurally cannot drift apart; there is only one dataset. `mcp/describe-eval-runner.mjs`
+  descriptions → per-family golden `{hue, chroma}` seeds, so rubric, exemplars, and evals structurally
+  cannot drift apart; there is only one dataset. `mcp/describe-eval-runner.mjs`
   is the live-model half: calls a real provider with the SAME briefing payload a real caller receives,
   forced tool-use against the PaletteBrief schema, scored by the same pure `scoreBrief`/`scoreRun`.
+- **Scoring is by perceptual distance (#811),** not by per-axis bands. The first scorer passed a family only
+  inside ±30° hue AND ±20 chroma of the golden seed and passed 0 of 15 for every model. Now both the brief's
+  and the golden seed's `{hue, chroma}` are drawn as a color at one fixed OKLCH lightness
+  (`SEED_LIGHTNESS` 0.65, chroma scaled by `CHROMA_TO_OKLCH` 0.0027 per unit, through the engine's
+  `oklchToRgb`) and a family passes when the OKLab distance between the two colors is at most
+  `DISTANCE_THRESHOLD` (0.07). A case passes when every family passes. A miss reports reason `distance`;
+  `missing`, `hue-missing` and `chroma-missing` still mark absent data. The threshold is derived in the
+  constant's own comment: it sits above the retired chroma edge (0.056) and below the nearest chromatic 180°
+  hue flip (0.081). The same hue miss now counts for what it looks like: a 30° miss clears 46 of the 59 golden
+  families (a pastel, a near-grey) and fails a vivid one. The 2026-10-07 Haiku 4.5 and 5.5 runs are not
+  re-scored: their raw briefs were not kept.
 
 ---
 
@@ -532,7 +543,7 @@ not bundled with the free downloadable kit. Concretely:
 | PNG + lint | decodable PNG matches families; text digest stands alone | yes |
 | `export_tokens` | each of the 8 formats returned for a generated kit | yes |
 | Surface + output parity (G2/G3) | shared-core + Worker parity test | yes (at #377) |
-| Interpretation quality | eval runner vs per-family bands, against the hosted interpreter model | **no**, scheduled/manual CI (LLM cost/flake) |
+| Interpretation quality | eval runner vs per-family perceptual distance (OKLab, #811), against the hosted interpreter model | **no**, scheduled/manual CI (LLM cost/flake) |
 
 ---
 
@@ -580,6 +591,10 @@ not bundled with the free downloadable kit. Concretely:
    workflow now fails loudly (`exit 1`) when the key is absent instead of the clean no-op skip, so the
    weekly badge stops lying about coverage it never ran. The key itself stays the user's own action
    (`gh secret set ANTHROPIC_API_KEY`); until it is added, the scheduled run is expected red.
+   **Amendment (2026-10-07, #811).** The first local runs (Haiku 4.5, Haiku 5.5) passed 0 of 15 against the
+   per-axis hue/chroma bands, so the scorer now judges perceptual distance (§10). No baseline pass count exists
+   yet under the new scorer: those two runs' raw briefs were not kept, and rerunning them
+   (`ANTHROPIC_API_KEY=... node mcp/describe-eval-runner.mjs --model=<id>`) is the user's own paid action.
 7. ~~**The Secondary-from-Primary harmony recipe**~~, **RESOLVED (#369's build):** Secondary
    (absent) is the **complement** of Primary (`SECONDARY_HARMONY_OFFSET = 180°`, the classic
    two-color brand pairing); Tertiary (absent) is the **analogous** of Secondary
