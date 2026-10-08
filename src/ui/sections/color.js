@@ -243,20 +243,13 @@ export class ColorSectionImpl {
   }
 
 
-  // selectPalette, pick the palette that drives the right pane + selected graphs; only a row click ({ tab: true }) jumps to the Palette tab (#786).
-  selectPalette(id, { tab = false } = {}) {
+  // selectPalette, pick the palette that drives the right pane + selected graphs. Selecting a palette is what shows the
+  // palette inspector (renderRightPane reads sel.kind); _deselect (Esc, empty canvas) returns to the Global inspector (#809).
+  selectPalette(id) {
     const max = this.doc.palettes.length - 1;
-    if (tab || this.sel?.kind !== "palette") this.segment = "palette"; // row click, or first selection from none (was Global)
     this.sel = { kind: "palette", id: Math.max(0, Math.min(id, max)) };
     this.doc.selected = this.sel.id; // `selected` is a real serialized field (persist.js), persist it
     this.save(); // TKT-0455: without this, isDirty() falsely reports "unsaved" after a plain reselect
-    this.render();
-  }
-
-
-  // setSegment, switch the right-pane segmented control (kept in ui-session state).
-  setSegment(seg) {
-    this.segment = seg;
     this.render();
   }
 
@@ -928,7 +921,7 @@ export class ColorSectionImpl {
                 this._reordering = false; // consume the post-reorder click guard
                 return;
               }
-              this.selectPalette(i, { tab: true });
+              this.selectPalette(i);
             },
           },
           h(
@@ -979,7 +972,7 @@ export class ColorSectionImpl {
           "data-pi": i,
           onclick: () => {
             if (this._reordering) { this._reordering = false; return; }
-            this.selectPalette(i, { tab: true });
+            this.selectPalette(i);
           },
         },
         h(
@@ -1138,7 +1131,7 @@ export class ColorSectionImpl {
                 this._reordering = false;
                 return;
               }
-              this.selectPalette(i, { tab: true });
+              this.selectPalette(i);
             },
           },
           h(
@@ -1564,7 +1557,7 @@ export class ColorSectionImpl {
   }
 
 
-  // renderStoryInspector, the holistic "Story" tab: the set's concept narrative + the curated
+  // renderStoryInspector, the holistic Story card (shown in the Global inspector): the set's concept narrative + the curated
   // colors (name · role · description) + the 60/30/10 groups + what the palette refuses. Mirrors the
   // source's cover layout. Present only for sets that carry a story (the curated travel volumes).
   renderStoryInspector(view) {
@@ -1997,7 +1990,10 @@ export class ColorSectionImpl {
   }
 
 
-  renderGlobalInspector() {
+  // renderGlobalInspector, the no-selection context of the right pane: the controls shared by every palette. A set that
+  // carries a story (the curated volumes) also lists it below the controls, so it is one scroll away in the default context
+  // (it was a third Story tab beside the Palette | Global switch before #809).
+  renderGlobalInspector(view) {
     const d = this.doc;
     const alreadyHasData = hasDataPalettes(this.doc);
     return h(
@@ -2144,6 +2140,8 @@ export class ColorSectionImpl {
           onclick: () => this.rederiveDataHuesAction(),
         }),
       ),
+      view && view.story ? h("div", { class: "sub-head" }, "Story") : false,
+      view && view.story ? this.renderStoryInspector(view) : false,
     );
   }
 }
