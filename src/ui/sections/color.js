@@ -2140,8 +2140,8 @@ export class ColorSectionImpl {
           onclick: () => this.rederiveDataHuesAction(),
         }),
       ),
-      view && view.story ? h("div", { class: "sub-head" }, "Story") : false,
-      view && view.story ? this.renderStoryInspector(view) : false,
+      view.story ? h("div", { class: "sub-head" }, "Story") : false,
+      view.story ? this.renderStoryInspector(view) : false,
     );
   }
 }
