@@ -1,0 +1,51 @@
+{
+  "domain": "technical-architecture",
+  "plan": true,
+  "nodes": [
+    { "id": "n1", "label": "OKHSL stop records carry `basis` (src/engine/tonal.js:1477, 1485 `anchor.okhsl.s`; 1586 `keyS`)", "leaf": true, "justify": null,
+      "accept": "`node -e` renders one perceptual ramp via paletteStops (gate path and anchored) and every record has a finite `basis`; `dampStops` passes it through unscaled (chroma 50 ramp: basis equals the chroma 100 ramp's)" },
+    { "id": "n2", "label": "Gate A rule 2' in test/engine/chroma-envelope-gate.mjs:103-113 (+ header 11-13): model/(damper??1) == clamp01(basis*env) at every uncapped stop, basis constant over the ramp, anchored stop 500 is `model == basis` or `model == min(1, basis)`", "leaf": true, "justify": null,
+      "accept": "`node test/engine/chroma-envelope-gate.mjs` exits 0 and prints `curve perceptual: 0/146000` and `curve peak: 0/146000`, with a printed rule-2' coverage of 280337 OKHSL stops (135064 anchored + 145273 gate path at HEAD; only capped stops and the anchored stop 500 sit outside the formula)" },
+    { "id": "n3", "label": "negative control: a planted basis or hold regression in an `--engine-dir` copy reds rule 2' only", "leaf": true, "justify": null,
+      "accept": "a scratch tree with `basis: keyS * 1.01` at tonal.js:1586 reds `curve perceptual` and `curve peak` with rule 1 at 0 off and residue at 0 outside TOL; a second plant `const intendedS = anchor.okhsl.s * (1 + 0.05 * Math.abs(sp))` with `basis: intendedS` reds the constant-basis clause" },
+    { "id": "n4", "label": "byte-neutrality proof: identity control with --authored", "leaf": true, "justify": null,
+      "accept": "`node scripts/report-preset-fidelity.mjs --identity-control --authored --base $(git merge-base origin/main HEAD)` last line `0 differing cells`" },
+    { "id": "n5", "label": "ADR-029 amendment (docs/references/decision-records.md, bullet before line 962 Status) restating Decision (3)'s OKHSL rule as the clamped basis form; gate header matches", "leaf": true, "justify": null,
+      "accept": "`grep -c 'clamp01\\|min(1, basis' docs/references/decision-records.md test/engine/chroma-envelope-gate.mjs` is nonzero in both; `node test/repo/em-dash.mjs` and `node scripts/audit-citations.mjs` exit 0" },
+    { "id": "n6", "label": "regenerated bundles (figma/plugin/ui.html, src/ui/describe-mcp-assets.js) via npm test", "leaf": true, "justify": null,
+      "accept": "`npm test` exits 0 and `git status --porcelain` is empty afterwards" },
+    { "id": "n7", "label": "landing order: before T-0021 step A (U5 freezes tonal.js as ramp@1)", "leaf": true, "justify": null,
+      "accept": "the ticket's PR merges before `src/engine/layers/ramp@1.mjs` exists on main, or T-0021's planner notes the rebase of 1477/1485/1586" }
+  ],
+  "actions": [
+    { "id": "a1", "label": "record the OKHSL saturation basis on every perceptual and peak stop record, unanchored and anchored" },
+    { "id": "a2", "label": "assert each uncapped OKHSL stop's model, over its group damper, equals the clamped basis times env" },
+    { "id": "a3", "label": "assert the basis is constant across a ramp (R69 no-climb), which the ratio rule checked implicitly" },
+    { "id": "a4", "label": "handle the anchored verbatim stop 500 whose model is the raw anchor s" },
+    { "id": "a5", "label": "prove a planted basis or hold regression reds the new rule and nothing else" },
+    { "id": "a6", "label": "prove the record field moves no emitted byte" },
+    { "id": "a7", "label": "restate rule 2 where it is written down (ADR-029 and the gate header)" },
+    { "id": "a8", "label": "keep rule 1, Gate B and the direction leg unchanged at their current totals" },
+    { "id": "a9", "label": "regenerate the committed bundles that embed tonal.js source" },
+    { "id": "a10", "label": "land before T-0021 U5 freezes the ramp so the frozen copy carries the field" }
+  ],
+  "hosts": [
+    { "action": "a1", "node": "n1" },
+    { "action": "a2", "node": "n2" },
+    { "action": "a3", "node": "n2" },
+    { "action": "a4", "node": "n2" },
+    { "action": "a5", "node": "n3" },
+    { "action": "a6", "node": "n4" },
+    { "action": "a7", "node": "n5" },
+    { "action": "a8", "node": "n2" },
+    { "action": "a9", "node": "n6" },
+    { "action": "a10", "node": "n7" }
+  ],
+  "edges": [
+    { "from": "n1", "to": "n2", "why": "the rule reads record.basis" },
+    { "from": "n2", "to": "n3", "why": "the control plants against the finished rule" },
+    { "from": "n1", "to": "n4", "why": "the identity run proves the record edit" },
+    { "from": "n2", "to": "n5", "why": "the ADR restates the rule as written in the gate" },
+    { "from": "n1", "to": "n6", "why": "the bundles embed the edited source" }
+  ]
+}

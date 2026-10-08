@@ -17,7 +17,7 @@ export class SettingsMixinImpl {
   _syncSettings() {
     const d = this.querySelector(".settings");
     if (!d || typeof d.showModal !== "function") return;
-    if (this.settingsOpen && !d.open) { try { d.showModal(); } catch { /* not attached */ } }
+    if (this.settingsOpen && !d.open) { try { d.showModal(); (Array.from(d.querySelectorAll(".settings-nav-item")).find((b) => b.classList.contains("on")) || d).focus(); /* showModal() focuses the FIRST control (Mapping) */ } catch { /* not attached */ } }
     else if (!this.settingsOpen && d.open) { try { d.close(); } catch { /* already closed */ } }
   }
 
@@ -517,6 +517,7 @@ export class SettingsMixinImpl {
               h("button", {
                 type: "button",
                 class: "settings-nav-item" + (sec === it.id ? " on" : ""),
+                "data-fk": "settings-nav:" + it.id,
                 "aria-current": sec === it.id ? "page" : undefined,
                 onclick: () => { this.settingsSection = it.id; this.render(); },
               }, it.label),
