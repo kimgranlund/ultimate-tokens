@@ -2,7 +2,7 @@
 id: T-0021
 title: "Compute layers: rebase U1-U3 onto main, then U4 pins and U5 ramp@2 on schema v9 (#788)"
 type: feature
-status: ready
+status: done
 size: L4
 priority: P2
 depends: []
@@ -23,3 +23,8 @@ GitHub #788. Land the compute-layers plan (`.sdlc/plans/compute-layers.md`, stat
 ## Constraints
 - Lane: full chain (size L4, cross-cutting, L4 steps need plan review). Planner L3 first; read `.sdlc/plans/compute-layers.md`, `.sdlc/plans/compute-layers-adr-draft.md` and the old unit handoffs under `.sdlc/` for U4.
 - Never commit `*.log`, `.run.lock`, `*.attempt.json`, `*.dispatch.json`. `.claude/docs/other/` never reaches a commit.
+
+## Plan review
+plan defect: specgate refused planner-L3.md before review: step 2: duplicate span: `out=$(node scripts/report-compute-neutral.mjs --base "$SDLC_BASE_SHA") && printf '%s\n' "$out" | tail -1 | grep -qx "0 differing cells"` repeats a criterion of step 1 verbatim. Replan: make step 2's byte-neutrality criterion distinct from step 1's (for example a different flag, a pins-stamped export leg, or the pre-pin-doc hydrate identity) and keep every other part of the plan; run `specgate.py check` on the new plan before returning it. Also keep: T-0030 (Gate A `basis` field in tonal.js) lands before step 1 (it is verified and landing now).
+
+user ruling 2026-10-08 (U5): drop U5. CAM16 stays a live, supported hue model (ADR-031, the Hue space control); `ramp@1` is the only ramp layer and U5 (`ramp@2` without the cam16 branch, R102) is closed as superseded. The plan covers U1 to U4 only; do not add a U5 step, and say in the new ADR that R102 is superseded by ADR-031.

@@ -19,11 +19,13 @@
 // (CURRENT_SCHEMA_VERSION); hydrate() runs any still-relevant RENAME_MAPS entry before the
 // domain clamp, so a doc saved before a canon rename (a voice, a treatment id, ...) survives
 // as its current name, never dropped by a current-names allowlist (TKT-0016, RENAME_MAPS below).
-// Its three imports are engine constants (icon systems, the default type, the collections); nothing from the DOM.
+// Its imports are engine constants (icon systems, the default type, the collections) and the
+// zero-dep layer-pin rule (layer-pins.mjs, never the layer registry); nothing from the DOM.
 import { ICON_SYSTEMS, DEFAULT_ICON_SYSTEM } from "../engine/icon-systems.mjs";
 import { DEFAULT_TYPE } from "../engine/type.mjs";
 import { DEFAULT_GEOMETRY } from "../engine/geometry.mjs";
 import { COLLECTIONS } from "../engine/collections.js";
+import { LATEST, pinsOf } from "../engine/layer-pins.mjs";
 
 // PALETTE_GROUPS (ticket #556), the four canvas group ids. Declared HERE, not in model.mjs: this
 // codebase's normal dependency direction is model.mjs importing FROM persist.js (never the
@@ -371,7 +373,14 @@ function clampOverrides(o) {
 // the retired keys (treatment, baseHeight, rampContrast, ramp, both per-cell height tokenOverrides
 // maps and the UI-control/UI-widget type overrides on steps other than MD), reporting each through
 // DROPPED_KEYS.
-export const CURRENT_SCHEMA_VERSION = 9;
+//
+// v10 (#788, compute-layers, ADR-033): a document carries `layers: { [id]: version }`, the version of
+// each compute layer it renders with. A RENAME_MAPS entry (stampLayers) stamps every registered layer
+// id at version 1 on a doc stamped below v10 that has no `layers` map, BEFORE the clamp: such a doc
+// was made with every layer at version 1, and the stamp is the explicit boundary, so every hydrated
+// doc then serializes with `layers`. layer-pins.mjs's pinsOf then clamps each pin to [1, latest] and
+// hydrate drops an id the registry does not name, reported through DROPPED_KEYS.
+export const CURRENT_SCHEMA_VERSION = 10;
 
 // DROPPED_KEYS (TKT-0455), the loud-fail accounting channel. hydrate() attaches the report of every
 // unknown voice/treatment/tokenOverrides key it dropped as a NON-ENUMERABLE property on its return
@@ -439,6 +448,13 @@ const RENAME_MAPS = [
     // entry reads and drops.
     version: 9,
     migrateGeometry: true,
+  },
+  {
+    // the compute-layer pins (#788, ADR-033): a doc that predates `layers` is stamped with every
+    // registered layer id at version 1, the version it was made with. Shaped like v2's
+    // stampIntensity: it fires only when the doc carries no `layers` map at all.
+    version: 10,
+    stampLayers: true,
   },
 ];
 
@@ -586,7 +602,8 @@ function renameKeyedMap(obj, renameMap, rewriteKey) {
 // BEFORE any allowlist clamp (see hydrate() below). Pure: returns a new snapshot when a rename actually
 // fires, the SAME snapshot reference otherwise (so a current doc pays no cost). `drop` is hydrate()'s
 // DROPPED_KEYS reporter, for an entry (foldGroups) that removes a value rather than renaming it.
-function applyRenameMaps(snapshot, drop) {
+// `latest` is hydrate's { [id]: latest version } table, the ids the v10 stamp writes.
+function applyRenameMaps(snapshot, drop, latest) {
   const fromVersion = Number.isFinite(snapshot && snapshot.schemaVersion) ? snapshot.schemaVersion : 0;
   if (fromVersion >= CURRENT_SCHEMA_VERSION) return snapshot; // already current, nothing to translate
   let s = snapshot;
@@ -607,6 +624,9 @@ function applyRenameMaps(snapshot, drop) {
     }
     if (entry.stampIntensity && s && typeof s.baseIntensity !== "number") {
       s = { ...s, baseIntensity: 100 };
+    }
+    if (entry.stampLayers && s && typeof s === "object" && !(s.layers && typeof s.layers === "object")) {
+      s = { ...s, layers: Object.fromEntries(Object.keys(latest).map((id) => [id, 1])) };
     }
     // renameControls: an old top-level control name -> new name, carrying the value across (never
     // clobbering an already-present new-name value), the REQ-011/R4 keyIntensity->primeChroma rename.
@@ -646,7 +666,10 @@ export function serialize(state) {
 // DOMAIN. Identity-preserving: an already-in-domain field is copied through untouched;
 // only a violated field is moved to its nearest valid bound. NOT a clamp-to-default and
 // NOT a reset, those discard user state and fail the sealed roundtrip/per-field gates.
-export function hydrate(snapshot) {
+// `latest` (optional, #788): the registry's { [id]: latest version }, the domain of the `layers`
+// pins; a test passes its own registry's (test/engine/layer-pins.mjs), every product caller takes
+// the shipped LATEST.
+export function hydrate(snapshot, { latest = LATEST } = {}) {
   const raw = (snapshot && typeof snapshot === "object") ? snapshot : {};
 
   // The loud-fail accounting list (TKT-0455), every unknown voice/treatment/tokenOverrides key this
@@ -663,7 +686,7 @@ export function hydrate(snapshot) {
   // TKT-0016, translate an older doc forward through any still-relevant rename maps BEFORE the
   // allowlist clamp below runs, so a renamed voice survives onto its current name instead of being
   // silently dropped by clampType's VOICES allowlist.
-  const s = applyRenameMaps(raw, drop);
+  const s = applyRenameMaps(raw, drop, latest);
 
   // Palettes first: `selected`'s upper bound is relational to the hydrated count.
   const rawPalettes = Array.isArray(s.palettes) ? s.palettes : [];
@@ -701,6 +724,13 @@ export function hydrate(snapshot) {
     }
   }
 
+  // layers (#788, ADR-033): one pin per registered layer, layer-pins.mjs's rule (rounded and clamped
+  // to [1, latest]; a pre-v10 doc arrives here already stamped by the v10 entry). An id the registry
+  // does not name is dropped, loudly.
+  if (s.layers && typeof s.layers === "object") {
+    for (const id of Object.keys(s.layers)) if (!(id in latest)) drop("layers", id, "not a registered compute layer");
+  }
+
   const result = {
     curve: clampEnum(s.curve, DOMAINS.curve.values, DOMAINS.curve.default),
     tension: clampNumber(s.tension, DOMAINS.tension.min, DOMAINS.tension.max),
@@ -722,6 +752,7 @@ export function hydrate(snapshot) {
     theme: clampEnum(s.theme, DOMAINS.theme.values, DOMAINS.theme.default),
     selected,
     roleOverrides: clampOverrides(s.roleOverrides),
+    layers: pinsOf(s.layers, latest),
     type: clampType(s.type, drop),
     geometry: clampGeometry(s.geometry, drop),
     palettes,
@@ -734,6 +765,18 @@ export function hydrate(snapshot) {
   // Non-enumerable: never serialized, never disturbs deepEq/roundtrip, see DROPPED_KEYS above.
   Object.defineProperty(result, DROPPED_KEYS, { value: dropped, enumerable: false });
   return result;
+}
+
+// presetDoc(preset, { latest }), a curated preset opened as a new document (#788, ADR-033): hydrated
+// like any stored document (a preset carries no schemaVersion, so the v10 stamp pins it to version 1),
+// then `layers` overwritten by every layer's latest version, because opening a preset makes a document
+// now, with the layers that ship now (R100). It lives here, not in src/engine/layers.mjs, because
+// src/engine never imports from src/ui. `layers` is assigned onto the hydrate result so its
+// non-enumerable DROPPED_KEYS report survives.
+export function presetDoc(preset, { latest = LATEST } = {}) {
+  const doc = hydrate(preset, { latest });
+  doc.layers = { ...latest };
+  return doc;
 }
 
 // clampIcons, the OPTIONAL icon-system facet { id, variant?, name?, variantName? } (Settings › Icons).

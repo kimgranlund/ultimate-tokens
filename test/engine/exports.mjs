@@ -1157,9 +1157,10 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     const refMod = X.exportRadixModule(refPreset);
     const valMod = X.exportRadixModule(valPreset);
     const lines = refMod.split("\n");
-    if (lines[0] !== `/* ultimate-tokens export schema ${6} */`) FAIL(G, `reference module first line = ${JSON.stringify(lines[0])}`);
-    if (!lines[1].startsWith("/* Radix preset")) FAIL(G, `reference module header does not open with the Radix preset comment: ${JSON.stringify(lines[1])}`);
-    if (!lines[2].includes("LINKS")) FAIL(G, `the header's second comment line must name the link form, got ${JSON.stringify(lines[2])}`);
+    if (lines[0] !== `/* ultimate-tokens export schema ${7} */`) FAIL(G, `reference module first line = ${JSON.stringify(lines[0])}`);
+    if (!lines[1].startsWith("/* ultimate-tokens layers ")) FAIL(G, `reference module second line is not the layer-pins stamp: ${JSON.stringify(lines[1])}`);
+    if (!lines[2].startsWith("/* Radix preset")) FAIL(G, `reference module header does not open with the Radix preset comment: ${JSON.stringify(lines[2])}`);
+    if (!lines[3].includes("LINKS")) FAIL(G, `the header's second comment line must name the link form, got ${JSON.stringify(lines[3])}`);
     if (!/css-hex|css-oklch/.test(refMod)) FAIL(G, "the reference header never tells the consumer which export to load first");
     if (valMod.includes("LINKS")) FAIL(G, "the VALUES module header must not claim its values are links");
     const body = refMod.slice(refMod.indexOf("export default ") + "export default ".length, refMod.lastIndexOf(";"));
@@ -1363,7 +1364,8 @@ if (primeCssCount(X.exportCSS(primeOff)) !== wantPrimeOff) FAIL("prime", "disabl
 const shadcnBase = X.exportShadcn(C(ALL));
 const shadcnPrimeChroma50 = X.exportShadcn({ ...C(ALL), primeChroma: 50 });
 if (shadcnBase !== shadcnPrimeChroma50) FAIL("prime", "exportShadcn output changed with primeChroma, it must have no prime slot (non-goal)");
-if (shadcnBase.includes("prime")) FAIL("prime", "exportShadcn output unexpectedly mentions 'prime'");
+// the layer-pins stamp line names the `prime` compute layer (U4, #788), not a token slot, so it is set aside
+if (shadcnBase.split("\n").filter((l) => !l.startsWith("/* ultimate-tokens layers ")).join("\n").includes("prime")) FAIL("prime", "exportShadcn output unexpectedly mentions 'prime'");
 
 // ── hpg-export-prime-dtcg (REQ-054, raw tree nests prime beside scrim/key, same depth) ──────────
 const primeDtcgTree = X.exportDTCG(C(ALL))["palette.tokens.json"][slug0];
@@ -2372,7 +2374,7 @@ if (Object.keys(primeUi3Off).some((k) => k.startsWith(`${offName}/`))) FAIL("pri
 // `v` is bumped alongside it in the same PR, that IS the bump-rule contract, not a bug in the gate.
 {
   const G = "hpg-export-schema-stamp";
-  const v = 6;
+  const v = 7;
   const doc = defaultDocument();
   const state = stateOf(doc);
   const tsc = typeScale({});

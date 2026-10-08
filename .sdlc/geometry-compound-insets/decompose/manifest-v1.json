@@ -115,6 +115,24 @@
       "label": "pixel evidence: smoke screenshots of the segmented control, the icon-only toggle and the Name field at product-md and content-lg (smoke-out/)",
       "leaf": true,
       "accept": "npm run smoke exits 0 and the step record lists the four screenshot paths with the measured outer heights"
+    },
+    {
+      "id": "n9e",
+      "label": "common control text rules, src/ui/styles.css: base button (:168-183) gains white-space: nowrap (the toolbar-only rule at :1564 folds into it) and an opt-in .multiline class; the literal font-size / padding offenders (.figma-files button :1089, .radix-files button :1096, .tyi-font-input :1462, .pane-toggle :424, .map-head .ghost :743, the max-width 1240px media paddings :1567-1569) read --sh-control-* / --sh-chip-* instead; .chip (:805-809) line-height 1 like button; seg-sm dropped from the two Global segmented controls (color.js:2095,2107) so a segment reads --sh-control-text like a button; .insp-actions (:987) flex-wrap so one-line buttons never wrap their label",
+      "leaf": true,
+      "accept": "node test/repo/control-text.mjs exits 0 (no button, select, .segmented, .chip or text-input rule in src/ui/styles.css sets a literal px font-size, padding or line-height); grep -c 'seg-sm' src/ui/sections/color.js prints 0"
+    },
+    {
+      "id": "n12",
+      "label": "static gate test/repo/control-text.mjs, wired into test/run.mjs: scans src/ui/styles.css for control-family selectors (button, select, input[type=\"text\"], .segmented, .chip, .tyi-font-input) setting font-size, padding or line-height to a literal px, with an explicit allowlist for the export mocks (.ex-input, .geom-ex-*)",
+      "leaf": true,
+      "accept": "npm test runs it; it fails when a line `.figma-files button { font-size: 11.5px }` is restored (negative control in the test file) and passes on the fixed stylesheet"
+    },
+    {
+      "id": "n4b",
+      "label": "real-browser control-text check in test/smoke/smoke.mjs: after boot, for every button, select, input[type=\"text\"] and .segmented button in the shell, computed font-size equals the host's resolved --control-text (and --chip-text for .chip), computed min-block-size equals --control-height, and no button's content box is taller than --control-height (no wrapped label); offenders listed by selector path",
+      "leaf": true,
+      "accept": "npm run smoke exits 0 with the line `control text: N controls, 0 off` at product-md and content-lg, and the check reports at least the .figma-files button offender when run against the pre-fix stylesheet"
     }
   ],
   "actions": [
@@ -193,6 +211,26 @@
     {
       "id": "a19",
       "label": "keep the chip distinct from the part (chip snaps to the ladder, part is exact; chip height never exceeds part height)"
+    },
+    {
+      "id": "a20",
+      "label": "give every control family (button, segment, select, input, option, chip) its text size, line height, inset and radius from the same cell roles"
+    },
+    {
+      "id": "a21",
+      "label": "keep control labels on one line unless a rule says multi-line"
+    },
+    {
+      "id": "a22",
+      "label": "align icon plus label on the cell's icon box and gap"
+    },
+    {
+      "id": "a23",
+      "label": "prove in a real browser that no button-like element computes a different font-size or height from its cell"
+    },
+    {
+      "id": "a24",
+      "label": "gate the stylesheet against new literal control sizes in npm test"
     }
   ],
   "hosts": [
@@ -287,6 +325,30 @@
     {
       "action": "a17",
       "node": "n11"
+    },
+    {
+      "action": "a20",
+      "node": "n9e"
+    },
+    {
+      "action": "a21",
+      "node": "n9e"
+    },
+    {
+      "action": "a22",
+      "node": "n9e"
+    },
+    {
+      "action": "a23",
+      "node": "n4b"
+    },
+    {
+      "action": "a24",
+      "node": "n12"
+    },
+    {
+      "action": "a16",
+      "node": "n12"
     }
   ],
   "edges": [
@@ -369,6 +431,26 @@
       "from": "n10",
       "to": "n11",
       "why": "pixel evidence runs after the shell lands green"
+    },
+    {
+      "from": "n9a",
+      "to": "n9e",
+      "why": "the rewritten rules read the --sh-* aliases"
+    },
+    {
+      "from": "n9e",
+      "to": "n12",
+      "why": "the gate's allowlist is written against the fixed stylesheet"
+    },
+    {
+      "from": "n9e",
+      "to": "n4b",
+      "why": "the smoke check runs on the fixed shell"
+    },
+    {
+      "from": "n4b",
+      "to": "n11",
+      "why": "the pixel evidence includes the control-text line"
     }
   ]
 }

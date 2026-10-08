@@ -60,8 +60,9 @@ table:
 - `applyAccentRef(roles, accentRef)`: `"single"` maps only the prime accent (empty suffix) to 500/500.
 - `applyRoleOverrides(roles, overrides)`: per-doc editor customization; absent fields keep canonical.
 
-`src/engine/exports.js` (`derivePalette`) calls these in order, `applyOnColorContrast(applyAccentRef(...))`
-then `applyRoleOverrides`, before resolving each ref to a color. The consequence for a role author: **if you
+`src/engine/layers.mjs` (`resolveRoles`, the `roles` layer that `compute` runs once for the canvas and every
+export) calls these in order, `applyOnColorContrast(applyAccentRef(...))` then `applyRoleOverrides`;
+`derivePalette` (`src/engine/exports.js`) then resolves each ref to a color. The consequence for a role author: **if you
 add an `on{N}…` role, decide whether it belongs in the contrast map** (`M` in `applyOnColorContrast`). A
 normal label-on-fill → yes (with its own state fill); an inert/disabled label → leave it out.
 

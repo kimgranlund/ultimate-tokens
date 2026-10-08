@@ -28,20 +28,17 @@
 // state is UI-only-aware: theme is NEVER read here, so output is identical for
 // theme light/dark/auto.
 
-import { paletteStops, EXPORT_STOPS, DEFAULT_CONTROLS } from "./tonal.js";
-import { semanticRoles, refKey, refPath, refSlug, roleLeaf, applyRoleOverrides, applyOnColorContrast, applyAccentRef, isAchromaticRef, DEFAULT_THEMES } from "./semantic.js";
+import { EXPORT_STOPS } from "./tonal.js";
+import { semanticRoles, refKey, refPath, refSlug, roleLeaf, isAchromaticRef, DEFAULT_THEMES } from "./semantic.js";
 import { COLLECTIONS } from "./collections.js";
-import { primeSwatches, PRIME_STEPS, primeSlug } from "./prime.mjs";
+import { compute, docPins, slug, relLum } from "./layers.mjs"; // slug: the palette-name token prefix the roles are keyed on
+import { PRIME_STEPS, primeSlug } from "./prime.mjs";
 import { oklchToRgb } from "./okhsl.js";
-import { rampChromaOf, primeChromaOf } from "./resolve.mjs";
 import { cssFontStack } from "./type.mjs";
 
-// WCAG relative luminance of an [r,g,b] (0..255) triple, for the opt-in contrast on-color pick.
-// Exported: ds-export.js's dsContrast also needs it (kept as one source, not a duplicate).
-export const relLumExp = (rgb) => {
-  const c = rgb.map((v) => { const s = v / 255; return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; });
-  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
-};
+// WCAG relative luminance of an [r,g,b] (0..255) triple: layers.mjs's relLum (the role chain's
+// on-color input), re-exported under this name for ds-export.js's dsContrast (one source).
+export const relLumExp = relLum;
 
 // ── Export schema version (SPEC 0.3.0 RP-8, ticket #577, plan PR #571 step E6) ────────────────
 // One constant stamped on every surface that can carry it: JSON meta.schemaVersion; DTCG
@@ -52,7 +49,21 @@ export const relLumExp = (rgb) => {
 // Bump rule (adding-export-formats/SKILL.md carries the same note): any additive or shape change
 // to an emitted format bumps this ONE constant, once, across every surface, in the same PR; a
 // value-only change (e.g. a chroma default) never bumps it.
-export const EXPORT_SCHEMA_VERSION = 6;
+// 7 (#788, compute-layers, ADR-034): every format also records the compute-layer pins the kit was
+// made with (layerPinsLine / the `layers` field below), so a reader can tell which layer versions
+// produced the values.
+export const EXPORT_SCHEMA_VERSION = 7;
+
+// ── Layer pins (#788, compute-layers, ADR-034) ─────────────────────────────────────
+// Every export records `docPins(state)`, the version of each compute layer the values came from
+// (the same pins compute ran). Comment-stamped formats (CSS/OKLCH/Tailwind/ShadCN/Panda/Radix)
+// carry layerPinsLine as their second line, right under the schema stamp; JSON formats carry the
+// pins map: JSON meta.layers, DTCG $extensions["com.ultimate-tokens"].layers, UI3 and the DS
+// tokens.json $layers. The two module exporters take a preset object (byte-pinned, #638) and so
+// read the pins from `opts.layers`, which every caller passes from the same state.
+export function layerPinsLine(pins) {
+  return `/* ultimate-tokens layers ${Object.entries(pins).map(([id, v]) => `${id}@${v}`).join(" ")} */`;
+}
 
 // ── Constants (from data/role-table.json) ─────────────────────────────────────
 // Scrims are a 500-based translucency ramp: a scrim primitive "{n}/500-{step}" is the
@@ -67,15 +78,6 @@ export const SCRIM_BASES = [500];
 export const SCRIM_STEPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
 
 // ── Small hand-rolled helpers ─────────────────────────────────────────────────
-
-// slug, palette name -> token namespace: lowercase, non-alphanumeric -> '-',
-// trimmed of leading/trailing '-'. "Neutral" -> "neutral", "On Surface" -> "on-surface".
-function slug(name) {
-  return String(name)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 // isDataPalette, true for a data-family palette by its SLUG ("data-1".."data-8" convention; #503
 // REQ-020..024). The public/exported twin of model.mjs's local isDataSlug helper (mintDataPalettes /
@@ -203,81 +205,18 @@ export function blackOklch() { return oklchStr(rgbToOklch(BLACK_RGB)); }
 
 // ── Core: per-palette derivation (shared by every emitter) ────────────────────
 
-// controlsOf, pull the tonal controls out of State, defaulting any missing.
-function controlsOf(state) {
-  return {
-    curve: state.curve ?? DEFAULT_CONTROLS.curve,
-    tension: state.tension ?? DEFAULT_CONTROLS.tension,
-    lmin: state.lmin ?? DEFAULT_CONTROLS.lmin,
-    lmax: state.lmax ?? DEFAULT_CONTROLS.lmax,
-    damp: state.damp ?? DEFAULT_CONTROLS.damp,
-    dampCurve: state.dampCurve ?? DEFAULT_CONTROLS.dampCurve,
-    dampAmp: state.dampAmp ?? DEFAULT_CONTROLS.dampAmp,
-    dampBias: state.dampBias ?? DEFAULT_CONTROLS.dampBias,
-    // baseChroma (SPEC 0.3.0 REQ-002/004, #804): the GLOBAL Base chroma k factor, multiplied onto every
-    // palette's own `baseChroma` (the ramp damper, #785). Named `state.baseChroma` here, a DIFFERENT
-    // name than the field persist.js/model.mjs persist on the document (kept there for backward compat),
-    // because a retired per-stop multiplier control once lived under that old name right in this file,
-    // and AC-004 bars its reintroduction, in any form, under src/engine. model.mjs's stateOf() (and
-    // dsDocOf() for the DS bundles) is where the document's own field is renamed onto this one.
-    baseChroma: state.baseChroma ?? 100,
-    // primeChroma (REQ-008/050..057, #804): the GLOBAL Prime chroma k factor, the same for every
-    // palette's prime strip, a plain 100 default.
-    primeChroma: state.primeChroma ?? 100,
-    hueSpace: state.hueSpace ?? "cam16", // a raw legacy state without the field was authored in cam16 (mirror the UI's legacy-preservation stamp); a live doc always carries it explicitly
-    // distribution mode + its shapers, previously dropped here, so exports always used the
-    // default mode regardless of the doc. Threaded now so exports match what the UI renders.
-    toneMode: state.toneMode ?? DEFAULT_CONTROLS.toneMode,
-    vibrancy: state.vibrancy ?? DEFAULT_CONTROLS.vibrancy,
-    onColorMode: state.onColorMode ?? DEFAULT_CONTROLS.onColorMode,
-    accentRef: state.accentRef ?? DEFAULT_CONTROLS.accentRef,
-    relChroma: state.relChroma ?? DEFAULT_CONTROLS.relChroma,
-    chromaFloor: state.chromaFloor ?? DEFAULT_CONTROLS.chromaFloor,
-  };
-}
-
 // enabledPalettes, the disabled-palette filter (AC-U2): a palette is included
 // iff on !== false. A disabled palette is therefore ABSENT from every export.
 function enabledPalettes(state) {
   return (state.palettes ?? []).filter((p) => p.on !== false);
 }
 
-// derivePalette, everything an emitter needs for one palette, computed once:
-//   slug, the 25 solid stops keyed by pad3, a stop->rgb lookup, the 11 scrims,
-//   the 53 resolved semantic roles, and a ref->rgb resolver shared by all formats.
-function derivePalette(palette, controls, overrides) {
-  const n = slug(palette.name);
-  const ctl = {
-    curve: controls.curve,
-    tension: controls.tension,
-    lmin: controls.lmin,
-    lmax: controls.lmax,
-    damp: controls.damp,
-    dampCurve: controls.dampCurve,
-    dampAmp: controls.dampAmp,
-    dampBias: controls.dampBias,
-    hueSpace: controls.hueSpace,
-    toneMode: controls.toneMode,
-    vibrancy: controls.vibrancy,
-    relChroma: controls.relChroma,
-    chromaFloor: controls.chromaFloor,
-  };
-  // accent-ref-resolved roles ("single" → prime accent 500/500), computed before the ramp, reused below
-  // for the on-color-contrast step so it's derived once per palette.
-  const accentRoles = applyAccentRef(semanticRoles(n), controls.accentRef);
-  // rampChroma/primeChromaResolved (SPEC 0.3.0 REQ-002/004/008, Risk 0b: "one shared resolver
-  // imported by both, never two copies"), engine/resolve.mjs's OWN pure functions, the SAME ones
-  // model.mjs's projectView calls, so the CSS/JSON/DTCG/… exports and the canvas agree byte for
-  // byte by construction, not by two hand-kept-in-sync formulas: the palette's own `baseChroma` times
-  // the global k for the ramp, the global prime k for the strip (#804, no group layer).
-  const rampChroma = rampChromaOf(palette, controls);
-  const primeChromaResolved = primeChromaOf(palette, controls);
-  const stopList = paletteStops(
-    { hue: palette.hue, chroma: rampChroma, skew: palette.skew, lift: palette.lift, hueShift: palette.hueShift, hueSameDir: palette.hueSameDir, cuspPull: palette.cuspPull, anchor: palette.anchor },
-    ctl,
-    EXPORT_STOPS,
-  );
-
+// derivePalette, everything an emitter needs for one palette, read off its compute(state) entry
+// (layers.mjs: the 25-stop ramp, the prime swatches, the resolved role refs): the slug, the 25
+// solid stops keyed by pad3, a stop->rgb lookup, the 11 scrims, the 53 roles with each ref resolved
+// to a color, and the prime swatches by step. The canvas (model.mjs projectView) reads the SAME
+// compute entry, so the two can never resolve a chroma, a ramp or a role differently (ADR-034).
+function derivePalette({ palette, n, stops: stopList, prime: primeList, roles: roleRefs }) {
   // stop (number) -> rgb int triple, for ref resolution.
   const byStop = new Map();
   const stops = {}; // { [pad3]: {rgb, hex, tone, chroma} }
@@ -313,13 +252,10 @@ function derivePalette(palette, controls, overrides) {
     return { rgb: byStop.get(base), frac: step / 1000 };
   };
 
-  // The 53 semantic roles, with each ref pre-resolved to a concrete color for
-  // BOTH modes. semanticRoles is keyed on the slug (so keys are name-prefixed).
-  // on-color policy: "contrast" mode flips the accent on-colors to the better-contrasting end
-  // BEFORE per-doc overrides (so an explicit override still wins). No-op in the default "fixed" mode.
-  const lumOf = (ref) => { const rgb = byStop.get(Number(ref)); return rgb ? relLumExp(rgb) : 0; };
-  const onAdjusted = applyOnColorContrast(accentRoles, n, lumOf, controls.onColorMode);
-  const roles = applyRoleOverrides(onAdjusted, overrides).map((r) => {
+  // The 53 semantic roles (compute's role chain, layers.mjs resolveRoles: the table keyed on the slug,
+  // the accent ref, the on-color policy, then the per-doc overrides), each ref pre-resolved to a
+  // concrete color for BOTH modes.
+  const roles = roleRefs.map((r) => {
     const L = resolveRef(r.light);
     const D = resolveRef(r.dark);
     return {
@@ -340,23 +276,8 @@ function derivePalette(palette, controls, overrides) {
   const keyColors = keyColorsRaw.map((kc) => ({ ...kc, rgb: oklchToRgb(kc.oklch[0], kc.oklch[1], kc.oklch[2]) }));
 
   // prime, the seven per-palette identity swatches (REQ-050..057), on their OWN OKHSL ladder,
-  // independent of the ramp above; mode-independent (R2), one set per palette. Built from
-  // prime.mjs's own primeSwatches(), never reimplemented here (same call shape model.mjs's
-  // projectView uses: the full `controls` object, not the ramp-only `ctl` slice, since
-  // primeSwatches reads controls.hueSpace/primeChroma, neither of which `ctl` needs). `chroma` is
-  // the palette's OWN unresolved value (REQ-002: the ramp target above never feeds this); `primeChroma`
-  // is cleared on the palette so prime.mjs's own `palette.primeChroma ?? controls.primeChroma` falls
-  // straight through to the global k resolved above (REQ-008, #804), whatever a stray palette carries.
-  // `anchor` (ticket #681, U1) forwards straight through: prime.mjs's own branch is a no-op when it
-  // is absent (byte-identical to the pre-#681 call below), and this is the ONLY site that resolves a
-  // palette down into the primeSwatches() call for every emitted export format, omitting it here
-  // would leave `prime.DEFAULT` cusp-derived in every real export while `primeSwatches()` called
-  // directly (as the anchor-identity test does) rendered the anchor, a silent split between the two
-  // that C2/C4 (test/engine/anchor.mjs) exist specifically to catch.
-  const primeList = primeSwatches(
-    { hue: palette.hue, chroma: palette.chroma, skew: palette.skew, hueShift: palette.hueShift, hueSameDir: palette.hueSameDir, anchor: palette.anchor, primeChroma: undefined },
-    { ...controls, primeChroma: primeChromaResolved },
-  );
+  // independent of the ramp above; mode-independent (R2), one set per palette, by step: compute's
+  // `prime` layer (prime.mjs primeSwatches, the anchor forwarded), the swatches the canvas shows.
   const prime = {}; // { [step]: {step, l, s, hue, rgb, hex, oklch, inGamut} }
   for (const sw of primeList) prime[sw.step] = sw;
 
@@ -369,9 +290,12 @@ function derivePalette(palette, controls, overrides) {
 
 // derivedAll, every enabled palette derived, in State order. Exported: ds-export.js's DS-bundle
 // layer derives from the SAME resolved roles (dsColorRoles/dsSemanticLayer/dsFullLayersCss).
-export function derivedAll(state) {
-  const controls = controlsOf(state);
-  return enabledPalettes(state).map((p) => derivePalette(p, controls, state.roleOverrides));
+// `computed` (optional): a compute(state) result the caller already holds (projectView passes its
+// own, every palette); absent, only the enabled palettes are computed. Either way the controls are
+// resolved once, by controls.mjs's resolveControls inside compute (a state with no hueSpace renders
+// as the engine default, "oklch").
+export function derivedAll(state, computed = compute({ ...state, palettes: enabledPalettes(state) })) {
+  return computed.palettes.filter(({ palette }) => palette.on !== false).map(derivePalette);
 }
 
 // ── colorLeaf, the DTCG color leaf (ADR + knowledge-04 §4) ────────────────────
@@ -403,7 +327,7 @@ function colorLeaf(rgb, frac, alias) {
 // palette's ramp again. Omitted -> derives it here, exactly as before (every existing caller works
 // unchanged; this is additive only).
 export function exportCSS(state, derived) {
-  return cssFrom(derived || derivedAll(state), false, cssPrefixOf(state));
+  return cssFrom(derived || derivedAll(state), false, cssPrefixOf(state), docPins(state));
 }
 
 // cssPrefixOf, the configurable CSS custom-property prefix (the `c` in `--c-*`). Lets a kit emit
@@ -422,14 +346,16 @@ export function cssPrefixOf(state) {
 // Identical structure; raw values are oklch(L C H) / oklch(L C H / a%). The
 // semantic --c-* layer is unchanged (var() refs), so the two-layer flip holds.
 export function exportOKLCH(state, derived) {
-  return cssFrom(derived || derivedAll(state), true, cssPrefixOf(state));
+  return cssFrom(derived || derivedAll(state), true, cssPrefixOf(state), docPins(state));
 }
 
 // cssFrom, shared CSS body for both variants. oklch=false -> hex raw values. `pfx` is the
 // custom-property prefix core (the `c` in `--c-*`); defaults to "c" for the historical output.
-function cssFrom(palettes, oklch, pfx = "c") {
+// `pins`: the state's layer pins, stamped on line 2.
+function cssFrom(palettes, oklch, pfx = "c", pins) {
   const lines = [];
   lines.push(`/* ultimate-tokens export schema ${EXPORT_SCHEMA_VERSION} */`);
+  lines.push(layerPinsLine(pins));
   lines.push(":root {");
   lines.push("  color-scheme: light dark;");
   // fixed system constants, NOT palette-derived, emitted ONCE (never per palette, never mode-flipped).
@@ -511,6 +437,7 @@ export function exportJSON(state, derived) {
     meta: {
       generator: "Ultimate Tokens",
       schemaVersion: EXPORT_SCHEMA_VERSION,
+      layers: docPins(state),
       controls: {
         baseChroma: state.baseChroma,
         primeChroma: state.primeChroma,
@@ -668,7 +595,7 @@ export function exportDTCG(state, opts, derived) {
   // plugin's own childKeys() already skips any "$"-prefixed root key, so this is inert to it.
   const figmaMode = (tree, modeName) => ({
     ...tree,
-    $extensions: { "com.figma.modeName": modeName, "com.ultimate-tokens": { schemaVersion: EXPORT_SCHEMA_VERSION } },
+    $extensions: { "com.figma.modeName": modeName, "com.ultimate-tokens": { schemaVersion: EXPORT_SCHEMA_VERSION, layers: docPins(state) } },
   });
 
   // one semantic file per theme, in `themes` order, with the default DEFAULT_THEMES this produces
@@ -735,6 +662,7 @@ export function exportUI3(state, derived) {
 
   return {
     $schema: `figma-ui3-variables.color.schema.v${EXPORT_SCHEMA_VERSION}`,
+    $layers: docPins(state),
     collections: {
       [COLLECTIONS.colorRaw]: { modes: ["Base"], variables: primVars },
       [COLLECTIONS.colorSemantic]: { modes: ["Light", "Dark"], variables: semVars },
@@ -761,6 +689,7 @@ export function exportTailwind(state, derived) {
   const palettes = derived || derivedAll(state);
   const lines = [];
   lines.push(`/* ultimate-tokens export schema ${EXPORT_SCHEMA_VERSION} */`);
+  lines.push(layerPinsLine(docPins(state)));
   lines.push("/* Tailwind v4 theme, generated by Ultimate Tokens.");
   lines.push("   Paste after `@import \"tailwindcss\";`. Ramps -> bg-{name}-{stop};");
   lines.push("   semantic roles flip via light-dark() (set `color-scheme: light dark`). */");
@@ -909,6 +838,7 @@ export function exportShadcn(state, opts = {}, derived) {
 
   return [
     `/* ultimate-tokens export schema ${EXPORT_SCHEMA_VERSION} */`,
+    layerPinsLine(docPins(state)),
     "/* ShadCN theme, generated by Ultimate Tokens. Replace the token blocks in",
     `   your globals.css. Mapped from: neutral=${neutral.name}, primary=${primary.name}, destructive=${danger.name}.${aliasPfx ? `\n   Values are LINKS (var()) into the --${aliasPfx}-* design-token layer below, one source of truth.` : ""} */`,
     ":root {",
@@ -1047,11 +977,13 @@ export function exportPanda(state, opts = {}, derived) {
 }
 
 // exportPandaModule, the ESM preset-module STRING the drawer shows and the zip ships (REQ-001):
-// a fixed two-line header comment, then `export default <preset JSON>;`. No import of
-// `@pandacss/dev`, `definePreset` is a no-op typing helper a consumer may wrap this in.
-export function exportPandaModule(preset) {
+// the schema stamp, the layer pins (`opts.layers`), a fixed two-line header comment, then
+// `export default <preset JSON>;`. No import of `@pandacss/dev`, `definePreset` is a no-op typing
+// helper a consumer may wrap this in.
+export function exportPandaModule(preset, opts = {}) {
   return [
     `/* ultimate-tokens export schema ${EXPORT_SCHEMA_VERSION} */`,
+    layerPinsLine(docPins(opts)),
     "/* Panda CSS preset, generated by Ultimate Tokens.",
     "   presets: ['@pandacss/preset-panda', preset]; dark mode = the .dark class (_dark). */",
     "export default " + JSON.stringify(preset, null, 2) + ";",
@@ -1405,6 +1337,7 @@ export function exportRadixModule(preset, opts = {}) {
     : ["/* Radix preset, generated by Ultimate Tokens."];
   return [
     `/* ultimate-tokens export schema ${EXPORT_SCHEMA_VERSION} */`,
+    layerPinsLine(docPins(opts)),
     ...head,
     "   accent = primary, gray = neutral, error = danger.",
     "   presets: [parkPreset, utRadixPreset] (ours last). */",

@@ -262,16 +262,17 @@ variables, Figma paths, the role table, or MCP output.
 Since #804 (ADR-030) a group carries no chroma value: it is canvas grouping metadata only.
 
 **Base chroma is each palette's own ramp damper, times one global k (#785 R94, #804).** For a palette
-`p`, the pure resolver `rampChromaOf(palette, controls)` (`src/engine/resolve.mjs`, imported
-identically by `src/ui/model.mjs`'s `projectView` and `src/engine/exports.js`'s `derivePalette` so the
-canvas and every export format can never disagree; the doc-shaped wrapper `rampChromaOf(p, doc)` in
+`p`, the pure resolver `rampChromaOf(palette, controls)` (`src/engine/resolve.mjs`, called once per
+palette by `src/engine/layers.mjs`'s `compute`, the one evaluation both `src/ui/model.mjs`'s
+`projectView` and `src/engine/exports.js`'s `derivedAll` read, so the canvas and every export format
+can never disagree, ADR-034; the doc-shaped wrapper `rampChromaOf(p, doc)` in
 `model.mjs` renames the document's `baseIntensity` to `baseChroma` at that one boundary) computes:
 
 ```
 rampChromaOf(p, doc) = (p.baseChroma ?? 100) * (doc.baseIntensity ?? 100) / 100
 ```
 
-and the model hands the resolved number to `paletteStops` AS the palette's own
+and `compute` hands the resolved number to `paletteStops` AS the palette's own
 `chroma` (`paletteStops({ ...p, chroma: rampChromaOf(p, doc) }, controls, stops)`), it REPLACES
 `palette.chroma` for ramp purposes. Inside `paletteStops` that value `g` is one damper on the whole
 ramp: every path renders its stops exactly as at `g = 100` (every floor, cap, tone hold and gamut
@@ -320,9 +321,9 @@ unchanged and roles never alias prime tokens (knowledge-03 §3).
 |---------|-------|---------|---------|
 | `primeChroma` (UI "Prime chroma", global) | 0–100 | 100 | the one global k `primeChromaOf` (§8.2) returns, on every rung of every palette, the anchored `prime` rung included; was `keyIntensity` through schema v2, renamed at v3 (REQ-011, R4) |
 
-`primeSwatches` stays group-unaware: its caller (`src/ui/model.mjs`'s `projectView`,
-`src/engine/exports.js`'s `derivePalette`) resolves `primeChromaOf(p, doc)` (§8.2) FIRST and calls
-`primeSwatches({ ...p, primeChroma: undefined }, { ...controls, primeChroma: primeChromaResolved })`,
+`primeSwatches` stays group-unaware: its caller (`src/engine/layers.mjs`'s `compute`, read by both
+`projectView` and `derivedAll`) resolves `primeChromaOf(p, controls)` (§8.2) FIRST and calls
+`primeSwatches({ ...p, primeChroma: undefined }, { ...controls, primeChroma })`,
 and `primeSwatches(palette, controls)` (REQ-050..053a, REQ-056; #537 ruling) reads the k from
 `controls.primeChroma` alone:
 
