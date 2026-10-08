@@ -84,9 +84,9 @@ const ciJobs = () => {
 const FACT_PINS = [
   { id: "type voices", doc: "docs/specs/app-shell.md", needle: "15 voices", noun: "voices", src: "src/engine/type.mjs",
     source: async () => Object.keys((await import("../../src/engine/type.mjs")).makeVoices()).length },
-  { id: "colour formats", doc: "docs/references/ui-plan.md", line: /T8 export:/, needle: "10 formats", noun: "formats", src: "src/ui/overlays/drawer.js",
+  { id: "colour formats", doc: "docs/planning/ui-plan.md", line: /T8 export:/, needle: "10 formats", noun: "formats", src: "src/ui/overlays/drawer.js",
     source: drawerColorFormats },
-  { id: "roles per palette", doc: "docs/references/ui-plan.md", needle: "a 53-role", noun: "roles?", src: "docs/reference/data/role-table.json",
+  { id: "roles per palette", doc: "docs/planning/ui-plan.md", needle: "a 53-role", noun: "roles?", src: "docs/reference/data/role-table.json",
     source: () => Object.keys(JSON.parse(txt("docs/reference/data/role-table.json")).roleTable).length },
   { id: "btn home", doc: "docs/references/component-inventory.md", line: /^\| `btn\(\)` \|/, needle: "app-helpers.mjs", src: "src/ui/app-helpers.mjs",
     source: () => /^export const btn\b/m.test(txt("src/ui/app-helpers.mjs")) },

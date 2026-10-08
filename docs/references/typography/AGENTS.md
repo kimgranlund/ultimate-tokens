@@ -1,6 +1,6 @@
 # typography
 
-Describe what this topic covers.
+Typography references: the intended use of the type voices and the preset revisions.
 
 <!-- sdlc-lite:managed:start v1 sha256:34bda4305f5d -->
 ## Documents

@@ -72,7 +72,7 @@ is **split across three cells** (engine-math parity → `color-engine`; role-tab
 shared `role-table.json` into a green "three implementations agree" while the engine math
 diverges. `_entailment_check.py` proves the carving **covers** all criteria (the partial-order
 gate: **29/29 covered, 6 tickets**); the council's entailment lens additionally
-pressure-tested intent-entailment. Full carving + the honest-maturity note in `docs/references/decomposition.md`.
+pressure-tested intent-entailment. Full carving + the honest-maturity note in `docs/planning/decomposition.md`.
 The six child rubric cells **and** the six capability cells are **validated**. Two further
 **integration** cells consume them downstream and are validated against their own harnesses, NOT part
 of this engine/output carving (the same way the editor UI is a separate concern): `capability.system.ui-app`
@@ -119,7 +119,7 @@ every role is aliased to its primitive, **idempotently** on re-apply).
   "non_goals": [
     "brand-color selection or non-HCT palette generation (opinionated about HCT, ADR-001). Palette COUNT is NOT bounded, the 16 defaults (8 brand + 8 data) are a seed set, every acceptance criterion is quantified 'for every palette' so it generalizes to any count, and the validated UI ships a configurable set (OD-005 DECIDED 2026-06-15)",
     "a build-time / CI token pipeline, it is an interactive browser generator (ADR-010). 'Single-file / offline' is the DISTRIBUTION format (achievable by bundling the ES modules to one HTML), NOT an authoring constraint: the reference build authors modular ES modules and bundles to a single offline file",
-    "the interactive editor UI itself (app shell, canvas, lenses, inspector, gallery, drawer), a SEPARATE concern owned by the validated capability.system.ui-app; this spec covers the generator + its token output only (see docs/references/ui-plan.md). This explicitly includes the editor-only surfaces the gallery/drawer add, the gallery 'Import' of a saved config and the drawer 'Config' tab that downloads serialize(doc), which are convenience surfaces over the persistence round-trip that IS specced (hpg-persistence-roundtrip), not new token-output contracts",
+    "the interactive editor UI itself (app shell, canvas, lenses, inspector, gallery, drawer), a SEPARATE concern owned by the validated capability.system.ui-app; this spec covers the generator + its token output only (see docs/planning/ui-plan.md). This explicitly includes the editor-only surfaces the gallery/drawer add, the gallery 'Import' of a saved config and the drawer 'Config' tab that downloads serialize(doc), which are convenience surfaces over the persistence round-trip that IS specced (hpg-persistence-roundtrip), not new token-output contracts",
     "a contrast-aware on-color TABLE, the canonical role table still maps on{N}->050 and on{N}Variant->200 and the criteria still require that mapping. Contrast-aware on-color picking is NOT excluded: it is the default RESOLUTION policy (onColorMode, ADR-025 amending ADR-003, closing OD-001), which re-points those two roles per fill without touching the table",
     "exposed CAM16 viewing-condition controls (one fixed VC for portable exports, ADR-009)",
     "an OKLCH-native internal color model: OKLCH is an INPUT hue space (now the default) and an OUTPUT format, but the engine's internal color math stays CAM16/L* (ADR-001). The OKLCH->CAM16 input bridge is itself color-accurate now, a chroma-aware Newton inverse landing the rendered identity color on the stored OKLCH hue to ~0.00° (ADR-011, superseding the old 'unbounded drift' framing of ADR-008); determinism is validated by hpg-engine-oklch-deterministic and fidelity by the engine's hct-oklch-inverse",
@@ -196,7 +196,7 @@ every role is aliased to its primitive, **idempotently** on re-apply).
 ## Working with this package
 
 **If you are spec-author / a reviewer:**
-1. The contract block above is the spec; `docs/references/spec-draft.md` is the full Brief+TDD the
+1. The contract block above is the spec; `docs/specs/spec-draft.md` is the full Brief+TDD the
    contract summarizes (the hybrid header block, "How to Read", common spine, 📐💡⚠️ markers).
 2. Use `docs/references/knowledge-01..06`, `docs/references/decision-records.md`, and
    `docs/references/glossary.md` as the **grounded knowledge foundation**, they are primary
@@ -228,13 +228,13 @@ every role is aliased to its primitive, **idempotently** on re-apply).
 
 | File | Read when |
 |------|-----------|
-| `docs/references/spec-draft.md` | the full Brief+TDD this contract summarizes |
-| `docs/references/decomposition.md` | the entailment-checked carving into cells + tickets (full) |
+| `docs/specs/spec-draft.md` | the full Brief+TDD this contract summarizes |
+| `docs/planning/decomposition.md` | the entailment-checked carving into cells + tickets (full) |
 | `docs/references/knowledge-01-color-engine.md` | engine math: CAM16, gamut, VC, anchors |
 | `docs/references/knowledge-02-tonal-scale.md` | curves, `toneAt`, chroma, damping, clamp domains |
 | `docs/references/knowledge-03-semantic-system.md` | role table, on-colors, scrims, surfaces, modes |
 | `docs/references/knowledge-04-export-formats.md` | the ten color formats (+ type/geom) and Figma import constraints |
-| `docs/references/ui-plan.md` | the front-end plan: tasks T1 to T9 and the arrangement of the editor |
+| `docs/planning/ui-plan.md` | the front-end plan: tasks T1 to T9 and the arrangement of the editor |
 | `docs/references/component-inventory.md` | the editor's components and shared primitives |
 | `docs/specs/app-shell.md` | the app shell LLD: frame, regions, render pipeline, state |
 | `docs/references/knowledge-05-figma-plugin.md` | the cascade binder |
