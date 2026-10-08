@@ -47,7 +47,7 @@ const FLOAT_FNS = [
   // verbatim so the binder's copy stays byte-identical (parity-gated, same discipline as the rest of
   // this list). LIBRARY_TYPE_VOICE_MAP itself is a CONST (extractConst only handles array consts), so
   // it's hand-duplicated in the binder instead, same precedent as SEMANTIC_RENAME_FROM (TKT-0024/#492).
-  "substituteSegment", "expandVoiceAliasMap", "nearestStepByHeightVM", "geometryPlanStepHeights",
+  "substituteSegment", "expandVoiceAliasMap", "nearestStepByHeightVM", "geometryCellOrderVM", "geometryPlanStepHeights",
   "expandGeometryAliasMap", "resolveLiteralHeightVM", "liveAliasTargetsByNameVM", "priorLibraryUpliftVM", "pruneCandidatesVM", "libraryReconcile",
   "valueChangedVM", "readLiveValuesByName", "libraryModeReportVM", "libraryModeReportText",
   "confirmLibraryMode", "escapeHtmlVM",

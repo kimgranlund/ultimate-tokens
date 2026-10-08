@@ -36,21 +36,34 @@ const ok = (c, m) => { if (!c) fails.push(m); };
 
 // ── kebabWaveVarRenames: every CURRENT Breakpoints variable a real plan emits must resolve to SOME
 //    pre-wave name (this is a coverage check on the reverse tables, not a byte-for-byte one, the
-//    tables are frozen history, so this only proves the CURRENT grammar's shape is still reachable) ──
+//    tables are frozen history, so this only proves the CURRENT grammar's shape is still reachable).
+//    Ladder cells (size/{tier}-{scale}-{size}/*, T-0017) are excluded BY DESIGN: they post-date the
+//    wave, so no pre-wave name exists for them (their predecessors are the legacy size/{step}/*
+//    variables, bridged by GEOMETRY_FIELD_RENAME_MAP + geometrySizeAliasMap instead) ──
 {
   const ix = A.mergeModeInterchanges(
     T.typeTokensFigmaModes(T.typeScale({ treatment: "product", bodyBase: 16 }), []),
-    G.geomTokensFigmaModes(G.geomScale({ treatment: "comfortable" }), []),
+    G.geomTokensFigmaModes(G.geomScale({}), []),
   );
   const plan = A.modeApplyPlan(ix)[0];
   const names = plan.variables.map((v) => v.name);
   const renames = M.kebabWaveVarRenames(names);
-  // every type/ and size/ variable must resolve (space/radius/border/focus/inset/gap were already
-  // kebab pre-wave and correctly resolve to null, not counted as coverage gaps).
-  const shouldCover = names.filter((n) => n.startsWith("type/") || n.startsWith("size/"));
+  // every type/ variable, and any size/ variable whose step segment is not a cell (none today), must
+  // resolve (space/radius/border/focus/inset/gap were already kebab pre-wave and correctly resolve to
+  // null, not counted as coverage gaps).
+  const CELL_RE = /^(content|product|micro)-(sm|md|lg)-(sm|md|lg)$/;
+  const isCellName = (n) => { const seg = n.split("/"); return seg[0] === "size" && seg.length === 3 && CELL_RE.test(seg[1]); };
+  const shouldCover = names.filter((n) => n.startsWith("type/") || (n.startsWith("size/") && !isCellName(n)));
   const covered = shouldCover.filter((n) => Object.values(renames).includes(n));
   ok(covered.length === shouldCover.length, `kebabWaveVarRenames: ${covered.length}/${shouldCover.length} type/size variables resolve to a pre-wave name (uncovered: ${shouldCover.filter((n) => !covered.includes(n)).slice(0, 5).join(", ")})`);
   ok(Object.keys(renames).length === covered.length, "kebabWaveVarRenames: one pre-wave name per covered current name (no collisions)");
+  // a cell never resolves to a pre-wave name: a later "modernization" of the frozen OLD_FIELD table
+  // (which would mint never-shipped rename keys like size/PRODUCT-MD-MD/inset) is caught here.
+  const cellNames = names.filter(isCellName);
+  ok(cellNames.length === 378 && cellNames.every((n) => M.kebabWaveOldName(n) === null), `kebabWaveOldName: ${cellNames.length} size/{cell}/{field} names (want 378 = 27 cells x 14 fields), every one must resolve to null (cells have no pre-wave name)`);
+  // frozen-table spot checks: the legacy step grammar still reverses exactly as it shipped.
+  ok(M.kebabWaveOldName("size/xs/padding-wide") === "size/XS/paddingWide", `kebabWaveOldName("size/xs/padding-wide") = ${M.kebabWaveOldName("size/xs/padding-wide")}, want size/XS/paddingWide (frozen OLD_FIELD)`);
+  ok(M.kebabWaveOldName("size/2xl/icon-gap") === "size/2XL/gap", `kebabWaveOldName("size/2xl/icon-gap") = ${M.kebabWaveOldName("size/2xl/icon-gap")}, want size/2XL/gap (frozen OLD_FIELD)`);
 }
 
 // ── FIGMA_MIGRATIONS: the static collection-rename maps name the right old collections ──
@@ -62,5 +75,5 @@ const ok = (c, m) => { if (!c) fails.push(m); };
 }
 
 if (fails.length) { console.error(`migrations FAIL (${fails.length}):\n  ` + fails.join("\n  ")); process.exit(1); }
-console.log("migrations PASS, kebabWaveColorRenames covers every SCRIM_STEPS entry + every non-identity role, kebabWaveVarRenames covers every live type/size variable, FIGMA_MIGRATIONS names the right old collections");
+console.log("migrations PASS, kebabWaveColorRenames covers every SCRIM_STEPS entry + every non-identity role, kebabWaveVarRenames covers every live type/ variable (ladder cells excluded by design: no pre-wave name), FIGMA_MIGRATIONS names the right old collections");
 process.exit(0);

@@ -86,9 +86,9 @@ const LIBRARY_TYPE_VOICE_MAP = { heading: "headline", ui: "ui-control", caption:
 
 // GEOMETRY_FIELD_RENAME_MAP (#498), "published library" mode's static old->new Geometry size/* field-
 // spelling map (mirrors migrations.mjs's GEOMETRY_FIELD_RENAME_MAP, hand-kept in lockstep and gated by `renameparity`, same
-// discipline as LIBRARY_TYPE_VOICE_MAP above). "font" is deliberately excluded, see migrations.mjs's
-// own header comment for the cross-collection execution-order reason.
-const GEOMETRY_FIELD_RENAME_MAP = { edgePadding: "padding-wide", gap: "icon-gap", minWidth: "min-width", padding: "padding-narrow", radius: "pill-radius" };
+// discipline as LIBRARY_TYPE_VOICE_MAP above). The targets are ladder-cell fields (T-0017); a field
+// with no cell counterpart is left out and deprecates, see migrations.mjs's own header comment.
+const GEOMETRY_FIELD_RENAME_MAP = { "padding-narrow": "inset", padding: "inset", font: "text", "pill-radius": "radius-control", radius: "radius-control", minWidth: "min-width" };
 
 // MIRRORS figma/plugin/code.js's float executor: readFloatRegistry/writeFloatRegistry/
 // ensureFloatCollection/varsByName/applyFloatPlans, a pure DATA executor (no planner to spec-gate
@@ -194,7 +194,7 @@ async function applyFloatPlans(plans, opts) {
       // current step name (unlike #495's original scan, which skipped those as "already fine"), an
       // identity-matching step's own UNRENAMED fields (height/icon/caret) are already `wanted` names
       // and get skipped by libraryReconcile before ever consulting this map (harmless no-op self-
-      // mapping), but its OLD-SPELLED fields (edgePadding/gap/…, GEOMETRY_FIELD_RENAME_MAP) are NOT
+      // mapping), but its OLD-SPELLED fields (padding/radius/…, GEOMETRY_FIELD_RENAME_MAP) are NOT
       // wanted names, and need this SAME step entry to be bridged at all (#498's field-spelling bridge,
       // isolated from step drift, see GEOMETRY_FIELD_RENAME_MAP's own header comment).
       const oldStepHeights = {};
@@ -213,10 +213,24 @@ async function applyFloatPlans(plans, opts) {
 
     const current = new Set();
     for (const v of plan.variables) {
+      if (v.type === "ALIAS") continue; // written in the second pass, once every literal target exists
       const vr = byName[v.name] || figma.variables.createVariable(v.name, coll, v.type || "FLOAT");
       for (const pair of v.values) {
         const mid = modeId[pair.mode];
         if (mid != null && Number.isFinite(Number(pair.value))) vr.setValueForMode(mid, Number(pair.value));
+      }
+      byName[v.name] = vr; current.add(v.name); variables++;
+    }
+    // ALIAS variables (Geometry's per-mode control/ roles, T-0017): each mode's value NAMES a literal
+    // variable of this plan, written as a real alias. A missing target is skipped, never thrown (the
+    // applyFontPrimitivesModes idiom); the validator already rejects a plan whose target is absent.
+    for (const v of plan.variables) {
+      if (v.type !== "ALIAS") continue;
+      const vr = byName[v.name] || figma.variables.createVariable(v.name, coll, "FLOAT");
+      for (const pair of (v.values || [])) {
+        const mid = modeId[pair.mode];
+        const target = byName[pair.value];
+        if (mid != null && target) vr.setValueForMode(mid, figma.variables.createVariableAlias(target));
       }
       byName[v.name] = vr; current.add(v.name); variables++;
     }
@@ -312,6 +326,19 @@ function nearestStepByHeightVM(oldHeight, currentStepHeights) {
   return best;
 }
 
+function geometryCellOrderVM(stepHeights) {
+  const cellRe = /^(content|product|micro)-(sm|md|lg)-(sm|md|lg)$/;
+  const tierRank = { product: 0, content: 1, micro: 2 };
+  const stepRank = { md: 0, sm: 1, lg: 2 };
+  const cells = [], rest = [];
+  for (const key of Object.keys(stepHeights || {})) (cellRe.test(key) ? cells : rest).push(key);
+  const rank = (key) => { const m = cellRe.exec(key); return tierRank[m[1]] * 9 + stepRank[m[3]] * 3 + stepRank[m[2]]; };
+  cells.sort((a, b) => rank(a) - rank(b));
+  const out = {};
+  for (const key of cells.concat(rest)) out[key] = stepHeights[key];
+  return out;
+}
+
 function geometryPlanStepHeights(planVariables) {
   const currentStepHeights = {};
   const fieldSet = {};
@@ -330,7 +357,7 @@ function geometryPlanStepHeights(planVariables) {
 function expandGeometryAliasMap(oldStepHeights, currentStepHeights, fields, fieldRenameMap) {
   const map = {};
   for (const oldStep of Object.keys(oldStepHeights)) {
-    const nearest = nearestStepByHeightVM(oldStepHeights[oldStep], currentStepHeights);
+    const nearest = nearestStepByHeightVM(oldStepHeights[oldStep], geometryCellOrderVM(currentStepHeights));
     if (!nearest) continue;
     for (const field of fields) map["size/" + oldStep + "/" + field] = "size/" + nearest + "/" + field;
     for (const oldField of Object.keys(fieldRenameMap || {})) map["size/" + oldStep + "/" + oldField] = "size/" + nearest + "/" + fieldRenameMap[oldField];
