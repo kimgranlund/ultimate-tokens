@@ -21,9 +21,9 @@ The non-obvious do/don'ts (each one cost a real bug or review cycle), then a con
 ## Control & data
 
 - **Bind only persisted doc fields; show derived params read-only.** The inspector's writable controls map
-  to exactly the fields `persist.js` carries (e.g. `doc.geometry = {treatment, baseHeight}`). Anything the
-  engine derives from those (per-size icon/font/pad, per-voice ratio/leading) is shown read-only with a
-  one-line "coming / from treatment" note. **Never fake an editable control** the engine + the persist fuzz
+  to exactly the fields `persist.js` carries (e.g. `doc.geometry = {tier, scale, radius, spaceBase, modes?}`). Anything the
+  engine derives from those (per-cell inset/icon/text/radius, per-voice ratio/leading) is shown read-only
+  with a one-line "from the ladder / from treatment" note. **Never fake an editable control** the engine + the persist fuzz
   generator can't round-trip, it lies to the user and breaks the persist test.
 - **`setSection(id)`**: stash the color viewport on leave (`_colorViewport`), restore on return; call
   `this.fit()` for non-color (it resets the viewport to zoom 1 and insets the scene's top-left corner via
@@ -54,6 +54,11 @@ The delete/keep checklist is in the body (Procedure step 6). Mechanics it doesn'
   children; `document.fonts.check` lies for variable fonts, measure DOM width instead.
 
 ## Worked walkthrough: the Geometry section (condensed, from PR #97)
+
+History: PR #97 built the section on the retired six-size ramp. T-0017 (ADR-032) rebuilt the scene on
+the Maison ladder (27 `.geom-spec-line` cells, each `data-cell="{tier}-{scale}-{size}"`, the kit default
+marked), the inspector on tier, scale, radius and space-base pickers, the mode editor on `modes[].scale`
+(`_setActiveGeomScaleId`) and the Tokens table as read-only. The pattern below is unchanged.
 
 1. State: `geomSpecMode` (Controls·Tokens), `geomSegment` (Ramp·Radius·Space); drop the modal's `geomOpen`.
 2. Route: `renderCenter` geometry → `renderGeomCanvasHeader` + `renderGeomCanvas` + footer; `renderLeftPane`

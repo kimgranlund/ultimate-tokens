@@ -1,208 +1,162 @@
 ---
 name: geometry-system
 description: >
-  Change the dimensional / GEOMETRY ENGINE in ultimate-tokens, the centering
-  law, the size ramp (XS–2XL heights + glyphs), radius and spacing ladders, and the
+  Change the dimensional / GEOMETRY ENGINE in ultimate-tokens, the Maison ladder
+  (tier × scale × size, 27 cells), the centering law, the radius modes, the CSS
+  context resolver and its roles, the spacing and container ladders, and the
   composition with typography. Use whenever a change touches src/engine/geometry.mjs
-  or src/ui/model.mjs geometryScale, or someone says "change the size ramp / control
-  heights", "the control padding is off / un-centered", "tune the radius / spacing",
-  "add a geometry treatment", "the geometry / dimension tokens are wrong", "the
-  control text doesn't match the brand font", or "a geometry gate is red". The
-  geometry sibling of the color-math skill (same shape: a few params → a
-  systematic ramp → tokens).
+  or src/ui/model.mjs geometryScale / geomScaleFor, or someone says "change the
+  control heights / the ladder", "the control padding is off / un-centered", "tune
+  the radius / spacing", "the --control-* / --chip-* / --radius-* roles are wrong",
+  "the data-tier / data-scale resolver", "the geometry / dimension tokens are wrong",
+  "the control text doesn't match the brand font", or "a geometry gate is red". The
+  geometry sibling of the color-math skill (a few params → a systematic ladder → tokens).
 disable-model-invocation: false
 user-invocable: true
 ---
 
 # Geometry / dimensional engine: ultimate-tokens
 
-`src/engine/geometry.mjs` is the spatial analog of the color & type engines: **`{ treatment, baseHeight }` → a
-six-size ramp → derived control geometry → DTCG / CSS / Figma tokens.** Pure, no DOM, no RNG. It encodes ONE
-law and TWO families; the verifier proves both on every change. Geometry is unforgiving the same way color is,
-a pad hand-tuned to "look right", a density that leaks into the frame, or a font that nudges the box ships
-un-centered controls that *look* plausible. This skill is the procedure + the gotchas + the gates. The
-conceptual *why* is owned by `docs/references/geometry/README.md` (de-staled, accurate to cite) and the
-`design-skills:component-decomposer` skill's geometry-system reference, **cite them, don't re-derive.**
+`src/engine/geometry.mjs` is the spatial analog of the color and type engines: **`{ tier, scale, radius,
+spaceBase }` → 27 ladder cells → DTCG / CSS (with a context resolver) / Figma tokens.** Pure, no DOM, no
+RNG. Since ADR-032 (T-0017) it is the **Maison ui-kit geometry system** in our token names: a fixed,
+validated ladder, not a ramp with a height knob. Geometry is unforgiving the same way color is: a pad
+hand-tuned to "look right" or a height off the ladder ships controls that *look* plausible and break the
+standard. This skill is the procedure, the gotchas and the gates. The reference shape is owned by
+`docs/references/geometry/README.md`, the decision and the Maison-to-ours name map by ADR-032 in
+`docs/references/decision-records.md`; **cite them, don't re-derive.**
 
-## THE ONE LAW (read first)
+## THE LADDER (read first)
 
-**Edge padding for a glyph = (height − glyph)/2**: every glyph centers in a square cell of side = the control
-height; block-size is the vertical lever, never block-padding (`padding-block: 0`). The full statement + its
-derivations: `references/foundations.md` §2.
+Three discrete axes address every cell, `{tier}-{scale}-{size}`:
 
-From that single rule fall out, mechanically: the slot pad `paddingNarrow = (height − icon)/2`, the caret/bare
-edge `paddingWide = (height − caret)/2`, the icon-only **square** `minWidth = height`, and the **pill radius**
-`round(height/2)`. The `centering-law` block asserts `paddingNarrow === (height − icon)/2` **exactly** (not a
-tolerance) for every size, it is a derivation, not a fit. The `.control-{size}` CSS utility **embodies** it
-(block-size lever, padding-block 0, inline pad = `paddingWide`, pill radius).
-
-## THE TWO FAMILIES: density rides the rhythm, never the frame
-
-**Frame** (`icon`, `paddingNarrow`, `paddingWide`, `minWidth`, `radiusPill`) scales with the box **height**
-and is **density-invariant**; **Rhythm** (`gap` = the hand-CALIBRATED `GAP_UNIT` per size, 3·3·4·6·6·8 at
-the canonical baseHeight, × bh/28) is all density may touch (`caret` rides its
-OWN height law, `3.5·h^0.39`, and is never composed). The compact pads
-(`paddingNarrowCompact`/`paddingWideCompact` = the same edges with the gap absorbed) straddle the two
-families: frame formulas with the rhythm's gap inside. The full table: `references/foundations.md` §3.
-
-`density` (treatment knob: comfortable 1 · compact 0.75 · spacious 1.25 · touch 1.1 · pill 1) multiplies
-**`gap` and only `gap`** (`gap = max(1, round(GAP_UNIT[name]·(bh/28)·density))`; per-breakpoint hand
-columns ride `opts.gapOverrides` as FINAL values). **Scaling the frame would un-center the
-glyph**, so density (and the type scale) must never touch it. Depth: `references/foundations.md` §3.
-
-## THE RAMP: one power law, six samples
-
-`SIZES = [XS 20, SM 24, MD 28, LG 36, XL 48, 2XL 64]` (heights), **two bands** at the MD|LG seam (compact `+4`
-linear below: 20·24·28, expressive `×4/3` geometric above: 36·48·64). The glyphs scale **sublinearly** (the
-optical correction): two tuned power laws of height, `icon = 2.49·h^0.58` (roundEven) and
-`caret = 3.5·h^0.39` (round), that reproduce the hand-tuned reference table (icon ±1px; the caret pinned at SM..2XL by its own exact-ramp assert): one rule sampled six times.
-`font` is not a power law: it is the ratified `CONTROL_FONT` row × `baseHeight/28`, or the composed UI-control
-voice (below). `CANON_MD =
-28`; `baseHeight` scales the whole ramp by `baseHeight/28`. **`rampContrast` (0…1, default 1 = identity)
-is the responsive knob**: at 0 the expressive band loses its gear and continues the compact +4 linear step
-(bh 24 · c 0 = 18·20·24·28·32·36, a compressed mobile ramp). **Breakpoints are DESKTOP-ANCHORED and
-INTRINSIC (#252/#253)**: the designed ramp IS Desktop (1280, Figma's default mode); Tablet (992, heights
-−2) and Mobile (≤476, −4, floor 20) are SYNTHESIZED at export/apply when the doc carries no modes
-(`_geomModeScales`), each composing type at the same rung; the Standard-set button just materializes the
-same modes for matrix editing. The CSS export is SEPARATE FILES, not one @media-embedded stylesheet
-(#264): `geometry.css` is the unconditional Desktop base (`geomTokensCSS`, complete on its own);
-`geometry-tablet.css` / `geometry-mobile.css` are bounded, self-contained bolt-ons (`geomTokensBreakpointCSS`)
-a consumer adds in any subset, any order. The constants + the reference table: `references/foundations.md` §4.
-
-**A SECOND, opt-in ramp shape exists for prototyping (issue #483, `config.ramp === RAMP_LADDER`
-["linear4"]):** a self-contained closed-form ladder (`inset = h/4−3`, `container = h/2+6`, `icon =
-container−2`, `text = h/4+6` doubling as font AND caret) evaluating AdiaUI's scale-ladder. Its ten
-steps are named NUMERICALLY, `LADDER_SIZE_KEYS = ["0".."9"]` (a final owner ruling; the
-CSV's ten rows map onto ten CONSECUTIVE +4 steps 20·24·28·32·36·40·44·48·52·56, exported as
-`--{pfx}-size-{0..9}-{field}`, e.g. `--md-size-3-height: 32px`, gen-ui-kit binds these directly).
-Step `"3"` (32px) is the MD-equivalent, `LADDER_MD_STEP`, since there is no `.MD` key on this ramp at
-all; `SIZES`/`SIZE_KEYS` above are UNCHANGED (still exactly six t-shirt names at 20·24·28·36·48·64) and
-the two ramps' naming schemes are entirely disjoint, not overlapping strings.
-
-**Two traps this naming scheme creates, both fixed centrally:**
-1. **Never iterate `Object.keys(scale.sizes)`/`Object.entries(...)` for ORDER, and never sort by
-   resolved height either.** JS forces integer-like string keys ("0".."9") into ascending NUMERIC
-   enumeration first, regardless of insertion order, a real trap the moment a ramp's names stop
-   being non-numeric strings (the default ramp's t-shirt names rely on the OPPOSITE spec guarantee,
-   insertion order, which only looks the same because `SIZES` happens to be authored ascending).
-   A height-sort has its OWN trap: a per-step height OVERRIDE that breaks monotonicity (an authored
-   MD taller than LG) must not reorder the list. Use `orderedSizeNames(scale)`, sorts by each name's
-   position in `LADDER_SIZE_KEYS`/`SIZE_KEYS` (the CANONICAL step order, immune to both traps),
-   instead; every consumer that needs an ordered list (ds-export's Buttons Size-ladder row, the five
-   `geomTokensX` emitters, every ordered loop in `sections/geometry.js`) routes through it.
-2. **Never assume `.sizes.MD`/`.SM`/`.LG`/etc. (any t-shirt-letter key) exists.** A bare
-   `scale.sizes.SM || Object.values(scale.sizes)[0]`-style fallback silently
-   lands on step `"0"` (the SMALLEST control) under the ladder, not any sensible letter-equivalent,
-   because of the same integer-key reordering. Use `sizeAnchor(scale, "SM")` (`{ name, size }`,
-   resolving the literal t-shirt name on the default ramp / its `LADDER_ANCHOR`-mapped numbered step
-   on the ladder, XS→"1", SM→"2", MD→"3"/`LADDER_MD_STEP`, LG→"4", XL→"5", 2XL→"6") instead;
-   `mdAnchor(scale)` is `sizeAnchor(scale, "MD")` kept as its own export for the common case.
-
-A consumer that hand-tracks "the six sizes" (persist.js's `GEOMETRY_SIZES` allowlist, now a flat
-UNION of both naming schemes, not a subset relationship) must read `orderedSizeNames`/
-`LADDER_SIZE_KEYS` rather than assume six, `geomModeScales` in `model.mjs` skips its hand-tuned
-per-cell breakpoint tables entirely while the ladder is active for exactly this reason (they're tuned
-to the default ramp's OWN six positions, not the ladder's). COMPOSITION is skipped while the ladder is
-active (the ladder's own text wins over the UI-control voice, by design, see the code comments above
-`buildSizeLadder` in `geometry.mjs` for the full rationale + the two standing flags in issue #483's
-Findings; `caret = text` is RULED intentional, not a flag). It does NOT satisfy the centering law
-above (a different, ladder-own anatomy) and `rampContrast` is a no-op on it. Absent/unknown `ramp` is
-byte-identical to the ramp above, this is a prototype for evaluation, not a ratified second law.
-
-## THE COMPOSITION: one number, two engines (the JOIN)
-
-A control's **box** (geometry) and the **text in it** (typography) share one source of truth. The join is
-`src/ui/model.mjs`:
-
-```js
-geometryScale(doc) = geomScale(doc.geometry, { typeScale: typeScale(doc.type) })
+```
+height = TIERS[tier].base + TIERS[tier].offsets[scale] + SIZES[size] · TIERS[tier].step
 ```
 
-When `opts.typeScale` is supplied, `geomScale` reads `opts.typeScale.categories["UI-control"]` and each
-step's `font` becomes the brand's **UI-control voice** at the matching step (XS→UI-control XS … 2XL→2XL,
-all six steps compose since the voice rides the full XS..2XL ramp; the join reads UI-control, not Label);
-`caret` keeps its OWN power law (`3.5·h^0.39`, never composed); `gap` rides its own
-GAP_UNIT calibration, independent of the font.
-Precedence per step: `opts.fontOverrides` > the composed UI-control size > `round(CONTROL_FONT[name] ×
-factor)` (the ratified fallback row `{XS:12, SM:13, MD:15, LG:16, XL:18, 2XL:20}`). **The FRAME is
-untouched**, so the centering law still holds. The pure `geomScale(config)` (no opts) rides the
-CONTROL_FONT row standalone. Geometry's Figma emitters carry NO font rows, control text lives in the
-type/ UI-voice variables. Depth + the worked walkthrough: `references/foundations.md` §5 +
-`references/best-practices.md`.
+`TIERS` is Maison's `definition.mjs` verbatim (content 48, product 32, micro 16), `SCALES = ["sm", "md",
+"lg"]`, `SIZES = { sm: -1, md: 0, lg: 1 }`. All 27 heights land on `LADDER_ROWS`, Maison's 25-row
+component-geometry CSV (height, inset, icon). A height off the table is a `RangeError` from `ladderRow`,
+never a nearest match: a continuous knob over a discrete standard is exactly the drift the 27-cell
+validation prevents. Depth: `references/foundations.md` §1-2.
+
+## THE ONE LAW
+
+**inset = (height − icon) / 2**: every glyph sits in one square icon box, centered in a control of side =
+height; block-size is the vertical lever, never block-padding. The law holds on every ladder row (Maison's
+generator asserts it); the `anatomy` group of `test/engine/geometry.mjs` checks it on all 27 cells and all
+25 rows. The glyph rules that live in consumer CSS, not in tokens: an indicator is text-sized inside the
+icon box, the icon-to-label gap is inset / 2, an icon-only control is a height square (`min-width`).
+
+## THE CELL: 14 fields, one builder
+
+`buildCell` (in `geometry.mjs`) derives every field from the ladder row, the text lookup and the radius
+mode's `{ text, height }` coefficient pair (`RADIUS_MODES`: default 0.5, round 1, sharp 0.25 on text; pill
+0.5 on height):
+
+- `height`, `inset`, `icon`: the ladder row. `text`: the type scale's `uiText` at the height.
+- The compact row: the first ladder row, by descending height, at or below height − inset. `captionText`
+  = `chipText` = its text; `chipInset` its inset; `chipHeight` = min(its height, height).
+- `iconRatio` = icon / height (unitless, unrounded); `minWidth` = height.
+- `radiusControl` = text · k.text + height · k.height; `radiusMark` = radiusControl · iconRatio;
+  `radiusInset` = max(0, radiusControl − inset / 2); `radiusCard` = radiusControl + inset / 2.
+
+## THE RESOLVER: attributes in, roles out
+
+`geomResolverCSS` is Maison's context resolver in our names. It reads the primitives, never declares
+them. `:where(:root)` sets the kit default context; `[data-tier]` reassigns the nine `--ctx-cell-*`
+cells to that tier's primitives; `[data-scale]`, `[data-size]` and `[data-radius]` set 0/1 indicators
+(`--ctx-scale-*`, `--ctx-size-*`) and the radius pair (`--ctx-radius-text/-height`); `:where(*, :host)`
+resolves the roles as a sum of products over the nine cells. The roles are `--control-height/-inset/
+-text/-icon/-caption-text/-icon-ratio`, `--chip-height/-inset/-text` and `--radius-control/-mark/-inset/
+-card`. Nearest ancestor wins per axis, so one page can mix sizes.
+
+**The prefix contract.** The `prefix` option goes through `ns()` and renames only the cell primitives
+(`--{pfx}-size-{cell}-{field}`) and the container ladders. The roles and `--ctx-*` are **never
+prefixed**: they equal Maison's per-instance override hooks, so Maison's control CSS binds an exported kit
+with no translation. Only the `var()` references inside the `--ctx-cell-*` reassignments follow the
+prefix. The `emitters` group checks it.
+
+## THE COMPOSITION: one table, two engines (the JOIN)
+
+Control text per height is ONE table, `UI_TEXT` in `src/engine/type.mjs`; `uiText(height, factor)`
+scales a row by the bodyBase factor onto the half-pixel grid, and `typeScale` exposes the whole table as
+`uiText`. The join is `geomScaleFor` in `src/ui/model.mjs`:
+
+```js
+geomScaleFor(doc, modeKey) = geomScale(mode ? { ...g, scale: mode.scale } : g, { typeScale: typeScaleFor(doc, "base") })
+```
+
+`geometryScale(doc)` is `geomScaleFor(doc, "base")`. With `opts.typeScale`, every cell's text, caption
+text and chip text read `opts.typeScale.uiText[height]`; without it, `uiText(height)` (factor 1). The
+frame (height, inset, icon) never moves, so the law holds composed. Cells compose from the BASE type
+scale at every mode, because the Figma cells are mode-constant; a mode changes only the scale axis.
 
 ## Map: what each export owns
 
 | Export (`geometry.mjs`) | Owns |
 |---|---|
-| `geomScale(config={treatment,baseHeight,rampContrast}, opts={typeScale,fontOverrides,overrides})` | the resolved scale `{treatment, label, density, radiusStyle, radiusDefault, baseHeight, rampContrast, sizes, radii, space, insets, gaps, borders, focus}` |
-| `buildSize(rawHeight, density, font, gap)` | one ramp row, the LAW + the icon/caret power laws live here; `font` and `gap` arrive pre-resolved from `geomScale` (override, then composition or calibration, then fallback) |
-| `GEOMETRY_TREATMENTS` / `DEFAULT_GEOMETRY` | the 5 presets (`comfortable/compact/spacious/touch/pill`) = density + radiusStyle + baseHeight + spaceBase; default `{comfortable, 28}` |
-| `geomTokensCSS` | `:root` custom props + the `.control-{size}` utility that embodies the law |
-| `geomTokensSizesCSS` | a SIZE-ONLY sibling of `geomTokensCSS` (issue #487), just the `--size-{step}-*` `:root` block, no radius/space/inset/gap/border/focus/density, no `.control-*` classes; bundled as `geometry-sizes.css` |
-| `geomTokensDTCG` | W3C `dimension` tokens (`"{px}px"`), size/radius/space groups |
-| `geomTokensFigma` | DTCG `number` tokens (UNITLESS) under a `Geometry` collection → Figma FLOAT variables |
+| `TIERS` / `SCALES` / `SIZES` / `RADIUS_MODES` / `DEFAULT_GEOMETRY` | the axes, the radius k table, the default kit `product/md/round/4` |
+| `LADDER_ROWS` / `ladderRow` / `cellHeight` | Maison's ladder and height formula; off-table throws |
+| `geomScale(config, opts={typeScale})` | the resolved scale `{ tier, scale, radius, spaceBase, cells, cell, radii, space, insets, gaps, borders, focus }`; unknown ids fall back to `DEFAULT_GEOMETRY` |
+| `orderedSizeNames` / `sizeAnchor` / `mdAnchor` / `LEGACY_SIZE_CELLS` | cell order (Maison's geometryRows order, never `Object.keys`), and legacy t-shirt names to cells (MD is the kit default cell; XS product-sm-sm, SM product-md-sm, LG product-lg-md, XL content-md-md, 2XL content-lg-md) |
+| `geomTokensCSS` | the 27 × 14 primitives, the container lines, then the resolver |
+| `geomTokensSizesCSS` | the primitives alone (issue #487), no container tier and no resolver |
+| `geomResolverCSS` | the context resolver only (the app shell injects primitives + resolver) |
+| `geomTokensBreakpointCSS` | one file per mode, setting only the `--ctx-scale-*` indicators |
+| `geomTokensDTCG` / `geomTokensFigma` | a `size` group keyed by cell (kebab fields; `icon-ratio` a `number`), radius/space/container groups |
+| `geomTokensFigmaModes` | the Geometry collection: 27 × 14 mode-constant FLOAT `size/{cell}/{field}` and 9 × 14 per-mode ALIAS `control/{tier}/{size}/{field}` |
 
-`M3_CORNERS` (the **Material 3 shape-corner scale**, fixed across treatments: `none 0 · xs 4 · sm 8 · md 12 · lg 16 · xl 28 · full 9999`; a treatment's feel is its `radiusDefault` corner LEVEL via `RADIUS_DEFAULT`, aliased to `--radius-default`, the M3 "pick a level" model, not a rescaling) and `SPACE_STEPS × spaceBase` (the `--space-*`
-ladder, the gap **BETWEEN** components, a **separate concern** from control padding). Depth: `foundations.md`
-§6–7.
-
-**The CONTAINER tier** (semantic names over the space ladder, never hand-picked rungs): `insets`
-(`control-group·card·panel·dialog·page`) + `gaps` (`cluster·stack-tight·stack·stack-loose·grid·section`),
-each a named `space[k]` so the tier follows the treatment's rhythm; plus stroke constants `borders`
-(thin 1 / thick 2) and the `focus` ring pair (width 2 / offset 2). Emitted as `--inset-* / --gap-* /
---border-* / --focus-*` in CSS and `inset/gap/border/focus` groups in DTCG + both Figma shapes.
+The container tier is a separate concern from control geometry and derives from `spaceBase` alone: the
+fixed M3 corner scale (`none 0 · xs 4 · sm 8 · md 12 · lg 16 · xl 28 · full 9999`), `SPACE_STEPS ×
+spaceBase`, named `insets` and `gaps` over the space ladder, `borders` and the `focus` ring pair. At
+spaceBase 4 it is byte-identical to the pre-ADR-032 output, which keeps the Tailwind/shadcn/Panda/Radix
+seeds in `src/engine/exports.js` stable. Depth: `references/foundations.md` §5-6.
 
 ## Procedure: change → check → fix → re-check
 
-1. **Locate it.** A pad / centering / square / pill-radius bug → the LAW in `buildSize`. A ramp-shape / glyph
-   / height bug → the power law in `buildSize` (and `SIZES`/`CANON_MD`). A density / gap bug → the rhythm in
-   `buildSize`. A "control text ≠ brand font" bug → the COMPOSITION (`opts.typeScale` in `geomScale`, joined in
-   `model.mjs` `geometryScale`). A treatment / radius-ladder / space bug → `GEOMETRY_TREATMENTS` /
-   `M3_CORNERS` / `RADIUS_DEFAULT` / `SPACE_STEPS`. A token-shape bug → the matching `geomTokensX` emitter.
-2. **Keep the law a derivation.** Never hard-code a pad, change the inputs (`height`/`icon`) and let
-   `(height − icon)/2` fall out. Never add `padding-block` to center text. `roundEven` for height/icon, `round`
-   for font/caret. (`references/best-practices.md`.)
-3. **Keep density (and composition) out of the frame.** `density` multiplies `gap` only. `fontOverrides`
-   replaces `font` only; `gapOverrides` replaces `gap` only (and the compact pads re-derive from it). The
-   frame (`height·icon·paddingNarrow·paddingWide·radiusPill·minWidth`) must be identical
-   across densities AND between composed/standalone, the gates compare exactly that.
-4. **Constants are tuned, not arbitrary.** The power-law coefficients/exponents (`references/foundations.md`
-   §4) reproduce the reference ramp to ±1px; `CANON_MD = 28` is the pivot. Don't retune without updating the
-   test's `REF` table in the same change.
-5. **Three emitters, one source.** A new per-size field in `buildSize` must be added to `geomTokensCSS`,
-   `geomTokensDTCG`, `geomTokensFigma`, and the test, together. DTCG carries `px`; Figma is unitless.
-   `geomTokensSizesCSS` (issue #487) shares `geomTokensCSS`'s own `geomSizeVarLines` line-builder, so a
-   new field lands in both automatically, no fourth place to remember.
+1. **Locate it.** A cell value → the ladder (`LADDER_ROWS`, `TIERS`) or `buildCell`. A control-text bug →
+   the composition (`UI_TEXT` in type.mjs, the join in `geomScaleFor`). A role or attribute bug → the
+   resolver (`geomResolverCSS`). A container / space bug → `M3_CORNERS` / `SPACE_STEPS`. A token-shape
+   bug → the matching emitter. A Figma bug → `geomTokensFigmaModes` and the `maintaining-figma-plugins`
+   skill.
+2. **The ladder is data, not a fit.** Never hand-edit a cell or add a knob that makes off-table heights.
+   A Maison ladder change is re-vendored into `test/engine/fixtures/maison-geometry-rows.json` (with its
+   source commit and sha256) and validated over all 27 cells.
+3. **Keep the roles unprefixed and Maison-named.** A new role follows the name map in ADR-032; never
+   route a role or `--ctx-*` through `ns()`.
+4. **Emitters in lockstep.** A new per-cell field goes into `CELL_FIELDS` (every emitter reads it), the
+   resolver's `RESOLVER_FIELDS` if it is a role, the fixture-backed test, the consumer skill
+   `plugin/ultimate-tokens/skills/geometry-tokens/` and its `scripts/dimension-parity.mjs`, and the
+   Figma field map if a live file needs a rename.
+5. **Saved kits migrate.** A doc-shape change bumps the persist schema and adds a `RENAME_MAPS` entry;
+   `migrateGeometry` in `src/ui/persist.js` is the v9 model (nearest md-cell height, every dropped key
+   reported through `DROPPED_KEYS`).
 
 ## Validate (the gate: draft → check → fix → re-check)
 
-Run the pure verifier first (on pass it prints a single summary line, `geometry PASS — the ramp, the
-centering law, the two families, treatments, CSS + DTCG emit`, and `exit 0`; any failure lists the broken
-asserts and `exit 1`), then the full suite:
-
 ```
-node test/engine/geometry.mjs   # comment-delineated groups: treatments · reference-ramp · centering-law ·
-                                # two-families · baseHeight-scale · fallback · radius/space · CSS · DTCG ·
-                                # composition · Figma   (group names are labels for the test's comment blocks)
-npm test                        # the above + ui/figma/exports + smoke gen (node test/run.mjs)
+node test/engine/geometry.mjs   # groups: maison-ladder · anatomy · radius-modes · anchors ·
+                                # emitters (incl. the prefix contract) · container-identity
+node test/figma/mode-apply.mjs  # the Geometry interchange (ALIAS variables) validates
+npm test                        # the above + ui/figma/exports/mcp (node test/run.mjs)
 ```
 
-The verifier asserts the law `paddingNarrow === (height − icon)/2` **exactly**, the power-law ramp (±1px vs the
-hand table), the two families (density tightens `gap`, NOT the pads), `baseHeight` scaling, the radius/space
-ladders, all three emitters, and the **composition** (composed `font === typeScale.categories["UI-control"][name].size`,
-the frame untouched, the law still holding, `fontOverrides` winning over composition). **Don't call it done until
-`node test/engine/geometry.mjs` AND `npm test` are green.** Read the test before editing, its comment blocks
-state what each group proves.
+On pass the verifier prints one summary line (`geometry PASS, the Maison ladder (27 cells vs the vendored
+fixture), ...`) and exits 0. The real-browser leg (`npm run smoke`, CI only) renders the 108 nested
+resolver cases (27 cells × 4 radius modes) and reads `--control-height` and `--radius-control` back with
+`getComputedStyle`. **Don't call it done until `node test/engine/geometry.mjs` AND `npm test` are green.**
 
 ## References
 
 | Path | Use when |
 |---|---|
-| `references/foundations.md` | the pipeline, the centering law's derivations, the two families (why density skips the frame), the power-law ramp + reference table, the composition JOIN, treatments/ladders/space, the three emitters, the mental model the procedure assumes |
-| `references/best-practices.md` | the non-obvious do/don't (law-is-a-derivation, density-rides-the-rhythm, constants-are-tuned, frame-untouched-by-composition, emitter-lockstep) + a worked walkthrough from the typography-composition history |
-| `references/rubric.md` | score the change before calling it done, the centering law + the two families + the ramp + the composition are the gates |
-| `docs/references/geometry/README.md` | the reference token shape + the law + the table + the Figma export (de-staled, cite, don't copy) |
-| `design-skills:component-decomposer` (its geometry-system reference) | the centering law's first principles + the WHY (the square cell, the forced asymmetric pad); its `bin/geometry-check.py` mechanizes the same law |
+| `references/foundations.md` | the axes, the ladder, the law, the cell fields, the resolver, the composition, the container tier, the emitters and the migration |
+| `references/best-practices.md` | the non-obvious do/don't (ladder-is-data, roles-unprefixed, cell order, emitter lockstep, Figma ALIAS shape) |
+| `references/rubric.md` | score the change before calling it done |
+| `docs/references/geometry/README.md` | the reference token shape (cite, don't copy) |
+| `docs/references/decision-records.md` ADR-032 | the decision, the user rulings and the Maison-to-ours name map |
 
-Peers: [[type-scale]] (composition with type) · [[adding-export-formats]] (the geometry emitter) ·
-[[building-editor-sections]] (the Geometry section) · [[shipping-changes]].
+Peers: [[type-scale]] (the UI text table) · [[adding-export-formats]] (the geometry emitter) ·
+[[building-editor-sections]] (the Geometry section and the shell axes) · [[maintaining-figma-plugins]]
+(the cell variables) · [[shipping-changes]].

@@ -33,8 +33,8 @@ if it renders.
 | **Kicker** | The eyebrow/overline, an uppercase section flag in mono | Above headlines, category tags | Caps + very wide tracking (16% em) at Label's sizes; its own voice, not a mono Label. |
 | **Tiny** | The smallest prose, footnotes, captions (former Caption folds in) | Fine print | Must hold at 9–11px; nothing decorative survives here. |
 | **Tiny-mono** | Tiny in mono | Timestamps, fine data | Mirrors Tiny. |
-| **UI-control** | INTERACTIVE control text, buttons, inputs, selects | Every control | The full 6-step XS..2XL ramp; composes into geometry's control ramp, a change here moves control heights. Box voice (single-line height). |
-| **UI-widget** | Compact-widget text, tags, badges, switches | Dense chrome | The 6-step ramp one register under UI-control; same box behavior. |
+| **UI-control** | INTERACTIVE control text, buttons, inputs, selects | Every control | One step, MD (14 at the 32px control, `uiText(32)`); control text per height for every Geometry cell is the height-indexed UI text table `UI_TEXT`, so a body-base change moves control text, never control heights. Box voice (single-line height). |
+| **UI-widget** | Compact-widget text, tags, badges, switches | Dense chrome | One step, MD (12, `uiText(24)`, the text of the 32px control's compact row); same box behavior. |
 
 Aliasing law: every `-mono` voice and Kicker ride their non-mono sibling's exact sizes, the mono
 font is the whole difference. A preset must never give them a distinct size story.

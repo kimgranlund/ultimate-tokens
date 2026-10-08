@@ -25,9 +25,9 @@
 ## The architecture finding (read first)
 
 There is **no component library**. The entire UI is one autonomous web component,
-`ultimate-tokens` (`customElements.define` at `app.js:2600`), whose class is assembled from
+`ultimate-tokens` (`customElements.define` at `app.js:2646`), whose class is assembled from
 `src/ui/app.js` (~2,580 lines: state, render dispatch, the frame) plus the section and overlay
-mixins in `src/ui/sections/` and `src/ui/overlays/` (~5,600 lines, `mixinInto` at `app.js:2594`).
+mixins in `src/ui/sections/` and `src/ui/overlays/` (~5,600 lines, `mixinInto` at `app.js:2640`).
 It builds every control inline with a single hyperscript helper `h(tag, attrs, ...kids)`
 (`app-helpers.mjs:319`), across ~39 `render*()` methods. Styling is ~705 class-led selector lines in
 `src/ui/styles.css` (~1,600 lines; count: `grep -cE '^\s*\.' src/ui/styles.css`, 544 unique class names). Consequences that recur in every card below:
@@ -35,16 +35,16 @@ It builds every control inline with a single hyperscript helper `h(tag, attrs, .
 - **S2 is not a second surface.** `scripts/gen-figma-ui.mjs` bundles the *same* compiled app
   (`dist/ultimate-tokens.html`) and injects a postMessage bridge that flips `inFigma`
   (`markInFigma()`, `gen-figma-ui.mjs:23-33`). So **S2 reuses S1's primitives verbatim**; the only S2-specific
-  *instances* are `inFigma`-gated buttons ("Read live" `sections/color.js:1321`, "Read approx →" (`readFromFigmaVariables()`, `app.js:1216`),
+  *instances* are `inFigma`-gated buttons ("Read live" `sections/color.js:1321`, "Read approx →" (`readFromFigmaVariables()`, `app.js:1219`),
   `.figma-plugin-btn` `overlays/drawer.js:224`) and the `.figma-files` mode segment (`overlays/drawer.js:221`).
 - **No native-replacement layer + no FACE.** Controls are a mix of *native* elements (`<input
   type=range/text/search/checkbox>`, `<select>`) and *custom `<div>`/`<button>` widgets*, none are
   form-associated custom elements. The native ones inherit native a11y for free; the custom ones
   (`.toggle`, `segmented()`) are built on real `<button>`s with ARIA roles (`switchControl`, `app-helpers.mjs:364`;
-  `segmented`, `app.js:1601`), so they keep focus and keyboard.
+  `segmented`, `app.js:1608`), so they keep focus and keyboard.
 - **Forced-colors support is one pass**, the `@media (forced-colors: active)` block at
   `styles.css:1562`; custom-painted controls outside it still flatten in Windows High Contrast.
-- **Geometry is ad-hoc, off any ramp.** Buttons are `padding: 4px 9px` (`styles.css:164`), the range
+- **Geometry is ad-hoc, off any ramp.** Buttons are `padding: 4px 9px` (`styles.css before ADR-032`), the range
   thumb is 15px, the toggle track 34×19, none derived from a documented size ramp or the
   `(height − glyph)/2` law. Not wrong per se, but undocumented and unenforced.
 
@@ -69,7 +69,7 @@ Plus: a `@media (forced-colors:active)` pass; set-tile → `role=button` with a 
 drawer `role=dialog`; toast `aria-live`. `slider()` was already the model and is unchanged.
 
 **Since landed:** the `.field`/`.segmented` self-margins were removed after all:
-`.segmented` carries no self-margin (`styles.css:861`) and `.field { margin: 0; }` (`styles.css:920`);
+`.segmented` carries no self-margin (`styles.css:861`) and `.field { margin: 0; }` (`styles.css:940`);
 the parent owns spacing.
 **Still deferred (intentional):** a true drawer focus-trap; migrating the remaining uniform-`ghost`
 buttons + the composite swatch cells (ramp-strip/scrim/footer), all behavior-neutral, adoptable
@@ -110,14 +110,14 @@ incrementally.
 - **Anatomy** `[ icon? · label? ]`, no caret variant. Icon-only used for zoom (`zoomBy()`, `sections/color.js:846/848`),
   drawer close (`_drawerHead()`, `overlays/drawer.js:132-138`).
 - **API** classes-as-variant: `.primary` (`styles.css:171`), `.ghost` (`styles.css:177`), `.danger`
-  (modifier on `.ghost`, `app-helpers.mjs:401`), `.add-pal-btn` (dashed, `styles.css:511`),
-  `.ex-btn` (preview, `cursor:default`, non-interactive, `styles.css:892-895`), `.copy-float` (`styles.css:1080`),
-  `.map-reset` (borderless icon, `styles.css:723`), `.pane-toggle` (`styles.css:406`),
-  `.figma-plugin-btn`, `.undo-btn`/`.redo-btn` (`app.js:1405/1406`).
+  (modifier on `.ghost`, `app-helpers.mjs:401`), `.add-pal-btn` (dashed, `styles.css:528`),
+  `.ex-btn` (preview, `cursor:default`, non-interactive, `styles.css:912-915`), `.copy-float` (`styles.css:1101`),
+  `.map-reset` (borderless icon, `styles.css:740`), `.pane-toggle` (`styles.css:423`),
+  `.figma-plugin-btn`, `.undo-btn`/`.redo-btn` (`app.js:1412/1413`).
 - **States** default · `hover` (`button:hover` `styles.css:170`) · `focus-visible` (`styles.css:179`) ·
   `disabled` (`styles.css:188`) · toggle-pressed (`.on` + `aria-pressed`, 7 sites in `src/ui/`: the `btn()` and
   `chip()` primitives plus five inline buttons:
-  `aria-pressed` at `app-helpers.mjs:410/537`, `app.js:1469/1618`, `sections/color.js:520/947/1157`).
+  `aria-pressed` at `app-helpers.mjs:410/537`, `app.js:1469/1625`, `sections/color.js:520/947/1157`).
 - **a11y** ✓ `:focus-visible` ring; ✓ `aria-pressed` on toggle-buttons; ✓ `aria-label` on icon-only
   (`sections/color.js:846`). ✗ no `forced_colors`.
 - **Geometry** `padding:4px 9px; border-radius:5px; gap:6px`, ad-hoc, not a ramp.
@@ -158,32 +158,32 @@ incrementally.
 
 ### 3 · Segmented control
 
-- **Surface** S1. **Sites** 15 static `segmented()` calls: section switcher `app.js:1418`; inspector
-  tabs `app.js:1941`, `sections/typography.js:604`, `sections/geometry.js:707`; new-palette mode
+- **Surface** S1. **Sites** 15 static `segmented()` calls: section switcher `app.js:1425`; inspector
+  tabs `app.js:1941`, `sections/typography.js:604`, `sections/geometry.js:584`; new-palette mode
   `sections/color.js:529`; canvas view `sections/color.js:806`; canvas stops `sections/color.js:821`;
   hue space `sections/color.js:2068`; on-colors `sections/color.js:2107`; breakpoint mode
-  `sections/typography.js:177`, `sections/geometry.js:230`; specimen mode `sections/typography.js:308`,
-  `sections/geometry.js:381`; Figma files `overlays/drawer.js:214`; and one settings-row call
+  `sections/typography.js:177`, `sections/geometry.js:168`; specimen mode `sections/typography.js:308`,
+  `sections/geometry.js:297`; Figma files `overlays/drawer.js:214`; and one settings-row call
   `overlays/settings.js:30` inside the settingRow helper, one live instance per settings row, called
   from 10 call sites (11-12 live rows) across `overlays/settings.js`. **Variants** as found, four stylings of one idea; today two
   base stylings plus four modifiers remain:
   - **Inspector tabs** `.segmented` `[Palette|Global|Roles]`, `role=tablist`/`tab`, roving
-    tabindex, ArrowLeft/ArrowRight (`app.js:1593-1626`). *Well-built.*
+    tabindex, ArrowLeft/ArrowRight (`app.js:1600-1633`). *Well-built.*
   - **Canvas view** `.canvas-seg` `[Palettes|Scrims|Mapping|Radix]`, `role=tablist` (`sections/color.js:806-816`).
   - **Canvas stops** `.canvas-seg` `role=group` (`sections/color.js:821-829`); the Typography and Geometry
     breakpoint-mode and specimen-mode segments reuse the same modifier: `sections/typography.js:177`,
-    `sections/typography.js:308`, `sections/geometry.js:230`, `sections/geometry.js:381`.
-  - **New-palette mode** `.newpal-seg` `role=group`, `sections/color.js:529`, `styles.css:1143`.
+    `sections/typography.js:308`, `sections/geometry.js:168`, `sections/geometry.js:297`.
+  - **New-palette mode** `.newpal-seg` `role=group`, `sections/color.js:529`, `styles.css:1164`.
   - **Settings rows** `.settings-seg` `role=group`, one live instance per row, `overlays/settings.js:30`,
     `styles.css:1284`.
   - **Drawer format picker**: the as-found `.drawer-tabs` segmented row no longer exists in `src/`; the
     format is chosen with a native labelled `<select>` (`label[for=export-format]` + `aria-label`,
-    `overlays/drawer.js:177-186`; `.drawer-format`, `styles.css:1061-1063`), so it is a select (card 5), not a
+    `overlays/drawer.js:177-186`; `.drawer-format`, `styles.css:1082-1084`), so it is a select (card 5), not a
     segmented control.
   - **Figma files** `.figma-files`, now a `segmented()` call with `baseClass: "figma-files"` and
     `role=group` (`overlays/drawer.js:202-209`, `styles.css:1067-1069`), so it carries the same roving
     tabindex + Arrow keys as every other `segmented()` site.
-- **Anatomy** `[ track (group) · segment (button)[] ]`; active = `.on` (`styles.css:871`).
+- **Anatomy** `[ track (group) · segment (button)[] ]`; active = `.on` (`styles.css:891`).
 - **a11y** ✓ every one of the 15 sites shares one keyboard model, set on each segment inside `segmented()`
   (`app.js:1582-1612`) regardless of role: roving `tabindex` and an ArrowLeft/ArrowRight `onkeydown`;
   `role=tablist` sites add `role=tab` + `aria-selected` + `aria-controls`, `role=group` sites add
@@ -271,7 +271,7 @@ incrementally.
 ### 8 · Checkbox
 
 - **Surface** S1. **Sites** 1, "ends bend same way" (`sections/color.js:1795-1803`, native `type=checkbox`).
-- **Anatomy** `.mini-check` `<label>` **wrapping** the native input + text (`styles.css:809-810`) →
+- **Anatomy** `.mini-check` `<label>` **wrapping** the native input + text (`styles.css:827-828`) →
   label *is* associated (the correct pattern, unlike the sliders/Name input).
 - **a11y** ✓ associated label, ✓ `accent-color: var(--accent)`, native keyboard (Space).
 - **Note** the only native checkbox; the boolean-toggle role elsewhere is taken by the custom
@@ -310,8 +310,8 @@ Three unrelated "pill" stylings, a naming/coherence drift, not one primitive:
 - **Anatomy** `.field` `[ label[ text · readout(<b>) ] · control ]`, label is `display:flex;
   justify-content:space-between` so the readout right-aligns, `styles.css:925-928`.
 - **Role** the one genuine layout primitive (token-only, no domain name). Owns no outer margin:
-  `.field { margin: 0; }` (`styles.css:920`), the parent provides spacing; the only scoped exception is
-  `.newpal-custom .field { margin-bottom: 16px; }` (`styles.css:1171`).
+  `.field { margin: 0; }` (`styles.css:940`), the parent provides spacing; the only scoped exception is
+  `.newpal-custom .field { margin-bottom: 16px; }` (`styles.css:1192`).
 
 ```json
 { "component":"field","layer":"primitive","role":null,"replaces_native":false,
@@ -375,7 +375,7 @@ curve) · `.lc-dot`, SVG L* curve (`styles.css:820-824`).
 
 ### 17 · Damping graph
 
-`.damp-graph` container + `.dg-unity` (dashed identity line, `styles.css:813-814`), the differential-damping falloff
+`.damp-graph` container + `.dg-unity` (dashed identity line, `styles.css:831-832`), the differential-damping falloff
 curve (`graphDamping()` `sections/color.js:188`).
 
 ### 18 · Graph legend

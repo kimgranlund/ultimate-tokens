@@ -111,6 +111,25 @@ Sibling weights: `doc.type.voices[v].weights`, edited in the per-voice panel (Su
 500 hue/chroma from the live raw vars (the APPROXIMATE fallback when no config is embedded); `read-variables`
 → `receiveLiveVariables` feeds the drift diff. Geometry rides the `Geometry` collection of Figma NUMBER (FLOAT) vars via `geomTokensFigma` (`src/engine/geometry.mjs`).
 
+**Geometry cells (T-0017, ADR-032).** `geomTokensFigmaModes` (`src/engine/geometry.mjs`) emits the Maison
+ladder as 27 × 14 mode-constant FLOAT `size/{tier}-{scale}-{size}/{field}` cell variables plus 9 × 14
+per-mode ALIAS variables `control/{tier}/{size}/{field}`, each mode naming the
+`size/{tier}-{modeScale}-{size}/{field}` cell for that mode's scale. `validateModeInterchange`
+(`figma/binder/mode-apply-plan.mjs`) accepts an ALIAS only when every mode names a literal variable of the
+same collection (one hop); `applyFloatPlans` writes literals first, then creates each ALIAS variable and
+binds it per mode with `createVariableAlias`, skipping a missing target. A live file's legacy
+`size/{XS..2XL}` and `size/{0..9}` variables alias to cells by their own live heights through
+`geometrySizeAliasMap`, whose tiebreak is `geometryCellOrder` (product before content before micro, then
+size md, sm, lg, then scale md, sm, lg); `nearestStepByHeight` stays byte-identical for its type callers.
+At the legacy default heights that gives XS 20 → product-sm-sm, SM 24 → product-md-sm, MD 28 →
+product-sm-md, LG 36 → product-lg-md, XL 48 → content-md-md, 2XL 64 → content-lg-md (the
+`legacy-cell-map` group in `test/figma/plugin.mjs`). `GEOMETRY_FIELD_RENAME_MAP` (three hand copies,
+`renameparity`) maps padding-narrow and padding to inset, font to text, pill-radius and radius to
+radius-control, minWidth to min-width; caret, gap, icon-gap and the wide and compact pads deprecate
+id-preserving. `geometryCellOrderVM` is the code.js mirror, spliced into the binder through `FLOAT_FNS`
+in `scripts/gen-figma-binder-code.mjs`. Cells have no kebab-wave old name: `kebabWaveOldName` returns null
+for them and `OLD_FIELD` stays frozen.
+
 ## Procedure
 
 1. **Identify the plugin.** Standalone binder vs app-as-plugin (the table above). A "binder skipped roles"

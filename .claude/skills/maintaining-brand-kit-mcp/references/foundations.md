@@ -16,15 +16,14 @@ probably fighting one of these. The user-facing contract is owned by `mcp/README
                                                        #   bright, prime, dim, dimmer, dimmest }, each { hex, oklch }
     roles:    { <slug>: { <roleKey>: { light: "#…", dark: "#…" } } },   # 53 keys per palette
     type:     <typeScaleFor(doc, "base")>,  # { treatment, label, fonts, roleOf, categories: {15 voices}, weights }
-    geometry: <geomScaleFor(doc, "base")> } # { treatment, label, density, radiusStyle, radiusDefault, baseHeight,
-                                            #   rampContrast, ramp, sizes:{XS…2XL}, radii:{none…full}, space,
-                                            #   insets, gaps, borders, focus }
+    geometry: <geomScaleFor(doc, "base")> } # { tier, scale, radius, spaceBase, cells:{27 × {tier}-{scale}-{size}},
+                                            #   cell:{name, …}, radii:{none…full}, space, insets, gaps, borders, focus }
   ```
   Note: `kit.type = typeScaleFor(doc, "base")` and `kit.geometry = geomScaleFor(doc, "base")` (both in
   `src/ui/model.mjs`) are the override-aware resolvers the sections use, so base-mode per-cell overrides reach
   the kit. `typeScaleFor` wraps the engine's `typeScale` (`src/engine/type.mjs`); `geomScaleFor` runs the
-  engine's `geomScale` (`src/engine/geometry.mjs`) with `{ typeScale: typeScaleFor(doc, modeKey) }` so the
-  geometry's per-step `font` is shared with the type UI scale. `geometryScale` in `model.mjs` is a back-compat
+  engine's `geomScale` (`src/engine/geometry.mjs`) with `{ typeScale: typeScaleFor(doc, "base") }` so each
+  cell's text is the type scale's height-indexed `uiText`. `geometryScale` in `model.mjs` is a back-compat
   wrapper only; `brandKit` does not call it.
 - **`mcp/brand-kit-core.mjs`** is the **surface**, PURE, no I/O, engine-free. `buildSurface(kit)` builds the
   gated `TOOLS`/`RESOURCES`/`PROMPTS` (+ `usageGuide()`); `handle(msg, surface)` is the pure JSON-RPC 2.0
@@ -130,20 +129,22 @@ asserts this on the projection directly via `brandKit({color:true})` / `{type:tr
 
 `get_type` / `brand://type` return `kit.type` **verbatim** (the `typeScaleFor(doc, "base")` output). Its
 `categories` map has the fifteen voices of `makeVoices` (`src/engine/type.mjs`), `Display` through `UI-widget`:
-the other thirteen voices carry `SM`, `MD`, `LG`, and `UI-control` and `UI-widget` carry `XS` to `2XL`. Each step
+the other thirteen voices carry `SM`, `MD`, `LG`, and `UI-control` and `UI-widget` carry one step, `MD`.
+The scale also carries `uiText`, the height-indexed UI text table (height → text px) the geometry cells read. Each step
 is `{ size, lineHeight, letterSpacing, leadingRatio, trackingRatio, weight, textTransform, paragraphSpacing,
 paragraphIndent }`, and the box voices (`Kicker`, `UI-control`, `UI-widget`) add `singleLineHeight` (equal to
 `size`). The `usageGuide()` prose names the voices by function; it is documentation, not the data shape.
 
 `get_geometry` / `brand://geometry` return `kit.geometry` verbatim (the `geomScaleFor(doc, "base")` output). Top level:
-`{ treatment, label, density, radiusStyle, radiusDefault, baseHeight, rampContrast, ramp, sizes, radii, space,
-insets, gaps, borders, focus }`. `sizes` runs XS, SM, MD, LG, XL, 2XL; each `buildSize` row is `{ height, icon,
-caret, font, gap, paddingNarrow, paddingWide, paddingNarrowCompact, paddingWideCompact, radiusPill, minWidth }`.
-`radii` is the ladder `{ none, xs, sm, md, lg, xl, full }`; `space` is the spacing scale.
+`{ tier, scale, radius, spaceBase, cells, cell, radii, space, insets, gaps, borders, focus }`. `cells` holds
+all 27 ladder cells keyed `{tier}-{scale}-{size}` (content, product, micro × sm, md, lg × sm, md, lg); each is
+`{ height, inset, text, icon, captionText, chipHeight, chipInset, chipText, iconRatio, minWidth,
+radiusControl, radiusMark, radiusInset, radiusCard }`. `cell` is the kit default (`{tier}-{scale}-md`) with
+its `name`. `radii` is the ladder `{ none, xs, sm, md, lg, xl, full }`; `space` is the spacing scale.
 
-The key composition facts the test pins: a size step's **`font` equals the UI-control voice's size** at the
-same step (`geo.sizes.MD.font === ty.categories["UI-control"].MD.size`) and the **centering law** holds
-(`geo.sizes.MD.paddingNarrow === (geo.sizes.MD.height − geo.sizes.MD.icon) / 2`). The server doesn't compute
+The key composition facts the test pins: the served ladder has 27 cells and no `sizes` key, a cell's
+**`text` equals the type scale's UI text at its height** (`geo.cells["product-md-md"].text === ty.uiText[32]`,
+14) and the **centering law** holds (`md.inset === (md.height − md.icon) / 2` on product-md-md). The server doesn't compute
 these, `geomScaleFor(doc, "base")` in `src/ui/model.mjs` shares the type scale into `geomScale`, but a tool/resource
 change must not break the round-trip. The taxonomy of voices + sizes is owned by `src/engine/type.mjs` /
 `src/engine/geometry.mjs` and the `geometry-system` skill, cite, don't re-derive.

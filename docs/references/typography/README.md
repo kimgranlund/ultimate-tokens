@@ -49,10 +49,14 @@ treatments (previously each voice derived from its own `base × ratio^step`, wit
 | **UI-control** | ui | sentence | small positive (optical) |
 | **UI-widget** | ui | sentence | small positive (optical) |
 
-51 steps in all (13 voices × 3 + the 2 interactive voices × 6, UI-control and UI-widget ride the
-full XS..2XL ramp, 2026-07-16). UI-control (buttons/inputs/selects) and UI-widget (tags/badges/
-switches, compact widgets) are the interactive-text voices (TKT-0008): Label-like character, box
-voices, and UI-control composes into geometry's control ramp (`font` at every step, XS..2XL). Each treatment supplies the font palette + a few character knobs (a
+41 steps in all (13 voices × 3 + the 2 interactive voices × 1). UI-control (buttons/inputs/selects)
+and UI-widget (tags/badges/switches, compact widgets) are the interactive-text voices (TKT-0008):
+Label-like character, box voices, each carrying one step, MD, since T-0017 (ADR-032, user ruling
+option B; their 2026-07-16 six-step XS..2XL rows retired). That MD size is a row of the height-indexed
+UI text table `UI_TEXT` (`uiText(32)` 14 for UI-control, `uiText(24)` 12 for UI-widget); the table is
+the Maison component-geometry ladder's text column, and every Geometry cell reads its control text,
+caption text and chip text from it (`typeScale(config).uiText`), so control text per height is one
+table owned by type. Each treatment supplies the font palette + a few character knobs (a
 shared `makeVoices()` factory); the FIXED SIZES table gives every step's size; the engine still
 derives leading, optical tracking, weight, and case per treatment. Body-mono, Label-mono, Tiny-mono,
 and Kicker all use the mono role, aliasing their non-mono sibling's own size triplet (same numbers,

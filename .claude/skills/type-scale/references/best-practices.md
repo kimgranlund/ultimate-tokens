@@ -74,7 +74,7 @@ The non-obvious do/don'ts (each a real trap in this engine), then a worked walkt
     per-voice overrides **silently dropped on hydrate** (the allowlist must track `makeVoices`'s voices);
   - the **`styles.css` `.ty-s0…N` series colours**, one per voice, in order (the analysis-chart strokes);
   - the **count literals** in `test/engine/type.mjs` (`GROUPS`, the per-voice ramp asserts) and
-    `test/ui/headless-boot.mjs` (**51 steps / 15 groups**, 13 voices × 3 + the 2 interactive voices × 6);
+    `test/ui/headless-boot.mjs` (**41 steps / 15 groups**, 13 voices × 3 + the 2 interactive voices × 1, `TYPE_STEPS` in `test/ui/counts.mjs`);
   - the **`test/smoke/smoke.mjs`** Typography-section count, **Chrome-only, so `npm test` won't catch
     it; only CI's smoke leg does** (the classic Safari-blind-spot trap in reverse, a green local gate can
     still red the smoke leg on a stale count);
@@ -108,7 +108,8 @@ The pattern behind moving from a modular scale to a hand-authored fixed table:
    `base × ratio^n` meant subtle unintended drift between treatments at the same nominal step. Google's
    own Material 3 approach (one fixed scale, theme varies styling only) was the model: hand-author
    a literal three-entry `SM · MD · LG` row per voice once, shared by all treatments (the 2026-07-16
-   extension then gave the two interactive voices a six-entry `XS..2XL` row).
+   extension gave the two interactive voices a six-entry `XS..2XL` row, which T-0017 retired for one
+   MD step read from the height-indexed `UI_TEXT` table).
 2. **Kept `bodyBase` as the ONE resize lever** (`factor = bodyBase/16`) so the whole fixed table still
    scales together, the design changed WHAT gets derived (a literal table instead of a modular formula),
    not the resize mechanism.
@@ -116,7 +117,7 @@ The pattern behind moving from a modular scale to a hand-authored fixed table:
    MODULAR-scale output land on familiar numbers; applying it unconditionally to an already-hand-authored
    literal would silently re-round it (120→128). Gated the quantizer on `factor !== 1 || compress` instead.
 4. **Retired per-voice `ratio`/`steps` entirely**: the 2026-07-13 table put thirteen voices on a three-step
-   `SM · MD · LG` row (the 2026-07-16 extension moved UI-control and UI-widget to the six-step `XS..2XL`
+   `SM · MD · LG` row (the 2026-07-16 extension moved UI-control and UI-widget to a six-step `XS..2XL`
    row); the old 3/5/8-step split (`STEPS_3`/`STEPS_5`/`STEPS_UI`) had no meaning once size stopped
    deriving from an exponent.
 5. **Validated**: `node test/engine/type.mjs` (green: 15 voices on their per-voice ramps, `roleOf`, the

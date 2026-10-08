@@ -1081,6 +1081,92 @@ Format: Context → Decision → Rationale → Consequences → Status.
   is the owner's: the owner edits this line to DECIDED, or amends the text under the file's amendment
   shape.
 
+## ADR-032: Geometry adopts the Maison ui-kit ladder
+- **Context.** T-0017 (#803). The Geometry engine was a six-size ramp (XS 20 to 2XL 64) from two
+  knobs, a treatment (`comfortable/compact/spacious/touch/pill`, each a density, radius style,
+  `baseHeight` and spaceBase) and `rampContrast`, with glyphs from two power laws, a calibrated gap
+  row (`GAP_UNIT`), a fallback control font row (`CONTROL_FONT`), an opt-in `linear4` prototype
+  ladder (issue #483) and per-cell height `tokenOverrides`. The user ruled on 2026-10-07: "for the
+  Geometry system, let's use the maison ui-kit system... we should name tokens according to our
+  standards of course, but this is a standard system to follow for now". Maison's system sizes
+  every control from three axes set as data attributes on any ancestor (`data-tier`, `data-scale`,
+  `data-size`, nearest value wins), resolved to a 27-cell ladder.
+- **Decision.** Geometry is Maison's ladder in our names. The engine (`src/engine/geometry.mjs`)
+  holds Maison's tier table verbatim (`TIERS`: content base 48, product 32, micro 16, each with its
+  per-scale offsets and per-size step), the 25-row component-geometry ladder (`LADDER_ROWS`: height,
+  inset, icon) and the four radius modes (`RADIUS_MODES`: default, round, sharp, pill, each a
+  `{ text, height }` coefficient pair). A kit is `{ tier, scale, radius, spaceBase }`, default
+  `product/md/round/4`; `geomScale` resolves all 27 cells (`{tier}-{scale}-{size}`, every one
+  on-table) and the kit default `cell` (`{tier}-{scale}-md`, product-md-md at 32px). Each cell
+  carries 14 fields: height, inset, text, icon, caption-text, chip-height, chip-inset, chip-text,
+  icon-ratio (unitless), min-width, radius-control, radius-mark, radius-inset, radius-card. The
+  centering law holds on every row (`inset = (height - icon) / 2`). Control text is no longer
+  geometry's: the ladder's text column moved into the type engine as `UI_TEXT` and `uiText(height)`,
+  and every cell reads its text from the type scale's `uiText` table, so control text per height is
+  one table. The CSS export carries the primitives (`--size-{tier}-{scale}-{size}-{field}`), the
+  container ladders (M3 radius, space, insets, gaps, borders, focus, unchanged at spaceBase 4) and
+  Maison's context resolver (`geomResolverCSS`), which turns the `data-tier`, `data-scale`,
+  `data-size` and `data-radius` attributes into the roles. User decisions of 2026-10-07: (1) on U1,
+  option B: UI-control and UI-widget keep exactly one step, MD, sized `uiText(32)` (14) and
+  `uiText(24)` (12), with weight, tracking and leading unchanged, so the type specimen moves from 51
+  steps to 41; (2) the app shell and its components ride with the engine in one cut (the host
+  carries the four attributes, `styles.css` reads the roles through the `--sh-*` aliases, icons size
+  from `--control-icon`, and Settings offers a shell-geometry override); (3) retired: `baseHeight`,
+  `rampContrast`, the five treatments, per-cell height `tokenOverrides`, `linear4` and `RAMP_LADDER`,
+  `CONTROL_FONT`, `GAP_UNIT`, the caret, icon-gap, density, the four pads, the pill radius, the
+  `.control-{step}` classes and `--radius-default`; (4) the role names are `--control-*`, `--chip-*`,
+  `--radius-control/-mark/-inset/-card` and `--ctx-*`, equal to Maison's per-instance override hooks
+  so Maison component CSS binds with no translation; (5) saved kits migrate at persist schema v9,
+  after T-0014's v8 (ADR-030).
+  - The Maison-to-ours name map: `--g-height`, `--g-inset`, `--g-text`, `--g-icon`,
+    `--g-caption-text`, `--g-icon-height-ratio` to `--control-height`, `--control-inset`,
+    `--control-text`, `--control-icon`, `--control-caption-text`, `--control-icon-ratio`;
+    `--g-chip-height`, `--g-chip-inset`, `--g-chip-text` to `--chip-height`, `--chip-inset`,
+    `--chip-text`; `--r-control`, `--r-mark`, `--r-inset`, `--r-card` to `--radius-control`,
+    `--radius-mark`, `--radius-inset`, `--radius-card`; the context hooks `--m-cell-*`, `--m-scale-*`,
+    `--m-size-*`, `--r-k-text`, `--r-k-height` to `--ctx-cell-*`, `--ctx-scale-*`, `--ctx-size-*`,
+    `--ctx-radius-text`, `--ctx-radius-height`.
+  - The prefix contract: an export prefix (`{ prefix }`, for example a Material scheme's `md`)
+    renames the cell primitives (`--md-size-*`) and the container ladders (`--md-radius-*`,
+    `--md-space-*` and the rest), never the roles or `--ctx-*`; only the `var()` references inside the
+    `--ctx-cell-*` reassignments follow the prefix, to reach the prefixed primitives.
+  - Kept verbatim from Maison: the attribute names `data-tier`, `data-scale`, `data-size`,
+    `data-radius` and the radius mode ids. Scoped out: Maison's `--g-micro-*` roles (no use in Maison's
+    own components).
+  - Figma: the Geometry collection carries 27 x 14 mode-constant FLOAT `size/{cell}/{field}`
+    variables plus 9 x 14 per-mode ALIAS variables `control/{tier}/{size}/{field}`, each naming
+    `size/{tier}-{modeScale}-{size}/{field}` for that mode's scale. `validateModeInterchange` accepts
+    an ALIAS whose every mode names a literal variable of the same collection, and `applyFloatPlans`
+    writes the aliases after the literals. A live file's old `size/{XS..2XL}` and `size/{0..9}`
+    variables alias to cells by their live heights through `geometrySizeAliasMap`, whose tiebreak is
+    `geometryCellOrder` (product before content before micro, then size md, sm, lg, then scale md,
+    sm, lg), never the shared `nearestStepByHeight`. `GEOMETRY_FIELD_RENAME_MAP` maps the old fields
+    that have a cell target (padding to inset, font to text, pill-radius and radius to
+    radius-control, minWidth to min-width); caret, gap, icon-gap and the wide and compact pads
+    deprecate id-preserving.
+  - Ladder cells have no pre-ADR-016 kebab-wave name: `kebabWaveOldName` returns null for any
+    `size/{tier}-{scale}-{size}/*` variable, and `OLD_FIELD` stays frozen as the pre-wave grammar
+    exactly as it shipped. A cell's real predecessors are the legacy `size/{step}` variables above.
+- **Rationale.** Maison's ladder is a validated standard: 27 cells, all on a table whose anatomy
+  holds on every row, against a continuous ramp whose every knob made an unvalidated size. Using the
+  hook names Maison's control CSS already reads lets a Maison component bind to an exported kit
+  directly. Moving the text column into type keeps one source of truth for control text, which
+  geometry composes from type as before. Keeping the roles unprefixed is what makes that binding
+  work under any scheme prefix.
+- **Consequences.** Saved kits stamped below v9 migrate in `migrateGeometry` (`src/ui/persist.js`):
+  the legacy MD height (`baseHeight`, else the treatment's own: comfortable 28, compact 24, spacious
+  32, touch 36, pill 28) picks the nearest md-cell height for tier and scale (ties product, content,
+  micro, then md, sm, lg), the treatment's radius style picks the radius mode, the treatment picks
+  spaceBase, a mode's `baseHeight` becomes its `scale`, and every dropped key (`treatment`,
+  `baseHeight`, `rampContrast`, `ramp`, geometry `tokenOverrides`, type `tokenOverrides` on retired
+  UI steps) is reported through `DROPPED_KEYS`. The Adia preset loses its `ramp: "linear4"`. The
+  shell grows: the default button is the 32px product-md-md control with a 14px round corner. The
+  gates: `test/engine/geometry.mjs` checks all 27 cells against a vendored Maison fixture
+  (`test/engine/fixtures/maison-geometry-rows.json`), the anatomy on every row, 108 radius cases and
+  the prefix contract; the real-browser smoke renders the 108 nested resolver cases (CI only).
+- **Status.** PROPOSED 2026-10-07 (T-0017, #803). Ratification is the owner's: the owner edits this
+  line to DECIDED, or amends the text under the file's amendment shape.
+
 ## Quick map: decisions an enhancing agent is most likely to "fix" (don't)
 | ADR | Looks wrong because… | But it's intentional because… |
 |-----|----------------------|-------------------------------|
@@ -1103,3 +1189,4 @@ Format: Context → Decision → Rationale → Consequences → Status.
 | ADR-029 | the envelope gate asserts a curve to 1e-12 but lets pixels miss it by up to 4 codes, and no fixture pins the emitted values | the closed form is the spec and the pixel tolerance is the path's own rounding steps; re-pinning rounded pixels brings back the ratchet #778 retired, and a curve change updates the gate's SPEC and ADR-029 together |
 | ADR-030 | the canvas groups carry no chroma, and an anchored palette's prime middle leaves its stored hex below Prime chroma 100 | chroma is per-palette Base chroma times two global k factors, formed once in `resolve.mjs`; a group layer made the globals dead, and the anchor is verbatim exactly at the default k 100 |
 | ADR-031 | the Hue space toggle moves an anchored palette's prime ladder but its perceptual and peak ramps by at most 0.02 OKLab dE, and the anchored ladder solves a hue per rung | the hue space is hue constancy through the anchor: the anchor stays verbatim and the toggle picks which hue (OKLCH or CAM16) is held along the line through it; the two lines differ by little on the OKHSL ramps, and a ramp re-seeded to move more would kink at stop 500 |
+| ADR-032 | Geometry has no height knob or treatment, the roles `--control-*` and `--ctx-*` ignore the export prefix, and ladder cells have no kebab-wave old name | the ladder is Maison's validated 27-cell standard, so a continuous knob would ship unvalidated sizes; unprefixed roles are Maison's own override hooks, so Maison component CSS binds with no translation; cells post-date the ADR-016 wave, so `OLD_FIELD` stays frozen |

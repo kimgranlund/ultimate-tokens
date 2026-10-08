@@ -1,103 +1,106 @@
 # Geometry / dimensional tokens: reference shape
 
-`docs/assets/geometry-tokens.json` is a **real export** from the geometry engine (`src/engine/geometry.mjs`), the
-spatial analog of the color & type engines: a few parameters → a systematic size ramp → derived control
-geometry → [DTCG](https://tr.designtokens.org/) `dimension` tokens (and CSS custom props + utility
-classes). The sample here is the **Comfortable** treatment at a 28px base height.
+The geometry engine (`src/engine/geometry.mjs`) is the spatial analog of the color and type engines:
+a few discrete axes, a fixed ladder, derived control geometry, then [DTCG](https://tr.designtokens.org/)
+`dimension` tokens, CSS custom properties with a context resolver, and Figma variables. Since ADR-032
+(T-0017) it is the **Maison ui-kit ladder** in our token names. `docs/assets/geometry-tokens.json` is a
+frozen snapshot of the retired six-size ramp, kept for history; the live shape is
+`geomTokensDTCG(geomScale({}))`.
+
+## The ladder: three axes, 27 cells
+
+A kit picks `{ tier, scale, radius, spaceBase }` (default `product / md / round / 4`). Every cell is
+addressed by three axes, `{tier}-{scale}-{size}`:
+
+```
+height = TIERS[tier].base + TIERS[tier].offsets[scale] + SIZES[size] · TIERS[tier].step
+```
+
+| Tier | Base | Scale offsets (sm / md / lg) | Size step |
+|---|---|---|---|
+| content | 48 | -12 / 0 / +16 | 8 |
+| product | 32 | -4 / 0 / +4 | 8 |
+| micro | 16 | -2 / 0 / +2 | 2 |
+
+`SIZES = { sm: -1, md: 0, lg: 1 }`. The 27 heights all land on Maison's 25-row component-geometry
+ladder (`LADDER_ROWS`: height, inset, icon). The kit default cell is `{tier}-{scale}-md`;
+product-md-md is the 32px control.
 
 ## The law (the one rule)
 
-> **Edge padding for a glyph = (height − glyph) / 2**: every glyph centers in a square cell of side =
-> the control height. `padding-block` is `0`; **block-size is the vertical lever, never block-padding**.
+> **inset = (height − icon) / 2**: every glyph sits in one square icon box, centered in a control of
+> side = height. `padding-block` is `0`; block-size is the vertical lever, never block-padding.
 
-From that single rule fall out: the slot padding (`½(height − icon)`), the slotless/bare-label edge
-(`h/2` = the text pad `½(h − font)` + the absent slot's gap `½·font`), the icon-only **square**
-(`min-width = height`), and the **pill radius** (`height/2`).
+The law holds on every ladder row (Maison's generator asserts it, and `test/engine/geometry.mjs`'s
+`anatomy` group checks all 27 cells and all 25 rows).
 
-## The two families
+## Per-cell fields
 
-| Family | Scales with | Members | Density |
-|---|---|---|---|
-| **Frame** | the box **height** | icon, slot, inline-pad, min-inline-size, pill radius | density-invariant (scaling it un-centers the glyph) |
-| **Rhythm** | the **font** | `gap = font/2`, `caret = font` | density multiplies the rhythm **only** |
+| Field | Rule |
+|---|---|
+| `height`, `inset`, `icon` | the ladder row at the cell height |
+| `text` | the type scale's UI text at the height (`uiText`, the height-indexed table `UI_TEXT` in `src/engine/type.mjs`) |
+| `caption-text`, `chip-text` | the text of the compact row: the first ladder row, by descending height, at or below height − inset |
+| `chip-height`, `chip-inset` | the compact row's height (capped at the cell height) and inset |
+| `icon-ratio` | icon / height, unitless |
+| `min-width` | height (an icon-only control is at least square) |
+| `radius-control` | text · k.text + height · k.height, k from the kit's radius mode |
+| `radius-mark` | radius-control · icon-ratio |
+| `radius-inset` | max(0, radius-control − inset / 2) |
+| `radius-card` | radius-control + inset / 2 |
 
-## The ramp (one power law, six samples)
+Radius modes (`RADIUS_MODES`): `default` (k.text 0.5), `round` (1, the default), `sharp` (0.25),
+`pill` (k.height 0.5).
 
-`scale × size` → a **height** and a **font**; the glyphs scale **sublinearly** (the optical correction,
-a glyph occupies a shrinking fraction of the box as it grows):
-
-```
-icon = 2.49 · height^0.58   (round to nearest even)
-font = 3.16 · height^0.45   ≈ √height   (round to nearest integer)
-caret = font                (the rhythm rule, the affordance mark = text height)
-```
-
-These reproduce the hand-tuned reference ramp to ±1px, so the table is not six hand-picked points, it is
-**one rule sampled six times**, and it generalizes to any scaled `baseHeight`:
-
-| size | height | icon | caret | font | pad (slot) | edge (slotless) | radius (pill) |
-|---|---|---|---|---|---|---|---|
-| **XS** | 20 | 14 | 12 | 12 | 3 | 10 | 10 |
-| **SM** | 24 | 16 | 13 | 13 | 4 | 12 | 12 |
-| **MD** | 28 | 18 | 14 | 14 | 5 | 14 | 14 |
-| **LG** | 36 | 20 | 16 | 16 | 8 | 18 | 18 |
-| **XL** | 48 | 24 | 18 | 18 | 12 | 24 | 24 |
-| **2XL** | 64 | 28 | 21 | 21 | 18 | 32 | 32 |
-
-## Structure (`docs/assets/geometry-tokens.json`)
+## Structure (`geomTokensDTCG`)
 
 | Top-level key | What it is |
 |---|---|
-| `size` | one composite per ramp step (XS–2XL): `height · icon · caret · font · gap · padding · edgePadding · radius · minWidth`, each a `dimension` token |
-| `radius` | the **Material 3 shape-corner scale** (fixed across treatments), `none 0 · xs 4 · sm 8 · md 12 · lg 16 · xl 28 · full 9999`; plus `--radius-default`, aliased to the treatment's favoured corner (`radiusDefault`: sharp→sm · soft→md · round→lg · pill→full, the M3 "pick a level" model, not a per-treatment rescaling) |
-| `space` | the `--space-*` layout scale (page/section/card rhythm, the space **between** components, a separate concern from control padding) |
-| `inset` | the CONTAINER tier's padding, `control-group · card · panel · dialog · page`, each a named `space` rung (derived, never hand-picked) so consumers stop guessing raw `--space-N` |
+| `size` | one group per cell (`content-sm-sm` to `micro-lg-lg`) with the 14 kebab fields above, `dimension` tokens (`icon-ratio` is a `number`) |
+| `radius` | the **Material 3 shape-corner scale**, `none 0 · xs 4 · sm 8 · md 12 · lg 16 · xl 28 · full 9999`; the control corner is the per-cell `radius-control`, a separate value |
+| `space` | the `--space-*` layout scale (`SPACE_STEPS × spaceBase`), the space **between** components, a separate concern from control geometry |
+| `inset` | the CONTAINER tier's padding, `control-group · card · panel · dialog · page`, each a named `space` rung |
 | `gap` | the container tier's sibling spacing, `cluster · stack-tight · stack · stack-loose · grid · section`, same named-rung derivation |
-| `border` | stroke constants, `thin (1) · thick (2)`; borders don't scale with rhythm |
-| `focus` | the focus-ring pair, `ring-width (2) · ring-offset (2)`; the offset keeps the ring clear of the control edge at any radius |
+| `border` | stroke constants, `thin (1) · thick (2)` |
+| `focus` | the focus-ring pair, `ring-width (2) · ring-offset (2)` |
 
-**The two-tier doctrine:** control-INTERNAL geometry (pad, pad-edge, the icon↔label gap) derives from the
-centering law and scales per size with `baseHeight` (+ `rampContrast`, the responsive knob: 1 = the full
-×4/3 expressive gear, 0 = the band continues the compact +4 linear step, so small screens get the
-compressed ramp). Container geometry (`inset`/`gap`) derives from the space ladder, treatment-scaled,
-mode-independent. (An opt-in `ramp:"linear4"` config, issue #483, uses a SEPARATE anatomy, its
-`padding-narrow` is not `(height − icon)/2`, and NUMBERS its ten steps `0`..`9` rather than the six
-t-shirt names above, so tokens read `--size-3-height` not `--size-md-height`; see `geometry.mjs`'s
-`buildSizeLadder` + `LADDER_MD_STEP`.)
+## The CSS resolver
+
+`geomTokensCSS` emits the 27 × 14 primitives (`--size-{tier}-{scale}-{size}-{field}`), the container
+lines, then the resolver (`geomResolverCSS`). The resolver reads four attributes on any ancestor,
+nearest value wins: `data-tier`, `data-scale`, `data-size`, `data-radius`. It resolves them to the roles
+`--control-height/-inset/-text/-icon/-caption-text/-icon-ratio`, `--chip-height/-inset/-text` and
+`--radius-control/-mark/-inset/-card`, through the context hooks `--ctx-cell-*`, `--ctx-scale-*`,
+`--ctx-size-*` and `--ctx-radius-text/-height`. An export prefix renames the primitives and container
+ladders only; roles and `--ctx-*` are never prefixed (ADR-032 holds the Maison-to-ours name map).
+
+Size a component from the roles, never fixed px:
+`min-block-size: var(--control-height); padding-inline: var(--control-inset); font-size: var(--control-text); border-radius: var(--radius-control)`.
+
+Breakpoints change only the scale axis: each `geomTokensBreakpointCSS` file sets the `--ctx-scale-*`
+indicators for its mode's scale. With no modes configured the app synthesizes Desktop Lg and Desktop Xl
+(scale lg) and Tablet and Mobile (scale sm).
 
 ## Composition with typography (one number, two engines)
 
-A control's **box** (geometry) and the **text** in it (typography) share a single source of truth: the
-app resolves geometry via `geometryScale(doc) = geomScale(doc.geometry, { typeScale: typeScale(doc.type) })`,
-which replaces each size's power-law `font` with the type scale's **UI voice** at the matching step
-(geometry `XS → UI XS … 2XL → UI 2XL`). So changing the brand's type treatment or body base moves the
-control text everywhere it's used. Only the *rhythm* follows (`caret = font`, `gap = font/2`); the *frame*
-(height/icon/padding/radius) is untouched, so the centering law still holds. The pure engine
-(`geomScale(config)` with no opts) keeps the standalone power-law `font`; the sample above is that pure
-output.
+A control's box (geometry) and the text in it (typography) share one table: `UI_TEXT` lives in the type
+engine, and the app resolves geometry with `geomScale(doc.geometry, { typeScale })` (`geomScaleFor` in
+`src/ui/model.mjs`), so each cell's `text`, `caption-text` and `chip-text` read the type scale's
+`uiText` at the cell's height. Changing the body base moves control text everywhere; the frame
+(height, inset, icon) never moves, so the centering law still holds.
 
-## Figma number variables (`dimension.variables.json`)
+## Figma variables
 
-`geomTokensFigma(scale)` emits the same numbers as **DTCG `number` tokens** (unitless) under a top-level
-**`Geometry`** group, the shape a Figma variable importer turns into native **FLOAT variables** you bind
-to auto-layout sizing, corner radius, and gaps. Shipped in the Download-All `figma/` folder + the geometry
-`.zip` (px is 1:1 with Figma's unitless floats).
-
-## The parameters (what the generator derives from)
-
-Mirroring color (`{hue, chroma, distribution}`) and type (`{ base, ratio, leading, … }`), geometry derives
-from `{ treatment, baseHeight }`:
-
-- **`baseHeight`**: the MD control height; uniformly scales the whole ramp (the dimensional analog of the
-  type engine's `bodyBase`).
-- **`treatment`**: seeds density + the radius ladder + the spacing base. Five presets:
-  **Comfortable** (density 1, soft corners, 4px rhythm) · **Compact/Dense** (0.75, sharp) ·
-  **Spacious/Airy** (1.25, round, 8px) · **Touch/Mobile** (1.1, 36px targets) · **Pill/Rounded** (fully-round).
+`geomTokensFigmaModes` emits one Geometry collection: 27 × 14 mode-constant FLOAT `size/{cell}/{field}`
+variables, 9 × 14 per-mode ALIAS variables `control/{tier}/{size}/{field}` (each mode names the
+`size/{tier}-{modeScale}-{size}/{field}` cell for that mode's scale), and the radius, space, inset, gap,
+border and focus FLOATs. `geomTokensFigma` emits the flat unitless shape.
 
 ## Mechanization
 
-This is the same law the `design-skills:component-decomposer` skill mechanizes (`bin/geometry-check.py`):
-edge-pad `== (height − glyph)/2`, block-size off the ramp with `padding-block == 0`, `0 < glyph ≤ box`,
-the slot/slotless pad, affordance `== font`. The engine is verified by `test/engine/geometry.mjs`.
+The engine is verified by `test/engine/geometry.mjs` against a vendored Maison fixture
+(`test/engine/fixtures/maison-geometry-rows.json`): the 27 cells, the anatomy, 108 radius cases (27 cells
+× 4 modes), the anchors, the emitters with the prefix contract, and the container identity. The
+real-browser smoke renders the 108 nested resolver cases in CI.
 
-> Status: **shipped**, `src/engine/geometry.mjs` + the Geometry editor section generate these tokens.
+> Status: **shipped**, `src/engine/geometry.mjs` and the Geometry editor section generate these tokens.
