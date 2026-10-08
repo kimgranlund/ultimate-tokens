@@ -4,6 +4,7 @@ import { BUNDLED_FONTS, DEFAULT_TYPE, TYPE_TREATMENTS, WEIGHT_NAMES, genericFor,
 import { googleSafeFontFor } from "../../engine/font-fallbacks.mjs";
 import { icon } from "../icons.js";
 import { GENERIC_FONTS, SELF_HOSTED_FONTS, TYPE_PARA, TYPE_SAMPLE, btn, ensureTypeFonts, ensureWebFonts, field, fmt, h } from "../app-helpers.mjs";
+import { renderChart } from "../charts/render.mjs";
 
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
 // methods, copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
@@ -12,7 +13,7 @@ export class TypeSectionImpl {
   // ── Typography analysis (left rail, READ-ONLY) ────────────────────────────────────────
   // The type analog of analysisCards(): cards computed from typeScale(doc.type). No inputs, pure
   // diagnostics of the resolved scale. `view` is accepted for dispatch parity but unused (typography
-  // is doc-driven, not palette-view-driven). Reuses .an-card / .an-svg / legend().
+  // is doc-driven, not palette-view-driven). Reuses .an-card / .an-chart / legend().
   typeAnalysisCards(view) {
     const scale = this._activeTypeScale();
     const card = (label, body) => h("div", { class: "an-card" }, h("div", { class: "an-label" }, label), body);
@@ -37,21 +38,21 @@ export class TypeSectionImpl {
     const maxSize = Math.max(8, ...series.flatMap((g) => g.steps.map((s) => s.size))) * 1.05;
     const X = (i, n) => pad + (n <= 1 ? 0 : i / (n - 1)) * (W - pad - 8);
     const Y = (px) => (H - pad + 8) - (px / maxSize) * (H - pad - 8);
-    const paths = series.map((g, gi) => {
-      const n = g.steps.length;
-      const d = "M" + g.steps.map((s, i) => `${X(i, n).toFixed(1)},${Y(s.size).toFixed(1)}`).join(" L");
-      const dots = g.steps.map((s, i) => `<circle class="ty-dot ty-s${gi}" cx="${X(i, n).toFixed(1)}" cy="${Y(s.size).toFixed(1)}" r="1.6"/>`).join("");
-      return `<path class="ty-line ty-s${gi}" d="${d}"/>${dots}`;
-    }).join("");
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        <text x="2" y="14">px</text>
-        <text x="${W - 40}" y="${H - pad + 18}">SM→LG</text>
-        ${paths}
-      </svg>`;
-    return h("div", {}, h("div", { class: "an-svg", html: svg }), this.legend(series.map((g, gi) => ({ mark: "ty s" + gi, label: g.short || g.cat }))));
+    const ser = (g, gi) => ({ label: g.short || g.cat, cls: "ty-s" + gi + (g.cat.endsWith("-mono") ? " ty-mono" : ""), dot: 1.6 });
+    const chart = renderChart({
+      W, H,
+      series: series.map((g, gi) => ({ ...ser(g, gi), points: g.steps.map((s, i) => ({ x: X(i, g.steps.length), y: Y(s.size), v: [s.name, s.size] })) })),
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+      ],
+      labels: [
+        { text: "px", x: 2, y: 14 },
+        { text: "SM→LG", x: W - 40, y: H - pad + 18 },
+      ],
+      columns: ["voice", "step", "px"],
+    });
+    return h("div", {}, chart, this.legend(series.map((g, gi) => ({ mark: "ty s" + gi, label: g.short || g.cat }))));
   }
 
 
@@ -65,24 +66,23 @@ export class TypeSectionImpl {
     const tMax = Math.max(0.5, ...tr), tMin = Math.min(-0.5, ...tr), tSpan = (tMax - tMin) || 1;
     const X = (px) => pad + (px / maxSize) * (W - pad - 8);
     const Y = (t) => 8 + ((tMax - t) / tSpan) * (H - pad - 8);
-    const zeroY = Y(0).toFixed(1);
-    const paths = series.map((g, gi) => {
-      const sorted = [...g.steps].sort((a, b) => a.size - b.size);
-      const d = "M" + sorted.map((s) => `${X(s.size).toFixed(1)},${Y(s.letterSpacing).toFixed(1)}`).join(" L");
-      const dots = sorted.map((s) => `<circle class="ty-dot ty-s${gi}" cx="${X(s.size).toFixed(1)}" cy="${Y(s.letterSpacing).toFixed(1)}" r="1.6"/>`).join("");
-      return `<path class="ty-line ty-s${gi}" d="${d}"/>${dots}`;
-    }).join("");
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        <line class="dg-unity" x1="${pad}" y1="${zeroY}" x2="${W - 6}" y2="${zeroY}"/>
-        <text x="2" y="${(+zeroY - 3).toFixed(1)}">0</text>
-        <text x="2" y="14">px</text>
-        <text x="${W - 30}" y="${H - pad + 18}">size→</text>
-        ${paths}
-      </svg>`;
-    return h("div", {}, h("div", { class: "an-svg", html: svg }), this.legend(series.map((g, gi) => ({ mark: "ty s" + gi, label: g.short || g.cat }))));
+    const ser = (g, gi) => ({ label: g.short || g.cat, cls: "ty-s" + gi + (g.cat.endsWith("-mono") ? " ty-mono" : ""), dot: 1.6 });
+    const chart = renderChart({
+      W, H,
+      series: series.map((g, gi) => ({ ...ser(g, gi), points: [...g.steps].sort((a, b) => a.size - b.size).map((s) => ({ x: X(s.size), y: Y(s.letterSpacing), v: [s.size, s.letterSpacing] })) })),
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+        { cls: "dg-unity", x1: pad, y1: Y(0), x2: W - 6, y2: Y(0) },
+      ],
+      labels: [
+        { text: "0", x: 2, y: Y(0) - 3 },
+        { text: "px", x: 2, y: 14 },
+        { text: "size→", x: W - 30, y: H - pad + 18 },
+      ],
+      columns: ["voice", "size px", "tracking px"],
+    });
+    return h("div", {}, chart, this.legend(series.map((g, gi) => ({ mark: "ty s" + gi, label: g.short || g.cat }))));
   }
 
 
@@ -94,21 +94,21 @@ export class TypeSectionImpl {
     const rMax = Math.max(1.7, ...ratios) * 1.02, rMin = Math.min(0.95, ...ratios), rSpan = (rMax - rMin) || 1;
     const X = (i, n) => pad + (n <= 1 ? 0 : i / (n - 1)) * (W - pad - 8);
     const Y = (r) => 8 + ((rMax - r) / rSpan) * (H - pad - 8);
-    const paths = series.map((g, gi) => {
-      const n = g.steps.length;
-      const d = "M" + g.steps.map((s, i) => `${X(i, n).toFixed(1)},${Y(s.lineHeight / s.size).toFixed(1)}`).join(" L");
-      const dots = g.steps.map((s, i) => `<circle class="ty-dot ty-s${gi}" cx="${X(i, n).toFixed(1)}" cy="${Y(s.lineHeight / s.size).toFixed(1)}" r="1.6"/>`).join("");
-      return `<path class="ty-line ty-s${gi}" d="${d}"/>${dots}`;
-    }).join("");
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        <text x="2" y="14">×</text>
-        <text x="${W - 40}" y="${H - pad + 18}">SM→LG</text>
-        ${paths}
-      </svg>`;
-    return h("div", {}, h("div", { class: "an-svg", html: svg }), this.legend(series.map((g, gi) => ({ mark: "ty s" + gi, label: g.short || g.cat }))));
+    const ser = (g, gi) => ({ label: g.short || g.cat, cls: "ty-s" + gi + (g.cat.endsWith("-mono") ? " ty-mono" : ""), dot: 1.6 });
+    const chart = renderChart({
+      W, H,
+      series: series.map((g, gi) => ({ ...ser(g, gi), points: g.steps.map((s, i) => ({ x: X(i, g.steps.length), y: Y(s.lineHeight / s.size), v: [s.name, s.lineHeight / s.size] })) })),
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+      ],
+      labels: [
+        { text: "×", x: 2, y: 14 },
+        { text: "SM→LG", x: W - 40, y: H - pad + 18 },
+      ],
+      columns: ["voice", "step", "line-height ÷ size"],
+    });
+    return h("div", {}, chart, this.legend(series.map((g, gi) => ({ mark: "ty s" + gi, label: g.short || g.cat }))));
   }
 
 

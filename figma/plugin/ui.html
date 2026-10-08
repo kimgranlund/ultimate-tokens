@@ -1449,29 +1449,26 @@ a.account-manage:hover { text-decoration: underline; }
 .type-spec-render { color: var(--ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .type-spec-render.para { white-space: normal; overflow: visible; max-width: 640px; }
 
-/* typography analysis, the seven-group series (display · 3 headings · body · ui · code), shared palette */
-/* the .ty-sN series classes ride BOTH the line <path> and the dot <circle>; the dots need their `fill`,
-   so qualify the line rule (0,2,0) to outrank `.ty-sN` (0,1,0), otherwise the series fill leaks onto the
-   open path, closing it into a filled wedge. Keep fill:none winning regardless of source order. */
-.an-svg .ty-line { fill: none; stroke-width: 1.5; }
-.ty-dot { stroke: none; }
-/* one series colour per voice, by index in the 11-voice order:
-   0 Display · 1 Heading · 2 Sub-heading · 3 Kicker · 4 Lead · 5 Body · 6 Quote · 7 Caption · 8 UI · 9 Code · 10 Legal */
-.ty-s0 { stroke: var(--accent); fill: var(--accent); }                                                      /* Display */
-.ty-s1 { stroke: color-mix(in srgb, var(--accent) 70%, #e0e0e0); fill: color-mix(in srgb, var(--accent) 70%, #e0e0e0); } /* Heading */
-.ty-s2 { stroke: color-mix(in srgb, var(--accent) 45%, var(--ink-dim)); fill: color-mix(in srgb, var(--accent) 45%, var(--ink-dim)); } /* Sub-heading */
-.ty-s3 { stroke: var(--ink-dim); fill: var(--ink-dim); stroke-dasharray: 3 3; }                              /* Kicker (mono) */
-.ty-s4 { stroke: color-mix(in srgb, var(--accent) 55%, var(--ink)); fill: color-mix(in srgb, var(--accent) 55%, var(--ink)); } /* Lead */
-.ty-s5 { stroke: color-mix(in srgb, var(--ink) 60%, var(--accent)); fill: color-mix(in srgb, var(--ink) 60%, var(--accent)); } /* Body */
-.ty-s6 { stroke: color-mix(in srgb, var(--accent) 40%, var(--ink-dim)); fill: color-mix(in srgb, var(--accent) 40%, var(--ink-dim)); } /* Quote (heading cut) */
-.ty-s7 { stroke: var(--ink-dim); fill: var(--ink-dim); }                                                    /* Caption (ui font, prose) */
-.ty-s8 { stroke: var(--ink-faint); fill: var(--ink-faint); }                                                /* UI */
-.ty-s9 { stroke: var(--ink-faint); fill: var(--ink-faint); stroke-dasharray: 3 3; }                         /* Code (mono) */
-.ty-s10 { stroke: color-mix(in srgb, var(--ink-faint) 80%, var(--accent)); fill: color-mix(in srgb, var(--ink-faint) 80%, var(--accent)); stroke-dasharray: 3 3; } /* Kicker (mono) */
-.ty-s11 { stroke: color-mix(in srgb, var(--ink-dim) 70%, var(--panel)); fill: color-mix(in srgb, var(--ink-dim) 70%, var(--panel)); }                              /* Tiny (ui font, prose) */
-.ty-s12 { stroke: color-mix(in srgb, var(--ink-dim) 70%, var(--panel)); fill: color-mix(in srgb, var(--ink-dim) 70%, var(--panel)); stroke-dasharray: 3 3; }        /* Tiny-mono */
-.ty-s13 { stroke: color-mix(in srgb, var(--accent) 60%, var(--ink-faint)); fill: color-mix(in srgb, var(--accent) 60%, var(--ink-faint)); }                         /* UI-control (TKT-0008) */
-.ty-s14 { stroke: color-mix(in srgb, var(--accent) 35%, var(--ink-faint)); fill: color-mix(in srgb, var(--accent) 35%, var(--ink-faint)); }                         /* UI-widget (TKT-0008) */
+/* typography analysis: one native DOM series per voice (ribbon + dots), painted by --series */
+/* one series colour per voice, by index in the live 15-voice order:
+   0 Display · 1 Headline · 2 Sub-heading · 3 Title · 4 Sub-title · 5 Lead · 6 Body · 7 Body-mono · 8 Label · 9 Label-mono · 10 Kicker · 11 Tiny · 12 Tiny-mono · 13 UI-control · 14 UI-widget */
+.ty-s0 { --series: var(--accent); } /* Display */
+.ty-s1 { --series: color-mix(in srgb, var(--accent) 70%, #e0e0e0); } /* Headline */
+.ty-s2 { --series: color-mix(in srgb, var(--accent) 45%, var(--ink-dim)); } /* Sub-heading */
+.ty-s3 { --series: var(--ink-dim); } /* Title */
+.ty-s4 { --series: color-mix(in srgb, var(--accent) 55%, var(--ink)); } /* Sub-title */
+.ty-s5 { --series: color-mix(in srgb, var(--ink) 60%, var(--accent)); } /* Lead */
+.ty-s6 { --series: color-mix(in srgb, var(--accent) 40%, var(--ink-dim)); } /* Body */
+.ty-s7 { --series: var(--ink-dim); } /* Body-mono */
+.ty-s8 { --series: var(--ink-faint); } /* Label */
+.ty-s9 { --series: var(--ink-faint); } /* Label-mono */
+.ty-s10 { --series: color-mix(in srgb, var(--ink-faint) 80%, var(--accent)); } /* Kicker */
+.ty-s11 { --series: color-mix(in srgb, var(--ink-dim) 70%, var(--panel)); } /* Tiny */
+.ty-s12 { --series: color-mix(in srgb, var(--ink-dim) 70%, var(--panel)); } /* Tiny-mono */
+.ty-s13 { --series: color-mix(in srgb, var(--accent) 60%, var(--ink-faint)); } /* UI-control (TKT-0008) */
+.ty-s14 { --series: color-mix(in srgb, var(--accent) 35%, var(--ink-faint)); } /* UI-widget (TKT-0008) */
+/* every *-mono voice dashes its ribbon, by voice name rather than index */
+.ty-mono { --dash: repeating-linear-gradient(90deg, #000 0 3px, transparent 3px 6px); }
 .an-leg-mark.ty { background: var(--ink-faint); }
 .an-leg-mark.ty.s0 { background: var(--accent); }
 .an-leg-mark.ty.s1 { background: color-mix(in srgb, var(--accent) 70%, #e0e0e0); }
@@ -17512,6 +17509,7 @@ const { BUNDLED_FONTS, DEFAULT_TYPE, TYPE_TREATMENTS, WEIGHT_NAMES, genericFor, 
 const { googleSafeFontFor } = __M.fontFallbacks;
 const { icon } = __M.icons;
 const { GENERIC_FONTS, SELF_HOSTED_FONTS, TYPE_PARA, TYPE_SAMPLE, btn, ensureTypeFonts, ensureWebFonts, field, fmt, h } = __M.appHelpers;
+const { renderChart } = __M.chartsRender;
 
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
 // methods, copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
@@ -17520,7 +17518,7 @@ class TypeSectionImpl {
   // ── Typography analysis (left rail, READ-ONLY) ────────────────────────────────────────
   // The type analog of analysisCards(): cards computed from typeScale(doc.type). No inputs, pure
   // diagnostics of the resolved scale. `view` is accepted for dispatch parity but unused (typography
-  // is doc-driven, not palette-view-driven). Reuses .an-card / .an-svg / legend().
+  // is doc-driven, not palette-view-driven). Reuses .an-card / .an-chart / legend().
   typeAnalysisCards(view) {
     const scale = this._activeTypeScale();
     const card = (label, body) => h("div", { class: "an-card" }, h("div", { class: "an-label" }, label), body);
@@ -17545,21 +17543,21 @@ class TypeSectionImpl {
     const maxSize = Math.max(8, ...series.flatMap((g) => g.steps.map((s) => s.size))) * 1.05;
     const X = (i, n) => pad + (n <= 1 ? 0 : i / (n - 1)) * (W - pad - 8);
     const Y = (px) => (H - pad + 8) - (px / maxSize) * (H - pad - 8);
-    const paths = series.map((g, gi) => {
-      const n = g.steps.length;
-      const d = "M" + g.steps.map((s, i) => `${X(i, n).toFixed(1)},${Y(s.size).toFixed(1)}`).join(" L");
-      const dots = g.steps.map((s, i) => `<circle class="ty-dot ty-s${gi}" cx="${X(i, n).toFixed(1)}" cy="${Y(s.size).toFixed(1)}" r="1.6"/>`).join("");
-      return `<path class="ty-line ty-s${gi}" d="${d}"/>${dots}`;
-    }).join("");
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        <text x="2" y="14">px</text>
-        <text x="${W - 40}" y="${H - pad + 18}">SM→LG</text>
-        ${paths}
-      </svg>`;
-    return h("div", {}, h("div", { class: "an-svg", html: svg }), this.legend(series.map((g, gi) => ({ mark: "ty s" + gi, label: g.short || g.cat }))));
+    const ser = (g, gi) => ({ label: g.short || g.cat, cls: "ty-s" + gi + (g.cat.endsWith("-mono") ? " ty-mono" : ""), dot: 1.6 });
+    const chart = renderChart({
+      W, H,
+      series: series.map((g, gi) => ({ ...ser(g, gi), points: g.steps.map((s, i) => ({ x: X(i, g.steps.length), y: Y(s.size), v: [s.name, s.size] })) })),
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+      ],
+      labels: [
+        { text: "px", x: 2, y: 14 },
+        { text: "SM→LG", x: W - 40, y: H - pad + 18 },
+      ],
+      columns: ["voice", "step", "px"],
+    });
+    return h("div", {}, chart, this.legend(series.map((g, gi) => ({ mark: "ty s" + gi, label: g.short || g.cat }))));
   }
 
 
@@ -17573,24 +17571,23 @@ class TypeSectionImpl {
     const tMax = Math.max(0.5, ...tr), tMin = Math.min(-0.5, ...tr), tSpan = (tMax - tMin) || 1;
     const X = (px) => pad + (px / maxSize) * (W - pad - 8);
     const Y = (t) => 8 + ((tMax - t) / tSpan) * (H - pad - 8);
-    const zeroY = Y(0).toFixed(1);
-    const paths = series.map((g, gi) => {
-      const sorted = [...g.steps].sort((a, b) => a.size - b.size);
-      const d = "M" + sorted.map((s) => `${X(s.size).toFixed(1)},${Y(s.letterSpacing).toFixed(1)}`).join(" L");
-      const dots = sorted.map((s) => `<circle class="ty-dot ty-s${gi}" cx="${X(s.size).toFixed(1)}" cy="${Y(s.letterSpacing).toFixed(1)}" r="1.6"/>`).join("");
-      return `<path class="ty-line ty-s${gi}" d="${d}"/>${dots}`;
-    }).join("");
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        <line class="dg-unity" x1="${pad}" y1="${zeroY}" x2="${W - 6}" y2="${zeroY}"/>
-        <text x="2" y="${(+zeroY - 3).toFixed(1)}">0</text>
-        <text x="2" y="14">px</text>
-        <text x="${W - 30}" y="${H - pad + 18}">size→</text>
-        ${paths}
-      </svg>`;
-    return h("div", {}, h("div", { class: "an-svg", html: svg }), this.legend(series.map((g, gi) => ({ mark: "ty s" + gi, label: g.short || g.cat }))));
+    const ser = (g, gi) => ({ label: g.short || g.cat, cls: "ty-s" + gi + (g.cat.endsWith("-mono") ? " ty-mono" : ""), dot: 1.6 });
+    const chart = renderChart({
+      W, H,
+      series: series.map((g, gi) => ({ ...ser(g, gi), points: [...g.steps].sort((a, b) => a.size - b.size).map((s) => ({ x: X(s.size), y: Y(s.letterSpacing), v: [s.size, s.letterSpacing] })) })),
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+        { cls: "dg-unity", x1: pad, y1: Y(0), x2: W - 6, y2: Y(0) },
+      ],
+      labels: [
+        { text: "0", x: 2, y: Y(0) - 3 },
+        { text: "px", x: 2, y: 14 },
+        { text: "size→", x: W - 30, y: H - pad + 18 },
+      ],
+      columns: ["voice", "size px", "tracking px"],
+    });
+    return h("div", {}, chart, this.legend(series.map((g, gi) => ({ mark: "ty s" + gi, label: g.short || g.cat }))));
   }
 
 
@@ -17602,21 +17599,21 @@ class TypeSectionImpl {
     const rMax = Math.max(1.7, ...ratios) * 1.02, rMin = Math.min(0.95, ...ratios), rSpan = (rMax - rMin) || 1;
     const X = (i, n) => pad + (n <= 1 ? 0 : i / (n - 1)) * (W - pad - 8);
     const Y = (r) => 8 + ((rMax - r) / rSpan) * (H - pad - 8);
-    const paths = series.map((g, gi) => {
-      const n = g.steps.length;
-      const d = "M" + g.steps.map((s, i) => `${X(i, n).toFixed(1)},${Y(s.lineHeight / s.size).toFixed(1)}`).join(" L");
-      const dots = g.steps.map((s, i) => `<circle class="ty-dot ty-s${gi}" cx="${X(i, n).toFixed(1)}" cy="${Y(s.lineHeight / s.size).toFixed(1)}" r="1.6"/>`).join("");
-      return `<path class="ty-line ty-s${gi}" d="${d}"/>${dots}`;
-    }).join("");
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        <text x="2" y="14">×</text>
-        <text x="${W - 40}" y="${H - pad + 18}">SM→LG</text>
-        ${paths}
-      </svg>`;
-    return h("div", {}, h("div", { class: "an-svg", html: svg }), this.legend(series.map((g, gi) => ({ mark: "ty s" + gi, label: g.short || g.cat }))));
+    const ser = (g, gi) => ({ label: g.short || g.cat, cls: "ty-s" + gi + (g.cat.endsWith("-mono") ? " ty-mono" : ""), dot: 1.6 });
+    const chart = renderChart({
+      W, H,
+      series: series.map((g, gi) => ({ ...ser(g, gi), points: g.steps.map((s, i) => ({ x: X(i, g.steps.length), y: Y(s.lineHeight / s.size), v: [s.name, s.lineHeight / s.size] })) })),
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+      ],
+      labels: [
+        { text: "×", x: 2, y: 14 },
+        { text: "SM→LG", x: W - 40, y: H - pad + 18 },
+      ],
+      columns: ["voice", "step", "line-height ÷ size"],
+    });
+    return h("div", {}, chart, this.legend(series.map((g, gi) => ({ mark: "ty s" + gi, label: g.short || g.cat }))));
   }
 
 

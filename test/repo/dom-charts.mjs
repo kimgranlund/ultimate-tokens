@@ -39,7 +39,7 @@ const FAIL = (msg) => { failed++; console.log(`FAIL ${msg}`); };
 const ALLOW = {
   "src/ui/sections/color.js": [],
   "src/ui/sections/geometry.js": ["graphGeomCentering", "graphGeomPower", "graphGeomBands"],
-  "src/ui/sections/typography.js": ["graphTypeScale", "graphTypeTracking", "graphTypeLeading"],
+  "src/ui/sections/typography.js": [],
 };
 const HEADER = /^  (?:async\s+)?([A-Za-z_$][\w$]*)\s*\(.*\)\s*\{\s*$/;
 const KEYWORDS = new Set(["if", "for", "while", "switch", "catch", "function", "return"]);
