@@ -170,15 +170,18 @@ ultimate-tokens[data-motion="reduced"].apply-busy::after {
 
 button {
   font: inherit;
+  font-size: var(--sh-control-text);
   color: var(--ink);
   background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--r-sm);
+  border-radius: var(--sh-control-radius);
   cursor: pointer;
-  padding: 4px 9px;
+  min-block-size: var(--sh-control-height);
+  padding-block: 0;
+  padding-inline: var(--sh-control-inset);
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: calc(var(--sh-control-inset) / 2);
   line-height: 1;
 }
 button:hover { background: var(--line-2); }
@@ -205,11 +208,14 @@ button:disabled, button[disabled] {
 
 input[type="text"], input[type="search"], select {
   font: inherit;
+  font-size: var(--sh-control-text);
   color: var(--ink);
   background: var(--panel-2);
   border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  padding: 5px 8px;
+  border-radius: var(--sh-control-radius);
+  min-block-size: var(--sh-control-height);
+  padding-block: 0;
+  padding-inline: var(--sh-control-inset);
   width: 100%;
 }
 input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
