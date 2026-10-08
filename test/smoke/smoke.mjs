@@ -357,6 +357,49 @@ try {
   }
   await evalJS(`(()=>{${el}.shellGeometry=null;${el}.setSection("color");${el}._deselect();${el}.render();})()`); await sleep(200);
 
+  // Control polish (T-0036): at the same two shell geometries, every visible select drops the native look and draws
+  // its chevron with room reserved for it, every range input has a track and thumb sized from the control icon role,
+  // the palette inspector has no Back-to-Global button, and each prime swatch strip is gapless with equal swatches
+  // filling the card width. The bad() negative control feeds each measure a value that must fail.
+  for (const [tier, scale, png] of [["product", "md", "polish-product-md.png"], ["content", "lg", "polish-content-lg.png"]]) {
+    const cell = geomScale({ tier, scale, radius: "round" }).cells[`${tier}-${scale}-md`];
+    const bad = [];
+    let nSel = 0, nRange = 0, nStrip = 0;
+    for (const go of [`${el}._deselect();`, `${el}.selectPalette(0);`]) {
+      await evalJS(`(()=>{${el}.shellGeometry={tier:"${tier}",scale:"${scale}",radius:"round"};${el}.setSection("color");${el}.setCanvasView("palettes");${go}${el}.render();})()`); await sleep(300);
+      const got = await evalJS(`(()=>{const vis=(e)=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0};const R=${el};
+        const selects=[...R.querySelectorAll("select")].filter((e)=>vis(e)&&!e.closest(".canvas-scene, .seg-example, .example-scheme")).map((e)=>{const cs=getComputedStyle(e);return {cls:e.className,ap:cs.appearance,bg:cs.backgroundImage,pl:parseFloat(cs.paddingLeft),pr:parseFloat(cs.paddingRight)}});
+        const ranges=[...R.querySelectorAll('.right-pane input[type="range"]')].filter(vis).map((e)=>{const t=getComputedStyle(e,"::-webkit-slider-thumb");return {h:e.getBoundingClientRect().height,tw:parseFloat(t.width),th:parseFloat(t.height)}});
+        const strips=[...R.querySelectorAll(".canvas-scene .prime-strip")].filter(vis).slice(0,4).map((s)=>{const sw=[...s.querySelectorAll(".prime-swatch")].map((e)=>e.getBoundingClientRect());const ramp=s.parentNode.querySelector(".ramp-strip");const cs=getComputedStyle(s);
+          return {gap:parseFloat(cs.columnGap)||0,n:sw.length,w:sw.map((r)=>r.width),total:s.getBoundingClientRect().width,rampW:ramp?ramp.getBoundingClientRect().width:0,x0:sw[0]?sw[0].left:0,x1:sw.length?sw[sw.length-1].right:0,sx0:s.getBoundingClientRect().left,sx1:s.getBoundingClientRect().right}});
+        const back=R.querySelectorAll(".pane-back").length+[...R.querySelectorAll(".right-pane button")].filter((b)=>/^\\s*Global\\s*$/.test(b.textContent)).length;
+        return {selects,ranges,strips,back};})()`);
+      nSel += got.selects.length; nRange += got.ranges.length; nStrip += got.strips.length;
+      for (const s of got.selects) {
+        if (s.ap !== "none") bad.push(`select.${s.cls} appearance ${s.ap} (want none)`);
+        if (!/linear-gradient/.test(s.bg)) bad.push(`select.${s.cls} draws no chevron (${s.bg})`);
+        if (!(s.pr > s.pl)) bad.push(`select.${s.cls} end padding ${s.pr} does not reserve the chevron lane (start ${s.pl})`);
+      }
+      for (const r of got.ranges) {
+        if (r.tw < cell.icon - 0.5 || r.th < cell.icon - 0.5) bad.push(`range thumb ${r.tw}x${r.th} (want at least the ${cell.icon}px icon role)`);
+        if (r.h < cell.icon * 0.4 - 0.5) bad.push(`range track ${r.h} (want at least ${cell.icon * 0.4})`);
+      }
+      for (const s of got.strips) {
+        const w0 = s.w[0];
+        if (s.gap !== 0 || s.n !== 7 || s.w.some((w) => Math.abs(w - w0) > 0.5)) bad.push(`prime strip gap ${s.gap}, ${s.n} swatches, widths ${s.w.map((w) => w.toFixed(1)).join("/")} (want gap 0, seven equal widths)`);
+        if (Math.abs(s.x0 - s.sx0) > 0.5 || Math.abs(s.x1 - s.sx1) > 0.5) bad.push(`prime swatches span ${s.x0.toFixed(1)}..${s.x1.toFixed(1)}, not the strip ${s.sx0.toFixed(1)}..${s.sx1.toFixed(1)}`);
+        if (s.rampW && Math.abs(s.total - s.rampW) > 1) bad.push(`prime strip ${s.total.toFixed(1)}px wide, ramp strip ${s.rampW.toFixed(1)}px (want the same width)`);
+      }
+      if (got.back) bad.push(`${got.back} Back-to-Global button(s) in the inspector header`);
+      if (go.includes("selectPalette")) { const sh = await send("Page.captureScreenshot", { format: "png" }); writeFileSync(resolve(OUT, png), Buffer.from(sh.data, "base64")); console.log(`  · screenshot → smoke-out/${png}`); }
+    }
+    bad.slice(0, 10).forEach((m) => console.log("    " + m));
+    ok(nSel > 0 && nRange > 0 && nStrip > 0 && bad.length === 0, `control polish at ${tier}-${scale}: ${nSel} selects styled with a chevron, ${nRange} sliders at the icon role, ${nStrip} prime strips gapless and full width, no Back to Global${bad.length ? ` (${bad.length} off)` : ""}`);
+  }
+  // negative control: an unstyled select (native appearance) must read as appearance "auto" in this Chrome, so the check above can fail
+  ok(await evalJS(`(()=>{const s=document.createElement("select");s.style.cssText="appearance:auto";document.body.appendChild(s);const a=getComputedStyle(s).appearance;s.remove();return a!=="none"})()`), "negative control: a select forced back to appearance auto does not read as none");
+  await evalJS(`(()=>{${el}.shellGeometry=null;${el}.setSection("color");${el}._deselect();${el}.render();})()`); await sleep(200);
+
   // Canvas header fit (T-0031): at the two shell geometries, in every section, no header control is clipped
   // or hidden past the center column's edge: the header is the column's width, nothing in it reaches the
   // right pane, and when the trailing tools do not fit they sit behind the overflow trigger instead. Real

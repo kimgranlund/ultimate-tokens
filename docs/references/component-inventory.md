@@ -25,9 +25,9 @@
 ## The architecture finding (read first)
 
 There is **no component library**. The entire UI is one autonomous web component,
-`ultimate-tokens` (`customElements.define` at `app.js:2835`), whose class is assembled from
+`ultimate-tokens` (`customElements.define` at `app.js:2827`), whose class is assembled from
 `src/ui/app.js` (~2,580 lines: state, render dispatch, the frame) plus the section and overlay
-mixins in `src/ui/sections/` and `src/ui/overlays/` (~5,600 lines, `mixinInto` at `app.js:2829`).
+mixins in `src/ui/sections/` and `src/ui/overlays/` (~5,600 lines, `mixinInto` at `app.js:2821`).
 It builds every control inline with a single hyperscript helper `h(tag, attrs, ...kids)`
 (`app-helpers.mjs:319`), across ~39 `render*()` methods. Styling is ~705 class-led selector lines in
 `src/ui/styles.css` (~1,600 lines; count: `grep -cE '^\s*\.' src/ui/styles.css`, 544 unique class names). Consequences that recur in every card below:
@@ -69,7 +69,7 @@ Plus: a `@media (forced-colors:active)` pass; set-tile → `role=button` with a 
 drawer `role=dialog`; toast `aria-live`. `slider()` was already the model and is unchanged.
 
 **Since landed:** the `.field`/`.segmented` self-margins were removed after all:
-`.segmented` carries no self-margin (`styles.css:902`) and `.field { margin: 0; }` (`styles.css:963`);
+`.segmented` carries no self-margin (`styles.css:902`) and `.field { margin: 0; }` (`styles.css:961`);
 the parent owns spacing.
 **Still deferred (intentional):** a true drawer focus-trap; migrating the remaining uniform-`ghost`
 buttons + the composite swatch cells (ramp-strip/scrim/footer), all behavior-neutral, adoptable
@@ -79,11 +79,11 @@ incrementally.
 
 | # | Primitive | Layer | Native / Custom | Variants | Call-sites | Owning CSS | a11y | Flags |
 |---|---|---|---|---|---|---|---|---|
-| 1 | **Button** | component | native `<button>` | ~10 (primary · ghost · icon-only · danger · undo/redo · add-pal · pane-toggle · pane-back · figma-plugin · ex-btn · copy-float · map-reset) | ~21 sites, 85+ refs | `button`, `.primary`, `.ghost`, `.icon-only`, `.danger`, `.ex-btn`, `.copy-float`, `.map-reset`, `.pane-toggle`, `.pane-back` | good (focus-visible, aria-pressed×7, aria-label on icon-only) | no forced-colors; variant sprawl via ad-hoc classes |
+| 1 | **Button** | component | native `<button>` | ~10 (primary · ghost · icon-only · danger · undo/redo · add-pal · pane-toggle · figma-plugin · ex-btn · copy-float · map-reset) | ~21 sites, 85+ refs | `button`, `.primary`, `.ghost`, `.icon-only`, `.danger`, `.ex-btn`, `.copy-float`, `.map-reset`, `.pane-toggle` | good (focus-visible, aria-pressed×7, aria-label on icon-only) | no forced-colors; variant sprawl via ad-hoc classes |
 | 2 | **Toggle / switch** | component | custom `<button role=switch>` (`switchControl()`) | 1 | 2 | `.toggle`, `.track` | ✓ role=switch, aria-checked, aria-label, native focus + Space/Enter | palette site has no `<label>` |
 | 3 | **Segmented control** | component (composes buttons) | custom (`<button>`s via `segmented()`) | 1 compound styling (`.segmented` · `.figma-files` · `.radix-files`, one rule) + 3 modifiers (`.canvas-seg` · `.newpal-seg` · `.settings-seg`) | 14 | `.segmented`, `.canvas-seg`, `.figma-files`, `.radix-files`, `.newpal-seg`, `.settings-seg` | ✓ one keyboard model: roving tabindex + arrows on every site; `role=tablist` or `group` | drawer format is a native `<select>` now, not a segment |
-| 4 | **Slider / range** | component | native `<input type=range>` | 1 (via `slider()` helper) | 1 helper, ~14 instances | `input[type=range]`, `.field` | partial, `aria-label` set (label sibling NOT associated, noted in code `app.js:2221-2224`); no forced-colors | custom thumb only; consistent, the model primitive |
-| 5 | **Select** | component | native `<select>` | 1 + `.map-raw-select` | 3 | `select`, `.map-raw-select` | ✓ `.map-raw-select` has `aria-label`; Distribution/Curve are `field()` rows (label[for] + fallback aria-label) | two naming paths |
+| 4 | **Slider / range** | component | native `<input type=range>` | 1 (via `slider()` helper) | 1 helper, ~14 instances | `input[type=range]`, `.field` | partial, `aria-label` set (label sibling NOT associated, noted in code `app.js:2213-2216`); no forced-colors | custom thumb only (T-0036: track 0.4 and thumb 1.25 times the control icon role); consistent, the model primitive |
+| 5 | **Select** | component | native `<select>` | 1 + `.map-raw-select` | 3 | `select`, `.map-raw-select` | ✓ `.map-raw-select` has `aria-label`; Distribution/Curve are `field()` rows (label[for] + fallback aria-label) | two naming paths; T-0036: `appearance: none` with a drawn chevron, control roles for height, inset, radius and text |
 | 6 | **Text input** | component | native `<input type=text>` | 2 (`.field` name · `.map-raw-input`) | 2 | `input[type=text]`, `.map-raw-input` | ✓ map-raw-input has `aria-label`; Name is a `field()` row (label[for] + fallback aria-label) | two naming paths |
 | 7 | **Search input** | component | native `<input type=search>` | 1 | 1 (singleton, reused) | `input[type=search]` | good, `aria-label` + placeholder | reused node (`ensureSearchInput`, `app.js:913-916`) to preserve focus |
 | 8 | **Checkbox** | component | native `<input type=checkbox>` | 1 | 1 | `.mini-check` | good, label-wrapped (associated), `accent-color` | only one instance |
@@ -218,9 +218,9 @@ incrementally.
   Tension/L*min/L*max/Damp/Chroma-floor/Falloff/Amplify/Bias `sections/color.js:2053-2076`.
 - **Anatomy** `.field` `[ label · readout(<b>) · input[type=range] ]`; track + custom `thumb` (`styles.css:939-953`).
 - **API** clean function signature; `fmtFn` for the live readout, `onInput` callback; `data-fk`
-  carries a focus key so re-render preserves focus, `app.js:2247`.
+  carries a focus key so re-render preserves focus, `app.js:2239`.
 - **a11y** ✓ `aria-label` on the input (the sibling `<label>` is deliberately *not* associated,
-  documented at `app.js:2221-2224`). Native keyboard, arrows/Home/End, inherited. ✗ no forced-colors on
+  documented at `app.js:2213-2216`). Native keyboard, arrows/Home/End, inherited. ✗ no forced-colors on
   the custom thumb.
 - **Verdict** the one consistently-factored primitive, every slider goes through one helper.
 
