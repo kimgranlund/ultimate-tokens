@@ -1839,6 +1839,43 @@ if (applyFontPrimitivesModes) {
   if (mjsReport2.aliases.length) FAIL("libraryparity", `libraryModeReport must omit an already-correctly-aliased name (idempotency fix), got ${JSON.stringify(mjsReport2.aliases)}`);
   if (mjsReport2.deprecates.length) FAIL("libraryparity", `libraryModeReport must not deprecate an already-correctly-aliased name, got ${JSON.stringify(mjsReport2.deprecates)}`);
 
+  // valueChanged's 3rd arg (T-0026): a `values`-shaped ALIAS (Geometry's control/ roles) compares each
+  // mode's live VARIABLE_ALIAS target by name through idToName. Matching target -> unchanged; drifted
+  // target, literal live value, or no idToName -> changed; the `{target}` shape stays unconditional.
+  const ctlVar = { name: "control/x", type: "ALIAS", values: [{ mode: "Base", value: "size/a/height" }] };
+  const ctlSame = { Base: { type: "VARIABLE_ALIAS", id: "x1" } };
+  const ctlCases = [
+    [ctlSame, ctlVar, { x1: "size/a/height" }, false],
+    [ctlSame, ctlVar, { x1: "size/b/height" }, true],
+    [{ Base: 4 }, ctlVar, { x1: "size/a/height" }, true],
+    [ctlSame, ctlVar, undefined, true],
+    [{}, aliasVar, { x1: "family/x" }, true],
+  ];
+  for (const [live, planVar, idToName, want] of ctlCases) {
+    const mjsV = valueChanged(live, planVar, idToName);
+    const vmV = vmValueChanged ? vmValueChanged(live, planVar, idToName) : null;
+    if (mjsV !== vmV) FAIL("libraryparity", `valueChanged (3-arg) disagree for ${JSON.stringify({ live, planVar, idToName })}: mjs=${mjsV} vm=${vmV}`);
+    if (mjsV !== want) FAIL("libraryparity", `valueChanged (3-arg) for ${JSON.stringify({ live, planVar, idToName })} = ${mjsV}, want ${want}`);
+  }
+  const ctlPlan = { variables: [ctlVar] };
+  const ctlMap = { x1: "size/a/height" };
+  const mjsReport3 = libraryModeReport(ctlPlan, { "control/x": ctlSame }, {}, {}, [], ctlMap);
+  const vmReport3 = vmLibraryModeReport ? vmLibraryModeReport(ctlPlan, { "control/x": ctlSame }, {}, {}, [], ctlMap) : null;
+  if (!vmReport3) FAIL("libraryparity", "code.js exported no libraryModeReportVM (6-arg form)");
+  else if (JSON.stringify(mjsReport3) !== JSON.stringify(vmReport3)) FAIL("libraryparity", `libraryModeReport/libraryModeReportVM (6-arg) disagree: mjs=${JSON.stringify(mjsReport3)} vm=${JSON.stringify(vmReport3)}`);
+  if (mjsReport3.valueUpdates.length) FAIL("libraryparity", `libraryModeReport must not report a value update for an ALIAS whose live targets already match, got ${JSON.stringify(mjsReport3.valueUpdates)}`);
+
+  // End to end (T-0026): re-applying the unchanged merged default plan on a classic file reports no
+  // valueUpdates, so the control/ ALIAS roles no longer read as changed on every apply.
+  const FVU = mockFigma();
+  const avu = new Function("figma", "__html__", "module", code + "\nreturn { applyFloatPlans };")(FVU.figma, "<html>", undefined).applyFloatPlans;
+  const vuPlans = modeApplyPlan(mergeModeInterchanges(TYPE.typeTokensFigmaModes(TYPE.typeScale({ treatment: "product", bodyBase: 16 }), []), GEOM.geomTokensFigmaModes(GEOM.geomScale({}), [])));
+  await avu(vuPlans, { libraryMode: false });
+  const vuRes = await avu(vuPlans, { libraryMode: false });
+  const vuRep = (vuRes.libraryReports || [])[0];
+  if (!vuRep) FAIL("libraryparity", "re-apply of the merged default plan returned no libraryReports[0]");
+  else if (vuRep.valueUpdates.length) FAIL("libraryparity", `re-apply of the unchanged merged default plan reported ${vuRep.valueUpdates.length} valueUpdates (e.g. ${vuRep.valueUpdates.slice(0, 3).join(", ")}), want 0`);
+
   // priorLibraryUplift / priorLibraryUpliftVM (#635, tightened in review round 1), the gate's "already
   // uplifted" evidence rule: an existing name NOT in wantedNames that carries a live alias target OR sits
   // under "_deprecated/". A wanted name's alias (the plan's own ALIAS variables) is NOT evidence.
