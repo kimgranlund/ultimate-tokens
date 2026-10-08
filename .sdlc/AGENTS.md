@@ -1,4 +1,4 @@
-<!-- sdlc-lite:managed:start v1 sha256:4ca932a5fafb -->
+<!-- sdlc-lite:managed:start v1 sha256:67ccab1ec9b7 -->
 # Work records
 
 This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and `config`. `tickets.py roadmap` (also run by `new` and `close`) generates this block: do not edit inside it; change a ticket's `handoff.md` front matter and rerun `roadmap`. `roadmap.md` lists every ticket in dependency order. Closed `.NNNN-*` folders are history: open one only when asked.
@@ -10,9 +10,12 @@ This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and
 ## Stages
 
 - proposed: 0
-- ready: 2
+- ready: 5
   - T-0024 Gate A narrowing from #807: can the chroma-envelope gate cover stops where OKHSL keyS reads above 1? (gate-a-narrowing)
   - T-0029 Rebuild the app's analysis charts as native DOM (HTML/CSS marks) following /Users/kimgranlund/Projects/nonoun/native-dom-charts (native-dom-charts)
+  - T-0036 Select triggers unstyled, sliders too small, drop the Back to Global button, prime swatches fill the width (ui-polish-controls)
+  - T-0037 Radix colors: hover tooltip with each step's role and intent (radix-role-tooltips)
+  - T-0038 Brightest steps do not share luminosity across peer palettes (diagnose first) (peer-luminosity)
 - blocked: 0
 - done: 32
 - dropped: 0
