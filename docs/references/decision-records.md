@@ -962,6 +962,19 @@ Format: Context → Decision → Rationale → Consequences → Status.
 - **Consequences.** `test/engine/fixtures/chroma-envelope.json` is retired, and its owner clause moves
   here: a change that moves the curve updates the gate's SPEC and this ADR in the same change.
   `NAMED_EXCEPTIONS` and `OVER_90_AT_300` stay report-only in `scripts/lib/envelope-measure.mjs`.
+- **Amendment (2026-10-08, T-0024).** Decision (3)'s perceptual and peak rule is restated as the clamped
+  basis form, and the stops it used to drop are back under it. The OKHSL stop records now carry `basis`,
+  the OKHSL `s` the envelope multiplies (the anchor's own `s` on the anchored path, the unanchored key
+  colour's `s` on the gate path), as the even records already did. At every stop that is not capped,
+  `model / (damper ?? 1)` equals `min(1, max(0, basis * env))` to 1e-9, the clamp `holdTone` applies to
+  `s` before the group damper scales it; at the anchored stop 500 it equals `basis` (a verbatim anchor)
+  or `min(1, basis)` (a clamped pivot); and `basis` is constant across the ramp, which is R69's no-climb
+  rule restated as a gate clause, not a new decision. OKHSL's `s = 1` is an approximate gamut boundary, so
+  a boundary key colour reads 1 plus or minus round-off (the corpus basis spans [0.9998, 1.0007]) and the
+  clamp is part of the model. The old `model / model(500)` form could not hold where stop 500 was clamped
+  and so checked only 122,733 of 146,000 anchored and 80,228 of 146,000 gate-path perceptual and peak
+  stops; the clamped basis form checks every uncapped stop. Rule 1 (`env` exact to 1e-12), Gate B and the direction leg are unchanged,
+  and the engine's arithmetic is untouched: the field reaches no export.
 - **Status.** PROPOSED 2026-10-07 (#778; builds on #725 and ADR-026). Ratification is the owner's:
   the owner edits this line to DECIDED, or amends the text under the file's amendment shape.
 
