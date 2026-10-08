@@ -25,7 +25,7 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 | T-0019 | [gh-811](gh-811/handoff.md) | Describe eval scores 0/15: score by perceptual distance (#811) | bug | L2 | P2 | none | 🟢 done |
 | T-0020 | [gh-809](gh-809/handoff.md) | Color inspector: drop the Palette\|Global switch, show context by selection (#809) | feature | L2 | P2 | none | 🟢 done |
 | T-0021 | [gh-788](gh-788/handoff.md) | Compute layers: rebase U1-U3 onto main, then U4 pins and U5 ramp@2 on schema v9 (#788) | feature | L4 | P2 | none | 🔵 ready |
-| T-0022 | [gh-811b](gh-811b/handoff.md) | Describe eval runner: parse the leading JSON object of a string-typed families (Haiku 5.5 appends trailing text) | bug | L1 | P2 | none | 🔵 ready |
+| T-0022 | [gh-811b](gh-811b/handoff.md) | Describe eval runner: parse the leading JSON object of a string-typed families (Haiku 5.5 appends trailing text) | bug | L1 | P2 | none | 🟢 done |
 | T-0023 | [geometry-tokens-snapshot](geometry-tokens-snapshot/handoff.md) | Retire docs/assets/geometry-tokens.json, the frozen six-size snapshot (T-0017 follow-up) | chore | L2 | P2 | none | 🟢 done |
 | T-0024 | [gate-a-narrowing](gate-a-narrowing/handoff.md) | Gate A narrowing from #807: can the chroma-envelope gate cover stops where OKHSL keyS reads above 1? | spike | L1 | P2 | none | 🔵 ready |
 | T-0025 | [inspector-review-fixes](inspector-review-fixes/handoff.md) | Color inspector follow-ups from the PR #814 review (Mapping/Radix reachability, drag-reorder context flip, keyboard path back to Global) | bug | L2 | P2 | none | 🟢 done |

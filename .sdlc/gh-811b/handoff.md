@@ -2,7 +2,7 @@
 id: T-0022
 title: "Describe eval runner: parse the leading JSON object of a string-typed families (Haiku 5.5 appends trailing text)"
 type: bug
-status: ready
+status: done
 size: L1
 priority: P2
 depends: []
@@ -21,3 +21,7 @@ GitHub #811 follow-up. `interpretOne` in `mcp/describe-eval-runner.mjs` parses a
 
 ## Constraints
 - Zero runtime deps, no U+2014. `npm test` green via `scripts/gate_lock.py run --name npm-test -- npm test`. Files: `mcp/describe-eval-runner.mjs`, `test/mcp/describe-eval.mjs` only (plus `src/ui/mcp-assets.js` / `describe-mcp-assets.js` only if a generator moves them).
+
+## Closed
+
+2026-10-08: delivered by the solo agent (level L1); the ticket's own checks and the fanout gates passed
