@@ -27,4 +27,4 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 | T-0021 | [gh-788](gh-788/handoff.md) | Compute layers: rebase U1-U3 onto main, then U4 pins and U5 ramp@2 on schema v9 (#788) | feature | L4 | P2 | none | 🔵 ready |
 | T-0022 | [gh-811b](gh-811b/handoff.md) | Describe eval runner: parse the leading JSON object of a string-typed families (Haiku 5.5 appends trailing text) | bug | L1 | P2 | none | 🔵 ready |
 | T-0023 | [geometry-tokens-snapshot](geometry-tokens-snapshot/handoff.md) | Retire docs/assets/geometry-tokens.json, the frozen six-size snapshot (T-0017 follow-up) | chore | L2 | P2 | none | 🔵 ready |
-| T-0024 | [gate-a-narrowing](gate-a-narrowing/handoff.md) | Gate A narrowing from #807: can the chroma-envelope gate cover stops where OKHSL keyS reads above 1? | spike | L1 | P2 | none | ⏳ proposed |
+| T-0024 | [gate-a-narrowing](gate-a-narrowing/handoff.md) | Gate A narrowing from #807: can the chroma-envelope gate cover stops where OKHSL keyS reads above 1? | spike | L1 | P2 | none | 🔵 ready |
