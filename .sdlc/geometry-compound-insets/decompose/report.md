@@ -1,0 +1,6 @@
+Manifest: .sdlc/geometry-compound-insets/decompose/manifest-v1.json (technical-architecture · plan) · coverage_check: clean
+Quadrant: load-bearing
+Outside-in: engine (4 leaves) · 7 gate/record leaves that pin the 14-field cell (tests, Figma count, smoke, token table, ds-export menu card, consumer skill, maintainer docs + MCP descriptions) · shell (4 leaves: aliases, .segmented, icon-only, Name input reproduce-first) · headless gate · pixel evidence. No unjustified structure: both non-leaf nodes are grouping.
+Inside-out: 19 actions, every one hosted. The radius side of the ask (a5) is hosted by the existing radiusControl / radiusInset / radiusCard fields and lands as the law in the engine header and the consumer skill, not as a new field. The "listbox or menu component in the shell" has no target (search: `grep -nE "listbox|\.menu|combobox" src/ui/styles.css` finds only .segmented and the .tyi-font-input combobox), so its demonstration lives in the ds-export menu card (a11, n6).
+Hand-off: /plan (sequence n1-n8 first, n9-n11 after T-0025 lands; the engine step touches no T-0026 file: nothing under figma/ enumerates the 14 names, only test/figma/migrations.mjs:63 counts them).
+Note for the conductor: Edit is disabled for the architect, so `Decomposition: decompose/report.md` was not added under the handoff's Context.

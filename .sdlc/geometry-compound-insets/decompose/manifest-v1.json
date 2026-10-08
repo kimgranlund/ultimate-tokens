@@ -1,0 +1,374 @@
+{
+  "domain": "technical-architecture",
+  "plan": true,
+  "nodes": [
+    {
+      "id": "n1",
+      "label": "geometry engine, src/engine/geometry.mjs",
+      "leaf": false,
+      "justify": "grouping"
+    },
+    {
+      "id": "n1a",
+      "label": "buildCell: partHeight = height - inset, partInset = inset / 2 (geometry.mjs:114-137)",
+      "leaf": true,
+      "accept": "node test/engine/geometry.mjs exits 0 and asserts for every one of the 27 cells partHeight === height - inset and partInset === inset / 2, and chipHeight <= partHeight"
+    },
+    {
+      "id": "n1b",
+      "label": "CELL_FIELDS exported, 16 entries, part-height / part-inset after min-width (geometry.mjs:203-208)",
+      "leaf": true,
+      "accept": "node test/engine/geometry.mjs exits 0 with the CSS primitive count 27 x 16, every DTCG cell 16 fields, geomTokensFigmaModes 27 x 16 size/ FLOAT + 9 x 16 control/ ALIAS; node test/figma/migrations.mjs exits 0 with 432 size/{cell}/{field} names"
+    },
+    {
+      "id": "n1c",
+      "label": "resolver derived roles --control-part-height / --control-part-inset in the :where(*, :host) block, beside the radius roles (geometry.mjs:272-278); RESOLVER_FIELDS stays 9",
+      "leaf": true,
+      "accept": "node test/engine/geometry.mjs exits 0 with both role names in the resolver output, the --ctx-cell- count still 81, and the roles bare under a prefix"
+    },
+    {
+      "id": "n1d",
+      "label": "header comment: the compound law (container pads partInset, keeps radiusControl; part is partHeight tall with partInset, radiusInset; a wrap around full controls uses radiusCard)",
+      "leaf": true,
+      "accept": "grep -n 'partInset' src/engine/geometry.mjs matches a comment line in the header block (lines 1-30) and node test/repo/em-dash.mjs exits 0"
+    },
+    {
+      "id": "n2",
+      "label": "engine gates, test/engine/geometry.mjs (pins at :119, :123, :132, :166)",
+      "leaf": true,
+      "accept": "node test/engine/geometry.mjs exits 0 and contains a negative control that fails when partInset is emitted as inset (not inset / 2)"
+    },
+    {
+      "id": "n3",
+      "label": "Figma name-wave count, test/figma/migrations.mjs:63 (378 to 432)",
+      "leaf": true,
+      "accept": "node test/figma/migrations.mjs exits 0 with the literal 432 = 27 cells x 16 fields"
+    },
+    {
+      "id": "n4",
+      "label": "real-browser resolver cases, test/smoke/smoke.mjs:269-281 (bind part-height to height and part-inset to padding-left)",
+      "leaf": true,
+      "accept": "npm run smoke exits 0 and its geometry resolver line reports all 108 cases resolving --control-part-height and --control-part-inset to the engine's cell values"
+    },
+    {
+      "id": "n5",
+      "label": "Geometry section token table, src/ui/sections/geometry.js:11-17 imports CELL_FIELDS instead of TABLE_FIELDS",
+      "leaf": true,
+      "accept": "grep -c 'TABLE_FIELDS' src/ui/sections/geometry.js prints 0 and node test/ui/headless-boot.mjs exits 0 with the tokens table showing 16 columns per cell"
+    },
+    {
+      "id": "n6",
+      "label": "design-system bundle menu card, src/engine/ds-export.js:614-615: menuPad = the kit default cell's partInset (mdAnchor(geomSc).size.partInset, fallback 4); menuItemRadius stays max(0, rLg - menuPad) because the popover radius is rLg by #480",
+      "leaf": true,
+      "accept": "grep -n 'const menuPad = 4' src/engine/ds-export.js prints nothing, grep -n 'partInset' src/engine/ds-export.js prints the menuPad line, and node test/engine/ds-gates.mjs exits 0"
+    },
+    {
+      "id": "n7",
+      "label": "consumer skill, plugin/ultimate-tokens/skills/geometry-tokens (SKILL.md:32,45-48, references/controls.md:39-67, references/detail.md, scripts/dimension-parity.mjs:5,23 comments)",
+      "leaf": true,
+      "accept": "node plugin/ultimate-tokens/skills/geometry-tokens/scripts/dimension-parity.mjs prints PASS with 27 cells x 16 fields, 15 roles, and node test/plugin/geometry-tokens.mjs exits 0; SKILL.md names --control-part-height and --control-part-inset and the compound recipe"
+    },
+    {
+      "id": "n8",
+      "label": "maintainer record: docs/references/geometry/README.md:69,94, .claude/skills/geometry-system (SKILL.md:51,103,108,128; references/foundations.md:14,114; rubric.md:15; best-practices.md:53), a new ADR appended to docs/references/decision-records.md before its Quick map, mcp/brand-kit-core.mjs:87,129 descriptions, .claude/skills/maintaining-brand-kit-mcp references",
+      "leaf": true,
+      "accept": "grep -rnE '27 ?[x\u00d7] ?14|14 (per-cell|fields)' docs/references/geometry/README.md .claude/skills/geometry-system plugin/ultimate-tokens/skills/geometry-tokens mcp prints nothing; node test/repo/citations.mjs exits 0; the new ADR is present and node test/repo/em-dash.mjs exits 0"
+    },
+    {
+      "id": "n9",
+      "label": "app shell, src/ui/styles.css + src/ui/app.js (after T-0025 lands)",
+      "leaf": false,
+      "justify": "grouping"
+    },
+    {
+      "id": "n9a",
+      "label": "shell aliases --sh-part-height: var(--control-part-height, 24px) and --sh-part-inset: var(--control-part-inset, 4px) (styles.css:74-85); the roles arrive live from app.js:2341 (_applyShellGeometry injects geomTokensSizesCSS + geomResolverCSS at render), no generated asset",
+      "leaf": true,
+      "accept": "grep -nE '^\\s*--sh-part-(height|inset):' src/ui/styles.css prints two lines with the product-md-md round fallbacks 24px and 4px"
+    },
+    {
+      "id": "n9b",
+      "label": ".segmented compound rule (styles.css:880-903): container border-box, block-size --sh-control-height, padding calc(--sh-part-inset - 1px) with its 1px border kept, radius --sh-control-radius, gap 0; button min-block-size --sh-part-height, padding-inline --sh-part-inset, radius --sh-radius-inset. .seg-sm keeps the chip basis as CSS calc on the chip roles (padding calc(--sh-chip-inset / 2 - 1px), button calc(--sh-chip-height - --sh-chip-inset)); .canvas-seg keeps its wider inset * 2 padding-inline (a deliberate wide variant, not a compound)",
+      "leaf": true,
+      "accept": "node test/ui/headless-boot.mjs exits 0 with a lettered group asserting .segmented's style text reads the --sh-part-* roles and no literal px padding, and the smoke screenshot of a segmented control shows outer height equal to --control-height at product-md and content-lg"
+    },
+    {
+      "id": "n9c",
+      "label": "icon-only buttons: a new button.icon-only class (inline-size and block-size --sh-control-height, border-box, padding 0, centered, transparent border and background, hover/active fill); paneToggle (app.js:1463) drops ghost for icon-only, .pane-toggle padding override (styles.css:424) removed, .on keeps color only",
+      "leaf": true,
+      "accept": "node test/ui/headless-boot.mjs exits 0 asserting both pane toggles carry class icon-only and not ghost; the smoke screenshot shows the header toggle square (width equals height) with no border at rest"
+    },
+    {
+      "id": "n9d",
+      "label": "palette name input (color.js:1666-1693, styled by styles.css:206): reproduce by smoke screenshot before any CSS change; fix only what the screenshot shows",
+      "leaf": true,
+      "accept": "a smoke screenshot of the palette inspector Name field is attached to the step record and, if a defect is confirmed, the fix is one rule in styles.css with a headless assertion naming the property that was wrong"
+    },
+    {
+      "id": "n10",
+      "label": "headless shell gate, test/ui/headless-boot.mjs, one lettered group for the three shell changes with a negative control each",
+      "leaf": true,
+      "accept": "npm test exits 0 and the new lettered group fails when the .segmented padding is restored to 2px or the pane toggle regains class ghost"
+    },
+    {
+      "id": "n11",
+      "label": "pixel evidence: smoke screenshots of the segmented control, the icon-only toggle and the Name field at product-md and content-lg (smoke-out/)",
+      "leaf": true,
+      "accept": "npm run smoke exits 0 and the step record lists the four screenshot paths with the measured outer heights"
+    }
+  ],
+  "actions": [
+    {
+      "id": "a1",
+      "label": "derive each cell's part height so a repeated part inside a control-sized container holds the outer height"
+    },
+    {
+      "id": "a2",
+      "label": "derive each cell's part inset, the half the part gives to its container"
+    },
+    {
+      "id": "a3",
+      "label": "emit the part fields through CSS primitives, sizes-only CSS, DTCG, Figma floats and Figma modes"
+    },
+    {
+      "id": "a4",
+      "label": "resolve the part roles per context (data-tier / scale / size) in the CSS export"
+    },
+    {
+      "id": "a5",
+      "label": "state the concentric radius law for compound containers and wraps using the existing radius-control / radius-inset / radius-card"
+    },
+    {
+      "id": "a6",
+      "label": "prove emitter parity for the 16-field cell on every surface"
+    },
+    {
+      "id": "a7",
+      "label": "prove the part roles resolve to the engine's numbers in a real browser"
+    },
+    {
+      "id": "a8",
+      "label": "show the part fields in the app's Geometry token table"
+    },
+    {
+      "id": "a9",
+      "label": "teach exported-kit consumers the compound recipe (segmented, listbox, menu, icon-only)"
+    },
+    {
+      "id": "a10",
+      "label": "keep the maintainer record and MCP descriptions current for the 16-field cell and the two new roles"
+    },
+    {
+      "id": "a11",
+      "label": "demonstrate the compound rule in the design-system bundle's menu preview instead of a literal 4px"
+    },
+    {
+      "id": "a12",
+      "label": "make the shell's segmented control hold its outer height with concentric corners"
+    },
+    {
+      "id": "a13",
+      "label": "make the shell's icon-only buttons square and ghost (borderless, transparent until hover/active)"
+    },
+    {
+      "id": "a14",
+      "label": "make the palette name input look like the other shell inputs, after reproducing the defect"
+    },
+    {
+      "id": "a15",
+      "label": "let the shell read the part roles with product-md-md fallbacks"
+    },
+    {
+      "id": "a16",
+      "label": "gate the shell changes against regression in the headless run"
+    },
+    {
+      "id": "a17",
+      "label": "produce pixel evidence at product-md and content-lg"
+    },
+    {
+      "id": "a18",
+      "label": "serve the part fields to agents through the brand-kit MCP (pass-through) and say so in its tool description"
+    },
+    {
+      "id": "a19",
+      "label": "keep the chip distinct from the part (chip snaps to the ladder, part is exact; chip height never exceeds part height)"
+    }
+  ],
+  "hosts": [
+    {
+      "action": "a1",
+      "node": "n1a"
+    },
+    {
+      "action": "a2",
+      "node": "n1a"
+    },
+    {
+      "action": "a19",
+      "node": "n1a"
+    },
+    {
+      "action": "a19",
+      "node": "n2"
+    },
+    {
+      "action": "a3",
+      "node": "n1b"
+    },
+    {
+      "action": "a4",
+      "node": "n1c"
+    },
+    {
+      "action": "a5",
+      "node": "n1d"
+    },
+    {
+      "action": "a5",
+      "node": "n7"
+    },
+    {
+      "action": "a6",
+      "node": "n2"
+    },
+    {
+      "action": "a6",
+      "node": "n3"
+    },
+    {
+      "action": "a6",
+      "node": "n7"
+    },
+    {
+      "action": "a7",
+      "node": "n4"
+    },
+    {
+      "action": "a8",
+      "node": "n5"
+    },
+    {
+      "action": "a9",
+      "node": "n7"
+    },
+    {
+      "action": "a10",
+      "node": "n8"
+    },
+    {
+      "action": "a18",
+      "node": "n8"
+    },
+    {
+      "action": "a11",
+      "node": "n6"
+    },
+    {
+      "action": "a12",
+      "node": "n9b"
+    },
+    {
+      "action": "a13",
+      "node": "n9c"
+    },
+    {
+      "action": "a14",
+      "node": "n9d"
+    },
+    {
+      "action": "a15",
+      "node": "n9a"
+    },
+    {
+      "action": "a16",
+      "node": "n10"
+    },
+    {
+      "action": "a17",
+      "node": "n11"
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1a",
+      "to": "n1b",
+      "why": "CELL_FIELDS names the keys buildCell produces"
+    },
+    {
+      "from": "n1b",
+      "to": "n1c",
+      "why": "the derived roles take the kebab names CELL_FIELDS fixes"
+    },
+    {
+      "from": "n1b",
+      "to": "n2",
+      "why": "the gates count the exported field list"
+    },
+    {
+      "from": "n1b",
+      "to": "n3",
+      "why": "the 432 literal is 27 x the CELL_FIELDS length"
+    },
+    {
+      "from": "n1c",
+      "to": "n4",
+      "why": "smoke binds the role names the resolver emits"
+    },
+    {
+      "from": "n1b",
+      "to": "n5",
+      "why": "the token table imports CELL_FIELDS"
+    },
+    {
+      "from": "n1a",
+      "to": "n6",
+      "why": "the menu card reads partInset off the kit default cell"
+    },
+    {
+      "from": "n1c",
+      "to": "n7",
+      "why": "dimension-parity reads the roles off geomResolverCSS"
+    },
+    {
+      "from": "n1c",
+      "to": "n8",
+      "why": "docs name the roles the resolver emits"
+    },
+    {
+      "from": "n1c",
+      "to": "n9a",
+      "why": "the shell aliases the resolved roles"
+    },
+    {
+      "from": "n9a",
+      "to": "n9b",
+      "why": ".segmented reads the --sh-part-* aliases"
+    },
+    {
+      "from": "n9a",
+      "to": "n9c",
+      "why": "the icon-only square reads --sh-control-height"
+    },
+    {
+      "from": "n9b",
+      "to": "n10",
+      "why": "the headless group asserts the new rules"
+    },
+    {
+      "from": "n9c",
+      "to": "n10",
+      "why": "the headless group asserts the toggle classes"
+    },
+    {
+      "from": "n9d",
+      "to": "n10",
+      "why": "a confirmed input defect gets its own assertion"
+    },
+    {
+      "from": "n10",
+      "to": "n11",
+      "why": "pixel evidence runs after the shell lands green"
+    }
+  ]
+}
