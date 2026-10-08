@@ -29,7 +29,7 @@ Bridge script: `scripts/gen-figma-ui.mjs:17-56` (injected before `</body>`, beco
 | `list-fonts` | `typography.js:799` (one-shot), posting `type: "list-fonts"` | `code.js:232-238` (`msg.type === "list-fonts"`) | `fonts-listed` |
 | `save-sets` | `app.js:1183` (`persistSets`), posting `type: "save-sets"` | `code.js:250-252` (`msg.type === "save-sets"`) | **none** (fire-and-forget) |
 | `save-config` | `app.js:2421`, posting `type: "save-config"` | `code.js:225-227` (`msg.type === "save-config"`) | **none** (only a `figma.notify`, not a postMessage) |
-| `apply` | `apply-gate.js:106`, posting `type: "apply"` | `code.js:133-224` (`msg.type === "apply"`) | `apply-done` or `apply-error` |
+| `apply` | `apply-gate.js:110`, posting `type: "apply"` | `code.js:133-224` (`msg.type === "apply"`) | `apply-done` or `apply-error` |
 | `sweep-scan` | `apply-gate.js:227`, posting `type: "sweep-scan"` | `code.js:253-259` (`msg.type === "sweep-scan"`) | `sweep-scanned` |
 | `sweep-delete` | `apply-gate.js:254`, posting `type: "sweep-delete"` | `code.js:260-269` (`msg.type === "sweep-delete"`) | `sweep-done` |
 
