@@ -4675,6 +4675,119 @@ app.setSection("color"); app.render(); flushRaf();
   ok(narrowOld !== cssCPD && !narrowOk(narrowOld), "(cpd6) negative control: a copy with the old .app-header button, .canvas-header button { padding: 4px 7px; } fails the check");
 }
 
+// ── (cht) canvas-header trailing tools: one shared builder, an inline group and an overflow menu, a measured fit ──
+// The shim has no layout, so what is checked here is the markup both homes carry, the menu's actions, the
+// three-step fit decision driven by a stubbed scrollWidth/clientWidth, and a text check of the CSS rules
+// (with negative controls on mutated copies). The real widths at product-md and content-lg are smoke.mjs's job.
+{
+  const { readFileSync: rfCHT } = await import("node:fs");
+  app.doc = defaultDocumentDPA();
+  app.history = []; app.future = [];
+  app.panesLeft = true; app.panesRight = true;
+  const hdr = () => app.querySelector(".canvas-header");
+  const fkOf = (root, fk) => walk(root, (e) => e.dataset && e.dataset.fk === fk)[0];
+  const readouts = () => app.querySelectorAll(".zoom-readout").map((e) => e.textContent);
+  for (const [section, pal] of [["color", true], ["typography", false], ["geometry", false]]) {
+    app.setSection(section); app._deselect(); app.render(); flushRaf();
+    const hd = hdr();
+    const tools = hd.querySelector(".canvas-tools");
+    const trigger = fkOf(hd, "tools-menu");
+    const menu = hd.querySelector(".tools-menu");
+    ok(!!tools && !!trigger && !!menu, `(cht1) ${section}: the header carries the inline .canvas-tools, the overflow trigger and the .tools-menu`);
+    const inlineKeys = ["tool-fit", "tool-zoom-out", "tool-zoom-in", ...(pal ? ["tool-add-palette"] : [])];
+    const menuKeys = ["menu-fit", "menu-zoom-out", "menu-zoom-in", ...(pal ? ["menu-add-palette"] : [])];
+    ok(inlineKeys.every((k) => !!fkOf(tools, k)) && menuKeys.every((k) => !!fkOf(menu, k)), `(cht2) ${section}: every tool has a data-fk key inline and in the menu (${inlineKeys.concat(menuKeys).join(", ")})`);
+    ok(!!fkOf(hd, "tool-add-palette") === pal && !!fkOf(hd, "menu-add-palette") === pal, `(cht3) ${section}: the + Palette tool ${pal ? "is" : "is not"} in the header`);
+    ok(trigger.tagName === "BUTTON" && trigger.classList.contains("icon-only") && trigger.getAttribute("aria-label") === "More canvas tools" && /canvas-tools-menu/.test(trigger.getAttribute("popovertarget") || "") && trigger.getAttribute("aria-haspopup") === "true" && trigger.getAttribute("aria-expanded") === "false", `(cht4) ${section}: the trigger is an icon-only button naming the menu (popovertarget, aria-haspopup, aria-expanded=false)`);
+    ok(menu.getAttribute("popover") === "auto" && menu.getAttribute("id") === "canvas-tools-menu" && menu.getAttribute("aria-label") === "Canvas tools" && hasSvgIcon(trigger), `(cht5) ${section}: the menu is a native popover (popover=auto) with the id the trigger targets, and the trigger carries a registry icon`);
+    ok(hd.children.indexOf(tools) < hd.children.indexOf(trigger) && hd.children.indexOf(trigger) < hd.children.indexOf(menu), `(cht6) ${section}: DOM order is inline tools, trigger, menu (Tab reaches the menu right after its trigger)`);
+    // the menu's actions: zoom keeps the menu open (no render) and paints BOTH readouts; Fit re-renders and refocuses the trigger
+    app.viewport = { panX: 0, panY: 0, zoom: 1 };
+    fkOf(menu, "menu-zoom-in").click();
+    ok(app.viewport.zoom > 1 && readouts().length === 2 && readouts().every((t) => t === Math.round(app.viewport.zoom * 100) + "%"), `(cht7) ${section}: the menu's Zoom in zooms the canvas and both zoom readouts show ${Math.round(app.viewport.zoom * 100)}% (got ${readouts().join(" | ")})`);
+    fkOf(menu, "menu-zoom-out").click(); fkOf(menu, "menu-zoom-out").click();
+    ok(app.viewport.zoom < 1, `(cht8) ${section}: the menu's Zoom out zooms the canvas out`);
+    fkOf(hdr(), "tool-zoom-in").click();
+    ok(readouts().every((t) => t === Math.round(app.viewport.zoom * 100) + "%"), `(cht9) ${section}: the inline Zoom in keeps both readouts in step (got ${readouts().join(" | ")})`);
+    fkOf(hdr().querySelector(".tools-menu"), "menu-fit").click(); flushRaf();
+    ok(app.viewport.zoom === 1 && document.activeElement && document.activeElement.dataset.fk === "tools-menu", `(cht10) ${section}: the menu's Fit resets the zoom and returns focus to the trigger (zoom ${app.viewport.zoom}, focus ${document.activeElement && document.activeElement.dataset.fk})`);
+  }
+  // + Palette from the menu opens the New Palette modal
+  app.setSection("color"); app._deselect(); app.render(); flushRaf();
+  app.newPalOpen = false;
+  fkOf(hdr().querySelector(".tools-menu"), "menu-add-palette").click(); flushRaf();
+  ok(app.newPalOpen === true, "(cht11) the menu's + Palette opens the New Palette modal");
+  app.newPalOpen = false; app.render(); flushRaf();
+
+  // the fit decision, against a stubbed layout: needs[...] = the width each header layout wants
+  const fitCase = (name, { client, popoverOpen = false, popover = true, start = [] }) => {
+    app.render(); flushRaf();
+    const hd = hdr();
+    const menu = hd.querySelector(".tools-menu");
+    let hidden = 0;
+    if (popover) { menu.showPopover = () => {}; menu.hidePopover = () => { hidden++; }; menu.matches = () => popoverOpen; }
+    start.forEach((c) => hd.classList.add(c));
+    const NEED = { inline: 900, trigger: 70, collapsed: 700, compact: 600 };
+    Object.defineProperty(hd, "clientWidth", { get: () => client });
+    Object.defineProperty(hd, "scrollWidth", { get: () => {
+      const c = hd.classList, collapsed = c.contains("tools-collapsed");
+      if (c.contains("tools-probe")) return NEED.inline + (collapsed ? NEED.trigger : 0); // the inline tools, plus the trigger when it stays
+      return collapsed ? (c.contains("tools-compact") ? NEED.compact : NEED.collapsed) : NEED.inline;
+    } });
+    app._measureCanvasHeader(hd);
+    return { has: (c) => hd.classList.contains(c), hidden, name };
+  };
+  let r = fitCase("room for everything", { client: 1000 });
+  ok(!r.has("tools-collapsed") && !r.has("tools-compact") && !r.has("tools-probe"), "(cht12) fit: with room for every tool nothing is collapsed or compacted and the probe class is cleared");
+  r = fitCase("tools do not fit", { client: 800 });
+  ok(r.has("tools-collapsed") && !r.has("tools-compact") && !r.has("tools-probe"), "(cht13) fit: when the tools overflow they collapse into the menu and the segments stay full");
+  r = fitCase("collapsed still too wide", { client: 650 });
+  ok(r.has("tools-collapsed") && r.has("tools-compact"), "(cht14) fit: when even the collapsed header overflows the segments compact too");
+  r = fitCase("hysteresis stays", { client: 950, start: ["tools-collapsed"] });
+  ok(r.has("tools-collapsed"), "(cht15) fit: a collapsed header whose tools fit alone but not with the trigger stays collapsed (no flapping on the boundary)");
+  r = fitCase("hysteresis expands", { client: 975, start: ["tools-collapsed", "tools-compact"] });
+  ok(!r.has("tools-collapsed") && !r.has("tools-compact"), "(cht16) fit: widening past tools + trigger expands the tools and drops the compact padding");
+  r = fitCase("open menu closes on expand", { client: 1000, popoverOpen: true, start: ["tools-collapsed"] });
+  ok(!r.has("tools-collapsed") && r.hidden === 1, "(cht17) fit: when the tools come back inline an open menu is hidden with its trigger");
+  r = fitCase("open menu stays while collapsed", { client: 800, popoverOpen: true, start: ["tools-collapsed"] });
+  ok(r.has("tools-collapsed") && r.hidden === 0, "(cht18) fit: a collapsed header leaves its open menu alone");
+  r = fitCase("no popover support", { client: 100, popover: false });
+  ok(!r.has("tools-collapsed") && !r.has("tools-compact"), "(cht19) fit: a host without the Popover API keeps every tool inline");
+  app.render(); flushRaf();
+
+  // Esc belongs to an open overflow menu: the global handler must not also deselect (a re-render under the popover)
+  app.setSection("color"); app.selectPalette(0); flushRaf();
+  const escMenu = hdr().querySelector(".tools-menu");
+  escMenu.matches = () => true;
+  fireKey("Escape"); flushRaf();
+  ok(app.sel.kind === "palette" && hdr().querySelector(".tools-menu") === escMenu, `(cht21) Esc with the overflow menu open leaves the palette selected and the header untouched (sel ${app.sel.kind})`);
+  escMenu.matches = () => false;
+  fireKey("Escape"); flushRaf();
+  ok(app.sel.kind === "none", `(cht21) control: with the menu closed Esc still deselects (sel ${app.sel.kind})`);
+  app._deselect(); app.render(); flushRaf();
+
+  // the CSS rules the decision leans on, parsed from the real stylesheet; negative controls on mutated copies
+  const cssCHT = rfCHT("src/ui/styles.css", "utf8");
+  const chtRulesOk = (text) => {
+    const c = text.replace(/\/\*[\s\S]*?\*\//g, "");
+    const R = [...c.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => [m[1].trim(), m[2]]);
+    const has = (sel, decl) => R.some(([s, b]) => s.split(/\s*,\s*/).includes(sel) && b.replace(/\s+/g, " ").includes(decl));
+    return has(".center", "grid-template-columns: minmax(0, 1fr)")
+      && has(".canvas-header .tools-more", "display: none")
+      && has(".canvas-header.tools-collapsed .tools-more", "display: inline-flex")
+      && has(".canvas-header.tools-collapsed:not(.tools-probe) .canvas-tools", "display: none")
+      && has(".canvas-header.tools-compact .canvas-seg button", "padding-inline: var(--sh-control-inset)")
+      && has(".tools-menu:popover-open", "display: flex");
+  };
+  ok(chtRulesOk(cssCHT), "(cht20) styles.css: the center column is one minmax(0, 1fr) track, the trigger shows only when collapsed, the inline tools hide only when collapsed and not probing, compact tightens the segments, and the menu shows only while popover-open");
+  const noTrack = cssCHT.replace("grid-template-columns: minmax(0, 1fr); /* the one track IS the column", "/* the one track IS the column");
+  ok(noTrack !== cssCHT && !chtRulesOk(noTrack), "(cht20) negative control: a copy without the .center single-track rule fails the check");
+  const noProbe = cssCHT.replace(".canvas-header.tools-collapsed:not(.tools-probe) .canvas-tools", ".canvas-header.tools-collapsed .canvas-tools");
+  ok(noProbe !== cssCHT && !chtRulesOk(noProbe), "(cht20) negative control: a copy whose inline-tools hide rule ignores .tools-probe fails the check");
+  const alwaysOpen = cssCHT.replace(".tools-menu:popover-open {", ".tools-menu {");
+  ok(alwaysOpen !== cssCHT && !chtRulesOk(alwaysOpen), "(cht20) negative control: a copy that styles the menu open outside :popover-open (always visible) fails the check");
+}
+
 // ── report ──────────────────────────────────────────────────────────────────────────
 if (fails.length) {
   console.error("HEADLESS BOOT FAIL:");

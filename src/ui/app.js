@@ -208,6 +208,7 @@ class HctApp extends HTMLElement {
     if (this._activeDragCleanup) this._activeDragCleanup(); // an in-flight slider drag's window pointermove/up/cancel listeners
     if (this._applyTimeoutTimer) { clearTimeout(this._applyTimeoutTimer); this._applyTimeoutTimer = null; } // #465
     if (this._geomRolesStyle) { this._geomRolesStyle.remove(); this._geomRolesStyle = null; } // the head <style> render() created
+    if (this._chObserver) { this._chObserver.disconnect(); this._chObserver = null; } // the canvas-header fit observer
   }
 
 
@@ -501,6 +502,9 @@ class HctApp extends HTMLElement {
       return;
     }
     if (this._isTextTarget(e.target)) return;
+    // Esc with the canvas-header overflow menu open belongs to the menu: the browser closes the popover and
+    // returns focus to its trigger. Deselecting here would re-render the whole subtree under it.
+    if (e.key === "Escape" && this._toolsMenuOpen()) return;
 
     switch (e.key) {
       case "ArrowUp":
@@ -627,6 +631,7 @@ class HctApp extends HTMLElement {
     this.dataset.theme = this.theme;
     this.dataset.motion = this.motion; // styles.css gates transitions/animations on [data-motion]
     this._applyShellGeometry();
+    this._fitCanvasHeader(); // after the geometry roles are stamped: inline tools vs the overflow menu
     // TKT-0004: the Apply-to-Figma busy indicator, Figma-plugin-embed only (the web-app preview has
     // no Apply-to-Figma action, so this is never set there even if _applyBusy were somehow true).
     // ALSO stamped on the open export .drawer <dialog>: it's a native top-layer dialog (showModal()),
@@ -1521,6 +1526,129 @@ class HctApp extends HTMLElement {
   }
 
 
+  // canvasTools, the canvas header's trailing tool group, shared by the Color, Typography and Geometry
+  // headers: a spacer · Fit · zoom out · readout · zoom in (+ "+ Palette" when `addPalette`). The tools
+  // are built in TWO homes and the header shows exactly one: inline (`.canvas-tools`) while they fit the
+  // center column, otherwise one overflow trigger (`.tools-more`) opening a native popover (`.tools-menu`)
+  // that holds the same actions. _fitCanvasHeader() measures and flips `.tools-collapsed` on the header;
+  // the CSS shows one home or the other. Both homes carry a `.zoom-readout` (applyTransform paints all).
+  canvasTools({ addPalette = false } = {}) {
+    const keyed = (el, fk) => { el.setAttribute("data-fk", fk); return el; };
+    const fitTitle = "Fit: reset the canvas view to centre at 100%";
+    const palTitle = "Create a new palette, derive it from your palette set, or pick one custom";
+    const readout = () => h("span", { class: "zoom-readout", role: "status", "aria-live": "polite", "aria-label": "Zoom level" }, Math.round(this.viewport.zoom * 100) + "%");
+    const fit = () => { this.fit(); this.render(); };
+
+    const inline = h(
+      "div",
+      { class: "canvas-tools" },
+      keyed(btn(icon("crosshair"), { title: fitTitle, ariaLabel: fitTitle, onclick: fit }), "tool-fit"),
+      keyed(btn(icon("minus"), { ariaLabel: "Zoom out", onclick: () => this.zoomBy(-1) }), "tool-zoom-out"),
+      readout(),
+      keyed(btn(icon("plus"), { ariaLabel: "Zoom in", onclick: () => this.zoomBy(1) }), "tool-zoom-in"),
+      addPalette ? keyed(btn([icon("plus"), "Palette"], { cls: "add-pal-btn", title: palTitle, onclick: () => this.openNewPalette() }), "tool-add-palette") : false,
+    );
+
+    const trigger = keyed(btn(icon("dots-three"), {
+      cls: "tools-more",
+      title: "More canvas tools: fit, zoom" + (addPalette ? ", new palette" : ""),
+      ariaLabel: "More canvas tools",
+    }), "tools-menu");
+    trigger.setAttribute("popovertarget", "canvas-tools-menu"); // the browser toggles the popover, light-dismisses it and returns focus here
+    trigger.setAttribute("aria-haspopup", "true");
+    trigger.setAttribute("aria-expanded", "false");
+
+    // Fit and + Palette re-render the whole subtree (which closes the popover); put focus back on the
+    // fresh trigger so the keyboard user lands where they started.
+    const refocusTrigger = () => {
+      const t = this._walkFind((c) => c.dataset.fk === "tools-menu");
+      if (t && typeof t.focus === "function") t.focus();
+    };
+    const menu = h(
+      "div",
+      { class: "tools-menu", id: "canvas-tools-menu", popover: "auto", role: "group", "aria-label": "Canvas tools" },
+      keyed(btn([icon("crosshair"), "Fit"], { title: fitTitle, onclick: () => { fit(); refocusTrigger(); } }), "menu-fit"),
+      h(
+        "div",
+        { class: "tools-zoom" },
+        keyed(btn(icon("minus"), { ariaLabel: "Zoom out", onclick: () => this.zoomBy(-1) }), "menu-zoom-out"),
+        readout(),
+        keyed(btn(icon("plus"), { ariaLabel: "Zoom in", onclick: () => this.zoomBy(1) }), "menu-zoom-in"),
+      ),
+      addPalette ? keyed(btn([icon("plus"), "Palette"], { title: palTitle, onclick: () => { this.openNewPalette(); refocusTrigger(); } }), "menu-add-palette") : false,
+    );
+    // A top-layer popover paints at the viewport, not in the header: pin it under the trigger's right edge
+    // when it opens (top/right are the only inline styles; `.tools-menu` owns the rest).
+    menu.addEventListener("beforetoggle", (e) => {
+      if (e.newState !== "open") return;
+      const r = trigger.getBoundingClientRect();
+      menu.style.top = Math.round(r.bottom + 4) + "px";
+      menu.style.right = Math.max(8, Math.round(document.documentElement.clientWidth - r.right)) + "px";
+    });
+    menu.addEventListener("toggle", (e) => trigger.setAttribute("aria-expanded", e.newState === "open" ? "true" : "false"));
+
+    return [h("div", { class: "spacer" }), inline, trigger, menu];
+  }
+
+
+  // _toolsMenuOpen, is the canvas-header overflow menu showing? False on a host without the Popover API.
+  _toolsMenuOpen() {
+    const m = this.querySelector(".tools-menu");
+    try { return !!m && typeof m.matches === "function" && m.matches(":popover-open"); } catch { return false; }
+  }
+
+
+  // _fitCanvasHeader, called from render() once the shell geometry is stamped (the control sizes it
+  // measures read those roles): decides inline vs overflow-menu for the header's trailing tools, then
+  // watches the header so a window resize or a pane drag re-decides without a re-render. The decision is
+  // a measurement, not a breakpoint: the room the tools need moves with the geometry tier and scale and
+  // with the leading segments, so no fixed width could hold at every cell.
+  _fitCanvasHeader() {
+    if (this._chObserver) this._chObserver.disconnect(); // the previous header was replaced by this render
+    const hd = this.querySelector(".canvas-header");
+    if (!hd) return;
+    this._measureCanvasHeader(hd);
+    if (typeof ResizeObserver !== "function") return; // the headless shim has neither layout nor an observer
+    if (!this._chObserver) {
+      this._chObserver = new ResizeObserver(() => {
+        const cur = this.querySelector(".canvas-header");
+        if (cur) this._measureCanvasHeader(cur);
+      });
+    }
+    this._chObserver.observe(hd);
+  }
+
+
+  // _measureCanvasHeader(hd), picks the header's least-reduced layout that fits, in three steps:
+  //   1. every tool inline (no class);
+  //   2. `.tools-collapsed`, the trailing tools behind the overflow trigger;
+  //   3. `.tools-compact` too, the view/mode segments at one control inset of padding instead of two (the
+  //      same tightening the narrow-window media rule applies), for a geometry whose control height and
+  //      text leave the segments alone nearly the column's width (content-lg).
+  // Each step is measured (scrollWidth over clientWidth: the header is exactly the column wide, so its
+  // content overflows rather than growing) in that layout, and the classes are set and cleared inside one
+  // task, so nothing paints between. `.tools-probe` lays the inline tools out for step 1; while collapsed
+  // the trigger keeps its place in that layout, so the tools only come back when they fit WITH the trigger
+  // (a hysteresis band of one square control, so a width on the boundary cannot flip back and forth), and
+  // the probe leaves the trigger itself alone, so a focused trigger is not blurred by it. A host without
+  // the Popover API keeps every tool inline (nothing could open the menu there).
+  _measureCanvasHeader(hd) {
+    const menu = hd.querySelector(".tools-menu");
+    if (!menu || typeof menu.showPopover !== "function") return;
+    const over = () => hd.scrollWidth > hd.clientWidth;
+    hd.classList.remove("tools-compact");
+    hd.classList.add("tools-probe");
+    const fitsInline = !over();
+    hd.classList.remove("tools-probe");
+    hd.classList.toggle("tools-collapsed", !fitsInline);
+    if (fitsInline) {
+      try { if (menu.matches(":popover-open")) menu.hidePopover(); } catch { /* already hidden */ } // the trigger is gone, so is its menu
+      return;
+    }
+    hd.classList.toggle("tools-compact", over());
+  }
+
+
   toGallery() {
     this.view = "gallery";
     this.render();
@@ -1756,8 +1884,8 @@ class HctApp extends HTMLElement {
       const { panX, panY, zoom } = this.viewport;
       scene.style.transform = `translate(-50%, -50%) translate(${panX}px, ${panY}px) scale(${zoom})`;
     }
-    const r = this.querySelector(".zoom-readout");
-    if (r) r.textContent = Math.round(this.viewport.zoom * 100) + "%";
+    const pct = Math.round(this.viewport.zoom * 100) + "%";
+    for (const r of this.querySelectorAll(".zoom-readout")) r.textContent = pct; // the inline tool and the overflow menu each carry one
     this.paintCanvasFooter();
   }
 

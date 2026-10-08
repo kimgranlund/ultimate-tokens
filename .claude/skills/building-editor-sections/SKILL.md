@@ -23,7 +23,7 @@ triplet, never invent a parallel shape. Depth in `references/`; this body is the
 
 | Region | Color | Typography | Geometry | Build |
 |---|---|---|---|---|
-| Center header | `renderCanvasHeader` | `renderTypeCanvasHeader` | `renderGeomCanvasHeader` | pane toggles · a view/mode segment · reused `fit`/scheme/zoom |
+| Center header | `renderCanvasHeader` | `renderTypeCanvasHeader` | `renderGeomCanvasHeader` | pane toggles · a view/mode segment · the shared `...this.canvasTools()` (fit · zoom, + Palette in Color; collapses into an overflow menu when it does not fit) |
 | Center canvas | `renderCanvasArea` | `renderTypeCanvas` | `renderGeomCanvas` | a `.canvas-area` + `.canvas-scene` (reuse `wirePanZoom` + `applyTransform`) |
 | Center scene | `renderRampsScene` | `renderTypographyScene` | `renderGeometryScene` | the **FULL** dataset (not a curated subset), in the brand's real color/font/mode |
 | Left analysis | `analysisCards` | `typeAnalysisCards` | `geomAnalysisCards` | `.an-card`/`.an-svg`/`legend()`, pure functions of the engine output, **no inputs** |

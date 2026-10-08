@@ -531,6 +531,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 .center {
   grid-area: center;
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* the one track IS the column: an implicit auto track grew to the header's content and ran under the right pane */
   grid-template-rows: var(--ch) 1fr var(--fh);
   min-width: 0; min-height: 0;
   background: var(--bg);
@@ -554,6 +555,30 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 .canvas-header .spacer { flex: 1; }
 .canvas-header .add-pal-btn { border: 1px dashed var(--line); }
 .canvas-header .add-pal-btn:hover { border-color: var(--accent); color: var(--accent); }
+/* Trailing tools (app.js canvasTools): the Fit/zoom/+ Palette group sits inline while it fits the center
+   column, and behind one overflow trigger (.tools-more, a popover menu) once it does not. app.js
+   _fitCanvasHeader measures and flips .tools-collapsed; .tools-probe lays the inline group out for that
+   measurement alone (the class is added and removed in one task, so it never paints). */
+.canvas-tools { display: flex; align-items: center; gap: inherit; }
+.canvas-header .tools-more { display: none; }
+.canvas-header.tools-collapsed .tools-more { display: inline-flex; }
+.canvas-header.tools-collapsed:not(.tools-probe) .canvas-tools { display: none; }
+/* collapsed and still too wide (a tall control height with large text, e.g. content-lg): the view/mode
+   segments take one control inset of padding per side instead of two, as the narrow-window rule below does */
+.canvas-header.tools-compact .canvas-seg button { padding-inline: var(--sh-control-inset); }
+/* the menu is a top-layer popover (the header cannot clip it); app.js pins its top/right under the trigger on open */
+.tools-menu { position: fixed; inset: auto; margin: 0; }
+.tools-menu:popover-open {
+  display: flex; flex-direction: column; align-items: stretch; gap: var(--sh-part-inset);
+  inline-size: max-content;
+  padding: var(--sh-part-inset);
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: calc(var(--sh-control-radius) + var(--sh-part-inset)); /* concentric with the controls it holds */
+  box-shadow: var(--shadow-lg);
+}
+.tools-menu button:not(.icon-only) { justify-content: flex-start; }
+.tools-zoom { display: flex; align-items: center; justify-content: space-between; gap: var(--sh-part-inset); }
 /* Typography breakpoint Mode control (canvas header), the Base/modes segment + a "+" to add one */
 .mode-control { display: inline-flex; align-items: center; gap: 4px; }
 .mode-control .mode-add { flex: none; }
@@ -13275,6 +13300,7 @@ const ICONS = {
   "crosshair": "<path d=\"M232,120h-8.34A96.14,96.14,0,0,0,136,32.34V24a8,8,0,0,0-16,0v8.34A96.14,96.14,0,0,0,32.34,120H24a8,8,0,0,0,0,16h8.34A96.14,96.14,0,0,0,120,223.66V232a8,8,0,0,0,16,0v-8.34A96.14,96.14,0,0,0,223.66,136H232a8,8,0,0,0,0-16Zm-96,87.6V200a8,8,0,0,0-16,0v7.6A80.15,80.15,0,0,1,48.4,136H56a8,8,0,0,0,0-16H48.4A80.15,80.15,0,0,1,120,48.4V56a8,8,0,0,0,16,0V48.4A80.15,80.15,0,0,1,207.6,120H200a8,8,0,0,0,0,16h7.6A80.15,80.15,0,0,1,136,207.6ZM128,88a40,40,0,1,0,40,40A40,40,0,0,0,128,88Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,152Z\"/>",
   "sidebar": "<path d=\"M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40ZM40,56H80V200H40ZM216,200H96V56H216V200Z\"/>",
   "plus": "<path d=\"M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z\"/>",
+  "dots-three": "<path d=\"M140,128a12,12,0,1,1-12-12A12,12,0,0,1,140,128ZM60,116a12,12,0,1,0,12,12A12,12,0,0,0,60,116Zm136,0a12,12,0,1,0,12,12A12,12,0,0,0,196,116Z\"/>",
   "minus": "<path d=\"M224,128a8,8,0,0,1-8,8H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,128Z\"/>",
   "x": "<path d=\"M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z\"/>",
   "trash": "<path d=\"M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z\"/>",
@@ -16121,21 +16147,9 @@ class ColorSectionImpl {
             { cls: "canvas-seg", ariaLabel: "Ramp stops", role: "group", idPrefix: "stops" },
           )
         : false,
-      // trailing tool group, right-aligned: fit · zoom · + Palette.
-      h("div", { class: "spacer" }),
-      // fit/orient, reset the canvas view to centre at 100% (icon-only).
-      btn(icon("crosshair"), {
-        title: "Fit: reset the canvas view to centre at 100%",
-        ariaLabel: "Fit: reset the canvas view to centre at 100%",
-        onclick: () => {
-          this.fit();
-          this.render();
-        },
-      }),
-      btn(icon("minus"), { ariaLabel: "Zoom out", onclick: () => this.zoomBy(-1) }),
-      h("span", { class: "zoom-readout", role: "status", "aria-live": "polite", "aria-label": "Zoom level" }, Math.round(this.viewport.zoom * 100) + "%"),
-      btn(icon("plus"), { ariaLabel: "Zoom in", onclick: () => this.zoomBy(1) }),
-      btn([icon("plus"), "Palette"], { cls: "add-pal-btn", title: "Create a new palette, derive it from your palette set, or pick one custom", onclick: () => this.openNewPalette() }),
+      // trailing tool group, right-aligned: fit · zoom · + Palette. Inline while it fits the column,
+      // otherwise one overflow menu (canvasTools + _fitCanvasHeader).
+      ...this.canvasTools({ addPalette: true }),
       // when the RIGHT pane is collapsed its toggle pops here, at the canvas's right edge.
       !this.panesRight ? this.paneToggle("right") : false,
     );
@@ -17798,15 +17812,7 @@ class TypeSectionImpl {
         { cls: "canvas-seg", ariaLabel: "Type specimen mode", role: "group", idPrefix: "tspec" },
       ),
       this.typeModeControl(),
-      h("div", { class: "spacer" }),
-      btn(icon("crosshair"), {
-        title: "Fit: reset the canvas view to centre at 100%",
-        ariaLabel: "Fit: reset the canvas view to centre at 100%",
-        onclick: () => { this.fit(); this.render(); },
-      }),
-      btn(icon("minus"), { ariaLabel: "Zoom out", onclick: () => this.zoomBy(-1) }),
-      h("span", { class: "zoom-readout", role: "status", "aria-live": "polite", "aria-label": "Zoom level" }, Math.round(this.viewport.zoom * 100) + "%"),
-      btn(icon("plus"), { ariaLabel: "Zoom in", onclick: () => this.zoomBy(1) }),
+      ...this.canvasTools(), // spacer · fit · zoom, or the overflow menu when they do not fit
       !this.panesRight ? this.paneToggle("right") : false,
     );
   }
@@ -18873,15 +18879,7 @@ class GeomSectionImpl {
         { cls: "canvas-seg", ariaLabel: "Geometry specimen mode", role: "group", idPrefix: "gspec" },
       ),
       this.geomModeControl(),
-      h("div", { class: "spacer" }),
-      btn(icon("crosshair"), {
-        title: "Fit: reset the canvas view to centre at 100%",
-        ariaLabel: "Fit: reset the canvas view to centre at 100%",
-        onclick: () => { this.fit(); this.render(); },
-      }),
-      btn(icon("minus"), { ariaLabel: "Zoom out", onclick: () => this.zoomBy(-1) }),
-      h("span", { class: "zoom-readout", role: "status", "aria-live": "polite", "aria-label": "Zoom level" }, Math.round(this.viewport.zoom * 100) + "%"),
-      btn(icon("plus"), { ariaLabel: "Zoom in", onclick: () => this.zoomBy(1) }),
+      ...this.canvasTools(), // spacer · fit · zoom, or the overflow menu when they do not fit
       !this.panesRight ? this.paneToggle("right") : false,
     );
   }
@@ -21114,6 +21112,7 @@ class HctApp extends HTMLElement {
     if (this._activeDragCleanup) this._activeDragCleanup(); // an in-flight slider drag's window pointermove/up/cancel listeners
     if (this._applyTimeoutTimer) { clearTimeout(this._applyTimeoutTimer); this._applyTimeoutTimer = null; } // #465
     if (this._geomRolesStyle) { this._geomRolesStyle.remove(); this._geomRolesStyle = null; } // the head <style> render() created
+    if (this._chObserver) { this._chObserver.disconnect(); this._chObserver = null; } // the canvas-header fit observer
   }
 
 
@@ -21407,6 +21406,9 @@ class HctApp extends HTMLElement {
       return;
     }
     if (this._isTextTarget(e.target)) return;
+    // Esc with the canvas-header overflow menu open belongs to the menu: the browser closes the popover and
+    // returns focus to its trigger. Deselecting here would re-render the whole subtree under it.
+    if (e.key === "Escape" && this._toolsMenuOpen()) return;
 
     switch (e.key) {
       case "ArrowUp":
@@ -21533,6 +21535,7 @@ class HctApp extends HTMLElement {
     this.dataset.theme = this.theme;
     this.dataset.motion = this.motion; // styles.css gates transitions/animations on [data-motion]
     this._applyShellGeometry();
+    this._fitCanvasHeader(); // after the geometry roles are stamped: inline tools vs the overflow menu
     // TKT-0004: the Apply-to-Figma busy indicator, Figma-plugin-embed only (the web-app preview has
     // no Apply-to-Figma action, so this is never set there even if _applyBusy were somehow true).
     // ALSO stamped on the open export .drawer <dialog>: it's a native top-layer dialog (showModal()),
@@ -22427,6 +22430,129 @@ class HctApp extends HTMLElement {
   }
 
 
+  // canvasTools, the canvas header's trailing tool group, shared by the Color, Typography and Geometry
+  // headers: a spacer · Fit · zoom out · readout · zoom in (+ "+ Palette" when `addPalette`). The tools
+  // are built in TWO homes and the header shows exactly one: inline (`.canvas-tools`) while they fit the
+  // center column, otherwise one overflow trigger (`.tools-more`) opening a native popover (`.tools-menu`)
+  // that holds the same actions. _fitCanvasHeader() measures and flips `.tools-collapsed` on the header;
+  // the CSS shows one home or the other. Both homes carry a `.zoom-readout` (applyTransform paints all).
+  canvasTools({ addPalette = false } = {}) {
+    const keyed = (el, fk) => { el.setAttribute("data-fk", fk); return el; };
+    const fitTitle = "Fit: reset the canvas view to centre at 100%";
+    const palTitle = "Create a new palette, derive it from your palette set, or pick one custom";
+    const readout = () => h("span", { class: "zoom-readout", role: "status", "aria-live": "polite", "aria-label": "Zoom level" }, Math.round(this.viewport.zoom * 100) + "%");
+    const fit = () => { this.fit(); this.render(); };
+
+    const inline = h(
+      "div",
+      { class: "canvas-tools" },
+      keyed(btn(icon("crosshair"), { title: fitTitle, ariaLabel: fitTitle, onclick: fit }), "tool-fit"),
+      keyed(btn(icon("minus"), { ariaLabel: "Zoom out", onclick: () => this.zoomBy(-1) }), "tool-zoom-out"),
+      readout(),
+      keyed(btn(icon("plus"), { ariaLabel: "Zoom in", onclick: () => this.zoomBy(1) }), "tool-zoom-in"),
+      addPalette ? keyed(btn([icon("plus"), "Palette"], { cls: "add-pal-btn", title: palTitle, onclick: () => this.openNewPalette() }), "tool-add-palette") : false,
+    );
+
+    const trigger = keyed(btn(icon("dots-three"), {
+      cls: "tools-more",
+      title: "More canvas tools: fit, zoom" + (addPalette ? ", new palette" : ""),
+      ariaLabel: "More canvas tools",
+    }), "tools-menu");
+    trigger.setAttribute("popovertarget", "canvas-tools-menu"); // the browser toggles the popover, light-dismisses it and returns focus here
+    trigger.setAttribute("aria-haspopup", "true");
+    trigger.setAttribute("aria-expanded", "false");
+
+    // Fit and + Palette re-render the whole subtree (which closes the popover); put focus back on the
+    // fresh trigger so the keyboard user lands where they started.
+    const refocusTrigger = () => {
+      const t = this._walkFind((c) => c.dataset.fk === "tools-menu");
+      if (t && typeof t.focus === "function") t.focus();
+    };
+    const menu = h(
+      "div",
+      { class: "tools-menu", id: "canvas-tools-menu", popover: "auto", role: "group", "aria-label": "Canvas tools" },
+      keyed(btn([icon("crosshair"), "Fit"], { title: fitTitle, onclick: () => { fit(); refocusTrigger(); } }), "menu-fit"),
+      h(
+        "div",
+        { class: "tools-zoom" },
+        keyed(btn(icon("minus"), { ariaLabel: "Zoom out", onclick: () => this.zoomBy(-1) }), "menu-zoom-out"),
+        readout(),
+        keyed(btn(icon("plus"), { ariaLabel: "Zoom in", onclick: () => this.zoomBy(1) }), "menu-zoom-in"),
+      ),
+      addPalette ? keyed(btn([icon("plus"), "Palette"], { title: palTitle, onclick: () => { this.openNewPalette(); refocusTrigger(); } }), "menu-add-palette") : false,
+    );
+    // A top-layer popover paints at the viewport, not in the header: pin it under the trigger's right edge
+    // when it opens (top/right are the only inline styles; `.tools-menu` owns the rest).
+    menu.addEventListener("beforetoggle", (e) => {
+      if (e.newState !== "open") return;
+      const r = trigger.getBoundingClientRect();
+      menu.style.top = Math.round(r.bottom + 4) + "px";
+      menu.style.right = Math.max(8, Math.round(document.documentElement.clientWidth - r.right)) + "px";
+    });
+    menu.addEventListener("toggle", (e) => trigger.setAttribute("aria-expanded", e.newState === "open" ? "true" : "false"));
+
+    return [h("div", { class: "spacer" }), inline, trigger, menu];
+  }
+
+
+  // _toolsMenuOpen, is the canvas-header overflow menu showing? False on a host without the Popover API.
+  _toolsMenuOpen() {
+    const m = this.querySelector(".tools-menu");
+    try { return !!m && typeof m.matches === "function" && m.matches(":popover-open"); } catch { return false; }
+  }
+
+
+  // _fitCanvasHeader, called from render() once the shell geometry is stamped (the control sizes it
+  // measures read those roles): decides inline vs overflow-menu for the header's trailing tools, then
+  // watches the header so a window resize or a pane drag re-decides without a re-render. The decision is
+  // a measurement, not a breakpoint: the room the tools need moves with the geometry tier and scale and
+  // with the leading segments, so no fixed width could hold at every cell.
+  _fitCanvasHeader() {
+    if (this._chObserver) this._chObserver.disconnect(); // the previous header was replaced by this render
+    const hd = this.querySelector(".canvas-header");
+    if (!hd) return;
+    this._measureCanvasHeader(hd);
+    if (typeof ResizeObserver !== "function") return; // the headless shim has neither layout nor an observer
+    if (!this._chObserver) {
+      this._chObserver = new ResizeObserver(() => {
+        const cur = this.querySelector(".canvas-header");
+        if (cur) this._measureCanvasHeader(cur);
+      });
+    }
+    this._chObserver.observe(hd);
+  }
+
+
+  // _measureCanvasHeader(hd), picks the header's least-reduced layout that fits, in three steps:
+  //   1. every tool inline (no class);
+  //   2. `.tools-collapsed`, the trailing tools behind the overflow trigger;
+  //   3. `.tools-compact` too, the view/mode segments at one control inset of padding instead of two (the
+  //      same tightening the narrow-window media rule applies), for a geometry whose control height and
+  //      text leave the segments alone nearly the column's width (content-lg).
+  // Each step is measured (scrollWidth over clientWidth: the header is exactly the column wide, so its
+  // content overflows rather than growing) in that layout, and the classes are set and cleared inside one
+  // task, so nothing paints between. `.tools-probe` lays the inline tools out for step 1; while collapsed
+  // the trigger keeps its place in that layout, so the tools only come back when they fit WITH the trigger
+  // (a hysteresis band of one square control, so a width on the boundary cannot flip back and forth), and
+  // the probe leaves the trigger itself alone, so a focused trigger is not blurred by it. A host without
+  // the Popover API keeps every tool inline (nothing could open the menu there).
+  _measureCanvasHeader(hd) {
+    const menu = hd.querySelector(".tools-menu");
+    if (!menu || typeof menu.showPopover !== "function") return;
+    const over = () => hd.scrollWidth > hd.clientWidth;
+    hd.classList.remove("tools-compact");
+    hd.classList.add("tools-probe");
+    const fitsInline = !over();
+    hd.classList.remove("tools-probe");
+    hd.classList.toggle("tools-collapsed", !fitsInline);
+    if (fitsInline) {
+      try { if (menu.matches(":popover-open")) menu.hidePopover(); } catch { /* already hidden */ } // the trigger is gone, so is its menu
+      return;
+    }
+    hd.classList.toggle("tools-compact", over());
+  }
+
+
   toGallery() {
     this.view = "gallery";
     this.render();
@@ -22662,8 +22788,8 @@ class HctApp extends HTMLElement {
       const { panX, panY, zoom } = this.viewport;
       scene.style.transform = `translate(-50%, -50%) translate(${panX}px, ${panY}px) scale(${zoom})`;
     }
-    const r = this.querySelector(".zoom-readout");
-    if (r) r.textContent = Math.round(this.viewport.zoom * 100) + "%";
+    const pct = Math.round(this.viewport.zoom * 100) + "%";
+    for (const r of this.querySelectorAll(".zoom-readout")) r.textContent = pct; // the inline tool and the overflow menu each carry one
     this.paintCanvasFooter();
   }
 

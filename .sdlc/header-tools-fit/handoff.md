@@ -23,3 +23,13 @@ User ruling 2026-10-08 (/sdlc-lite:ask): collapse into a menu. Evidence: T-0027 
 
 ## Constraints
 Every shell control text/padding reads the cell roles (`test/repo/control-text.mjs` gate). No U+2014. Doc cites into `src/ui/styles.css` and `app.js` shift: repair with `node scripts/audit-citations.mjs` in the same change. Do not add a framework; hyperscript `h()` only. `npm test` runs before done.
+
+## Acceptance criteria
+- `npm test` exits 0 (58 files; includes the headless group `(cht1)` to `(cht21)` in `test/ui/headless-boot.mjs` and the citations and control-text gates).
+- `npm run build` exits 0.
+- `CHROME_BIN=<chrome> npm run smoke` exits 0, with these legs passing in `test/smoke/smoke.mjs`: "canvas header at product-md" (tools inline, nothing outside the header, header inside the center column), "canvas header at content-lg" (tools collapsed behind the trigger, same fit measures, in Color, Typography and Geometry), the negative control (forcing the tools inline at content-lg makes the same measures fail), and the four "overflow menu" legs (opens inside the window with Fit, zoom and + Palette; zoom keeps it open and moves the readout; Esc closes it and returns focus to the trigger; Fit resets zoom, closes it and refocuses the trigger).
+- `node scripts/audit-citations.mjs` exits 0 and `node test/repo/em-dash.mjs` is clean.
+- At the two smoke geometries (product-md, content-lg) in the 1440px window the Color, Typography and Geometry headers fit the center column (header `scrollWidth` not over `clientWidth`, every visible header control inside the header box, header right edge not past the right pane); all three headers build their trailing tools through the one `canvasTools` method in `src/ui/app.js`.
+
+## Decisions
+- The ticket named only the trailing tools, but at content-lg the segments alone fill the column (Typography leading controls need 922px of 850px), so a second step (`.tools-compact`, segments at one control inset of padding per side, the same tightening the narrow-window media rule applies) engages only when the collapsed header is still too wide. `.center` also gained `grid-template-columns: minmax(0, 1fr)`: its implicit auto track grew to the header's content and ran the header under the right pane, which is what clipped the tools. A throwaway probe (not committed) measured all nine tier x scale cells x three sections at 1440px: every header fit; only content-md and content-lg collapse the tools, only content-lg also compacts.
