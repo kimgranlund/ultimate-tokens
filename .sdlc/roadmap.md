@@ -24,3 +24,4 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 | T-0018 | [gh-786](gh-786/handoff.md) | Arrow-stepping and palette add/duplicate/delete must keep the current right-pane tab (gh 786) | bug | L1 | P2 | none | 🟢 done |
 | T-0019 | [gh-811](gh-811/handoff.md) | Describe eval scores 0/15: score by perceptual distance (#811) | bug | L2 | P2 | none | 🟢 done |
 | T-0020 | [gh-809](gh-809/handoff.md) | Color inspector: drop the Palette\|Global switch, show context by selection (#809) | feature | L2 | P2 | none | 🟢 done |
+| T-0021 | [gh-788](gh-788/handoff.md) | Compute layers: rebase U1-U3 onto main, then U4 pins and U5 ramp@2 on schema v9 (#788) | feature | L2 | P2 | none | ⏳ proposed |
