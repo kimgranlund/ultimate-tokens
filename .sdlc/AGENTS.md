@@ -1,4 +1,4 @@
-<!-- sdlc-lite:managed:start v1 sha256:ac0051501e02 -->
+<!-- sdlc-lite:managed:start v1 sha256:73e8a257eaa4 -->
 # Work records
 
 This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and `config`. `tickets.py roadmap` (also run by `new` and `close`) generates this block: do not edit inside it; change a ticket's `handoff.md` front matter and rerun `roadmap`. `roadmap.md` lists every ticket in dependency order. Closed `.NNNN-*` folders are history: open one only when asked.
@@ -10,12 +10,13 @@ This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and
 ## Stages
 
 - proposed: 0
-- ready: 5
+- ready: 6
   - T-0021 Compute layers: rebase U1-U3 onto main, then U4 pins and U5 ramp@2 on schema v9 (#788) (gh-788)
   - T-0022 Describe eval runner: parse the leading JSON object of a string-typed families (Haiku 5.5 appends trailing text) (gh-811b)
   - T-0023 Retire docs/assets/geometry-tokens.json, the frozen six-size snapshot (T-0017 follow-up) (geometry-tokens-snapshot)
   - T-0024 Gate A narrowing from #807: can the chroma-envelope gate cover stops where OKHSL keyS reads above 1? (gate-a-narrowing)
   - T-0025 Color inspector follow-ups from the PR #814 review (Mapping/Radix reachability, drag-reorder context flip, keyboard path back to Global) (inspector-review-fixes)
+  - T-0026 Figma apply must not prune legacy size/* variables on an existing file (PR #813 review, major 1) (figma-legacy-size-renames)
 - blocked: 0
 - done: 19
 - dropped: 0
