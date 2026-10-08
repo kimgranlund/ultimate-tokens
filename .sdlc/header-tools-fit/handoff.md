@@ -2,7 +2,7 @@
 id: T-0031
 title: "Canvas header trailing tools collapse into a menu when they do not fit (content-lg clipping)"
 type: feature        # feature | bug | chore | spike | idea
-status: ready     # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: done     # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: L2             # L1 | L2 | L3 | L4 (L5 reserved)
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -33,3 +33,7 @@ Every shell control text/padding reads the cell roles (`test/repo/control-text.m
 
 ## Decisions
 - The ticket named only the trailing tools, but at content-lg the segments alone fill the column (Typography leading controls need 922px of 850px), so a second step (`.tools-compact`, segments at one control inset of padding per side, the same tightening the narrow-window media rule applies) engages only when the collapsed header is still too wide. `.center` also gained `grid-template-columns: minmax(0, 1fr)`: its implicit auto track grew to the header's content and ran the header under the right pane, which is what clipped the tools. A throwaway probe (not committed) measured all nine tier x scale cells x three sections at 1440px: every header fit; only content-md and content-lg collapse the tools, only content-lg also compacts.
+
+## Closed
+
+2026-10-08: delivered by the solo agent (level L2); one independent batched verifier passed before the merge
