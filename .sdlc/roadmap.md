@@ -31,3 +31,4 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 | T-0025 | [inspector-review-fixes](inspector-review-fixes/handoff.md) | Color inspector follow-ups from the PR #814 review (Mapping/Radix reachability, drag-reorder context flip, keyboard path back to Global) | bug | L2 | P2 | none | 🔵 ready |
 | T-0026 | [figma-legacy-size-renames](figma-legacy-size-renames/handoff.md) | Figma apply must not prune legacy size/* variables on an existing file (PR #813 review, major 1) | bug | L3 | P2 | none | 🔵 ready |
 | T-0027 | [geometry-compound-insets](geometry-compound-insets/handoff.md) | Compound insets and radius composition for container components (segmented, listbox), square ghost icon buttons, unstyled palette name input | feature | L2 | P2 | none | 🔵 ready |
+| T-0028 | [settings-nav-focus](settings-nav-focus/handoff.md) | Settings overlay: the Mapping nav item takes focus whenever any page is clicked | bug | L1 | P2 | none | 🔵 ready |
