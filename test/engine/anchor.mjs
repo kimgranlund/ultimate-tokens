@@ -1538,6 +1538,73 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
   console.log(`  ${fails.some((f) => f.startsWith("prime-huespace control:")) ? "FAIL" : "pass"}  prime-huespace control: planted regression (the cam16 render on both sides) reads default kit ${ctl.moved} of ${kitPalettes.length} ladders moved, max OKLab dE ${ctl.maxDe.toFixed(4)} (want 0, 0), so prime-huespace reds on it`);
 }
 
+// ── hue-constancy (T-0032, PR #810 review Major): the solves hit their targets ─────────────────────
+// ADR-031 promises the anchored ladder holds the anchor's hue in the chosen space. The other gates
+// compare renders to renders (or one hue space to the other), so a solve that quietly missed its
+// target would still pass them; this one reads each rung back against the anchor's own hue.
+//  (a) hueSpace oklch, hueShift 0: every primeSwatches rung with OKLCH C >= 0.03 reads the anchor's
+//      OKLCH hue within LADDER_HUE_K / C + 0.1 degrees (independent conversion). The bound is
+//      chroma-scaled because an 8-bit code step moves a low-chroma hue by about 1/C; hue error
+//      times C peaks at 0.095 over the sampled corpus plus the default kit, so K = 0.12. A solver
+//      fallback to the CAM16 hue lands several degrees off at any chroma.
+//  (b) hueSpace cam16, perceptual, hueShift 0: every default-kit stop with CAM16 C >= 5 reads
+//      anchor.cam.hue within STOP_HUE_K / C + 0.5 degrees. The bound is chroma-scaled because a
+//      one-code quantisation step moves the hue by about 1/C: measured on the default kit, hue
+//      error times C peaks at 145 over C 5 to 100, so K = 150. A stop over its bound counts as a
+//      solver fallback and the gate wants 0.
+// The predicate takes the target hue as an argument, so the control feeds it a rotated target and
+// requires it to red.
+{
+  const LADDER_HUE_K = 0.12, LADDER_MIN_C = 0.03, STOP_HUE_K = 150, STOP_MIN_C = 5;
+  const hueGap = (a, b) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
+  const ladderMisses = (palettes, rotate) => {
+    let checked = 0, misses = 0, worst = 0, worstWho = "";
+    for (const p of palettes) {
+      const q = { ...p, hueShift: 0 };
+      const target = rgbToOklchIndep(hexToRgb(p.anchor))[2] + rotate;
+      for (const [i, s] of primeSwatches(q, { hueSpace: "oklch", primeChroma: 100 }).entries()) {
+        const [, c, h] = rgbToOklchIndep(hexToRgb(s.hex));
+        if (c < LADDER_MIN_C) continue;
+        checked++;
+        const d = hueGap(h, target);
+        if (d * c > worst) { worst = d * c; worstWho = `${p.name} rung ${i} (C ${c.toFixed(3)}, ${d.toFixed(2)} deg)`; }
+        if (d > LADDER_HUE_K / c + 0.1) misses++;
+      }
+    }
+    return { checked, misses, worst, worstWho };
+  };
+  const stopMisses = (palettes, rotate) => {
+    let checked = 0, misses = 0, worstKC = 0, worstWho = "";
+    for (const p of palettes) {
+      const q = { ...p, hueShift: 0 };
+      const target = cam16FromRgb(hexToRgb(p.anchor)).hue + rotate;
+      for (const s of paletteStops(q, { ...DEFAULT_CONTROLS, hueSpace: "cam16", toneMode: "perceptual" }, STOPS)) {
+        const cam = cam16FromRgb(hexToRgb(s.hex));
+        if (cam.chroma < STOP_MIN_C) continue;
+        checked++;
+        const d = hueGap(cam.hue, target);
+        if (d * cam.chroma > worstKC) { worstKC = d * cam.chroma; worstWho = `${p.name} stop ${s.stop}`; }
+        if (d > STOP_HUE_K / cam.chroma + 0.5) misses++;
+      }
+    }
+    return { checked, misses, worstKC, worstWho };
+  };
+  const kitAnchored = defaultDocument().palettes.filter((p) => typeof p.anchor === "string");
+  const corpusAnchored = anchored.map((c) => c.palette);
+  const kitLadder = ladderMisses(kitAnchored, 0), corpusLadder = ladderMisses(corpusAnchored, 0), kitStops = stopMisses(kitAnchored, 0);
+  if (kitLadder.checked === 0 || corpusLadder.checked === 0 || kitStops.checked === 0) FAIL("hue-constancy", `vacuous: checked ${kitLadder.checked} kit rungs, ${corpusLadder.checked} corpus rungs, ${kitStops.checked} kit stops`);
+  if (kitLadder.misses + corpusLadder.misses > 0) FAIL("hue-constancy", `${kitLadder.misses} kit and ${corpusLadder.misses} corpus oklch ladder rungs read over ${LADDER_HUE_K}/C + 0.1 degrees off the anchor's OKLCH hue (worst error x C ${corpusLadder.worst.toFixed(3)} at ${corpusLadder.worstWho})`);
+  if (kitStops.misses > 0) FAIL("hue-constancy", `${kitStops.misses} cam16 perceptual stops over the ${STOP_HUE_K}/C + 0.5 degree bound off anchor.cam.hue (solver fallbacks; worst error x C ${kitStops.worstKC.toFixed(0)} at ${kitStops.worstWho})`);
+  console.log(`  ${fails.some((f) => f.startsWith("hue-constancy:")) ? "FAIL" : "pass"}  hue-constancy: ${kitLadder.checked + corpusLadder.checked} oklch ladder rungs within ${LADDER_HUE_K}/C + 0.1 deg (worst error x C ${corpusLadder.worst.toFixed(3)}), ${kitStops.checked} cam16 stops with C >= ${STOP_MIN_C} within ${STOP_HUE_K}/C + 0.5 deg, ${kitStops.misses} solver fallbacks (want 0)`);
+
+  // control: the same predicates against a target rotated off the anchor's hue (a perturbed rung),
+  // which must red, or the gate reads nothing.
+  const ctlLadder = ladderMisses(kitAnchored, 5), ctlStops = stopMisses(kitAnchored, 15);
+  if (ctlLadder.misses === 0) FAIL("hue-constancy control", "a 5 degree rotation of the OKLCH target produced 0 ladder misses, the tolerance cannot catch a perturbed rung");
+  if (ctlStops.misses === 0) FAIL("hue-constancy control", "a 15 degree rotation of the CAM16 target produced 0 stop misses, the bound cannot catch a perturbed stop");
+  console.log(`  ${fails.some((f) => f.startsWith("hue-constancy control:")) ? "FAIL" : "pass"}  hue-constancy control: a 5 degree OKLCH and 15 degree CAM16 target rotation reds ${ctlLadder.misses} of ${ctlLadder.checked} rungs and ${ctlStops.misses} of ${ctlStops.checked} stops (want > 0)`);
+}
+
 // ── anchor-achromatic (U10, pre-land F1): an achromatic anchor renders real colours ─────────
 // `rgbToOkhsl([0,0,0]).s` was NaN (0/0 at L = 0), and the anchored OKHSL branches carried it to
 // `#NANNANNAN` at every stop in perceptual and peak. Called on the ENGINE directly (never through
