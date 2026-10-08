@@ -31,6 +31,6 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 | T-0025 | [inspector-review-fixes](inspector-review-fixes/handoff.md) | Color inspector follow-ups from the PR #814 review (Mapping/Radix reachability, drag-reorder context flip, keyboard path back to Global) | bug | L2 | P2 | none | 🟢 done |
 | T-0026 | [figma-legacy-size-renames](figma-legacy-size-renames/handoff.md) | Figma apply must not prune legacy size/* variables on an existing file (PR #813 review, major 1) | bug | L3 | P2 | none | 🔵 ready |
 | T-0027 | [geometry-compound-insets](geometry-compound-insets/handoff.md) | Compound insets and radius composition for container components (segmented, listbox), square ghost icon buttons, unstyled palette name input | feature | L4 | P2 | none | 🔵 ready |
-| T-0028 | [settings-nav-focus](settings-nav-focus/handoff.md) | Settings overlay: the Mapping nav item takes focus whenever any page is clicked | bug | L1 | P2 | none | 🔵 ready |
+| T-0028 | [settings-nav-focus](settings-nav-focus/handoff.md) | Settings overlay: the Mapping nav item takes focus whenever any page is clicked | bug | L1 | P2 | none | 🟢 done |
 | T-0029 | [native-dom-charts](native-dom-charts/handoff.md) | Rebuild the app's analysis charts as native DOM (HTML/CSS marks) following /Users/kimgranlund/Projects/nonoun/native-dom-charts | feature | L4 | P2 | none | 🔵 ready |
 | T-0030 | [gate-a-basis](gate-a-basis/handoff.md) | Chroma-envelope Gate A: record the OKHSL basis so rule 2 covers every uncapped stop (#807 follow-up) | chore | L2 | P2 | none | 🔵 ready |

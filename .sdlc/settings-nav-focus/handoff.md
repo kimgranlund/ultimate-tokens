@@ -2,7 +2,7 @@
 id: T-0028
 title: "Settings overlay: the Mapping nav item takes focus whenever any page is clicked"
 type: bug             # feature | bug | chore | spike | idea
-status: ready     # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: done     # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: L1
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -20,3 +20,7 @@ User report 2026-10-08 (screenshot: Settings overlay, left nav): "odd focus sett
 
 ## Constraints
 - Vanilla web component, `h()` hyperscript. No U+2014. `npm test` via `scripts/gate_lock.py run --name npm-test -- npm test`. Files: `src/ui/overlays/settings.js` and `test/ui/headless-boot.mjs` only (plus the generated `figma/plugin/ui.html`). T-0025 owns `app.js`, `color.js`, `styles.css`.
+
+## Closed
+
+2026-10-08: delivered by the solo agent (level L1); the ticket's own checks and the fanout gates passed
