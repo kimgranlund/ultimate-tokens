@@ -2,8 +2,8 @@
 id: T-0017
 title: "Geometry system adopts the Maison ui-kit ladder (tier x scale x size, --g-* and --r-* roles)"
 type: feature        # feature | bug | chore | spike | idea
-status: proposed     # proposed | ready | blocked | done | dropped (build progress lives in /board)
-size: XL              # S | M | L | XL
+status: done     # proposed | ready | blocked | done | dropped (build progress lives in /board)
+size: L4              # L1 | L2 | L3 | L4 (L5 reserved)
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
 created: 2026-10-07
