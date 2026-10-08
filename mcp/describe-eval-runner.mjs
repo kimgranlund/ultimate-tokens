@@ -31,6 +31,27 @@ function modelFromArgv(argv) {
 // path will do). briefing.rubric already embeds the research-tier note (§10, RESEARCH_TIER_NOTE), so
 // the system prompt sends it once, not twice, and adds one sentence saying this session has no web
 // search of its own, since the note tells the model to reach for a host tool this eval never provides.
+// parseLeadingJsonObject(str) → the first balanced top-level JSON object in str, parsed. Plain JSON.parse
+// is tried first; otherwise scan from the first "{" (tracking string state and escapes) to its matching "}".
+// Returns the original value when there is no balanced, parseable object. Never throws.
+export function parseLeadingJsonObject(str) {
+  if (typeof str !== "string") return str;
+  try { return JSON.parse(str); } catch { /* fall through to the scan */ }
+  const start = str.indexOf("{");
+  if (start < 0) return str;
+  let depth = 0, inStr = false, esc = false;
+  for (let i = start; i < str.length; i++) {
+    const c = str[i];
+    if (inStr) { if (esc) esc = false; else if (c === "\\") esc = true; else if (c === '"') inStr = false; continue; }
+    if (c === '"') inStr = true;
+    else if (c === "{") depth++;
+    else if (c === "}" && --depth === 0) {
+      try { return JSON.parse(str.slice(start, i + 1)); } catch { return str; }
+    }
+  }
+  return str;
+}
+
 export async function interpretOne(apiKey, model, description, briefing) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -50,10 +71,11 @@ export async function interpretOne(apiKey, model, description, briefing) {
   if (json.stop_reason === "refusal") throw new Error(`the model refused (stop_reason: refusal): ${JSON.stringify(json)}`);
   const toolUse = (json.content || []).find((b) => b.type === "tool_use" && b.name === "submit_brief");
   if (!toolUse) throw new Error(`no tool_use block in the provider response: ${JSON.stringify(json)}`);
-  // Haiku 5.5 can return an object-typed field (here \`families\`) as a JSON string; parse it back so the
-  // scorer sees an object. A string that is not valid JSON is left as is and scores as a miss.
+  // Haiku 5.5 can return an object-typed field (here `families`) as a JSON string, sometimes with trailing
+  // text after the object; parse it back so the scorer sees an object. A string with no parseable leading
+  // object is left as is and scores as a miss.
   const input = toolUse.input;
-  if (input && typeof input.families === "string") { try { input.families = JSON.parse(input.families); } catch { /* left as is */ } }
+  if (input && typeof input.families === "string") input.families = parseLeadingJsonObject(input.families);
   return input;
 }
 
