@@ -1,18 +1,42 @@
-# Icons, hit targets, focus rings, density
+# Glyphs, marks, badges, hit targets, focus rings
 
-## Icon sizes
+## Icons and indicators: one box
 
-An icon INSIDE a control uses that control's `--size-{step}-icon` (controls.md), never an
-independent size, or it won't center. A standalone/decorative icon picks the `--size-{step}-icon` of
-the step whose scale it visually matches (an icon beside `md` text → `--size-md-icon`). Icon color is
-color-tokens (icons inherit their text partner's role).
+There is no caret, gap, or glyph-size token. Every glyph sits in one square box,
+`inline-size: var(--control-icon); block-size: var(--control-icon)`:
 
-## Hit targets & minimum size
+- An **icon** fills the box (`font-size: var(--control-icon)` for an icon font, or the SVG at 100%).
+- An **indicator** (caret, chevron, dot, count) sits in the same box at
+  `font-size: var(--control-text)`, so it is text-sized and still aligned with the icons beside it.
+- The **icon-to-label gap** is `calc(var(--control-inset) / 2)`.
 
-`--size-{step}-min` is the 1:1 floor, an icon-only control is at least square (height × height). For
-touch surfaces, choose a step whose height clears the platform hit-target floor (≈44px): `xl`/`2xl`
-heights are the touch-first steps; don't shrink an interactive control below `sm` on touch. The token
-gives you the square; the STEP choice gives you the target size.
+A standalone or decorative icon takes the `--control-icon` of the context it sits in; set `data-size`
+on it to step it up or down. Icon color is color-tokens (icons inherit their text partner's role).
+
+## Marks: checkbox, radio, switch
+
+- Checkbox and radio boxes are `--control-icon` squares. The checkbox corner is
+  `min(var(--radius-mark), calc(0.3 * var(--control-icon)))`; the radio is `50%` with a
+  `calc(var(--control-icon) / 2)` dot.
+- A switch track is `calc(1.75 * var(--control-icon))` by `--control-icon`, its thumb
+  `calc(var(--control-icon) - 2 * <edge>)` with corner `--radius-mark`.
+- A caption or note under a choice control is `font-size: var(--control-caption-text)`.
+
+## Badges, tags, chips
+
+- A **badge** is `calc(var(--control-height) - var(--control-inset))` tall with `--radius-inset`.
+- A **tag** is full `--control-height` with `--radius-inset`.
+- A **chip** (kbd, tooltip, stepper marker, breadcrumb separator, inline code, OTP cell) is the
+  compact row: `block-size: var(--chip-height); padding-inline: var(--chip-inset);
+  font-size: var(--chip-text)`.
+
+## Hit targets and minimum size
+
+An icon-only control is a height square, `inline-size: var(--control-height)`; the cell's
+`min-width` field (`--size-{tier}-{scale}-{size}-min-width`) records that same 1:1 floor. For touch
+surfaces, choose a context whose height clears the platform hit-target floor (about 44px):
+`content-sm-lg`, `content-md-md` and up, or `product-lg-lg`. Don't drop an interactive control into
+the `micro` tier on touch.
 
 ## Focus rings (every focusable element)
 
@@ -27,21 +51,16 @@ accent (`--c-{p}`). The offset keeps the ring clear of the control edge so it su
 emphasis). These are constants, NOT part of the space rhythm, a hairline is a hairline at every
 density. Color comes from color-tokens' outline roles.
 
-## Density
+## The radius ladder vs the control roles
 
-`--density` (a multiplier, e.g. 1 · 0.75 · 1.25) is the treatment's rhythm knob, it already rides
-inside the derived `--size-{step}-gap`, so you don't apply it yourself. Read it only if you need to
-scale a bespoke spacing to match the kit's feel; the standard tokens already carry it.
-
-## The radius ladder vs the control pill
-
-- `--radius-{none|sm|md|lg}`: the flat ladder for CONTAINER corners.
-- `--radius-full` (9999), a pill/circle: fully-rounded containers and pill buttons.
-- `--size-{step}-radius`: a CONTROL's own height-linked corner (= height/2 pill radius by law), so a
-  control's roundness scales with its size. Use this on controls, the ladder on containers.
+- `--radius-{none|xs|sm|md|lg|xl}`: the Material 3 ladder for free-standing CONTAINER corners.
+- `--radius-full` (9999), a pill/circle: avatars, dots, standalone pills.
+- `--radius-control`, `--radius-mark`, `--radius-inset`, `--radius-card`: the corners that follow
+  the control's cell and the `data-radius` mode. Use these on controls and what nests in or wraps them.
 
 ## Don't
 
-- Don't size an in-control icon independently of `--size-{step}-icon` (breaks centering).
+- Don't size an in-control icon independently of `--control-icon` (breaks centering).
+- Don't add a gap token; the gap is `calc(var(--control-inset) / 2)`.
 - Don't shrink interactive controls below the hit-target floor on touch.
 - Don't hardcode focus-ring width/offset or border width.

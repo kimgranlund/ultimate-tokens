@@ -1,66 +1,89 @@
-# Controls: heights, the centering law, paddings, radius
+# Controls: the cell ladder, the axes, the roles, radius
 
-A control is ONE size step; everything inside it derives from the height. Use the `.control-{step}`
-class for the box, or compose the `--size-{step}-*` vars when you need the parts.
+A control binds the resolved roles; the context attributes around it pick which of the 27 cells those
+roles resolve to. Everything inside the control derives from that one cell.
 
-## The size ramp: pick a step by density
+## The ladder: tier x scale x size
 
-| Step | Typical use |
+A cell is `{tier}-{scale}-{size}`. Its height is the tier's base, plus the scale's offset, plus the
+size's step (`sm` one step down, `lg` one step up):
+
+| Tier | Typical use | `sm` scale (sm/md/lg) | `md` scale (sm/md/lg) | `lg` scale (sm/md/lg) |
+|---|---|---|---|---|
+| `content` | marketing, content forms, touch-first | 28 / 36 / 44 | 40 / 48 / 56 | 56 / 64 / 72 |
+| `product` | product UI, the default | 20 / 28 / 36 | 24 / 32 / 40 | 28 / 36 / 44 |
+| `micro` | dense widgets, table-cell controls | 12 / 14 / 16 | 14 / 16 / 18 | 16 / 18 / 20 |
+
+Pick the tier for the surface, the scale for its density, then the size per control (a secondary
+button `data-size="sm"` beside a primary at `md`). Every height is a row of one fixed table, so there
+is no in-between value to reach for.
+
+## Setting the context
+
+```html
+<section data-tier="product" data-scale="md" data-radius="round">
+  <button class="btn">Save</button>
+  <button class="btn" data-size="sm">Cancel</button>
+  <div data-scale="sm"><!-- a denser toolbar --></div>
+</section>
+```
+
+Each axis resolves to its nearest ancestor independently: `data-scale="sm"` on the toolbar keeps the
+section's tier and radius. Unset axes fall back to the kit default. The attributes work inside shadow
+roots too (the resolver also matches `:host`).
+
+## The roles (what a control reads)
+
+| Role | What it is |
 |---|---|
-| `xs` | dense toolbars, table-row controls, compact chips |
-| `sm` | secondary buttons, filter bars, inline controls |
-| `md` | the default button / input / select (start here) |
-| `lg` | primary CTAs, prominent form fields |
-| `xl` · `2xl` | hero actions, touch-first / marketing controls |
+| `--control-height` | the control's block-size, and the side of an icon-only square |
+| `--control-inset` | the inline edge padding, `(height − icon) / 2` (the centering law) |
+| `--control-text` | the label's font-size, composed from the type system's UI text at this height |
+| `--control-icon` | the icon box, a square every glyph sits in |
+| `--control-caption-text` | the font-size of a caption or note under a choice control |
+| `--control-icon-ratio` | `icon / height`, unitless; the resolver uses it to form `--radius-mark` |
+| `--chip-height` / `--chip-inset` / `--chip-text` | the compact row inside the control: kbd, tooltip, stepper markers, inline code, OTP cells |
+| `--radius-control` | the control's corner (follows `data-radius`) |
+| `--radius-mark` | the corner of a checkbox, switch thumb, legend swatch |
+| `--radius-inset` | the corner of a badge or tag nested in the control |
+| `--radius-card` | the corner of a card or popover that wraps controls |
 
-The step is a density choice; the same control is `md` in a dense admin and `lg` in a touch app.
-Pick per context, then everything inside follows.
-
-## What derives from the height (the centering law)
-
-For a chosen `{step}`:
-
-| Field | Var | What it is |
-|---|---|---|
-| height | `--size-{step}-height` | the control's block-size |
-| icon | `--size-{step}-icon` | leading content-icon / slot glyph size |
-| caret | `--size-{step}-caret` | the affordance mark (dropdown ▾) = text size |
-| font | `--size-{step}-font` | the control's text size (composed from the UI type voice) |
-| gap | `--size-{step}-gap` | icon↔label gap INSIDE the control |
-| padding-narrow | `--size-{step}-padding-narrow` | inline edge padding for a control WITH a leading slot/icon ((h−icon)/2) |
-| padding-wide | `--size-{step}-padding-wide` | inline edge padding for a SLOTLESS (bare text) or caret-side edge ((h−caret)/2) |
-| padding-narrow-compact | `--size-{step}-padding-narrow-compact` | the slot edge with the gap absorbed ((h−gap−icon)/2), dense layouts |
-| padding-wide-compact | `--size-{step}-padding-wide-compact` | the caret/bare edge with the gap absorbed ((h−gap−caret)/2) |
-| radius | `--size-{step}-radius` | the control's own corner (its height-linked pill radius) |
-| min | `--size-{step}-min` | the 1:1 floor, an icon-only control is at least square |
-
-**The law:** padding = (height − icon)/2, so a glyph sits optically centered in the height² cell. If
-you set a control's padding independently of its height, you break centering, always use the paired
-`--size-{step}-padding-narrow` / `-padding-wide` (or their `-compact` twins).
+The roles double as per-instance hooks: `style="--control-height: 45px"` on one element overrides that
+element (its `--radius-*` roles follow), while its descendants re-resolve from context as usual.
 
 ## Recipes
 
-**Button (text + optional icon)**: box: `.control-md`, OR by hand: `block-size:
-var(--size-md-height); padding-inline: var(--size-md-padding-wide); padding-block: 0; gap:
-var(--size-md-gap); border-radius: var(--size-md-radius); min-inline-size: var(--size-md-min);`. Text
-= the UI-control voice at the matching step (typography-tokens: `.type-ui-control-md`, `-line-single`).
+**Button**: `block-size: var(--control-height); padding-inline: var(--control-inset);
+font-size: var(--control-text); border-radius: var(--radius-control); gap: calc(var(--control-inset) / 2);`
+(font family and weight are typography-tokens' UI-control voice).
 
-- **With a leading icon:** icon `--size-md-icon`, and use `--size-md-padding-narrow` (slot edge) instead
-  of `-padding-wide`.
-- **Icon-only:** `inline-size: var(--size-md-min)` (square), padding `--size-md-padding-narrow`.
-- **Dropdown/select:** append a caret at `--size-md-caret`.
+- **With a leading icon:** the icon is `inline-size: var(--control-icon); block-size: var(--control-icon)`;
+  the padding stays `--control-inset`.
+- **Icon-only:** `inline-size: var(--control-height)` (a height square), padding 0, the icon centered.
+- **Dropdown/select:** the caret sits in a `--control-icon` box at `font-size: var(--control-text)`.
 
-**Input / select field**: `block-size: var(--size-md-height)`, `padding-inline:
-var(--size-md-padding-wide)`, border `--border-thin` (color from color-tokens), radius
-`--size-md-radius`. The value text is `.type-ui-md`.
+**Input / select field**: `block-size: var(--control-height)`, `padding-inline: var(--control-inset)`,
+border `--border-thin` (color from color-tokens), radius `--radius-control`, value text
+`font-size: var(--control-text)`.
 
-**Toggle / checkbox / radio**: the box tracks a small step (`--size-sm-*` or `-xs-*`); the control's
-`min` keeps it square.
+**Tag / badge / kbd**: see [`detail.md`](detail.md).
+
+## Radius modes
+
+`data-radius` sets how `--radius-control` follows the cell: `round` (the control's text size), `default`
+(half the text size), `sharp` (a quarter of it), `pill` (half the height, a full pill). The other three
+radius roles derive from it, so one attribute restyles every corner in the subtree.
+
+## Raw cell primitives
+
+`--size-{tier}-{scale}-{size}-{field}` (for example `--size-product-md-md-height`) is one cell's value,
+fixed regardless of context. Use it only for a one-off that must not follow context, such as a
+specimen of a specific cell. The primitive's `radius-*` fields carry the kit's radius mode, not the
+nearest `data-radius`.
 
 ## Don't
 
-- Don't hardcode a control height (`height: 40px`), pick a step.
-- Don't set padding that isn't one of the four padding props in the table above, you'll un-center the glyph.
-- Don't put `--radius-md` on a control that should scale, use `--size-{step}-radius` (or
-  `--radius-full` for a pill).
-- Don't mix steps within one control, height, icon, font, and pad must all be the same `{step}`.
+- Don't hardcode a control height (`height: 40px`); bind `--control-height` and set the context.
+- Don't set padding that isn't `--control-inset`; you'll un-center the glyph.
+- Don't put `--radius-md` on a control; use `--radius-control` so it follows the radius mode.
+- Don't bind a raw `--size-*` primitive in a component; the component stops following context.

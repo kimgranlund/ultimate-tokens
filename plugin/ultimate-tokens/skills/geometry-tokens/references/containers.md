@@ -1,7 +1,7 @@
 # Containers: insets, gaps, the space scale, borders
 
 Container geometry is the space BETWEEN and AROUND components, a different tier from control-internal
-geometry (controls.md). It's treatment-derived (scales with the kit's density) and mode-independent.
+geometry (controls.md). It derives from the kit's base spacing unit alone and is mode-independent.
 Reach for a SEMANTIC token (`--inset-*`, `--gap-*`) before a raw `--space-N`.
 
 ## Insets: padding INSIDE a container
@@ -34,8 +34,8 @@ large; the token already carries the right rhythm.
 
 ## The raw space ladder (escape hatch)
 
-`--space-{0…9}` is the underlying geometric ladder (roughly-geometric multiples of the treatment's
-base spacing, read the actual values from the export). The `--inset-*`/`--gap-*` tier is named rungs
+`--space-{0…9}` is the underlying geometric ladder (roughly-geometric multiples of the kit's base
+spacing, read the actual values from the export). The `--inset-*`/`--gap-*` tier is named rungs
 OF this ladder, use the semantic name first; drop to a raw `--space-N` only for a one-off the tier
 doesn't cover (an unusual offset, a bespoke grid).
 
@@ -61,6 +61,6 @@ doesn't cover (an unusual offset, a bespoke grid).
 
 - Don't reach for `--space-N` when a `--inset-*`/`--gap-*` names the job, the semantic tier is why
   you don't guess rungs.
-- Don't pad a card with a control's `--size-*-padding-narrow`/`-padding-wide`, those are
-  control-internal; a container uses `--inset-*`.
+- Don't pad a card with a control's `--control-inset`, that is control-internal; a container uses
+  `--inset-*`.
 - Don't hardcode `border-radius`/`padding`/`gap` in px.
