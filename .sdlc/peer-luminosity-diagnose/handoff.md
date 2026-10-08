@@ -29,3 +29,10 @@ Engine: `src/engine/tonal.js`, `derive.mjs`, `okhsl.js`, `hct.js`, `exports.js` 
 
 ## Constraints
 No product change without evidence from the measurements. No U+2014. `npm test` before done.
+
+## Acceptance criteria
+- `docs/reports/2026-10-08-peer-luminosity.md` exists and holds a per-step lightness spread table for the Radix 12-step view, the 25-stop ramp, and the curated corpus.
+- The report names the root cause with file:line (`src/engine/tonal.js` anchorLerp, pivotTone, pivotL, lightnessAt) and says plainly which steps are by design and which, if any, violate a repo gate.
+- The report lists fix options with cost and names the open user decision; no engine file changed (`git diff --stat main -- src/ test/` is empty).
+- The report contains no U+2014 (`node test/repo/em-dash.mjs`).
+- `npm test` exits 0 and leaves the tree clean.
