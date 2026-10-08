@@ -20,3 +20,11 @@ router: .sdlc/AGENTS.md  # how to claim and close this ticket
 
 ## Constraints
 - No U+2014. `npm test` green via `scripts/gate_lock.py run --name npm-test -- npm test`. Docs and assets only.
+
+## Acceptance criteria
+- `docs/assets/geometry-tokens.json` is gone from the tree (`test ! -e docs/assets/geometry-tokens.json` exits 0, and `git ls-files docs/assets` no longer lists it). `docs/assets/typography-tokens.json` and the other `docs/assets` files are untouched.
+- No live reader or reference remains: `git grep -n "assets/geometry-tokens.json" -- . ':!.sdlc' ':!docs/archive' ':!docs/reports' ':!docs/assets/docs-reconcile-path-map.tsv'` prints nothing. The proof that nothing read the file at runtime is that this search, run before the delete, found only `docs/references/geometry/README.md`, the path map row and a dated report, and no test, script, generator or source file.
+- `docs/references/geometry/README.md` no longer calls the file a frozen snapshot "kept for history"; it still names `geomTokensDTCG(geomScale({}))` as the live shape. The path-map row at `docs/assets/docs-reconcile-path-map.tsv` line 27 is deliberately left: it is ADR-028's record of the 2026-10-06 move, `.sdlc/checks/card-amendment-check.sh` skips a row whose target is gone, and the dated report `docs/reports/2026-10-07-geometry-maison-ladder.md` keeps its follow-up note as evidence.
+- `python3 <plugin>/scripts/docs_check.py --root .` reports 0 errors and no more than the baseline 25 warnings (B-2a 13, D-10 2, D-11 10); `node test/repo/citations.mjs` exits 0; `sh .sdlc/checks/card-amendment-check.sh` prints `stale total: 0`.
+- `npm test` is green through `scripts/gate_lock.py run --name npm-test -- npm test` (run from the sdlc-lite plugin's scripts folder), and `git status` is clean after it. No U+2014 is introduced.
+- Only `docs/assets/geometry-tokens.json`, `docs/references/geometry/README.md` and this handoff changed. `src/engine/tonal.js` is untouched.
