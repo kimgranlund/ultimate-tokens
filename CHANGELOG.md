@@ -8,6 +8,18 @@ they landed on `main` and reference the squash-merged PR that introduced them.
 
 ## [Unreleased]
 
+### 2026-10-08
+
+#### Changed
+- **The canvas and every export read one evaluation of six named compute layers** (#788, ADR-033).
+  The controls, ramp, prime, roles, type and geometry stages are registered as versioned pure
+  functions in `src/engine/layers.mjs`, and `compute()` evaluates the colour layers once for the
+  editor canvas and every export format, so the two can no longer resolve a palette differently.
+  Missing controls are defaulted in one place, `src/engine/controls.mjs`. Saved kits, presets and
+  exports render byte for byte as before. One case moves: a raw state with no `hueSpace` sent
+  straight to an exporter (the MCP server or a hand-built caller) now renders as OKLCH, the editor's
+  default, instead of CAM16; a document saved by the app always carries its hue space.
+
 ### 2026-10-07
 
 #### Changed

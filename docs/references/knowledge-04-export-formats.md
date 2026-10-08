@@ -47,8 +47,9 @@ from `pickDrivers` (a palette whose slug equals one of those seven keys is emitt
 unless explicitly wired in. Panda CSS, like Tailwind, is auto-flow: it maps every palette's `roles` directly.
 
 **Scope note (TKT-0015):** `src/engine/exports.js` holds ONLY these 10 formats (the 9 emitters above
-plus the `exportAll` aggregator) plus their shared helpers (`derivePalette`/`derivedAll`, `pad3`/`slug`/`hexOf`/
-`hex8`/`colorLeaf`/`roleOklch`, the `dialogBackdrop*` system constant). The Claude Design / Google Stitch /
+plus the `exportAll` aggregator) plus their shared helpers (`derivePalette`/`derivedAll`, which read
+`src/engine/layers.mjs`'s `compute`, `pad3`/`hexOf`/`hex8`/`colorLeaf`/`roleOklch`, the `dialogBackdrop*`
+system constant; `slug` is imported from `layers.mjs`). The Claude Design / Google Stitch /
 Figma Make "DS bundle" DESIGN.md-authoring subsystem that used to share the file now lives in the sibling
 `src/engine/ds-export.js`, a different kind of artifact (a consumption-bundle spec + prose, not a token
 serializer) with no rubric of record in this directory yet. It is out of scope for this document and for

@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## 1.67 - 2026-10-08 - the canvas and every export read one evaluation of six versioned compute layers (#788)
+
+**One resolver, one registry, one evaluator.** `src/engine/controls.mjs` `resolveControls` replaces
+the two `controlsOf` copies in `src/ui/model.mjs` and `src/engine/exports.js`. `src/engine/layers.mjs`
+registers six layers, `controls`, `ramp`, `prime`, `roles`, `type` and `geometry`, each
+`{ id, version: 1, inputs, outputs, run }` with `run` the engine function it already was; there is no
+`group-chroma` layer, retired by ADR-030. `compute(doc)` walks the colour layers once (ramp and prime
+chroma from `resolve.mjs`, the 25-stop ramp, the prime swatches, the whole role chain in
+`resolveRoles`), and `projectView` and `derivedAll` are both views over that one result. Type and
+geometry stay evaluated per breakpoint mode in `model.mjs`.
+
+**Records.** Byte-neutral: `scripts/report-compute-neutral.mjs --base 1d2bf23f` renders the default
+kit and 343 presets through `projectView`, `figmaBundle`, `brandKit` and the three design-system
+bundles on both trees, 0 of 44,267,992 cells differ. The one move: a raw state with no `hueSpace`
+sent straight to an exporter renders as `oklch` (was `cam16`). ADR-033 records the layer model; its
+R102 (drop the cam16 branch and the `baseIntensity` name) is superseded by ADR-031.
+
 ## 1.66 - 2026-10-07 - chroma controls are per-palette Base chroma times two global k factors; the anchor follows Prime chroma (#804)
 
 **The group chroma layer is gone.** Each palette carries its own Base chroma (`palette.baseChroma`,
