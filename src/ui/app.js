@@ -90,9 +90,8 @@ class HctApp extends HTMLElement {
     this.doc = null;
     this.savedSnapshot = null; // JSON string of last-saved doc -> dirty detection
     this._dirty = false; // cheap dirty bit isDirty() reads, set true on edit(), cleared on save()/openSet()/_restore()
-    this.sel = { kind: "palette", id: 0 };
-    this.segment = "palette"; // right-pane segmented control: palette | global (| story when the palette has one)
-    this.panesLeft = true; // left analysis rail shown (ui-session state, like segment, never persisted)
+    this.sel = { kind: "none", id: 0 }; // no selection: the right pane shows the Global inspector; selecting a palette (kind:"palette") shows the palette inspector (#809)
+    this.panesLeft = true; // left analysis rail shown (ui-session state, like sel, never persisted)
     this.panesRight = true; // right inspector shown
     this.canvasView = "palettes"; // canvas content: palettes (the ramps) | scrims | mapping (the role→raw table) | radix (the 12-step Park UI ladder)
     this.section = "color"; // editor section: color | typography | geometry, ui-session, routes the whole editor (never persisted)
@@ -153,7 +152,7 @@ class HctApp extends HTMLElement {
     // ── undo / redo (whole-document snapshots) ───────────────────────────────
     // history/future hold serialized doc snapshots (the SAME bytes persist.js
     // stores). A COMMITTED edit pushes the PRE-edit doc onto history and clears
-    // future; undo/redo move snapshots between the two stacks. Pan/zoom/segment/
+    // future; undo/redo move snapshots between the two stacks. Pan/zoom/
     // selection/theme are UI-session, they never touch these stacks.
     this.history = []; // past states (most-recent last)
     this.future = []; // redo branch
@@ -206,8 +205,8 @@ class HctApp extends HTMLElement {
     this.doc.name = rec.name;
     this.savedSnapshot = JSON.stringify(serialize(this.doc));
     this._dirty = false;
-    this.sel = { kind: "palette", id: Math.min(this.doc.selected || 0, this.doc.palettes.length - 1) };
-    this.segment = "palette";
+    // a freshly opened doc has no selection (Global inspector); `id` keeps the persisted pick so selectedIndex() still resolves to it
+    this.sel = { kind: "none", id: Math.min(this.doc.selected || 0, this.doc.palettes.length - 1) };
     this.exportOpen = false;
     this.history = []; // a fresh doc starts with an empty undo stack
     this.future = [];
@@ -419,7 +418,7 @@ class HctApp extends HTMLElement {
     this.doc = hydrate(raw);
     this.doc.name = typeof raw.name === "string" ? raw.name : this.doc.name;
     const max = this.doc.palettes.length - 1;
-    this.sel = { kind: "palette", id: Math.max(0, Math.min(this.sel.id, max)) };
+    this.sel = { kind: this.sel.kind, id: Math.max(0, Math.min(this.sel.id, max)) }; // keep the current context: undo/redo from Global must not pop into a palette inspector
     this.doc.selected = this.sel.id;
     this.save();
     this.render();
@@ -428,8 +427,8 @@ class HctApp extends HTMLElement {
 
   // ── keyboard shortcuts ───────────────────────────────────────────────────────
   // Installed once on the document. Undo/redo work editor-wide; the nav keys
-  // (↑↓ 1/2 Esc f +/-) fire ONLY when the editor is shown and focus is NOT in a
-  // text field (so typing a palette/set name is never hijacked). Pan/zoom/segment/
+  // (↑↓ Esc f +/-) fire ONLY when the editor is shown and focus is NOT in a
+  // text field (so typing a palette/set name is never hijacked). Pan/zoom/
   // selection are UI-session, none of these keys snapshot history.
   _installKeyboard() {
     this._onKeyDown = (e) => this._handleKey(e);
@@ -484,14 +483,6 @@ class HctApp extends HTMLElement {
         e.preventDefault();
         this._selectRelative(1);
         return;
-      case "1":
-        e.preventDefault();
-        this.setSegment("palette");
-        return;
-      case "2":
-        e.preventDefault();
-        this.setSegment("global");
-        return;
       case "[":
         e.preventDefault();
         this.toggleLeftPane();
@@ -535,12 +526,12 @@ class HctApp extends HTMLElement {
   }
 
 
-  // _deselect, Esc with no drawer open: clear the right-pane/graph selection.
-  // selectedIndex() clamps, so the panes fall back to palette 0; we mark the
-  // session as having no explicit pick (kind:"none") so nothing renders 'sel'.
+  // _deselect, Esc with no drawer open (or a click on empty canvas): clear the right-pane/graph
+  // selection. selectedIndex() clamps, so the panes fall back to palette 0; we mark the
+  // session as having no explicit pick (kind:"none") so nothing renders 'sel' and the right
+  // pane shows the Global inspector (renderRightPane picks its context from sel.kind).
   _deselect() {
     this.sel = { kind: "none", id: this.sel.id };
-    this.segment = "global"; // nothing selected: the right pane shows the Global inspector
     this.render();
   }
 
@@ -1454,7 +1445,7 @@ class HctApp extends HTMLElement {
 
 
   // toggleLeftPane / toggleRightPane, collapse/expand a side pane (the .editor grid track → 0).
-  // Ephemeral ui-session state (like segment); a full render re-applies the modifier class.
+  // Ephemeral ui-session state (like sel); a full render re-applies the modifier class.
   toggleLeftPane() { this.panesLeft = !this.panesLeft; this.render(); }
 
   toggleRightPane() { this.panesRight = !this.panesRight; this.render(); }
@@ -1932,31 +1923,26 @@ class HctApp extends HTMLElement {
   }
 
 
-  // ── right pane (segmented inspector) ──────────────────────────────────────────
-  // [ Palette | Global ] (+ Story when the palette has one), the panels over the SELECTED palette. The
-  // selection lives in ui-session state (this.segment); default is Palette.
+  // ── right pane (context inspector) ────────────────────────────────────────────
+  // No switch (#809): the SELECTION picks the context. A selected palette (sel.kind "palette": a canvas
+  // row, a rail row, selectPalette) shows the palette inspector; nothing selected (a fresh doc, Esc, a
+  // click on empty canvas) shows the Global inspector, which also carries the set's Story when it has one.
   renderRightPane(view) {
     // section routing, Typography/Geometry each return their OWN whole .right-pane inspector; Color's
     // body (below) is unchanged.
     if (this.section === "typography") return this.renderTypeInspector(view);
     if (this.section === "geometry") return this.renderGeomInspector(view);
-    const tabs = [{ id: "palette", label: "Palette" }, { id: "global", label: "Global" }];
-    if (view.story) tabs.push({ id: "story", label: "Story" }); // story tab only when there is one
-    const seg = tabs.some((t) => t.id === this.segment) ? this.segment : "palette"; // a stale/unknown segment (e.g. the retired "roles") falls back to Palette
-    let body;
-    if (seg === "story") body = this.renderStoryInspector(view);
-    else if (seg === "global") body = this.renderGlobalInspector();
-    else body = this.renderPaletteInspector(view);
+    const body = this.sel.kind === "palette" ? this.renderPaletteInspector(view) : this.renderGlobalInspector(view);
     return h(
       "aside",
       { class: "right-pane" },
       // header row: while OPEN the right toggle hugs the inner (canvas-side) edge, left of
-      // the Inspector tabs; once collapsed it is rendered in the canvas-header instead.
+      // the title; once collapsed it is rendered in the canvas-header instead.
       h("div", { class: "pane-head" },
         this.panesRight ? this.paneToggle("right") : false,
-        this.segmented(tabs, seg, (id) => this.setSegment(id), { ariaLabel: "Inspector", idPrefix: "tab", controls: "seg-panel" })),
-      h("div", { class: "seg-body", "data-scroll": "seg-body", role: "tabpanel", id: "seg-panel", "aria-labelledby": "tab-" + seg }, body),
-      // Pinned below the panel on EVERY tab: a live component preview wired to the
+        h("span", { class: "pane-title" }, "Inspector")),
+      h("div", { class: "seg-body", "data-scroll": "seg-body" }, body),
+      // Pinned below the panel in EVERY context: a live component preview wired to the
       // selected palette's roles (surface / onSurface / onSurfaceVariant + primary).
       h("div", { class: "seg-example" }, ...this.exampleArtifacts(view)),
     );
