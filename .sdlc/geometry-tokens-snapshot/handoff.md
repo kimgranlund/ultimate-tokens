@@ -2,7 +2,7 @@
 id: T-0023
 title: "Retire docs/assets/geometry-tokens.json, the frozen six-size snapshot (T-0017 follow-up)"
 type: chore           # feature | bug | chore | spike | idea
-status: ready     # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: done     # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: L2             # L1 | L2 | L3 | L4 (L5 reserved)
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -28,3 +28,7 @@ router: .sdlc/AGENTS.md  # how to claim and close this ticket
 - `python3 <plugin>/scripts/docs_check.py --root .` reports 0 errors and no more than the baseline 25 warnings (B-2a 13, D-10 2, D-11 10); `node test/repo/citations.mjs` exits 0; `sh .sdlc/checks/card-amendment-check.sh` prints `stale total: 0`.
 - `npm test` is green through `scripts/gate_lock.py run --name npm-test -- npm test` (run from the sdlc-lite plugin's scripts folder), and `git status` is clean after it. No U+2014 is introduced.
 - Only `docs/assets/geometry-tokens.json`, `docs/references/geometry/README.md` and this handoff changed. `src/engine/tonal.js` is untouched.
+
+## Closed
+
+2026-10-08: delivered by the solo agent (level L2); one independent batched verifier passed before the merge
