@@ -2,7 +2,7 @@
 id: T-0025
 title: "Color inspector follow-ups from the PR #814 review (Mapping/Radix reachability, drag-reorder context flip, keyboard path back to Global)"
 type: bug             # feature | bug | chore | spike | idea
-status: ready     # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: done     # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: L2
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -40,3 +40,7 @@ verifier: L3
 - `node test/ui/headless-boot.mjs` exits 0 and its new group `(ir)` (labels `ira` to `irg`) asserts all of the above, each with a negative control. The group was run against the pre-change `src/` (`git checkout 7d0a1ca9 -- src/ui/app.js src/ui/sections/color.js src/ui/styles.css`) and failed 21 assertions across every label, then passed after the change.
 - Stale docs repaired: `docs/references/ui-plan.md` (Color inspector cell), `docs/references/component-inventory.md` (segmented call-sites 15 to 14, `.pane-back` added to the Button row) and `docs/specs/app-shell.md` (LLD-C7). Every line-number citation shifted by the `src/ui/app.js`, `src/ui/sections/color.js` and `src/ui/styles.css` edits was remapped from the exact git hunks across seven docs (the slash-list members by hand), and `node test/repo/citations.mjs` is green.
 - `python3 <plugin-root>/scripts/gate_lock.py run --name npm-test -- npm test` is green (all 54 files, including `repo/citations.mjs` and `repo/em-dash.mjs`); the regenerated `figma/plugin/ui.html` is committed. No file under `src/engine/` or `figma/` other than that generated bundle changed. `npm run build` (needs `npm ci`) and `npm run smoke` (needs Chrome) were not run in this lane. `CHANGELOG.md` has no entry for this follow-up (entries are keyed to the squash-merged PR number, known only at landing).
+
+## Closed
+
+2026-10-08: delivered by the solo agent (level L2); one independent batched verifier passed before the merge
