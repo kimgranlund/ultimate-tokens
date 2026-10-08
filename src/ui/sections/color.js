@@ -1031,6 +1031,8 @@ export class ColorSectionImpl {
   // ladder, never re-derived and never cross-checked against radix-projection.json. This scene is
   // READ-ONLY (I1): no drag handle, no reorder wiring, no document mutation of any kind, it is
   // NOT one of the isGroupedView canvas views and adds no export affordance whatsoever (I6).
+  // A row click only SELECTS its palette (UI-session state, the same select the ramp rows do), so the palette
+  // inspector stays reachable from this view; that is not reorder wiring and not a document edit.
   //
   // Three states only (no fourth):
   //   - no-drivers (I9): view.radixPreset is the exportRadix no-driver sentinel STRING, the scene
@@ -1058,9 +1060,20 @@ export class ColorSectionImpl {
         const paint = scheme === "dark" ? val._dark : val.base;
         steps.push(h("i", { class: "radix-step", style: `background:${paint}`, title: `${p.name} ${step}` }));
       }
+      // a row click SELECTS its palette (the palette inspector is otherwise unreachable from this view, #814 review):
+      // selection is UI-session state, not a document edit and not reorder wiring, so I1 (read-only) still holds.
+      // `idx` is the palette's index in doc.palettes (projectView is index-aligned), NOT its place in the filtered `enabled`.
+      const idx = view.palettes.indexOf(p);
+      const selected = this.sel.kind === "palette" && this.selectedIndex() === idx;
       return h(
         "div",
-        { class: collision ? "radix-row radix-collision" : "radix-row" },
+        {
+          class: "radix-row" + (collision ? " radix-collision" : "") + (selected ? " sel" : ""),
+          onclick: () => {
+            if (this._didDrag) { this._didDrag = false; return; } // a canvas pan-drag, not a click
+            if (!selected) this.selectPalette(idx);
+          },
+        },
         h("span", { class: "ramp-name" }, p.name),
         h("div", { class: "radix-ladder" }, ...steps),
         collision ? h("span", { class: "radix-badge" }, radixCollisionBadge(key)) : null,
@@ -1278,7 +1291,18 @@ export class ColorSectionImpl {
       const overridden = !!(ov[r.key] && ov[r.key][mode] != null);
       return h(
         "tr",
-        { class: "map-row map-" + mode + (mode === "light" ? " map-role-top" : "") + (overridden ? " map-ov" : "") },
+        {
+          class: "map-row map-" + mode + (mode === "light" ? " map-role-top" : "") + (overridden ? " map-ov" : ""),
+          // a row click SELECTS the palette this table is showing, so the palette inspector is reachable from
+          // the Mapping view (#814 review). The row's own controls (the raw-token select / input, the reset
+          // button) keep their clicks: a re-render here would close an open select under the user's pointer.
+          onclick: (e) => {
+            for (let n = e && e.target; n && n !== e.currentTarget; n = n.parentNode)
+              if (n.tagName === "SELECT" || n.tagName === "INPUT" || n.tagName === "OPTION" || n.tagName === "BUTTON") return;
+            if (this._didDrag) { this._didDrag = false; return; } // a canvas pan-drag, not a click
+            if (this.sel.kind !== "palette") this.selectPalette(this.selectedIndex());
+          },
+        },
         h("td", { class: "map-mode" }, mode === "light" ? "Light" : "Dark"),
         h("td", { class: "map-sw" }, h("span", { class: "map-swatch" }, h("span", { class: "map-swatch-fill", style: `background:${hex}` }))),
         h("td", { class: "map-sem" }, h("code", {}, r.name)),
@@ -1548,9 +1572,15 @@ export class ColorSectionImpl {
       const [moved] = doc.palettes.splice(from, 1);
       if (groupChanged) moved.group = targetGroup;
       doc.palettes.splice(to, 0, moved);
-      // keep `selected` on the SAME palette object (now at its new index)
+      // keep `selected` on the SAME palette object (now at its new index). The CONTEXT (sel.kind) is left
+      // as it was, as _restore does: a drop made from the Global inspector must stay on Global, not flip
+      // to a palette inspector the user never clicked. edit() mirrors sel.id into doc.selected only for
+      // kind "palette", so under Global the persisted pick is moved here (selectedIndex() reads it).
       const newSel = doc.palettes.indexOf(selPal);
-      if (newSel >= 0) this.sel = { kind: "palette", id: newSel };
+      if (newSel >= 0) {
+        this.sel = { kind: this.sel.kind, id: newSel };
+        doc.selected = newSel;
+      }
     });
     // safety net: if no stray click consumes the guard, clear it next tick.
     setTimeout(() => { this._reordering = false; }, 0);
@@ -1678,6 +1708,8 @@ export class ColorSectionImpl {
           oninput: (e) => {
             if (paletteNameClash(e.target.value, this.doc.palettes, i)) return;
             this.editDrag((d) => (d.palettes[i].name = e.target.value));
+            const pt = this.querySelector(".pane-title"); // the context heading names the palette: keep it live with the typing
+            if (pt) pt.textContent = this.paneContextTitle();
           },
           onchange: (e) => {
             const clash = paletteNameClash(e.target.value, this.doc.palettes, i);

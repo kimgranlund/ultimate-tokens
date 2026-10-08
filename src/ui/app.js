@@ -472,6 +472,15 @@ class HctApp extends HTMLElement {
 
     // Everything below is bare (no modifier) and must NOT fire while typing.
     if (meta || e.altKey) return;
+    // Esc in a focused inspector field (text, number, select) is a two-stage exit (#814 review): the first Esc
+    // blurs the field (so the arrows and the context keys work again), the second falls through and deselects.
+    // Without this the keyboard user is stuck in the field with no way back to Global. A field in a modal
+    // (drawer, settings) is outside the right pane and keeps its own Esc.
+    if (e.key === "Escape" && !this.exportOpen && this._isTextTarget(e.target) && this._inRightPane(e.target)) {
+      e.preventDefault();
+      if (typeof e.target.blur === "function") e.target.blur();
+      return;
+    }
     if (this._isTextTarget(e.target)) return;
 
     switch (e.key) {
@@ -531,8 +540,31 @@ class HctApp extends HTMLElement {
   // session as having no explicit pick (kind:"none") so nothing renders 'sel' and the right
   // pane shows the Global inspector (renderRightPane picks its context from sel.kind).
   _deselect() {
+    // the focused palette control disappears with the palette inspector and focus would fall to <body>
+    // (Esc from the pane, or an empty-canvas click whose mousedown already parked focus on <body>): hand it
+    // to the pane title (the context heading) instead, unless focus sat on some other control that survives.
+    const a = document.activeElement;
+    const moveFocus = this._inRightPane(a) || (this.sel.kind === "palette" && (!a || a === document.body));
     this.sel = { kind: "none", id: this.sel.id };
     this.render();
+    if (moveFocus) this._focusPaneTitle();
+  }
+
+
+  // _inRightPane, true when el sits inside the right pane (<aside class="right-pane">). Walks parentNode (not
+  // .closest) so it also holds under the headless DOM shim.
+  _inRightPane(el) {
+    for (let n = el; n; n = n.parentNode)
+      if (n.classList && n.classList.contains("right-pane")) return true;
+    return false;
+  }
+
+
+  // _focusPaneTitle, move focus to the right pane's context heading (tabindex -1, so it takes programmatic focus
+  // without joining the Tab order).
+  _focusPaneTitle() {
+    const t = this._walkFind((c) => c.dataset.fk === "pane-title");
+    if (t && typeof t.focus === "function") t.focus();
   }
 
 
@@ -1874,12 +1906,14 @@ class HctApp extends HTMLElement {
 
     // a plain click on EMPTY canvas clears the selection → canvasBg reverts to the default
     // neutral backdrop. A click inside a ramp-row is a SELECT (handled by the row's own onclick,
-    // which runs first); a pan-drag is not a click. We walk parentNode (not .closest) so this
-    // also holds under the headless DOM shim.
+    // which runs first); a pan-drag is not a click. The Mapping table (.map-wrap) and the Radix scene
+    // (.radix-scene) are content, not empty canvas: their rows select, and a click on a Mapping select / input
+    // under a selected palette must not drop the selection (#814 review). We walk parentNode (not .closest)
+    // so this also holds under the headless DOM shim.
     area.addEventListener("click", (e) => {
       if (this._didDrag) { this._didDrag = false; return; } // a pan, not a click
       for (let n = e.target; n && n !== area; n = n.parentNode)
-        if (n.classList && n.classList.contains("ramp-row")) return; // a row handled the selection
+        if (n.classList && (n.classList.contains("ramp-row") || n.classList.contains("map-wrap") || n.classList.contains("radix-scene"))) return; // content handled its own click
       if (this.sel.kind === "palette") this._deselect();
     });
   }
@@ -1932,20 +1966,40 @@ class HctApp extends HTMLElement {
     // body (below) is unchanged.
     if (this.section === "typography") return this.renderTypeInspector(view);
     if (this.section === "geometry") return this.renderGeomInspector(view);
-    const body = this.sel.kind === "palette" ? this.renderPaletteInspector(view) : this.renderGlobalInspector(view);
+    const inPalette = this.sel.kind === "palette";
+    const body = inPalette ? this.renderPaletteInspector(view) : this.renderGlobalInspector(view);
     return h(
       "aside",
-      { class: "right-pane" },
+      { class: "right-pane", "aria-label": "Inspector" },
       // header row: while OPEN the right toggle hugs the inner (canvas-side) edge, left of
-      // the title; once collapsed it is rendered in the canvas-header instead.
+      // the title; once collapsed it is rendered in the canvas-header instead. The title NAMES the context
+      // ("Palette: <name>" / "Global") and takes programmatic focus (tabindex -1) when a deselect removes the
+      // focused palette control; in a palette context a button returns to Global, the keyboard path back
+      // (a palette is otherwise left only by Esc, which a focused field swallows) (#814 review).
       h("div", { class: "pane-head" },
         this.panesRight ? this.paneToggle("right") : false,
-        h("span", { class: "pane-title" }, "Inspector")),
+        h("span", { class: "pane-title", tabindex: "-1", "data-fk": "pane-title" }, this.paneContextTitle()),
+        inPalette
+          ? btn([icon("caret-left", { size: 12 }), "Global"], {
+              cls: "pane-back",
+              title: "Back to the Global inspector (Esc)",
+              ariaLabel: "Back to the Global inspector",
+              onclick: () => this._deselect(),
+            })
+          : false),
       h("div", { class: "seg-body", "data-scroll": "seg-body" }, body),
       // Pinned below the panel in EVERY context: a live component preview wired to the
       // selected palette's roles (surface / onSurface / onSurfaceVariant + primary).
       h("div", { class: "seg-example" }, ...this.exampleArtifacts(view)),
     );
+  }
+
+
+  // paneContextTitle, the Color inspector's context heading: the accessible cue for which inspector is showing.
+  paneContextTitle() {
+    if (this.sel.kind !== "palette") return "Global";
+    const p = this.doc.palettes[this.selectedIndex()];
+    return p ? "Palette: " + p.name : "Global";
   }
 
 
