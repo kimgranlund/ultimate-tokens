@@ -62,10 +62,6 @@ const ALLOW = [
 const CHROME = [".ex-collapse-toggle", ".ex-artifact-title"];
 
 const PENDING = {
-  "step-7": [
-    ".typo-", ".type-spec-", ".ty-role", ".tyi-voices-head", ".tyi-weights-core", ".tyi-voice-font", ".tyi-voice-stats",
-    ".tyi-font-role", ".tyi-font-legend", ".geom-",
-  ],
   "step-8": [
     "=button", "=select", '=input[type="text"]', '=input[type="search"]', "=.linklike", ".chip", ".segmented",
     ".figma-files", ".radix-files", ".toggle", ".tyi-voice-name", ".tyi-font-input", ".map-raw-", ".tools-menu",

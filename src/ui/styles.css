@@ -1451,12 +1451,12 @@ a.account-manage:hover { text-decoration: underline; }
    these bare specimen-line classes are KEPT (reused by typeSpecimenTab / _typeSample). ── */
 .typo-cat { margin-bottom: 20px; }
 .typo-cat-head { display: flex; gap: 8px; align-items: baseline; margin-bottom: 8px; border-bottom: 1px solid var(--line); padding-bottom: 4px; }
-.typo-cat-head b { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-dim); }
-.typo-cat-head small { color: var(--ink-faint); font-size: 11px; }
+.typo-cat-head b { font: var(--ui-kicker-font); letter-spacing: var(--ui-kicker-tracking); text-transform: var(--ui-kicker-case); color: var(--ui-kicker-ink); }
+.typo-cat-head small { font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); }
 /* STACKED in the narrow right pane: the step label sits ABOVE a full-width sample (was side-by-side with a
    fixed 92px meta, which squeezed the sample into a truncated "A…" / "Three nigh…"). */
 .typo-line { display: flex; flex-direction: column; gap: 3px; padding: 6px 0; }
-.typo-step { color: var(--ink-faint); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.typo-step { font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); font-variant-numeric: tabular-nums; }
 .typo-sample { color: var(--ink); min-width: 0; overflow: hidden; white-space: nowrap; }
 .typo-cat:nth-child(3) .typo-sample { white-space: normal; }
 
@@ -1470,18 +1470,18 @@ a.account-manage:hover { text-decoration: underline; }
    scheme column (.compare-col), so it tracks each column's light/dark. */
 .type-spec { display: flex; flex-direction: column; gap: 22px; padding: 16px 20px; width: 720px; max-width: 720px; }
 .type-spec-head { display: flex; align-items: baseline; gap: 10px; }
-.type-spec-head b { font-size: 14px; color: var(--ink); }
-.type-spec-head small { color: var(--ink-dim); font-size: 12px; }
-.type-spec-note { color: var(--ink-dim); font-size: 12px; line-height: 1.55; margin: 0; }
+.type-spec-head b { font: var(--ui-pane-title-font); letter-spacing: var(--ui-pane-title-tracking); text-transform: var(--ui-pane-title-case); color: var(--ui-pane-title-ink); }
+.type-spec-head small { font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); }
+.type-spec-note { font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); margin: 0; }
 .type-spec-group { display: flex; flex-direction: column; gap: 10px; }
 .type-spec-grouphead { display: flex; gap: 8px; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 5px; }
-.type-spec-grouphead b { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-dim); }
-.type-spec-grouphead small { color: var(--ink-faint); font-size: 11px; }
-.type-spec-count { margin-left: auto; color: var(--ink-faint); font-size: 11px; font-variant-numeric: tabular-nums; }
+.type-spec-grouphead b { font: var(--ui-kicker-font); letter-spacing: var(--ui-kicker-tracking); text-transform: var(--ui-kicker-case); color: var(--ui-kicker-ink); }
+.type-spec-grouphead small { font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); }
+.type-spec-count { margin-left: auto; font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); font-variant-numeric: tabular-nums; }
 .type-spec-line { display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: var(--r); border: 1px solid transparent; }
 .type-spec-line:hover { border-color: var(--line); }
-.type-spec-meta { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; font-size: 10.5px; font-variant-numeric: tabular-nums; color: var(--ink-faint); }
-.type-spec-token { font-family: var(--mono, ui-monospace, monospace); font-size: 10.5px; color: var(--ink-dim); background: color-mix(in srgb, var(--line) 60%, transparent); padding: 1px 5px; border-radius: 4px; }
+.type-spec-meta { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); font-variant-numeric: tabular-nums; }
+.type-spec-token { font: var(--ui-code-font); letter-spacing: var(--ui-code-tracking); text-transform: var(--ui-code-case); color: var(--ui-code-ink); background: color-mix(in srgb, var(--line) 60%, transparent); padding: 1px 5px; border-radius: 4px; }
 .type-spec-dims { color: var(--ink-faint); }
 .type-spec-render { color: var(--ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .type-spec-render.para { white-space: normal; overflow: visible; max-width: 640px; }
@@ -1519,16 +1519,16 @@ a.account-manage:hover { text-decoration: underline; }
 .an-leg-mark.ty.s9 { background: var(--ink-faint); }
 .an-leg-mark.ty.s10 { background: color-mix(in srgb, var(--ink-faint) 80%, var(--accent)); }
 .ty-roles { display: flex; flex-direction: column; gap: 5px; padding: 2px 0; }
-.ty-role { display: flex; align-items: baseline; gap: 8px; font-size: 10.5px; }
+.ty-role { display: flex; align-items: baseline; gap: 8px; font: var(--ui-label-font); letter-spacing: var(--ui-label-tracking); text-transform: var(--ui-label-case); color: var(--ui-label-ink); }
 .ty-role .ty-role-k { width: 54px; color: var(--ink-dim); flex: none; }
-.ty-role .ty-role-fam { color: var(--ink); font-size: 12px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ty-role .ty-role-fam { font: var(--ui-label-font); letter-spacing: var(--ui-label-tracking); text-transform: var(--ui-label-case); color: var(--ui-label-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Typography inspector (right pane), reuses .insp-* / .seg-* / .example-card / .field / .typo-* */
 .insp-sub.tyi-note { margin-top: 2px; }
 .insp-sub.tyi-future { margin-top: 2px; opacity: .85; }
 .tyi-voices { display: flex; flex-direction: column; gap: 10px; }
 .tyi-voices-head { display: flex; align-items: baseline; justify-content: space-between; }
-.tyi-voices-head small { color: var(--ink-dim); font-size: 11px; }
+.tyi-voices-head small { font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); }
 .tyi-voice { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--panel); }
 .tyi-voice.is-sel { border-color: var(--accent, #5b9dff); }
 /* the voice header is a select-to-expand button */
@@ -1545,18 +1545,18 @@ a.account-manage:hover { text-decoration: underline; }
 .tyi-weight-name { flex: 1; min-width: 0; }
 .tyi-weight-num { width: 64px; }
 .tyi-weights-actions { display: flex; gap: 6px; }
-.tyi-weights-core { color: var(--c-on-surface-variant); font-weight: 400; }
-.tyi-voice-font { color: var(--ink-dim); font-weight: 400; font-size: 11px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.tyi-weights-core { color: var(--c-on-surface-variant); font-weight: var(--ui-weight-regular); }
+.tyi-voice-font { font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .tyi-voice-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px 16px; margin: 8px 0 0; }
 .tyi-voice-stats > div { display: flex; align-items: baseline; justify-content: space-between; }
-.tyi-voice-stats dt { color: var(--ink-dim); font-size: 11px; margin: 0; }
-.tyi-voice-stats dd { margin: 0; font-size: 12px; font-variant-numeric: tabular-nums; }
+.tyi-voice-stats dt { font: var(--ui-label-font); letter-spacing: var(--ui-label-tracking); text-transform: var(--ui-label-case); color: var(--ui-label-ink); margin: 0; }
+.tyi-voice-stats dd { margin: 0; font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); font-variant-numeric: tabular-nums; }
 .tyi-fonts { display: flex; flex-direction: column; gap: 8px; }
 .tyi-font-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; background: var(--panel); }
 /* same field-label look as .field > label (Distribution/Name/Hue), a per-row label is still a FIELD
    label, not a section eyebrow (that uppercase/tracked style is for group headings like "DIFFERENTIAL
    CURVE", a different role); flex: none keeps the 11 rows' inputs aligned to one column. */
-.tyi-font-role { color: var(--ink-dim); font-size: 11.5px; flex: none; }
+.tyi-font-role { font: var(--ui-label-font); letter-spacing: var(--ui-label-tracking); text-transform: var(--ui-label-case); color: var(--ui-label-ink); flex: none; }
 /* editable combobox per voice, same visible border/background/padding as the base input[type=text]/
    select rule, so it doesn't read as a different control family from Distribution's <select> or the
    Palette panel's Name <input>. */
@@ -1571,7 +1571,7 @@ a.account-manage:hover { text-decoration: underline; }
 .tyi-font-dot.is-ok { background: var(--c-success); }
 .tyi-font-dot.is-sub, .tyi-font-dot.is-fallback { background: var(--c-warning); }
 .tyi-font-dot.is-unknown { background: var(--line-2); opacity: .8; }
-.tyi-font-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11px; color: var(--ink-dim); }
+.tyi-font-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); }
 .tyi-font-legend-item { display: inline-flex; align-items: center; gap: 6px; }
 .tyi-specimen { display: flex; flex-direction: column; gap: 16px; }
 .tyi-example { display: flex; flex-direction: column; gap: 8px; }
@@ -1582,26 +1582,26 @@ a.account-manage:hover { text-decoration: underline; }
 /* ── Geometry section, the canvas scene (full dimensional dataset) mirrors the Typography specimen ── */
 .geom-spec { display: flex; flex-direction: column; gap: 20px; padding: 16px 20px; width: 720px; max-width: 720px; }
 .geom-spec-head { display: flex; align-items: baseline; gap: 10px; }
-.geom-spec-head b { font-size: 14px; color: var(--ink); }
-.geom-spec-head small { color: var(--ink-dim); font-size: 12px; }
-.geom-spec-note { color: var(--ink-dim); font-size: 12px; line-height: 1.55; margin: 0; }
-.geom-shared-note { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: var(--r-sm); background: var(--c-neutral-container); color: var(--ink-dim); font-size: 11.5px; line-height: 1.45; }
+.geom-spec-head b { font: var(--ui-pane-title-font); letter-spacing: var(--ui-pane-title-tracking); text-transform: var(--ui-pane-title-case); color: var(--ui-pane-title-ink); }
+.geom-spec-head small { font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); }
+.geom-spec-note { font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); margin: 0; }
+.geom-shared-note { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: var(--r-sm); background: var(--c-neutral-container); font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); }
 .geom-shared-note .ic { flex: none; color: var(--accent); }
 .geom-spec-group { display: flex; flex-direction: column; gap: 16px; }
 .geom-spec-grouphead { display: flex; gap: 8px; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 5px; }
-.geom-spec-grouphead b { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-dim); }
-.geom-spec-grouphead small { color: var(--ink-faint); font-size: 11px; }
-.geom-spec-count { margin-left: auto; color: var(--ink-faint); font-size: 11px; font-variant-numeric: tabular-nums; }
+.geom-spec-grouphead b { font: var(--ui-kicker-font); letter-spacing: var(--ui-kicker-tracking); text-transform: var(--ui-kicker-case); color: var(--ui-kicker-ink); }
+.geom-spec-grouphead small { font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); }
+.geom-spec-count { margin-left: auto; font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); font-variant-numeric: tabular-nums; }
 .geom-spec-line { display: flex; flex-direction: column; gap: 10px; padding: 8px; border-radius: var(--r); border: 1px solid transparent; }
 .geom-spec-line:hover { border-color: var(--line); }
-.geom-spec-meta { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; font-size: 10.5px; font-variant-numeric: tabular-nums; color: var(--ink-faint); }
-.geom-spec-token { font-family: var(--mono, ui-monospace, monospace); font-size: 10.5px; color: var(--ink-dim); background: color-mix(in srgb, var(--line) 60%, transparent); padding: 1px 5px; border-radius: 4px; }
+.geom-spec-meta { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); font-variant-numeric: tabular-nums; }
+.geom-spec-token { font: var(--ui-code-font); letter-spacing: var(--ui-code-tracking); text-transform: var(--ui-code-case); color: var(--ui-code-ink); background: color-mix(in srgb, var(--line) 60%, transparent); padding: 1px 5px; border-radius: 4px; }
 .geom-spec-dims { color: var(--ink-faint); }
 /* the per-size component row: Button · Select · Switch side by side, one gap between siblings. */
 .geom-spec-render { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 /* Select, the outlined sibling (border color = the palette's outlineVariant, set inline). */
 .geom-select { display: inline-flex; align-items: center; box-sizing: border-box; flex: none;
-  background: transparent; border: 1.5px solid; font-weight: 500; line-height: 1; }
+  background: transparent; border: 1.5px solid; font: var(--ui-control-font); letter-spacing: var(--ui-control-tracking); text-transform: var(--ui-control-case); color: var(--ui-control-ink); }
 /* Switch (ON), track + a right-inset circular thumb; every dimension/color set inline from the ramp. */
 .geom-switch { flex: none; position: relative; display: inline-block; box-sizing: border-box; }
 .geom-switch-thumb { position: absolute; top: 50%; transform: translateY(-50%); border-radius: 50%; }
@@ -1615,7 +1615,7 @@ a.account-manage:hover { text-decoration: underline; }
 .geom-ctl-label { white-space: nowrap; }
 .geom-caret { flex: none; display: inline-flex; align-items: center; justify-content: center; transform: rotate(-90deg); opacity: .9; }
 .geom-caret .ic, .geom-caret svg { width: 100%; height: 100%; }
-.geom-chip { display: inline-flex; gap: 5px; align-items: center; font-size: 10.5px; color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+.geom-chip { display: inline-flex; gap: 5px; align-items: center; font: var(--ui-badge-font); letter-spacing: var(--ui-badge-tracking); text-transform: var(--ui-badge-case); color: var(--ui-badge-ink); font-variant-numeric: tabular-nums; }
 .geom-radius-swatch { width: 18px; height: 18px; background: var(--c-neutral-container); border: 1.5px solid var(--accent); }
 .geom-space-bar { height: 10px; background: var(--accent); border-radius: 2px; display: inline-block; opacity: .7; }
 
@@ -1623,7 +1623,7 @@ a.account-manage:hover { text-decoration: underline; }
 .gc-cell { border: 1.5px solid var(--line); border-radius: 2px; }
 .gc-glyph { background: color-mix(in srgb, var(--accent) 24%, transparent); border: 1.5px solid var(--accent); border-radius: 2px; }
 .gc-pad { --series: var(--ink-faint); --chart-ref: 3px; }
-.geom-an-cap { text-align: center; color: var(--ink-dim); font-size: 10.5px; font-variant-numeric: tabular-nums; margin-top: 4px; }
+.geom-an-cap { text-align: center; font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); font-variant-numeric: tabular-nums; margin-top: 4px; }
 .gp-ref { --series: var(--ink-faint); --dash: repeating-linear-gradient(90deg, #000 0 3px, transparent 3px 6px); }
 .gp-icon { --series: var(--accent); }
 .gp-font { --series: color-mix(in srgb, var(--ink) 55%, var(--accent)); }
@@ -1631,18 +1631,18 @@ a.account-manage:hover { text-decoration: underline; }
 .an-leg-mark.gp.icon { background: var(--accent); }
 .an-leg-mark.gp.font { background: color-mix(in srgb, var(--ink) 55%, var(--accent)); }
 .geom-comp { display: flex; flex-direction: column; gap: 8px; }
-.geom-comp-note { margin: 0; color: var(--ink-dim); font-size: 11px; line-height: 1.5; }
+.geom-comp-note { margin: 0; font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); }
 .geom-comp-rows { display: flex; flex-direction: column; gap: 3px; }
-.geom-comp-row { display: flex; align-items: baseline; gap: 8px; font-size: 11px; font-variant-numeric: tabular-nums; }
-.geom-comp-k { width: 34px; flex: none; color: var(--ink-dim); font-weight: 600; }
+.geom-comp-row { display: flex; align-items: baseline; gap: 8px; font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); font-variant-numeric: tabular-nums; }
+.geom-comp-k { width: 34px; flex: none; color: var(--ink-dim); font-weight: var(--ui-weight-strong); }
 .geom-comp-v { color: var(--ink); }
 .geom-comp-v.dim { color: var(--ink-faint); margin-left: auto; }
 
 /* geometry inspector, the radius + space ladders (right pane) */
 .geom-lad { display: flex; flex-direction: column; gap: 6px; }
 .geom-lad-row { display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; background: var(--panel); }
-.geom-lad-k { font-size: 12px; color: var(--ink); font-family: var(--mono, ui-monospace, monospace); }
-.geom-lad-v { margin-left: auto; font-size: 12px; color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+.geom-lad-k { font: var(--ui-code-font); letter-spacing: var(--ui-code-tracking); text-transform: var(--ui-code-case); color: var(--ui-code-ink); }
+.geom-lad-v { margin-left: auto; font: var(--ui-code-font); letter-spacing: var(--ui-code-tracking); text-transform: var(--ui-code-case); color: var(--ui-code-ink); font-variant-numeric: tabular-nums; }
 .geom-space-track { flex: 1; height: 8px; border-radius: 4px; background: var(--c-neutral-container); overflow: hidden; }
 .geom-space-fill { display: block; height: 100%; background: var(--accent); opacity: .8; }
 .geom-example { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
