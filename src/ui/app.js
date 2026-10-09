@@ -49,7 +49,8 @@ import { FIGMA_MIGRATIONS, kebabWaveVarRenames, kebabWaveColorRenames } from "..
 import { COLLECTIONS } from "../engine/collections.js";
 import { stylePlans } from "../../figma/binder/style-plan.mjs";
 import { ICON_SYSTEMS, iconSystem, iconSystemById, iconSystemLabel } from "../engine/icon-systems.mjs";
-import { icon } from "./icons.js";
+import { icon, selectCaret } from "./icons.js";
+import { shellRolesCSS } from "./shell-roles.mjs";
 import { CANVAS_INSET, MODE_WIDTH_PRESETS, PROJECT_KEY, PRO_EXPORT_FORMATS, SCHEME_ICON, SCHEME_NEXT, ago, btn, chip, defaultLicenseService, ensureAppTheme, ensureTypeFonts, field, fmt, h, hydrateConfig, hydrateStoredDoc, licenseInstanceName, loadProfile, loadSets, migrateStorageKeys, newSet, posterStripBands, sanitizeSetRecords, saveProfile, saveSets, setColorScheme, swatch } from "./app-helpers.mjs";
 import { ColorSection } from "./sections/color.js";
 import { TypeSection } from "./sections/typography.js";
@@ -59,6 +60,8 @@ import { ApplyGateMixin } from "./overlays/apply-gate.js";
 import { SettingsMixin } from "./overlays/settings.js";
 
 let geomHostSeq = 0; // per-instance keys for the host-scoped geometry roles (_applyShellGeometry)
+// the editor chrome's default cell (T-0044, user ruling): product tier, sm scale, round corners; the host's size stays md
+const SHELL_DEFAULT_GEOMETRY = Object.freeze({ tier: "product", scale: "sm", radius: "round" });
 
 // scopeGeomCSS, rewrites the engine's document-level geometry CSS (geomTokensSizesCSS + geomResolverCSS)
 // onto one host: the :root primitives and default context land on the keyed host, a [data-A="V"] context
@@ -124,7 +127,7 @@ class HctApp extends HTMLElement {
     this.theme = "system"; // app chrome color scheme: system (follows OS) | light | dark
     this.motion = "system"; // animation preference: system (respect prefers-reduced-motion) | reduced (always minimal), app pref
     this.fontMode = "premium"; // rendering-reliability pref: premium (as-designed families) | google (every family google-fonts-safe, per src/engine/font-fallbacks.mjs), app pref, NOT doc-bound
-    this.shellGeometry = null; // the editor chrome's own { tier, scale, radius }: null follows the kit's doc.geometry, app pref, NOT doc-bound
+    this.shellGeometry = null; // the editor chrome's own cell, app pref, NOT doc-bound: null is SHELL_DEFAULT_GEOMETRY (product, sm), "kit" follows doc.geometry, an object { tier, scale, radius } pins a custom cell
     this._geomRolesStyle = null; // this host's <style id="ut-geometry-roles-<key>"> in document.head (the shell's --control-* roles), created on first render
     this._loadAppPrefs(); // persisted APP prefs (theme/motion/fontMode/shellGeometry), loaded before setColorScheme below
     this.exportOpen = false;
@@ -178,6 +181,8 @@ class HctApp extends HTMLElement {
     this._dragSnap = null; // pending pre-drag snapshot (a slider drag = ONE step)
     this._dragTimer = null; // debounce timer that commits a settled drag
     this._activeDragCleanup = null; // set while a _bindRangeDrag pointer-drag is in flight, removes its window-level move/up/cancel listeners (disconnectedCallback safety net)
+    this._radixTip = null; // the one shared Radix step tooltip (T-0043), created on first hover/focus
+    this._radixTipFor = null; // the swatch it currently describes
     this.HISTORY_MAX = 100;
     setColorScheme(this.theme); // flip the chrome's light-dark() tokens to the initial theme
     this._installKeyboard(); // editor-scoped keyboard shortcuts (guarded vs text inputs)
@@ -505,6 +510,8 @@ class HctApp extends HTMLElement {
     // Esc with the canvas-header overflow menu open belongs to the menu: the browser closes the popover and
     // returns focus to its trigger. Deselecting here would re-render the whole subtree under it.
     if (e.key === "Escape" && this._toolsMenuOpen()) return;
+    // Esc with the Radix step tooltip showing dismisses just the tooltip (WCAG 1.4.13), not the selection.
+    if (e.key === "Escape" && this._radixTipOpen()) { this._hideRadixTip(); return; }
 
     switch (e.key) {
       case "ArrowUp":
@@ -627,7 +634,9 @@ class HctApp extends HTMLElement {
     // swap and put the user exactly back AFTER, so any fk-tagged input survives a
     // full render, not just the few with bespoke liveRefresh patches.
     const focus = this._captureFocus();
+    this._hideRadixTip(); // the swatch it points at is about to be replaced
     this.replaceChildren(this.view === "gallery" ? this.renderGallery() : this.renderEditor());
+    if (this._radixTip) this.append(this._radixTip); // the one shared step tooltip survives the rebuild (hidden)
     this.dataset.theme = this.theme;
     this.dataset.motion = this.motion; // styles.css gates transitions/animations on [data-motion]
     this._applyShellGeometry();
@@ -1884,6 +1893,7 @@ class HctApp extends HTMLElement {
       const { panX, panY, zoom } = this.viewport;
       scene.style.transform = `translate(-50%, -50%) translate(${panX}px, ${panY}px) scale(${zoom})`;
     }
+    this._hideRadixTip(); // a pan or zoom moves the swatch out from under its tooltip
     const pct = Math.round(this.viewport.zoom * 100) + "%";
     for (const r of this.querySelectorAll(".zoom-readout")) r.textContent = pct; // the inline tool and the overflow menu each carry one
     this.paintCanvasFooter();
@@ -2095,7 +2105,7 @@ class HctApp extends HTMLElement {
         document.createTextNode(`x:${xy.x} y:${xy.y} · ${z}% · `),
         h("span", { class: "sw", style: `background:${this.hover.hex}` }),
         document.createTextNode(`${this.hover.hex} · tone ${fmt(this.hover.tone)} · `),
-        icon(this.hover.inGamut ? "check" : "x", { size: 12 }),
+        icon(this.hover.inGamut ? "check" : "x", { size: "badge" }),
         document.createTextNode(this.hover.inGamut ? " in-gamut" : " out-of-gamut"),
       );
     } else {
@@ -2216,7 +2226,7 @@ class HctApp extends HTMLElement {
         { class: "ex-form-row", style: "color:" + pick(byKey.onSurfaceVariant) },
         h("label", {}, h("input", { type: "checkbox", checked: "checked", tabindex: "-1", "aria-hidden": "true", style: "accent-color:" + accent }), "Checkbox"),
         h("label", {}, h("input", { type: "radio", checked: "checked", tabindex: "-1", "aria-hidden": "true", style: "accent-color:" + accent }), "Radio"),
-        h("select", { tabindex: "-1", "aria-hidden": "true", class: "ex-input ex-select", style: fieldStyle + ";--select-chevron:" + pick(byKey.onSurfaceVariant) }, h("option", {}, "Select")),
+        h("select", { tabindex: "-1", "aria-hidden": "true", class: "ex-input ex-select", style: fieldStyle + ";--select-caret:" + selectCaret(pick(byKey.onSurfaceVariant)) }, h("option", {}, "Select")),
       ),
     );
   }
@@ -2251,6 +2261,7 @@ class HctApp extends HTMLElement {
         onclick: () => { this.examplesExpanded = !this.examplesExpanded; this.liveRefresh(); },
       },
       this.examplesExpanded ? "Show less" : `Show ${artifacts.length - 1} more examples`,
+      icon("caret-down", { cls: "caret" }),
     );
     return [...schemes, toggle];
   }
@@ -2396,7 +2407,7 @@ class HctApp extends HTMLElement {
     if (save) {
       const dirty = this.isDirty();
       save.className = dirty ? "af-save dirty" : "af-save saved";
-      save.replaceChildren(icon(dirty ? "dot" : "check", { size: 12 }), dirty ? " unsaved" : " saved");
+      save.replaceChildren(icon(dirty ? "dot" : "check", { size: "badge" }), dirty ? " unsaved" : " saved");
     }
 
     const warn = this.querySelector(".app-footer .af-warn");
@@ -2491,22 +2502,25 @@ class HctApp extends HTMLElement {
       if (p.motion === "reduced" || p.motion === "system") this.motion = p.motion;
       if (p.fontMode === "premium" || p.fontMode === "google") this.fontMode = p.fontMode;
       const sg = p.shellGeometry;
-      if (sg && Object.prototype.hasOwnProperty.call(TIERS, sg.tier) && SCALES.includes(sg.scale) && Object.prototype.hasOwnProperty.call(RADIUS_MODES, sg.radius)) {
+      if (sg === "kit") this.shellGeometry = "kit";
+      else if (sg && Object.prototype.hasOwnProperty.call(TIERS, sg.tier) && SCALES.includes(sg.scale) && Object.prototype.hasOwnProperty.call(RADIUS_MODES, sg.radius)) {
         this.shellGeometry = { tier: sg.tier, scale: sg.scale, radius: sg.radius };
       }
     } catch { /* storage unavailable / corrupt record → defaults */ }
   }
 
-  // shellGeometry is written only when set, so a record that follows the kit keeps the three chrome keys.
+  // shellGeometry is written only when not null ("kit" or a custom cell), so a record on the default keeps the three chrome keys.
   _saveAppPrefs() {
     const rec = { theme: this.theme, motion: this.motion, fontMode: this.fontMode, ...(this.shellGeometry ? { shellGeometry: this.shellGeometry } : {}) };
     try { localStorage.setItem(this._appPrefsKey(), JSON.stringify(rec)); } catch { /* storage unavailable */ }
   }
 
-  // _effectiveShellGeometry(), the chrome's { tier, scale, radius }: the Settings override, else the
-  // kit's doc.geometry, else the default (the gallery has no doc).
+  // _effectiveShellGeometry(), the chrome's { tier, scale, radius }, by shellGeometry's three states: null is
+  // SHELL_DEFAULT_GEOMETRY; "kit" follows the kit's doc.geometry, else DEFAULT_GEOMETRY (the gallery has no doc);
+  // an object is the Settings custom cell. An invalid field falls back per field to DEFAULT_GEOMETRY.
   _effectiveShellGeometry() {
-    const g = this.shellGeometry || (this.doc && this.doc.geometry) || DEFAULT_GEOMETRY;
+    const sg = this.shellGeometry;
+    const g = !sg ? SHELL_DEFAULT_GEOMETRY : sg === "kit" ? (this.doc && this.doc.geometry) || DEFAULT_GEOMETRY : sg;
     return {
       tier: Object.prototype.hasOwnProperty.call(TIERS, g.tier) ? g.tier : DEFAULT_GEOMETRY.tier,
       scale: SCALES.includes(g.scale) ? g.scale : DEFAULT_GEOMETRY.scale,
@@ -2518,7 +2532,8 @@ class HctApp extends HTMLElement {
   // [data-tier/scale/radius/size] (the resolver's context selectors) and refreshes this host's head
   // <style> holding the kit's cell primitives + resolver, unprefixed and scoped to the host (so two
   // instances, or a page that loads its own exported geometry.css, never share or clobber the roles).
-  // Held on the instance, never looked up by id (the headless shim's getElementById returns null).
+  // The shell's text-role step variables (shellRolesCSS, the shell's tier-scale-md cell) close the
+  // same style. Held on the instance, never looked up by id (the headless shim's getElementById returns null).
   _applyShellGeometry() {
     const g = this._effectiveShellGeometry();
     this.dataset.utGeom = this._geomKey;
@@ -2533,7 +2548,8 @@ class HctApp extends HTMLElement {
       this._geomRolesStyle = el;
     }
     const sc = this.doc ? this._geomScaleFor("base") : geomScale(DEFAULT_GEOMETRY);
-    const css = scopeGeomCSS(geomTokensSizesCSS(sc) + "\n" + geomResolverCSS(sc), this._geomKey);
+    const css = scopeGeomCSS(geomTokensSizesCSS(sc) + "\n" + geomResolverCSS(sc), this._geomKey)
+      + "\n" + shellRolesCSS(sc.cells[`${g.tier}-${g.scale}-md`], this.doc ? this._typeScaleFor("base").uiText : null, this._geomKey);
     if (this._geomRolesStyle.textContent !== css) this._geomRolesStyle.textContent = css;
   }
 

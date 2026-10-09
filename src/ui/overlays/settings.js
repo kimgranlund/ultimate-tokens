@@ -171,16 +171,18 @@ export class SettingsMixinImpl {
     };
   }
 
-  // The Shell geometry row: Follow kit (shellGeometry null, the chrome reads doc.geometry) or Custom,
-  // which seeds from the current effective geometry and reveals one tier, scale and radius row.
+  // The Shell geometry row: Default (shellGeometry null, the product-sm cell), Follow kit ("kit", the chrome
+  // reads doc.geometry) or Custom, which seeds from the current effective geometry and reveals one tier,
+  // scale and radius row.
   _shellGeometryRows() {
     const sg = this.shellGeometry;
     const setShell = (next) => { this.shellGeometry = next; this._saveAppPrefs(); this.render(); };
     const opts = (ids) => ids.map((id) => ({ id, label: id[0].toUpperCase() + id.slice(1) }));
-    const rows = [this._settingRow("Shell geometry", "The editor chrome's control sizes and corners. Follow kit uses this document's Geometry; Custom pins a tier, scale, and radius on this device.",
-      [{ id: "kit", label: "Follow kit" }, { id: "custom", label: "Custom" }], sg ? "custom" : "kit",
-      (id) => setShell(id === "custom" ? { ...this._effectiveShellGeometry() } : null), "setshellgeom")];
-    if (sg) {
+    const custom = !!sg && typeof sg === "object";
+    const rows = [this._settingRow("Shell geometry", "The editor chrome's control sizes and corners. Default is product, sm; Follow kit uses this document's Geometry; Custom pins a tier, scale, and radius on this device.",
+      [{ id: "default", label: "Default" }, { id: "kit", label: "Follow kit" }, { id: "custom", label: "Custom" }], custom ? "custom" : sg === "kit" ? "kit" : "default",
+      (id) => setShell(id === "custom" ? { ...this._effectiveShellGeometry() } : id === "kit" ? "kit" : null), "setshellgeom")];
+    if (custom) {
       rows.push(
         this._settingRow("Shell tier", "The control height family.", opts(Object.keys(TIERS)), sg.tier, (id) => setShell({ ...sg, tier: id }), "setshelltier"),
         this._settingRow("Shell scale", "The density step within the tier.", opts(SCALES), sg.scale, (id) => setShell({ ...sg, scale: id }), "setshellscale"),

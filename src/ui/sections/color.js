@@ -1,6 +1,7 @@
+import { placeTip } from "../tip-position.mjs";
 import { DEFAULT_CONTROLS, PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hasDataPalettes, hexToOklch, mintDataPalettes, nextPaletteName, paletteGroup, paletteGroupLabel, paletteNameClash, projectView, RADIX_STEP_GUIDE, radixCollisionBadge, radixExportKey, radixKeyCollision, rederiveDataHues, seedFromKeyColor, slug } from "../model.mjs";
 import { RELATIONSHIPS, deriveNeutral, deriveRelative } from "../../engine/derive.mjs";
-import { chromaEnvelope, envelopePresetOf } from "../../engine/tonal.js";
+import { chromaEnvelope, envelopePresetOf, solveCam16Hue } from "../../engine/tonal.js";
 import { icon } from "../icons.js";
 import { CURVES, DAMP_PRESETS, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
 import { renderChart } from "../charts/render.mjs";
@@ -161,7 +162,7 @@ export class ColorSectionImpl {
           h("span", { class: "an-thresh", title: "4.5:1 minimum" }),
           h("span", { class: "an-fill" + (pass ? "" : " bad"), style: `width:${pct.toFixed(0)}%` }),
         ),
-        h("b", { class: pass ? "pass" : "fail" }, ratio.toFixed(2) + " ", icon(pass ? "check" : "warning", { size: 12 })),
+        h("b", { class: pass ? "pass" : "fail" }, ratio.toFixed(2) + " ", icon(pass ? "check" : "warning", { size: "badge" })),
       );
     };
     return h(
@@ -941,7 +942,7 @@ export class ColorSectionImpl {
                   this.commit((d) => (d.palettes[i].on = !(d.palettes[i].on !== false)));
                 },
               },
-              icon(p.on !== false ? "dot" : "circle", { size: 13 }),
+              icon(p.on !== false ? "dot" : "circle", { size: "badge" }),
             ),
             h("span", { class: "ramp-name" }, vp.name, h("small", {}, `${stops.length} stops`)),
           ),
@@ -980,7 +981,7 @@ export class ColorSectionImpl {
                 this.commit((d) => (d.palettes[i].on = true));
               },
             },
-            icon("circle", { size: 13 }),
+            icon("circle", { size: "badge" }),
           ),
           h("span", { class: "ramp-name off" }, p.name || "(unnamed)", h("small", {}, "disabled")),
         ),
@@ -1049,8 +1050,9 @@ export class ColorSectionImpl {
         const leaf = group[String(step)];
         const val = leaf && leaf.value ? leaf.value : { base: "transparent", _dark: "transparent" };
         const paint = scheme === "dark" ? val._dark : val.base;
-        // the hover/focus tooltip (T-0037): `Step N: <role>` + the one-line intent from RADIX_STEP_GUIDE, drawn by the
-        // .radix-step::after rule from data-tip; tabindex=0 so keyboard focus shows it too, aria-label so a screen reader hears it
+        // the hover/focus tooltip (T-0037): `Step N: <role>` + the one-line intent from RADIX_STEP_GUIDE, held in data-tip
+        // and shown by ONE shared .radix-tip outside the zoomed scene (T-0043, _showRadixTip); tabindex=0 so keyboard focus
+        // shows it too, aria-label so a screen reader hears it
         const guide = RADIX_STEP_GUIDE[step - 1];
         steps.push(h("i", { class: "radix-step", style: `background:${paint}`, tabindex: "0", role: "img", "data-tip": `Step ${step}: ${guide.role}\n${guide.intent}`, "aria-label": `${p.name} step ${step}: ${guide.role}. ${guide.intent}` }));
       }
@@ -1073,7 +1075,70 @@ export class ColorSectionImpl {
         collision ? h("span", { class: "radix-badge" }, radixCollisionBadge(key)) : null,
       );
     });
-    return h("div", { class: "radix-scene" }, ...rows);
+    const scene = h("div", { class: "radix-scene" }, ...rows);
+    // ONE delegated set of handlers for all 384 swatches (T-0043): the tooltip is a single element outside the scene,
+    // so it is not clipped by .canvas-area, not scaled by the zoom, and a swatch only has to say "show me".
+    const swatchOf = (t) => { for (let n = t; n && n !== scene; n = n.parentNode) if (n.classList && n.classList.contains("radix-step")) return n; return null; };
+    scene.addEventListener("mouseover", (e) => { const s = swatchOf(e.target); if (s) this._showRadixTip(s); });
+    scene.addEventListener("mouseout", (e) => { if (swatchOf(e.target) && !swatchOf(e.relatedTarget)) this._hideRadixTip(); }); // moving onto a neighbour just re-points the tip
+    scene.addEventListener("focusin", (e) => { const s = swatchOf(e.target); if (s) this._showRadixTip(s); });
+    scene.addEventListener("focusout", (e) => { if (swatchOf(e.target) && !swatchOf(e.relatedTarget)) this._hideRadixTip(); });
+    return scene;
+  }
+
+
+  // _radixTipEl, the one shared step tooltip, created on first use and kept for the life of the app: a native
+  // manual popover (top layer, so no ancestor clips or scales it) appended to the app root after each render
+  // (render() rebuilds the subtree and drops it). A host without the Popover API shows it as a plain
+  // position:fixed box via the `.open` class; the class is the source of truth for both.
+  _radixTipEl() {
+    if (!this._radixTip) {
+      const tip = h("div", { class: "radix-tip", id: "radix-tip", role: "tooltip" });
+      tip.setAttribute("popover", "manual");
+      this._radixTip = tip;
+    }
+    return this._radixTip;
+  }
+
+
+  // _showRadixTip(anchor), fill the tooltip from the swatch's data-tip, measure it, and place it from the swatch's
+  // bounding rect with placeTip (below by default; above near the bottom edge; shifted left near the right edge).
+  _showRadixTip(anchor) {
+    const text = anchor.getAttribute("data-tip");
+    if (!text) return;
+    const tip = this._radixTipEl();
+    if (!Array.from(this.children).includes(tip)) this.append(tip); // render() drops it with the rest of the subtree
+    if (this._radixTipFor && this._radixTipFor !== anchor) this._radixTipFor.removeAttribute("aria-describedby");
+    tip.textContent = text;
+    tip.classList.add("open");
+    try { if (typeof tip.showPopover === "function" && !tip.matches(":popover-open")) tip.showPopover(); } catch { /* not attached yet */ }
+    tip.style.left = "0px"; tip.style.top = "0px"; // measure at a fixed origin, so a stale position cannot squeeze the box
+    const r = tip.getBoundingClientRect();
+    const root = document.documentElement;
+    const view = { width: root.clientWidth || window.innerWidth || 0, height: root.clientHeight || window.innerHeight || 0 };
+    const at = placeTip(anchor.getBoundingClientRect(), { width: r.width, height: r.height }, view);
+    tip.style.left = Math.round(at.left) + "px";
+    tip.style.top = Math.round(at.top) + "px";
+    tip.setAttribute("data-placement", at.placement);
+    anchor.setAttribute("aria-describedby", "radix-tip");
+    this._radixTipFor = anchor;
+  }
+
+
+  // _hideRadixTip, hide it (blur, mouse-out, Esc, a pan or zoom, a re-render). Safe to call when nothing shows.
+  _hideRadixTip() {
+    const tip = this._radixTip;
+    if (!tip || !tip.classList.contains("open")) return;
+    tip.classList.remove("open");
+    try { if (typeof tip.hidePopover === "function" && tip.matches(":popover-open")) tip.hidePopover(); } catch { /* already hidden */ }
+    if (this._radixTipFor) this._radixTipFor.removeAttribute("aria-describedby");
+    this._radixTipFor = null;
+  }
+
+
+  // _radixTipOpen, is the step tooltip showing?
+  _radixTipOpen() {
+    return !!this._radixTip && this._radixTip.classList.contains("open");
   }
 
 
@@ -1165,7 +1230,7 @@ export class ColorSectionImpl {
                   this.commit((d) => (d.palettes[i].on = !(d.palettes[i].on !== false)));
                 },
               },
-              icon(p.on !== false ? "dot" : "circle", { size: 13 }),
+              icon(p.on !== false ? "dot" : "circle", { size: "badge" }),
             ),
             h("span", { class: "ramp-name" }, vp.name, h("small", {}, `500 base · ${stops.length} scrims`)),
           ),
@@ -1254,8 +1319,8 @@ export class ColorSectionImpl {
       const st = this.driftStatus(n + "/" + padRef(ref), hex);
       const title = { match: "Matches the file", drift: "Drifted from the file", absent: "Not in the file" }[st]
         || "Click Read live to compare with the file";
-      const mark = st === "match" ? icon("check", { size: 12 })
-        : st === "drift" ? icon("x", { size: 12 })
+      const mark = st === "match" ? icon("check", { size: "badge" })
+        : st === "drift" ? icon("x", { size: "badge" })
         : st === "absent" ? "n/a" : "·";
       return h("td", { class: "map-file" }, h("span", { class: "map-drift map-drift-" + (st || "none"), title }, mark));
     };
@@ -1304,7 +1369,7 @@ export class ColorSectionImpl {
           "td",
           { class: "map-raw" },
           rawEditor(r, mode, ref, overridden),
-          overridden ? btn(icon("arrow-counter-clockwise", { size: 13 }), { variant: "bare", cls: "map-reset", title: "Reset to canonical", ariaLabel: "Reset to canonical", onclick: () => this.clearRoleOverride(r.key, mode) }) : false,
+          overridden ? btn(icon("arrow-counter-clockwise", { size: "badge" }), { variant: "bare", cls: "map-reset", title: "Reset to canonical", ariaLabel: "Reset to canonical", onclick: () => this.clearRoleOverride(r.key, mode) }) : false,
         ),
         this.inFigma ? driftCell(ref, hex) : false, // drift vs the live Figma variable (#3)
       );
@@ -1743,34 +1808,34 @@ export class ColorSectionImpl {
         ),
         { labelTitle: "Which canvas group this palette is organized under: Material, Brand, System, or Data." },
       ),
-      // Hue/Chroma edits DETACH an anchored palette (ticket #681, U2/Q6): they drop the live `anchor`
-      // (the generator-written `sourceAnchor` copy stays, so Reset below can restore it), a hue or
-      // chroma slider drag makes an anchor-carrying palette ordinary again, since the ramp's stop 500
-      // and prime.mjs's own anchor rung would otherwise keep rendering the OLD source color while the
-      // hue/chroma the user just set claims a different one. Skew/lift edits do NOT detach (their own
-      // sliders below are untouched), they're aesthetic warps ABOUT the anchor's own fixed pivot, not
-      // a claim about a different source color.
+      // Hue/Chroma edits RE-SEED an anchored palette's `anchor` (T-0045); they used to DETACH it (#681, U2/Q6)
+      // by deleting it, which dropped the ramp onto the unanchored `toneAt` curve (stop 500 at L* ~73, not
+      // the anchored 42 to 51) and washed every hue-edited palette out. `reseedAnchor` moves the anchor to
+      // the new hue/chroma at its OWN tone (gamut-clamped): the ramp keeps its pivot, and stop 500 and the
+      // prime anchor rung follow the slider. `sourceAnchor` stays, so Reset below can restore it.
+      // Skew/lift edits do not touch the anchor,
+      // they warp the ramp ABOUT its fixed pivot.
       //
-      // Snapshot hue/chroma/lift the MOMENT this drag detaches (re-diagnosis Finding 3 / review F7):
-      // `detachSnapshot` below stamps `preDetachHue`/`preDetachChroma`/`preDetachLift` from the
-      // PRE-edit palette, once, only on the transition from anchored to detached (an already-detached
-      // palette dragging Hue again must not overwrite its FIRST snapshot with an already-detached
-      // in-between value), resetAnchor restores these exactly, never re-deriving.
-      this.slider("Hue", p.hue, 0, 360, 1, (v) => fmt(v) + "°", (v) => this.editDrag((d) => { this.detachSnapshot(d, i, p); d.palettes[i].hue = v; if (d.palettes[i].anchor) delete d.palettes[i].anchor; })),
+      // `detachSnapshot` stamps `preDetachHue`/`preDetachChroma`/`preDetachLift` from the PRE-edit palette
+      // `p` (the pane is rebuilt on release, so `p` is the pre-drag palette for the whole drag, and every
+      // tick re-seeds from the same start), once, only while the anchor still equals `sourceAnchor`
+      // (a later drag must not overwrite the FIRST snapshot with an in-between value). resetAnchor
+      // restores it exactly, never re-deriving (re-diagnosis Finding 3 / review F7).
+      this.slider("Hue", p.hue, 0, 360, 1, (v) => fmt(v) + "°", (v) => this.editDrag((d) => { this.detachSnapshot(d, i, p); d.palettes[i].hue = v; this.reseedAnchorOn(d, i, p, { hue: v }); })),
       // Chroma (SPEC 0.3.0 REQ-002/032), feeds the KEY COLOUR and the prime system only now (the
       // gallery tile, deriveKeyColor, and the seven prime swatches); the ramp no longer reads it at
       // all, the palette's own Base chroma (below) damps the whole at-100 ramp instead, by Base
       // chroma / 100 times the global k (#785, #804). No "Intensity" slider exists any more.
-      this.slider("Chroma", p.chroma, 0, 100, 1, (v) => fmt(v) + "%", (v) => this.editDrag((d) => { this.detachSnapshot(d, i, p); d.palettes[i].chroma = v; if (d.palettes[i].anchor) delete d.palettes[i].anchor; })),
-      // Reset, re-attach a detached palette (Q6, U2's C12): restores `anchor = sourceAnchor` and
+      this.slider("Chroma", p.chroma, 0, 100, 1, (v) => fmt(v) + "%", (v) => this.editDrag((d) => { this.detachSnapshot(d, i, p); d.palettes[i].chroma = v; this.reseedAnchorOn(d, i, p, { chroma: { from: p.chroma, to: v } }); })),
+      // Reset, re-attach a moved-off-source palette (Q6, U2's C12): restores `anchor = sourceAnchor` and
       // restores hue/chroma/lift EXACTLY from the pre-detach snapshot (resetAnchor below, R8/R9 review
       // pass 2 - the tooltip used to say "re-derive", which was true before the Finding 3/F7 fix landed
       // and is stale now: resetAnchor restores a snapshot, it only re-derives as a last-resort fallback
       // when no snapshot exists at all). Visible ONLY when there is something to restore (`sourceAnchor`
-      // present) and the palette is actually detached (`anchor` absent) - an already-anchored palette
-      // has nothing to reset, and one with no `sourceAnchor` at all (never generator-written, e.g. a
-      // hand-built palette) has nothing to restore TO.
-      p.sourceAnchor && !p.anchor
+      // present) and the anchor has left it (absent in a pre-T-0045 saved doc, else re-seeded by an edit),
+      // a palette still at source has nothing to reset, and one with no `sourceAnchor` at all (never
+      // generator-written, e.g. a hand-built palette) has nothing to restore TO.
+      p.sourceAnchor && !this.sameHex(p.anchor, p.sourceAnchor)
         ? h(
             "div",
             { class: "field" },
@@ -1892,11 +1957,11 @@ export class ColorSectionImpl {
   //
   // DETACH (ticket #681, Q6, pre-land S2): this writes the SAME two fields the Hue and Chroma
   // sliders write, so under Q6 it is the same event: an edit to hue or chroma on an anchored copy
-  // detaches it. It previously committed `hue`/`chroma` alone, leaving `anchor` in place, so the
+  // moves it off source. It previously committed `hue`/`chroma` alone, leaving `anchor` in place, so the
   // palette kept rendering its stored source colour while claiming the seeded family, and Reset had
   // no snapshot to restore because `detachSnapshot` never ran. The three calls below are the
   // sliders' own three, in the sliders' own order: snapshot from the PRE-edit palette first, then
-  // the new values, then drop `anchor`.
+  // the new values, then re-seed `anchor` (T-0045; it used to be dropped).
   seedFromKey(i, role) {
     const p = this.doc.palettes[i];
     const kc = (p.keyColors || []).find((k) => k.role === role);
@@ -1906,7 +1971,7 @@ export class ColorSectionImpl {
       this.detachSnapshot(d, i, p);
       d.palettes[i].hue = s.hue;
       d.palettes[i].chroma = s.chroma;
-      if (d.palettes[i].anchor) delete d.palettes[i].anchor;
+      this.reseedAnchorOn(d, i, p, { hue: s.hue, chroma: { from: p.chroma, to: s.chroma } });
     });
   }
 
@@ -1918,11 +1983,11 @@ export class ColorSectionImpl {
   // ANCHOR's own hue, never whatever `hue` the palette held before the edit, 1,902 of 3,380 corpus
   // palettes measured with a DIFFERENT hue than before detach, worst case 90°) and never round-trips
   // a hand-tuned `lift` (e.g. the default kit's Warning at -36) at all, since re-deriving always reset
-  // it to 0. Fires ONLY on the anchored->detached transition (`p.anchor` present): an already-detached
-  // palette dragging Hue or Chroma again must not overwrite its FIRST snapshot with an in-between,
-  // already-detached value, one detach, one snapshot, until the next Reset clears it.
+  // it to 0. Fires ONLY while the anchor still equals `sourceAnchor` (T-0045: an edit re-seeds `anchor`, so
+  // a moved anchor already has its snapshot): dragging Hue or Chroma again must not overwrite the FIRST
+  // snapshot with an in-between value, one detach, one snapshot, until the next Reset clears it.
   detachSnapshot(d, i, p) {
-    if (!p || !p.anchor) return;
+    if (!p || !p.anchor || !this.sameHex(p.anchor, p.sourceAnchor)) return;
     d.palettes[i].preDetachHue = p.hue;
     d.palettes[i].preDetachChroma = p.chroma;
     d.palettes[i].preDetachLift = p.lift ?? 0;
@@ -1943,7 +2008,7 @@ export class ColorSectionImpl {
   // no-op guard here too, so a stray call (e.g. a stubbed-out UI event) can never silently misfire.
   resetAnchor(i) {
     const p = this.doc.palettes[i];
-    if (!p || !p.sourceAnchor || p.anchor) return;
+    if (!p || !p.sourceAnchor || this.sameHex(p.anchor, p.sourceAnchor)) return;
     const hasSnapshot = Number.isFinite(p.preDetachHue) || Number.isFinite(p.preDetachChroma) || Number.isFinite(p.preDetachLift);
     const fallback = !hasSnapshot ? seedFromKeyColor(hexToOklch(p.sourceAnchor), this.doc.hueSpace) : null;
     if (!hasSnapshot && !fallback) return;
@@ -2224,5 +2289,48 @@ export class ColorSectionImpl {
       view.story ? this.renderStoryInspector(view) : false,
     );
   }
+
+
+  // sameHex(a, b), true when both are "#RRGGBB" strings that match case-insensitively.
+  sameHex(a, b) {
+    return typeof a === "string" && typeof b === "string" && a.toUpperCase() === b.toUpperCase();
+  }
+
+  // reseedAnchor(p, edit) -> "#RRGGBB" | null, the anchor `p` carries, moved to an edited hue and/or
+  // chroma at its OWN CIE L* (T-0045). Pure: reads only `p.anchor` (callers pass the PRE-drag palette so
+  // every tick of one drag derives from the same start, never from the previous tick's clamped result).
+  //   edit.hue    the new palette hue, in the doc's hue space (OKLCH, or CAM16 for a legacy cam16 doc).
+  //   edit.chroma { from, to }: the Chroma slider's old and new value; the anchor's CAM16 chroma scales
+  //               by to/from (from 0: `to`% of the in-gamut maximum at that hue and tone).
+  // An unedited hue keeps the anchor's own hue. Chroma is capped at the sRGB gamut at the new hue, the
+  // same cap deriveKeyColor applies at a Prime chroma other than 100. null when `p` has no valid anchor.
+  reseedAnchor(p, edit = {}) {
+    if (typeof p?.anchor !== "string" || !/^#[0-9A-Fa-f]{6}$/.test(p.anchor)) return null;
+    const rgb = [1, 3, 5].map((k) => parseInt(p.anchor.slice(k, k + 2), 16));
+    const cam = cam16FromRgb(rgb);
+    const L = lstarFromRgb(rgb);
+    const ch = edit.chroma;
+    const scale = ch && Number.isFinite(ch.to) ? (ch.from > 0 ? ch.to / ch.from : null) : 1;
+    const chromaAt = (hh) => {
+      const cap = maxChromaInGamut(hh, L);
+      return Math.min(scale === null ? (cap * ch.to) / 100 : cam.chroma * scale, cap);
+    };
+    const oklch = this.doc.hueSpace !== "cam16";
+    const target = Number.isFinite(edit.hue) ? edit.hue : oklch ? rgbToOklchHue(rgb) : cam.hue;
+    const hue = oklch ? solveCam16Hue(target, 0, L, false, { chromaAt }) : target;
+    return "#" + hctToRgb(hue, chromaAt(hue), L).rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
+  }
+
+  // reseedAnchorOn(d, i, p, edit), write the re-seeded anchor onto d.palettes[i]. A palette with no
+  // anchor is left alone; a malformed `anchor` string is dropped, as the old detach dropped it.
+  reseedAnchorOn(d, i, p, edit) {
+    if (!p || !p.anchor) return;
+    const a = this.reseedAnchor(p, edit);
+    if (a) d.palettes[i].anchor = a;
+    else delete d.palettes[i].anchor;
+  }
 }
 export const ColorSection = ColorSectionImpl;
+// Imports for reseedAnchor (T-0045), kept below the class so the line numbers the docs cite stay put (ES imports hoist).
+import { cam16FromRgb, hctToRgb, lstarFromRgb, maxChromaInGamut } from "../../engine/hct.js";
+import { rgbToOklchHue } from "../../engine/okhsl.js";

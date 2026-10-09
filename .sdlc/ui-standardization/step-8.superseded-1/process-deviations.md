@@ -1,0 +1,2 @@
+# Process deviations (written by redck.py audit; the verifier and filer read this file)
+process deviation: red-checkpoint: missing: attempt f65eda542cca48bdb640e4b1ecd9759a, handoff sha256 d791fe54daf3, 3 of 3 (red) criteria without a pre-edit red control: `node test/repo/shell-text.mjs --strict && ! grep -qE '"step-[0-9]+"...`; `node -e 'const c=require("fs").readFileSync("src/ui/styles.css","ut...`; `test "$(grep -c '\["anatomy: ' test/repo/ui-polish.mjs)" -ge 5 && n...`

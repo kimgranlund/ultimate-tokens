@@ -96,9 +96,11 @@ Since T-0017 (ADR-032) the editor chrome sizes its controls from the Geometry la
 
 - **Host axes.** `_applyShellGeometry` (`src/ui/app.js`), called from `render()`, stamps `data-tier`,
   `data-scale`, `data-radius` and `data-size="md"` on the `<ultimate-tokens>` host from
-  `_effectiveShellGeometry`: the app pref `this.shellGeometry` (null follows the kit), else
-  `doc.geometry`, else `DEFAULT_GEOMETRY`. The pref is set in Settings (`_shellGeometryRows` in
-  `src/ui/overlays/settings.js`, Follow kit or Custom) and persisted with the other app prefs.
+  `_effectiveShellGeometry`, by the app pref `this.shellGeometry`'s three states (T-0044): `null` is
+  `SHELL_DEFAULT_GEOMETRY` (product, sm, round; the user's default cell); `"kit"` follows `doc.geometry`,
+  else `DEFAULT_GEOMETRY` (the gallery has no doc); an object `{ tier, scale, radius }` is a Custom cell.
+  The pref is set in Settings (`_shellGeometryRows` in `src/ui/overlays/settings.js`: Default, Follow kit
+  or Custom) and persisted with the other app prefs (only when not null).
 - **One head style.** The same call refreshes `this._geomRolesStyle`, a `<style id="ut-geometry-roles-<key>">`
   in `document.head`, where `<key>` is the host's `data-ut-geom` (the module counter `geomHostSeq`, kept as
   `this._geomKey` from the constructor, stamped at render). It holds `geomTokensSizesCSS(sc) +
@@ -109,15 +111,24 @@ Since T-0017 (ADR-032) the editor chrome sizes its controls from the Geometry la
 - **Aliases.** `src/ui/styles.css` declares one alias block on the `ultimate-tokens` selector, because the
   host carries the attributes: `--sh-control-height/-inset/-text/-icon`, `--sh-control-radius`
   (`--radius-control`), `--sh-radius-inset`, `--sh-part-height/-inset`, `--sh-chip-height/-inset/-text`, each falling back to the
-  product-md-md round cell, plus `--ctl-thumb` from `--sh-control-icon`. Buttons, inputs, segmented
+  product-sm-md round cell (the shell default), plus `--ctl-thumb` from `--sh-control-icon`. Buttons, inputs, segmented
   controls, chips, the switch and `icon()` read these aliases; a new shell control does too
   (`min-block-size`, `padding-block: 0`, `padding-inline`, `font-size`, `border-radius` from `--sh-*`).
   The chrome bands `--hh` and `--ch` are a `max()` of their `:root` literal and the control height plus
   a margin, so they grow with it; only `--fh` and `--r-sm/--r/--r-lg` stay literal.
-- **Tests.** The headless groups `(shg1)` to `(shg6)` cover the host attributes, a doc commit, the
-  Settings override, the head style, its host scoping and a second instance's own style. The static
-  gate `test/repo/control-text.mjs` fails a shell control rule whose font-size or padding does not read
-  a `var(` alias (or is zero); pixels are proven only by CI smoke.
+- **Text and anatomy roles.** New shell text uses a role, never a literal: `font: var(--ui-<role>-font)` with
+  the role's `-tracking`, `-case` and `-ink` (pane-title, element-title, kicker, label, control, badge,
+  helper, body, code; `UI_ROLES` in `src/ui/shell-roles.mjs`). A control reads the control role and the
+  `--sh-*` cell aliases; a badge or tag reads the badge role on the chip row; a weight-only rule reads
+  `--ui-weight-*`; a transition reads `--ui-motion-fast` or `-base` with `--ui-motion-ease`; a glyph is
+  `icon(name)` (the control box) or `icon(name, { size: "badge" })`. `test/repo/shell-text.mjs` fails a
+  literal, and its allow-list (specimens, the gallery, chart marks) prints a reason for each exemption.
+- **Tests.** The headless groups `(shg1)` to `(shg8)` cover the default cell, Follow kit with a doc
+  commit, the Custom override and Default again, the head style, its host scoping, a second instance's own
+  style, the role block and the stored app-prefs records. The static
+  gate `test/repo/shell-text.mjs` gates text on every shell rule (a literal font-size, weight, tracking,
+  case or line-height fails) and fails a shell control or container whose padding, gap or radius does
+  not read a `var(` alias (or is zero); pixels are proven only by CI smoke.
 
 ## Validate (draft → check → fix → re-check)
 

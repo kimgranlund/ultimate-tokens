@@ -154,32 +154,41 @@ flushRaf();
 ok(app.view === "editor", "openSet entered editor view");
 ok(app.doc && app.doc.palettes.length === DEFAULT_PALETTES, `doc has ${DEFAULT_PALETTES} palettes`);
 
-// ── (shg) the shell receives the geometry roles: host [data-tier/scale/size/radius] + one head <style> ──
+// ── (shg) the shell receives the geometry roles: host [data-tier/scale/size/radius] + one head <style>; the
+// shell's cell is the product-sm default (null), the kit's doc.geometry ("kit") or a Custom object ──
 {
   const hostGeom = () => [app.dataset.tier, app.dataset.scale, app.dataset.size, app.dataset.radius].join(",");
   const fkBtn = (fk) => { let f = null; const w = (n) => { if (f || !n) return; if (n.attrs && n.attrs["data-fk"] === fk) { f = n; return; } (n.children || []).forEach(w); }; w(app); return f; };
-  ok(app.shellGeometry === null && hostGeom() === "product,md,md,round", `(shg1) a fresh doc's host carries product, md, md, round (got ${hostGeom()})`);
-  app.commit((d) => { d.geometry = { ...d.geometry, tier: "content", scale: "lg", radius: "pill" }; }); flushRaf();
-  ok(hostGeom() === "content,lg,md,pill", `(shg2) a doc.geometry commit updates the host attributes (got ${hostGeom()})`);
-  app.undo(); flushRaf();
-  ok(hostGeom() === "product,md,md,round", `(shg2) undoing the commit restores them (got ${hostGeom()})`);
-  // Settings › Appearance › Shell geometry: Custom seeds from the kit, then a tier/scale/radius pick wins over the doc
+  const prefs = () => JSON.parse(localStorage.getItem("ultimate-tokens-app-prefs-v1") || "{}");
+  ok(app.shellGeometry === null && hostGeom() === "product,sm,md,round", `(shg1) a fresh app's shell is the default cell: shellGeometry null, host product, sm, md, round (got ${JSON.stringify(app.shellGeometry)}, ${hostGeom()})`);
+  // Settings › Appearance › Shell geometry: Default (null) · Follow kit ("kit") · Custom (an object)
   app.openSettings(); app.settingsSection = "appearance"; app.render(); flushRaf();
+  const kit = fkBtn("setshellgeom:kit");
+  ok(!!kit && !!fkBtn("setshellgeom:default") && !!fkBtn("setshellgeom:custom"), "(shg2) the Shell geometry row renders Default, Follow kit and Custom");
+  if (kit) kit.click();
+  flushRaf();
+  ok(app.shellGeometry === "kit" && hostGeom() === "product,md,md,round", `(shg2) Follow kit sets "kit" and the host follows the doc's product, md, round (got ${JSON.stringify(app.shellGeometry)}, ${hostGeom()})`);
+  ok(prefs().shellGeometry === "kit", `(shg3) Follow kit stores "kit" in the app-prefs record (got ${JSON.stringify(prefs().shellGeometry)})`);
+  app.commit((d) => { d.geometry = { ...d.geometry, tier: "content", scale: "lg", radius: "pill" }; }); flushRaf();
+  ok(hostGeom() === "content,lg,md,pill", `(shg2) under Follow kit a doc.geometry commit moves the host (got ${hostGeom()})`);
+  app.undo(); flushRaf();
+  ok(hostGeom() === "product,md,md,round", `(shg2) undoing the commit restores it (got ${hostGeom()})`);
+  // Custom seeds from the effective cell, then a tier/scale/radius pick wins over the doc
   const custom = fkBtn("setshellgeom:custom");
   ok(!!custom, "(shg3) the Shell geometry row renders a Custom option");
   if (custom) custom.click();
   flushRaf();
   for (const fk of ["setshelltier:micro", "setshellscale:sm", "setshellradius:sharp"]) { const b = fkBtn(fk); ok(!!b, `(shg3) the Custom row renders ${fk}`); if (b) b.click(); flushRaf(); }
   app.commit((d) => { d.geometry = { ...d.geometry, tier: "content", scale: "lg", radius: "pill" }; }); flushRaf();
-  ok(hostGeom() === "micro,sm,md,sharp", `(shg3) a Settings override wins over the doc (got ${hostGeom()})`);
-  const saved = JSON.parse(localStorage.getItem("ultimate-tokens-app-prefs-v1") || "{}");
-  ok(saved.shellGeometry && saved.shellGeometry.tier === "micro" && saved.shellGeometry.radius === "sharp", "(shg3) the override persists with the app prefs");
-  const follow = fkBtn("setshellgeom:kit");
-  if (follow) follow.click();
+  ok(hostGeom() === "micro,sm,md,sharp", `(shg3) a Custom cell wins over the doc (got ${hostGeom()})`);
+  const saved = prefs();
+  ok(saved.shellGeometry && saved.shellGeometry.tier === "micro" && saved.shellGeometry.radius === "sharp", "(shg3) the Custom cell persists with the app prefs");
+  const def = fkBtn("setshellgeom:default");
+  if (def) def.click();
   flushRaf();
-  ok(app.shellGeometry === null && hostGeom() === "content,lg,md,pill", `(shg3) Follow kit drops the override and the host follows the doc again (got ${hostGeom()})`);
+  ok(app.shellGeometry === null && hostGeom() === "product,sm,md,round" && !("shellGeometry" in prefs()), `(shg3) Default returns to null, the host to product, sm, md, round, and the record drops the key (got ${JSON.stringify(app.shellGeometry)}, ${hostGeom()})`);
   app.undo(); app.closeSettings(); app.settingsSection = "mapping"; flushRaf();
-  ok(hostGeom() === "product,md,md,round", `(shg3) state restored for the groups below (got ${hostGeom()})`);
+  ok(hostGeom() === "product,sm,md,round", `(shg3) state restored for the groups below (got ${hostGeom()})`);
   const st = app._geomRolesStyle;
   const key = app.dataset.utGeom;
   ok(!!key && !!st && st.id === `ut-geometry-roles-${key}` && st.parentNode === document.head, `(shg4) app._geomRolesStyle is <style id="ut-geometry-roles-<key>"> in document.head, keyed by the host's data-ut-geom (key ${key}, id ${st && st.id})`);
@@ -189,7 +198,7 @@ ok(app.doc && app.doc.palettes.length === DEFAULT_PALETTES, `doc has ${DEFAULT_P
   // (shg5) the injected roles are scoped to this host: no document-level selector survives the rewrite
   const blocks = css.split("\n").filter((l) => /\{\s*$/.test(l));
   ok(!/^:root \{/m.test(css) && !css.includes(":where(:root)") && !css.includes(":where(*, :host)"), "(shg5) the style text has no :root {, :where(:root) or :where(*, :host) block");
-  ok(blocks.length === 16 && blocks.every((l) => l.includes(`ultimate-tokens[data-ut-geom="${key}"]`)), `(shg5) all 16 block selectors name the host's data-ut-geom (got ${blocks.length}: ${blocks.filter((l) => !l.includes("data-ut-geom")).join(" | ")})`);
+  ok(blocks.length === 17 && blocks.every((l) => l.includes(`ultimate-tokens[data-ut-geom="${key}"]`)) && blocks[16] === `ultimate-tokens[data-ut-geom="${key}"] {`, `(shg5) all 17 block selectors name the host's data-ut-geom, the 17th is the shell role block naming the host (got ${blocks.length}: ${blocks.filter((l) => !l.includes("data-ut-geom")).join(" | ")})`);
   // (shg6) a second instance gets its own key and its own style element
   const app2 = new App();
   app2.classList = new ClassList(); app2.dataset = {}; app2.style = new CSSStyleDeclaration(); app2._children = [];
@@ -199,6 +208,34 @@ ok(app.doc && app.doc.palettes.length === DEFAULT_PALETTES, `doc has ${DEFAULT_P
   ok(!!app2.dataset.utGeom && app2.dataset.utGeom !== key && !!st2 && st2 !== st && st2.id === `ut-geometry-roles-${app2.dataset.utGeom}` && st2.parentNode === document.head, `(shg6) a second instance gets key ${app2.dataset.utGeom} (first ${key}) and its own style element (${st2 && st2.id})`);
   ok(st2 && st2.textContent.includes(`ultimate-tokens[data-ut-geom="${app2.dataset.utGeom}"]`) && !st2.textContent.includes(`data-ut-geom="${key}"`), "(shg6) the second style names only its own host");
   if (st2) st2.remove();
+  // (shg7) the shell role block carries the text steps of the shell's own cell and follows a Settings override
+  const roleBlock = () => {
+    const ls = ((app._geomRolesStyle && app._geomRolesStyle.textContent) || "").split("\n");
+    const at = ls.indexOf(`ultimate-tokens[data-ut-geom="${key}"] {`);
+    return at < 0 ? "" : ls.slice(at, ls.indexOf("}", at) + 1).join("\n");
+  };
+  const rb = roleBlock();
+  ok(rb.includes("--ui-text-step-0:") && rb.includes("--ui-text-step-2:"), `(shg7) the host role block holds --ui-text-step-0: and --ui-text-step-2: (got ${JSON.stringify(rb)})`);
+  app.shellGeometry = { tier: "content", scale: "lg", radius: "round" }; app.render(); flushRaf();
+  const n = app._geomScaleFor("base").cells["content-lg-md"].text;
+  ok(roleBlock().includes(`--ui-text-step-0: ${n}px;`), `(shg7) a content-lg override sets --ui-text-step-0: ${n}px; (got ${JSON.stringify(roleBlock())})`);
+  app.shellGeometry = null; app.render(); flushRaf();
+  // (shg8) app-prefs records load through _loadAppPrefs: no shellGeometry key (a pre-T-0044 record) leaves the
+  // default null, "kit" loads "kit", a bad object leaves null
+  const PREFS = "ultimate-tokens-app-prefs-v1";
+  const keep = localStorage.getItem(PREFS);
+  const loadRec = (extra) => {
+    app.shellGeometry = null;
+    localStorage.setItem(PREFS, JSON.stringify({ theme: app.theme, motion: app.motion, fontMode: app.fontMode, ...extra }));
+    app._loadAppPrefs();
+    return app.shellGeometry;
+  };
+  ok(loadRec({}) === null, "(shg8) a record with no shellGeometry key leaves null (the default cell)");
+  ok(loadRec({ shellGeometry: "kit" }) === "kit", "(shg8) a record with \"kit\" loads \"kit\"");
+  const badRec = loadRec({ shellGeometry: { tier: "huge", scale: "sm", radius: "round" } });
+  ok(badRec === null, `(shg8) a record with a bad object leaves null (got ${JSON.stringify(badRec)})`);
+  if (keep === null) localStorage.removeItem(PREFS); else localStorage.setItem(PREFS, keep);
+  app.shellGeometry = null; app.render(); flushRaf();
 }
 
 // ── (a) undo/redo + slider drag = ONE step ────────────────────────────────────────
@@ -2242,13 +2279,17 @@ ok(hasSvgIcon(findFk("pane-left")), "(ic) the pane toggle renders an inline-SVG 
 ok(hasSvgIcon(app.querySelector(".app-header")), "(ic) the app-header controls (Undo/Redo/Export/theme) carry registry icons");
 ok(hasSvgIcon(app.querySelector(".canvas-header")), "(ic) the canvas-header controls (Fit/zoom/+Palette) carry registry icons");
 
-// ── (ics) icon sizing: no size follows the shell's --sh-control-icon; an explicit size holds by attributes ──
+// ── (ics) icon sizing: no size follows the shell's --sh-control-icon, "badge" the --ui-badge-icon; a number holds by attributes ──
 {
   const { icon: iconICS } = await import("../../src/ui/icons.js");
   const plain = iconICS("x").innerHTML;
   ok(plain.includes("var(--sh-control-icon, 16px)"), `(ics1) icon("x")'s svg style follows var(--sh-control-icon, 16px) (got ${plain.slice(0, 160)})`);
   const sized = iconICS("x", { size: 13 }).innerHTML;
   ok(/<svg[^>]* width="13"/.test(sized) && !sized.includes("--sh-control-icon") && !/<svg[^>]* style=/.test(sized), `(ics2) icon("x", { size: 13 })'s svg has width="13" and no --sh-control-icon style (got ${sized.slice(0, 160)})`);
+  const badge = iconICS("x", { size: "badge" }).innerHTML;
+  ok(/<svg[^>]* style="[^"]*var\(--ui-badge-icon, 11px\)/.test(badge) && !badge.includes("--sh-control-icon"), `(ics3) icon("x", { size: "badge" })'s svg style follows var(--ui-badge-icon, 11px) (got ${badge.slice(0, 160)})`);
+  const caret = iconICS("caret-down", { cls: "caret" });
+  ok(String(caret.tagName).toLowerCase() === "span" && caret.className === "ic caret" && /<svg[^>]*>\s*<path d="M213\.66,101\.66/.test(caret.innerHTML), `(ics4) icon("caret-down", { cls: "caret" }) is a span.ic.caret holding the caret-down svg path (got ${caret.className}: ${String(caret.innerHTML).slice(0, 120)})`);
 }
 
 // ── (mig) storage-key migration: BOTH pre-rename generations forward-migrate into the new namespace ──
@@ -4127,9 +4168,65 @@ flushRaf();
     ok(Array.from(rowSteps).every((el) => el.getAttribute("tabindex") === "0"), "(rx10g) every step swatch is keyboard-focusable (tabindex=0), so the tooltip is not hover-only");
     ok(Array.from(rowSteps).every((el) => / step \d+: /.test(el.getAttribute("aria-label") || "") && !(el.getAttribute("aria-label") || "").includes("undefined")), "(rx10h) every swatch has a spoken aria-label naming its step");
     const css10 = readFileSyncRX(resolveRX(dirnameRX(fileURLToPathRX(import.meta.url)), "../../src/ui/styles.css"), "utf8");
-    ok(/\.radix-step::after\s*\{[^}]*content:\s*attr\(data-tip\)/.test(css10), "(rx10i) .radix-step::after draws the tooltip from data-tip");
-    ok(/\.radix-step:hover::after[^{]*\{[^}]*display:\s*block/.test(css10) && /\.radix-step:focus-visible::after[^{]*\{[^}]*display:\s*block/.test(css10), "(rx10j) the tooltip shows on :hover and on :focus-visible");
+    ok(!/\.radix-step::after/.test(css10), "(rx10i) the tooltip is no longer a ::after inside the zoomed scene (it clipped and scaled there)");
+    ok(/\.radix-tip\s*\{[^}]*position:\s*fixed/.test(css10) && /\.radix-tip\.open\s*\{[^}]*display:\s*block/.test(css10), "(rx10j) .radix-tip is a fixed box shown by .open");
     ok(!/\.radix-ladder\s*\{[^}]*overflow:\s*hidden/.test(css10), "(rx10k) the ladder does not clip (overflow:hidden would hide the tooltip)");
+    const tipRule = (css10.match(/\.radix-tip\s*\{[^}]*\}/) || [""])[0];
+    ok(/font-style:\s*normal/.test(tipRule) && /font-size:\s*var\(--sh-chip-text\)/.test(tipRule) && /padding:\s*var\(--sh-part-inset\)\s+var\(--sh-control-inset\)/.test(tipRule), "(rx10l) the tooltip text is upright and sized from the chip text and cell inset roles");
+
+    // test 11 (T-0043): ONE shared tooltip outside the scene, shown on hover and focus, hidden on blur, Esc, pan and zoom, and
+    // placed by the pure helper (the shim computes no layout: rects are set by hand).
+    const tipOf = () => app.querySelector(".radix-tip");
+    const sceneRX = app.querySelector(".radix-scene");
+    const steps11 = Array.from(inLight(".radix-step"));
+    const rectFor = (left, top) => ({ left, top, right: left + 26, bottom: top + 40, width: 26, height: 40 });
+    const docEl = document.documentElement;
+    docEl.clientWidth = 1440; docEl.clientHeight = 900;
+    const tip0 = app._radixTipEl();
+    tip0._rect = { left: 0, top: 0, right: 220, bottom: 51, width: 220, height: 51 };
+    let shownN = 0, hiddenN = 0;
+    tip0.showPopover = () => { shownN++; }; tip0.hidePopover = () => { hiddenN++; }; tip0.matches = () => shownN > hiddenN;
+    ok(steps11.every((el) => !el.getAttribute("aria-describedby")), "(rx11a) no swatch is described before any hover");
+    steps11[4]._rect = rectFor(300, 200);
+    sceneRX.dispatch("mouseover", { target: steps11[4] });
+    ok(!!tipOf() && tipOf() === tip0 && tipOf().classList.contains("open") && shownN === 1, "(rx11b) hover shows the one shared tooltip as a popover");
+    ok(tipOf().textContent === steps11[4].getAttribute("data-tip"), "(rx11c) it carries the hovered swatch's data-tip text");
+    ok(tipOf().getAttribute("role") === "tooltip" && tipOf().getAttribute("popover") === "manual" && tipOf().getAttribute("id") === "radix-tip", "(rx11d) it is a manual popover with role=tooltip");
+    ok(steps11[4].getAttribute("aria-describedby") === "radix-tip", "(rx11e) the hovered swatch is described by it");
+    let ancestor11 = tipOf().parentNode, inScene = false;
+    for (; ancestor11; ancestor11 = ancestor11.parentNode) if (ancestor11.classList && (ancestor11.classList.contains("canvas-scene") || ancestor11.classList.contains("canvas-area"))) inScene = true;
+    ok(!inScene && tipOf().parentNode === app, "(rx11f) the tooltip lives on the app root, outside the clipped, zoomed canvas scene");
+    ok(tipOf().style.top === "246px" && tipOf().style.left === "300px" && tipOf().getAttribute("data-placement") === "below", `(rx11g) mid-window: below the swatch (top ${tipOf().style.top}, left ${tipOf().style.left})`);
+    steps11[11]._rect = rectFor(300, 870);
+    sceneRX.dispatch("mouseover", { target: steps11[11] });
+    ok(tipOf().getAttribute("data-placement") === "above" && tipOf().style.top === "813px", `(rx11h) a swatch at the bottom edge flips the tooltip above (top ${tipOf().style.top})`);
+    ok(!steps11[4].getAttribute("aria-describedby") && steps11[11].getAttribute("aria-describedby") === "radix-tip", "(rx11i) the description moves to the new swatch");
+    steps11[11]._rect = rectFor(1400, 200);
+    sceneRX.dispatch("mouseover", { target: steps11[11] });
+    ok(tipOf().style.left === "1212px" && tipOf().getAttribute("data-placement") === "below", `(rx11j) a swatch at the right edge shifts the tooltip left (left ${tipOf().style.left})`);
+    sceneRX.dispatch("mouseout", { target: steps11[11], relatedTarget: steps11[10] });
+    ok(tipOf().classList.contains("open"), "(rx11k) moving onto a neighbouring swatch keeps the tooltip up");
+    sceneRX.dispatch("mouseout", { target: steps11[11], relatedTarget: null });
+    ok(!tipOf().classList.contains("open") && hiddenN === shownN && !steps11[11].getAttribute("aria-describedby"), "(rx11l) leaving the swatches hides it and drops the description");
+    sceneRX.dispatch("focusin", { target: steps11[2] });
+    ok(tipOf().classList.contains("open") && tipOf().textContent === steps11[2].getAttribute("data-tip"), "(rx11m) keyboard focus shows it");
+    sceneRX.dispatch("focusout", { target: steps11[2], relatedTarget: null });
+    ok(!tipOf().classList.contains("open"), "(rx11n) blur hides it");
+    sceneRX.dispatch("focusin", { target: steps11[2] });
+    document.dispatch("keydown", { key: "Escape", target: steps11[2], preventDefault() {} });
+    ok(!tipOf().classList.contains("open") && app.canvasView === "radix", "(rx11o) Esc hides it");
+    sceneRX.dispatch("focusin", { target: steps11[2] });
+    app.viewport.panX += 30; app.applyTransform();
+    ok(!tipOf().classList.contains("open"), "(rx11p) a pan hides it");
+    sceneRX.dispatch("focusin", { target: steps11[2] });
+    app.zoomBy(1);
+    ok(!tipOf().classList.contains("open"), "(rx11q) a zoom hides it");
+    app.fit(); app.applyTransform();
+    sceneRX.dispatch("focusin", { target: steps11[2] });
+    app.render(); flushRaf();
+    ok(!app._radixTipOpen() && tipOf() === tip0, "(rx11r) a re-render hides it and the same single element is reattached to the new tree");
+    ok(app.querySelectorAll(".radix-tip").length === 1, "(rx11s) there is exactly one tooltip element, however many swatches there are");
+    delete docEl.clientWidth; delete docEl.clientHeight;
   }
 
   app.canvasView = rxView0; app.render(); flushRaf();
@@ -4307,7 +4404,8 @@ flushRaf();
   hueInput.value = String(newHue);
   hueInput.dispatch("input", {});
   app.commitDrag();
-  ok(app.doc.palettes[idx].anchor === undefined, "(rst1) a Hue edit drops `anchor`");
+  // T-0045: the edit re-seeds `anchor` at the new hue instead of deleting it (see (reh) below); "detach" now means "anchor moved off source".
+  ok(typeof app.doc.palettes[idx].anchor === "string" && app.doc.palettes[idx].anchor !== anchorBefore, "(rst1) a Hue edit moves `anchor` off its source (re-seeded, not deleted)");
   ok(app.doc.palettes[idx].sourceAnchor === sourceAnchorBefore, "(rst1b) `sourceAnchor` survives the edit untouched");
   ok(app.doc.palettes[idx].hue === newHue, `(rst1c) the Hue slider still writes palettes[i].hue (got ${app.doc.palettes[idx].hue}, want ${newHue})`);
   ok(app.doc.palettes[idx].preDetachHue === hueBefore && app.doc.palettes[idx].preDetachChroma === chromaBefore && app.doc.palettes[idx].preDetachLift === liftBefore,
@@ -4425,7 +4523,7 @@ flushRaf();
   const sfkAfter = app.doc.palettes[sfkIdx];
   ok(sfkAfter.hue !== sfkHue || sfkAfter.chroma !== sfkChroma,
     `(sfk1a) test setup: the seed actually moved hue or chroma (got ${sfkAfter.hue}/${sfkAfter.chroma}, was ${sfkHue}/${sfkChroma})`);
-  ok(sfkAfter.anchor === undefined, "(sfk1) seedFromKey drops `anchor`, the same detach the Hue and Chroma sliders perform");
+  ok(typeof sfkAfter.anchor === "string" && sfkAfter.anchor !== sfkAnchor, "(sfk1) seedFromKey moves `anchor` off its source (re-seeded, T-0045), the same as the Hue and Chroma sliders");
   ok(sfkAfter.sourceAnchor === sfkSource, "(sfk2) `sourceAnchor` survives the seed untouched");
   ok(sfkAfter.preDetachHue === sfkHue && sfkAfter.preDetachChroma === sfkChroma && sfkAfter.preDetachLift === sfkLift,
     `(sfk3) seedFromKey stamps the exact pre-detach snapshot detachSnapshot writes (got hue=${sfkAfter.preDetachHue}/chroma=${sfkAfter.preDetachChroma}/lift=${sfkAfter.preDetachLift}, want ${sfkHue}/${sfkChroma}/${sfkLift})`);
@@ -4448,6 +4546,97 @@ flushRaf();
     "(sfk5) all 19 ramp hexes are byte-identical to the pre-seed capture after Reset");
   ok(JSON.stringify(sfkViewAfter.prime) === sfkPrimeBefore,
     "(sfk6) all 7 prime rungs are byte-identical to the pre-seed capture after Reset");
+}
+
+// ── (reh) Hue/Chroma edits RE-SEED the anchor, they do not delete it (T-0045) ───────────────────
+// The defect. A Hue or Chroma slider drag ran `delete palettes[i].anchor`, which drops the ramp onto
+// the unanchored `toneAt` curve (stop 500 near L* 73, 64 with skew -20) instead of the anchored pivot
+// (stop 500 at the anchor's own L*, ~42 to 51). Every hue-edited palette looked washed out against its
+// anchored siblings. The fix keeps the anchor and moves it to the new hue at the SAME tone.
+// These drive the REAL sliders on an anchored preset palette. Every predicate below FAILED on the
+// pre-fix code (anchor undefined, stop 500 L* far above the anchor's), the (reh-ctl) control proves
+// the L* predicate separates the two curves by deleting the anchor the way the old code did.
+{
+  const { projectView: pvREH, defaultDocument: defaultDocumentREH } = await import("../../src/ui/model.mjs");
+  const { lstarFromRgb: lstarREH } = await import("../../src/engine/hct.js");
+  const lstarHex = (hex) => typeof hex !== "string" ? NaN : lstarREH([1, 3, 5].map((k) => parseInt(hex.slice(k, k + 2), 16)));
+  const stop500 = (doc, i) => pvREH(doc).palettes[i].fullRamp.find((s) => s.stop === 500).hex;
+  const rehSpread = (doc, i) => { const r = pvREH(doc).palettes[i].fullRamp; const L = (n) => lstarHex(r.find((s) => s.stop === n).hex); return [L(200), L(500), L(800)]; };
+
+  app.openConfigAsSet(TP[1], null, { mintData: false });
+  app.setSection("color");
+  const idx = 1;
+  app.selectPalette(idx); app.render(); flushRaf();
+  const p0 = app.doc.palettes[idx];
+  ok(!!p0.anchor && !!p0.sourceAnchor, "(reh0) setup: the preset primary is anchored with a sourceAnchor");
+  const anchor0 = p0.anchor, hue0 = p0.hue, chroma0 = p0.chroma, lift0 = p0.lift ?? 0;
+  const L500before = lstarHex(stop500(app.doc, idx));
+  const anchorL = lstarHex(anchor0);
+  const spreadBefore = rehSpread(app.doc, idx);
+
+  // negative control: delete the anchor the way the old slider did and confirm the L* predicate
+  // (|stop-500 L* - anchor L*| < 3) really fails on that curve, so the assertions below can bite.
+  {
+    const probe = JSON.parse(JSON.stringify(app.doc));
+    delete probe.palettes[idx].anchor;
+    probe.palettes[idx].hue = (hue0 + 120) % 360;
+    const Lold = lstarHex(stop500(probe, idx));
+    ok(Math.abs(Lold - anchorL) > 3, `(reh-ctl) control: the old behavior (anchor deleted) puts stop 500 at L* ${Lold.toFixed(1)}, away from the anchor's ${anchorL.toFixed(1)}`);
+  }
+
+  // Hue drag through the real slider, a big slide (+120 degrees), then settle.
+  const hueInput = findFk("slider:Hue");
+  const newHue = (hue0 + 120) % 360;
+  hueInput.value = String(newHue);
+  hueInput.dispatch("input", {});
+  app.commitDrag();
+  const pH = app.doc.palettes[idx];
+  ok(typeof pH.anchor === "string" && /^#[0-9A-F]{6}$/.test(pH.anchor), `(reh1) a Hue drag keeps a valid anchor (got ${pH.anchor})`);
+  ok(pH.anchor !== anchor0, `(reh1b) the anchor moved with the hue (got ${pH.anchor}, was ${anchor0})`);
+  ok(pH.sourceAnchor === p0.sourceAnchor, "(reh1c) sourceAnchor survives untouched");
+  ok(Math.abs(lstarHex(pH.anchor) - anchorL) < 3, `(reh2) the re-seeded anchor keeps the old anchor's tone (L* ${lstarHex(pH.anchor).toFixed(1)} vs ${anchorL.toFixed(1)})`);
+  const L500after = lstarHex(stop500(app.doc, idx));
+  ok(Math.abs(L500after - L500before) < 4, `(reh3) stop 500 stays at the anchored pivot after a hue slide (L* ${L500after.toFixed(1)} vs ${L500before.toFixed(1)})`);
+  const spreadAfter = rehSpread(app.doc, idx);
+  ok(spreadAfter.every((v, k) => Math.abs(v - spreadBefore[k]) < 8), `(reh3b) stops 200/500/800 keep the same lightness spread (${spreadAfter.map((v) => v.toFixed(0))} vs ${spreadBefore.map((v) => v.toFixed(0))})`);
+  ok(pH.preDetachHue === hue0 && pH.preDetachChroma === chroma0 && pH.preDetachLift === lift0, "(reh4) the first drag stamps the pre-edit hue/chroma/lift snapshot");
+
+  // Chroma drag: anchor stays, tone stays, the first snapshot is NOT overwritten by the second edit.
+  app.render(); flushRaf();
+  const chromaInput = findFk("slider:Chroma");
+  chromaInput.value = String(Math.max(0, chroma0 - 30));
+  chromaInput.dispatch("input", {});
+  app.commitDrag();
+  const pC = app.doc.palettes[idx];
+  ok(typeof pC.anchor === "string" && Math.abs(lstarHex(pC.anchor) - anchorL) < 3, `(reh5) a Chroma drag keeps the anchor at its tone (got ${pC.anchor})`);
+  ok(pC.preDetachHue === hue0 && pC.preDetachChroma === chroma0, `(reh5b) a second edit does not overwrite the FIRST snapshot (got hue=${pC.preDetachHue}/chroma=${pC.preDetachChroma}, want ${hue0}/${chroma0})`);
+
+  // Reset restores the anchor, the snapshot and the original ramp.
+  app.render(); flushRaf();
+  const rehText = (e) => (e._text || "") + (e.children || []).map(rehText).join("");
+  const rehBtn = walk(app.querySelector(".right-pane") || app, (e) => e.tagName === "BUTTON" && /Reset to source color/.test(rehText(e)))[0];
+  ok(!!rehBtn, "(reh6) the Reset button renders for a re-seeded palette (anchor present but no longer the source)");
+  if (rehBtn) rehBtn.click();
+  flushRaf();
+  const pR = app.doc.palettes[idx];
+  ok(pR.anchor === anchor0 && pR.hue === hue0 && pR.chroma === chroma0, `(reh7) Reset restores anchor, hue and chroma (got ${pR.anchor}/${pR.hue}/${pR.chroma})`);
+  ok(pR.preDetachHue === undefined, "(reh7b) the snapshot is cleared once restored");
+  app.render(); flushRaf();
+  ok(!walk(app.querySelector(".right-pane") || app, (e) => e.tagName === "BUTTON" && /Reset to source color/.test(rehText(e)))[0], "(reh7c) the Reset button hides again once the anchor is back at source");
+
+  // The default kit's Primary, slid to green: pure helper, the ticket's repro numbers.
+  const dk = defaultDocumentREH();
+  const prim = dk.palettes.findIndex((q) => q.name === "Primary");
+  const primAnchorL = lstarHex(dk.palettes[prim].anchor);
+  const seeded = typeof app.reseedAnchor === "function" ? app.reseedAnchor(dk.palettes[prim], { hue: 150 }) : null;
+  ok(typeof seeded === "string" && Math.abs(lstarHex(seeded) - primAnchorL) < 3, `(reh8) reseedAnchor moves default Primary to hue 150 at its own tone (L* ${seeded && lstarHex(seeded).toFixed(1)} vs ${primAnchorL.toFixed(1)})`);
+  const dk2 = JSON.parse(JSON.stringify(dk));
+  dk2.palettes[prim].hue = 150; dk2.palettes[prim].anchor = seeded;
+  const L500dk = lstarHex(stop500(dk2, prim));
+  ok(L500dk < 55, `(reh8b) default Primary at hue 150 renders stop 500 at L* ${L500dk.toFixed(1)}, the anchored pivot, not the unanchored ~64`);
+  // no-edit identity: a palette with no anchor yields null, and seeding at its own hue is a near no-op.
+  ok(typeof app.reseedAnchor === "function" && app.reseedAnchor({ hue: 10, chroma: 50 }, { hue: 20 }) === null, "(reh9) a palette with no anchor re-seeds to null (nothing to move)");
+  app.commit((d) => { d.palettes[idx].lift = d.palettes[idx].lift; }); // leave the doc settled for the next group
 }
 
 // (rst-corpus) extend C12's coverage from one sample palette to the FULL anchored corpus across ALL
