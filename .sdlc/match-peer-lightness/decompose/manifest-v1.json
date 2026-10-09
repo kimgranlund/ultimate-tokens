@@ -43,18 +43,25 @@
       "accept": "node test/engine/peer-lightness.mjs exits 0 (unanchored-variant leg) and node test/engine/tonal.mjs exits 0"
     },
     {
-      "id": "n1e",
-      "label": "layers.mjs: controls.inputs lists matchPeerLightness (ramp stays @1)",
+      "id": "n1g",
+      "label": "src/engine/layers/ramp@1.mjs: verbatim frozen copy of today's tonal.js exporting paletteStops (imports hct.js/okhsl.js), SHA-256 in FROZEN.json",
       "leaf": true,
       "justify": null,
-      "accept": "node test/engine/layers.mjs exits 0 and node test/engine/layer-pins.mjs exits 0 and src/engine/layer-pins.mjs LATEST.ramp is still 1"
+      "accept": "node test/engine/layers.mjs exits 0 (c4.4-frozen) and `git diff --no-index <merge-base>:src/engine/tonal.js src/engine/layers/ramp@1.mjs` differs only in the header comment and import paths"
+    },
+    {
+      "id": "n1e",
+      "label": "layers.mjs + layer-pins.mjs: REGISTRY lists ramp@1 (frozen) and ramp@2 (live paletteStops); LATEST.ramp = 2; controls.inputs adds matchPeerLightness",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/engine/layers.mjs exits 0 and node test/engine/layer-pins.mjs exits 0 and src/engine/layer-pins.mjs reads `ramp: 2`"
     },
     {
       "id": "n1f",
-      "label": "tonal.js: extreme-chroma pin in match mode: per-stop chroma blends (anchorChromaBasis smoothstep, w=1 at 050/950 for any lift) from the path's own value at 500 to chromaFloor/100 x maxChromaInGamut(hue, sharedToneAt(stop)) at the ends; OKHSL paths solve s for that chroma at the held L* (solveSForChroma)",
+      "label": "tonal.js (ramp@2): end-band rule in every tone mode, anchored or not: stops 050..100 and 900..950 at sharedToneAt(stop) with chroma = chromaFloor/100 x maxc(hue, L*); interior affinely remapped per side so 100/900 land on the shared values (anchorLerp with band-edge knots); OKHSL paths solve l and s (solveLForTone, solveSForChroma)",
       "leaf": true,
       "justify": null,
-      "accept": "node test/engine/peer-lightness.mjs exits 0 (extremes leg: gamut fraction within tolerance at 075/100/900/925/950) and node test/engine/tonal.mjs exits 0"
+      "accept": "node test/engine/peer-lightness.mjs exits 0 (extremes leg over the default kit and presets at ramp@2) and node test/engine/anchor.mjs exits 0 (C3 stop 500 verbatim, C5 monotone/gap/distinct)"
     },
     {
       "id": "n2",
@@ -131,6 +138,13 @@
       "accept": "node test/ui/headless-boot.mjs exits 0 and npm run smoke exits 0"
     },
     {
+      "id": "n4e",
+      "label": "re-baselined fixtures and declared movements: tonal-legacy.json, mode-isolation.json, shadcn-baseline.css, radix-baseline.json, Gate A basis (chroma-envelope-gate), even-dips, curated-contrast counts, adia derived exports; report-preset-fidelity declaration lines",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/run.mjs exits 0 after `npm run gen:*` and the regenerated fixtures are committed; the six `identity <mode>` lines of report-preset-fidelity match the plan's declared ramp@2 movement; report-compute-neutral --only default-kit with the kit re-pinned to ramp@1 ends with '0 differing cells'"
+    },
+    {
       "id": "n4d",
       "label": "neutrality and sweep runs (ramp-identity --authored, report-compute-neutral, gate:sweeps, build)",
       "leaf": true,
@@ -156,6 +170,13 @@
       "leaf": true,
       "justify": null,
       "accept": "grep -q 'matchPeerLightness' docs/references/knowledge-02-tonal-scale.md .claude/skills/color-math/SKILL.md docs/references/changelog.md (each) and node test/run.mjs exits 0"
+    },
+    {
+      "id": "n5c",
+      "label": "before/after board of the default kit and presets at ramp@1 vs ramp@2 (docs/reports/<date>-ramp2-extremes.md with smoke screenshots), shown to the user before landing",
+      "leaf": true,
+      "justify": null,
+      "accept": "the report file exists with the default-kit 25-stop table at both versions and the per-stop L* and tint readings, and the conductor records the user's acknowledgement in the plan"
     }
   ],
   "actions": [
@@ -246,6 +267,22 @@
     {
       "id": "a22",
       "label": "decide extremes cannot be matched in the default mode without moving stored documents (record it)"
+    },
+    {
+      "id": "a23",
+      "label": "ship the extremes rule as ramp@2: a stored document keeps ramp@1 and renders byte-identically; a new document or preset pins ramp@2"
+    },
+    {
+      "id": "a24",
+      "label": "keep ramp@1 runnable and unedited (frozen copy, hash-gated)"
+    },
+    {
+      "id": "a25",
+      "label": "re-baseline every fixture and sweep that binds the default render, declaring the ramp@2 movement"
+    },
+    {
+      "id": "a26",
+      "label": "show the user the visible change to the default kit and presets before landing"
     }
   ],
   "hosts": [
@@ -356,6 +393,30 @@
     {
       "action": "a6",
       "node": "n1f"
+    },
+    {
+      "action": "a23",
+      "node": "n1f"
+    },
+    {
+      "action": "a23",
+      "node": "n1e"
+    },
+    {
+      "action": "a24",
+      "node": "n1g"
+    },
+    {
+      "action": "a25",
+      "node": "n4e"
+    },
+    {
+      "action": "a26",
+      "node": "n5c"
+    },
+    {
+      "action": "a22",
+      "node": "n5a"
     }
   ],
   "edges": [
@@ -428,6 +489,26 @@
       "from": "n2b",
       "to": "n3c",
       "why": "the slider gate reads doc.matchPeerLightness"
+    },
+    {
+      "from": "n1g",
+      "to": "n1f",
+      "why": "freeze ramp@1 before tonal.js changes, so the copy is today's bytes"
+    },
+    {
+      "from": "n1g",
+      "to": "n1e",
+      "why": "the registry imports the frozen file"
+    },
+    {
+      "from": "n1f",
+      "to": "n4e",
+      "why": "fixtures re-baseline over the finished ramp@2"
+    },
+    {
+      "from": "n4e",
+      "to": "n5c",
+      "why": "the board reads the re-baselined render"
     }
   ]
 }
