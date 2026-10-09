@@ -62,10 +62,6 @@ const ALLOW = [
 const CHROME = [".ex-collapse-toggle", ".ex-artifact-title"];
 
 const PENDING = {
-  "step-4": [
-    ".pane-label", ".pane-head", ".an-", ".mode-editor", ".compare-col", ".ramp-", ".radix-badge", ".radix-tip",
-    ".sub-head", ".mini-check", ".canvas-footer", ".app-footer", ".scrim-", ".key-cell", ".toast",
-  ],
   "step-5": [
     ".map-table", ".map-sem", ".map-reset", ".map-drift", ".tok-", ".insp-", ".field", ".key-slot", ".color-story",
     ".color-role", ".story-", ".ex-collapse-toggle", ".ex-artifact-title",

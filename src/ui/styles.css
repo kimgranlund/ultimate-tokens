@@ -67,7 +67,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-ultimate-tokens { display: block; height: 100vh; }
+ultimate-tokens { display: block; height: 100vh; font: var(--ui-body-font); color: var(--ui-body-ink); }
 /* Shell geometry aliases: the host carries [data-tier/scale/radius/size] (app.js _applyShellGeometry),
    so the resolved --control-* / --chip-* / --radius-* roles land here. Fallbacks are the product-md-md
    round cell. The header and canvas-header bands (--hh/--ch) grow with the control height and keep
@@ -466,16 +466,16 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 /* the pane header matches the canvas-header: same height (--ch) + padding + bottom seam,
    so the three column headers line up as one band. */
 .pane-label {
-  font-size: 10.5px; font-weight: 700; letter-spacing: .07em;
-  text-transform: uppercase; color: var(--ink-faint);
+  font: var(--ui-pane-title-font); letter-spacing: var(--ui-pane-title-tracking); text-transform: var(--ui-pane-title-case);
+  color: var(--ui-pane-title-ink);
   height: var(--ch); flex: none; padding: 0 12px; gap: 8px;
   display: flex; align-items: center;
   border-bottom: 1px solid var(--line);
 }
 .an-body { flex: 1; min-height: 0; overflow-y: auto; padding: 8px; }
 .pane-label .an-sel {
-  text-transform: none; letter-spacing: 0; font-weight: 600;
-  color: var(--accent); font-size: 11px;
+  font: var(--ui-label-font); letter-spacing: var(--ui-label-tracking); text-transform: var(--ui-label-case);
+  color: var(--accent);
 }
 /* the left toggle (when the pane is open) sits at the label's inner / canvas-side edge */
 .pane-label .pane-toggle { margin-left: auto; align-self: center; }
@@ -487,10 +487,10 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
   margin-bottom: 8px;
 }
 .an-label {
-  font-size: 10.5px; font-weight: 600; color: var(--ink-dim);
+  font: var(--ui-label-font); letter-spacing: var(--ui-label-tracking); text-transform: var(--ui-label-case); color: var(--ui-label-ink);
   margin-bottom: 4px;
 }
-.an-empty { color: var(--ink-faint); padding: 14px 0; text-align: center; font-size: 11px; }
+.an-empty { font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); padding: 14px 0; text-align: center; }
 
 /* native DOM charts (renderChart, src/ui/charts/render.mjs): marks are absolutely placed elements in
    percent of an aspect-ratio box. A mark paints with --series; a ribbon is masked by --dash when its
@@ -527,7 +527,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 }
 
 /* graph legend (keys the overlaid series) */
-.an-legend { display: flex; flex-wrap: wrap; gap: 3px 10px; margin-top: 5px; font-size: 9.5px; color: var(--ink-dim); }
+.an-legend { display: flex; flex-wrap: wrap; gap: 3px 10px; margin-top: 5px; font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); }
 .an-leg { display: inline-flex; align-items: center; gap: 4px; }
 .an-leg-mark { width: 12px; height: 3px; border-radius: 999px; flex: none; }
 .an-leg-mark.solid { background: var(--accent); }
@@ -540,7 +540,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 
 /* analysis contrast bars */
 .an-contrast { display: flex; flex-direction: column; gap: 6px; padding: 2px 0; }
-.an-bar { display: flex; align-items: center; gap: 6px; font-size: 10.5px; }
+.an-bar { display: flex; align-items: center; gap: 6px; font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); }
 .an-bar .an-bk { width: 46px; color: var(--ink-dim); flex: none; }
 .an-bar .an-track {
   flex: 1; height: 7px; border-radius: 999px; background: var(--line);
@@ -617,10 +617,10 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 .mode-control .mode-add { flex: none; }
 /* the inspector mode editor: rename + delete the active breakpoint */
 .mode-editor { margin: 8px 0 2px; }
-.mode-editor-label { display: block; font-size: 11px; color: var(--ink-dim); margin-bottom: 4px; }
+.mode-editor-label { display: block; font: var(--ui-label-font); letter-spacing: var(--ui-label-tracking); text-transform: var(--ui-label-case); color: var(--ui-label-ink); margin-bottom: 4px; }
 .mode-editor-row { display: flex; gap: 6px; align-items: center; }
 .mode-editor-row input { flex: 1; min-width: 0; }
-.mode-editor-unit { flex: none; font-size: 11px; color: var(--ink-faint); }
+.mode-editor-unit { flex: none; font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); }
 .mode-presets { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 .mode-presets .mode-preset { font-variant-numeric: tabular-nums; }
 .zoom-readout { color: var(--ink-dim); min-width: 42px; text-align: center; font-variant-numeric: tabular-nums; }
@@ -653,8 +653,8 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 .canvas-scene.compare { display: flex; gap: 32px; align-items: flex-start; }
 .compare-col { position: relative; padding: 12px 14px 16px; border-radius: var(--r-lg);
   background: var(--canvas-bg, var(--bg)); box-shadow: 0 0 0 1px var(--line); }
-.compare-col-label { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
-  color: var(--ink-faint); margin: 0 0 8px 4px; }
+.compare-col-label { font: var(--ui-kicker-font); letter-spacing: var(--ui-kicker-tracking); text-transform: var(--ui-kicker-case);
+  color: var(--ui-kicker-ink); margin: 0 0 8px 4px; }
 /* canvas = the ramps as the 2D space; each row IS the palette navigator */
 .ramp-stack { display: flex; flex-direction: column; gap: 20px; padding: 4px; }
 /* .ramp-group, one canvas-group section (Material/Brand/System/Data, ticket #556); its own
@@ -662,10 +662,10 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 .ramp-group { display: flex; flex-direction: column; gap: 12px; }
 .ramp-group-header {
   display: flex; align-items: baseline; justify-content: space-between;
-  padding: 0 4px; font-size: 11px; font-weight: 700; letter-spacing: .07em;
-  text-transform: uppercase; color: var(--ink-faint);
+  padding: 0 4px; font: var(--ui-kicker-font); letter-spacing: var(--ui-kicker-tracking); text-transform: var(--ui-kicker-case);
+  color: var(--ui-kicker-ink);
 }
-.ramp-group-count { font-weight: 400; text-transform: none; letter-spacing: normal; color: var(--ink-dim); }
+.ramp-group-count { font-weight: var(--ui-weight-regular); text-transform: none; letter-spacing: normal; color: var(--ink-dim); }
 .ramp-row {
   display: flex; flex-direction: column; gap: 6px;
   padding: 8px; border-radius: var(--r);
@@ -764,18 +764,18 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
    hovered or focused swatch's data-tip (set from RADIX_STEP_GUIDE). ONE shared element, a manual popover appended to
    the app root, so the canvas clip and the scene zoom never touch it; app.js places it from the swatch's rect with
    tip-position.mjs. Shown on hover AND keyboard focus (the steps are tabindex=0), never hover-only. The text is
-   upright (the swatch is an <i>; nothing here inherits from it) and sized from the chip text role. `.open` is the
+   upright (the swatch is an <i>; nothing here inherits from it) and set in the helper text role at the chip text size. `.open` is the
    source of truth, so a host without the Popover API still shows it as a fixed box. */
 .radix-tip {
   position: fixed; inset: auto; margin: 0; display: none; z-index: 5;
   inline-size: max-content; max-inline-size: min(220px, calc(100vw - 16px)); box-sizing: border-box;
   padding: var(--sh-part-inset) var(--sh-control-inset); border: 0; border-radius: var(--r-sm);
   background: var(--ink); color: var(--bg); box-shadow: var(--shadow-lg); overflow: visible;
-  font-family: inherit; font-style: normal; font-size: var(--sh-chip-text); line-height: 1.4; text-align: left; white-space: pre-line; pointer-events: none;
+  font: var(--ui-helper-font); font-style: normal; font-size: var(--sh-chip-text); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); text-align: left; white-space: pre-line; pointer-events: none;
 }
 .radix-tip.open { display: block; }
 .radix-collision .radix-badge { opacity: .85; }
-.radix-badge { font-size: 12px; color: var(--ink-dim); }
+.radix-badge { font: var(--ui-badge-font); letter-spacing: var(--ui-badge-tracking); text-transform: var(--ui-badge-case); color: var(--ui-badge-ink); }
 .radix-empty { color: var(--ink-dim); padding: 40px 0; text-align: center; }
 
 /* Semantic Mapping view, a DATA TABLE in the canvas slot: scrolls, no pan/zoom. */
@@ -917,16 +917,16 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 .chip.has-drift { background: color-mix(in srgb, #d9534f 16%, transparent); color: #d9534f; }
 .scrim-context { border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; background: var(--panel-2); }
 .scrim-ctx-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
-.scrim-ctx-head small { color: var(--ink-dim); font-weight: 400; }
+.scrim-ctx-head small { color: var(--ink-dim); font-weight: var(--ui-weight-regular); }
 .scrim-ctx-strip { display: flex; border-radius: 5px; overflow: hidden; width: fit-content; box-shadow: var(--shadow); }
-.scrim-ctx-note { margin: 8px 0 0; font-size: 12px; line-height: 1.4; color: var(--ink-dim); }
-.ramp-name { font-weight: 600; color: var(--ink); }
+.scrim-ctx-note { margin: 8px 0 0; font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); }
+.ramp-name { font-weight: var(--ui-weight-strong); color: var(--ink); }
 .ramp-name.off { text-decoration: line-through; color: var(--ink-faint); }
-.ramp-name small { color: var(--ink-dim); font-weight: 400; margin-left: 6px; }
+.ramp-name small { color: var(--ink-dim); font-weight: var(--ui-weight-regular); margin-left: 6px; }
 
 /* differential damping controls + curve (Global tab) */
-.sub-head { font-size: 10px; font-weight: 600; color: var(--ink-dim); margin: 0; text-transform: uppercase; letter-spacing: .05em; }
-.mini-check { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-dim); margin: 0; cursor: pointer; }
+.sub-head { font: var(--ui-kicker-font); letter-spacing: var(--ui-kicker-tracking); text-transform: var(--ui-kicker-case); color: var(--ui-kicker-ink); margin: 0; }
+.mini-check { display: flex; align-items: center; gap: 6px; font: var(--ui-label-font); letter-spacing: var(--ui-label-tracking); text-transform: var(--ui-label-case); color: var(--ui-label-ink); margin: 0; cursor: pointer; }
 .mini-check input { width: 13px; height: 13px; accent-color: var(--accent); cursor: pointer; }
 .damp-presets { display: flex; flex-wrap: wrap; gap: 4px; }
 /* the preset buttons are chips (.chip.on), see the chip primitive above. */
@@ -944,7 +944,7 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 
 .canvas-footer, .app-footer {
   display: flex; align-items: center; gap: 14px;
-  font-size: 11.5px; color: var(--ink-dim);
+  font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink);
   padding: 0 12px; font-variant-numeric: tabular-nums;
 }
 .canvas-footer {
@@ -980,7 +980,7 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
   border-bottom: 1px solid var(--line); /* match the canvas-header band */
 }
 .pane-head .segmented { flex: 1; margin: 0; } /* the Typography + Geometry inspectors still switch their tabs here */
-.pane-head .pane-title { flex: 1; min-width: 0; font-size: 12px; font-weight: 600; color: var(--ink-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pane-head .pane-title { flex: 1; min-width: 0; font: var(--ui-pane-title-font); letter-spacing: var(--ui-pane-title-tracking); text-transform: var(--ui-pane-title-case); color: var(--ui-pane-title-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* the Color inspector's context heading takes programmatic focus after a deselect (tabindex -1), show where it landed */
 .pane-head .pane-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 /* compound container (ADR-033): the container pads by the part inset (the 1px border sits inside it),
@@ -1102,7 +1102,7 @@ input[type="range"]::-moz-range-thumb {
 .key-strip { display: flex; gap: 6px; margin-bottom: 6px; }
 .key-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .key-cell .key-fill { width: 54px; height: 26px; border-radius: 6px; border: 1px solid var(--line); box-shadow: var(--shadow); }
-.key-cell small { font-size: 9px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.key-cell small { font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); font-variant-numeric: tabular-nums; }
 /* inspector: two big expression swatches, `dominant` + `supportive`, each ≈ half width. */
 .key-colors .key-slots { display: flex; gap: 8px; margin-top: 6px; }
 .key-slot { flex: 1; min-width: 0; border-radius: var(--r); }
@@ -1672,7 +1672,7 @@ a.account-manage:hover { text-decoration: underline; }
   position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(20px);
   background: var(--ink); color: var(--bg);
   padding: 9px 16px; border-radius: var(--r); box-shadow: var(--shadow-lg);
-  z-index: 60; opacity: 0; transition: opacity .15s, transform .15s; font-size: 12.5px;
+  z-index: 60; opacity: 0; transition: opacity .15s, transform .15s; font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case);
   pointer-events: none;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
