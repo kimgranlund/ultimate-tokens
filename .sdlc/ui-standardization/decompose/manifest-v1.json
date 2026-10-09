@@ -1,0 +1,389 @@
+{
+  "domain": "technical-architecture",
+  "plan": true,
+  "nodes": [
+    {
+      "id": "n0",
+      "label": "editor shell standardization (T-0044)",
+      "leaf": false,
+      "justify": "grouping"
+    },
+    {
+      "id": "nA",
+      "label": "shell text-role system",
+      "leaf": false,
+      "justify": "grouping"
+    },
+    {
+      "id": "n1",
+      "label": "src/ui/shell-roles.mjs: UI_ROLES, CONTROL_ANATOMY, MOTION tables + shellRolesCSS(cell, uiTextAt)",
+      "leaf": true,
+      "justify": null,
+      "accept": "`node test/ui/shell-roles.mjs` exits 0: every role resolves on all 27 cells, step px equals uiText at the row `step` rows from the cell row (clamped at row 12), steps follow the body-base factor, and the emitted CSS declares every --ui-* name the styles.css alias block reads"
+    },
+    {
+      "id": "n2",
+      "label": "styles.css `ultimate-tokens { --sh-* / --ui-* }` alias block: role -> step var + weight/lh/tracking/case/color, product-sm-md fallbacks, --sh-radius-card/-mark/-caption-text added, band floors",
+      "leaf": true,
+      "justify": null,
+      "accept": "`node test/ui/shell-roles.mjs` parity leg exits 0: each UI_ROLES entry maps to the same step var in the alias block (parsed from src/ui/styles.css), and no other rule in styles.css declares a --ui-* custom property"
+    },
+    {
+      "id": "n3",
+      "label": "app.js _applyShellGeometry appends shellRolesCSS for the effective cell to the per-host head <style>",
+      "leaf": true,
+      "justify": null,
+      "accept": "`node test/ui/headless-boot.mjs` (shg) group: the host style text contains `--ui-text-step-0:` and `--ui-text-step-2:` scoped to [data-ut-geom], and changing shellGeometry to content-lg rewrites them"
+    },
+    {
+      "id": "n5",
+      "label": "styles.css shell rules rewritten onto roles: every in-scope font-size/font-weight/letter-spacing/text-transform/line-height reads var(--ui-*)",
+      "leaf": true,
+      "justify": null,
+      "accept": "`node test/repo/shell-text.mjs` exits 0 on src/ui/styles.css with the allow-list prefixes (.ex-, .geom-ex-, .gal/.masthead/.category/.story, .ch-/.an-svg, .drawer-pre, .toast) each carrying a reason string"
+    },
+    {
+      "id": "n9",
+      "label": "test/repo/shell-text.mjs: the text gate (control-text.mjs widened to every shell rule, plus padding/border-radius on control and container kinds), registered in test/run.mjs",
+      "leaf": true,
+      "justify": null,
+      "accept": "`node test/repo/shell-text.mjs` runs three negative controls (a literal font-size on .pane-title, a literal font-weight on .sub-head, a literal border-radius on .tools-menu:popover-open) and exits 1 on each mutated copy, 0 on the tree"
+    },
+    {
+      "id": "n10",
+      "label": "test/ui/shell-roles.mjs: unit test for the tables and the alias parity, registered in test/run.mjs",
+      "leaf": true,
+      "justify": null,
+      "accept": "`grep -n 'ui/shell-roles.mjs' test/run.mjs` finds the entry and `npm test` lists it as pass"
+    },
+    {
+      "id": "nB",
+      "label": "container and control anatomy",
+      "leaf": false,
+      "justify": "grouping"
+    },
+    {
+      "id": "n6",
+      "label": "container rules: .segmented/.figma-files/.radix-files, .tools-menu (listbox/menu wrap), tab row (.pane-head .segmented), .toggle .track, input group, all on partInset/partHeight/radiusInset/radiusCard",
+      "leaf": true,
+      "justify": null,
+      "accept": "`node test/repo/ui-polish.mjs` exits 0 with new checks: container padding reads var(--sh-part-inset) (minus the 1px border where bordered), part min-block-size var(--sh-part-height), part radius var(--sh-radius-inset), wrap radius var(--sh-radius-card); each check fails on its mutated sample"
+    },
+    {
+      "id": "n7",
+      "label": "control rules per kind (button, input, select, trigger, chip, icon-only, switch): inset, gap, glyph box, caret box, lane, thumb and track as ratios of --sh-control-icon/-inset/-part-inset/--sh-chip-*",
+      "leaf": true,
+      "justify": null,
+      "accept": "`node test/repo/ui-polish.mjs` exits 0: button gap = calc(inset/2), select --select-lane = icon + inset and chevron 0.3*icon, chip radius = calc(chip-height/2), switch track 1.75*icon by icon with thumb = icon - 2*edge, icon-only inline-size = block-size = control height with padding 0; and `npm run smoke` measures every .icon-only button square at product-sm and content-lg"
+    },
+    {
+      "id": "n13",
+      "label": "icons.js and the 16 explicit icon(name, { size }) calls: glyph size from the role box (--sh-control-icon / --sh-chip-icon), no literal px",
+      "leaf": true,
+      "justify": null,
+      "accept": "`grep -rn 'icon([^)]*size: *[0-9]' src/ui --include=*.js --include=*.mjs` prints 0 lines outside src/ui/sections/geometry.js specimens, and the (geo-row) headless check still passes"
+    },
+    {
+      "id": "nC",
+      "label": "glyph motion",
+      "leaf": false,
+      "justify": "grouping"
+    },
+    {
+      "id": "n8",
+      "label": "motion tokens --ui-motion-fast/-ease in the alias block; caret rotate on [aria-expanded=true] triggers (.tools-more, .tyi-voice-name, examples disclosure), listbox check fade; durations collapse under [data-motion=reduced] and prefers-reduced-motion",
+      "leaf": true,
+      "justify": null,
+      "accept": "`node test/repo/ui-polish.mjs` exits 0: every transition on a caret/disclosure/check selector reads var(--ui-motion-fast) and var(--ui-motion-ease) (fails on a literal 120ms sample); `npm run smoke` parses getComputedStyle(caret).transitionDuration to seconds and asserts it is below 0.001 with data-motion=reduced and at least 0.1 with motion=system and no OS preference"
+    },
+    {
+      "id": "nD",
+      "label": "shell default geometry",
+      "leaf": false,
+      "justify": "grouping"
+    },
+    {
+      "id": "n4",
+      "label": "app.js SHELL_DEFAULT_GEOMETRY = { tier: product, scale: sm, radius: round }; shellGeometry tri-state (undefined -> default, 'kit' -> doc.geometry, object -> custom) in _effectiveShellGeometry/_loadAppPrefs/_saveAppPrefs/_resetAppPrefs; settings rows offer Default / Follow kit / Custom",
+      "leaf": true,
+      "justify": null,
+      "accept": "`node test/ui/headless-boot.mjs` (shg) group: a fresh host carries product,sm,md,round; Follow kit stores 'kit' and the host follows doc.geometry (content,lg,md,pill); Custom persists; a pre-T-0044 record with no shellGeometry key lands on the default"
+    },
+    {
+      "id": "nE",
+      "label": "evidence and records",
+      "leaf": false,
+      "justify": "grouping"
+    },
+    {
+      "id": "n11",
+      "label": "smoke matrix: compound/polish/header-fit PNGs and measures at product-sm (default) and content-lg (stress), light and dark",
+      "leaf": true,
+      "justify": null,
+      "accept": "`npm run smoke` exits 0 and smoke-out/ holds compound-product-sm-{light,dark}.png, compound-content-lg-{light,dark}.png, polish-product-sm-*.png, polish-content-lg-*.png; the `control text at product-sm` measure reports every control at the cell text on one line"
+    },
+    {
+      "id": "n12",
+      "label": "records: ADR-036 (shell roles, anatomy, motion, default cell) appended before the Quick map; docs/references/geometry/shell-roles.md (the role, anatomy, radius-composition and motion tables); component-inventory.md cards; geometry-system and building-editor-sections skills; `node scripts/audit-citations.mjs` in the same change",
+      "leaf": true,
+      "justify": null,
+      "accept": "`grep -n '^## ADR-036' docs/references/decision-records.md` finds the record, `test -f docs/references/geometry/shell-roles.md`, `node scripts/audit-citations.mjs` and `node test/repo/citations.mjs` exit 0, and `.claude/skills/geometry-system/SKILL.md` names shell-roles.mjs"
+    }
+  ],
+  "actions": [
+    {
+      "id": "a1",
+      "label": "resolve a text role's px from the cell by a fixed row step of UI_TEXT, following the doc's body-base factor"
+    },
+    {
+      "id": "a2",
+      "label": "bind each shell selector to exactly one role (size, weight, line-height, tracking, case, ink)"
+    },
+    {
+      "id": "a3",
+      "label": "forbid literal text and control geometry props in shell rules, allow-list by prefix with a reason"
+    },
+    {
+      "id": "a4",
+      "label": "prove the gate bites with negative controls"
+    },
+    {
+      "id": "a5",
+      "label": "default the chrome to product-sm-md round on a fresh install"
+    },
+    {
+      "id": "a6",
+      "label": "let the user follow the kit or pin a custom cell, persisted with the app prefs"
+    },
+    {
+      "id": "a7",
+      "label": "pad a compound container by partInset and size its repeated parts (segmented, tab row, menu, listbox, switch track, input group)"
+    },
+    {
+      "id": "a8",
+      "label": "compose radius: container radius = part radius + container padding"
+    },
+    {
+      "id": "a9",
+      "label": "size glyph boxes, carets, lanes, track and thumb from the cell's icon, inset and partInset"
+    },
+    {
+      "id": "a10",
+      "label": "keep icon-only buttons square and ghost"
+    },
+    {
+      "id": "a11",
+      "label": "animate caret rotate, disclosure and listbox check with one duration/easing token pair"
+    },
+    {
+      "id": "a12",
+      "label": "collapse glyph motion under the motion app pref and prefers-reduced-motion"
+    },
+    {
+      "id": "a13",
+      "label": "show the control matrix at product-sm and content-lg in light and dark as pixel evidence"
+    },
+    {
+      "id": "a14",
+      "label": "record the tables and the decision for later readers and agents"
+    },
+    {
+      "id": "a15",
+      "label": "keep doc cites valid across the styles.css and app.js edits"
+    },
+    {
+      "id": "a16",
+      "label": "unit-test the tables on all 27 cells and the alias parity"
+    },
+    {
+      "id": "a17",
+      "label": "lift the faint light-theme headings by giving the kicker role --ink-dim"
+    },
+    {
+      "id": "a18",
+      "label": "size explicit icon() calls from the role box, never literal px"
+    },
+    {
+      "id": "a19",
+      "label": "emit the role px per host so two instances never share or clobber them"
+    },
+    {
+      "id": "a20",
+      "label": "keep the header bands at or above their floors when the cell shrinks"
+    },
+    {
+      "id": "a21",
+      "label": "move existing tests and smoke assertions off the product-md default"
+    }
+  ],
+  "hosts": [
+    {
+      "action": "a1",
+      "node": "n1"
+    },
+    {
+      "action": "a2",
+      "node": "n2"
+    },
+    {
+      "action": "a2",
+      "node": "n5"
+    },
+    {
+      "action": "a3",
+      "node": "n9"
+    },
+    {
+      "action": "a4",
+      "node": "n9"
+    },
+    {
+      "action": "a5",
+      "node": "n4"
+    },
+    {
+      "action": "a6",
+      "node": "n4"
+    },
+    {
+      "action": "a7",
+      "node": "n6"
+    },
+    {
+      "action": "a8",
+      "node": "n6"
+    },
+    {
+      "action": "a8",
+      "node": "n2"
+    },
+    {
+      "action": "a9",
+      "node": "n7"
+    },
+    {
+      "action": "a10",
+      "node": "n7"
+    },
+    {
+      "action": "a11",
+      "node": "n8"
+    },
+    {
+      "action": "a12",
+      "node": "n8"
+    },
+    {
+      "action": "a13",
+      "node": "n11"
+    },
+    {
+      "action": "a14",
+      "node": "n12"
+    },
+    {
+      "action": "a15",
+      "node": "n12"
+    },
+    {
+      "action": "a16",
+      "node": "n10"
+    },
+    {
+      "action": "a17",
+      "node": "n2"
+    },
+    {
+      "action": "a18",
+      "node": "n13"
+    },
+    {
+      "action": "a19",
+      "node": "n3"
+    },
+    {
+      "action": "a20",
+      "node": "n2"
+    },
+    {
+      "action": "a21",
+      "node": "n4"
+    },
+    {
+      "action": "a21",
+      "node": "n11"
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2",
+      "why": "the alias block names the --ui-text-step-N vars the module emits"
+    },
+    {
+      "from": "n1",
+      "to": "n3",
+      "why": "the injector calls shellRolesCSS"
+    },
+    {
+      "from": "n1",
+      "to": "n10",
+      "why": "the unit test imports the tables"
+    },
+    {
+      "from": "n2",
+      "to": "n5",
+      "why": "the rule rewrite reads the --ui-* aliases"
+    },
+    {
+      "from": "n9",
+      "to": "n5",
+      "why": "the rewrite's acceptance is the gate exiting 0"
+    },
+    {
+      "from": "n2",
+      "to": "n6",
+      "why": "container rules read --sh-radius-card added to the block"
+    },
+    {
+      "from": "n2",
+      "to": "n7",
+      "why": "control rules read the chip icon and edge aliases added to the block"
+    },
+    {
+      "from": "n2",
+      "to": "n8",
+      "why": "caret rules read --ui-motion-* from the block"
+    },
+    {
+      "from": "n4",
+      "to": "n11",
+      "why": "the smoke matrix is taken at the new default"
+    },
+    {
+      "from": "n5",
+      "to": "n11",
+      "why": "pixel evidence is of the rewritten rules"
+    },
+    {
+      "from": "n6",
+      "to": "n11",
+      "why": "pixel evidence is of the rewritten containers"
+    },
+    {
+      "from": "n7",
+      "to": "n11",
+      "why": "pixel evidence is of the rewritten controls"
+    },
+    {
+      "from": "n8",
+      "to": "n11",
+      "why": "the reduced-motion smoke read needs the caret rules"
+    },
+    {
+      "from": "n1",
+      "to": "n12",
+      "why": "the reference page copies the module's tables"
+    }
+  ]
+}
