@@ -69,7 +69,7 @@ Plus: a `@media (forced-colors:active)` pass; set-tile → `role=button` with a 
 drawer `role=dialog`; toast `aria-live`. `slider()` was already the model and is unchanged.
 
 **Since landed:** the `.field`/`.segmented` self-margins were removed after all:
-`.segmented` carries no self-margin (`styles.css:915`) and `.field { margin: 0; }` (`styles.css:974`);
+`.segmented` carries no self-margin (`styles.css:961`) and `.field { margin: 0; }` (`styles.css:1030`);
 the parent owns spacing.
 **Still deferred (intentional):** a true drawer focus-trap; migrating the remaining uniform-`ghost`
 buttons + the composite swatch cells (ramp-strip/scrim/footer), all behavior-neutral, adoptable
