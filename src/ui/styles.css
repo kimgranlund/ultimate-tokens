@@ -795,8 +795,8 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
    not to the table's own box, overflow!=visible would make the table the scrollport and headers would
    scroll away. The radius is dropped: it needed overflow:hidden to clip, which would re-trap the scrollport;
    the table is square-cornered inside the (square) .canvas-area. */
-.map-table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--panel); border: 1px solid var(--line); overflow: visible; }
-.map-table th { text-align: left; font-weight: 600; color: var(--ink-dim); padding: 8px 10px; border-bottom: 1px solid var(--line); background: var(--panel-2); position: sticky; top: 0; z-index: 1; }
+.map-table { width: 100%; border-collapse: collapse; font: var(--ui-body-font); letter-spacing: var(--ui-body-tracking); text-transform: var(--ui-body-case); color: var(--ui-body-ink); background: var(--panel); border: 1px solid var(--line); overflow: visible; }
+.map-table th { text-align: left; font-weight: var(--ui-weight-strong); color: var(--ink-dim); padding: 8px 10px; border-bottom: 1px solid var(--line); background: var(--panel-2); position: sticky; top: 0; z-index: 1; }
 /* the pinned header's bottom rule as an inset box-shadow, NOT only the collapsed border: under
    border-collapse, WebKit can paint a sticky th's border at its scrolled-away position (header loses its
    rule). A box-shadow isn't part of the collapsed grid, so it pins cleanly in every engine. */
@@ -829,8 +829,8 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
   background-size: var(--checker, 10px) var(--checker, 10px);
   background-position: 0 0, calc(var(--checker, 10px) / 2) calc(var(--checker, 10px) / 2);
 }
-.map-table code { font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink); }
-.map-sem code { color: var(--accent); font-weight: 600; }
+.map-table code { font: var(--ui-code-font); letter-spacing: var(--ui-code-tracking); text-transform: var(--ui-code-case); color: var(--ui-code-ink); }
+.map-sem code { color: var(--accent); font-weight: var(--ui-weight-strong); }
 /* the editable raw-token cell, a select menu, or a free text input (⇄ toggle in the head). */
 .map-raw-select, .map-raw-input {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: var(--sh-chip-text);
@@ -841,15 +841,15 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
 .map-raw-input { width: 150px; }
 .map-raw-select.ov, .map-raw-input.ov { border-color: var(--accent); color: var(--accent); font-weight: 600; }
 .map-row.map-ov td.map-mode { box-shadow: inset 2px 0 0 var(--accent); }
-.map-reset { border: none; background: none; cursor: pointer; color: var(--ink-dim); font-size: 13px; padding: 0 2px; margin-left: 4px; vertical-align: middle; }
+.map-reset { border: none; background: none; cursor: pointer; font: var(--ui-control-font); letter-spacing: var(--ui-control-tracking); text-transform: var(--ui-control-case); color: var(--ui-control-ink); padding: 0 2px; margin-left: 4px; vertical-align: middle; }
 .map-reset:hover { color: var(--accent); }
 .map-head .spacer { flex: 1; }
 /* drift diff (#3), does the file match what we'd generate? */
 .map-file { width: 38px; text-align: center; }
-.map-drift { display: inline-block; min-width: 16px; text-align: center; font-weight: 700; }
+.map-drift { display: inline-block; min-width: 16px; text-align: center; font-weight: var(--ui-weight-heavy); }
 .map-drift-match { color: #2e9e5b; }
 .map-drift-drift { color: #d9534f; }
-.map-drift-absent, .map-drift-none { color: var(--ink-faint); font-weight: 400; }
+.map-drift-absent, .map-drift-none { color: var(--ink-faint); font-weight: var(--ui-weight-regular); }
 
 /* ── Tokens MATRIX (Type / Geom), a READ-ONLY token table in the .is-table canvas slot.
    Rows = steps grouped by voice/size; columns = Base + one per breakpoint mode. Extends .map-table
@@ -871,11 +871,11 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
 }
 .tok-table th.tok-name-head { top: 0; z-index: 2; background: var(--panel-2); } /* the corner, sticky on BOTH axes */
 .tok-table th.tok-grouphead { position: static; } /* group-header rows scroll with the body, never pin to the top */
-.tok-table th.tok-name code { color: var(--ink); font-weight: 600; }
+.tok-table th.tok-name code { color: var(--ink); font-weight: var(--ui-weight-strong); }
 /* breakpoint column heads, name above, ≥{minWidth}px beneath */
 .tok-col { white-space: nowrap; }
 .tok-col-name { display: block; }
-.tok-col-bp { display: block; color: var(--ink-faint); font-weight: 400; font-size: 11px; }
+.tok-col-bp { display: block; font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); }
 .tok-col-base .tok-col-name { color: var(--ink); }
 /* group header row, spans every column */
 .tok-grouphead {
@@ -884,21 +884,21 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
 }
 .tok-grouphead b { color: var(--ink); margin-right: 8px; }
 .tok-grouphead small { color: var(--ink-dim); }
-.tok-group-count { float: right; color: var(--ink-faint); font-weight: 400; }
+.tok-group-count { float: right; color: var(--ink-faint); font-weight: var(--ui-weight-regular); }
 /* value cell, an EDITABLE size/height input (the lever) over a compact re-derived sub-line (Phase 3) */
 .tok-cell { white-space: nowrap; }
 .tok-val { display: block; color: var(--ink); }
 .tok-edit { display: flex; align-items: center; gap: 2px; }
 .tok-input {
-  inline-size: 4.5ch; min-inline-size: 0; padding: 1px 3px; font: inherit; font-size: 12px; font-variant-numeric: tabular-nums;
-  color: var(--ink); background: var(--panel); border: 1px solid var(--border); border-radius: 4px; text-align: right;
+  inline-size: 4.5ch; min-inline-size: 0; padding: 1px 3px; font: var(--ui-code-font); letter-spacing: var(--ui-code-tracking); text-transform: var(--ui-code-case); font-variant-numeric: tabular-nums;
+  color: var(--ui-code-ink); background: var(--panel); border: 1px solid var(--border); border-radius: 4px; text-align: right;
 }
 .tok-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.tok-input.ov { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.tok-input.ov { border-color: var(--accent); color: var(--accent); font-weight: var(--ui-weight-strong); }
 .tok-cell-ov { background: color-mix(in srgb, var(--accent) 7%, transparent); }
 .tok-reset { border: none; background: none; cursor: pointer; color: var(--ink-dim); padding: 0 1px; line-height: 1; }
 .tok-reset:hover { color: var(--accent); }
-.tok-sub { display: block; color: var(--ink-dim); font-size: 11px; margin-top: 1px; }
+.tok-sub { display: block; font: var(--ui-badge-font); letter-spacing: var(--ui-badge-tracking); text-transform: var(--ui-badge-case); color: var(--ui-badge-ink); margin-top: 1px; }
 .tok-na { color: var(--ink-faint); }
 
 /* ── primitive: chip (one in-flow pill) ───────────────────────────────────────────
@@ -1027,13 +1027,13 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 /* the collapse/expand affordance for the preview gallery, a quiet eyebrow-style ghost button */
 .ex-collapse-toggle {
   align-self: flex-start; background: none; border: none; padding: 2px 0; cursor: pointer;
-  font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
-  color: var(--ink-2); opacity: .8;
+  font: var(--ui-kicker-font); letter-spacing: var(--ui-kicker-tracking); text-transform: var(--ui-kicker-case);
+  color: var(--ui-kicker-ink); opacity: .8;
 }
 .ex-collapse-toggle:hover { opacity: 1; color: var(--ink); }
 /* the extra preview artifacts (native slider + form controls), compact cards with an eyebrow title */
 .ex-artifact { padding: 12px 14px; }
-.ex-artifact-title { font-weight: 700; font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; opacity: .8; margin-bottom: 7px; }
+.ex-artifact-title { font: var(--ui-element-title-font); letter-spacing: var(--ui-element-title-tracking); text-transform: var(--ui-element-title-case); color: var(--ui-element-title-ink); opacity: .8; margin-bottom: 7px; }
 .ex-range { width: 100%; margin: 0; }
 .ex-input { width: 100%; box-sizing: border-box; padding: 5px 8px; border-radius: var(--r-sm); border: 1px solid var(--line); font: inherit; font-size: 12px; }
 .ex-form-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 8px; font-size: 12px; }
@@ -1042,8 +1042,8 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 /* the palette/global inspector bodies own spacing via a column gap, so no child sets its
    own outer margin (the "components don't own outer margin" rule). Uniform 14px rhythm. */
 .insp-body { display: flex; flex-direction: column; gap: 14px; }
-.insp-title { font-size: 14px; font-weight: 650; margin: 0; display: flex; align-items: center; gap: 8px; }
-.insp-sub { color: var(--ink-dim); font-size: 11.5px; margin: 0; }
+.insp-title { font: var(--ui-pane-title-font); letter-spacing: var(--ui-pane-title-tracking); text-transform: var(--ui-pane-title-case); color: var(--ui-pane-title-ink); margin: 0; display: flex; align-items: center; gap: 8px; }
+.insp-sub { font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); margin: 0; }
 /* per-group intensity rows (ticket #559): a tighter internal rhythm than .insp-body's 14px so the
    group label reads as attached to its own two sliders, not as a peer of them; no outer margin (the
    .insp-body gap already spaces this block from its siblings). */
@@ -1051,9 +1051,9 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 .field { margin: 0; }
 .field > label {
   display: flex; justify-content: space-between; align-items: baseline;
-  font-size: 11.5px; color: var(--ink-dim); margin-bottom: 5px;
+  font: var(--ui-label-font); letter-spacing: var(--ui-label-tracking); text-transform: var(--ui-label-case); color: var(--ui-label-ink); margin-bottom: 5px;
 }
-.field > label b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.field > label b { color: var(--ink); font-weight: var(--ui-weight-strong); font-variant-numeric: tabular-nums; }
 .row { display: flex; align-items: center; gap: 8px; }
 
 input[type="range"] {
@@ -1109,8 +1109,8 @@ input[type="range"]::-moz-range-thumb {
 .key-slot.filled { display: flex; flex-direction: column; }
 .key-slot .key-fill { height: 56px; border-radius: var(--r); border: 1px solid var(--line); box-shadow: var(--shadow); }
 .key-slot .key-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; margin-top: 5px; }
-.key-slot .key-role { font-size: 11px; font-weight: 600; text-transform: capitalize; color: var(--ink); }
-.key-slot .key-place { font-size: 10.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.key-slot .key-role { font: var(--ui-element-title-font); letter-spacing: var(--ui-element-title-tracking); text-transform: capitalize; color: var(--ui-element-title-ink); }
+.key-slot .key-place { font: var(--ui-badge-font); letter-spacing: var(--ui-badge-tracking); text-transform: var(--ui-badge-case); color: var(--ui-badge-ink); font-variant-numeric: tabular-nums; }
 .key-slot .key-acts { display: flex; gap: 2px; margin-top: 4px; }
 .key-slot .key-act { padding: 2px 6px; color: var(--ink-dim); }
 .key-slot .key-act:hover { color: var(--ink); background: var(--line-2); }
@@ -1118,38 +1118,38 @@ input[type="range"]::-moz-range-thumb {
 .key-slot.empty {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
   height: 84px; border: 1.5px dashed var(--line); background: var(--panel-2);
-  color: var(--ink-dim); font-size: 11px; font-weight: 550;
+  font: var(--ui-control-font); letter-spacing: var(--ui-control-tracking); text-transform: var(--ui-control-case); color: var(--ui-control-ink);
 }
 .key-slot.empty:hover { border-color: var(--accent); color: var(--accent); background: var(--panel-2); }
 
 /* ── curated story, per-color line (Palette tab) ────────────────────────────────── */
 .color-story { padding: 8px 10px; border-radius: var(--r-sm); background: var(--panel-2); border: 1px solid var(--line); }
-.color-story-name { font-size: 12px; font-weight: 600; color: var(--ink); display: flex; align-items: baseline; gap: 6px; }
-.color-role { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); flex: none; }
-.color-story-note { margin: 4px 0 0; font-size: 11.5px; line-height: 1.45; color: var(--ink-dim); }
+.color-story-name { font: var(--ui-element-title-font); letter-spacing: var(--ui-element-title-tracking); text-transform: var(--ui-element-title-case); color: var(--ui-element-title-ink); display: flex; align-items: baseline; gap: 6px; }
+.color-role { font: var(--ui-kicker-font); letter-spacing: var(--ui-kicker-tracking); text-transform: var(--ui-kicker-case); color: var(--accent); flex: none; }
+.color-story-note { margin: 4px 0 0; font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); }
 
 /* ── Story card (holistic concept view, in the Global inspector)───────────────────────────────────────────── */
-.story-pane { font-size: 12.5px; }
-.story-kicker { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-faint); }
-.story-title { font-family: Georgia, "Times New Roman", serif; font-size: 17px; font-weight: 600; line-height: 1.25; margin: 5px 0 0; }
-.story-narrative { margin: 10px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--ink-dim); }
+.story-pane { font: var(--ui-body-font); letter-spacing: var(--ui-body-tracking); text-transform: var(--ui-body-case); color: var(--ui-body-ink); }
+.story-kicker { font: var(--ui-kicker-font); letter-spacing: var(--ui-kicker-tracking); text-transform: var(--ui-kicker-case); color: var(--ui-kicker-ink); }
+.story-title { font: var(--ui-pane-title-font); letter-spacing: var(--ui-pane-title-tracking); text-transform: var(--ui-pane-title-case); color: var(--ui-pane-title-ink); margin: 5px 0 0; }
+.story-narrative { margin: 10px 0 0; font: var(--ui-body-font); letter-spacing: var(--ui-body-tracking); text-transform: var(--ui-body-case); color: var(--ui-body-ink); }
 .story-colors { display: flex; flex-direction: column; gap: 9px; margin: 16px 0 0; }
 .story-color { display: flex; gap: 10px; }
 .story-swatch { flex: none; width: 40px; height: 40px; border-radius: var(--r-sm); border: 1px solid var(--line); box-shadow: var(--shadow); }
 .story-color-meta { min-width: 0; }
-.story-color-name { font-size: 12px; font-weight: 600; }
+.story-color-name { font: var(--ui-element-title-font); letter-spacing: var(--ui-element-title-tracking); text-transform: var(--ui-element-title-case); color: var(--ui-element-title-ink); }
 /* the role eyebrow ALWAYS on its own line above the name → consistent item rhythm (it was an inline,
    baseline-aligned flex child that wrapped only for long names, so some items stacked and some didn't). */
 .story-color-name .color-role { display: block; margin-bottom: 1px; }
-.story-color-note { margin: 2px 0 0; font-size: 11.5px; line-height: 1.4; color: var(--ink-dim); }
+.story-color-note { margin: 2px 0 0; font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); }
 .story-groups { display: flex; flex-direction: column; gap: 9px; margin: 16px 0 0; padding-top: 14px; border-top: 1px solid var(--line); }
 .story-group-head { display: flex; align-items: baseline; gap: 8px; }
-.story-group-head b { font-size: 11px; text-transform: capitalize; }
-.story-group-pct { font-size: 11px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
-.story-group p { margin: 2px 0 0; font-size: 11.5px; line-height: 1.4; color: var(--ink-dim); }
+.story-group-head b { font: var(--ui-element-title-font); letter-spacing: var(--ui-element-title-tracking); text-transform: capitalize; color: var(--ui-element-title-ink); }
+.story-group-pct { font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); font-variant-numeric: tabular-nums; }
+.story-group p { margin: 2px 0 0; font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); }
 .story-refuses { margin: 16px 0 0; padding-top: 14px; border-top: 1px solid var(--line); }
-.story-refuses b { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--danger); }
-.story-refuses p { margin: 5px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--ink-dim); font-style: italic; }
+.story-refuses b { font: var(--ui-kicker-font); letter-spacing: var(--ui-kicker-tracking); text-transform: var(--ui-kicker-case); color: var(--danger); }
+.story-refuses p { margin: 5px 0 0; font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); font-style: italic; }
 
 /* ── gallery preset shelf, grouped by VOLUME ────────────────────────────────────── */
 .preset-shelf { display: flex; flex-direction: column; gap: 24px; }
