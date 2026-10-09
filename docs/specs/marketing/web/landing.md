@@ -39,7 +39,7 @@ Design tokens, derived, not guessed.
 **H2** `Type and space, from the same source`
 
 > Typography composes on a modular scale, fifteen voices from headline to fine-print, five treatments from
-> Editorial to Brutalist, sizes snapped to a designer's ladder. Geometry builds a size ramp on one
+> Editorial to Brutalist, sizes snapped to a designer's ladder. Geometry builds the Maison ladder, 27 cells of tier, scale and size, on one
 > centering law: edge padding = (height − glyph) / 2, so controls sit optically true at every size.
 > Change the source; both systems follow.
 

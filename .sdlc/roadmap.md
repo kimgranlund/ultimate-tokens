@@ -39,3 +39,10 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 | T-0033 | [docs-facts-sweep](docs-facts-sweep/handoff.md) | Docs, specs and skills: repair stale facts after T-0015/17/21/27 | chore | L2 | P2 | none | 🟢 done |
 | T-0034 | [docs-structure-sweep](docs-structure-sweep/handoff.md) | Docs structure: indexes, placeholders, ADR map, plan archive, notes cleanup | chore | L2 | P2 | none | 🟢 done |
 | T-0035 | [header-fit-ci](header-fit-ci/handoff.md) | Header tools fit smoke fails on CI Chrome at content-lg (typography 896 > 850, geometry 880 > 850) | bug | L2 | P2 | none | 🟢 done |
+| T-0036 | [ui-polish-controls](ui-polish-controls/handoff.md) | Select triggers unstyled, sliders too small, drop the Back to Global button, prime swatches fill the width | bug | L2 | P2 | none | 🟢 done |
+| T-0037 | [radix-role-tooltips](radix-role-tooltips/handoff.md) | Radix colors: hover tooltip with each step's role and intent | feature | L2 | P2 | none | 🟢 done |
+| T-0038 | [peer-luminosity](peer-luminosity/handoff.md) | Brightest steps do not share luminosity across peer palettes (diagnose first) | spike | L2 | P2 | none | 🟢 done |
+| T-0039 | [peer-luminosity-diagnose](peer-luminosity-diagnose/handoff.md) | Brightest steps do not share luminosity across peer palettes (diagnose first) | spike | L2 | P2 | none | 🟢 done |
+| T-0040 | [match-peer-lightness](match-peer-lightness/handoff.md) | Opt-in match-peer-lightness mode: anchored palettes share lightness per stop across peers | feature | L4 | P2 | none | 🔵 ready |
+| T-0041 | [docs-planning-to-specs](docs-planning-to-specs/handoff.md) | Move ui-plan.md and decomposition.md from docs/planning to docs/specs (T-0034 verifier ruling) | chore | L1 | P2 | none | 🔵 ready |
+| T-0042 | [docs-leftovers](docs-leftovers/handoff.md) | Docs and copy leftovers from T-0033 and T-0034 (ADR cites, size-ramp copy, store-copy link, notes) | chore | L1 | P2 | none | 🟢 done |
