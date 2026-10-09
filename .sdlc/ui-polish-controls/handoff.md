@@ -2,7 +2,7 @@
 id: T-0036
 title: "Select triggers unstyled, sliders too small, drop the Back to Global button, prime swatches fill the width"
 type: bug             # feature | bug | chore | spike | idea
-status: ready     # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: done     # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: L2             # L1 | L2 | L3 | L4 (L5 reserved)
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -34,3 +34,7 @@ Every shell control text/padding reads the cell roles (`test/repo/control-text.m
 - No `.pane-back` button and no `Global` button in the inspector header in a palette context; `_deselect` and Esc still return to Global (headless group `irf`).
 - Every `.prime-strip` has gap 0, seven equal-width swatches spanning the strip, and the strip is as wide as the ramp strip below it; the New Palette `Context priority` row is gapless with flex-basis 0 swatches (smoke "control polish", `test/repo/ui-polish.mjs`).
 - `npm test`, `npm run build`, `npm run smoke` green; `node scripts/audit-citations.mjs` clean.
+
+## Closed
+
+2026-10-08: landed via integration; verified L2 pass (two rounds)
