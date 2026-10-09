@@ -218,14 +218,18 @@ async function engineOf(engineDir) {
 export const TOL_CODES = 1;
 export const TOL_CODES_TWICE = 2;
 export const TOL_CODES_REFINED = 4;
+// TOL_CODES_SNAPPED (T-0040, ramp@2): a band stop's pixel is chosen by `snapBandPixel` from the plus or
+// minus 3 per channel neighbourhood of its rounded render (RADIUS 3 plus the rounding), two-sided.
+export const TOL_CODES_SNAPPED = 4;
 // The gamut edge, the one clipping named: OKHSL s saturates at the sRGB boundary and no 8-bit pixel
 // reads exactly 1, so an emitted pixel with a channel at 0 or 255 whose s reads at least EDGE_S widens
 // its range to 1.
 export const EDGE_S = 0.999;
-export const RESIDUE_CLASSES = ["plain", "damped", "capped", "refined"];
+export const RESIDUE_CLASSES = ["plain", "damped", "capped", "refined", "snapped"];
 
 export function stopClass(record) {
   if (record.refined) return "refined";
+  if (record.snapped) return "snapped";
   if (record.capped) return "capped";
   if ((record.damper ?? 1) < 1) return "damped";
   return "plain";
@@ -240,7 +244,7 @@ export function unitOf(rgb, mode) {
 
 export function residueOf(record, mode) {
   const cls = stopClass(record);
-  const k = cls === "refined" ? TOL_CODES_REFINED : cls === "plain" ? TOL_CODES : TOL_CODES_TWICE;
+  const k = cls === "refined" ? TOL_CODES_REFINED : cls === "snapped" ? TOL_CODES_SNAPPED : cls === "plain" ? TOL_CODES : TOL_CODES_TWICE;
   const model = record.model;
   const [r0, g0, b0] = record.rgb;
   const readback = unitOf(record.rgb, mode);

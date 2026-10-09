@@ -1,0 +1,18 @@
+{
+  "subagent_type": "sdlc-lite:solo-L3",
+  "name": "0040-solo-L3",
+  "description": "T-0040 solo L3 Opt-in match-peer-lightness",
+  "model": "opus",
+  "effort": "xhigh",
+  "prompt": "T-0040 Opt-in match-peer-lightness mode | solo L3\nHandoff: /Users/kimgranlund/Projects/nonoun/ultimate-tokens/.worktrees/match-peer-lightness/.sdlc/match-peer-lightness/handoff.md\nArtifacts dir: /Users/kimgranlund/Projects/nonoun/ultimate-tokens/.worktrees/match-peer-lightness/.sdlc/match-peer-lightness\nFinish T-0040 (ramp@2 shared lightness extremes plus the opt-in matchPeerLightness mode) from the current tree, in one session, in big chunks. Step 1 (freeze ramp@1, register ramp@2) is committed on plan/match-peer-lightness. The ramp@2 band rule is built but uncommitted in this worktree (src/engine/tonal.js, test/engine/peer-lightness.mjs, fixtures, doc cites); the blocked build's facts and defects are in .sdlc/match-peer-lightness/step-2.superseded-1/builder-L5.md, and the plan you follow (scope, decisions, criteria as guidance) is .sdlc/match-peer-lightness/planner-L3-3.md steps 2 to 7, reviewed and passed (plan-reviewer-L1-3.md notes apply: add tonal.mjs to the step 2 scope; vibrancy-match-peer must be in tonal.mjs DECLARED; give the Upgrade to latest button a data-fk). The design is .sdlc/match-peer-lightness/architect-L1.md.\n\nOrder: (1) finish ramp@2 so every invariant holds: grey anchors stay achromatic (tint capped by the anchor fraction), every ramp descends, the hue spaces agree, test/engine/peer-lightness.mjs green; commit. (2) Bring the edited-kit render within 2x of ramp@1 (it measured 6.5x: 1061 ms against 162 ms; cache or cheapen the snap and tint solve); commit. (3) Re-pin the dependents (tonal.mjs groups, semantic.mjs, exports.mjs, headless-boot gid3, anchor.mjs lists, Gate A band clause, scripts/report-compute-neutral.mjs --pin); a red that breaks an invariant is a bug to fix in src, not a pin; commit. (4) The opt-in matchPeerLightness mode and its inspector control; commit. (5) ADR-036 appended before the Quick map in docs/references/decision-records.md, docs, and the before/after board for the user (the default kit and the 5 clamped anchors Istanbul, Saint-Malo, Wadi Rum, Carlsbad, Kea listed as the declared change); commit. Commit each on plan/match-peer-lightness (message `T-0040: <what>`, end with the Co-Authored-By line from the harness). No per-step verifier, no plan review, and do NOT run the 8 full-corpus sweeps locally (CI runs them in parallel); run `npm test` after each commit and the focused engine tests, through scripts/gate_lock.py with SDLC_GATE_WORKERS=10. If a design question blocks you (a rule that cannot hold), stop and report it with options rather than widening a bound. Do not push, open a PR, or merge. Report: what changed, gate results, the perf number, and where to see the extremes in the editor.\n",
+  "run_in_background": true,
+  "role": "solo",
+  "level": "L3",
+  "tier": "L3",
+  "prune": false,
+  "handoff": "/Users/kimgranlund/Projects/nonoun/ultimate-tokens/.worktrees/match-peer-lightness/.sdlc/match-peer-lightness/handoff.md",
+  "artifacts_dir": "/Users/kimgranlund/Projects/nonoun/ultimate-tokens/.worktrees/match-peer-lightness/.sdlc/match-peer-lightness",
+  "attempt_id": "813a00e75bcb446e97263e5b806d8545",
+  "base_sha": "2d218bec249c54b82eecd7de6ebca3c5b8f0595d",
+  "verifier": "python3 /Users/kimgranlund/.claude/plugins/cache/sdlc-lite/sdlc-lite/0.22.1/scripts/dispatch.py prepare verifier L3 /Users/kimgranlund/Projects/nonoun/ultimate-tokens/.worktrees/match-peer-lightness/.sdlc/match-peer-lightness/handoff.md"
+}
