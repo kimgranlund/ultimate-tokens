@@ -54,7 +54,7 @@ Per-palette: `{ name, hue 0–360, chroma 0–100, skew -100..100, lift -40..40,
 palette that carries one renders through the anchored construction in §9 instead of the plain `toneAt`/envelope
 path in §4–§5. `sourceAnchor` is the generator's own copy of the same hex, written by `scripts/gen-categories.mjs`
 and by `defaultDocument()` and never edited by the UI, so the inspector's Reset action has something to restore
-after a hue or chroma edit detaches `anchor` (§9).
+after a hue or chroma edit moves `anchor` off its source (§9; T-0045: the edit re-seeds `anchor` at the new hue and the same tone instead of deleting it).
 `hueShift` is the **edge hue rotation** about stop 500: per-stop hue = baseHue + hueShift·s (s=(stop−500)/450), `hueSameDir=false` (default) torsions the two ends in OPPOSITE directions; `hueSameDir=true` makes BOTH ends bend the SAME way, matching the light end (per-stop hue = baseHue − hueShift·|s|, so light+20/dark−20 becomes light+20/dark+20). 0 = flat (the hue-stability default).
 
 ## 3. Tone curves (the five `shape` functions)
