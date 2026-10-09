@@ -1,4 +1,4 @@
-<!-- sdlc-lite:managed:start v1 sha256:f58f4daf8b69 -->
+<!-- sdlc-lite:managed:start v1 sha256:9b45841dfd74 -->
 # Work records
 
 This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and `config`. `tickets.py roadmap` (also run by `new` and `close`) generates this block: do not edit inside it; change a ticket's `handoff.md` front matter and rerun `roadmap`. `roadmap.md` lists every ticket in dependency order. Closed `.NNNN-*` folders are history: open one only when asked.
@@ -10,14 +10,13 @@ This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and
 ## Stages
 
 - proposed: 0
-- ready: 5
+- ready: 4
   - T-0024 Gate A narrowing from #807: can the chroma-envelope gate cover stops where OKHSL keyS reads above 1? (gate-a-narrowing)
-  - T-0037 Radix colors: hover tooltip with each step's role and intent (radix-role-tooltips)
   - T-0040 Opt-in match-peer-lightness mode: anchored palettes share lightness per stop across peers (match-peer-lightness)
   - T-0041 Move ui-plan.md and decomposition.md from docs/planning to docs/specs (T-0034 verifier ruling) (docs-planning-to-specs)
   - T-0042 Docs and copy leftovers from T-0033 and T-0034 (ADR cites, size-ramp copy, store-copy link, notes) (docs-leftovers)
 - blocked: 0
-- done: 36
+- done: 37
 - dropped: 0
 
 ## Procedures

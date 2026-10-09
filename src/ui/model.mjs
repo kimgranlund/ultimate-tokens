@@ -219,6 +219,7 @@ import {
   exportRadix,
   exportRadixModule,
   RESERVED_ALIAS_KEYS,
+  RADIX_STEP_GUIDE,
   radixPaletteKey,
   paletteNameClash,
   SCRIM_BASES,
@@ -243,7 +244,7 @@ import {
 
 // Re-export the scrim model so the UI (app.js) can build the Mapping tab's re-point targets from the
 // SAME source of truth as the exporters, no second, drift-prone hardcoded scrim-step list.
-export { SCRIM_BASES, SCRIM_STEPS, paletteNameClash, exportDesignSystemTokens, exportDesignSystemSpine, exportDesignSystemBundle, exportDesignSystemStitchBundle, exportDesignSystemMakeBundle };
+export { SCRIM_BASES, SCRIM_STEPS, RADIX_STEP_GUIDE, paletteNameClash, exportDesignSystemTokens, exportDesignSystemSpine, exportDesignSystemBundle, exportDesignSystemStitchBundle, exportDesignSystemMakeBundle };
 
 // The sixteen seed palettes, 8 brand + 8 Data (data/role-table.json `defaults`). Inlined so the
 // pure core has no file I/O and runs identically in node and the browser.
