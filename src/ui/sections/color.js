@@ -1,3 +1,4 @@
+import { placeTip } from "../tip-position.mjs";
 import { DEFAULT_CONTROLS, PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hasDataPalettes, hexToOklch, mintDataPalettes, nextPaletteName, paletteGroup, paletteGroupLabel, paletteNameClash, projectView, RADIX_STEP_GUIDE, radixCollisionBadge, radixExportKey, radixKeyCollision, rederiveDataHues, seedFromKeyColor, slug } from "../model.mjs";
 import { RELATIONSHIPS, deriveNeutral, deriveRelative } from "../../engine/derive.mjs";
 import { chromaEnvelope, envelopePresetOf } from "../../engine/tonal.js";
@@ -1040,8 +1041,9 @@ export class ColorSectionImpl {
         const leaf = group[String(step)];
         const val = leaf && leaf.value ? leaf.value : { base: "transparent", _dark: "transparent" };
         const paint = scheme === "dark" ? val._dark : val.base;
-        // the hover/focus tooltip (T-0037): `Step N: <role>` + the one-line intent from RADIX_STEP_GUIDE, drawn by the
-        // .radix-step::after rule from data-tip; tabindex=0 so keyboard focus shows it too, aria-label so a screen reader hears it
+        // the hover/focus tooltip (T-0037): `Step N: <role>` + the one-line intent from RADIX_STEP_GUIDE, held in data-tip
+        // and shown by ONE shared .radix-tip outside the zoomed scene (T-0043, _showRadixTip); tabindex=0 so keyboard focus
+        // shows it too, aria-label so a screen reader hears it
         const guide = RADIX_STEP_GUIDE[step - 1];
         steps.push(h("i", { class: "radix-step", style: `background:${paint}`, tabindex: "0", role: "img", "data-tip": `Step ${step}: ${guide.role}\n${guide.intent}`, "aria-label": `${p.name} step ${step}: ${guide.role}. ${guide.intent}` }));
       }
@@ -1064,7 +1066,70 @@ export class ColorSectionImpl {
         collision ? h("span", { class: "radix-badge" }, radixCollisionBadge(key)) : null,
       );
     });
-    return h("div", { class: "radix-scene" }, ...rows);
+    const scene = h("div", { class: "radix-scene" }, ...rows);
+    // ONE delegated set of handlers for all 384 swatches (T-0043): the tooltip is a single element outside the scene,
+    // so it is not clipped by .canvas-area, not scaled by the zoom, and a swatch only has to say "show me".
+    const swatchOf = (t) => { for (let n = t; n && n !== scene; n = n.parentNode) if (n.classList && n.classList.contains("radix-step")) return n; return null; };
+    scene.addEventListener("mouseover", (e) => { const s = swatchOf(e.target); if (s) this._showRadixTip(s); });
+    scene.addEventListener("mouseout", (e) => { if (swatchOf(e.target) && !swatchOf(e.relatedTarget)) this._hideRadixTip(); }); // moving onto a neighbour just re-points the tip
+    scene.addEventListener("focusin", (e) => { const s = swatchOf(e.target); if (s) this._showRadixTip(s); });
+    scene.addEventListener("focusout", (e) => { if (swatchOf(e.target) && !swatchOf(e.relatedTarget)) this._hideRadixTip(); });
+    return scene;
+  }
+
+
+  // _radixTipEl, the one shared step tooltip, created on first use and kept for the life of the app: a native
+  // manual popover (top layer, so no ancestor clips or scales it) appended to the app root after each render
+  // (render() rebuilds the subtree and drops it). A host without the Popover API shows it as a plain
+  // position:fixed box via the `.open` class; the class is the source of truth for both.
+  _radixTipEl() {
+    if (!this._radixTip) {
+      const tip = h("div", { class: "radix-tip", id: "radix-tip", role: "tooltip" });
+      tip.setAttribute("popover", "manual");
+      this._radixTip = tip;
+    }
+    return this._radixTip;
+  }
+
+
+  // _showRadixTip(anchor), fill the tooltip from the swatch's data-tip, measure it, and place it from the swatch's
+  // bounding rect with placeTip (below by default; above near the bottom edge; shifted left near the right edge).
+  _showRadixTip(anchor) {
+    const text = anchor.getAttribute("data-tip");
+    if (!text) return;
+    const tip = this._radixTipEl();
+    if (!Array.from(this.children).includes(tip)) this.append(tip); // render() drops it with the rest of the subtree
+    if (this._radixTipFor && this._radixTipFor !== anchor) this._radixTipFor.removeAttribute("aria-describedby");
+    tip.textContent = text;
+    tip.classList.add("open");
+    try { if (typeof tip.showPopover === "function" && !tip.matches(":popover-open")) tip.showPopover(); } catch { /* not attached yet */ }
+    tip.style.left = "0px"; tip.style.top = "0px"; // measure at a fixed origin, so a stale position cannot squeeze the box
+    const r = tip.getBoundingClientRect();
+    const root = document.documentElement;
+    const view = { width: root.clientWidth || window.innerWidth || 0, height: root.clientHeight || window.innerHeight || 0 };
+    const at = placeTip(anchor.getBoundingClientRect(), { width: r.width, height: r.height }, view);
+    tip.style.left = Math.round(at.left) + "px";
+    tip.style.top = Math.round(at.top) + "px";
+    tip.setAttribute("data-placement", at.placement);
+    anchor.setAttribute("aria-describedby", "radix-tip");
+    this._radixTipFor = anchor;
+  }
+
+
+  // _hideRadixTip, hide it (blur, mouse-out, Esc, a pan or zoom, a re-render). Safe to call when nothing shows.
+  _hideRadixTip() {
+    const tip = this._radixTip;
+    if (!tip || !tip.classList.contains("open")) return;
+    tip.classList.remove("open");
+    try { if (typeof tip.hidePopover === "function" && tip.matches(":popover-open")) tip.hidePopover(); } catch { /* already hidden */ }
+    if (this._radixTipFor) this._radixTipFor.removeAttribute("aria-describedby");
+    this._radixTipFor = null;
+  }
+
+
+  // _radixTipOpen, is the step tooltip showing?
+  _radixTipOpen() {
+    return !!this._radixTip && this._radixTip.classList.contains("open");
   }
 
 

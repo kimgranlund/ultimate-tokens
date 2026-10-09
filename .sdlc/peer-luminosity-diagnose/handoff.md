@@ -2,7 +2,7 @@
 id: T-0039
 title: "Brightest steps do not share luminosity across peer palettes (diagnose first)"
 type: spike           # feature | bug | chore | spike | idea
-status: done     # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: ready     # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: L2             # L1 | L2 | L3 | L4 (L5 reserved)
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -29,14 +29,3 @@ Engine: `src/engine/tonal.js`, `derive.mjs`, `okhsl.js`, `hct.js`, `exports.js` 
 
 ## Constraints
 No product change without evidence from the measurements. No U+2014. `npm test` before done.
-
-## Acceptance criteria
-- `docs/reports/2026-10-08-peer-luminosity.md` exists and holds a per-step lightness spread table for the Radix 12-step view, the 25-stop ramp, and the curated corpus.
-- The report names the root cause with file:line (`src/engine/tonal.js` anchorLerp, pivotTone, pivotL, lightnessAt) and says plainly which steps are by design and which, if any, violate a repo gate.
-- The report lists fix options with cost and names the open user decision; no engine file changed (`git diff --stat main -- src/ test/` is empty).
-- The report contains no U+2014 (`node test/repo/em-dash.mjs`).
-- `npm test` exits 0 and leaves the tree clean.
-
-## Closed
-
-2026-10-08: delivered by the solo agent (level L2); one independent batched verifier passed before the merge
