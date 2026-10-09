@@ -66,10 +66,6 @@ const PENDING = {
     ".map-table", ".map-sem", ".map-reset", ".map-drift", ".tok-", ".insp-", ".field", ".key-slot", ".color-story",
     ".color-role", ".story-", ".ex-collapse-toggle", ".ex-artifact-title",
   ],
-  "step-6": [
-    ".drawer-", ".figma-note", ".radix-note", ".config-note", ".copy-float", ".pro-upsell", ".newpal-", ".apply-gate-",
-    ".settings-", ".acct-", ".account-", ".cleanup-",
-  ],
   "step-7": [
     ".typo-", ".type-spec-", ".ty-role", ".tyi-voices-head", ".tyi-weights-core", ".tyi-voice-font", ".tyi-voice-stats",
     ".tyi-font-role", ".tyi-font-legend", ".geom-",
