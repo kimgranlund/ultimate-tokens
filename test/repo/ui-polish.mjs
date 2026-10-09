@@ -20,6 +20,7 @@ const decl = (b, prop) => {
   return m ? m[1].trim() : null;
 };
 
+const APP = readFileSync(join(ROOT, "src", "ui", "app.js"), "utf8");
 const RANGE = 'input[type="range"]';
 const CHECKS = [
   ["every select drops the native look (appearance none) and draws a chevron", (css) => {
@@ -40,6 +41,10 @@ const CHECKS = [
     const row = body(css, ".newpal-pp-chain-row"), sw = body(css, ".newpal-pp-chain-sw");
     return !!row && !!sw && /^0(px)?$/.test(decl(row, "gap") || "") && /^1 1 0/.test(decl(sw, "flex") || "") && decl(sw, "width") === null;
   }],
+  ["the pinned example select keeps the chevron lane, and its field style sets background-color (a background shorthand resets the chevron image)", (css, app) => {
+    const fs = (app.match(/const fieldStyle = "([a-z-]+):/) || [])[1];
+    return /\.ex-select\s*\{[^}]*padding-inline-end:\s*var\(--select-lane\)/.test(css) && fs === "background-color";
+  }],
 ];
 
 // known-bad samples, one per check, that the check must reject
@@ -49,12 +54,15 @@ const BAD = [
   `${RANGE} { height: 4px; }`,
   ".prime-strip { display: flex; gap: 3px; } .prime-swatch { width: 26px; }",
   ".newpal-pp-chain-row { display: flex; gap: 6px; } .newpal-pp-chain-sw { width: 22px; }",
+  ".ex-select { width: auto; }",
 ];
+// a field style that is the `background:` shorthand, with the right padding rule: still rejected
+const BAD_APP = 'const fieldStyle = "background:" + pick(x);';
 
 let failed = 0;
 CHECKS.forEach(([name, fn], i) => {
-  if (fn(BAD[i])) { console.log(`FAIL ui-polish: the negative control for "${name}" was accepted`); failed++; return; }
-  if (!fn(CSS)) { console.log(`FAIL ui-polish: ${name}`); failed++; }
+  if (fn(BAD[i], i === 5 ? BAD_APP : APP) || (i === 5 && fn(".ex-select { padding-inline-end: var(--select-lane); }", BAD_APP))) { console.log(`FAIL ui-polish: the negative control for "${name}" was accepted`); failed++; return; }
+  if (!fn(CSS, APP)) { console.log(`FAIL ui-polish: ${name}`); failed++; }
 });
 if (failed) process.exit(1);
 console.log(`ui-polish: pass, ${CHECKS.length} stylesheet checks (each rejects its known-bad sample)`);

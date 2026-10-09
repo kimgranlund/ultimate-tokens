@@ -365,16 +365,23 @@ try {
   for (const [tier, scale, png] of [["product", "md", "polish-product-md.png"], ["content", "lg", "polish-content-lg.png"]]) {
     const cell = geomScale({ tier, scale, radius: "round" }).cells[`${tier}-${scale}-md`];
     const bad = [];
-    let nSel = 0, nRange = 0, nStrip = 0;
+    let nSel = 0, nEx = 0, nRange = 0, nStrip = 0;
     for (const go of [`${el}._deselect();`, `${el}.selectPalette(0);`]) {
-      await evalJS(`(()=>{${el}.shellGeometry={tier:"${tier}",scale:"${scale}",radius:"round"};${el}.setSection("color");${el}.setCanvasView("palettes");${go}${el}.render();})()`); await sleep(300);
+      await evalJS(`(()=>{${el}.shellGeometry={tier:"${tier}",scale:"${scale}",radius:"round"};${el}.setSection("color");${el}.setCanvasView("palettes");${el}.examplesExpanded=true;${go}${el}.render();})()`); await sleep(300);
       const got = await evalJS(`(()=>{const vis=(e)=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0};const R=${el};
         const selects=[...R.querySelectorAll("select")].filter((e)=>vis(e)&&!e.closest(".canvas-scene, .seg-example, .example-scheme")).map((e)=>{const cs=getComputedStyle(e);return {cls:e.className,ap:cs.appearance,bg:cs.backgroundImage,pl:parseFloat(cs.paddingLeft),pr:parseFloat(cs.paddingRight)}});
+        const exSelects=[...R.querySelectorAll(".seg-example select.ex-select")].filter(vis).map((e)=>{const cs=getComputedStyle(e);return {ap:cs.appearance,bg:cs.backgroundImage,pl:parseFloat(cs.paddingLeft),pr:parseFloat(cs.paddingRight)}});
         const ranges=[...R.querySelectorAll('.right-pane input[type="range"]')].filter(vis).map((e)=>{const pr=document.createElement("i");pr.style.cssText="position:absolute;visibility:hidden;width:var(--ctl-range-thumb);height:var(--ctl-range-thumb)";e.parentNode.appendChild(pr);const b=pr.getBoundingClientRect();pr.remove();return {h:e.getBoundingClientRect().height,tw:b.width,th:b.height}});
         const strips=[...R.querySelectorAll(".canvas-scene .prime-strip")].filter(vis).slice(0,4).map((s)=>{const sw=[...s.querySelectorAll(".prime-swatch")].map((e)=>e.getBoundingClientRect());const ramp=s.parentNode.querySelector(".ramp-strip");const cs=getComputedStyle(s);
           return {gap:parseFloat(cs.columnGap)||0,n:sw.length,w:sw.map((r)=>r.width),total:s.getBoundingClientRect().width,rampW:ramp?ramp.getBoundingClientRect().width:0,x0:sw[0]?sw[0].left:0,x1:sw.length?sw[sw.length-1].right:0,sx0:s.getBoundingClientRect().left,sx1:s.getBoundingClientRect().right}});
         const back=R.querySelectorAll(".pane-back").length+[...R.querySelectorAll(".right-pane button")].filter((b)=>/^\\s*Global\\s*$/.test(b.textContent)).length;
-        return {selects,ranges,strips,back};})()`);
+        return {selects,exSelects,ranges,strips,back};})()`);
+      nEx += got.exSelects.length;
+      for (const s of got.exSelects) {
+        if (s.ap !== "none") bad.push(`example select appearance ${s.ap} (want none)`);
+        if (!/linear-gradient/.test(s.bg)) bad.push(`example select draws no chevron (${s.bg})`);
+        if (!(s.pr > s.pl)) bad.push(`example select end padding ${s.pr} does not reserve the chevron lane (start ${s.pl})`);
+      }
       nSel += got.selects.length; nRange += got.ranges.length; nStrip += got.strips.length;
       for (const s of got.selects) {
         if (s.ap !== "none") bad.push(`select.${s.cls} appearance ${s.ap} (want none)`);
@@ -395,8 +402,9 @@ try {
       if (go.includes("selectPalette")) { const sh = await send("Page.captureScreenshot", { format: "png" }); writeFileSync(resolve(OUT, png), Buffer.from(sh.data, "base64")); console.log(`  · screenshot → smoke-out/${png}`); }
     }
     bad.slice(0, 10).forEach((m) => console.log("    " + m));
-    ok(nSel > 0 && nRange > 0 && nStrip > 0 && bad.length === 0, `control polish at ${tier}-${scale}: ${nSel} selects styled with a chevron, ${nRange} sliders at the icon role, ${nStrip} prime strips gapless and full width, no Back to Global${bad.length ? ` (${bad.length} off)` : ""}`);
+    ok(nSel > 0 && nEx > 0 && nRange > 0 && nStrip > 0 && bad.length === 0, `control polish at ${tier}-${scale}: ${nSel} selects and ${nEx} pinned example select(s) styled with a chevron, ${nRange} sliders at the icon role, ${nStrip} prime strips gapless and full width, no Back to Global${bad.length ? ` (${bad.length} off)` : ""}`);
   }
+  await evalJS(`${el}.examplesExpanded=false`);
   // negative control: an unstyled select (native appearance) must read as appearance "auto" in this Chrome, so the check above can fail
   ok(await evalJS(`(()=>{const s=document.createElement("select");s.style.cssText="appearance:auto";document.body.appendChild(s);const a=getComputedStyle(s).appearance;s.remove();return a!=="none"})()`), "negative control: a select forced back to appearance auto does not read as none");
   await evalJS(`(()=>{${el}.shellGeometry=null;${el}.setSection("color");${el}._deselect();${el}.render();})()`); await sleep(200);

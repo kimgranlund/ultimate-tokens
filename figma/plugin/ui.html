@@ -1690,6 +1690,7 @@ select {
 }
 select:disabled { opacity: .4; cursor: default; pointer-events: none; }
 .map-raw-select { padding-inline-end: calc(var(--sh-chip-inset) + 14px); background-position: calc(100% - var(--sh-chip-inset) - 5px) 50%, calc(100% - var(--sh-chip-inset)) 50%; background-size: 5px 5px; }
+.ex-select { padding-inline-end: var(--select-lane); } /* the preview select: .ex-input's padding shorthand would drop the chevron lane */
 </style></head>
 <body><ultimate-tokens></ultimate-tokens>
 <script type="module">
@@ -23130,7 +23131,7 @@ class HctApp extends HTMLElement {
   exampleForm(view) {
     const { byKey, pick, main } = this._exampleRoles(view);
     const accent = pick(main);
-    const fieldStyle = "background:" + pick(byKey.surfaceLow || byKey.surface) + ";color:" + pick(byKey.onSurface) + ";border-color:" + pick(byKey.outline);
+    const fieldStyle = "background-color:" + pick(byKey.surfaceLow || byKey.surface) + ";color:" + pick(byKey.onSurface) + ";border-color:" + pick(byKey.outline);
     return h(
       "div",
       { class: "example-card ex-artifact", style: "background:" + pick(byKey.surface) },

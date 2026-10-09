@@ -2205,7 +2205,7 @@ class HctApp extends HTMLElement {
   exampleForm(view) {
     const { byKey, pick, main } = this._exampleRoles(view);
     const accent = pick(main);
-    const fieldStyle = "background:" + pick(byKey.surfaceLow || byKey.surface) + ";color:" + pick(byKey.onSurface) + ";border-color:" + pick(byKey.outline);
+    const fieldStyle = "background-color:" + pick(byKey.surfaceLow || byKey.surface) + ";color:" + pick(byKey.onSurface) + ";border-color:" + pick(byKey.outline);
     return h(
       "div",
       { class: "example-card ex-artifact", style: "background:" + pick(byKey.surface) },
