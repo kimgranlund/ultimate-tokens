@@ -124,9 +124,9 @@ incrementally.
 - **a11y** ✓ `:focus-visible` ring; ✓ `aria-pressed` on toggle-buttons; ✓ `aria-label` on icon-only
   (`sections/color.js:822`). ✗ no `forced_colors`.
 - **Geometry** the cell roles: `min-block-size: var(--sh-control-height)`, `padding-inline: var(--sh-control-inset)`,
-  `font-size: var(--sh-control-text)`, `border-radius: var(--sh-control-radius)`, `line-height: 1` and
-  `white-space: nowrap`, so a label never wraps (`button`, `styles.css:190`). `test/repo/control-text.mjs` gates
-  every shell control rule against literal text sizes and paddings.
+  a `font-size` that reads `--sh-control-text`, `border-radius: var(--sh-control-radius)`, `line-height: 1` and
+  `white-space: nowrap`, so a label never wraps (`button`, `styles.css:190`). `test/repo/shell-text.mjs` gates
+  text on every shell rule, and every shell control and container against literal paddings, gaps and radii.
 
 ```json
 { "component":"button","layer":"component","role":"button","replaces_native":false,

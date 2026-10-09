@@ -116,8 +116,9 @@ Since T-0017 (ADR-032) the editor chrome sizes its controls from the Geometry la
   a margin, so they grow with it; only `--fh` and `--r-sm/--r/--r-lg` stay literal.
 - **Tests.** The headless groups `(shg1)` to `(shg6)` cover the host attributes, a doc commit, the
   Settings override, the head style, its host scoping and a second instance's own style. The static
-  gate `test/repo/control-text.mjs` fails a shell control rule whose font-size or padding does not read
-  a `var(` alias (or is zero); pixels are proven only by CI smoke.
+  gate `test/repo/shell-text.mjs` gates text on every shell rule (a literal font-size, weight, tracking,
+  case or line-height fails) and fails a shell control or container whose padding, gap or radius does
+  not read a `var(` alias (or is zero); pixels are proven only by CI smoke.
 
 ## Validate (draft → check → fix → re-check)
 
