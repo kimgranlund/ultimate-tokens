@@ -27,3 +27,10 @@ Surface: `src/ui/styles.css`, `src/ui/app.js` (pane header and selection), `src/
 
 ## Constraints
 Every shell control text/padding reads the cell roles (`test/repo/control-text.mjs`). Doc cites into `src/ui/styles.css`, `app.js`, sections shift: run `node scripts/audit-citations.mjs` and repair in the same change. No U+2014. Hyperscript `h()` only, no framework. Gates via `scripts/gate_lock.py run -- <cmd>` with `SDLC_GATE_WORKERS=10`; `npm run smoke` needs `CHROME_BIN` set to Chrome Beta/Canary. `npm test` before done. The user previews in Safari: reason about WebKit from spec, smoke is Chrome only.
+
+## Acceptance criteria
+- At product-md and content-lg every visible shell `<select>` computes `appearance: none`, draws a chevron (`background-image` gradient) and reserves end padding for it (`npm run smoke`, "control polish" check; `test/repo/ui-polish.mjs` pins the rule).
+- Range inputs: track height is at least 0.4 times the control icon role and the `--ctl-range-thumb` role (1.25 times the icon role, at least the icon) is what both `::-webkit-slider-thumb` and `::-moz-range-thumb` read (smoke "control polish", `test/repo/ui-polish.mjs`).
+- No `.pane-back` button and no `Global` button in the inspector header in a palette context; `_deselect` and Esc still return to Global (headless group `irf`).
+- Every `.prime-strip` has gap 0, seven equal-width swatches spanning the strip, and the strip is as wide as the ramp strip below it; the New Palette `Context priority` row is gapless with flex-basis 0 swatches (smoke "control polish", `test/repo/ui-polish.mjs`).
+- `npm test`, `npm run build`, `npm run smoke` green; `node scripts/audit-citations.mjs` clean.

@@ -22,13 +22,13 @@ Bridge script: `scripts/gen-figma-ui.mjs:17-56` (injected before `</body>`, beco
 
 | Type | Call site | Sandbox handler | Reply |
 |---|---|---|---|
-| `load-config` | `app.js:1059` (probe), `app.js:2583` (explicit load), posting `type: "load-config"` | `code.js:228-231` (`msg.type === "load-config"`) | `config-loaded` |
-| `read-variables` | `app.js:1060` (probe), `app.js:2637` (manual re-read), posting `type: "read-variables"` | `code.js:239-242` (`msg.type === "read-variables"`) | `variables-read` |
+| `load-config` | `app.js:1059` (probe), `app.js:2575` (explicit load), posting `type: "load-config"` | `code.js:228-231` (`msg.type === "load-config"`) | `config-loaded` |
+| `read-variables` | `app.js:1060` (probe), `app.js:2629` (manual re-read), posting `type: "read-variables"` | `code.js:239-242` (`msg.type === "read-variables"`) | `variables-read` |
 | `load-sets` | `app.js:1061` (probe), posting `type: "load-sets"` | `code.js:246-249` (`msg.type === "load-sets"`) | `sets-loaded` |
 | `read-float-variables` | `apply-gate.js:45` (gate open), posting `type: "read-float-variables"` | `code.js:243-245` (`msg.type === "read-float-variables"`) | `float-variables-read` |
 | `list-fonts` | `typography.js:791` (one-shot), posting `type: "list-fonts"` | `code.js:232-238` (`msg.type === "list-fonts"`) | `fonts-listed` |
 | `save-sets` | `app.js:1207` (`persistSets`), posting `type: "save-sets"` | `code.js:250-252` (`msg.type === "save-sets"`) | **none** (fire-and-forget) |
-| `save-config` | `app.js:2570`, posting `type: "save-config"` | `code.js:225-227` (`msg.type === "save-config"`) | **none** (only a `figma.notify`, not a postMessage) |
+| `save-config` | `app.js:2562`, posting `type: "save-config"` | `code.js:225-227` (`msg.type === "save-config"`) | **none** (only a `figma.notify`, not a postMessage) |
 | `apply` | `apply-gate.js:110`, posting `type: "apply"` | `code.js:133-224` (`msg.type === "apply"`) | `apply-done` or `apply-error` |
 | `sweep-scan` | `apply-gate.js:227`, posting `type: "sweep-scan"` | `code.js:253-259` (`msg.type === "sweep-scan"`) | `sweep-scanned` |
 | `sweep-delete` | `apply-gate.js:254`, posting `type: "sweep-delete"` | `code.js:260-269` (`msg.type === "sweep-delete"`) | `sweep-done` |
@@ -37,9 +37,9 @@ Bridge script: `scripts/gen-figma-ui.mjs:17-56` (injected before `</body>`, beco
 
 | Type | Sandbox origin | Bridge line | UI handler | State mutated | Re-renders? |
 |---|---|---|---|---|---|
-| `figma-init` | `code.js:41` (`type: "figma-init"`) (once, right after `showUI`) | `gen-figma-ui.mjs:32` (`markInFigma`) | `app.js:2478 setInFigma` | `this.inFigma` | yes (`render()`, `app.js:2477`) |
-| `config-loaded` | `code.js:230` (`type: "config-loaded"`) | `gen-figma-ui.mjs:34` | `app.js:2576 applyLoadedConfig` | `this.fileConfig` or opens a new set | yes, both branches |
-| `variables-read` | `code.js:241` (`type: "variables-read"`) | `gen-figma-ui.mjs:36` | `app.js:2641 receiveLiveVariables` | `this.liveVars`, `this.liveVarsFound` | yes |
+| `figma-init` | `code.js:41` (`type: "figma-init"`) (once, right after `showUI`) | `gen-figma-ui.mjs:32` (`markInFigma`) | `app.js:2470 setInFigma` | `this.inFigma` | yes (`render()`, `app.js:2469`) |
+| `config-loaded` | `code.js:230` (`type: "config-loaded"`) | `gen-figma-ui.mjs:34` | `app.js:2568 applyLoadedConfig` | `this.fileConfig` or opens a new set | yes, both branches |
+| `variables-read` | `code.js:241` (`type: "variables-read"`) | `gen-figma-ui.mjs:36` | `app.js:2633 receiveLiveVariables` | `this.liveVars`, `this.liveVarsFound` | yes |
 | `float-variables-read` | `code.js:245` (`type: "float-variables-read"`) | `gen-figma-ui.mjs:39` | `apply-gate.js:313 receiveLiveFloatVariables` | `this._liveFloatVars` | yes |
 | `sets-loaded` | `code.js:249` (`type: "sets-loaded"`) | `gen-figma-ui.mjs:42` | `app.js:1215 receiveStoredSets` | `this.sets` (guarded) | yes |
 | `fonts-listed` | `code.js:238` (`type: "fonts-listed"`) | `gen-figma-ui.mjs:45` | `typography.js:794 receiveFigmaFonts` | `this._figmaFonts` | yes |
@@ -58,7 +58,7 @@ Refresh discipline is consistent, every inbound handler calls `this.render()` (o
 |---|---|---|---|
 | `_applyBusy` (`app.js:152`) | `apply-gate.js:144` (`applyToFigma`) | `onApplyDone` (`apply-gate.js:159`) or `onApplyError` (`apply-gate.js:179`) | **Covered on the Figma-side throw** (code.js always answers `apply` either way). **Not covered** if the reply never arrives at all, no timeout, so a UI reload/detach of the plugin frame mid-apply wedges it forever (session-scoped only; a fresh open resets the constructor default). Documented intent (TKT-0004) is "belt-and-suspenders re-entry guard," not "impossible to wedge." |
 | `sweepBusy` (`app.js:101`) | `apply-gate.js:226` (scan), `apply-gate.js:253` (delete) | `receiveSweepScan` (`apply-gate.js:231`), `onSweepDone` (`apply-gate.js:258`), or the local `catch` if `postMessage` itself throws (`apply-gate.js:228`, `apply-gate.js:255`) | **NOT covered** if the sandbox's OWN handler throws after receipt, see the asymmetry in (A). A throwing `sweep-scan`/`sweep-delete` sets `sweepBusy=true`, the sandbox only `figma.notify`s, no reply ever posts, and the Cleanup panel's Scan/Delete buttons (`disabled: busy`, `settings.js:371,367-370`) stay disabled **permanently** for the rest of the session. Real bug, worth a ticket (either code.js posts `sweep-scanned:{texts:[],paints:[]}`/`sweep-done:{removed:0}` from its own catch, mirroring the apply carve-out, or the UI needs a timeout fallback). |
-| `_loadRequested` (`app.js:106`) | `loadFromProject` (`app.js:2580`) | `applyLoadedConfig` (`app.js:2604`) on any exit path, or the local `catch`/no-raw branches (`app.js:2583,2340,2341`) | Fully covered, every path resets it. No wedge. |
+| `_loadRequested` (`app.js:106`) | `loadFromProject` (`app.js:2572`) | `applyLoadedConfig` (`app.js:2596`) on any exit path, or the local `catch`/no-raw branches (`app.js:2575,2340,2341`) | Fully covered, every path resets it. No wedge. |
 | `_figmaProbed` (`app.js:107`) | `probeFigmaProject` (`app.js:1053`), immediately | never reset (one-shot by design, "probe once when the gallery opens") | Not a wedge, a fire-once latch, correctly documented as such. |
 | `_figmaFontsRequested` (`app.js:98`) | `typography.js:790`, immediately | never reset | Same shape, deliberate one-shot per the adjacent comment. Not a wedge. |
 
@@ -92,8 +92,8 @@ Not cleaned up:
 - `_bindRangeDrag` (`app.js:2289-2335`): a `pointerdown` listener on `this` (dies with the element) that, on drag-start, adds `pointermove`/`pointerup`/`pointercancel` on `window`, cleaned by its own `end()` on pointerup/cancel (`app.js:2348-2351`), **but not if the element disconnects mid-drag**: those three window-level listeners, and the closure holding the whole app instance, live on indefinitely.
 - `_liveRaf` (`app.js:302-307`): never cancelled; a post-disconnect rAF still runs `_liveRefreshNow` against a detached subtree (harmless, wasted work, unguarded).
 - `_dragTimer` (`app.js:178,364`): a settled-drag commit up to 250ms after disconnect still mutates `this.history`/`this.future` on a dead instance.
-- `_toastT` (`app.js:2794-2795`): same shape, ≤1800ms tail.
-- The blob-download revoke timer (`URL.revokeObjectURL`, `app.js:2448`, 1500ms) and the code.js-download timer (`download()`, `app.js:2698`, 150ms): both harmless, also uncleaned.
+- `_toastT` (`app.js:2786-2787`): same shape, ≤1800ms tail.
+- The blob-download revoke timer (`URL.revokeObjectURL`, `app.js:2440`, 1500ms) and the code.js-download timer (`download()`, `app.js:2690`, 150ms): both harmless, also uncleaned.
 
 None exploitable today because `<ultimate-tokens>` is a true page-lifetime singleton, `disconnectedCallback` in practice never fires outside tests. That's exactly why it's worth flagging: the two things that DO get cleaned up were fixed reactively; the rest were never audited as a set. Nothing in `test/ui/headless-boot.mjs` exercises disconnect/reconnect at all.
 

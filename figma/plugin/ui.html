@@ -99,7 +99,7 @@ ultimate-tokens {
   --sh-chip-height: var(--chip-height, 24px);
   --sh-chip-inset: var(--chip-inset, 5.5px);
   --sh-chip-text: var(--chip-text, 12px);
-  --ctl-thumb: calc(var(--sh-control-icon) - 4px); /* switch + range thumb: a 2px edge each side */
+  --ctl-thumb: calc(var(--sh-control-icon) - 4px); --ctl-range-track: calc(var(--sh-control-icon) * 0.4); --ctl-range-thumb: calc(var(--sh-control-icon) * 1.25); /* switch thumb: a 2px edge each side; the range track + thumb are larger (T-0036) */
   --hh: max(48px, calc(var(--sh-control-height) + 16px));
   --ch: max(42px, calc(var(--sh-control-height) + 10px));
 }
@@ -722,11 +722,10 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
 .ramp-strip i:hover { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 2; }
 
 /* prime strip, the seven prime-system swatches (brightest/brighter/bright/prime/dim/dimmer/
-   dimmest), discrete chips (not a joined ramp) so they read as their own token group, not stops. */
-.prime-strip { display: flex; gap: 3px; margin-bottom: 6px; }
+   dimmest), one gapless strip like the ramp below it; the swatches share the card width (T-0036). */
+.prime-strip { display: flex; gap: 0; width: 100%; margin-bottom: 6px; box-shadow: var(--shadow); border-radius: 6px; overflow: hidden; }
 .prime-swatch {
-  width: 26px; height: 32px; display: block; position: relative;
-  border-radius: 4px; box-shadow: var(--shadow);
+  flex: 1 1 0; min-width: 0; height: 32px; display: block; position: relative;
 }
 .prime-swatch:hover { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 2; }
 
@@ -818,7 +817,7 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: var(--sh-chip-text);
   min-block-size: var(--sh-chip-height); padding-block: 0; padding-inline: var(--sh-chip-inset);
   border: 1px solid var(--line); border-radius: 5px;
-  background: var(--panel-2); color: var(--ink); max-width: 210px;
+  background-color: var(--panel-2); color: var(--ink); max-width: 210px;
 }
 .map-raw-input { width: 150px; }
 .map-raw-select.ov, .map-raw-input.ov { border-color: var(--accent); color: var(--accent); font-weight: 600; }
@@ -965,8 +964,6 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 .pane-head .pane-title { flex: 1; min-width: 0; font-size: 12px; font-weight: 600; color: var(--ink-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* the Color inspector's context heading takes programmatic focus after a deselect (tabindex -1), show where it landed */
 .pane-head .pane-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
-/* the palette inspector's way back to Global (keyboard-reachable, unlike the ramp rows) */
-.pane-head .pane-back { flex: none; }
 /* compound container (ADR-033): the container pads by the part inset (the 1px border sits inside it),
    so the outer box is one control height; each segment is a part (partHeight tall, partInset inline,
    radiusInset corners), concentric with the container's radiusControl. The drawer's Figma + Radix file
@@ -1041,18 +1038,18 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 .row { display: flex; align-items: center; gap: 8px; }
 
 input[type="range"] {
-  -webkit-appearance: none; appearance: none; width: 100%; height: 4px;
+  -webkit-appearance: none; appearance: none; width: 100%; height: var(--ctl-range-track);
   background: var(--line); border-radius: 999px; outline: none;
   touch-action: none; /* the delegated pointer-drag (_bindRangeDrag) owns the gesture, don't let touch scroll/pan it */
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none;
-  width: var(--ctl-thumb); height: var(--ctl-thumb); border-radius: 50%;
+  box-sizing: border-box; width: var(--ctl-range-thumb); height: var(--ctl-range-thumb); border-radius: 50%;
   background: var(--accent); border: 2px solid var(--panel);
   box-shadow: var(--shadow); cursor: pointer;
 }
 input[type="range"]::-moz-range-thumb {
-  width: var(--ctl-thumb); height: var(--ctl-thumb); border-radius: 50%;
+  box-sizing: border-box; width: var(--ctl-range-thumb); height: var(--ctl-range-thumb); border-radius: 50%;
   background: var(--accent); border: 2px solid var(--panel); cursor: pointer;
 }
 
@@ -1291,9 +1288,9 @@ dialog.newpal::backdrop { background: rgba(10,14,22,.34); }
 /* priority chain (Relative preview), the ordered context colors; the primary wears the accent ring. */
 .newpal-pp-chain { margin-bottom: 12px; }
 .newpal-pp-chain small { display: block; color: var(--ink-dim); font-size: 10.5px; margin-bottom: 6px; }
-.newpal-pp-chain-row { display: flex; flex-wrap: wrap; gap: 6px; }
-.newpal-pp-chain-sw { width: 22px; height: 22px; border-radius: var(--r-sm); border: 1px solid var(--line); box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
-.newpal-pp-chain-sw.primary { box-shadow: 0 0 0 2px var(--accent); }
+.newpal-pp-chain-row { display: flex; gap: 0; width: 100%; border-radius: var(--r-sm); overflow: hidden; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+.newpal-pp-chain-sw { flex: 1 1 0; min-width: 0; height: 22px; }
+.newpal-pp-chain-sw.primary { box-shadow: inset 0 0 0 2px var(--accent); }
 /* RIGHT, proposed-palette preview (swatches + ramp) */
 .newpal-pp-host { margin-top: 14px; }
 .newpal-preview-pane { border-top: 1px solid var(--line); padding-top: 12px; }
@@ -1700,7 +1697,28 @@ a.account-manage:hover { text-decoration: underline; }
 .icon-tile-lic { opacity: .7; }
 .icon-custom-name, .icon-custom-variant { min-width: 180px; }
 
-
+/* Select trigger (T-0036): the native look is dropped (appearance none) so it reads as a sibling of the text
+   input rule at the top (`input[type="text"], ..., select`): control height / inset / radius / text roles, token colors, and a DRAWN chevron (two gradient
+   triangles, so it follows --select-chevron and survives dark mode, WebKit and Blink alike). The end padding
+   reserves the chevron's lane; every select class below that re-sets padding-inline keeps padding-inline-end. */
+select {
+  -webkit-appearance: none; appearance: none;
+  --select-lane: calc(var(--sh-control-icon) + var(--sh-control-inset));
+  padding-inline-end: var(--select-lane);
+  text-overflow: ellipsis; white-space: nowrap; cursor: pointer;
+  background-color: var(--panel-2);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--select-chevron, var(--ink-dim)) 50%),
+    linear-gradient(135deg, var(--select-chevron, var(--ink-dim)) 50%, transparent 50%);
+  background-size: calc(var(--sh-control-icon) * 0.3) calc(var(--sh-control-icon) * 0.3);
+  background-repeat: no-repeat;
+  background-position:
+    calc(100% - var(--sh-control-inset) - var(--sh-control-icon) * 0.3) 50%,
+    calc(100% - var(--sh-control-inset)) 50%;
+}
+select:disabled { opacity: .4; cursor: default; pointer-events: none; }
+.map-raw-select { padding-inline-end: calc(var(--sh-chip-inset) + 14px); background-position: calc(100% - var(--sh-chip-inset) - 5px) 50%, calc(100% - var(--sh-chip-inset)) 50%; background-size: 5px 5px; }
+.ex-select { padding-inline-end: var(--select-lane); } /* the preview select: .ex-input's padding shorthand would drop the chevron lane */
 </style></head>
 <body><ultimate-tokens></ultimate-tokens>
 <script type="module">
@@ -23253,19 +23271,11 @@ class HctApp extends HTMLElement {
       // header row: while OPEN the right toggle hugs the inner (canvas-side) edge, left of
       // the title; once collapsed it is rendered in the canvas-header instead. The title NAMES the context
       // ("Palette: <name>" / "Global") and takes programmatic focus (tabindex -1) when a deselect removes the
-      // focused palette control; in a palette context a button returns to Global, the keyboard path back
-      // (a palette is otherwise left only by Esc, which a focused field swallows) (#814 review).
+      // focused palette control. There is no back button (T-0036): the selection follows the canvas, and a
+      // palette is left by a click on empty canvas or Esc (a focused field takes one Esc to blur, a second to deselect).
       h("div", { class: "pane-head" },
         this.panesRight ? this.paneToggle("right") : false,
-        h("span", { class: "pane-title", tabindex: "-1", "data-fk": "pane-title" }, this.paneContextTitle()),
-        inPalette
-          ? btn([icon("caret-left", { size: 12 }), "Global"], {
-              cls: "pane-back",
-              title: "Back to the Global inspector (Esc)",
-              ariaLabel: "Back to the Global inspector",
-              onclick: () => this._deselect(),
-            })
-          : false),
+        h("span", { class: "pane-title", tabindex: "-1", "data-fk": "pane-title" }, this.paneContextTitle())),
       h("div", { class: "seg-body", "data-scroll": "seg-body" }, body),
       // Pinned below the panel in EVERY context: a live component preview wired to the
       // selected palette's roles (surface / onSurface / onSurfaceVariant + primary).
@@ -23345,7 +23355,7 @@ class HctApp extends HTMLElement {
   exampleForm(view) {
     const { byKey, pick, main } = this._exampleRoles(view);
     const accent = pick(main);
-    const fieldStyle = "background:" + pick(byKey.surfaceLow || byKey.surface) + ";color:" + pick(byKey.onSurface) + ";border-color:" + pick(byKey.outline);
+    const fieldStyle = "background-color:" + pick(byKey.surfaceLow || byKey.surface) + ";color:" + pick(byKey.onSurface) + ";border-color:" + pick(byKey.outline);
     return h(
       "div",
       { class: "example-card ex-artifact", style: "background:" + pick(byKey.surface) },
@@ -23356,7 +23366,7 @@ class HctApp extends HTMLElement {
         { class: "ex-form-row", style: "color:" + pick(byKey.onSurfaceVariant) },
         h("label", {}, h("input", { type: "checkbox", checked: "checked", tabindex: "-1", "aria-hidden": "true", style: "accent-color:" + accent }), "Checkbox"),
         h("label", {}, h("input", { type: "radio", checked: "checked", tabindex: "-1", "aria-hidden": "true", style: "accent-color:" + accent }), "Radio"),
-        h("select", { tabindex: "-1", "aria-hidden": "true", class: "ex-input ex-select", style: fieldStyle }, h("option", {}, "Select")),
+        h("select", { tabindex: "-1", "aria-hidden": "true", class: "ex-input ex-select", style: fieldStyle + ";--select-chevron:" + pick(byKey.onSurfaceVariant) }, h("option", {}, "Select")),
       ),
     );
   }

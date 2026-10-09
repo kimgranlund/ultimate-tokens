@@ -2121,19 +2121,11 @@ class HctApp extends HTMLElement {
       // header row: while OPEN the right toggle hugs the inner (canvas-side) edge, left of
       // the title; once collapsed it is rendered in the canvas-header instead. The title NAMES the context
       // ("Palette: <name>" / "Global") and takes programmatic focus (tabindex -1) when a deselect removes the
-      // focused palette control; in a palette context a button returns to Global, the keyboard path back
-      // (a palette is otherwise left only by Esc, which a focused field swallows) (#814 review).
+      // focused palette control. There is no back button (T-0036): the selection follows the canvas, and a
+      // palette is left by a click on empty canvas or Esc (a focused field takes one Esc to blur, a second to deselect).
       h("div", { class: "pane-head" },
         this.panesRight ? this.paneToggle("right") : false,
-        h("span", { class: "pane-title", tabindex: "-1", "data-fk": "pane-title" }, this.paneContextTitle()),
-        inPalette
-          ? btn([icon("caret-left", { size: 12 }), "Global"], {
-              cls: "pane-back",
-              title: "Back to the Global inspector (Esc)",
-              ariaLabel: "Back to the Global inspector",
-              onclick: () => this._deselect(),
-            })
-          : false),
+        h("span", { class: "pane-title", tabindex: "-1", "data-fk": "pane-title" }, this.paneContextTitle())),
       h("div", { class: "seg-body", "data-scroll": "seg-body" }, body),
       // Pinned below the panel in EVERY context: a live component preview wired to the
       // selected palette's roles (surface / onSurface / onSurfaceVariant + primary).
@@ -2213,7 +2205,7 @@ class HctApp extends HTMLElement {
   exampleForm(view) {
     const { byKey, pick, main } = this._exampleRoles(view);
     const accent = pick(main);
-    const fieldStyle = "background:" + pick(byKey.surfaceLow || byKey.surface) + ";color:" + pick(byKey.onSurface) + ";border-color:" + pick(byKey.outline);
+    const fieldStyle = "background-color:" + pick(byKey.surfaceLow || byKey.surface) + ";color:" + pick(byKey.onSurface) + ";border-color:" + pick(byKey.outline);
     return h(
       "div",
       { class: "example-card ex-artifact", style: "background:" + pick(byKey.surface) },
@@ -2224,7 +2216,7 @@ class HctApp extends HTMLElement {
         { class: "ex-form-row", style: "color:" + pick(byKey.onSurfaceVariant) },
         h("label", {}, h("input", { type: "checkbox", checked: "checked", tabindex: "-1", "aria-hidden": "true", style: "accent-color:" + accent }), "Checkbox"),
         h("label", {}, h("input", { type: "radio", checked: "checked", tabindex: "-1", "aria-hidden": "true", style: "accent-color:" + accent }), "Radio"),
-        h("select", { tabindex: "-1", "aria-hidden": "true", class: "ex-input ex-select", style: fieldStyle }, h("option", {}, "Select")),
+        h("select", { tabindex: "-1", "aria-hidden": "true", class: "ex-input ex-select", style: fieldStyle + ";--select-chevron:" + pick(byKey.onSurfaceVariant) }, h("option", {}, "Select")),
       ),
     );
   }

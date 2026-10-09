@@ -690,15 +690,14 @@ flushRaf();
   ok(dp.now !== dp.from && app.sel.kind === "palette" && app.sel.id === dp.now && palInspector(), `(irc) control: the same drop with a palette selected keeps the palette inspector on the moved palette (got ${app.sel.kind} ${app.sel.id}, palette at ${dp.now})`);
   app.undo(); settle();
 
-  // (c) the palette inspector has a focusable way back to Global; Esc still works, and a focused field takes two Escs
+  // (c) T-0036: the Back to Global button is gone; the keyboard path back is Esc, and a focused field takes two Escs
   app.selectPalette(1); settle();
-  const bk = backBtn();
-  ok(!!bk && bk.tagName === "BUTTON" && bk.getAttribute("tabindex") !== "-1" && !bk.disabled && !!bk.getAttribute("aria-label"), "(irf) the palette inspector header holds a focusable, labelled Back-to-Global <button>");
-  ok(!!bk && !!bk.parentNode && bk.parentNode.classList.contains("pane-head"), "(irf) the back button lives in the .pane-head");
-  if (bk) bk.focus();
-  if (bk) bk.dispatch("click", { target: bk }); settle();
-  ok(globalInspector() && paneTitle() === "Global", "(irf) activating the back button returns to the Global inspector");
-  ok(!backBtn(), "(irf) control: no back button in the Global context");
+  ok(app.sel.kind === "palette" && paneTitle() === "Palette: " + nameOf(1), "(irf) precondition: a palette is selected and the pane title names it");
+  ok(!backBtn(), "(irf) the palette inspector header holds no Back-to-Global button");
+  ok(!findIn(rp(), (e) => e.tagName === "BUTTON" && /Global/.test(textOf(e))), "(irf) no button anywhere in the inspector is labelled Global");
+  ok(!!findIn(rp(), (e) => e.classList && e.classList.contains("pane-title")), "(irf) control: the pane title is still in the header (the search can find header nodes)");
+  app._deselect(); settle();
+  ok(globalInspector() && paneTitle() === "Global", "(irf) _deselect (empty canvas click) still returns to the Global inspector");
   app.selectPalette(1); settle();
   fireKey("Escape"); settle();
   ok(globalInspector(), "(irf) Esc from the body still deselects to Global");
