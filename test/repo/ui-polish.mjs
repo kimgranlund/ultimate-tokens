@@ -45,6 +45,27 @@ const CHECKS = [
     const fs = (app.match(/const fieldStyle = "([a-z-]+):/) || [])[1];
     return /\.ex-select\s*\{[^}]*padding-inline-end:\s*var\(--select-lane\)/.test(css) && fs === "background-color";
   }],
+  // the anatomy rows (T-0044, shell-roles.mjs CONTROL_ANATOMY and CONTAINER_COMPOSITION)
+  ["anatomy: the interactive chip is a control (control font, height and inset, a pill on the control height)", (css) => {
+    const b = body(css, "button.chip");
+    return decl(b, "font") === "var(--ui-control-font)" && decl(b, "min-block-size") === "var(--sh-control-height)" && decl(b, "padding-inline") === "var(--sh-control-inset)" && decl(b, "border-radius") === "calc(var(--sh-control-height) / 2)";
+  }],
+  ["anatomy: the badge chip keeps the compact chip row (badge font, chip height and inset, a pill on the chip height)", (css) => {
+    const b = body(css, ".chip");
+    return decl(b, "font") === "var(--ui-badge-font)" && decl(b, "min-block-size") === "var(--sh-chip-height)" && decl(b, "padding-inline") === "var(--sh-chip-inset)" && decl(b, "border-radius") === "calc(var(--sh-chip-height) / 2)";
+  }],
+  ["anatomy: the switch thumb sits one edge inside its track (thumb = icon - 2 edge, inset by the edge, track radius half the icon)", (css) => {
+    const thumb = body(css, ".toggle .track::after");
+    return /--ctl-thumb:\s*calc\(var\(--sh-control-icon\)\s*-\s*2\s*\*\s*var\(--ui-edge\)\)/.test(css) && decl(thumb, "top") === "var(--ui-edge)" && decl(thumb, "left") === "var(--ui-edge)" && decl(thumb, "width") === "var(--ctl-thumb)" && decl(body(css, ".toggle .track"), "border-radius") === "calc(var(--sh-control-icon) / 2)";
+  }],
+  ["anatomy: the menu wrap pads by the part inset and rounds on the card radius", (css) => {
+    const b = body(css, ".tools-menu:popover-open");
+    return decl(b, "padding") === "var(--sh-part-inset)" && decl(b, "border-radius") === "var(--sh-radius-card)";
+  }],
+  ["anatomy: every button reads the control role font, with no size override", (css) => {
+    const b = body(css, "button");
+    return decl(b, "font") === "var(--ui-control-font)" && decl(b, "font-size") === null;
+  }],
 ];
 
 // known-bad samples, one per check, that the check must reject
@@ -55,6 +76,11 @@ const BAD = [
   ".prime-strip { display: flex; gap: 3px; } .prime-swatch { width: 26px; }",
   ".newpal-pp-chain-row { display: flex; gap: 6px; } .newpal-pp-chain-sw { width: 22px; }",
   ".ex-select { width: auto; }",
+  "button.chip { font: var(--ui-control-font); min-block-size: var(--sh-chip-height); padding-inline: var(--sh-chip-inset); border-radius: 999px; }",
+  ".chip { font-size: var(--sh-chip-text); font-weight: 600; min-block-size: var(--sh-chip-height); padding-inline: var(--sh-chip-inset); border-radius: 999px; }",
+  "ultimate-tokens { --ctl-thumb: calc(var(--sh-control-icon) - 4px); } .toggle .track { border-radius: 999px; } .toggle .track::after { top: 2px; left: 2px; width: var(--ctl-thumb); }",
+  ".tools-menu:popover-open { padding: var(--sh-part-inset); border-radius: calc(var(--sh-control-radius) + var(--sh-part-inset)); }",
+  "button { font: inherit; font-size: var(--sh-control-text); }",
 ];
 // a field style that is the `background:` shorthand, with the right padding rule: still rejected
 const BAD_APP = 'const fieldStyle = "background:" + pick(x);';

@@ -8,15 +8,16 @@
 // role's), a line-height other than 1, normal, inherit or 0, and a font shorthand with no var( are
 // flagged; the shorthand passes when a later font-size in the same rule reads a var(. Geometry, on the
 // control and container kinds below: a padding*, gap or border-radius with a nonzero literal length
-// outside var( is flagged, except border-radius: 50% (a circle is a shape, not a size). A value that reads a var( passes the
-// text checks; custom-property declarations (--*) and @keyframes are not checked.
+// outside var( is flagged, except border-radius: 50% (a circle is a shape, not a size) and a padding of
+// exactly calc(var(--role) - 1px) (the 1px border a compound container's padding sits inside, ADR-033;
+// the form headless (cpd5) pins on .segmented). A value that reads a var( passes the text checks; custom-property declarations (--*) and @keyframes are not checked.
 //
-// ALLOW exempts a selector that is not the shell chrome. PENDING lists the families a later step of
-// T-0044 migrates; a selector they match is skipped until that step empties its list. A needle that
-// starts with = matches one selector exactly; any other needle matches by substring.
+// ALLOW exempts a selector that is not the shell chrome. A needle that starts with = matches one
+// selector exactly; any other needle matches by substring.
 //
 // Usage: node test/repo/shell-text.mjs [--strict] [path/to/styles.css]   (default src/ui/styles.css)
-//   --strict ignores PENDING. /dev/stdin reads the rules from a pipe.
+//   --strict is still accepted and changes nothing: every family is migrated (T-0044 step 8), so the
+//   gate is always strict. /dev/stdin reads the rules from a pipe.
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -24,7 +25,6 @@ import { dirname, join, resolve } from "node:path";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const args = process.argv.slice(2);
-const STRICT = args.includes("--strict");
 const pathArg = args.find((a) => !a.startsWith("--"));
 const STYLES = pathArg ? resolve(pathArg) : join(ROOT, "src", "ui", "styles.css");
 
@@ -61,16 +61,8 @@ const ALLOW = [
 // shell chrome that carries a specimen prefix: never exempt by ALLOW
 const CHROME = [".ex-collapse-toggle", ".ex-artifact-title"];
 
-const PENDING = {
-  "step-8": [
-    "=button", "=select", '=input[type="text"]', '=input[type="search"]', "=.linklike", ".chip", ".segmented",
-    ".figma-files", ".radix-files", ".toggle", ".tyi-voice-name", ".tyi-font-input", ".map-raw-", ".tools-menu",
-  ],
-};
-
 const matches = (s, needle) => (needle.startsWith("=") ? s === needle.slice(1) : s.includes(needle));
 const allowed = (s) => !CHROME.some((c) => s.includes(c)) && ALLOW.some(([needle]) => matches(s, needle));
-const pendingKey = (s) => Object.keys(PENDING).find((k) => PENDING[k].some((needle) => matches(s, needle)));
 
 const elementRe = (name) => new RegExp(`(^|[\\s>+~(])${name}(?![\\w-])`);
 const classRe = (name) => new RegExp(`\\.${name}(?![\\w-])`);
@@ -156,12 +148,13 @@ function textBad(prop, bare, later) {
 function geometryBad(prop, bare) {
   if (!GEOMETRY(prop)) return false;
   if (prop === "border-radius" && bare === "50%") return false;
+  if (prop.startsWith("padding") && /^calc\(var\(--[\w-]+\)\s*-\s*1px\)$/.test(bare)) return false;
   return nonZeroLength(outsideVar(bare));
 }
 
-// flagged declarations: { selectors, prop, value } in `found`, and the ones a PENDING family holds in `pending`
-function check(css, strict) {
-  const found = [], pending = [];
+// flagged declarations: { selectors, prop, value }
+function check(css) {
+  const found = [];
   for (const [list, body] of rules(css)) {
     const live = splitList(list).filter((s) => !allowed(s));
     if (!live.length) continue;
@@ -175,39 +168,37 @@ function check(css, strict) {
       let scope = [];
       if (textBad(prop, bare, decls.slice(i + 1))) scope = live;
       else if (geometryBad(prop, bare)) scope = live.filter(isKind);
-      if (!scope.length) return;
-      const open = strict ? scope : scope.filter((s) => !pendingKey(s));
-      if (open.length) found.push({ selectors: open, prop, value });
-      else pending.push({ selectors: scope, prop, value, keys: [...new Set(scope.map(pendingKey))] });
+      if (scope.length) found.push({ selectors: scope, prop, value });
     });
   }
-  return { found, pending };
+  return found;
 }
 
 const line = (v) => `${v.selectors.join(", ")} | ${v.prop}: ${v.value}`;
 
-// negative controls, under strict: each must be flagged
+// negative controls: each must be flagged
 const CONTROLS = [
   ".pane-head .pane-title { font-size: 12px; }",
   ".sub-head { font-weight: 600; }",
   ".tools-menu:popover-open { border-radius: 16px; }",
   ".figma-files button { font-size: 11.5px; }",
   ".toggle { font: inherit; }",
+  ".segmented { padding: calc(var(--sh-part-inset) - 2px); }",
 ];
 for (const css of CONTROLS) {
-  if (check(css, true).found.length !== 1) {
+  if (check(css).length !== 1) {
     console.log(`FAIL shell-text: the negative control (${css}) was not flagged`);
     process.exit(1);
   }
 }
-// allow-list positive, under strict: a specimen must pass
+// allow-list positive: a specimen must pass
 const POSITIVE = ".ex-title { font-size: 15px; }";
-if (check(POSITIVE, true).found.length) {
+if (check(POSITIVE).length) {
   console.log(`FAIL shell-text: the allow-list positive (${POSITIVE}) was flagged`);
   process.exit(1);
 }
 
-const { found, pending } = check(readFileSync(STYLES, "utf8"), STRICT);
+const found = check(readFileSync(STYLES, "utf8"));
 if (found.length) {
   for (const v of found) console.log(`FAIL ${line(v)}`);
   for (const [needle, reason] of ALLOW) console.log(`allowed: ${needle}: ${reason}`);
@@ -215,7 +206,3 @@ if (found.length) {
   process.exit(1);
 }
 console.log("shell-text: pass, every shell rule reads its text from the type roles and every control and container its insets and radius from the cell roles");
-if (pending.length) {
-  const keys = Object.keys(PENDING).filter((k) => pending.some((p) => p.keys.includes(k)));
-  console.log(`shell-text: ${pending.length} declaration${pending.length === 1 ? "" : "s"} pending in ${keys.join(", ")}`);
-}

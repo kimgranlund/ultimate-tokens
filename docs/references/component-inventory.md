@@ -43,7 +43,7 @@ It builds every control inline with a single hyperscript helper `h(tag, attrs, .
   (`.toggle`, `segmented()`) are built on real `<button>`s with ARIA roles (`switchControl`, `app-helpers.mjs:363`;
   `segmented`, `app.js:1784`), so they keep focus and keyboard.
 - **Forced-colors support is one pass**, the `@media (forced-colors: active)` block at
-  `styles.css:1675`; custom-painted controls outside it still flatten in Windows High Contrast.
+  `styles.css:1692`; custom-painted controls outside it still flatten in Windows High Contrast.
 - **Geometry is ad-hoc, off any ramp.** Buttons are `padding: 4px 9px` (`styles.css before ADR-032`), the range
   thumb is 15px, the toggle track 34×19, none derived from a documented size ramp or the
   `(height − glyph)/2` law. Not wrong per se, but undocumented and unenforced.
@@ -114,7 +114,7 @@ incrementally.
 - **API** classes-as-variant: `.primary` (`styles.css:208`), `.ghost` (`styles.css:214`), `.icon-only` (a square
   control-height box, icon centered, borderless and transparent until hover, `button.icon-only`, `styles.css:201`),
   `.danger` (modifier on `.ghost`, `app-helpers.mjs:400`), `.add-pal-btn` (dashed, `styles.css:577`),
-  `.ex-btn` (preview, `cursor:default`, non-interactive, `styles.css:1010-1013`), `.copy-float` (`styles.css:1199`),
+  `.ex-btn` (preview, `cursor:default`, non-interactive, `styles.css:1029-1032`), `.copy-float` (`styles.css:1215`),
   `.map-reset` (borderless icon, `styles.css:845`), `.pane-toggle` (color only on an icon-only button, `styles.css:455`),
   `.figma-plugin-btn`, `.undo-btn`/`.redo-btn` (`app.js:1465/1466`).
 - **States** default · `hover` (`button:hover` `styles.css:207`) · `focus-visible` (`styles.css:208`) ·
@@ -124,7 +124,7 @@ incrementally.
 - **a11y** ✓ `:focus-visible` ring; ✓ `aria-pressed` on toggle-buttons; ✓ `aria-label` on icon-only
   (`sections/color.js:822`). ✗ no `forced_colors`.
 - **Geometry** the cell roles: `min-block-size: var(--sh-control-height)`, `padding-inline: var(--sh-control-inset)`,
-  a `font-size` that reads `--sh-control-text`, `border-radius: var(--sh-control-radius)`, `line-height: 1` and
+  the control text role (`font: var(--ui-control-font)`), `border-radius: var(--sh-control-radius)`, `line-height: 1` and
   `white-space: nowrap`, so a label never wraps (`button`, `styles.css:190`). `test/repo/shell-text.mjs` gates
   text on every shell rule, and every shell control and container against literal paddings, gaps and radii.
 
@@ -142,7 +142,7 @@ incrementally.
   Chroma basis peak/gamut (`switchControl`, `sections/color.js:2198`). Hue space OKLCH/CAM16 is **not** a toggle any more:
   it is a `segmented()` `role=group` (`sections/color.js:2146`, card 3), as is its On-colors sibling
   (`sections/color.js:2187`).
-- **Anatomy** `[ track (with ::after thumb) · label-span ]`. CSS `styles.css:1032-1048`; the `.track`
+- **Anatomy** `[ track (with ::after thumb) · label-span ]`. CSS `styles.css:1084-1101`; the `.track`
   is 34×19 with a 15px ::after thumb that translates on `.on`.
 - **API** `switchControl({ on, onToggle, label, ariaLabel })` (`app-helpers.mjs:363`), a
   `<button type=button class="toggle" role="switch">` with `aria-checked` mirroring `on`, `aria-label`
@@ -180,12 +180,12 @@ incrementally.
   - **Canvas stops** `.canvas-seg` `role=group` (`sections/color.js:815-823`); the Typography and Geometry
     breakpoint-mode and specimen-mode segments reuse the same modifier: `sections/typography.js:177`,
     `sections/typography.js:308`, `sections/geometry.js:163`, `sections/geometry.js:292`.
-  - **New-palette mode** `.newpal-seg` `role=group`, `sections/color.js:525`, `styles.css:1262`.
+  - **New-palette mode** `.newpal-seg` `role=group`, `sections/color.js:525`, `styles.css:1278`.
   - **Settings rows** `.settings-seg` `role=group`, one live instance per row, `overlays/settings.js:30`,
-    `styles.css:1382`.
+    `styles.css:1419`.
   - **Drawer format picker**: the as-found `.drawer-tabs` segmented row no longer exists in `src/`; the
     format is chosen with a native labelled `<select>` (`label[for=export-format]` + `aria-label`,
-    `overlays/drawer.js:177-186`; `.drawer-format`, `styles.css:1180-1182`), so it is a select (card 5), not a
+    `overlays/drawer.js:177-186`; `.drawer-format`, `styles.css:1198-1200`), so it is a select (card 5), not a
     segmented control.
   - **Figma files** `.figma-files` (and the Radix picker `.radix-files`), now a `segmented()` call with
     `baseClass: "figma-files"` and `role=group` (`overlays/drawer.js:221`), so it carries the same roving
@@ -284,7 +284,7 @@ incrementally.
 ### 8 · Checkbox
 
 - **Surface** S1. **Sites** 1, "ends bend same way" (`sections/color.js:1870-1878`, native `type=checkbox`).
-- **Anatomy** `.mini-check` `<label>` **wrapping** the native input + text (`styles.css:919-920`) →
+- **Anatomy** `.mini-check` `<label>` **wrapping** the native input + text (`styles.css:935-936`) →
   label *is* associated (the correct pattern, unlike the sliders/Name input).
 - **a11y** ✓ associated label, ✓ `accent-color: var(--accent)`, native keyboard (Space).
 - **Note** the only native checkbox; the boolean-toggle role elsewhere is taken by the custom
@@ -323,13 +323,13 @@ Three unrelated "pill" stylings, a naming/coherence drift, not one primitive:
 - **Anatomy** `.field` `[ label[ text · readout(<b>) ] · control ]`, label is `display:flex;
   justify-content:space-between` so the readout right-aligns, `styles.css:1006-1009`.
 - **Role** the one genuine layout primitive (token-only, no domain name). Owns no outer margin:
-  `.field { margin: 0; }` (`styles.css:1037`), the parent provides spacing; the only scoped exception is
-  `.newpal-custom .field { margin-bottom: 16px; }` (`styles.css:1290`).
+  `.field { margin: 0; }` (`styles.css:1057`), the parent provides spacing; the only scoped exception is
+  `.newpal-custom .field { margin-bottom: 16px; }` (`styles.css:1306`).
 
 ```json
 { "component":"field","layer":"primitive","role":null,"replaces_native":false,
   "parts":["label","readout","control(slot)"],"states":[],"keyboard":[],"forced_colors":"n/a",
-  "owns_outer_margin":false,"flags":["no self-owned margin, margin: 0 on `field` (`styles.css:1001`); only .newpal-custom .field sets `margin-bottom` (`styles.css:1252`)"] }
+  "owns_outer_margin":false,"flags":["no self-owned margin, margin: 0 on `field` (`styles.css:1057`); only .newpal-custom .field sets `margin-bottom` (`styles.css:1306`)"] }
 ```
 
 ---
@@ -385,11 +385,11 @@ selected palette), native DOM polar plot in an `.an-chart.hw` box (`styles.css:5
 
 `.ch-rule.lc-axis` · `.ch-band.lc-ceiling` (gamut fill) · `.ch-ribbon.lc-toneline` (dashed reference, a
 `--dash` mask) · `.ch-ribbon.lc-applied` (accent curve) · `.ch-dot`, native DOM L* curve in an `.an-chart`
-box; each series rule sets `--series`, from `.lc-axis` to `.lc-dot` (`styles.css:920-927`).
+box; each series rule sets `--series`, from `.lc-axis` to `.lc-dot` (`styles.css:942-949`).
 
 ### 17 · Damping graph
 
-`.damp-graph` container + `.ch-rule.dg-unity` (dashed identity line, `styles.css:917-918`), the differential-damping falloff
+`.damp-graph` container + `.ch-rule.dg-unity` (dashed identity line, `styles.css:939-940`), the differential-damping falloff
 curve as a `.ch-ribbon` in an `.an-chart` box (`graphDamping()` `sections/color.js:198`).
 
 ### 18 · Graph legend
@@ -457,7 +457,7 @@ fine as bespoke one-offs.
    absolutely-positioned `.tile-tag` overlay badge stays separate, it is an overlay, not an in-flow
    chip.)
 8. **✅ Self-owned outer margins** on `.field` / `.segmented`: resolved. Both are `margin: 0`
-   (`styles.css:965`, `styles.css:925-926`, the latter with a "no self-margin" comment); the parent owns
+   (`styles.css:1057`, `styles.css:996-997`, the latter with a "no self-margin" comment); the parent owns
    spacing. The earlier "deferred, intentional" note described a state that no longer exists.
 9. **✅ ⚪ Set-tile nested interactive.** *Fixed + corrected*, it was a `.del` **`<span>`** (mouse-only)
    inside the tile `<button>`, not a button-in-button (so not invalid HTML, but the delete had no

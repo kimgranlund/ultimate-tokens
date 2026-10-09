@@ -29,3 +29,7 @@ User rulings 2026-10-09: default cell is product tier, sm scale, md size; roles 
 
 ## Constraints
 Control sizes and the ladder do not change; no new framework; hyperscript `h()`; Safari is the preview browser (reason from spec); doc cites shift on every `styles.css` and `app.js` edit (`node scripts/audit-citations.mjs` in the same change); no U+2014; heavy gates through `scripts/gate_lock.py run --` with `SDLC_GATE_WORKERS=10`; never push.
+
+## Plan review
+
+plan review: replan: step 8 is built and tested (smoke PASS, npm test green, criteria 1 to 4 pass) but its scope guard deny-lists `test/smoke` while the step must edit `test/smoke/smoke.mjs` (line 365, drop `.chip` from the control-text chip predicate: user ruling, interactive chips use the control size); `steps.py widen` cannot rewrite a deny-path guard. Replan step 8 ONLY: keep every other step byte for byte, keep step 8's Do and criteria, and change its scope guard to allow exactly `test/smoke/smoke.mjs` (add `':!test/smoke/smoke.mjs'` to the git diff pathspec, keep the untracked-files list denied) and add the one-line smoke edit to its Do. The step 8 tree work is uncommitted in this worktree and the replanned step 8 continues from it (patch at /private/tmp/claude-501/t0044-s8-wip.patch).

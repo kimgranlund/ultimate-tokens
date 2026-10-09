@@ -362,7 +362,7 @@ try {
       const got = await evalJS(`(()=>{const vis=(e)=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0};
         const skip=(e)=>!!e.closest(".canvas-scene, .seg-example, .example-scheme")||[...e.classList].some((c)=>c.includes("ex-"))||e.matches(".map-reset, .key-act, .tok-reset, .tyi-weight-del, .key-slot");
         return [...${el}.querySelectorAll('button, select, input[type="text"], input[type="search"], input.tyi-font-input')].filter((e)=>vis(e)&&!skip(e)).map((e)=>{const cs=getComputedStyle(e);
-          return {tag:e.tagName.toLowerCase(),cls:e.className,fk:e.getAttribute("data-fk"),chip:e.matches(".map-raw-select, .map-raw-input, .chip"),fs:parseFloat(cs.fontSize),h:e.getBoundingClientRect().height,r:parseFloat(cs.borderTopLeftRadius),mh:parseFloat(cs.minHeight)}});})()`);
+          return {tag:e.tagName.toLowerCase(),cls:e.className,fk:e.getAttribute("data-fk"),chip:e.matches(".map-raw-select, .map-raw-input"),fs:parseFloat(cs.fontSize),h:e.getBoundingClientRect().height,r:parseFloat(cs.borderTopLeftRadius),mh:parseFloat(cs.minHeight)}});})()`);
       for (const c of got || []) {
         const who = `${view}: ${c.tag}${c.cls ? "." + String(c.cls).trim().split(/\s+/).join(".") : ""}`;
         const want = c.chip ? cell.chipText : cell.text;

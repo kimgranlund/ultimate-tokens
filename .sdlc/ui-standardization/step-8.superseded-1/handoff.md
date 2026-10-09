@@ -47,3 +47,6 @@ Depends on: step 7. Edits `src/ui/styles.css` (the `"step-8"` family and the con
 
 ## Notes
 - step 6 verifier ruling: `.settings-nav-item.on` (styles.css ~:1393) now matches rest and hover ink, so selected shows only by background and looks like hover. Give it a distinct selected cue, a state-colour exception the role rules allow (accent ink or an inset marker), and keep the gate green.
+
+## Scope widened
+- `test/smoke/smoke.mjs`: allowed by a conductor scope decision (steps.py widen): verifier-L3 plan defect: smoke.mjs:365-368 chip predicate pins the pre-ruling chip text; drop .chip from it (one line), the user ruled interactive chips use the control size
