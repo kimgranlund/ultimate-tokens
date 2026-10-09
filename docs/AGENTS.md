@@ -39,7 +39,6 @@ The first line that matches wins.
 ## Contents
 
 - [specs/](specs/AGENTS.md)
-- [planning/](planning/AGENTS.md)
 - [references/](references/AGENTS.md)
 - [guides/](guides/AGENTS.md)
 - [reports/](reports/AGENTS.md)
@@ -51,4 +50,4 @@ The first line that matches wins.
 ## Notes
 
 - `assets/` and `reference/` hold no Markdown documents, so they have no entry file and stay unlinked above by design: the onboard setup links a home only when it holds two or more Markdown files. `assets/` holds files that documents cite; `reference/` holds runtime-read data that code and generators open at those exact paths (ADR-028).
-- `planning/` was created in T-0034 for `ui-plan.md` and `decomposition.md`, which are plans, not references. `app-shell-patterns.md` and `spec-draft.md` moved to `specs/`, and the procedure `od-004-plugin-free-import-test.md` moved to `guides/`.
+- `ui-plan.md` and `decomposition.md` live in `specs/`: they are maintained as current truth, not plans under review (T-0041). `app-shell-patterns.md` and `spec-draft.md` moved to `specs/`, and the procedure `od-004-plugin-free-import-test.md` moved to `guides/`.
