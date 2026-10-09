@@ -4,7 +4,7 @@ Lookup tables, records and knowledge notes for the engines: the decision records
 
 Subfolders without a generated entry: [geometry/](geometry/AGENTS.md) (the geometry reference and the shell roles), which the generated list below has not picked up yet.
 
-<!-- sdlc-lite:managed:start v1 sha256:c246d58f5c4e -->
+<!-- sdlc-lite:managed:start v1 sha256:06a56321a47e -->
 ## Documents
 
 - [colors/](colors/AGENTS.md)
@@ -22,4 +22,5 @@ Subfolders without a generated entry: [geometry/](geometry/AGENTS.md) (the geome
 - [knowledge-05-figma-plugin.md](knowledge-05-figma-plugin.md)
 - [knowledge-06-palette-derivation.md](knowledge-06-palette-derivation.md)
 - [radix-park-adaptation.md](radix-park-adaptation.md)
+- [geometry/shell-roles.md](geometry/shell-roles.md)
 <!-- sdlc-lite:managed:end -->
