@@ -62,10 +62,6 @@ const ALLOW = [
 const CHROME = [".ex-collapse-toggle", ".ex-artifact-title"];
 
 const PENDING = {
-  "step-6": [
-    ".drawer-", ".figma-note", ".radix-note", ".config-note", ".copy-float", ".pro-upsell", ".newpal-", ".apply-gate-",
-    ".settings-", ".acct-", ".account-", ".cleanup-",
-  ],
   "step-7": [
     ".typo-", ".type-spec-", ".ty-role", ".tyi-voices-head", ".tyi-weights-core", ".tyi-voice-font", ".tyi-voice-stats",
     ".tyi-font-role", ".tyi-font-legend", ".geom-",
