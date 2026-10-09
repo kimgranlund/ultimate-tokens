@@ -189,7 +189,7 @@ ok(app.doc && app.doc.palettes.length === DEFAULT_PALETTES, `doc has ${DEFAULT_P
   // (shg5) the injected roles are scoped to this host: no document-level selector survives the rewrite
   const blocks = css.split("\n").filter((l) => /\{\s*$/.test(l));
   ok(!/^:root \{/m.test(css) && !css.includes(":where(:root)") && !css.includes(":where(*, :host)"), "(shg5) the style text has no :root {, :where(:root) or :where(*, :host) block");
-  ok(blocks.length === 16 && blocks.every((l) => l.includes(`ultimate-tokens[data-ut-geom="${key}"]`)), `(shg5) all 16 block selectors name the host's data-ut-geom (got ${blocks.length}: ${blocks.filter((l) => !l.includes("data-ut-geom")).join(" | ")})`);
+  ok(blocks.length === 17 && blocks.every((l) => l.includes(`ultimate-tokens[data-ut-geom="${key}"]`)) && blocks[16] === `ultimate-tokens[data-ut-geom="${key}"] {`, `(shg5) all 17 block selectors name the host's data-ut-geom, the 17th is the shell role block naming the host (got ${blocks.length}: ${blocks.filter((l) => !l.includes("data-ut-geom")).join(" | ")})`);
   // (shg6) a second instance gets its own key and its own style element
   const app2 = new App();
   app2.classList = new ClassList(); app2.dataset = {}; app2.style = new CSSStyleDeclaration(); app2._children = [];
@@ -199,6 +199,18 @@ ok(app.doc && app.doc.palettes.length === DEFAULT_PALETTES, `doc has ${DEFAULT_P
   ok(!!app2.dataset.utGeom && app2.dataset.utGeom !== key && !!st2 && st2 !== st && st2.id === `ut-geometry-roles-${app2.dataset.utGeom}` && st2.parentNode === document.head, `(shg6) a second instance gets key ${app2.dataset.utGeom} (first ${key}) and its own style element (${st2 && st2.id})`);
   ok(st2 && st2.textContent.includes(`ultimate-tokens[data-ut-geom="${app2.dataset.utGeom}"]`) && !st2.textContent.includes(`data-ut-geom="${key}"`), "(shg6) the second style names only its own host");
   if (st2) st2.remove();
+  // (shg7) the shell role block carries the text steps of the shell's own cell and follows a Settings override
+  const roleBlock = () => {
+    const ls = ((app._geomRolesStyle && app._geomRolesStyle.textContent) || "").split("\n");
+    const at = ls.indexOf(`ultimate-tokens[data-ut-geom="${key}"] {`);
+    return at < 0 ? "" : ls.slice(at, ls.indexOf("}", at) + 1).join("\n");
+  };
+  const rb = roleBlock();
+  ok(rb.includes("--ui-text-step-0:") && rb.includes("--ui-text-step-2:"), `(shg7) the host role block holds --ui-text-step-0: and --ui-text-step-2: (got ${JSON.stringify(rb)})`);
+  app.shellGeometry = { tier: "content", scale: "lg", radius: "round" }; app.render(); flushRaf();
+  const n = app._geomScaleFor("base").cells["content-lg-md"].text;
+  ok(roleBlock().includes(`--ui-text-step-0: ${n}px;`), `(shg7) a content-lg override sets --ui-text-step-0: ${n}px; (got ${JSON.stringify(roleBlock())})`);
+  app.shellGeometry = null; app.render(); flushRaf();
 }
 
 // ── (a) undo/redo + slider drag = ONE step ────────────────────────────────────────

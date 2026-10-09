@@ -50,6 +50,7 @@ import { COLLECTIONS } from "../engine/collections.js";
 import { stylePlans } from "../../figma/binder/style-plan.mjs";
 import { ICON_SYSTEMS, iconSystem, iconSystemById, iconSystemLabel } from "../engine/icon-systems.mjs";
 import { icon } from "./icons.js";
+import { shellRolesCSS } from "./shell-roles.mjs";
 import { CANVAS_INSET, MODE_WIDTH_PRESETS, PROJECT_KEY, PRO_EXPORT_FORMATS, SCHEME_ICON, SCHEME_NEXT, ago, btn, chip, defaultLicenseService, ensureAppTheme, ensureTypeFonts, field, fmt, h, hydrateConfig, hydrateStoredDoc, licenseInstanceName, loadProfile, loadSets, migrateStorageKeys, newSet, posterStripBands, sanitizeSetRecords, saveProfile, saveSets, setColorScheme, swatch } from "./app-helpers.mjs";
 import { ColorSection } from "./sections/color.js";
 import { TypeSection } from "./sections/typography.js";
@@ -2525,7 +2526,8 @@ class HctApp extends HTMLElement {
   // [data-tier/scale/radius/size] (the resolver's context selectors) and refreshes this host's head
   // <style> holding the kit's cell primitives + resolver, unprefixed and scoped to the host (so two
   // instances, or a page that loads its own exported geometry.css, never share or clobber the roles).
-  // Held on the instance, never looked up by id (the headless shim's getElementById returns null).
+  // The shell's text-role step variables (shellRolesCSS, the shell's tier-scale-md cell) close the
+  // same style. Held on the instance, never looked up by id (the headless shim's getElementById returns null).
   _applyShellGeometry() {
     const g = this._effectiveShellGeometry();
     this.dataset.utGeom = this._geomKey;
@@ -2540,7 +2542,8 @@ class HctApp extends HTMLElement {
       this._geomRolesStyle = el;
     }
     const sc = this.doc ? this._geomScaleFor("base") : geomScale(DEFAULT_GEOMETRY);
-    const css = scopeGeomCSS(geomTokensSizesCSS(sc) + "\n" + geomResolverCSS(sc), this._geomKey);
+    const css = scopeGeomCSS(geomTokensSizesCSS(sc) + "\n" + geomResolverCSS(sc), this._geomKey)
+      + "\n" + shellRolesCSS(sc.cells[`${g.tier}-${g.scale}-md`], this.doc ? this._typeScaleFor("base").uiText : null, this._geomKey);
     if (this._geomRolesStyle.textContent !== css) this._geomRolesStyle.textContent = css;
   }
 

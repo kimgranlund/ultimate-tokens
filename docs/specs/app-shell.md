@@ -23,7 +23,7 @@
 
 `HctApp` is a single vanilla custom element (no framework), built with the `h(tag, attrs, ...kids)`
 hyperscript into **light DOM**. It has exactly two top-level views and forks between them on every
-render (`render`, `app.js:599`):
+render (`render`, `app.js:600`):
 
 ```
 render() ─┬─ this.view === "gallery" → renderGallery()   (the home / set browser, UI:T9)
@@ -60,7 +60,7 @@ Stable handles for the ui-plan clauses the shell realizes. These are the *what*;
 
 ---
 
-## 1. The frame: CSS grid (`renderEditor` `app.js:1406` · `.editor` `styles.css:386`)
+## 1. The frame: CSS grid (`renderEditor` `app.js:1406` · `.editor` `styles.css:403`)
 
 `renderEditor()` returns a `.editor` grid plus its overlay siblings (drawer, dialogs, toast). The grid
 is a fixed 3×3:
@@ -122,7 +122,7 @@ anchor. "Interface" is the method's contract, not its body.
 
 | ID | Component | Method (bare `:N` = `src/ui/app.js`) | Traces to |
 |----|-----------|-------------------|-----------|
-| **LLD-C1** | Root element / view fork | `render` :622 | SPEC-R9 (gallery) + SPEC-R10 (editor) |
+| **LLD-C1** | Root element / view fork | `render` :623 | SPEC-R9 (gallery) + SPEC-R10 (editor) |
 | **LLD-C2** | Editor frame (grid + overlays) | `renderEditor` :1405 | SPEC-R10 |
 | **LLD-C3** | App-header | `renderAppHeader` :1412 | SPEC-R1, SPEC-R8, SPEC-R7 |
 | **LLD-C4** | Section switcher | `sectionSwitcher` :1474 / `setSection` :1494 | SPEC-R12 |
@@ -230,7 +230,7 @@ never with the document; see the exception above).
 
 ## 4. The render pipeline (control flow)
 
-### 4.1 Full render (`render` :622)
+### 4.1 Full render (`render` :623)
 ```
 render():
   focus = _captureFocus()            (focused control by data-fk + caret + [data-scroll] offsets; no skip, always rebuilds)
@@ -240,7 +240,7 @@ render():
   _restoreFocus(focus)
   _syncDrawer() ; _syncNewPal() ; _syncApplyGate() ; _syncSettings()   (re-show each open <dialog>)
 ```
-There is no mid-edit guard: `render` (`app.js:599`) always rebuilds and instead snapshots the focused
+There is no mid-edit guard: `render` (`app.js:600`) always rebuilds and instead snapshots the focused
 control before the swap and puts it back after (`_captureFocus` `app.js:690`, `_restoreFocus` `app.js:711`).
 A full render mounts a *fresh, closed* `<dialog>` for each overlay; an open export drawer is
 re-`showModal()`'d after mount so a render mid-drawer doesn't dismiss it (`_syncDrawer`, `app.js:660`).
@@ -249,7 +249,7 @@ static hint (`renderCanvasFooter`, `app.js:2075`) and is painted by `applyTransf
 canvas pointer handlers and `_liveRefreshNow` (`app.js:311`); each calls
 `paintCanvasFooter` (`app.js:1896`, `app.js:2024`, `app.js:353`).
 
-### 4.2 Live refresh (partial: during a continuous drag, `liveRefresh` `app.js:296` → `_liveRefreshNow` `app.js:311`)
+### 4.2 Live refresh (partial: during a continuous drag, `liveRefresh` `app.js:297` → `_liveRefreshNow` `app.js:311`)
 A slider/swatch drag must not full-render (it would blow away the active control's focus/caret). Instead
 `liveRefresh` surgically updates only what the drag changed, leaving the header, panes shell, and the
 active control untouched:

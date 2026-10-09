@@ -2,6 +2,8 @@
 // shell-roles.mjs, direct coverage for the shell's standard tables (src/ui/shell-roles.mjs) over all
 // 27 cells of geomScale({}). The row-step check derives the expected text independently, from the
 // height keys of type.mjs's UI_TEXT sorted descending, never from LADDER_ROWS, which the module walks.
+// The alias leg checks the ultimate-tokens { ... } blocks of src/ui/styles.css against UI_ROLES.
+import { readFileSync } from "node:fs";
 import * as S from "../../src/ui/shell-roles.mjs";
 import { geomScale } from "../../src/engine/geometry.mjs";
 import { UI_TEXT, uiText } from "../../src/engine/type.mjs";
@@ -89,10 +91,44 @@ for (const n of names) for (const k of ["segmented", "menu"]) {
   ok(lines.length === want.length + 2, `shellRolesCSS has ${lines.length} lines, want ${want.length + 2}`);
 }
 
+// Alias block parity: the stylesheet's ultimate-tokens { ... } blocks spell every UI_ROLES entry,
+// read only step variables shellRolesCSS emits, and are the only rules declaring a --ui-* property.
+{
+  const css = readFileSync(new URL("../../src/ui/styles.css", import.meta.url), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  const ALIAS = /(?<=^|\})\s*ultimate-tokens\s*\{([^}]*)\}/g;
+  const alias = [...css.matchAll(ALIAS)].map((m) => m[1]).join(";");
+  const value = (text, name) => { const m = text.match(new RegExp(`(^|[;\\s])${name}\\s*:\\s*([^;]+)`)); return m ? m[2].trim() : ""; };
+  const reads = (s, v) => s.includes(v + ",") || s.includes(v + ")");
+  const aliasMisses = (text) => {
+    const out = [];
+    for (const [r, role] of Object.entries(S.UI_ROLES)) {
+      const font = value(text, `--ui-${r}-font`);
+      const size = role.step === "badge" ? "var(--sh-chip-text" : `var(--ui-text-step-${-role.step}`;
+      if (!font.startsWith(`${role.weight} `)) out.push(`--ui-${r}-font "${font}" lacks weight ${role.weight}`);
+      if (!reads(font, size)) out.push(`--ui-${r}-font "${font}" lacks ${size}`);
+      for (const part of [`/${role.lineHeight} `, `var(--${role.family})`]) if (!font.includes(part)) out.push(`--ui-${r}-font "${font}" lacks "${part}"`);
+      const want = { tracking: role.tracking, case: role.textCase, ink: `var(--${role.ink})` };
+      for (const [p, v] of Object.entries(want)) if (value(text, `--ui-${r}-${p}`) !== v) out.push(`--ui-${r}-${p} is "${value(text, `--ui-${r}-${p}`)}", want "${v}"`);
+    }
+    return out;
+  };
+  const miss = aliasMisses(alias);
+  ok(miss.length === 0, `alias block parity: ${miss.slice(0, 3).join("; ")}`);
+  const emitted = new Set([...S.shellRolesCSS(cells["product-sm-md"], null, "k9").matchAll(/^\s*(--[\w-]+):/gm)].map((m) => m[1]));
+  const stepReads = new Set([...css.matchAll(/var\(\s*(--ui-(?:text-step-\d+|badge-icon|edge))(?![\w-])/g)].map((m) => m[1]));
+  ok(stepReads.size > 0, "the stylesheet reads no --ui-text-step-N, --ui-badge-icon or --ui-edge");
+  for (const n of stepReads) ok(emitted.has(n), `the stylesheet reads ${n}, which shellRolesCSS does not emit`);
+  const stray = [...css.replace(ALIAS, "").matchAll(/(?:^|[;{\s])(--ui-[\w-]+)\s*:/g)].map((m) => m[1]);
+  ok(stray.length === 0, `a rule outside the alias block declares ${stray.slice(0, 3).join(", ")}`);
+  // Negative control: the kicker moved to step 1 must fail the parity check.
+  const kickerOnStep1 = alias.replace(/(--ui-kicker-font\s*:\s*700 var\(--ui-text-step-)2/, (_, head) => head + "1");
+  ok(kickerOnStep1 !== alias && aliasMisses(kickerOnStep1).length > 0, "negative control: the parity check accepts an alias block with the kicker on step 1");
+}
+
 if (fails.length) {
   for (const f of fails) console.log("FAIL " + f);
   console.log(`FAIL: ${fails.length}`);
   process.exit(1);
 }
-console.log(`shell-roles: pass, ${checks} checks over ${names.length} cells`);
+console.log(`shell-roles: pass, ${checks} checks over ${names.length} cells, alias block parity`);
 process.exit(0);

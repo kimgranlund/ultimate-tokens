@@ -38,7 +38,7 @@ Bridge script: `scripts/gen-figma-ui.mjs:17-56` (injected before `</body>`, beco
 | Type | Sandbox origin | Bridge line | UI handler | State mutated | Re-renders? |
 |---|---|---|---|---|---|
 | `figma-init` | `code.js:41` (`type: "figma-init"`) (once, right after `showUI`) | `gen-figma-ui.mjs:32` (`markInFigma`) | `app.js:2477 setInFigma` | `this.inFigma` | yes (`render()`, `app.js:2476`) |
-| `config-loaded` | `code.js:230` (`type: "config-loaded"`) | `gen-figma-ui.mjs:34` | `app.js:2575 applyLoadedConfig` | `this.fileConfig` or opens a new set | yes, both branches |
+| `config-loaded` | `code.js:230` (`type: "config-loaded"`) | `gen-figma-ui.mjs:34` | `app.js:2578 applyLoadedConfig` | `this.fileConfig` or opens a new set | yes, both branches |
 | `variables-read` | `code.js:241` (`type: "variables-read"`) | `gen-figma-ui.mjs:36` | `app.js:2640 receiveLiveVariables` | `this.liveVars`, `this.liveVarsFound` | yes |
 | `float-variables-read` | `code.js:245` (`type: "float-variables-read"`) | `gen-figma-ui.mjs:39` | `apply-gate.js:313 receiveLiveFloatVariables` | `this._liveFloatVars` | yes |
 | `sets-loaded` | `code.js:249` (`type: "sets-loaded"`) | `gen-figma-ui.mjs:42` | `app.js:1221 receiveStoredSets` | `this.sets` (guarded) | yes |
@@ -73,7 +73,7 @@ Two more request/reply pairs have no busy flag at all, and don't need one: `read
 
 ## C: Implicit-context coupling (via the flattened `this`)
 
-`mixinInto` (`app.js:2800-2818`) copies every prototype method from `ColorSection`, `TypeSection`, `GeomSection`, `DrawerMixin`, `ApplyGateMixin`, `SettingsMixin` onto one `HctApp.prototype` (composition point: `app.js:2825`). There is no interface, no explicit import of "the methods I depend on", every mixin file just calls `this.whatever()` and trusts it exists somewhere in the final flattened prototype. Cross-file dependencies found:
+`mixinInto` (`app.js:2800-2818`) copies every prototype method from `ColorSection`, `TypeSection`, `GeomSection`, `DrawerMixin`, `ApplyGateMixin`, `SettingsMixin` onto one `HctApp.prototype` (composition point: `app.js:2828`). There is no interface, no explicit import of "the methods I depend on", every mixin file just calls `this.whatever()` and trusts it exists somewhere in the final flattened prototype. Cross-file dependencies found:
 
 - `overlays/drawer.js` (never defines these itself) calls: `this._typeScaleFor`, `this._geomScaleFor`, `this._typeModeScales`, `this._geomModeScales`, `this._typeBaseOpts`, `this._geomBaseOpts`, `this._typePrefix`, `this._geomPrefix`, `this._typeModeDTCGFiles`, `this._geomModeDTCGFiles` (defined in sections/typography.js/geometry.js), plus `this._exportUnit`, `this._proExportLocked`, `this.figmaBundle`, `this.flagOf`, `this.segmented`, `this.copy`, `this.downloadBytes`, `this.toast` (core app.js), plus `this.requestApplyToFigma`, `this._applyBusy`, `this.downloadFigmaPlugin` (ApplyGateMixin/core). One render method (`renderDrawer`) touches all six source files' worth of state with zero declared contract.
 - `overlays/apply-gate.js` reads `this.exportSystems`, `this.doc`, `this._typeScaleFor` (typography), and writes `this._applyBusy`, `this.applyGateOpen`, `this.sweepBusy`, `this.sweepResults`, `this.sweepSelected`, `this._liveFloatVars`, none declared anywhere near apply-gate.js itself except the shared app.js constructor (`app.js:76-133`).
@@ -85,7 +85,7 @@ Net effect: the module boundary (`src/ui/sections/*`, `src/ui/overlays/*`) is a 
 ## D: Cleanup / leak findings
 
 Only ONE `disconnectedCallback` exists in the codebase (`app.js:204-212`), cleaning exactly two of the many registrations [since extended: it now also cancels `_liveRaf`, `_dragTimer`, `_toastT` and the in-flight drag cleanup, `app.js:207-210`]:
-- ✅ `_onKeyDown` (document keydown listener, installed `app.js:453`)
+- ✅ `_onKeyDown` (document keydown listener, installed `app.js:454`)
 - ✅ `_mqlScheme` change listener (installed `app.js:190-192`)
 
 Not cleaned up:
@@ -93,7 +93,7 @@ Not cleaned up:
 - `_liveRaf` (`app.js:304-309`): never cancelled; a post-disconnect rAF still runs `_liveRefreshNow` against a detached subtree (harmless, wasted work, unguarded).
 - `_dragTimer` (`app.js:178,364`): a settled-drag commit up to 250ms after disconnect still mutates `this.history`/`this.future` on a dead instance.
 - `_toastT` (`app.js:2793-2794`): same shape, ≤1800ms tail.
-- The blob-download revoke timer (`URL.revokeObjectURL`, `app.js:2447`, 1500ms) and the code.js-download timer (`download()`, `app.js:2697`, 150ms): both harmless, also uncleaned.
+- The blob-download revoke timer (`URL.revokeObjectURL`, `app.js:2448`, 1500ms) and the code.js-download timer (`download()`, `app.js:2697`, 150ms): both harmless, also uncleaned.
 
 None exploitable today because `<ultimate-tokens>` is a true page-lifetime singleton, `disconnectedCallback` in practice never fires outside tests. That's exactly why it's worth flagging: the two things that DO get cleaned up were fixed reactively; the rest were never audited as a set. Nothing in `test/ui/headless-boot.mjs` exercises disconnect/reconnect at all.
 

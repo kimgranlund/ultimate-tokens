@@ -46,6 +46,7 @@ const MODS = [
   ["icons", "src/ui/icons.js"],
   ["dataHues", "src/engine/data-hues.mjs"], // pure, zero-dep; BEFORE model (which imports it, TKT #515/U6)
   ["model", "src/ui/model.mjs"],
+  ["shellRoles", "src/ui/shell-roles.mjs"], // T-0044: pure shell tables, imports geometry/type (above); BEFORE app
   // TKT-0023: app.js decomposed into a bootstrap/core + per-section prototype mixins. appHelpers is the
   // pure (no `this`) shared carrier (h()/btn/chip/… + storage/license/font-loading) both app.js and every
   // mixin below import from, dependency order: after model/icons (which it also imports), before every
@@ -62,7 +63,7 @@ const MODS = [
   ["app", "src/ui/app.js"],
 ];
 const KEY = { "hct.js": "hct", "okhsl.js": "okhsl", "semantic.js": "semantic", "tonal.js": "tonal", "derive.mjs": "derive", "font-fallbacks.mjs": "fontFallbacks", "type.mjs": "type", "geometry.mjs": "geometry", "flags.js": "flags", "persist.js": "persist",
-  "ds-gates.js": "dsGates", "exports.js": "exports", "ds-export.js": "dsExport", "figma-plugin-assets.js": "figmaPlugin", "mcp-assets.js": "mcpAssets", "describe-mcp-assets.js": "describeMcpAssets", "type-fonts.js": "typeFonts", "zip.mjs": "zip", "tip-position.mjs": "tipPosition", "mode-apply-plan.mjs": "modeApplyPlan", "migrations.mjs": "figmaMigrations", "live-diff.mjs": "liveDiff", "collections.js": "collections", "style-plan.mjs": "stylePlan", "icon-systems.mjs": "iconSystems", "motion.mjs": "motion", "icons.js": "icons", "data-hues.mjs": "dataHues", "prime.mjs": "prime", "resolve.mjs": "resolve", "controls.mjs": "controls", "layers.mjs": "layers", "layer-pins.mjs": "layerPins", "model.mjs": "model",
+  "ds-gates.js": "dsGates", "exports.js": "exports", "ds-export.js": "dsExport", "figma-plugin-assets.js": "figmaPlugin", "mcp-assets.js": "mcpAssets", "describe-mcp-assets.js": "describeMcpAssets", "type-fonts.js": "typeFonts", "zip.mjs": "zip", "tip-position.mjs": "tipPosition", "mode-apply-plan.mjs": "modeApplyPlan", "migrations.mjs": "figmaMigrations", "live-diff.mjs": "liveDiff", "collections.js": "collections", "style-plan.mjs": "stylePlan", "icon-systems.mjs": "iconSystems", "motion.mjs": "motion", "icons.js": "icons", "data-hues.mjs": "dataHues", "prime.mjs": "prime", "resolve.mjs": "resolve", "controls.mjs": "controls", "layers.mjs": "layers", "layer-pins.mjs": "layerPins", "model.mjs": "model", "shell-roles.mjs": "shellRoles",
   "app-helpers.mjs": "appHelpers", "core.mjs": "chartsCore", "render.mjs": "chartsRender", "color.js": "colorSection", "typography.js": "typeSection", "geometry.js": "geomSection",
   "drawer.js": "drawerMixin", "apply-gate.js": "applyGateMixin", "settings.js": "settingsMixin",
   ...Object.fromEntries(CATEGORY_FILES.map((f) => [f, categoryKey(f)])) };

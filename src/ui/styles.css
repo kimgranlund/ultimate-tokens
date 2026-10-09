@@ -71,7 +71,12 @@ ultimate-tokens { display: block; height: 100vh; }
 /* Shell geometry aliases: the host carries [data-tier/scale/radius/size] (app.js _applyShellGeometry),
    so the resolved --control-* / --chip-* / --radius-* roles land here. Fallbacks are the product-md-md
    round cell. The header and canvas-header bands (--hh/--ch) grow with the control height and keep
-   their :root literals as the floor; --fh and --r-sm/--r/--r-lg stay literal. */
+   their :root literals as the floor; --fh and --r-sm/--r/--r-lg stay literal.
+   The --ui-* roles below are the shell's text roles (UI_ROLES in shell-roles.mjs): each role's
+   font, tracking, case and ink, plus the four weights and the glyph motion set. Each font reads a
+   step variable (--ui-text-step-0..3, with --ui-badge-icon and --ui-edge) that app.js injects per
+   host from shellRolesCSS into the keyed head <style>; the font fallbacks are the product-sm-md cell.
+   No other rule declares a --ui-* property: a rule reads these roles, it never redefines one. */
 ultimate-tokens {
   --sh-control-height: var(--control-height, 32px);
   --sh-control-inset: var(--control-inset, 8px);
@@ -84,6 +89,18 @@ ultimate-tokens {
   --sh-chip-height: var(--chip-height, 24px);
   --sh-chip-inset: var(--chip-inset, 5.5px);
   --sh-chip-text: var(--chip-text, 12px);
+  --sh-radius-card: var(--radius-card, 16.5px); --sh-radius-mark: var(--radius-mark, 6.5px);
+  --ui-weight-regular: 400; --ui-weight-medium: 500; --ui-weight-strong: 600; --ui-weight-heavy: 700;
+  --ui-motion-fast: 120ms; --ui-motion-base: 180ms; --ui-motion-ease: cubic-bezier(.2, 0, 0, 1);
+  --ui-pane-title-font: 600 var(--ui-text-step-0, 13px)/1 var(--sans); --ui-pane-title-tracking: 0; --ui-pane-title-case: none; --ui-pane-title-ink: var(--ink);
+  --ui-element-title-font: 600 var(--ui-text-step-1, 12px)/1.2 var(--sans); --ui-element-title-tracking: 0; --ui-element-title-case: none; --ui-element-title-ink: var(--ink);
+  --ui-kicker-font: 700 var(--ui-text-step-2, 11px)/1 var(--sans); --ui-kicker-tracking: .06em; --ui-kicker-case: uppercase; --ui-kicker-ink: var(--ink-dim);
+  --ui-label-font: 500 var(--ui-text-step-1, 12px)/1.3 var(--sans); --ui-label-tracking: 0; --ui-label-case: none; --ui-label-ink: var(--ink-dim);
+  --ui-control-font: 500 var(--ui-text-step-0, 13px)/1 var(--sans); --ui-control-tracking: 0; --ui-control-case: none; --ui-control-ink: var(--ink);
+  --ui-badge-font: 600 var(--sh-chip-text)/1 var(--sans); --ui-badge-tracking: .02em; --ui-badge-case: none; --ui-badge-ink: var(--ink-dim);
+  --ui-helper-font: 400 var(--ui-text-step-2, 11px)/1.4 var(--sans); --ui-helper-tracking: 0; --ui-helper-case: none; --ui-helper-ink: var(--ink-dim);
+  --ui-body-font: 400 var(--ui-text-step-0, 13px)/1.5 var(--sans); --ui-body-tracking: 0; --ui-body-case: none; --ui-body-ink: var(--ink);
+  --ui-code-font: 400 var(--ui-text-step-1, 12px)/1.4 var(--mono); --ui-code-tracking: 0; --ui-code-case: none; --ui-code-ink: var(--ink);
   --ctl-thumb: calc(var(--sh-control-icon) - 4px); --ctl-range-track: calc(var(--sh-control-icon) * 0.4); --ctl-range-thumb: calc(var(--sh-control-icon) * 1.25); /* switch thumb: a 2px edge each side; the range track + thumb are larger (T-0036) */
   --hh: max(48px, calc(var(--sh-control-height) + 16px));
   --ch: max(42px, calc(var(--sh-control-height) + 10px));
