@@ -178,6 +178,8 @@ class HctApp extends HTMLElement {
     this._dragSnap = null; // pending pre-drag snapshot (a slider drag = ONE step)
     this._dragTimer = null; // debounce timer that commits a settled drag
     this._activeDragCleanup = null; // set while a _bindRangeDrag pointer-drag is in flight, removes its window-level move/up/cancel listeners (disconnectedCallback safety net)
+    this._radixTip = null; // the one shared Radix step tooltip (T-0043), created on first hover/focus
+    this._radixTipFor = null; // the swatch it currently describes
     this.HISTORY_MAX = 100;
     setColorScheme(this.theme); // flip the chrome's light-dark() tokens to the initial theme
     this._installKeyboard(); // editor-scoped keyboard shortcuts (guarded vs text inputs)
@@ -505,6 +507,8 @@ class HctApp extends HTMLElement {
     // Esc with the canvas-header overflow menu open belongs to the menu: the browser closes the popover and
     // returns focus to its trigger. Deselecting here would re-render the whole subtree under it.
     if (e.key === "Escape" && this._toolsMenuOpen()) return;
+    // Esc with the Radix step tooltip showing dismisses just the tooltip (WCAG 1.4.13), not the selection.
+    if (e.key === "Escape" && this._radixTipOpen()) { this._hideRadixTip(); return; }
 
     switch (e.key) {
       case "ArrowUp":
@@ -627,7 +631,9 @@ class HctApp extends HTMLElement {
     // swap and put the user exactly back AFTER, so any fk-tagged input survives a
     // full render, not just the few with bespoke liveRefresh patches.
     const focus = this._captureFocus();
+    this._hideRadixTip(); // the swatch it points at is about to be replaced
     this.replaceChildren(this.view === "gallery" ? this.renderGallery() : this.renderEditor());
+    if (this._radixTip) this.append(this._radixTip); // the one shared step tooltip survives the rebuild (hidden)
     this.dataset.theme = this.theme;
     this.dataset.motion = this.motion; // styles.css gates transitions/animations on [data-motion]
     this._applyShellGeometry();
@@ -1884,6 +1890,7 @@ class HctApp extends HTMLElement {
       const { panX, panY, zoom } = this.viewport;
       scene.style.transform = `translate(-50%, -50%) translate(${panX}px, ${panY}px) scale(${zoom})`;
     }
+    this._hideRadixTip(); // a pan or zoom moves the swatch out from under its tooltip
     const pct = Math.round(this.viewport.zoom * 100) + "%";
     for (const r of this.querySelectorAll(".zoom-readout")) r.textContent = pct; // the inline tool and the overflow menu each carry one
     this.paintCanvasFooter();
