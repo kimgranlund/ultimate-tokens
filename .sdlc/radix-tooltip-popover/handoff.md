@@ -2,7 +2,7 @@
 id: T-0043
 title: "Radix step tooltip: render outside the canvas scene (no clipping, no zoom scaling, upright text)"
 type: bug             # feature | bug | chore | spike | idea
-status: ready     # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: done     # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: L2             # L1 | L2 | L3 | L4 (L5 reserved)
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -29,3 +29,7 @@ Hyperscript `h()`, no framework, no new deps. Control text and padding read the 
 - `node test/ui/headless-boot.mjs` exits 0 with (rx10i) to (rx10l) and (rx11a) to (rx11s) green: no `.radix-step::after` rule remains, `.radix-tip` is a fixed box shown by `.open` with upright text from the chip text and cell inset roles, and exactly one shared `.radix-tip` (a manual popover with `role="tooltip"`, a child of the app root, not of `.canvas-scene`) shows on mouseover and focusin, hides on mouseout, blur, Esc, pan, zoom and re-render, flips above at the bottom edge and shifts left at the right edge, and sets `aria-describedby` on the active swatch only.
 - `npm test` exits 0 (61 test files, including the citations gate: `node scripts/audit-citations.mjs` reports no STALE or NOFILE line).
 - `CHROME_BIN=<Chrome Beta> npm run smoke` (which runs `npm run build` first) prints SMOKE PASS, including the real-Chrome checks: at 100% and 25% zoom, with a swatch at the canvas bottom edge and at the right edge, the tooltip is an open top-layer popover outside `.canvas-area`/`.canvas-scene`, sits inside the window, is `font-style: normal`, and its font size and box height at 25% equal the unzoomed ones; keyboard focus shows it and Esc hides it without leaving the Radix view.
+
+## Closed
+
+2026-10-08: delivered by the solo agent (level L2); one independent batched verifier passed before the merge
