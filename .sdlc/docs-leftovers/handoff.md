@@ -2,7 +2,7 @@
 id: T-0042
 title: "Docs and copy leftovers from T-0033 and T-0034 (ADR cites, size-ramp copy, store-copy link, notes)"
 type: chore           # feature | bug | chore | spike | idea
-status: ready     # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: done     # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: L1             # L1 | L2 | L3 | L4 (L5 reserved)
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -22,3 +22,7 @@ Sources: `.sdlc/docs-facts-sweep/` solo report (open items) and `.sdlc/docs-stru
 
 ## Constraints
 Run `node scripts/audit-citations.mjs` and `npm test` before done; fix cites in the same change. No U+2014. Do not edit inside managed AGENTS.md blocks by hand (rerun the generator `python3 <plugin>/scripts/onboard.py` is NOT allowed: edit only the starter text above the managed block or leave and report). Never push.
+
+## Closed
+
+2026-10-08: landed via integration; L1 solo, gates green
