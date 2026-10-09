@@ -23,3 +23,9 @@ Verifier findings on T-0037 (report `.sdlc/radix-role-tooltips/verifier-L2.md`):
 
 ## Constraints
 Hyperscript `h()`, no framework, no new deps. Control text and padding read the cell roles (`test/repo/control-text.mjs`). Doc cites shift: `node scripts/audit-citations.mjs` in the same change. No U+2014. Gates via `scripts/gate_lock.py run --` with `SDLC_GATE_WORKERS=10`; `npm run smoke` needs `CHROME_BIN` (Chrome Beta/Canary). Never push.
+
+## Acceptance criteria
+- `node test/ui/tip-position.mjs` exits 0: the pure `placeTip` helper (`src/ui/tip-position.mjs`) opens below by default, flips above within the bottom band, shifts left near the right edge, clamps in a short window, and a 1440 x 900 sweep never lands the tooltip outside the window.
+- `node test/ui/headless-boot.mjs` exits 0 with (rx10i) to (rx10l) and (rx11a) to (rx11s) green: no `.radix-step::after` rule remains, `.radix-tip` is a fixed box shown by `.open` with upright text from the chip text and cell inset roles, and exactly one shared `.radix-tip` (a manual popover with `role="tooltip"`, a child of the app root, not of `.canvas-scene`) shows on mouseover and focusin, hides on mouseout, blur, Esc, pan, zoom and re-render, flips above at the bottom edge and shifts left at the right edge, and sets `aria-describedby` on the active swatch only.
+- `npm test` exits 0 (61 test files, including the citations gate: `node scripts/audit-citations.mjs` reports no STALE or NOFILE line).
+- `CHROME_BIN=<Chrome Beta> npm run smoke` (which runs `npm run build` first) prints SMOKE PASS, including the real-Chrome checks: at 100% and 25% zoom, with a swatch at the canvas bottom edge and at the right edge, the tooltip is an open top-layer popover outside `.canvas-area`/`.canvas-scene`, sits inside the window, is `font-style: normal`, and its font size and box height at 25% equal the unzoomed ones; keyboard focus shows it and Esc hides it without leaving the Radix view.
