@@ -279,6 +279,31 @@ try {
     .map(({ c, got }) => `${c.tier}-${c.scale}-${c.size}/${c.radius}: --control-height ${got[0]} (want ${c.height}), --radius-control ${got[1]} (want ${c.radiusControl}), --control-part-height ${got[2]} (want ${c.partHeight}), --control-part-inset ${got[3]} (want ${c.partInset})`);
   geomBad.slice(0, 8).forEach((m) => console.log("    " + m));
   ok(geomCases.length === 108 && Array.isArray(geomGot) && geomGot.length === 108 && geomBad.length === 0, `geometry.css resolver: all 108 nested cases (27 cells x 4 radius modes) resolve --control-height, --radius-control, --control-part-height and --control-part-inset to the engine's cell values${geomBad.length ? ` (${geomBad.length} off)` : ""}`);
+
+  // Native DOM charts (T-0029): each section's analysis rail renders its charts as .an-chart boxes of
+  // HTML marks, in light and in dark. Every ribbon has a real box and a NaN-free style, a mono type
+  // series is dashed by a mask, and the centering card draws exactly its cell and glyph.
+  const chartMin = { color: 4, typography: 3, geometry: 3 };
+  for (const [section, theme, png] of [
+    ["color", "light", "charts-color-light.png"], ["color", "dark", "charts-color-dark.png"],
+    ["typography", "light", "charts-typography-light.png"], ["typography", "dark", "charts-typography-dark.png"],
+    ["geometry", "light", "charts-geometry-light.png"], ["geometry", "dark", "charts-geometry-dark.png"],
+  ]) {
+    await evalJS(`(()=>{${el}.setSection("${section}");${el}.theme="${theme}";${el}.render();})()`); await sleep(300);
+    const ch = await evalJS(`(()=>{const rail=${el}.querySelector(".left-pane");if(!rail)return null;
+      const ribbons=[...rail.querySelectorAll(".ch-ribbon")].map((r)=>{const b=r.getBoundingClientRect();return {w:b.width,h:b.height,nan:/NaN/.test(r.getAttribute("style")||"")}});
+      const mono=rail.querySelector(".ch-ribbon.ty-mono");const cs=mono&&getComputedStyle(mono);
+      const center=[...rail.querySelectorAll(".an-card")].find((c)=>/^Centering law/.test((c.querySelector(".an-label")||{}).textContent||""));
+      return {charts:rail.querySelectorAll(".an-chart").length,ribbons,mask:cs?(cs.maskImage&&cs.maskImage!=="none"?cs.maskImage:cs.webkitMaskImage):null,rects:center?center.querySelectorAll(".ch-rect").length:null};})()`);
+    ok(!!ch && ch.charts >= chartMin[section], `${section} ${theme}: the analysis rail renders ${ch ? ch.charts : 0} .an-chart (want at least ${chartMin[section]})`);
+    ok(!!ch && ch.ribbons.length > 0 && ch.ribbons.every((r) => r.w > 0 && r.h > 0 && !r.nan), `${section} ${theme}: every .ch-ribbon (${ch ? ch.ribbons.length : 0}) has a non-zero box and no NaN in its style`);
+    if (section === "typography") ok(!!ch && !!ch.mask && ch.mask !== "none", `typography ${theme}: a .ty-mono ribbon is dashed by a mask (${ch && ch.mask})`);
+    if (section === "geometry") ok(!!ch && ch.rects === 2, `geometry ${theme}: the centering card holds exactly 2 .ch-rect (got ${ch && ch.rects})`);
+    const chShot = await send("Page.captureScreenshot", { format: "png" });
+    writeFileSync(resolve(OUT, png), Buffer.from(chShot.data, "base64"));
+    console.log(`  · screenshot → smoke-out/${png}`);
+  }
+  await evalJS(`(()=>{${el}.theme="system";${el}.render();})()`); await sleep(150);
   await evalJS(`${el}.setSection("color")`); await sleep(120);
 
   const shot = await send("Page.captureScreenshot", { format: "png" });
@@ -454,7 +479,7 @@ try {
   // swatch-only chips: no inline text, the palette name lives in the title (hover tooltip).
   ok(await evalJS(`(()=>{const c=${el}.querySelector(".newpal-chip");return !!c.getAttribute("title") && c.textContent.trim()===""})()`), "context chips are swatch-only (name in title)");
   // two-column previews: left = hue circle + chroma curve; right = the proposed-palette ramp.
-  ok(await evalJS(`!!${el}.querySelector(".newpal-hc svg") && ${el}.querySelectorAll(".newpal-diagram").length === 2 && ${el}.querySelector(".newpal-ramp").children.length >= ${CORE_RAMP_STOPS}`), "Relative tab renders hue circle + chroma curve + ramp preview");
+  ok(await evalJS(`!!${el}.querySelector(".newpal-hc .ch-dot") && ${el}.querySelectorAll(".newpal-diagram").length === 2 && ${el}.querySelector(".newpal-ramp").children.length >= ${CORE_RAMP_STOPS}`), "Relative tab renders hue circle + chroma curve + ramp preview");
   // priority order: the Dominant changes per relationship, the Primary (the anchor it pivots on) does NOT.
   const swAt = (rel) => evalJS(`(()=>{${el}.newPalRel="${rel}";${el}.render();const s=${el}.querySelectorAll(".newpal-pp-sw");return [s[0]&&s[0].getAttribute("style"), s[1]&&s[1].getAttribute("style")]})()`);
   const swAnchor = await swAt("anchor"), swContrast = await swAt("contrast");

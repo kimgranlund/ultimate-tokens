@@ -3,7 +3,7 @@ name: change-reviewer-agent
 description: >
   Reviews an ultimate-tokens change (a diff, a staged set, or a PR branch)
   against THIS repo's specific invariants, semantic-role parity, the Safari
-  font-quoting + SVG fill:none traps, the headless-shim limits, the editor
+  font-quoting + native-chart rules, the headless-shim limits, the editor
   section pattern, and the .claude/docs/other + node_modules guards. Use proactively
   before committing or opening a PR, or when the user says "review this change",
   "is this safe to ship", "did I miss anything". Returns a severity-classified,
@@ -38,8 +38,8 @@ untouched code. Cite every finding as `path:line`.
 3. **Browser traps (MAJOR, smoke is Chrome-only, won't catch these).**
    - Interpolated `font-family` with a digit/space must be **quoted** (`'Source Serif 4', serif`), unquoted
      dies in Safari/WebKit.
-   - New SVG line/area chart paths must set `fill: none`, qualified so a shared series-color class can't
-     override it (e.g. `.an-svg .x-line`), else the open path fills into a wedge.
+   - Charts are native DOM marks: no `html:` attribute or SVG string in a section file
+     (`test/repo/dom-charts.mjs`), and `-webkit-mask-image` beside every `mask-image` (Safari needs the prefix).
 4. **Headless-shim safety (MAJOR, silently false-passes).** New `test/ui/headless-boot.mjs` assertions must
    use single-class `querySelector`, `getAttribute(...)`, or the `txtOf(node)` walker, **never** a
    descendant/compound selector, `element.id`, or `element.textContent` (the shim has none of those, so the

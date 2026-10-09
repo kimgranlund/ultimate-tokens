@@ -3,6 +3,8 @@ import { RELATIONSHIPS, deriveNeutral, deriveRelative } from "../../engine/deriv
 import { chromaEnvelope, envelopePresetOf } from "../../engine/tonal.js";
 import { icon } from "../icons.js";
 import { CURVES, DAMP_PRESETS, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
+import { renderChart } from "../charts/render.mjs";
+import { STROKE, polar, scaleLinear } from "../charts/core.mjs";
 
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
 // methods, copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
@@ -37,29 +39,30 @@ export class ColorSectionImpl {
     const W = 244, H = 168, pad = 26;
     const pts = target.points;
     const maxC = Math.max(8, ...pts.map((p) => Math.max(p.ceiling, p.applied))) * 1.05;
-    const X = (c) => pad + (c / maxC) * (W - pad - 8);
-    const Y = (l) => 8 + ((100 - l) / 100) * (H - pad - 8);
-    const ceilPath =
-      "M" + pts.map((p) => `${X(p.ceiling).toFixed(1)},${Y(p.tone).toFixed(1)}`).join(" L") +
-      ` L${X(0)},${Y(pts[pts.length - 1].tone).toFixed(1)} L${X(0)},${Y(pts[0].tone).toFixed(1)} Z`;
-    const appliedPath = "M" + pts.map((p) => `${X(p.applied).toFixed(1)},${Y(p.tone).toFixed(1)}`).join(" L");
-    const tonePath = "M" + pts.map((p) => `${X(0).toFixed(1)},${Y(p.tone).toFixed(1)}`).join(" L");
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        <text x="2" y="${Y(100) + 3}">100</text>
-        <text x="6" y="${Y(0)}">0</text>
-        <text x="${W - 14}" y="${H - pad + 20}">C→</text>
-        <path class="lc-ceiling" d="${ceilPath}"/>
-        <path class="lc-toneline" d="${tonePath}"/>
-        <path class="lc-applied" d="${appliedPath}"/>
-        ${pts.map((p) => `<circle class="lc-dot" cx="${X(p.applied).toFixed(1)}" cy="${Y(p.tone).toFixed(1)}" r="2"/>`).join("")}
-      </svg>`;
+    const X = scaleLinear([0, maxC], [pad, W - 8]);
+    const Y = scaleLinear([100, 0], [8, H - pad]);
+    const chart = renderChart({
+      W, H,
+      series: [
+        { label: "gamut ceiling", cls: "lc-ceiling", kind: "band", base: { x: X(0) }, points: pts.map((p) => ({ x: X(p.ceiling), y: Y(p.tone), v: [p.ceiling, p.tone] })) },
+        { label: "applied C", cls: "lc-applied", dot: 2, points: pts.map((p) => ({ x: X(p.applied), y: Y(p.tone), v: [p.applied, p.tone] })) },
+      ],
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+        { cls: "lc-toneline", x1: X(0), y1: Y(pts[0].tone), x2: X(0), y2: Y(pts[pts.length - 1].tone) },
+      ],
+      labels: [
+        { text: "100", x: 2, y: Y(100) + 3 },
+        { text: "0", x: 6, y: Y(0) },
+        { text: "C→", x: W - 14, y: H - pad + 20 },
+      ],
+      columns: ["series", "C", "L*"],
+    });
     return h(
       "div",
       {},
-      h("div", { class: "an-svg", html: svg }),
+      chart,
       this.legend([
         { mark: "solid", label: "applied C" },
         { mark: "fill", label: "gamut ceiling" },
@@ -75,19 +78,21 @@ export class ColorSectionImpl {
     if (!vp) return h("div", { class: "an-empty" }, "n/a");
     const W = 244, H = 120, pad = 22;
     const pts = vp.ramp;
-    const X = (i) => pad + (i / (pts.length - 1)) * (W - pad - 8);
-    const Y = (t) => 8 + ((100 - t) / 100) * (H - pad - 8);
-    const line = "M" + pts.map((s, i) => `${X(i).toFixed(1)},${Y(s.tone).toFixed(1)}`).join(" L");
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        <text x="2" y="${Y(100) + 3}">L*</text>
-        <text x="${W - 26}" y="${H - pad + 18}">stops</text>
-        <path class="lc-applied" d="${line}"/>
-        ${pts.map((s, i) => `<circle class="lc-dot" cx="${X(i).toFixed(1)}" cy="${Y(s.tone).toFixed(1)}" r="1.8"/>`).join("")}
-      </svg>`;
-    return h("div", { class: "an-svg", html: svg });
+    const X = scaleLinear([0, pts.length - 1], [pad, W - 8]);
+    const Y = scaleLinear([100, 0], [8, H - pad]);
+    return renderChart({
+      W, H,
+      series: [{ label: "L*", cls: "lc-applied", dot: 1.8, points: pts.map((s, i) => ({ x: X(i), y: Y(s.tone), v: [s.stop, s.tone] })) }],
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+      ],
+      labels: [
+        { text: "L*", x: 2, y: Y(100) + 3 },
+        { text: "stops", x: W - 26, y: H - pad + 18 },
+      ],
+      columns: ["series", "stop", "L*"],
+    });
   }
 
 
@@ -98,24 +103,28 @@ export class ColorSectionImpl {
     const W = 244, H = 120, pad = 22;
     const pts = vp.ramp;
     const maxC = Math.max(8, ...pts.map((s) => Math.max(s.maxc, s.chroma))) * 1.05;
-    const X = (i) => pad + (i / (pts.length - 1)) * (W - pad - 8);
-    const Y = (c) => (H - pad + 8) - (c / maxC) * (H - pad - 8);
-    const ceil = "M" + pts.map((s, i) => `${X(i).toFixed(1)},${Y(s.maxc).toFixed(1)}`).join(" L");
-    const applied = "M" + pts.map((s, i) => `${X(i).toFixed(1)},${Y(s.chroma).toFixed(1)}`).join(" L");
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        <text x="2" y="14">C</text>
-        <text x="${W - 26}" y="${H - pad + 18}">stops</text>
-        <path class="lc-toneline" d="${ceil}"/>
-        <path class="lc-applied" d="${applied}"/>
-        ${pts.map((s, i) => `<circle class="lc-dot" cx="${X(i).toFixed(1)}" cy="${Y(s.chroma).toFixed(1)}" r="1.6"/>`).join("")}
-      </svg>`;
+    const X = scaleLinear([0, pts.length - 1], [pad, W - 8]);
+    const Y = scaleLinear([0, maxC], [H - pad + 8, 16]);
+    const chart = renderChart({
+      W, H,
+      series: [
+        { label: "gamut ceiling", cls: "lc-toneline", stroke: STROKE.ref, points: pts.map((s, i) => ({ x: X(i), y: Y(s.maxc), v: [s.stop, s.maxc] })) },
+        { label: "applied C", cls: "lc-applied", dot: 1.6, points: pts.map((s, i) => ({ x: X(i), y: Y(s.chroma), v: [s.stop, s.chroma] })) },
+      ],
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+      ],
+      labels: [
+        { text: "C", x: 2, y: 14 },
+        { text: "stops", x: W - 26, y: H - pad + 18 },
+      ],
+      columns: ["series", "stop", "C"],
+    });
     return h(
       "div",
       {},
-      h("div", { class: "an-svg", html: svg }),
+      chart,
       this.legend([
         { mark: "solid", label: "applied C" },
         { mark: "faint", label: "gamut ceiling" },
@@ -190,22 +199,23 @@ export class ColorSectionImpl {
     const amp = (doc.dampAmp ?? 0) / 100;
     const M = (stop) => chromaEnvelope(stop, 500, 0, { ...doc });
     const ymax = Math.max(1.15, 1 + amp) * 1.05;
-    const X = (i) => pad + (i / (STOPS.length - 1)) * (W - pad - 8);
-    const Y = (m) => H - pad + 8 - (m / ymax) * (H - pad - 8);
-    const line = "M" + STOPS.map((st, i) => `${X(i).toFixed(1)},${Y(M(st)).toFixed(1)}`).join(" L");
-    const y1 = Y(1).toFixed(1);
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        <line class="dg-unity" x1="${pad}" y1="${y1}" x2="${W - 6}" y2="${y1}"/>
-        <text x="2" y="${(+y1 - 3).toFixed(1)}">1×</text>
-        <text x="${pad}" y="${H - pad + 18}">light</text>
-        <text x="${W - 24}" y="${H - pad + 18}">dark</text>
-        <path class="lc-applied" d="${line}"/>
-        ${STOPS.map((st, i) => `<circle class="lc-dot" cx="${X(i).toFixed(1)}" cy="${Y(M(st)).toFixed(1)}" r="1.6"/>`).join("")}
-      </svg>`;
-    return h("div", { class: "an-svg", html: svg });
+    const X = scaleLinear([0, STOPS.length - 1], [pad, W - 8]);
+    const Y = scaleLinear([0, ymax], [H - pad + 8, 16]);
+    return renderChart({
+      W, H,
+      series: [{ label: "multiplier", cls: "lc-applied", dot: 1.6, points: STOPS.map((st, i) => { const m = M(st); return { x: X(i), y: Y(m), v: [st, m] }; }) }],
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+        { cls: "dg-unity", x1: pad, y1: Y(1), x2: W - 6, y2: Y(1) },
+      ],
+      labels: [
+        { text: "1×", x: 2, y: Y(1) - 3 },
+        { text: "light", x: pad, y: H - pad + 18 },
+        { text: "dark", x: W - 24, y: H - pad + 18 },
+      ],
+      columns: ["series", "stop", "m"],
+    });
   }
 
 
@@ -219,27 +229,19 @@ export class ColorSectionImpl {
       .map(({ p, i }) => {
         const vp = view.palettes[i];
         const mid = vp.ramp.find((s) => s.stop === 550) || vp.ramp[Math.floor(vp.ramp.length / 2)];
-        const a = ((p.hue - 90) * Math.PI) / 180; // 0° at top, clockwise
-        const x = cx + Math.cos(a) * R;
-        const y = cy + Math.sin(a) * R;
-        const r = i === sel ? 7 : 5;
-        const ring = i === sel ? `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r + 3}" class="hw-ring"/>` : "";
-        return ring + `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="${mid.hex}" class="hw-dot"/>`;
-      })
-      .join("");
-    const ticks = [0, 90, 180, 270]
-      .map((d) => {
-        const a = ((d - 90) * Math.PI) / 180;
-        return `<text x="${(cx + Math.cos(a) * (R + 14)).toFixed(1)}" y="${(cy + Math.sin(a) * (R + 14) + 3).toFixed(1)}" text-anchor="middle">${d}°</text>`;
-      })
-      .join("");
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="${cx}" cy="${cy}" r="${R}" class="hw-circle"/>
-        ${ticks}
-        ${dots}
-      </svg>`;
-    return h("div", { class: "an-svg hw", html: svg });
+        return { cls: "hw-dot", ...polar(p.hue, R, cx, cy), r: i === sel ? 7 : 5, ring: i === sel, fill: mid.hex, label: p.name, v: [p.hue, mid.chroma] };
+      });
+    const ticks = [0, 90, 180, 270].map((d) => {
+      const t = polar(d, R + 14, cx, cy);
+      return { cls: "hw-tick", text: `${d}°`, x: t.x, y: t.y + 3, anchor: "middle" };
+    });
+    return renderChart({
+      W, H, cls: "hw",
+      circles: [{ cls: "hw-circle", cx, cy, r: R }],
+      labels: ticks,
+      dots,
+      columns: ["palette", "hue", "C"],
+    });
   }
 
 
@@ -606,31 +608,23 @@ export class ColorSectionImpl {
       const vp = view.palettes[i];
       if (!vp || !vp.keyOklch) continue;
       const [, C, H] = vp.keyOklch;
-      dots.push({ H, C, fill: vp.key, on: false });
+      dots.push({ H, C, fill: vp.key, on: false, name: vp.name });
     }
-    if (proposed) dots.push({ H: proposed.pos.H, C: proposed.pos.C, fill: proposed.hex, on: true });
+    if (proposed) dots.push({ H: proposed.pos.H, C: proposed.pos.C, fill: proposed.hex, on: true, name: "proposed" });
     const SZ = 280, cx = SZ / 2, cy = SZ / 2, R = SZ / 2 - 30;
     const maxC = Math.max(0.08, ...dots.map((d) => d.C)); // floor so a near-grey-only set still spreads
-    const at = (H, C) => {
-      const rr = R * Math.min(1, C / maxC), a = (H * Math.PI) / 180;
-      return [cx + rr * Math.sin(a), cy - rr * Math.cos(a)];
-    };
-    const dotSvg = dots.map((d) => {
-      const [x, y] = at(d.H, d.C);
-      return d.on
-        ? `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="11" class="hc-ring"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="8" class="hc-dot" fill="${d.fill}"/>`
-        : `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" class="hc-dot" fill="${d.fill}"/>`;
-    }).join("");
-    const svg = `
-      <svg width="${SZ}" height="${SZ}" viewBox="0 0 ${SZ} ${SZ}" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="${cx}" cy="${cy}" r="${R}" class="hc-rim"/>
-        <text x="${cx}" y="13" class="hc-axis" text-anchor="middle">0°</text>
-        <text x="${SZ - 4}" y="${cy + 4}" class="hc-axis" text-anchor="end">90°</text>
-        <text x="${cx}" y="${SZ - 3}" class="hc-axis" text-anchor="middle">180°</text>
-        <text x="4" y="${cy + 4}" class="hc-axis" text-anchor="start">270°</text>
-        ${dotSvg}
-      </svg>`;
-    return h("div", { class: "an-svg newpal-hc", html: svg });
+    return renderChart({
+      W: SZ, H: SZ, cls: "newpal-hc",
+      circles: [{ cls: "hc-rim", cx, cy, r: R }],
+      labels: [
+        { cls: "hc-axis", text: "0°", x: cx, y: 13, anchor: "middle" },
+        { cls: "hc-axis", text: "90°", x: SZ - 4, y: cy + 4, anchor: "end" },
+        { cls: "hc-axis", text: "180°", x: cx, y: SZ - 3, anchor: "middle" },
+        { cls: "hc-axis", text: "270°", x: 4, y: cy + 4, anchor: "start" },
+      ],
+      dots: dots.map((d) => ({ cls: "hc-dot", ...polar(d.H, R * Math.min(1, d.C / maxC), cx, cy), r: d.on ? 8 : 6, ring: d.on, fill: d.fill, label: d.name, v: [d.H, d.C] })),
+      columns: ["palette", "hue", "C"],
+    });
   }
 
 
