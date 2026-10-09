@@ -1,4 +1,4 @@
-<!-- sdlc-lite:managed:start v1 sha256:6d60c11c715e -->
+<!-- sdlc-lite:managed:start v1 sha256:24b9097b3c5e -->
 # Work records
 
 This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and `config`. `tickets.py roadmap` (also run by `new` and `close`) generates this block: do not edit inside it; change a ticket's `handoff.md` front matter and rerun `roadmap`. `roadmap.md` lists every ticket in dependency order. Closed `.NNNN-*` folders are history: open one only when asked.
@@ -19,7 +19,7 @@ This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and
   - T-0042 Docs and copy leftovers from T-0033 and T-0034 (ADR cites, size-ramp copy, store-copy link, notes) (docs-leftovers)
   - T-0044 UI standardization: shell type roles, container and control anatomy, glyph motion, product-sm default (ui-standardization)
 - blocked: 0
-- done: 36
+- done: 37
 - dropped: 0
 
 ## Procedures
