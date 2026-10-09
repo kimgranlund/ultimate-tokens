@@ -40,7 +40,7 @@ import { effHue, paletteStops, DEFAULT_CONTROLS, RAMP_L_MIN, RAMP_L_MAX, STOPS, 
 import { rgbToOkhsl, okhslToRgb, rgbToOklabChroma } from "../../src/engine/okhsl.js";
 import { derivedAll, oklchStr } from "../../src/engine/exports.js";
 import { defaultDocument, projectView, paletteKeyColors } from "../../src/ui/model.mjs";
-import { hydrate } from "../../src/ui/persist.js";
+import { hydrate, presetDoc } from "../../src/ui/persist.js";
 import { sampleCorpus, SAMPLE_SEED } from "./lib/corpus-sample.mjs";
 
 const CATS = ["architecture", "cuisine", "film", "literature", "music", "nature", "travel", "brands"];
@@ -910,7 +910,7 @@ const loneSpikeNames = new Set();
 const modeHex = new Map(); // label -> { perceptual, peak, even } each a joined-hex fingerprint string
 for (const { slug, preset } of presetsByCat) {
   for (const mode of MODES) {
-    const doc = hydrate({ ...preset, toneMode: mode });
+    const doc = presetDoc({ ...preset, toneMode: mode });
     const view = projectView(doc);
     for (const p of doc.palettes) {
       if (typeof p.anchor !== "string") continue;
@@ -1083,7 +1083,7 @@ for (const n of loneSpikeSorted) FAIL("anchor-ramp", `lone-spike: unexpected mem
   // and model.mjs's layers import points at it below.
   const layersSrc = readFileSync(new URL("../../src/engine/layers.mjs", import.meta.url), "utf8");
   let patchedLayers = layersSrc;
-  for (const f of ["controls.mjs", "resolve.mjs", "tonal.js", "prime.mjs", "semantic.js", "type.mjs", "geometry.mjs", "layer-pins.mjs"]) {
+  for (const f of ["controls.mjs", "resolve.mjs", "tonal.js", "layers/ramp@1.mjs", "prime.mjs", "semantic.js", "type.mjs", "geometry.mjs", "layer-pins.mjs"]) {
     if (!layersSrc.includes(`from "./${f}"`)) FAIL("anchor-ramp", `lone-spike negative control: layers.mjs import target not found - ./${f} moved, update this control`);
     patchedLayers = patchedLayers.replace(`from "./${f}"`, `from "${f === "tonal.js" ? buggyTonalUrl : new URL(`../../src/engine/${f}`, import.meta.url).href}"`);
   }
@@ -1122,7 +1122,7 @@ for (const n of loneSpikeSorted) FAIL("anchor-ramp", `lone-spike: unexpected mem
   // + anchor hex + stop): a first version keyed on `doc.name|p.name|stop` alone and collapsed distinct
   // witnesses that share a palette name and spike stop across different presets into one Set entry,
   // undercounting 65 as 7 (review pass 2, F3 follow-up).
-  const spikeDocs = [...presetsByCat.map(({ slug, preset }) => ({ slug, doc: hydrate({ ...preset, toneMode: "even" }) })), { slug: "default kit", doc: dkSpikeDoc, kitName: dkBaseForSpike.name }];
+  const spikeDocs = [...presetsByCat.map(({ slug, preset }) => ({ slug, doc: presetDoc({ ...preset, toneMode: "even" }) })), { slug: "default kit", doc: dkSpikeDoc, kitName: dkBaseForSpike.name }];
   for (const { slug, doc, kitName } of spikeDocs) {
     const view = BuggyModel.projectView(doc);
     for (const p of doc.palettes) {
@@ -1303,7 +1303,7 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
   for (const modeName of ["perceptual", "peak"]) {
     let max = 0, worst = "n/a";
     for (const { slug, preset } of hueSpaceBoundSubjects) {
-      const base = hydrate({ ...preset, toneMode: modeName });
+      const base = presetDoc({ ...preset, toneMode: modeName });
       const baseV = projectView(base), altV = projectView(hydrate({ ...base, ...flipHueSpace(base) }));
       for (const p of base.palettes) {
         if (typeof p.anchor !== "string") continue;

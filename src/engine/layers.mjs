@@ -38,6 +38,7 @@
 import { resolveControls } from "./controls.mjs";
 import { rampChromaOf, primeChromaOf } from "./resolve.mjs";
 import { paletteStops, EXPORT_STOPS } from "./tonal.js";
+import { paletteStops as paletteStopsV1 } from "./layers/ramp@1.mjs";
 import { primeSwatches } from "./prime.mjs";
 import { semanticRoles, applyAccentRef, applyOnColorContrast, applyRoleOverrides } from "./semantic.js";
 import { typeScale } from "./type.mjs";
@@ -75,7 +76,7 @@ export const LAYERS = Object.freeze({
   controls: layer("controls", 1,
     ["curve", "tension", "lmin", "lmax", "damp", "dampCurve", "dampAmp", "dampBias", "hueSpace", "relChroma", "chromaFloor", "toneMode", "vibrancy", "onColorMode", "accentRef", "primeChroma"],
     ["controls.resolved"], resolveControls),
-  ramp: layer("ramp", 1,
+  ramp: layer("ramp", 2,
     ["palettes", "controls.resolved"],
     ["ramp.stops"], paletteStops),
   prime: layer("prime", 1,
@@ -93,9 +94,9 @@ export const LAYERS = Object.freeze({
 });
 
 // REGISTRY, every runnable layer version: each layer's latest (LAYERS) plus the frozen earlier
-// versions under ./layers/ (none shipped yet; a version bump imports the frozen file and lists it
-// here). A test registers its own versions by passing a longer list as `registry`.
-export const REGISTRY = Object.freeze(Object.values(LAYERS));
+// versions under ./layers/ (ramp@1, the ramp before T-0040; a version bump imports the frozen file and
+// lists it here). A test registers its own versions by passing a longer list as `registry`.
+export const REGISTRY = Object.freeze([...Object.values(LAYERS), layer("ramp", 1, ["palettes", "controls.resolved"], ["ramp.stops"], paletteStopsV1)]);
 
 // latestOf(registry), { [id]: highest registered version }, in registry order.
 export function latestOf(registry) {

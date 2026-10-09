@@ -26,7 +26,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { hydrate } from "../../src/ui/persist.js";
+import { hydrate, presetDoc } from "../../src/ui/persist.js";
 import { defaultDocument, projectView } from "../../src/ui/model.mjs";
 
 const CATS = ["architecture", "brands", "cuisine", "film", "literature", "music", "nature", "travel"];
@@ -46,7 +46,7 @@ let corpusPaletteCount = 0;
 function fingerprintMode(mode, countPalettes) {
   const lines = [];
   for (const preset of presets) {
-    const doc = hydrate({ ...preset, toneMode: mode });
+    const doc = presetDoc({ ...preset, toneMode: mode });
     const view = projectView(doc);
     for (const p of view.palettes) {
       lines.push(`${preset.name}|${p.name}|${p.fullRamp.map((s) => s.hex).join(" ")}`);

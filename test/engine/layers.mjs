@@ -18,7 +18,7 @@
 // and must report a failure there: the negative controls live in this file, not in a one-off edit.
 import { readFileSync, readdirSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { LAYERS, resolveRoles } from "../../src/engine/layers.mjs";
+import { LAYERS, REGISTRY, latestOf, resolveRoles } from "../../src/engine/layers.mjs";
 import { resolveControls } from "../../src/engine/controls.mjs";
 import { paletteStops, DEFAULT_CONTROLS } from "../../src/engine/tonal.js";
 import { primeSwatches } from "../../src/engine/prime.mjs";
@@ -50,7 +50,7 @@ function shapeProblems(layers) {
     const keys = Object.keys(l).sort().join(",");
     if (keys !== "id,inputs,outputs,run,version") out.push(`${id}: keys ${keys}`);
     if (l.id !== id) out.push(`${id}: id field ${l.id}`);
-    if (l.version !== 1) out.push(`${id}: version ${l.version}`);
+    if (l.version !== latestOf(REGISTRY)[id]) out.push(`${id}: version ${l.version}, registry latest ${latestOf(REGISTRY)[id]}`);
     for (const f of ["inputs", "outputs"]) {
       if (!Array.isArray(l[f]) || !l[f].every((s) => typeof s === "string" && s)) out.push(`${id}: ${f} is not a list of names`);
     }
@@ -107,7 +107,7 @@ const domLines = (src) => src.split("\n").map((t, i) => [i + 1, t]).filter(([, t
 {
   const p = shapeProblems(LAYERS);
   if (p.length) FAIL("c2.1-registry", p.join("; "));
-  else ok("c2.1-registry", `${IDS.length} layers at version 1, every run is its engine export`);
+  else ok("c2.1-registry", `${IDS.length} layers at their registry latest, every run is its engine export`);
   const badGeometry = { ...LAYERS, geometry: { ...LAYERS.geometry, run: typeScale } };
   if (!shapeProblems(badGeometry).length) FAIL("c2.1-control", "geometry run pointed at typeScale and the shape check stayed quiet");
   else ok("c2.1-control", "geometry run -> typeScale is caught");
