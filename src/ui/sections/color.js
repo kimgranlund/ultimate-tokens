@@ -1,4 +1,4 @@
-import { DEFAULT_CONTROLS, PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hasDataPalettes, hexToOklch, mintDataPalettes, nextPaletteName, paletteGroup, paletteGroupLabel, paletteNameClash, projectView, radixCollisionBadge, radixExportKey, radixKeyCollision, rederiveDataHues, seedFromKeyColor, slug } from "../model.mjs";
+import { DEFAULT_CONTROLS, PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hasDataPalettes, hexToOklch, mintDataPalettes, nextPaletteName, paletteGroup, paletteGroupLabel, paletteNameClash, projectView, RADIX_STEP_GUIDE, radixCollisionBadge, radixExportKey, radixKeyCollision, rederiveDataHues, seedFromKeyColor, slug } from "../model.mjs";
 import { RELATIONSHIPS, deriveNeutral, deriveRelative } from "../../engine/derive.mjs";
 import { chromaEnvelope, envelopePresetOf } from "../../engine/tonal.js";
 import { icon } from "../icons.js";
@@ -1040,7 +1040,10 @@ export class ColorSectionImpl {
         const leaf = group[String(step)];
         const val = leaf && leaf.value ? leaf.value : { base: "transparent", _dark: "transparent" };
         const paint = scheme === "dark" ? val._dark : val.base;
-        steps.push(h("i", { class: "radix-step", style: `background:${paint}`, title: `${p.name} ${step}` }));
+        // the hover/focus tooltip (T-0037): `Step N: <role>` + the one-line intent from RADIX_STEP_GUIDE, drawn by the
+        // .radix-step::after rule from data-tip; tabindex=0 so keyboard focus shows it too, aria-label so a screen reader hears it
+        const guide = RADIX_STEP_GUIDE[step - 1];
+        steps.push(h("i", { class: "radix-step", style: `background:${paint}`, tabindex: "0", role: "img", "data-tip": `Step ${step}: ${guide.role}\n${guide.intent}`, "aria-label": `${p.name} step ${step}: ${guide.role}. ${guide.intent}` }));
       }
       // a row click SELECTS its palette (the palette inspector is otherwise unreachable from this view, #814 review):
       // selection is UI-session state, not a document edit and not reorder wiring, so I1 (read-only) still holds.

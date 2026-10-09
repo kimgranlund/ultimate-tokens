@@ -323,6 +323,7 @@ palette. */` string sentinel (mirroring `exportShadcn`'s own no-driver sentinel)
   bg + `a7` border + step-11 fg), `plain` (`a3`/`a4` bg + step-11 fg). Two additive leaves round it
   out (REQ-024): `on-accent` (the solid-foreground on-color, `base`/`_dark`) and `prime` (the
   mode-independent prime identity swatch, `base` only, no `_dark`, unlike every other leaf here).
+- **Step guide** (`RADIX_STEP_GUIDE`, `src/engine/exports.js`): the one table of what each of the 12 steps is for (Radix's published usage, a role and a one-line intent per step). Display text only: the canvas Radix view reads it for each swatch's hover and focus tooltip, and it changes no step value or export.
 - **Driver aliases** (REQ-025): `colors.accent` ← a deep clone of the primary driver's group with
   every internal reference re-pointed from `{primary.n}` to `accent`; `colors.gray` ← the same for
   the neutral driver, re-pointed to `gray` (Park UI's own `gray: colorPalettes.neutral` pattern, KF-4).

@@ -10,7 +10,7 @@
 > **Source of record:** `src/ui/app.js` (the `HctApp` custom element: state, render dispatch, header,
 > footers, inspector shell, i.e. the frame) · `src/ui/sections/{color,typography,geometry}.js` (the per-section
 > pane bodies) · `src/ui/overlays/{drawer,settings,apply-gate}.js` (the overlays); both sets are mixed
-> onto the prototype (`mixinInto`, `app.js:2829`) of `HctApp` ·
+> onto the prototype (`mixinInto`, `app.js:2821`) of `HctApp` ·
 > `src/ui/app-helpers.mjs` (`h` + the shared primitives) · `src/ui/styles.css` (the grid) ·
 > `src/ui/model.mjs` (`projectView`, the read-model each render consumes).
 > **Scope:** the shell, the frame, its regions, the render pipeline, and the state that routes them.
@@ -132,7 +132,7 @@ anchor. "Interface" is the method's contract, not its body.
 | **LLD-C6b** | Canvas area / scene | `renderCanvasArea` `sections/color.js:833` | SPEC-R10 (pannable canvas), SPEC-R2 |
 | **LLD-C6c** | Canvas footer | `renderCanvasFooter` :2072 / `paintCanvasFooter` :2070 | SPEC-R5 |
 | **LLD-C7** | Right pane (context inspector) | `renderRightPane` :2114 | SPEC-R11, SPEC-R3, SPEC-R4 |
-| **LLD-C8** | App-footer | `renderAppFooter` :2372 / `paintAppFooter` :2392 | SPEC-R6, SPEC-R1 |
+| **LLD-C8** | App-footer | `renderAppFooter` :2364 / `paintAppFooter` :2384 | SPEC-R6, SPEC-R1 |
 | **LLD-C9** | Pane-collapse toggles | `toggleLeftPane`/`toggleRightPane` :1501 / `paneToggle` :1511 | SPEC-R10 (density) |
 | **LLD-C10** | Overlays (drawer, dialogs, toast) | `renderDrawer` `overlays/drawer.js:33` / `renderSettings` `overlays/settings.js:494` / `renderNewPalette` `sections/color.js:469` / `renderApplyGate` `overlays/apply-gate.js:362` | SPEC-R8, SPEC-R2, SPEC-R1 |
 
@@ -164,12 +164,11 @@ anchor. "Interface" is the method's contract, not its body.
 
 - **LLD-C7 Right pane**: `<aside class=right-pane aria-label="Inspector">` = `.pane-head` (open-state right
   toggle + a `.pane-title` that names the Color context, "Palette: <name>" or "Global", and takes
-  programmatic focus when a deselect removes the focused control; in a palette context also a
-  `.pane-back` button, the keyboard way back to Global) + **`.seg-body`** (the active inspector) +
+  programmatic focus when a deselect removes the focused control; there is no back button, T-0036) + **`.seg-body`** (the active inspector) +
   **`.seg-example`** (a live component preview wired to the selected palette's roles, pinned below **every**
   context). Color has no switch: `this.sel.kind` picks the context, the palette inspector while a palette
   is selected (a canvas row in the Palettes, Scrims or Radix view, a Mapping row, a rail row,
-  `selectPalette`), the Global inspector otherwise (a freshly opened doc, Esc, the back button, a click on
+  `selectPalette`), the Global inspector otherwise (a freshly opened doc, Esc, a click on
   empty canvas via `_deselect`). Esc in a focused inspector field blurs it first; the second Esc
   deselects. A drag-reorder keeps the current context. The set's Story, when `view.story` exists, is a
   section at the foot of the Global inspector. Typography/geometry return their own whole inspector with its own tabs
@@ -219,7 +218,7 @@ State lives on the element instance. Two tiers, and the split is load-bearing:
 
 Exception: one of these fields, `theme`, doubles as an **app pref**:
 `_saveAppPrefs()` writes it, with two fields this table does not list (`motion`, `fontMode`), to
-`localStorage` under `_appPrefsKey()` (`app.js:2491`) on every change, and `_loadAppPrefs()` reloads
+`localStorage` under `_appPrefsKey()` (`app.js:2483`) on every change, and `_loadAppPrefs()` reloads
 them at construction. That persistence is per app, on this device, and never with the
 document: it never enters `view`, never round-trips through export/import, and carries no undo entry.
 

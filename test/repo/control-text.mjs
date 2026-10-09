@@ -23,7 +23,7 @@ const ELEMENTS = ["button", "select"];
 const LITERALS = ['input[type="text"]', 'input[type="search"]'];
 const CLASSES = [
   "segmented", "canvas-seg", "section-seg", "chip", "ghost", "icon-only", "pane-toggle", "figma-files",
-  "radix-files", "tyi-font-input", "docname", "map-raw-select", "map-raw-input", "pane-back", "toggle",
+  "radix-files", "tyi-font-input", "docname", "map-raw-select", "map-raw-input", "toggle",
   "tyi-voice-name",
 ];
 const ALLOW = [".ex-", ".geom-ex-"];

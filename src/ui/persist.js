@@ -374,7 +374,7 @@ function clampOverrides(o) {
 // maps and the UI-control/UI-widget type overrides on steps other than MD), reporting each through
 // DROPPED_KEYS.
 //
-// v10 (#788, compute-layers, ADR-033): a document carries `layers: { [id]: version }`, the version of
+// v10 (#788, compute-layers, ADR-034): a document carries `layers: { [id]: version }`, the version of
 // each compute layer it renders with. A RENAME_MAPS entry (stampLayers) stamps every registered layer
 // id at version 1 on a doc stamped below v10 that has no `layers` map, BEFORE the clamp: such a doc
 // was made with every layer at version 1, and the stamp is the explicit boundary, so every hydrated
@@ -450,7 +450,7 @@ const RENAME_MAPS = [
     migrateGeometry: true,
   },
   {
-    // the compute-layer pins (#788, ADR-033): a doc that predates `layers` is stamped with every
+    // the compute-layer pins (#788, ADR-034): a doc that predates `layers` is stamped with every
     // registered layer id at version 1, the version it was made with. Shaped like v2's
     // stampIntensity: it fires only when the doc carries no `layers` map at all.
     version: 10,
@@ -724,7 +724,7 @@ export function hydrate(snapshot, { latest = LATEST } = {}) {
     }
   }
 
-  // layers (#788, ADR-033): one pin per registered layer, layer-pins.mjs's rule (rounded and clamped
+  // layers (#788, ADR-034): one pin per registered layer, layer-pins.mjs's rule (rounded and clamped
   // to [1, latest]; a pre-v10 doc arrives here already stamped by the v10 entry). An id the registry
   // does not name is dropped, loudly.
   if (s.layers && typeof s.layers === "object") {
@@ -767,7 +767,7 @@ export function hydrate(snapshot, { latest = LATEST } = {}) {
   return result;
 }
 
-// presetDoc(preset, { latest }), a curated preset opened as a new document (#788, ADR-033): hydrated
+// presetDoc(preset, { latest }), a curated preset opened as a new document (#788, ADR-034): hydrated
 // like any stored document (a preset carries no schemaVersion, so the v10 stamp pins it to version 1),
 // then `layers` overwritten by every layer's latest version, because opening a preset makes a document
 // now, with the layers that ship now (R100). It lives here, not in src/engine/layers.mjs, because

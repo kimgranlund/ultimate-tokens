@@ -690,15 +690,14 @@ flushRaf();
   ok(dp.now !== dp.from && app.sel.kind === "palette" && app.sel.id === dp.now && palInspector(), `(irc) control: the same drop with a palette selected keeps the palette inspector on the moved palette (got ${app.sel.kind} ${app.sel.id}, palette at ${dp.now})`);
   app.undo(); settle();
 
-  // (c) the palette inspector has a focusable way back to Global; Esc still works, and a focused field takes two Escs
+  // (c) T-0036: the Back to Global button is gone; the keyboard path back is Esc, and a focused field takes two Escs
   app.selectPalette(1); settle();
-  const bk = backBtn();
-  ok(!!bk && bk.tagName === "BUTTON" && bk.getAttribute("tabindex") !== "-1" && !bk.disabled && !!bk.getAttribute("aria-label"), "(irf) the palette inspector header holds a focusable, labelled Back-to-Global <button>");
-  ok(!!bk && !!bk.parentNode && bk.parentNode.classList.contains("pane-head"), "(irf) the back button lives in the .pane-head");
-  if (bk) bk.focus();
-  if (bk) bk.dispatch("click", { target: bk }); settle();
-  ok(globalInspector() && paneTitle() === "Global", "(irf) activating the back button returns to the Global inspector");
-  ok(!backBtn(), "(irf) control: no back button in the Global context");
+  ok(app.sel.kind === "palette" && paneTitle() === "Palette: " + nameOf(1), "(irf) precondition: a palette is selected and the pane title names it");
+  ok(!backBtn(), "(irf) the palette inspector header holds no Back-to-Global button");
+  ok(!findIn(rp(), (e) => e.tagName === "BUTTON" && /Global/.test(textOf(e))), "(irf) no button anywhere in the inspector is labelled Global");
+  ok(!!findIn(rp(), (e) => e.classList && e.classList.contains("pane-title")), "(irf) control: the pane title is still in the header (the search can find header nodes)");
+  app._deselect(); settle();
+  ok(globalInspector() && paneTitle() === "Global", "(irf) _deselect (empty canvas click) still returns to the Global inspector");
   app.selectPalette(1); settle();
   fireKey("Escape"); settle();
   ok(globalInspector(), "(irf) Esc from the body still deselects to Global");
@@ -4045,6 +4044,28 @@ flushRaf();
     const sxsLine = lines9.find((l) => l.includes("side by side, inside ONE"));
     ok(!!sxsLine && /radix/i.test(sxsLine), "(rx9a) the side-by-side canvas comment names radix");
     ok(!colorSrc9.includes("Palettes/Scrims only"), "(rx9b) the stale 'Palettes/Scrims only' phrase is gone");
+  }
+
+  // test 10 (T-0037): every Radix step swatch carries its role and intent from the ONE RADIX_STEP_GUIDE table, reachable by
+  // hover AND keyboard focus (the headless shim computes no CSS, so the show-on-hover/focus rules are read off styles.css).
+  {
+    const { RADIX_STEP_GUIDE: GUIDE_RX } = await import("../../src/engine/exports.js");
+    ok(Array.isArray(GUIDE_RX) && GUIDE_RX.length === 12, `(rx10a) RADIX_STEP_GUIDE has 12 entries (got ${GUIDE_RX && GUIDE_RX.length})`);
+    ok(GUIDE_RX.every((g, i) => g.step === i + 1 && typeof g.role === "string" && g.role.trim() !== "" && typeof g.intent === "string" && g.intent.trim() !== ""),
+      "(rx10b) every entry is step i+1 with a non-empty role and a non-empty intent");
+    ok(new Set(GUIDE_RX.map((g) => g.role)).size === 12, "(rx10c) the 12 roles are distinct");
+    ok(GUIDE_RX[0].role === "App background" && GUIDE_RX[8].role === "Solid background", "(rx10d) step 1 is the app background and step 9 the solid background");
+    app.canvasView = "radix"; app.render(); flushRaf();
+    const rowSteps = inLight(".radix-step");
+    ok(rowSteps.length >= 12 && rowSteps.length % 12 === 0, `(rx10e) the Radix scene renders swatches in whole 12-step ladders (got ${rowSteps.length})`);
+    const firstLadder = Array.from(rowSteps).slice(0, 12);
+    ok(firstLadder.every((el, i) => el.getAttribute("data-tip") === `Step ${i + 1}: ${GUIDE_RX[i].role}\n${GUIDE_RX[i].intent}`), "(rx10f) each swatch's data-tip is `Step N: <role>` + the table's intent, in table order");
+    ok(Array.from(rowSteps).every((el) => el.getAttribute("tabindex") === "0"), "(rx10g) every step swatch is keyboard-focusable (tabindex=0), so the tooltip is not hover-only");
+    ok(Array.from(rowSteps).every((el) => / step \d+: /.test(el.getAttribute("aria-label") || "") && !(el.getAttribute("aria-label") || "").includes("undefined")), "(rx10h) every swatch has a spoken aria-label naming its step");
+    const css10 = readFileSyncRX(resolveRX(dirnameRX(fileURLToPathRX(import.meta.url)), "../../src/ui/styles.css"), "utf8");
+    ok(/\.radix-step::after\s*\{[^}]*content:\s*attr\(data-tip\)/.test(css10), "(rx10i) .radix-step::after draws the tooltip from data-tip");
+    ok(/\.radix-step:hover::after[^{]*\{[^}]*display:\s*block/.test(css10) && /\.radix-step:focus-visible::after[^{]*\{[^}]*display:\s*block/.test(css10), "(rx10j) the tooltip shows on :hover and on :focus-visible");
+    ok(!/\.radix-ladder\s*\{[^}]*overflow:\s*hidden/.test(css10), "(rx10k) the ladder does not clip (overflow:hidden would hide the tooltip)");
   }
 
   app.canvasView = rxView0; app.render(); flushRaf();
