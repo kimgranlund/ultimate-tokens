@@ -107,7 +107,10 @@ incrementally.
 ### 1 · Button
 
 - **Surface** S1 (+ S2 instances). **Sites** ~20 `h("button"…)`; 85+ refs.
-- **Anatomy** `[ icon? · label? ]`, no caret variant. Icon-only used for zoom (`zoomBy()`, `canvasTools` at `app.js:1554/1556`),
+- **Anatomy** `[ icon? · label? · caret? ]`. The trigger variant (T-0044, `CONTROL_ANATOMY.trigger` in
+  `src/ui/shell-roles.mjs`) ends in `icon("caret-down", { cls: "caret" })`, a control-box glyph that turns
+  180deg on `[aria-expanded="true"]` (`.caret`, `styles.css:234`): the Examples toggle and the Typography voice
+  headers. Icon-only used for zoom (`zoomBy()`, `canvasTools` at `app.js:1554/1556`),
   drawer close (`_drawerHead()`, `overlays/drawer.js:132-138`). `btn()` emits `icon-only` in place of `ghost`
   when its only child is one `.ic` icon (`isIconOnly`, `app-helpers.mjs:402`); the two pane toggles carry
   `icon-only pane-toggle` (`paneToggle`, `app.js:1523`).
@@ -124,9 +127,13 @@ incrementally.
 - **a11y** ✓ `:focus-visible` ring; ✓ `aria-pressed` on toggle-buttons; ✓ `aria-label` on icon-only
   (`sections/color.js:822`). ✗ no `forced_colors`.
 - **Geometry** the cell roles: `min-block-size: var(--sh-control-height)`, `padding-inline: var(--sh-control-inset)`,
-  the control text role (`font: var(--ui-control-font)`), `border-radius: var(--sh-control-radius)`, `line-height: 1` and
-  `white-space: nowrap`, so a label never wraps (`button`, `styles.css:190`). `test/repo/shell-text.mjs` gates
-  text on every shell rule, and every shell control and container against literal paddings, gaps and radii.
+  the control text role (`font: var(--ui-control-font)`, one of the nine `--ui-<role>-font` roles of `UI_ROLES`
+  in `src/ui/shell-roles.mjs`), `border-radius: var(--sh-control-radius)`, `line-height: 1` and
+  `white-space: nowrap`, so a label never wraps (`button`, `styles.css:190`). `.primary` and `.on` read
+  `--ui-weight-strong`. At the shell's default cell (product-sm-md, `SHELL_DEFAULT_GEOMETRY`, `app.js:64`) a
+  button is 28px with a 7px inset and 13px text. `test/repo/shell-text.mjs` gates text on every shell rule,
+  and every shell control and container against literal paddings, gaps and radii. The tables with px are in
+  `docs/references/geometry/shell-roles.md`.
 
 ```json
 { "component":"button","layer":"component","role":"button","replaces_native":false,
@@ -142,8 +149,9 @@ incrementally.
   Chroma basis peak/gamut (`switchControl`, `sections/color.js:2198`). Hue space OKLCH/CAM16 is **not** a toggle any more:
   it is a `segmented()` `role=group` (`sections/color.js:2146`, card 3), as is its On-colors sibling
   (`sections/color.js:2187`).
-- **Anatomy** `[ track (with ::after thumb) · label-span ]`. CSS `styles.css:1085-1102`; the `.track`
-  is 34×19 with a 15px ::after thumb that translates on `.on`.
+- **Anatomy** `[ track (with ::after thumb) · label-span ]`. CSS `styles.css:1089-1106`; the `.track`
+  is 1.75 by 1 control icon, a pill, and the ::after thumb is the icon less two edges (`--ctl-thumb`), inset
+  one `--ui-edge` (an eighth of the icon, at least 1px) and translated on `.on` (`CONTROL_ANATOMY.switch`).
 - **API** `switchControl({ on, onToggle, label, ariaLabel })` (`app-helpers.mjs:363`), a
   `<button type=button class="toggle" role="switch">` with `aria-checked` mirroring `on`, `aria-label`
   from `ariaLabel`, an `aria-hidden` track span and a visible `.toggle-label`. State = `aria-checked` +
@@ -153,7 +161,9 @@ incrementally.
   "Chroma basis: gamut when on, peak when off"). The palette site sits in a bare `field` div with no `<label>` at all
   (`sections/color.js:1783`); the Chroma basis site goes through `field()`, which also associates a
   `label[for]` (`app-helpers.mjs:551`).
-- **Geometry** ad-hoc (34×19 track / 15px thumb).
+- **Geometry** the switch row of `CONTROL_ANATOMY` (`src/ui/shell-roles.mjs`): at the product-sm default a
+  24.5×14 track, a 10px thumb and a 2px edge; the label gap is the control inset; the motion is
+  `--ui-motion-fast`.
 
 ```json
 { "component":"toggle","layer":"component","role":"switch","replaces_native":true,
@@ -195,8 +205,10 @@ incrementally.
 - **Geometry** the compound rule (ADR-033): the container is one control height with a part-inset pad and
   the control radius (`.segmented, .figma-files, .radix-files`, `styles.css:1000`); each segment is a part,
   part height tall, part inset inline, inset radius, so its corner stays concentric with the container's
-  (`.segmented button, .figma-files button, .radix-files button`, `styles.css:983`). The small variant is
-  gone: every segment reads the control text size.
+  (`.segmented button, .figma-files button, .radix-files button`, `styles.css:1007`). The small variant is
+  gone: every segment reads the control text role (`--ui-control-font`, the user's 2026-10-09 ruling that
+  segmented controls and interactive chips take the control size), and `.on` reads `--ui-weight-strong`.
+  The rule is `CONTAINER_COMPOSITION.segmented` in `src/ui/shell-roles.mjs`.
 - **a11y** ✓ every one of the 14 sites shares one keyboard model, set on each segment inside `segmented()`
   (`app.js:1741-1771`) regardless of role: roving `tabindex` and an ArrowLeft/ArrowRight `onkeydown`;
   `role=tablist` sites add `role=tab` + `aria-selected` + `aria-controls`, `role=group` sites add
@@ -235,8 +247,12 @@ incrementally.
 
 - **Surface** S1. **Sites** 3: Distribution (`field()`, `sections/color.js:2087`), Curve (`sections/color.js:2111`),
   `.map-raw-select` raw token (`sections/color.js:1341`, with `.ov` override state).
-- **Anatomy** native `<select>` + `<option>[]`; `.map-raw-select` is a compact mono variant on the
-  chip row of the cell (`styles.css:819-824`).
+- **Anatomy** native `<select>` + `<option>[]` on the control role (`--ui-control-font`), with a drawn caret:
+  the caret-down glyph as a background data-URI (`--select-caret`, `select`, `styles.css:1743`), 0.6 of the
+  control icon wide at the end of a lane of icon + inset (`CONTROL_ANATOMY.select`). A native select takes no
+  child and a data-URI cannot read a var, so the chrome holds one data-URI per scheme and the kit specimen
+  builds its own (`selectCaret`, `icons.js:54`). `.map-raw-select` is a compact mono variant on the
+  badge row of the cell (`styles.css:838-843`), the same caret at the badge glyph box (`styles.css:1756`).
 - **a11y** ✓ native keyboard/picker; ✓ `aria-label` on `.map-raw-select` (`sections/color.js:1335-1337`);
   ✓ Distribution/Curve are built through `field()` (`sections/color.js:2088/2113`), which stamps an `id`
   on the `<select>`, associates the `<label for>` with it and adds a fallback `aria-label`
@@ -299,7 +315,10 @@ incrementally.
 
 ### 9 · Chip / pill
 
-Three unrelated "pill" stylings, a naming/coherence drift, not one primitive:
+Three unrelated "pill" stylings, a naming/coherence drift, not one primitive. Since T-0044 the `.chip`
+pair splits by role: the interactive `button.chip` is a control (control text, height and inset, a pill on
+the control height, `styles.css:918`) and the status `span.chip` is a badge on the compact chip row
+(`--ui-badge-font`), the user's 2026-10-09 ruling:
 - **`.tile-tag`** (`styles.css:323-334`), non-interactive status badge on gallery tiles: palette
   count + "preset"/"ago" (`app.js:766/767/850/851`); `pointer-events:none`, absolute over the thumb.
 - **`.chip` interactive**, the damping presets: `chip(name, { mode: "interactive", on })` renders a

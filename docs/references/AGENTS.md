@@ -2,7 +2,7 @@
 
 Lookup tables, records and knowledge notes for the engines: the decision records, the glossary, the changelog, the component inventory and the numbered `knowledge-NN` references.
 
-Subfolders without a generated entry: [geometry/](geometry/AGENTS.md), a one-document folder, so the list below leaves it out.
+Subfolders without a generated entry: [geometry/](geometry/AGENTS.md) (the geometry reference and the shell roles), which the generated list below has not picked up yet.
 
 <!-- sdlc-lite:managed:start v1 sha256:c246d58f5c4e -->
 ## Documents

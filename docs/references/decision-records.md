@@ -1383,6 +1383,71 @@ Format: Context → Decision → Rationale → Consequences → Status.
 - **Status.** PROPOSED 2026-10-08 (T-0029). Ratification is the owner's: the owner edits this line to
   DECIDED, or amends the text under the file's amendment shape.
 
+## ADR-036: The editor shell's text roles, control anatomy, glyph motion and product-sm default cell
+- **Context.** T-0044. The editor chrome carried 591 literal text and geometry declarations in
+  `src/ui/styles.css` (153 font sizes alone, clustered at 13, 12, 11 and 10 to 10.5px), so text sizes,
+  control insets and radii were picked per rule and drifted from the Maison cell the controls already sized
+  from (ADR-032, ADR-033). The user ruled on 2026-10-09: the shell's default cell is product tier, sm scale,
+  md size; the roles derive from `UI_TEXT` by fixed steps, never independent px; an architect pass first
+  (`.sdlc/ui-standardization/architect-L1.md`), then the role table shown before any build. Approving those
+  tables, the user changed one thing: chips and segmented controls use the control text size (`--ui-control`,
+  step 0), not the compact chip row; only badges and tags stay compact, and `--ui-chip` is renamed
+  `--ui-badge`. On the select caret the user ruled the caret-down glyph, not the two-gradient triangle.
+- **Decision.** One module, `src/ui/shell-roles.mjs` (pure, no DOM), holds the shell's four tables, copied
+  with px at three cells in `docs/references/geometry/shell-roles.md`:
+  - `UI_ROLES`, nine text roles (pane-title, element-title, kicker, label, control, badge, helper, body,
+    code). A role's size is a ladder row step from the cell (0 is the cell's control text, -1 the next
+    shorter row's UI text, and so on; `badge` is the cell's compact row), with a weight, line-height,
+    tracking, case and ink. The steps are computed in JS (`roleText`, `shellRolesCSS`) because CSS cannot
+    index the `UI_TEXT` table and a `calc()` offset would not follow the body-base factor; `app.js`
+    injects `--ui-text-step-0..3`, `--ui-badge-icon` and `--ui-edge` into the host's head style, and the
+    alias block declares each role once as `--ui-<role>-font`, `-tracking`, `-case` and `-ink`. The kicker
+    reads `--ink-dim`, not `--ink-faint`, so a section heading never fades below a label.
+  - `CONTROL_ANATOMY`, one row per kind (button, icon-only, input, select, trigger, chip, badge, switch,
+    range) as ratios of the cell's icon, inset and chip row. The interactive chip (`button.chip`) is a
+    control: control text, height and inset, a pill on the control height. The badge (`span.chip`,
+    `.acct-badge`, `.radix-badge`, `.tok-sub`, `.geom-chip`, `.key-slot .key-place`) keeps the compact row.
+    The switch thumb sits one edge (`--ui-edge`, an eighth of the icon, at least 1px) inside its track. The
+    trigger carries a `.caret` (`icon("caret-down")`) that turns 180deg on `[aria-expanded="true"]`. The
+    native select draws the caret-down path as a background data-URI (`--select-caret`, one per scheme,
+    filled with the chrome's `--ink-dim`; a data-URI cannot read a var, so `test/repo/ui-polish.mjs` pins
+    the path and both fills against the boot theme). `icon()` takes `size: "control"` (the default) or
+    `"badge"`; a numeric size stays only on the gallery and the kit-cell specimens.
+  - `CONTAINER_COMPOSITION`, ADR-033 applied to segmented, tab row, menu, input group and switch track:
+    container radius = part radius + container padding. The menu wrap takes `--sh-radius-card`.
+  - `MOTION`, two durations and one easing: `--ui-motion-fast` 120ms (the caret, the switch, the swatch
+    toggle, the toast), `--ui-motion-base` 180ms (the pane collapse), `--ui-motion-ease`
+    `cubic-bezier(.2, 0, 0, 1)`. Every shell transition reads them. Reduced motion adds no rule: the
+    existing descendant rules under `[data-motion="reduced"]` and under `prefers-reduced-motion` with
+    `[data-motion="system"]` force `0.01ms`.
+  - The shell's cell: `shellGeometry` is tri-state. `null` (a fresh install, Reset, or a record with no
+    key) is `SHELL_DEFAULT_GEOMETRY`, product, sm, round, size md; `"kit"` follows `doc.geometry`;
+    an object is a Custom cell. Settings offers Default, Follow kit and Custom. The `--sh-*` fallbacks are
+    the product-sm-md cell. content-lg stays the stress geometry in smoke.
+  - The gate: `test/repo/shell-text.mjs` fails a literal font size, weight, tracking, case or line-height
+    on any shell rule, and a literal padding, gap or radius on a control or container. Its allow-list,
+    each entry with a printed reason: specimens painted at a kit cell (`.ex-`, `.geom-ex-` and the
+    Geometry mocks, except `.ex-collapse-toggle` and `.ex-artifact-title`, which are chrome), the gallery
+    (a content page), the wordmark, drawn glyphs, chart marks (ADR-035), and the page `body` outside the
+    host. Negative controls run first.
+- **Rejected.** Role sizes as `calc()` offsets from the control text (the row step follows the body-base
+  factor on the half-pixel grid, which `calc()` cannot). The step texts as engine `CELL_FIELDS` (those
+  fields are locked to DTCG, Figma and the consumer skill, and exported tokens are a non-goal). A
+  `shellDefault` flag beside `null` meaning Follow kit (two values for one choice). Per-role size, weight
+  and line-height vars instead of one `font` shorthand per role (twice the declarations, and the gate
+  already accepts a shorthand that reads a var). Rotating the select caret (it is a background image on a
+  native select). Gating layout `gap` and `padding` on panes and cards (that is the container tier, a
+  separate law).
+- **Consequences.** At the default the controls are 28px, not 32px; the ramp enable and drift marks are
+  11px, not 13px; the interactive chips are control height; the settings nav selected item reads the strong
+  weight with an accent marker. `test/ui/shell-roles.mjs` checks the tables over all 27 cells and the alias
+  block against `UI_ROLES`; `test/repo/ui-polish.mjs` checks the anatomy, the select caret and the motion
+  tokens; the headless (shg) group covers the tri-state; smoke checks compound containers and control
+  polish at product-sm and content-lg in light and dark, control text at both, and the caret's reduced
+  motion duration.
+- **Status.** PROPOSED 2026-10-09 (T-0044). Ratification is the owner's: the owner edits this line to
+  DECIDED, or amends the text under the file's amendment shape.
+
 ## Quick map: decisions an enhancing agent is most likely to "fix" (don't)
 | ADR | Looks wrong because… | But it's intentional because… |
 |-----|----------------------|-------------------------------|
@@ -1421,3 +1486,4 @@ Format: Context → Decision → Rationale → Consequences → Status.
 | ADR-033 | a segmented control, tab row or menu pads half the part's inset, and its parts take `radiusInset` rather than the container's radius | the half law: the container takes `partInset = inset / 2` and each part is `partHeight` tall, so the outer size and alignment equal a lone control's and the two corners stay concentric (PROPOSED, ratification is the owner's) |
 | ADR-034 | `layers.mjs` registers `type` and `geometry` but `compute` never walks them, there is no `group-chroma` layer, and the document still says `baseIntensity` while the engine says `baseChroma` | type and geometry are mode layers evaluated per breakpoint by `model.mjs` (`typeScaleFor`, `geomScaleFor`); ADR-030 retired group chroma, so a registered group layer would name dead code; AC-004 keeps the document's name out of `src/engine`, renamed at one boundary in `model.mjs`, and R102's rename is superseded by ADR-031 |
 | ADR-035 | the analysis charts are stacks of divs with `clip-path` polygons, not SVG, and `h()` refuses `html` | the user ruled charts native DOM on 2026-10-08; an `html:` SVG string writes `innerHTML` and brings back the wedge-fill CSS trap, and `test/repo/dom-charts.mjs` fails the build if one returns |
+| ADR-036 | the select caret is a data-URI with two hard-coded fills, shell text sizes come from a JS step table rather than `calc()`, and a null `shellGeometry` no longer follows the kit | a native select takes no child and a data-URI cannot read a var, so the fills are pinned to the boot theme's `--ink-dim` by `test/repo/ui-polish.mjs`; a row step follows the body-base factor, which `calc()` cannot; the user ruled the product-sm default, and Follow kit is the explicit `"kit"` (PROPOSED, ratification is the owner's) |

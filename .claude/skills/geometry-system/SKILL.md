@@ -117,6 +117,20 @@ spaceBase`, named `insets` and `gaps` over the space ladder, `borders` and the `
 spaceBase 4 it is byte-identical to the pre-ADR-032 output, which keeps the Tailwind/shadcn/Panda/Radix
 seeds in `src/engine/exports.js` stable. Depth: `references/foundations.md` §5-6.
 
+## The editor shell's roles (T-0044, ADR-036)
+
+The app's own chrome is sized from one cell too: the app pref `this.shellGeometry` resolves to
+product-sm-md by default (`SHELL_DEFAULT_GEOMETRY` in `src/ui/app.js`), the doc's geometry under Follow
+kit, or a Custom cell. Its standard
+tables live in `src/ui/shell-roles.mjs`, not in the engine (the chrome is not an exported token):
+`UI_ROLES` (nine text roles), `CONTROL_ANATOMY`, `CONTAINER_COMPOSITION` and `MOTION`. The row-step law: a
+role's text size is a ladder row step from the cell, never a px or a `calc()` offset. Step 0 is the cell's
+control text; step -n is the UI text of the ladder row n rows shorter (`roleText`, clamped at the last
+row, following the doc's body-base factor); `badge` is the cell's compact row. `shellRolesCSS` writes the
+steps per host. A ladder or `UI_TEXT` change therefore moves the shell's text with it;
+`test/ui/shell-roles.mjs` checks the tables over all 27 cells. Reference with px:
+`docs/references/geometry/shell-roles.md`.
+
 ## Procedure: change → check → fix → re-check
 
 1. **Locate it.** A cell value → the ladder (`LADDER_ROWS`, `TIERS`) or `buildCell`. A control-text bug →
