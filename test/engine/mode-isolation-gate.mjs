@@ -22,11 +22,12 @@
 // (`unknown` outside git) in its `capturedAt` field, and prints that sha - used only by hand, by the plan
 // that moves perceptual or peak or edits a curated corpus document or the default kit (the scope of the
 // fixture's `owner` field and of the fingerprint note above);
-// #725 moved perceptual and peak at U2/U3 and re-captured; the next plan that moves them re-captures.
+// #725 moved perceptual and peak at U2/U3 and re-captured, T-0040 (ramp@2, ADR-037) again; the next plan
+// that moves them re-captures.
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { hydrate } from "../../src/ui/persist.js";
+import { hydrate, presetDoc } from "../../src/ui/persist.js";
 import { defaultDocument, projectView } from "../../src/ui/model.mjs";
 
 const CATS = ["architecture", "brands", "cuisine", "film", "literature", "music", "nature", "travel"];
@@ -46,7 +47,7 @@ let corpusPaletteCount = 0;
 function fingerprintMode(mode, countPalettes) {
   const lines = [];
   for (const preset of presets) {
-    const doc = hydrate({ ...preset, toneMode: mode });
+    const doc = presetDoc({ ...preset, toneMode: mode });
     const view = projectView(doc);
     for (const p of view.palettes) {
       lines.push(`${preset.name}|${p.name}|${p.fullRamp.map((s) => s.hex).join(" ")}`);
@@ -70,7 +71,7 @@ if (CAPTURE) {
   let sha = "unknown";
   try { sha = execFileSync("git", ["rev-parse", "HEAD"], { cwd: new URL("../..", import.meta.url) }).toString().trim(); } catch { /* detached/no-git scratch context: leave "unknown" */ }
   const fx = {
-    owner: "the plan that moves perceptual or peak, or edits any curated corpus document or the default kit (the fingerprint covers their rendered content), re-captures this fixture in its own change and names the new sha here; #725 moved perceptual and peak at U2/U3 and re-captured; the next plan that moves them re-captures",
+    owner: "the plan that moves perceptual or peak, or edits any curated corpus document or the default kit (the fingerprint covers their rendered content), re-captures this fixture in its own change and names the new sha here; #725 moved perceptual and peak at U2/U3 and re-captured; T-0040 (ramp@2, ADR-037) moved them and re-captured; the next plan that moves them re-captures",
     capturedAt: sha,
     corpus: corpusLabel,
     perceptual,

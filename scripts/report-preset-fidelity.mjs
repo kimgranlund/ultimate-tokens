@@ -252,7 +252,7 @@ function printReadingA(m, mode, heading, { barCells, barClause }) {
     const witnesses = [...perceptualRunFails.runs, ...perceptualRunFails.bound].slice(0, 3);
     console.log(`    clause: one cusp run, at or under ${(CUSP_RUN_BOUND * 100).toFixed(4)}% of stop 500 (#55 cusp-pull ships unchanged; ruling (f))`);
     if (!m.gatePath) {
-      console.log(`    window: anchors with L* in [${T.RAMP_L_MIN}, ${T.RAMP_L_MAX}] count; ${m.outsideWindow} anchored instance(s) outside it, ${m.perceptualWindowExcluded.length} violation(s) excluded${m.perceptualWindowExcluded.length ? ":" : ""}`);
+      console.log(`    window: anchors with L* in the ramp's pivot window (T.pivotWindow, [${T.pivotWindow({ ...T.DEFAULT_CONTROLS, toneMode: "perceptual" }).map((x) => x.toFixed(2)).join(", ")}] on perceptual at the defaults) count; ${m.outsideWindow} anchored instance(s) outside it, ${m.perceptualWindowExcluded.length} violation(s) excluded${m.perceptualWindowExcluded.length ? ":" : ""}`);
       for (const x of m.perceptualWindowExcluded) console.log(`      excluded: ${x.label} anchor ${x.anchor} L* ${x.lstar.toFixed(1)} (${x.why})`);
     }
     const named = namedExceptions[mode].length ? ` (named exception: ${namedExceptions[mode].join("; ")})` : "";

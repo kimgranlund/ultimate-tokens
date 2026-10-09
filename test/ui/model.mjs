@@ -360,7 +360,7 @@ const expectedBrandHues = (palettes) => palettes.filter((p) => !isDataName(p.nam
   // Self-consistency: projectView(doc).exports.radix === exportRadixModule(projectView(doc).radixPreset)
   for (const [label, d] of [["defaultDocument()", defaultDocument()], ["a brand-preset document", hydrate(BRAND_PRESETS[0])]]) {
     const v = projectView(d);
-    ok(v.exports.radix === exportRadixModule(v.radixPreset), `self-consistency failed for ${label}: projectView(doc).exports.radix !== exportRadixModule(projectView(doc).radixPreset)`);
+    ok(v.exports.radix === exportRadixModule(v.radixPreset, { layers: d.layers }), `self-consistency failed for ${label}: projectView(doc).exports.radix !== exportRadixModule(projectView(doc).radixPreset)`);
   }
 
   // Data-palette-only document -> the I9 sentinel reaches the UI intact (radixPreset is a string).

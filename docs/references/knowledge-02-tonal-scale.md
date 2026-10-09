@@ -31,7 +31,7 @@
 
 ## 2. Global controls and defaults
 
-> ⚠️ **`toneMode` selects the whole ramp algorithm and defaults to `perceptual`, not the curve-driven path below.** `toneMode ∈ {perceptual (default), even, peak}`. The `curve`/`relChroma`/`chromaFloor` controls in this table and the `toneAt` math in §3–§4 apply to **`even` mode only**; `perceptual`/`peak` go through the OKHSL path (`okhslStops`), shaped by `lmin`/`lmax`/`damp`/`vibrancy`. `skew` and `lift` are the exception: both apply in every tone mode, since #647 wired them into `okhslStops` via the shared `liftStop` helper. The additional defaults not yet tabled here, `relChroma` (false), `chromaFloor` (40), `toneMode` (perceptual), `vibrancy` (0), `onColorMode` (contrast, since #662), `accentRef` (mode), live in `DEFAULT_CONTROLS` in `tonal.js`. `baseIntensity` and `primeChroma` (100 each, §8) are NOT engine controls: SPEC 0.3.0 retired both from `tonal.js`'s `DEFAULT_CONTROLS` entirely, they live only on the document/UI side (`src/ui/persist.js` `DOMAINS`), as the two global fallbacks the palette-group resolvers in §8 read.
+> ⚠️ **`toneMode` selects the whole ramp algorithm and defaults to `perceptual`, not the curve-driven path below.** `toneMode ∈ {perceptual (default), even, peak}`. The `curve`/`relChroma`/`chromaFloor` controls in this table and the `toneAt` math in §3–§4 apply to **`even` mode only** (on `ramp@2`, `chromaFloor` also sets the band tint in every mode, §9); `perceptual`/`peak` go through the OKHSL path (`okhslStops`), shaped by `lmin`/`lmax`/`damp`/`vibrancy`. `skew` and `lift` are the exception: both apply in every tone mode, since #647 wired them into `okhslStops` via the shared `liftStop` helper. The additional defaults not yet tabled here, `relChroma` (false), `chromaFloor` (40), `toneMode` (perceptual), `vibrancy` (50, since T-0014), `onColorMode` (contrast, since #662), `accentRef` (mode), `matchPeerLightness` (false, schema v11, read by `ramp@2` only, §9), live in `DEFAULT_CONTROLS` in `tonal.js`. `baseIntensity` and `primeChroma` (100 each, §8) are NOT engine controls: SPEC 0.3.0 retired both from `tonal.js`'s `DEFAULT_CONTROLS` entirely, they live only on the document/UI side (`src/ui/persist.js` `DOMAINS`), as the two global fallbacks the palette-group resolvers in §8 read.
 
 > ⚠️ **`peak` was the tone mode least suited to accent-on-text use, and #662 is why it no longer is.** Peak pins vibrancy at 100 and anchors the hue's cusp at stop 500, which pushes the accent fills toward the chroma peak and away from either ramp end. Under the pre-#662 fixed on-color policy that made it the worst of the three by a wide margin: measured on the default document, dark-scheme Secondary 1.24:1, Success 1.58:1, Info 2.44:1 and Warning 2.52:1 against their pinned light on-color, all far under WCAG AA 4.5:1 and under the MCP lint's advisory 3.0 floor as well. Those numbers were a property of the ON-COLOR, not of peak's ramp: with the contrast policy and its achromatic fall-through now the default (ADR-025), peak clears 4.5:1 in all 32 cells and is the highest-contrast of the three modes. Peak's ramp is unchanged, pick it for vivid mid-stops, and read this as the record of why it once carried an accessibility caveat.
 
@@ -439,11 +439,12 @@ itself is stored and both of the places a user reads "the" colour reproduce it b
 | Guarantee | Scope | Where |
 |---|---|---|
 | `prime.DEFAULT` equals `anchor` byte for byte | every palette carrying an `anchor`, 3,380 on the regenerated corpus, at Prime chroma k 100 (below it the rung follows k at the anchor's own hue and L\*, ADR-030) | `primeSwatches(...)[3]` returns the anchor's own rgb verbatim at k 100 (§8.3) |
-| ramp stop 500 equals `anchor` byte for byte, in all three tone modes, at the palette's Base chroma 100 times the global k 100 (below it the damper scales stop 500 too, §8.1) | the 3,370 anchored palettes whose source sits INSIDE the ramp window `[9.95, 95.05]` L\* | `paletteStopsAnchored` / `okhslStopsAnchored`, the `stop === 500 && !clamped` case |
+| ramp stop 500 equals `anchor` byte for byte, in all three tone modes, at the palette's Base chroma 100 times the global k 100 (below it the damper scales stop 500 too, §8.1) | the anchored palettes whose source sits INSIDE the ramp window: `[9.95, 95.05]` L\* on `ramp@1` (3,370), `pivotWindow` on `ramp@2` (`[11.73, 94.36]` on perceptual and peak at the defaults, five more sources clamped), with Match peer lightness off | `paletteStopsAnchored` / `okhslStopsAnchored`, the `stop === 500 && !clamped` case |
 
 The two scopes differ on purpose. At the defaults the TOKEN is exact for all 3,380: a source outside the ramp window
 still exports its own hex at `prime.DEFAULT`. The RAMP clamps: for the 10 named out-of-window sources
-(9 dark ones between 7.32 and 9.84 L\*, plus one pure white) stop 500 lands at the window edge nearest
+(9 dark ones between 7.32 and 9.84 L\*, plus one pure white; `ramp@2` adds Istanbul (Eminönü), Saint-Malo, Wadi
+Rum, Carlsbad and Kea on perceptual and peak, ADR-037) stop 500 lands at the window edge nearest
 the source, because forcing the verbatim pixel at a clamped pivot would jump away from the window edge
 its own neighbours are shaped around, which is the discontinuity that broke monotonicity before this
 branch existed. Both allow-lists are frozen by name and count in the gates, not by a threshold.
@@ -514,3 +515,26 @@ OKLCH-hue palette into a CAM16 seed. A chromatic anchor (OKLab C at or above the
 untouched: it renders from its own hue exactly as before this ticket. `rgbToOkhsl` reads pure black
 (`s = 0`, Ticket #681 U10) and pure white (`s = 0`, this ticket) as achromatic; `#FFFFFF`'s OKLab L
 rounds to 0.99999999, not exactly 1, so the white guard checks a tolerance rather than `L >= 1`.
+
+**The band rule (`ramp@2`, T-0040, ADR-037).** `ramp@2` matches the extremes across a kit's palettes,
+in every tone mode, anchored or not. The band stops (050 to 100 and 900 to 950, `BAND_EDGE`) take one
+palette-free L\* ladder, `sharedToneAt(stop, controls)` (stop 100 at L\* 94.91 and stop 900 at 11.18 on
+perceptual and peak at the defaults), and one tint, `chromaFloor / 100` of each stop's gamut ceiling:
+on the anchored perceptual and peak paths the fraction is capped at the anchor's own gamut fraction, so
+an achromatic anchor keeps grey ends (a tint under CAM16's neutral reading renders the exact grey). The
+interior is the palette's own construction remapped affinely onto [shared(100), pivot] and [pivot,
+shared(900)], its chroma blended toward the tint by a smoothstep of the `liftStop` distance from 500.
+The last operation is the pixel snap: each band stop's 8-bit pixel lies within 0.45 L\* of the ladder,
+nearest the tint on the stop's hue line, never over its predecessor. The anchored pivot keeps the
+verbatim anchor inside `pivotWindow` (the ramp window narrowed by one 0.55 L\* step from the shared
+edge); the cost is a compressed interior next to the shared edge for a very dark or very light anchor,
+where adjacent stops can share a pixel (declared in ADR-037 and the gates' cited lists). A kit stored
+without pins hydrates at `ramp@1` and renders as before; the editor offers "Upgrade to latest".
+
+**Match peer lightness (`matchPeerLightness`, schema v11).** Off by default and read by `ramp@2` only.
+On, the tone edge moves to 500 on both sides: every stop's tone is `sharedToneAt(stop)`, every pixel is
+snapped onto it, and a stop number means one L\* across the kit (spread at most 0.89 on the default kit).
+The chroma rule keeps its shape (the tint in the bands, the blend between, the palette's own chroma basis
+at 500), so stop 500 is no longer the anchor pixel: it is built at the anchor's hue and chroma basis at
+the shared tone. Skew, vibrancy and cusp pull move no lightness in the mode (the inspector hides them);
+lift keeps its chroma-envelope role. The stop-500 guarantee above holds with the mode off.

@@ -1334,7 +1334,9 @@ Format: Context → Decision → Rationale → Consequences → Status.
     `meta.layers`, DTCG `$extensions["com.ultimate-tokens"].layers`, UI3 and the design-system
     `tokens.json` `$layers`. The DESIGN.md frontmatter takes no new key. The brand kit is
     `ultimate-tokens-brand-kit/7` and the brand-kit MCP server 0.7.0.
-  - The editor's "upgrade to latest" action is not in this change.
+  - The editor's "upgrade to latest" action is not in this change. Amended 2026-10-09 (T-0040,
+    ADR-037): the Global inspector of a `ramp@1` kit offers "Upgrade to latest", which sets every
+    layer pin to `LATEST` and re-renders.
 - **Alternatives rejected.**
   | Alternative | Why rejected |
   |---|---|
@@ -1448,6 +1450,76 @@ Format: Context → Decision → Rationale → Consequences → Status.
 - **Status.** PROPOSED 2026-10-09 (T-0044). Ratification is the owner's: the owner edits this line to
   DECIDED, or amends the text under the file's amendment shape.
 
+## ADR-037: Ramp version 2 matches the lightest and darkest stops across palettes, and Match peer lightness matches every stop
+- **Context.** T-0040. On `ramp@1` every palette of a kit chose its own lightness at every stop, the
+  ends included: on the default kit the 16 palettes spread 7.46 L* at stop 100 and 3.54 at stop 900
+  (perceptual), with a gamut-fraction spread of 0.42 to 0.73 at the band stops, so a "100" or "900"
+  surface, and the Radix steps 1 and 12 read from them, changed lightness and tint from one palette to
+  the next. The user asked for the lightest and darkest stops to match across peers, and for an opt-in
+  mode where every stop does. ADR-034's layer pins make the change a new `ramp` version instead of a
+  silent re-render of stored kits.
+- **Decision.** `ramp@2` (the live `src/engine/tonal.js`; `ramp@1` frozen in
+  `src/engine/layers/ramp@1.mjs`) adds the band rule, in every tone mode, anchored or not:
+  - The band stops (050 to 100 and 900 to 950, `BAND_EDGE`) sit on one palette-free L* ladder,
+    `sharedToneAt(stop, controls)`: on perceptual and peak the L* of the neutral grey at the OKHSL `l`
+    the mode steps through, on even `toneAt` at skew 0 and lift 0 (stop 100 at L* 94.91 and stop 900 at
+    11.18 on perceptual and peak at the defaults).
+  - Each band stop carries one tint: `chromaFloor / 100` of the stop's gamut ceiling. On the anchored
+    perceptual and peak paths the fraction is capped at the anchor's own gamut fraction (CAM16 C over
+    its ceiling), and an achromatic anchor reads 0, so a grey anchor keeps grey ends and a muted anchor
+    keeps ends no richer than itself (the default kit's Neutral reads 0.38 against the floor's 0.40).
+    A tint under CAM16's own reading of the neutral (near white under a capped fraction) renders the
+    exact grey. The even path and every unanchored palette read `chromaFloor / 100` uncapped (R69: the
+    even floor tints an achromatic anchor's ramp). Under hueShift the anchored even path reads the
+    ceiling at the hue before edge rotation, capped at the rotated one's, as its floor has since #784:
+    read at the rotated hue, the near-white ceiling swings with a few degrees of hue and stop 100 dipped
+    under both neighbours (`gate:even-dips` (b1)).
+  - The interior is the palette's own construction, remapped affinely onto [shared(100), pivot] and
+    [pivot, shared(900)], and its chroma blends toward the tint by a smoothstep of the `liftStop`
+    distance from 500 (0 at the pivot, 1 at the edge), so stop 500 keeps the palette's own chroma basis.
+  - The pixel snap is the last operation at every ramp chroma: each band stop's 8-bit pixel is chosen
+    from the plus or minus 3 codes of its render within 0.45 L* of the ladder, nearest the tint
+    fraction on the stop's hue line, and never over its predecessor's L*; the group damper re-snaps
+    after it scales. Measured on the default kit: L* spread at most 0.89 and fraction spread at most
+    0.062 at every band stop in every mode, damped kit included (`test/engine/peer-lightness.mjs`).
+  - The pivot window: an anchored pivot stays verbatim unless it sits within one 0.55 L* step of the
+    shared edge (`pivotWindow`, [11.73, 94.36] on perceptual and peak at the defaults, [9.95, 95.05] on
+    even), which clamps five more corpus anchors on perceptual and peak (Istanbul (Eminönü)
+    tertiary-muted, Saint-Malo, Wadi Rum, Carlsbad and Kea primary-muted); an unanchored pivot keeps
+    eight such steps of room (`BAND_PIVOT_ROOM`).
+  - The three band searches are exact-key `boundedCache` memos (#686's rule), so an edited kit
+    re-renders within 1.24x of `ramp@1` (cold 8.39x, one render per session).
+- **Pins.** New documents and presets open at `ramp@2` (`LATEST`); a stored kit without pins hydrates
+  at `ramp@1` and renders byte for byte as before (R100: `report-compute-neutral --pin ramp=1` reads 0
+  differing cells). The frozen `ramp@1` imports `hct.js` and `okhsl.js`, whose outputs are gated, so a
+  change there moves both versions and reds the gates. The corpus gates open presets through
+  `presetDoc`, so they read `ramp@2`. This amends ADR-034's "the editor's upgrade to latest action is
+  not in this change": the Global inspector of a `ramp@1` kit now offers "Upgrade to latest", which
+  sets every layer pin to `LATEST` and re-renders.
+- **Match peer lightness.** `matchPeerLightness` (default false, schema v11, read by `ramp@2` only)
+  moves the tone edge to 500 on both sides: every stop's tone is `sharedToneAt(stop)` and every pixel
+  is snapped onto it (L* spread at most 0.89 over all 25 stops of the default kit, both hue spaces,
+  damped kit included). The chroma rule keeps its shape: the tint in the bands, the blend between, the
+  palette's own chroma basis at 500. Stop 500 is no longer the anchor pixel: it is built like a
+  clamped pivot at the anchor's hue (held in the document's hue space, within 0.49 degrees of the
+  anchor's OKLCH hue on the default kit) and chroma basis. Skew, vibrancy and cusp pull move no
+  lightness and are hidden; lift keeps only its chroma-envelope role. ADR-026's stop-500-verbatim and
+  ADR-031's anchor-verbatim guarantees hold with the mode off; with it on, the anchor stays verbatim on
+  the prime ladder and the key tile only.
+- **Rejected.** A per-palette end tint control (duplicates `chromaFloor`). One `bandEdge` parameter for
+  both modes (the handoff kept the anchor's hue and chroma leading in the mode). A wider anchored
+  pivot window (clamps far more anchors, against ADR-026). Re-rendering stored kits in place (ADR-034).
+- **Consequences.** The default kit and every preset move at their extremes (`report-preset-fidelity
+  --identity-control --migrate --authored`: every mode's ramp cells move; prime and key tiles 0). A
+  verbatim dark or light anchor next to the shared edge compresses its interior, a declared cost: 29
+  of 3,380 anchored corpus palettes on perceptual, 41 on peak and 6 on even show a repeated display
+  swatch (`ramp@1`: 0, 1, 0), and the cited lists grew (C6 ii 32 to 380 keys; anchor gap 79 to 193,
+  distinct 19 to 107, notch 15 to 99, every notch addition on even). Gate A reads the band clause from
+  the rule. The shadcn and Radix baselines and the Adia exports stay `ramp@1`-pinned. The board is
+  `docs/reports/2026-10-09-ramp2-extremes.md`.
+- **Status.** PROPOSED 2026-10-09 (T-0040). Ratification is the owner's: the owner edits this line to
+  DECIDED, or amends the text under the file's amendment shape.
+
 ## Quick map: decisions an enhancing agent is most likely to "fix" (don't)
 | ADR | Looks wrong because… | But it's intentional because… |
 |-----|----------------------|-------------------------------|
@@ -1487,3 +1559,4 @@ Format: Context → Decision → Rationale → Consequences → Status.
 | ADR-034 | `layers.mjs` registers `type` and `geometry` but `compute` never walks them, there is no `group-chroma` layer, and the document still says `baseIntensity` while the engine says `baseChroma` | type and geometry are mode layers evaluated per breakpoint by `model.mjs` (`typeScaleFor`, `geomScaleFor`); ADR-030 retired group chroma, so a registered group layer would name dead code; AC-004 keeps the document's name out of `src/engine`, renamed at one boundary in `model.mjs`, and R102's rename is superseded by ADR-031 |
 | ADR-035 | the analysis charts are stacks of divs with `clip-path` polygons, not SVG, and `h()` refuses `html` | the user ruled charts native DOM on 2026-10-08; an `html:` SVG string writes `innerHTML` and brings back the wedge-fill CSS trap, and `test/repo/dom-charts.mjs` fails the build if one returns |
 | ADR-036 | the select caret is a data-URI with two hard-coded fills, shell text sizes come from a JS step table rather than `calc()`, and a null `shellGeometry` no longer follows the kit | a native select takes no child and a data-URI cannot read a var, so the fills are pinned to the boot theme's `--ink-dim` by `test/repo/ui-polish.mjs`; a row step follows the body-base factor, which `calc()` cannot; the user ruled the product-sm default, and Follow kit is the explicit `"kit"` (PROPOSED, ratification is the owner's) |
+| ADR-037 | the lightest and darkest stops of every palette land on one L* and one tint, a muted or grey anchor's ends are greyer than `chromaFloor` asks, a dark anchor's 500 to 900 stops can repeat a pixel, and Match peer lightness moves stop 500 off the anchor | `ramp@2`'s band rule matches the extremes across peers (Radix steps 1 and 12 read them) while the anchor stays verbatim at 500; the tint is capped at the anchor's own so grey stays grey; the compression next to the shared edge is the declared cost; the mode is opt-in and stored kits stay `ramp@1` until upgraded |

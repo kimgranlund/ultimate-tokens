@@ -5,6 +5,15 @@ import { chromaEnvelope, envelopePresetOf, solveCam16Hue } from "../../engine/to
 import { icon } from "../icons.js";
 import { CURVES, DAMP_PRESETS, btn, chip, field, fmt, h, swatch, switchControl } from "../app-helpers.mjs";
 import { renderChart } from "../charts/render.mjs";
+import { docPins } from "../../engine/layers.mjs";
+import { LATEST } from "../../engine/layer-pins.mjs";
+
+// titled(field, title): a `slider` field whose label carries a hover title (the slider builds its label
+// bare); the label is the field's first child in the DOM and in the headless shim alike.
+const titled = (field, title) => {
+  field.children[0].setAttribute("title", title);
+  return field;
+};
 import { STROKE, polar, scaleLinear } from "../charts/core.mjs";
 
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
@@ -1836,11 +1845,14 @@ export class ColorSectionImpl {
             }),
           )
         : false,
-      isEven ? this.slider("Skew", p.skew, -100, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].skew = v))) : false,
-      isEven ? this.slider("Lift", p.lift, -40, 40, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].lift = v))) : false,
+      // Match peer lightness (T-0040, ADR-037) puts every stop on the shared ladder, so Skew moves no
+      // lightness there and is hidden; Lift stays (it still shapes chroma) and says so.
+      isEven && !this.doc.matchPeerLightness ? this.slider("Skew", p.skew, -100, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].skew = v))) : false,
+      isEven ? titled(this.slider("Lift", p.lift, -40, 40, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].lift = v))), "Lightens (+) or darkens (-) the mid stops. With Match peer lightness on, Lift shapes chroma only.") : false,
       // Cusp pull (perceptual only), this palette's override of the global Vibrancy: how far its
       // richest stop is nudged toward 500. Starts at the inherited global value; the peak mode pins it.
-      this.doc.toneMode === "perceptual"
+      // Hidden with Match peer lightness on, where it moves nothing.
+      this.doc.toneMode === "perceptual" && !this.doc.matchPeerLightness
         ? this.slider("Cusp pull", p.cuspPull ?? (this.doc.vibrancy ?? DEFAULT_CONTROLS.vibrancy), 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].cuspPull = v)))
         : false,
       // Base chroma (SPEC spec-muted-base-key-spikes REQ-032, #804), this palette's own ramp damper:
@@ -2095,7 +2107,8 @@ export class ColorSectionImpl {
       // Vibrancy (perceptual only): pulls the ramp's center toward the hue's chroma cusp, so the mid
       // stops read vibrant, the fix for hues whose vivid expression is off-center (e.g. yellow). At
       // 100 it equals "peak" mode. Hidden in even (CIELAB) + peak (already pinned at the cusp).
-      d.toneMode === "perceptual"
+      // Hidden with Match peer lightness on, where it moves nothing.
+      d.toneMode === "perceptual" && !d.matchPeerLightness
         ? this.slider("Vibrancy", d.vibrancy, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.vibrancy = v)))
         : false,
       // Base chroma and Prime chroma (SPEC spec-muted-base-key-spikes REQ-032, #804), placed next to
@@ -2123,10 +2136,17 @@ export class ColorSectionImpl {
       this.slider("L* min", d.lmin, 0, 40, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.lmin = v))),
       this.slider("L* max", d.lmax, 60, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.lmax = v))),
       this.slider("Damp", d.damp, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.damp = v))),
-      // chroma floor (even mode only): lifts the damped light/dark ends back toward the palette's
-      // intended chroma so low-chroma ramps don't dead-zone to near-white; never over-saturates.
-      d.toneMode === "even"
-        ? this.slider("Chroma floor", d.chromaFloor, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.chromaFloor = v)))
+      // chroma floor: lifts the damped light/dark ends back toward the palette's intended chroma so
+      // low-chroma ramps don't dead-zone to near-white; never over-saturates. ramp@2 (T-0040, ADR-037)
+      // also reads it in every tone mode as the shared end tint, so it shows in every mode on a ramp@2
+      // document and in even only on a ramp@1 one (ramp@1 reads it only there).
+      d.toneMode === "even" || docPins(d).ramp >= 2
+        ? titled(
+            this.slider("Chroma floor", d.chromaFloor, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.chromaFloor = v))),
+            docPins(d).ramp >= 2
+              ? "The tint of the lightest and darkest stops, as a % of each stop's gamut ceiling, in every tone mode (a low-chroma anchor caps it at its own on perceptual and peak). In even it also lifts the damped ends back toward the palette's chroma."
+              : "Even only: lifts the damped light and dark ends back toward the palette's chroma, as a % of each stop's gamut ceiling. This kit renders with ramp@1, which reads it in even only.",
+          )
         : false,
       // differential damping curve, falloff (shape) · amplify (mid boost) · bias (L↔D)
       h("div", { class: "sub-head" }, "Differential curve"),
@@ -2190,6 +2210,50 @@ export class ColorSectionImpl {
           ),
         );
       })(),
+      // Match peer lightness (T-0040, ADR-037), a row of its own: the right pane is 300 px and a third
+      // field in the row above would leave about 83 px per field. ramp@2 reads the flag and ramp@1 never
+      // does, so a ramp@1 kit offers "Upgrade to latest" instead, which re-pins every compute layer to
+      // its latest version (ADR-034's upgrade action) and re-renders.
+      h(
+        "div",
+        { class: "global-seg-row" },
+        docPins(d).ramp >= 2
+          ? h(
+              "div",
+              { class: "field" },
+              h(
+                "label",
+                {
+                  title:
+                    "Off: only the lightest and darkest stops share one lightness across palettes; each palette keeps its own curve between them, with its anchor colour at stop 500. On: every palette lands on the same lightness at every stop, so a stop number means one lightness across the kit; the anchor's hue and chroma still lead, stop 500 is no longer the anchor pixel, and Skew, Cusp pull and Vibrancy stop moving lightness.",
+                },
+                "Match peer lightness",
+              ),
+              this.segmented(
+                [{ id: "off", label: "Off" }, { id: "on", label: "On" }],
+                d.matchPeerLightness ? "on" : "off",
+                (id) => this.commit((doc) => (doc.matchPeerLightness = id === "on")),
+                { ariaLabel: "Match peer lightness", role: "group", idPrefix: "matchpeer" },
+              ),
+            )
+          : h(
+              "div",
+              { class: "field" },
+              h("label", {}, "Match peer lightness"),
+              h(
+                "button",
+                {
+                  type: "button",
+                  class: "ghost",
+                  "data-fk": "matchpeer:upgrade",
+                  title:
+                    "This kit renders with ramp@1, the version it was made with. Upgrade to latest re-pins every compute layer to its latest version (ramp@2 matches the lightest and darkest stops across palettes) and unlocks Match peer lightness.",
+                  onclick: () => this.commit((doc) => (doc.layers = { ...LATEST })),
+                },
+                "Upgrade to latest",
+              ),
+            ),
+      ),
       d.toneMode === "even"
         ? field(
             "Chroma basis",

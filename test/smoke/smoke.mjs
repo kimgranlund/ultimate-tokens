@@ -107,6 +107,18 @@ try {
   writeFileSync(resolve(OUT, "scheme-color.png"), Buffer.from(cmpShot.data, "base64"));
   console.log("  · screenshot → smoke-out/scheme-color.png");
 
+  // Match peer lightness (T-0040, ADR-037): the Global inspector's own row, switched On through its
+  // segment, every palette on the shared ladder; one screenshot for the T-0040 board, then Off again.
+  await evalJS(`(()=>{${el}._deselect();${el}.render();})()`); await sleep(200);
+  await evalJS(`(()=>{const up=${el}.querySelector('[data-fk="matchpeer:upgrade"]');if(up)up.click();})()`); await sleep(300);
+  await evalJS(`${el}.querySelector('[data-fk="matchpeer:on"]').click()`); await sleep(500);
+  ok(await evalJS(`${el}.doc.matchPeerLightness === true && ${el}.querySelector('[data-fk="matchpeer:on"]').classList.contains("on")`), "Match peer lightness switches On from the Global inspector");
+  await evalJS(`${el}.querySelector('[data-fk="matchpeer:on"]').scrollIntoView({ block: "center" })`); await sleep(200);
+  const mplShot = await send("Page.captureScreenshot", { format: "png" });
+  writeFileSync(resolve(OUT, "match-peer-lightness.png"), Buffer.from(mplShot.data, "base64"));
+  console.log("  · screenshot → smoke-out/match-peer-lightness.png");
+  await evalJS(`${el}.querySelector('[data-fk="matchpeer:off"]').click()`); await sleep(300);
+
   // cross-scheme regression, both ways: a drag lifts the floating clone into the host, so the clone must carry
   // the SOURCE ROW's column scheme, not the app chrome's. Chrome dark + a drag from the light column gives a
   // light clone; chrome light + a drag from the dark column gives a dark clone.

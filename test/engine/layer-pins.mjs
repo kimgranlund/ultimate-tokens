@@ -57,8 +57,8 @@ const pinProblems = (serializeFn) => {
   else ok("c4.1-control", "a serialize that drops `layers` is caught");
   if (!same(LATEST, latestOf(REGISTRY))) FAIL("c4.1-latest-table", `layer-pins.mjs LATEST ${show(LATEST)} != latestOf(REGISTRY) ${show(latestOf(REGISTRY))}`);
   else ok("c4.1-latest-table", "layer-pins.mjs LATEST equals latestOf(REGISTRY)");
-  if (same({ ...LATEST, ramp: 2 }, latestOf(REGISTRY))) FAIL("c4.1-control", "a LATEST with ramp 2 matched the registry");
-  else ok("c4.1-control", "a LATEST table with ramp 2 is caught");
+  if (same({ ...LATEST, ramp: LATEST.ramp + 1 }, latestOf(REGISTRY))) FAIL("c4.1-control", `a LATEST with ramp ${LATEST.ramp + 1} matched the registry`);
+  else ok("c4.1-control", `a LATEST table with ramp ${LATEST.ramp + 1} is caught`);
 }
 
 // ---- C4.2
@@ -114,9 +114,9 @@ function prePinProblems(hydrateFn) {
 {
   const doc = hydrate({ ...STORED, schemaVersion: 10, layers: { ramp: 9, roles: 0.4, "test-layer": 7, bogus: 2 } }, { latest: latestOf(TEST_REGISTRY) });
   const dropped = (doc[DROPPED_KEYS] || []).filter((d) => d.facet === "layers").map((d) => d.key);
-  const want = { ...Object.fromEntries(Object.keys(latestOf(TEST_REGISTRY)).map((id) => [id, 1])), "test-layer": 2 };
+  const want = { ...Object.fromEntries(Object.keys(latestOf(TEST_REGISTRY)).map((id) => [id, 1])), ramp: latestOf(TEST_REGISTRY).ramp, "test-layer": 2 };
   if (!same(doc.layers, want) || !same(dropped, ["bogus"])) FAIL("c4.3-clamp", `pins ${show(doc.layers)}, dropped [${dropped}]; want ${show(want)}, dropped [bogus]`);
-  else ok("c4.3-clamp", "ramp 9 -> 1, roles 0.4 -> 1, test-layer 7 -> 2, bogus dropped and reported");
+  else ok("c4.3-clamp", `ramp 9 -> ${latestOf(TEST_REGISTRY).ramp}, roles 0.4 -> 1, test-layer 7 -> 2, bogus dropped and reported`);
 }
 
 // ---- C4.4

@@ -36,11 +36,11 @@
 import { readFileSync } from "node:fs";
 import { primeSwatches, PRIME_STEPS } from "../../src/engine/prime.mjs";
 import { peakC, hctToRgb, lstarFromRgb, cam16FromRgb } from "../../src/engine/hct.js";
-import { effHue, paletteStops, DEFAULT_CONTROLS, RAMP_L_MIN, RAMP_L_MAX, STOPS, ACHROMATIC_ANCHOR_C } from "../../src/engine/tonal.js";
+import { effHue, paletteStops, DEFAULT_CONTROLS, STOPS, ACHROMATIC_ANCHOR_C, pivotWindow } from "../../src/engine/tonal.js";
 import { rgbToOkhsl, okhslToRgb, rgbToOklabChroma } from "../../src/engine/okhsl.js";
 import { derivedAll, oklchStr } from "../../src/engine/exports.js";
 import { defaultDocument, projectView, paletteKeyColors } from "../../src/ui/model.mjs";
-import { hydrate } from "../../src/ui/persist.js";
+import { hydrate, presetDoc } from "../../src/ui/persist.js";
 import { sampleCorpus, SAMPLE_SEED } from "./lib/corpus-sample.mjs";
 
 const CATS = ["architecture", "cuisine", "film", "literature", "music", "nature", "travel", "brands"];
@@ -484,6 +484,14 @@ const DUPE_ALLOW = [
 // would jump away from that pivot and invert the ramp at 550/450, which is exactly what broke before
 // this branch existed). `prime.DEFAULT` (the token, C2 above) stays exact for ALL 3,380 regardless,
 // only the ramp's own stop 500 clamps.
+// T-0040 (ramp@2, ADR-037): the window is `pivotWindow(controls)` (exported by tonal.js), read per
+// document and tone mode: [RAMP_L_MIN, RAMP_L_MAX] narrowed to the band interior by one 0.55 L* step,
+// perceptual and peak [11.73, 94.36] at the defaults (even keeps [9.95, 95.05]). It adds 5 clamped
+// sources, each on perceptual and peak only, the declared change (conductor decision (a)): Istanbul
+// (Eminönü) tertiary-muted, Saint-Malo, Wadi Rum and Carlsbad, dark anchors at L* 10.71 to 10.88 under
+// 11.73, and Kea primary-muted #E1F5DA at 94.47 over 94.36. Every rendered document here is Match peer
+// lightness off: C3 is a mode-off rule (with the mode on, stop 500 leaves the anchor by design).
+const windowOf = (doc, mode) => pivotWindow({ ...DEFAULT_CONTROLS, curve: doc.curve, tension: doc.tension, lmin: doc.lmin, lmax: doc.lmax, toneMode: mode });
 const RAMP_WINDOW_ALLOW = [
   `brands "Nike · The Swoosh · Since 1971" secondary #101820`,
   `brands "Nike · The Swoosh · Since 1971" tertiary-muted #FFFFFF`,
@@ -491,14 +499,19 @@ const RAMP_WINDOW_ALLOW = [
   `film "Double Indemnity · 1944 · dir. Billy Wilder · the venetian-blind living room" primary #1B1B1D`,
   `film "TRON: Legacy · 2010 · dir. Kosinski · the Grid" secondary #181B1F`,
   `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" primary #161618`,
+  `nature "32° N · constant · Carlsbad Caverns, New Mexico, lamp-lit" secondary #1D1D20`,
   `travel "20° N · January · 06:30 · Rub' al Khali at first light, near the Saudi-Omani border" primary-muted #1F1A16`,
   `travel "27° N · October · 17:30 · A teahouse in Khumbu, on the trekking route from Namche to Tengboche" tertiary-muted #1F1A16`,
+  `travel "30° N · March · 16:00 · Wadi Rum, the Jebel Khazali wall in late afternoon" primary #1E1D1B`,
   `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" primary #221913`,
+  `travel "37° N · November · 05:40 · MV passing Kea, en route Piraeus" primary-muted #E1F5DA`,
+  `travel "41° N · November · 00:10 · Eminönü waterfront, Istanbul, last ferries in" tertiary-muted #251B12`,
+  `travel "48° N · February · 11:00 · Saint-Malo quay at the year's lowest tide" primary-muted #251B14`,
   `travel "62° N · September · 09:30 · Tórshavn waterfront, thick sea-fog" tertiary-muted #221913`,
 ].sort();
 
 // C5: over both stop sets, measured pixel L* must be non-increasing 050→950 in every mode, a true 0
-// with no allow-list (R1, review pass 2, see `enforceMonotonePixelL` in tonal.js), including the 10
+// with no allow-list (R1, review pass 2, see `enforceMonotonePixelL` in tonal.js), including the 15
 // window-clamped sources above, whose clamp fix makes them CONTINUOUS with their neighbours, not
 // merely "allowed to be wrong". Every ramp
 // should also keep a >=0.55 L* gap between neighbours on the 19-stop DISPLAY ramp, and no duplicate
@@ -552,85 +565,207 @@ const RAMP_WINDOW_ALLOW = [
 // "Lake Baikal" secondary #E0E5E6 (already not reproduced at U2's head). Pass 1's 3 other members are
 // gone at revision 8 (the anchor's own OKLCH hue, no per-stop solve): literature "Bleak House"
 // tertiary-muted (peak 900&950 0.789), music "Motown" tertiary-muted and "Pop-punk" secondary (0.730).
+// T-0040 re-freeze (ramp@2 band rule, ADR-037), measured FULL on the ramp@2 engine: 79 -> 193, 118 added
+// and 4 removed. The band stops sit on the shared ladder (stop 100 at L* 94.91 and 900 at 11.18 on
+// perceptual and peak at the defaults) while an in-window anchor stays verbatim at 500, so the
+// edge-to-500 interior is compressed for a light or dark anchor and adjacent display stops fall under
+// the 0.55 L* bar: the 69 light additions have anchors at L* 82.7 to 90.6, the 49 dark ones at 14.4 to
+// 24.0. A declared cost of the shared extremes (architect: an allow-list that grows here is declared,
+// not hidden), not a construction defect; the ramps stay monotone (C5 monotone reads 0). Removed: 4
+// light greys (#D0CEC9) whose band snap now separates the near-white pair.
 const RAMP_GAP_ALLOW = [
+  `architecture "Andalusian patio · Moorish-Spanish vernacular · Córdoba" secondary #DFDEDC`,
+  `architecture "Bauhaus Dessau · 1926 · Walter Gropius" primary-muted #272A2C`,
+  `architecture "Bauhaus Dessau · 1926 · Walter Gropius" secondary #DCDBD8`,
+  `architecture "Boston City Hall · 1968 · Kallmann McKinnell & Knowles" tertiary-muted #2F2E2B`,
+  `architecture "Charleston single house · antebellum vernacular · South Carolina" primary #DDDBD7`,
+  `architecture "Cologne Cathedral · 1880 (completed) · the dark nave" tertiary-muted #302E2A`,
+  `architecture "Falu-red farmstead · Swedish vernacular · Dalarna" tertiary-muted #DDDBD7`,
+  `architecture "Farnsworth House · 1951 · Mies van der Rohe · Illinois" secondary #DCDBD8`,
+  `architecture "Habitat 67 · 1967 · Moshe Safdie · Montreal" tertiary-muted #D6D5D0`,
   `architecture "Icelandic turf house · vernacular · Skógar / Glaumbær" tertiary-muted #D9D8D4`,
   `architecture "Katsura Imperial Villa · 17th c · Kyoto" primary #282322`,
+  `architecture "Komsomolskaya Station · 1952 · Moscow Metro" tertiary-muted #D4D1CA`,
+  `architecture "Lancashire cotton mill · 19th c · northern England" secondary-muted #262A2D`,
+  `architecture "New England saltbox · colonial vernacular · coastal Massachusetts" tertiary-muted #DDDBD7`,
+  `architecture "Ocean Drive · 1930s · Miami Beach Art Deco Historic District" secondary-muted #DED7CA`,
   `architecture "Oia · Cyclades vernacular · Santorini, Greece" secondary #E3E2DF`,
+  `architecture "The Taj Mahal · 1648 · Agra · at dawn" secondary #DDCECA`,
+  `architecture "Trulli of Alberobello · vernacular · Puglia, Italy" secondary #E0DEDC`,
+  `architecture "Villa Savoye · 1931 · Le Corbusier · Poissy" primary-muted #272A2C`,
+  `architecture "Villa Savoye · 1931 · Le Corbusier · Poissy" secondary #DFDEDC`,
   `brands "Burger King · The Flame Identity · 2021 rebrand" tertiary-muted #F5EBDC`,
   `brands "Nike · The Swoosh · Since 1971" secondary #101820`,
+  `brands "Nike · The Swoosh · Since 1971" tertiary #E4E0D2`,
   `brands "Nike · The Swoosh · Since 1971" tertiary-muted #FFFFFF`,
+  `cuisine "Berries & cream · the summer bowl" tertiary-muted #DFDBD3`,
   `cuisine "Caramel & toffee · the confection pan" primary #DDDBD6`,
+  `cuisine "Chinese tea · the gongfu tray" tertiary-muted #DBD8D1`,
+  `cuisine "Chocolate · the chocolatier's bench" primary #312722`,
+  `cuisine "Chocolate · the chocolatier's bench" secondary #4C3125`,
+  `cuisine "Chocolate · the chocolatier's bench" tertiary-muted #DCD4C4`,
+  `cuisine "Cured & smoked · the fish board" primary-muted #DBD8CF`,
+  `cuisine "Donuts & sprinkles · the bakery case" tertiary-muted #DED7CA`,
   `cuisine "Día de Muertos table · the ofrenda" tertiary-muted #DDDBD6`,
+  `cuisine "Elote · the street-corn cart" tertiary-muted #DBD8CF`,
+  `cuisine "Espresso · the café counter" primary #D8D1C3`,
+  `cuisine "Espresso · the café counter" tertiary #392B23`,
   `cuisine "Espresso · the café counter" tertiary-muted #DDDBD6`,
+  `cuisine "Fruit tarts & glaçage · the entremets case" tertiary-muted #DCD4C2`,
   `cuisine "Kaiseki · the seasonal course" tertiary-muted #2B2624`,
+  `cuisine "Low-and-slow BBQ · the smokehouse tray" secondary #4C3125`,
+  `cuisine "Low-and-slow BBQ · the smokehouse tray" tertiary-muted #DCD8CE`,
+  `cuisine "Mango sticky rice · the dessert cart" tertiary-muted #DBD8CF`,
   `cuisine "Matcha & wagashi · the tea room" tertiary-muted #2B2624`,
+  `cuisine "Peking duck · the banquet table" secondary-muted #4C3125`,
+  `cuisine "Pie & milkshake · the diner counter" primary-muted #DEDBD4`,
+  `cuisine "Pizza Napoletana · the wood-fired oven" primary #382F28`,
+  `cuisine "Pizza Napoletana · the wood-fired oven" secondary-muted #DED8C8`,
+  `cuisine "Ramen · the late-night counter" tertiary-muted #3D342D`,
+  `cuisine "Red wine · the tasting flight" primary #4C1F49`,
+  `cuisine "Sushi & sashimi · the cypress counter" secondary #DAD8D2`,
+  `cuisine "Tacos al pastor · the street stand" tertiary-muted #DBD8CF`,
+  `cuisine "Tandoor · the clay oven" tertiary-muted #362C27`,
+  `cuisine "The cold sea · raw shellfish & ice" tertiary #D6DCE0`,
+  `cuisine "Éclairs & choux · the glaze line" tertiary-muted #DBD4C6`,
+  `film "2001: A Space Odyssey · 1968 · dir. Kubrick · the centrifuge & the stargate" secondary #D5D9DA`,
   `film "2001: A Space Odyssey · 1968 · dir. Kubrick · the centrifuge & the stargate" tertiary-muted #1A1B1E`,
+  `film "Akira · 1988 · dir. Otomo · Neo-Tokyo at night" primary-muted #E7D8AA`,
   `film "Apocalypse Now · 1979 · dir. Coppola · the river at dusk" primary #241E1A`,
   `film "Arrival · 2016 · dir. Villeneuve · the shell interior" primary-muted #232427`,
+  `film "Blade Runner · 1982 · dir. Ridley Scott · the rainy LA street" secondary #27292F`,
   `film "Double Indemnity · 1944 · dir. Billy Wilder · the venetian-blind living room" primary #1B1B1D`,
+  `film "Dune · 2021 · dir. Villeneuve · Arrakis at high sun" tertiary-muted #262A2D`,
   `film "Enter the Void · 2009 · dir. Gaspar Noé · the Tokyo nightlife" secondary #212129`,
   `film "Hereditary · 2018 · dir. Aster · the dollhouse home" tertiary-muted #29231F`,
+  `film "Hero · 2002 · dir. Zhang Yimou · the red courtyard duel" primary #DAD8D2`,
   `film "Hero · 2002 · dir. Zhang Yimou · the red courtyard duel" tertiary-muted #282421`,
   `film "John Wick · 2014 · dir. Stahelski · the Red Circle club" tertiary-muted #232428`,
+  `film "Lawrence of Arabia · 1962 · dir. David Lean · the Nefud desert" tertiary-muted #D9D5CB`,
   `film "Once Upon a Time in the West · 1968 · dir. Leone · the railhead town" tertiary-muted #312721`,
+  `film "Singin' in the Rain · 1952 · the 'Broadway Melody' set" primary-muted #272A2C`,
+  `film "Snowpiercer · 2013 · dir. Bong Joon-ho · the train cars" primary-muted #372C23`,
   `film "Spider-Man: Into the Spider-Verse · 2018 · the comic-book city" primary #232429`,
   `film "Suspiria · 1977 · dir. Argento · the ballet academy" tertiary-muted #201F25`,
   `film "TRON: Legacy · 2010 · dir. Kosinski · the Grid" secondary #181B1F`,
+  `film "TRON: Legacy · 2010 · dir. Kosinski · the Grid" tertiary-muted #D3DDE1`,
+  `film "Taxi Driver · 1976 · dir. Scorsese · the neon city through a windshield" secondary #262A2D`,
+  `film "The Godfather · 1972 · dir. Coppola · cin. Gordon Willis · the don's study" secondary #302721`,
   `film "The Matrix · 1999 · dir. Wachowskis · inside the simulation" tertiary-muted #1F1F24`,
   `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" primary #161618`,
   `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" tertiary #1E211E`,
+  `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" tertiary-muted #D6D5D2`,
+  `film "The Red Shoes · 1948 · dir. Powell & Pressburger · the ballet" primary #DAD8D2`,
+  `film "The Red Shoes · 1948 · dir. Powell & Pressburger · the ballet" primary-muted #392737`,
   `film "The Third Man · 1949 · dir. Carol Reed · the wet Vienna cobbles at night" secondary-muted #252422`,
+  `film "The Witch · 2015 · dir. Eggers · the farm at the wood's edge" tertiary-muted #253227`,
   `film "There Will Be Blood · 2007 · dir. P.T. Anderson · the oil derrick fire" tertiary-muted #282320`,
   `film "Touch of Evil · 1958 · dir. Orson Welles · the border-town night" secondary #232428`,
+  `film "Touch of Evil · 1958 · dir. Orson Welles · the border-town night" tertiary-muted #DDDBD7`,
+  `film "WALL·E · 2008 · Pixar · the abandoned Earth" primary-muted #C6D9DF`,
+  `literature "Alice's Adventures in Wonderland · Carroll, ill. Tenniel · 1865" secondary-muted #DBD4C5`,
+  `literature "Alice's Adventures in Wonderland · Carroll, ill. Tenniel · 1865" tertiary #DDDBD7`,
   `literature "Alice's Adventures in Wonderland · Carroll, ill. Tenniel · 1865" tertiary-muted #2C2926`,
   `literature "Anna Karenina · Tolstoy · 1877 · the Moscow station in snow" tertiary-muted #252428`,
+  `literature "Bleak House · Dickens · 1853 · a November fog over the city" tertiary-muted #2C2925`,
+  `literature "Doctor Zhivago · Pasternak · 1957 · the ice-bound house at Varykino" secondary #C2D1D9`,
+  `literature "Dracula · Bram Stoker · 1897 · the Carpathian castle at night" secondary #28292D`,
+  `literature "Fahrenheit 451 · Bradbury · 1953 · the fireman's city" primary-muted #E1D1A4`,
   `literature "Fahrenheit 451 · Bradbury · 1953 · the fireman's city" tertiary-muted #282320`,
   `literature "My Brilliant Friend · Ferrante · 2011 · a poor Naples neighbourhood" tertiary-muted #D3D1CC`,
+  `literature "Strange Case of Dr Jekyll and Mr Hyde · Stevenson · 1886 · foggy Soho" tertiary-muted #312E2A`,
   `literature "The Bell Jar · Sylvia Plath · 1963 · New York & the suburb" primary #242427`,
+  `literature "The Handmaid's Tale · Atwood · 1985 · Gilead" primary #DAD8D2`,
   `literature "The Road · Cormac McCarthy · 2006 · the ash-grey wasteland" tertiary-muted #2C2926`,
   `literature "The Tale of Genji · Murasaki Shikibu · c.1010 · the Heian court" secondary-muted #292321`,
+  `literature "Winnie-the-Pooh · Milne, ill. Shepard · 1926 · the Hundred Acre Wood" tertiary #DBD4C6`,
   `music "Acid house · the smiley flyer" tertiary-muted #26241F`,
+  `music "Baroque · the candlelit chamber" primary-muted #D5CEBF`,
   `music "Black metal · the forest at night" secondary #1E2024`,
+  `music "Cool jazz · the mid-century record sleeve" tertiary #DBD4C5`,
+  `music "Detroit techno · the chrome sleeve" secondary #24272B`,
   `music "Doom & stoner · the amp-fuzz haze" secondary-muted #28262C`,
+  `music "Dub studio · the mixing desk" secondary #272A2C`,
   `music "Golden-age NYC · the boom-bap sleeve" primary #242428`,
+  `music "Gospel · the church choir" primary-muted #DDDBD7`,
   `music "Graffiti · the subway-car piece" primary #242428`,
+  `music "Kingston street · the sound-system yard" secondary #24272B`,
   `music "Leather & studs · the club night" secondary #242428`,
   `music "Liquid light show · the projected oil-wheel" tertiary-muted #26232C`,
   `music "Lovers rock · the blue-light basement" primary #242428`,
   `music "Mod & British Invasion · the op-art club" tertiary #242428`,
+  `music "Mod & British Invasion · the op-art club" tertiary-muted #DDDBD7`,
+  `music "Motown · the glamour stage" tertiary-muted #26272B`,
+  `music "Nashville rhinestone · the Opry stage" tertiary-muted #DBD4C6`,
   `music "Neon MV · the night-set choreography" tertiary-muted #26232C`,
+  `music "New Orleans brass · the street parade" secondary-muted #DAD8D2`,
+  `music "Outlaw country · the desert-highway sleeve" tertiary-muted #2D2E34`,
   `music "P-Funk · the cosmic album art" secondary-muted #211E27`,
+  `music "Pastel idol concept · the debut MV" tertiary-muted #E6DBBA`,
+  `music "Pop-punk · the skate-park sleeve" secondary #26272B`,
   `music "Pop-punk · the skate-park sleeve" tertiary-muted #D9D8D4`,
   `music "Rasta tricolour · the roots sleeve" tertiary-muted #282320`,
-  `music "Riot grrrl · the zine collage" tertiary #D0CEC9`,
   `music "Riot grrrl · the zine collage" tertiary-muted #242427`,
+  `music "Romantic era · the candlelit recital" primary-muted #392B23`,
+  `music "Soul Train · the TV stage" primary-muted #2D2E34`,
   `music "Southern trap · the night-drive cover" tertiary-muted #26222F`,
+  `music "Stax · the Southern-soul sleeve" tertiary-muted #D9D1BF`,
+  `music "Studio 54 · the dancefloor" secondary #2B2734`,
   `music "Symphonic & gothic metal · the cathedral set" tertiary-muted #272328`,
   `music "The late-night club · the smoky set" primary-muted #1F1F23`,
+  `music "The late-night club · the smoky set" secondary #2F2823`,
   `music "The orchestra · the concert platform" secondary #242428`,
+  `music "The orchestra · the concert platform" tertiary-muted #DDDBD7`,
+  `music "The rave · the laser tent" primary #D4DDE2`,
   `music "The rave · the laser tent" secondary #212228`,
   `music "UK '77 · the ransom-note sleeve" secondary #1F1F23`,
+  `nature "19° N · April · 18:00 · Kīlauea, Hawai'i, at dusk" secondary #28292E`,
+  `nature "20° N · January · 11:00 · Cenote Ik Kil, Yucatán, Mexico" tertiary-muted #213137`,
   `nature "24° S · June · 07:00 · Sossusvlei, Namib Desert, Namibia" tertiary-muted #2B2621`,
+  `nature "25° N · January · 08:00 · Everglades sawgrass prairie, Florida" primary-muted #2B2F33`,
   `nature "32° N · constant · Carlsbad Caverns, New Mexico, lamp-lit" secondary #1D1D20`,
+  `nature "36° N · midday · Antelope Canyon, Arizona, light-shaft season" primary #E3D4A7`,
   `nature "40° S · December · 14:00 · Valdivian rainforest, Los Ríos, southern Chile" tertiary-muted #302820`,
+  `nature "44° N · October · 14:00 · Northern hardwood forest, Vermont, peak foliage" primary #D4D1CA`,
+  `nature "44° N · September · 12:00 · Grand Prismatic Spring, Yellowstone, Wyoming" tertiary-muted #D5D1C9`,
+  `nature "49° N · October · 15:00 · Boreal shield, northern Ontario, Canada" primary #312E24`,
+  `nature "51° N · May · 09:00 · English oak woodland, Sussex, bluebell season" primary #D8D9D0`,
+  `nature "52° N · September · 09:00 · Great Bear Rainforest, coastal British Columbia" primary #D6CDBC`,
+  `nature "54° N · September · 16:00 · Larch taiga, Baikal hinterland, Siberia" tertiary-muted #243E38`,
+  `nature "64° N · July · 13:00 · Landmannalaugar, Icelandic highlands" tertiary-muted #262A2D`,
+  `nature "66° N · August · 16:00 · Baffin Island fjord, Nunavut, Canadian Arctic" tertiary-muted #D7D5CC`,
+  `travel "19° N · December · 06:20 · Worli koliwada, Mumbai, just before sunrise" tertiary-muted #24234B`,
   `travel "20° N · January · 06:30 · Rub' al Khali at first light, near the Saudi-Omani border" primary-muted #1F1A16`,
+  `travel "22° N · January · 11:00 · Sapa Sunday market, Lào Cai Province, cold mountain fog" secondary #042546`,
   `travel "23° S · December · 16:20 · Salar de Atacama, 2,305 m" secondary #EBEAE6`,
+  `travel "26° N · June · 18:30 · The shrine of Lal Shahbaz Qalandar, Sehwan, at the evening dhamaal" tertiary #DFDBD1`,
+  `travel "27° N · October · 17:30 · A teahouse in Khumbu, on the trekking route from Namche to Tengboche" secondary #E0E5E6`,
   `travel "27° N · October · 17:30 · A teahouse in Khumbu, on the trekking route from Namche to Tengboche" tertiary-muted #1F1A16`,
   `travel "30° N · March · 16:00 · Wadi Rum, the Jebel Khazali wall in late afternoon" primary #1E1D1B`,
   `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" primary #221913`,
-  `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" primary-muted #D0CEC9`,
+  `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" tertiary-muted #31241A`,
+  `travel "31° N · April · 18:45 · Souk Semmarine, Marrakech medina" tertiary-muted #DFD8C9`,
+  `travel "31° S · September · 14:00 · The Indian Pacific between Cook and Adelaide, mid-Nullarbor" tertiary #E2DDD0`,
+  `travel "33° N · April · 10:30 · ONCF Al Boraq high-speed train, Tangier-bound from Casablanca" secondary-muted #D4DDE2`,
   `travel "34° S · March · 22:00 · San Telmo, Buenos Aires, a Sunday after the antiques fair has closed" secondary-muted #22242B`,
   `travel "35° N · February · 23:48 · Yamanote line, last loop, between Shinjuku and Ikebukuro" secondary #DDE5EB`,
+  `travel "37° N · May · 00:00 · A Patmos Greek Orthodox church, Easter Saturday at midnight" secondary #E0D4B6`,
   `travel "37° N · May · 00:00 · A Patmos Greek Orthodox church, Easter Saturday at midnight" tertiary-muted #232220`,
+  `travel "37° N · November · 05:40 · MV passing Kea, en route Piraeus" primary #2E2B37`,
   `travel "37° N · November · 05:40 · MV passing Kea, en route Piraeus" primary-muted #E1F5DA`,
-  `travel "38° N · July · 11:00 · Point Reyes peninsula, California, the marine layer locked in for the third week" secondary #D0CEC9`,
+  `travel "41° N · April · 09:00 · La Boqueria, Barcelona, just past opening on a Tuesday" secondary-muted #DADECE`,
   `travel "41° N · November · 00:10 · Eminönü waterfront, Istanbul, last ferries in" tertiary-muted #251B12`,
+  `travel "42° N · July · 06:00 · Hidaka coast, Hokkaido, low tide at the height of kombu season" primary-muted #282724`,
   `travel "42° N · July · 06:00 · Hidaka coast, Hokkaido, low tide at the height of kombu season" tertiary-muted #252215`,
-  `travel "47° N · June · 10:00 · St. John's harbour, dense Atlantic fog" secondary #D0CEC9`,
   `travel "48° N · February · 11:00 · Saint-Malo quay at the year's lowest tide" primary-muted #251B14`,
   `travel "48° N · November · 18:50 · A wet evening in a Viennese kaffeehaus, Mariahilf" primary-muted #24221F`,
+  `travel "59° N · January · 14:00 · Lake Baikal corridor" primary #482A26`,
+  `travel "59° N · January · 14:00 · Lake Baikal corridor" primary-muted #242D47`,
+  `travel "59° N · January · 14:00 · Lake Baikal corridor" secondary #E0E5E6`,
   `travel "62° N · September · 09:30 · Tórshavn waterfront, thick sea-fog" tertiary-muted #221913`,
   `travel "63° N · Late August · 15:00 · Reynisfjara, south coast of Iceland" secondary #242427`,
+  `travel "63° N · Late August · 15:00 · Reynisfjara, south coast of Iceland" tertiary-muted #E2DDD0`,
+  `travel "67° N · January · 03:00 · The Helsinki–Rovaniemi night train, somewhere past Oulu" tertiary #243B2A`,
   `travel "67° N · January · 03:00 · The Helsinki–Rovaniemi night train, somewhere past Oulu" tertiary-muted #20263A`,
 ].sort();
 
@@ -664,26 +799,119 @@ const RAMP_GAP_ALLOW = [
 // to 950 stops, 25 of 25 unique), travel "Patmos" tertiary-muted and "Viennese kaffeehaus" primary-
 // muted (already not reproduced at U2's head). Pass 1's Trulli secondary and Black metal secondary are
 // unique again at revision 8.
+// T-0040 re-freeze (ramp@2 band rule, ADR-037), measured FULL on the ramp@2 engine: 19 -> 107, 89 added
+// and 1 removed, the same compression as RAMP_GAP_ALLOW's T-0040 note: on the 25-stop export ramp a
+// compressed interior lands two adjacent stops on one 8-bit pixel. 70 additions are dark anchors (L*
+// 9.7 to 20.2, among them three of the five new window clamps), 19 light (L* 79.8 to 94.5, Kea
+// primary-muted the top). Removed: music "Vaporwave" secondary-muted (the band snap separates it).
 const RAMP_DISTINCT_ALLOW = [
   `architecture "Andalusian patio · Moorish-Spanish vernacular · Córdoba" secondary #DFDEDC`,
+  `architecture "Bauhaus Dessau · 1926 · Walter Gropius" primary-muted #272A2C`,
+  `architecture "Katsura Imperial Villa · 17th c · Kyoto" primary #282322`,
+  `architecture "Lancashire cotton mill · 19th c · northern England" secondary-muted #262A2D`,
+  `architecture "Oia · Cyclades vernacular · Santorini, Greece" secondary #E3E2DF`,
+  `architecture "Villa Savoye · 1931 · Le Corbusier · Poissy" primary-muted #272A2C`,
   `architecture "Villa Savoye · 1931 · Le Corbusier · Poissy" secondary #DFDEDC`,
   `brands "Burger King · The Flame Identity · 2021 rebrand" tertiary-muted #F5EBDC`,
   `brands "Nike · The Swoosh · Since 1971" secondary #101820`,
+  `brands "Nike · The Swoosh · Since 1971" tertiary #E4E0D2`,
   `brands "Nike · The Swoosh · Since 1971" tertiary-muted #FFFFFF`,
+  `cuisine "Chocolate · the chocolatier's bench" tertiary-muted #DCD4C4`,
+  `cuisine "Fruit tarts & glaçage · the entremets case" tertiary-muted #DCD4C2`,
+  `cuisine "Kaiseki · the seasonal course" tertiary-muted #2B2624`,
+  `cuisine "Matcha & wagashi · the tea room" tertiary-muted #2B2624`,
+  `cuisine "Pie & milkshake · the diner counter" primary-muted #DEDBD4`,
+  `cuisine "Pizza Napoletana · the wood-fired oven" primary #382F28`,
+  `cuisine "Tandoor · the clay oven" tertiary-muted #362C27`,
+  `cuisine "The cold sea · raw shellfish & ice" tertiary #D6DCE0`,
+  `cuisine "Whisky & spirits · the back bar" primary #C8D4D8`,
   `film "2001: A Space Odyssey · 1968 · dir. Kubrick · the centrifuge & the stargate" tertiary-muted #1A1B1E`,
+  `film "Akira · 1988 · dir. Otomo · Neo-Tokyo at night" primary-muted #E7D8AA`,
+  `film "Apocalypse Now · 1979 · dir. Coppola · the river at dusk" primary #241E1A`,
+  `film "Arrival · 2016 · dir. Villeneuve · the shell interior" primary-muted #232427`,
   `film "Double Indemnity · 1944 · dir. Billy Wilder · the venetian-blind living room" primary #1B1B1D`,
+  `film "Dune · 2021 · dir. Villeneuve · Arrakis at high sun" tertiary-muted #262A2D`,
+  `film "Enter the Void · 2009 · dir. Gaspar Noé · the Tokyo nightlife" secondary #212129`,
+  `film "Hereditary · 2018 · dir. Aster · the dollhouse home" tertiary-muted #29231F`,
+  `film "Hero · 2002 · dir. Zhang Yimou · the red courtyard duel" tertiary-muted #282421`,
+  `film "John Wick · 2014 · dir. Stahelski · the Red Circle club" tertiary-muted #232428`,
+  `film "Once Upon a Time in the West · 1968 · dir. Leone · the railhead town" tertiary-muted #312721`,
+  `film "Singin' in the Rain · 1952 · the 'Broadway Melody' set" primary-muted #272A2C`,
+  `film "Spider-Man: Into the Spider-Verse · 2018 · the comic-book city" primary #232429`,
+  `film "Suspiria · 1977 · dir. Argento · the ballet academy" tertiary-muted #201F25`,
   `film "TRON: Legacy · 2010 · dir. Kosinski · the Grid" secondary #181B1F`,
+  `film "Taxi Driver · 1976 · dir. Scorsese · the neon city through a windshield" secondary #262A2D`,
+  `film "The Godfather · 1972 · dir. Coppola · cin. Gordon Willis · the don's study" secondary #302721`,
+  `film "The Matrix · 1999 · dir. Wachowskis · inside the simulation" tertiary-muted #1F1F24`,
   `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" primary #161618`,
   `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" tertiary #1E211E`,
+  `film "The Third Man · 1949 · dir. Carol Reed · the wet Vienna cobbles at night" secondary-muted #252422`,
+  `film "There Will Be Blood · 2007 · dir. P.T. Anderson · the oil derrick fire" tertiary-muted #282320`,
+  `film "Touch of Evil · 1958 · dir. Orson Welles · the border-town night" secondary #232428`,
+  `film "WALL·E · 2008 · Pixar · the abandoned Earth" primary-muted #C6D9DF`,
+  `literature "Anna Karenina · Tolstoy · 1877 · the Moscow station in snow" tertiary-muted #252428`,
+  `literature "Doctor Zhivago · Pasternak · 1957 · the ice-bound house at Varykino" secondary #C2D1D9`,
+  `literature "Fahrenheit 451 · Bradbury · 1953 · the fireman's city" tertiary-muted #282320`,
+  `literature "The Bell Jar · Sylvia Plath · 1963 · New York & the suburb" primary #242427`,
+  `literature "The Makioka Sisters · Tanizaki · 1948 · the Kyoto cherry-viewing" secondary #E4BCC2`,
+  `literature "The Tale of Genji · Murasaki Shikibu · c.1010 · the Heian court" secondary-muted #292321`,
+  `music "Acid house · the smiley flyer" tertiary-muted #26241F`,
+  `music "Black metal · the forest at night" secondary #1E2024`,
+  `music "Black metal · the forest at night" tertiary-muted #D4D9DB`,
+  `music "Detroit techno · the chrome sleeve" secondary #24272B`,
+  `music "Dub studio · the mixing desk" secondary #272A2C`,
+  `music "Golden-age NYC · the boom-bap sleeve" primary #242428`,
+  `music "Graffiti · the subway-car piece" primary #242428`,
+  `music "Kingston street · the sound-system yard" secondary #24272B`,
+  `music "Leather & studs · the club night" secondary #242428`,
+  `music "Liquid light show · the projected oil-wheel" tertiary-muted #26232C`,
+  `music "Lovers rock · the blue-light basement" primary #242428`,
+  `music "Mod & British Invasion · the op-art club" tertiary #242428`,
+  `music "Motown · the glamour stage" tertiary-muted #26272B`,
+  `music "Neon MV · the night-set choreography" tertiary-muted #26232C`,
+  `music "Outlaw country · the desert-highway sleeve" tertiary-muted #2D2E34`,
+  `music "P-Funk · the cosmic album art" secondary-muted #211E27`,
+  `music "Pop-punk · the skate-park sleeve" secondary #26272B`,
+  `music "Rasta tricolour · the roots sleeve" tertiary-muted #282320`,
+  `music "Riot grrrl · the zine collage" tertiary-muted #242427`,
+  `music "Soul Train · the TV stage" primary-muted #2D2E34`,
+  `music "Southern trap · the night-drive cover" tertiary-muted #26222F`,
+  `music "Stax · the Southern-soul sleeve" tertiary-muted #D9D1BF`,
+  `music "Studio 54 · the dancefloor" secondary #2B2734`,
+  `music "Symphonic & gothic metal · the cathedral set" tertiary-muted #272328`,
   `music "The late-night club · the smoky set" primary-muted #1F1F23`,
+  `music "The orchestra · the concert platform" secondary #242428`,
+  `music "The rave · the laser tent" secondary #212228`,
   `music "UK '77 · the ransom-note sleeve" secondary #1F1F23`,
-  `music "Vaporwave · the digital-pastel aesthetic" secondary-muted #D8D4CE`,
+  `nature "24° S · June · 07:00 · Sossusvlei, Namib Desert, Namibia" tertiary-muted #2B2621`,
   `nature "32° N · constant · Carlsbad Caverns, New Mexico, lamp-lit" secondary #1D1D20`,
+  `nature "40° S · December · 14:00 · Valdivian rainforest, Los Ríos, southern Chile" tertiary-muted #302820`,
+  `nature "64° N · July · 13:00 · Landmannalaugar, Icelandic highlands" tertiary-muted #262A2D`,
+  `travel "19° N · December · 06:20 · Worli koliwada, Mumbai, just before sunrise" tertiary-muted #24234B`,
   `travel "20° N · January · 06:30 · Rub' al Khali at first light, near the Saudi-Omani border" primary-muted #1F1A16`,
+  `travel "22° N · January · 11:00 · Sapa Sunday market, Lào Cai Province, cold mountain fog" secondary #042546`,
   `travel "23° S · December · 16:20 · Salar de Atacama, 2,305 m" secondary #EBEAE6`,
+  `travel "26° N · June · 18:30 · The shrine of Lal Shahbaz Qalandar, Sehwan, at the evening dhamaal" tertiary #DFDBD1`,
   `travel "27° N · October · 17:30 · A teahouse in Khumbu, on the trekking route from Namche to Tengboche" tertiary-muted #1F1A16`,
+  `travel "30° N · March · 16:00 · Wadi Rum, the Jebel Khazali wall in late afternoon" primary #1E1D1B`,
+  `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" primary #221913`,
+  `travel "31° S · September · 14:00 · The Indian Pacific between Cook and Adelaide, mid-Nullarbor" tertiary #E2DDD0`,
+  `travel "34° S · March · 22:00 · San Telmo, Buenos Aires, a Sunday after the antiques fair has closed" secondary-muted #22242B`,
+  `travel "35° N · February · 23:48 · Yamanote line, last loop, between Shinjuku and Ikebukuro" secondary #DDE5EB`,
+  `travel "37° N · May · 00:00 · A Patmos Greek Orthodox church, Easter Saturday at midnight" tertiary-muted #232220`,
+  `travel "37° N · November · 05:40 · MV passing Kea, en route Piraeus" primary #2E2B37`,
+  `travel "37° N · November · 05:40 · MV passing Kea, en route Piraeus" primary-muted #E1F5DA`,
+  `travel "41° N · April · 09:00 · La Boqueria, Barcelona, just past opening on a Tuesday" secondary-muted #DADECE`,
   `travel "41° N · November · 00:10 · Eminönü waterfront, Istanbul, last ferries in" tertiary-muted #251B12`,
+  `travel "42° N · July · 06:00 · Hidaka coast, Hokkaido, low tide at the height of kombu season" primary-muted #282724`,
   `travel "42° N · July · 06:00 · Hidaka coast, Hokkaido, low tide at the height of kombu season" tertiary-muted #252215`,
+  `travel "48° N · February · 11:00 · Saint-Malo quay at the year's lowest tide" primary-muted #251B14`,
+  `travel "48° N · November · 18:50 · A wet evening in a Viennese kaffeehaus, Mariahilf" primary-muted #24221F`,
+  `travel "59° N · January · 14:00 · Lake Baikal corridor" primary-muted #242D47`,
+  `travel "62° N · September · 09:30 · Tórshavn waterfront, thick sea-fog" tertiary-muted #221913`,
+  `travel "63° N · Late August · 15:00 · Reynisfjara, south coast of Iceland" secondary #242427`,
+  `travel "63° N · Late August · 15:00 · Reynisfjara, south coast of Iceland" tertiary-muted #E2DDD0`,
+  `travel "67° N · January · 03:00 · The Helsinki–Rovaniemi night train, somewhere past Oulu" tertiary-muted #20263A`,
 ].sort();
 
 // NOTCH_ALLOW (ruling Q-C, 2026-09-18): the owner ruled the notch gate is the 70%-ratio definition AND
@@ -709,22 +937,113 @@ const RAMP_DISTINCT_ALLOW = [
 // #725 U3 freeze (R74), measured FULL on U3's head: 17 -> 15, 0 added. Removed: travel "Helsinki-
 // Rovaniemi night train" secondary-muted #ACADAE [peak] and [perceptual], the #739 pair, which U2's
 // head already did not reproduce (the 15 even-mode members are unchanged).
+// T-0040 re-freeze (ramp@2 band rule, ADR-037), measured FULL on the ramp@2 engine: 15 -> 99, 84 added,
+// none removed, every addition on even. Each is a near-grey anchor (CAM16 C about 2 to 3.5) whose 450 and
+// 550 already read under 70% on ramp@1 but within 3 C of it; the even band tint, chromaFloor% of the
+// stop's ceiling and not capped by the anchor (R69: the even floor tints an achromatic anchor's ramp),
+// blends in by the band weight and lifts 450 and 550 by about 1 C, past the 3 C bar (architecture
+// "Bankside" tertiary #888781: 450 at C 6.17 -> 7.13 over the anchor's 3.47). The anchored perceptual
+// and peak paths cap the tint by the anchor's own fraction, so none of them joins.
 const NOTCH_ALLOW = [
+  `architecture "Bankside / Tate Modern · 1947, conv. 2000 · London" tertiary #888781 [even]`,
+  `architecture "Bauhaus Dessau · 1926 · Walter Gropius" secondary #DCDBD8 [even]`,
+  `architecture "Boston City Hall · 1968 · Kallmann McKinnell & Knowles" secondary #888781 [even]`,
+  `architecture "Charleston single house · antebellum vernacular · South Carolina" primary #DDDBD7 [even]`,
+  `architecture "Chartres Cathedral · c.1220 · the nave at midday" secondary #AEABA6 [even]`,
+  `architecture "Falu-red farmstead · Swedish vernacular · Dalarna" tertiary-muted #DDDBD7 [even]`,
+  `architecture "Farnsworth House · 1951 · Mies van der Rohe · Illinois" secondary #DCDBD8 [even]`,
+  `architecture "Habitat 67 · 1967 · Moshe Safdie · Montreal" secondary #A4A29D [even]`,
   `architecture "Habitat 67 · 1967 · Moshe Safdie · Montreal" tertiary-muted #D6D5D0 [even]`,
   `architecture "Himeji Castle · 1609 · 'White Heron' keep · Japan" secondary #E0DEDA [even]`,
+  `architecture "Himeji Castle · 1609 · 'White Heron' keep · Japan" secondary-muted #7D7B76 [even]`,
   `architecture "Icelandic turf house · vernacular · Skógar / Glaumbær" tertiary-muted #D9D8D4 [even]`,
+  `architecture "Ise Grand Shrine · rebuilt every 20 years · Mie Prefecture" secondary-muted #BDBBB5 [even]`,
   `architecture "Katsura Imperial Villa · 17th c · Kyoto" primary #282322 [even]`,
+  `architecture "Komsomolskaya Station · 1952 · Moscow Metro" tertiary-muted #D4D1CA [even]`,
+  `architecture "Narkomfin Building · 1930 · Ginzburg · Moscow" secondary #8E8D87 [even]`,
+  `architecture "New England saltbox · colonial vernacular · coastal Massachusetts" tertiary-muted #DDDBD7 [even]`,
+  `architecture "Oia · Cyclades vernacular · Santorini, Greece" secondary #E3E2DF [even]`,
+  `architecture "Sainte-Chapelle · 1248 · Paris · the upper chapel" primary-muted #B4B1AC [even]`,
+  `architecture "Sydney Opera House · 1973 · Jørn Utzon" tertiary-muted #9A8C88 [even]`,
   `architecture "Trulli of Alberobello · vernacular · Puglia, Italy" primary #CCCBC7 [even]`,
+  `cuisine "Caramel & toffee · the confection pan" primary #DDDBD6 [even]`,
+  `cuisine "Chinese tea · the gongfu tray" tertiary-muted #DBD8D1 [even]`,
+  `cuisine "Cured & smoked · the fish board" primary-muted #DBD8CF [even]`,
+  `cuisine "Dim sum · the bamboo steamer" secondary #D8D5CC [even]`,
+  `cuisine "Día de Muertos table · the ofrenda" tertiary-muted #DDDBD6 [even]`,
+  `cuisine "Elote · the street-corn cart" tertiary-muted #DBD8CF [even]`,
+  `cuisine "Espresso · the café counter" tertiary-muted #DDDBD6 [even]`,
   `cuisine "Fresh pasta · the marble work-bench" tertiary-muted #E0DEDA [even]`,
   `cuisine "Macarons · the display case" tertiary-muted #E0DEDA [even]`,
+  `cuisine "Mango sticky rice · the dessert cart" tertiary-muted #DBD8CF [even]`,
+  `cuisine "Pho · the noodle bowl" tertiary-muted #D8D5CC [even]`,
+  `cuisine "Pie & milkshake · the diner counter" primary-muted #DEDBD4 [even]`,
+  `cuisine "Sushi & sashimi · the cypress counter" secondary #DAD8D2 [even]`,
+  `cuisine "Tacos al pastor · the street stand" tertiary-muted #DBD8CF [even]`,
+  `film "Double Indemnity · 1944 · dir. Billy Wilder · the venetian-blind living room" primary #1B1B1D [even]`,
+  `film "Hero · 2002 · dir. Zhang Yimou · the red courtyard duel" primary #DAD8D2 [even]`,
+  `film "Lawrence of Arabia · 1962 · dir. David Lean · the Nefud desert" tertiary-muted #D9D5CB [even]`,
+  `film "Suspiria · 1977 · dir. Argento · the ballet academy" tertiary-muted #201F25 [even]`,
+  `film "The Matrix · 1999 · dir. Wachowskis · inside the simulation" tertiary-muted #1F1F24 [even]`,
+  `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" primary #161618 [even]`,
+  `film "The Night of the Hunter · 1955 · dir. Charles Laughton · the river drift" tertiary-muted #D6D5D2 [even]`,
+  `film "The Red Shoes · 1948 · dir. Powell & Pressburger · the ballet" primary #DAD8D2 [even]`,
+  `film "The Third Man · 1949 · dir. Carol Reed · the wet Vienna cobbles at night" primary #B0AEA9 [even]`,
+  `film "Touch of Evil · 1958 · dir. Orson Welles · the border-town night" tertiary-muted #DDDBD7 [even]`,
+  `literature "A Streetcar Named Desire · Tennessee Williams · 1947 · the French Quarter flat" tertiary-muted #D8D5CC [even]`,
+  `literature "Alice's Adventures in Wonderland · Carroll, ill. Tenniel · 1865" tertiary #DDDBD7 [even]`,
+  `literature "Anna Karenina · Tolstoy · 1877 · the Moscow station in snow" tertiary-muted #252428 [even]`,
+  `literature "Don Quixote · Cervantes · 1605 · the plains of La Mancha" secondary-muted #A5A29B [even]`,
+  `literature "Dracula · Bram Stoker · 1897 · the Carpathian castle at night" secondary-muted #85847E [even]`,
+  `literature "Mistborn · Brandon Sanderson · 2006 · the ash-fall Final Empire" secondary #82817D [even]`,
+  `literature "My Brilliant Friend · Ferrante · 2011 · a poor Naples neighbourhood" tertiary-muted #D3D1CC [even]`,
+  `literature "The Handmaid's Tale · Atwood · 1985 · Gilead" primary #DAD8D2 [even]`,
+  `literature "The Makioka Sisters · Tanizaki · 1948 · the Kyoto cherry-viewing" primary-muted #A6A5A0 [even]`,
+  `literature "The Road · Cormac McCarthy · 2006 · the ash-grey wasteland" secondary #7C7B77 [even]`,
+  `literature "The Tale of Genji · Murasaki Shikibu · c.1010 · the Heian court" secondary-muted #292321 [even]`,
+  `music "Doom & stoner · the amp-fuzz haze" secondary-muted #28262C [even]`,
+  `music "Doom & stoner · the amp-fuzz haze" tertiary-muted #7C7982 [even]`,
+  `music "Gospel · the church choir" primary-muted #DDDBD7 [even]`,
+  `music "Mod & British Invasion · the op-art club" tertiary-muted #DDDBD7 [even]`,
+  `music "New Orleans brass · the street parade" secondary-muted #DAD8D2 [even]`,
   `music "Pop-punk · the skate-park sleeve" tertiary-muted #D9D8D4 [even]`,
+  `music "Riot grrrl · the zine collage" tertiary #D0CEC9 [even]`,
+  `music "Symphonic & gothic metal · the cathedral set" tertiary-muted #272328 [even]`,
+  `music "The late-night club · the smoky set" primary-muted #1F1F23 [even]`,
+  `music "The orchestra · the concert platform" tertiary-muted #DDDBD7 [even]`,
+  `music "UK '77 · the ransom-note sleeve" secondary #1F1F23 [even]`,
+  `music "UK '77 · the ransom-note sleeve" tertiary-muted #C3C1BC [even]`,
+  `music "Vaporwave · the digital-pastel aesthetic" secondary-muted #D8D4CE [even]`,
   `nature "23° S · December · 13:00 · Salar de Atacama edge, Atacama Desert, Chile" secondary #E0DEDA [even]`,
+  `nature "35° N · November · 16:00 · Kyoto temple maple, late autumn" primary #B3B2AC [even]`,
+  `nature "44° N · October · 14:00 · Northern hardwood forest, Vermont, peak foliage" primary #D4D1CA [even]`,
+  `nature "44° N · September · 07:00 · Bold Coast, Maine, low tide at dawn" tertiary-muted #9F938F [even]`,
+  `nature "47° N · July · 12:00 · Central Mongolian steppe, Övörkhangai" tertiary-muted #BDBBB4 [even]`,
+  `nature "49° N · October · 15:00 · Boreal shield, northern Ontario, Canada" secondary-muted #988984 [even]`,
   `nature "51° N · May · 09:00 · English oak woodland, Sussex, bluebell season" primary #D8D9D0 [even]`,
+  `nature "51° S · November · 07:00 · Torres del Paine, Patagonian Andes, Chile" secondary-muted #978985 [even]`,
+  `nature "57° N · August · 14:00 · Rannoch Moor blanket bog, Scottish Highlands" primary #D7D5CE [even]`,
+  `nature "63° N · February · 13:00 · Karelian taiga, eastern Finland, deep winter" secondary-muted #BDBBB5 [even]`,
+  `nature "66° N · August · 16:00 · Baffin Island fjord, Nunavut, Canadian Arctic" tertiary-muted #D7D5CC [even]`,
+  `nature "70° N · September · 12:00 · Varanger / Finnmark tundra, Arctic Norway" tertiary #BBBCB2 [even]`,
+  `travel "23° S · December · 16:20 · Salar de Atacama, 2,305 m" secondary #EBEAE6 [even]`,
+  `travel "26° N · June · 18:30 · The shrine of Lal Shahbaz Qalandar, Sehwan, at the evening dhamaal" tertiary #DFDBD1 [even]`,
+  `travel "26° N · June · 18:30 · The shrine of Lal Shahbaz Qalandar, Sehwan, at the evening dhamaal" tertiary-muted #BCBBB8 [even]`,
+  `travel "30° N · March · 16:00 · Wadi Rum, the Jebel Khazali wall in late afternoon" tertiary-muted #AC9D99 [even]`,
+  `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" primary-muted #D0CEC9 [even]`,
+  `travel "30° N · May · 06:00 · Atchafalaya basin cypress slough, sunrise from a flat-bottom boat" secondary-muted #82817E [even]`,
   `travel "34° N · May · 04:30 · The corridor of torii at Fushimi Inari before opening hour" tertiary-muted #A2A19E [even]`,
   `travel "37° N · May · 00:00 · A Patmos Greek Orthodox church, Easter Saturday at midnight" secondary-muted #B9B8B4 [even]`,
+  `travel "38° N · July · 11:00 · Point Reyes peninsula, California, the marine layer locked in for the third week" secondary #D0CEC9 [even]`,
+  `travel "41° N · April · 10:00 · Bolhão Market, Porto, Saturday opening hour" tertiary-muted #AFADA9 [even]`,
+  `travel "41° N · July · 20:30 · The Great Salt Lake at sunset, near Antelope Island causeway" tertiary-muted #413538 [even]`,
   `travel "41° N · October · 23:00 · Tbilisi viewed from the Mtatsminda funicular at the upper station" secondary #71716E [even]`,
+  `travel "47° N · June · 10:00 · St. John's harbour, dense Atlantic fog" secondary #D0CEC9 [even]`,
+  `travel "48° N · February · 11:00 · Saint-Malo quay at the year's lowest tide" tertiary-muted #CFCECB [even]`,
   `travel "48° N · November · 18:50 · A wet evening in a Viennese kaffeehaus, Mariahilf" secondary-muted #CBCAC5 [even]`,
   `travel "55° N · July · 13:00 · Lowland Kamchatkan taiga in heavy mosquito season, near the Avacha river" tertiary-muted #ABAAA7 [even]`,
+  `travel "57° N · January · 12:00 · Jūrmala beachfront, Latvia, snow on the pier and ice on the Gulf" secondary #D0D2D0 [even]`,
+  `travel "62° N · September · 09:30 · Tórshavn waterfront, thick sea-fog" secondary #BCBFBB [even]`,
 ].sort();
 
 const MODES = ["perceptual", "peak", "even"];
@@ -820,9 +1139,10 @@ function distinctOk25(stops) {
 // stop 500 is the anchor; below 100 the group damper scales stop 500 too (#785 U2, R94), so the raw
 // palette's own stored `chroma` would test the damper, not the anchor.
 {
+  const [wLo, wHi] = pivotWindow({ ...DEFAULT_CONTROLS, toneMode: "perceptual" });
   const sample = anchored.find((c) => {
     const l = lstarFromRgb(hexToRgb(c.palette.anchor));
-    return l >= RAMP_L_MIN && l <= RAMP_L_MAX;
+    return l >= wLo && l <= wHi;
   });
   if (!sample) FAIL("anchor-ramp", "no in-window anchored palette found to run C3's own negative control against");
   else {
@@ -910,12 +1230,13 @@ const loneSpikeNames = new Set();
 const modeHex = new Map(); // label -> { perceptual, peak, even } each a joined-hex fingerprint string
 for (const { slug, preset } of presetsByCat) {
   for (const mode of MODES) {
-    const doc = hydrate({ ...preset, toneMode: mode });
+    const doc = presetDoc({ ...preset, toneMode: mode });
     const view = projectView(doc);
+    const [wLo, wHi] = windowOf(doc, mode);
     for (const p of doc.palettes) {
       if (typeof p.anchor !== "string") continue;
       const srcL = lstarFromRgb(hexToRgb(p.anchor));
-      const outsideWindow = srcL < RAMP_L_MIN || srcL > RAMP_L_MAX;
+      const outsideWindow = srcL < wLo || srcL > wHi;
       const label = `${slug} "${preset.name}" ${p.name} ${p.anchor}`;
       if (outsideWindow) windowNames.add(label);
       const vp = view.palettes.find((v) => v.name === p.name);
@@ -1083,7 +1404,7 @@ for (const n of loneSpikeSorted) FAIL("anchor-ramp", `lone-spike: unexpected mem
   // and model.mjs's layers import points at it below.
   const layersSrc = readFileSync(new URL("../../src/engine/layers.mjs", import.meta.url), "utf8");
   let patchedLayers = layersSrc;
-  for (const f of ["controls.mjs", "resolve.mjs", "tonal.js", "prime.mjs", "semantic.js", "type.mjs", "geometry.mjs", "layer-pins.mjs"]) {
+  for (const f of ["controls.mjs", "resolve.mjs", "tonal.js", "layers/ramp@1.mjs", "prime.mjs", "semantic.js", "type.mjs", "geometry.mjs", "layer-pins.mjs"]) {
     if (!layersSrc.includes(`from "./${f}"`)) FAIL("anchor-ramp", `lone-spike negative control: layers.mjs import target not found - ./${f} moved, update this control`);
     patchedLayers = patchedLayers.replace(`from "./${f}"`, `from "${f === "tonal.js" ? buggyTonalUrl : new URL(`../../src/engine/${f}`, import.meta.url).href}"`);
   }
@@ -1122,7 +1443,7 @@ for (const n of loneSpikeSorted) FAIL("anchor-ramp", `lone-spike: unexpected mem
   // + anchor hex + stop): a first version keyed on `doc.name|p.name|stop` alone and collapsed distinct
   // witnesses that share a palette name and spike stop across different presets into one Set entry,
   // undercounting 65 as 7 (review pass 2, F3 follow-up).
-  const spikeDocs = [...presetsByCat.map(({ slug, preset }) => ({ slug, doc: hydrate({ ...preset, toneMode: "even" }) })), { slug: "default kit", doc: dkSpikeDoc, kitName: dkBaseForSpike.name }];
+  const spikeDocs = [...presetsByCat.map(({ slug, preset }) => ({ slug, doc: presetDoc({ ...preset, toneMode: "even" }) })), { slug: "default kit", doc: dkSpikeDoc, kitName: dkBaseForSpike.name }];
   for (const { slug, doc, kitName } of spikeDocs) {
     const view = BuggyModel.projectView(doc);
     for (const p of doc.palettes) {
@@ -1197,7 +1518,8 @@ for (const mode of MODES) {
     const ramp19 = vp ? vp.ramp : null, ramp25 = vp ? vp.fullRamp : null;
     if (!ramp19 || !ramp25) { kitWindow.push(`${p.name} ${p.anchor} [${mode}]: projectView produced no matching palette, the render path changed shape`); continue; }
     const srcL = lstarFromRgb(hexToRgb(p.anchor));
-    if (srcL < RAMP_L_MIN || srcL > RAMP_L_MAX) kitWindow.push(`${p.name} ${p.anchor} [${mode}] L* ${srcL.toFixed(2)} outside [${RAMP_L_MIN}, ${RAMP_L_MAX}]`);
+    const [kLo, kHi] = windowOf(doc, mode); // T-0040: the ramp@2 window, pivotWindow
+    if (srcL < kLo || srcL > kHi) kitWindow.push(`${p.name} ${p.anchor} [${mode}] L* ${srcL.toFixed(2)} outside [${kLo.toFixed(2)}, ${kHi.toFixed(2)}]`);
     if (!monotoneOk(ramp19)) kitMonotone.push(`${p.name} ${p.anchor} [${mode}, 19-stop]: pixel L* rose between two stops`);
     if (!monotoneOk(ramp25)) kitMonotone.push(`${p.name} ${p.anchor} [${mode}, 25-stop]: pixel L* rose between two stops`);
     if (!gapOk19(ramp19)) kitGap.push(`${p.name} ${p.anchor} [${mode}]: a 19-stop pixel gap fell under 0.55 L*`);
@@ -1303,7 +1625,7 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
   for (const modeName of ["perceptual", "peak"]) {
     let max = 0, worst = "n/a";
     for (const { slug, preset } of hueSpaceBoundSubjects) {
-      const base = hydrate({ ...preset, toneMode: modeName });
+      const base = presetDoc({ ...preset, toneMode: modeName });
       const baseV = projectView(base), altV = projectView(hydrate({ ...base, ...flipHueSpace(base) }));
       for (const p of base.palettes) {
         if (typeof p.anchor !== "string") continue;
@@ -1343,7 +1665,8 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
         for (let i = 0; i < a.length; i++) maxDeltaE = Math.max(maxDeltaE, deltaEOk(a[i].hex, b[i].hex));
       }
       const srcL = lstarFromRgb(hexToRgb(p.anchor));
-      const inWin = srcL >= RAMP_L_MIN && srcL <= RAMP_L_MAX;
+      const [fLo, fHi] = windowOf(base, base.toneMode); // T-0040: the ramp@2 window, pivotWindow
+      const inWin = srcL >= fLo && srcL <= fHi;
       const a500 = a.find((s) => s.stop === 500).hex, b500 = b.find((s) => s.stop === 500).hex;
       if (inWin && a500 !== b500) { s500moved++; FAIL("anchor-f4", `${key}: stop 500 moved on the default kit, ${p.name} ${a500} !== ${b500}`); }
     }
@@ -1621,8 +1944,9 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
   if (!Number.isFinite(rgbToOkhsl([0, 0, 0]).s)) FAIL("anchor-achromatic", `rgbToOkhsl([0,0,0]).s is ${rgbToOkhsl([0, 0, 0]).s}, want a finite saturation`);
   let seen = 0, bad = 0;
   for (const anchor of ["#000000", "#FFFFFF", "#010101", "#808080"]) {
-    const inWindow = (() => { const L = lstarFromRgb(hexToRgb(anchor)); return L >= RAMP_L_MIN && L <= RAMP_L_MAX; })();
     for (const toneMode of ["perceptual", "peak", "even"]) for (const hueSpace of ["oklch", "cam16"]) {
+      // T-0040: the ramp@2 window per tone mode (pivotWindow), was [RAMP_L_MIN, RAMP_L_MAX]
+      const inWindow = (() => { const L = lstarFromRgb(hexToRgb(anchor)); const [lo, hi] = pivotWindow({ ...DEFAULT_CONTROLS, toneMode }); return L >= lo && L <= hi; })();
       const ramp = paletteStops({ hue: 30, chroma: 50, skew: 0, lift: 0, anchor }, { ...DEFAULT_CONTROLS, toneMode, hueSpace }, STOPS);
       seen++;
       const b = badStops(ramp);
@@ -1701,8 +2025,41 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
   console.log(`  ${fails.some((f) => f.startsWith("achromatic-anchor:")) ? "FAIL" : "pass"}  achromatic-anchor: even ${bound} of ${10 - skipped} anchored/twin hue distances at most 12deg (#808080, #808081, #FFFFFF, #000000, #010101 x stop 300/700, ${skipped} skipped under CAM16 C 5 - a near-white/black anchor's own nearest stop); perceptual/peak ${greyOk} of ${greyCells} cells CAM16 C below ${ACHROMATIC_CELL_C}; #808082 (OKLab C ${twoOff.toFixed(4)}, above the constant) chromatic and hue-stable across a moved palette hue: ${chromaticIdentical}`);
 }
 
+// ── anchor-match-peer (T-0040, ADR-037): with Match peer lightness on, stop 500 sits on the shared
+// ladder, so it leaves the anchor pixel (C3, stop 500 verbatim, is a mode-off rule: every document the
+// sweeps above render is mode off), while the anchor's hue still leads: in each tone mode at least one
+// default-kit stop 500 differs from its anchor, every chromatic stop 500 (OKLCH C 0.04 and over, the
+// anchor too) keeps its anchor's OKLCH hue within 5 degrees, and every ramp descends in pixel L*.
+{
+  const kit = defaultDocument();
+  let moved = 0, n = 0, drift = 0, worst = "", rises = 0;
+  const perMode = {};
+  for (const toneMode of MODES) {
+    const v = projectView({ ...kit, toneMode, matchPeerLightness: true });
+    perMode[toneMode] = 0;
+    v.palettes.forEach((vp, k) => {
+      const anchorHex = String(kit.palettes[k].anchor).toUpperCase();
+      const s500 = vp.fullRamp.find((x) => x.stop === 500).hex.toUpperCase();
+      if (s500 !== anchorHex) perMode[toneMode]++;
+      const a = rgbToOklchIndep(hexToRgb(anchorHex)), b = rgbToOklchIndep(hexToRgb(s500));
+      if (a[1] >= 0.04 && b[1] >= 0.04) {
+        n++;
+        const d = Math.abs(((b[2] - a[2] + 540) % 360) - 180);
+        if (d > drift) { drift = d; worst = `${vp.name} ${toneMode}`; }
+      }
+      if (!monotoneOk(vp.fullRamp) || !monotoneOk(vp.ramp)) rises++;
+    });
+    moved += perMode[toneMode];
+  }
+  for (const toneMode of MODES) if (!(perMode[toneMode] >= 1)) FAIL("anchor-match-peer", `${toneMode}: no default-kit stop 500 left its anchor with the mode on`);
+  if (!(n >= 30)) FAIL("anchor-match-peer", `vacuity: ${n} chromatic stop 500s compared, want at least 30`);
+  if (drift > 5) FAIL("anchor-match-peer", `stop 500's OKLCH hue drifts ${drift.toFixed(2)} deg from its anchor (${worst}), over 5`);
+  if (rises) FAIL("anchor-match-peer", `${rises} ramp(s) rise in pixel L* with the mode on`);
+  console.log(`  ${fails.some((f) => f.startsWith("anchor-match-peer:")) ? "FAIL" : "pass"}  anchor-match-peer: stop 500 left the anchor in ${moved} of ${MODES.length * kit.palettes.length} default-kit ramps (${MODES.map((m) => `${m} ${perMode[m]}`).join(", ")}), ${n} chromatic stop 500s within ${drift.toFixed(2)} deg of their anchor's OKLCH hue (want <= 5), ${rises} rises`);
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["anchor-identity", "prime-identity-control", "anchor-ladder", "anchor-ramp", "anchor-f4", "key-anchor", "anchor-k", "anchor-k scale control", "prime-huespace", "prime-huespace control", "anchor-achromatic", "achromatic-anchor"]) {
+for (const g of ["anchor-match-peer", "anchor-identity", "prime-identity-control", "anchor-ladder", "anchor-ramp", "anchor-f4", "key-anchor", "anchor-k", "anchor-k scale control", "prime-huespace", "prime-huespace control", "anchor-achromatic", "achromatic-anchor"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   if (!f) continue; // already printed a pass/FAIL summary line above; only surface the FIRST failure detail here
   console.error(`, ${f.slice(g.length + 2)}`);
