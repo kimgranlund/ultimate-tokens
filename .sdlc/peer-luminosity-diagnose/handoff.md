@@ -2,7 +2,7 @@
 id: T-0039
 title: "Brightest steps do not share luminosity across peer palettes (diagnose first)"
 type: spike           # feature | bug | chore | spike | idea
-status: ready     # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: done     # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: L2             # L1 | L2 | L3 | L4 (L5 reserved)
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -36,3 +36,7 @@ No product change without evidence from the measurements. No U+2014. `npm test` 
 - The report lists fix options with cost and names the open user decision; no engine file changed (`git diff --stat main -- src/ test/` is empty).
 - The report contains no U+2014 (`node test/repo/em-dash.mjs`).
 - `npm test` exits 0 and leaves the tree clean.
+
+## Closed
+
+2026-10-08: delivered by the solo agent (level L2); one independent batched verifier passed before the merge
