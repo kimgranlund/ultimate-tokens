@@ -29,3 +29,10 @@ Found in a session 2026-10-08 (user screenshots of Primary slid to green). Diagn
 
 ## Constraints
 The failing test lands before or with the fix, never after. Do not change `tonal.js` or the unanchored path. Touch `src/ui/sections/color.js` and its tests only. The default kit and presets must render identically (no hue edit, no change).
+
+## Acceptance criteria
+- `node test/ui/headless-boot.mjs 2>&1 | grep -q "HEADLESS BOOT PASS"` and the `(reh)` group is present: `grep -q "(reh)" test/ui/headless-boot.mjs`
+- (guard) `git diff --quiet "$SDLC_BASE_SHA" -- src/engine`
+- A Hue drag on an anchored palette keeps a valid `anchor` at the same L* (within 3) and stop 500 within 4 L* of its pre-drag value; the default Primary at hue 150 renders stop 500 below L* 55 (was 64): check by reading the `(reh)` group's assertions and running a node projectView repro.
+- A Chroma drag keeps the anchor, a second edit keeps the first snapshot, Reset restores anchor, hue, chroma, lift and the ramp.
+- `npm test` passes.

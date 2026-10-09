@@ -4299,7 +4299,8 @@ flushRaf();
   hueInput.value = String(newHue);
   hueInput.dispatch("input", {});
   app.commitDrag();
-  ok(app.doc.palettes[idx].anchor === undefined, "(rst1) a Hue edit drops `anchor`");
+  // T-0045: the edit re-seeds `anchor` at the new hue instead of deleting it (see (reh) below); "detach" now means "anchor moved off source".
+  ok(typeof app.doc.palettes[idx].anchor === "string" && app.doc.palettes[idx].anchor !== anchorBefore, "(rst1) a Hue edit moves `anchor` off its source (re-seeded, not deleted)");
   ok(app.doc.palettes[idx].sourceAnchor === sourceAnchorBefore, "(rst1b) `sourceAnchor` survives the edit untouched");
   ok(app.doc.palettes[idx].hue === newHue, `(rst1c) the Hue slider still writes palettes[i].hue (got ${app.doc.palettes[idx].hue}, want ${newHue})`);
   ok(app.doc.palettes[idx].preDetachHue === hueBefore && app.doc.palettes[idx].preDetachChroma === chromaBefore && app.doc.palettes[idx].preDetachLift === liftBefore,
@@ -4417,7 +4418,7 @@ flushRaf();
   const sfkAfter = app.doc.palettes[sfkIdx];
   ok(sfkAfter.hue !== sfkHue || sfkAfter.chroma !== sfkChroma,
     `(sfk1a) test setup: the seed actually moved hue or chroma (got ${sfkAfter.hue}/${sfkAfter.chroma}, was ${sfkHue}/${sfkChroma})`);
-  ok(sfkAfter.anchor === undefined, "(sfk1) seedFromKey drops `anchor`, the same detach the Hue and Chroma sliders perform");
+  ok(typeof sfkAfter.anchor === "string" && sfkAfter.anchor !== sfkAnchor, "(sfk1) seedFromKey moves `anchor` off its source (re-seeded, T-0045), the same as the Hue and Chroma sliders");
   ok(sfkAfter.sourceAnchor === sfkSource, "(sfk2) `sourceAnchor` survives the seed untouched");
   ok(sfkAfter.preDetachHue === sfkHue && sfkAfter.preDetachChroma === sfkChroma && sfkAfter.preDetachLift === sfkLift,
     `(sfk3) seedFromKey stamps the exact pre-detach snapshot detachSnapshot writes (got hue=${sfkAfter.preDetachHue}/chroma=${sfkAfter.preDetachChroma}/lift=${sfkAfter.preDetachLift}, want ${sfkHue}/${sfkChroma}/${sfkLift})`);
@@ -4440,6 +4441,97 @@ flushRaf();
     "(sfk5) all 19 ramp hexes are byte-identical to the pre-seed capture after Reset");
   ok(JSON.stringify(sfkViewAfter.prime) === sfkPrimeBefore,
     "(sfk6) all 7 prime rungs are byte-identical to the pre-seed capture after Reset");
+}
+
+// ── (reh) Hue/Chroma edits RE-SEED the anchor, they do not delete it (T-0045) ───────────────────
+// The defect. A Hue or Chroma slider drag ran `delete palettes[i].anchor`, which drops the ramp onto
+// the unanchored `toneAt` curve (stop 500 near L* 73, 64 with skew -20) instead of the anchored pivot
+// (stop 500 at the anchor's own L*, ~42 to 51). Every hue-edited palette looked washed out against its
+// anchored siblings. The fix keeps the anchor and moves it to the new hue at the SAME tone.
+// These drive the REAL sliders on an anchored preset palette. Every predicate below FAILED on the
+// pre-fix code (anchor undefined, stop 500 L* far above the anchor's), the (reh-ctl) control proves
+// the L* predicate separates the two curves by deleting the anchor the way the old code did.
+{
+  const { projectView: pvREH, defaultDocument: defaultDocumentREH } = await import("../../src/ui/model.mjs");
+  const { lstarFromRgb: lstarREH } = await import("../../src/engine/hct.js");
+  const lstarHex = (hex) => typeof hex !== "string" ? NaN : lstarREH([1, 3, 5].map((k) => parseInt(hex.slice(k, k + 2), 16)));
+  const stop500 = (doc, i) => pvREH(doc).palettes[i].fullRamp.find((s) => s.stop === 500).hex;
+  const rehSpread = (doc, i) => { const r = pvREH(doc).palettes[i].fullRamp; const L = (n) => lstarHex(r.find((s) => s.stop === n).hex); return [L(200), L(500), L(800)]; };
+
+  app.openConfigAsSet(TP[1], null, { mintData: false });
+  app.setSection("color");
+  const idx = 1;
+  app.selectPalette(idx); app.render(); flushRaf();
+  const p0 = app.doc.palettes[idx];
+  ok(!!p0.anchor && !!p0.sourceAnchor, "(reh0) setup: the preset primary is anchored with a sourceAnchor");
+  const anchor0 = p0.anchor, hue0 = p0.hue, chroma0 = p0.chroma, lift0 = p0.lift ?? 0;
+  const L500before = lstarHex(stop500(app.doc, idx));
+  const anchorL = lstarHex(anchor0);
+  const spreadBefore = rehSpread(app.doc, idx);
+
+  // negative control: delete the anchor the way the old slider did and confirm the L* predicate
+  // (|stop-500 L* - anchor L*| < 3) really fails on that curve, so the assertions below can bite.
+  {
+    const probe = JSON.parse(JSON.stringify(app.doc));
+    delete probe.palettes[idx].anchor;
+    probe.palettes[idx].hue = (hue0 + 120) % 360;
+    const Lold = lstarHex(stop500(probe, idx));
+    ok(Math.abs(Lold - anchorL) > 3, `(reh-ctl) control: the old behavior (anchor deleted) puts stop 500 at L* ${Lold.toFixed(1)}, away from the anchor's ${anchorL.toFixed(1)}`);
+  }
+
+  // Hue drag through the real slider, a big slide (+120 degrees), then settle.
+  const hueInput = findFk("slider:Hue");
+  const newHue = (hue0 + 120) % 360;
+  hueInput.value = String(newHue);
+  hueInput.dispatch("input", {});
+  app.commitDrag();
+  const pH = app.doc.palettes[idx];
+  ok(typeof pH.anchor === "string" && /^#[0-9A-F]{6}$/.test(pH.anchor), `(reh1) a Hue drag keeps a valid anchor (got ${pH.anchor})`);
+  ok(pH.anchor !== anchor0, `(reh1b) the anchor moved with the hue (got ${pH.anchor}, was ${anchor0})`);
+  ok(pH.sourceAnchor === p0.sourceAnchor, "(reh1c) sourceAnchor survives untouched");
+  ok(Math.abs(lstarHex(pH.anchor) - anchorL) < 3, `(reh2) the re-seeded anchor keeps the old anchor's tone (L* ${lstarHex(pH.anchor).toFixed(1)} vs ${anchorL.toFixed(1)})`);
+  const L500after = lstarHex(stop500(app.doc, idx));
+  ok(Math.abs(L500after - L500before) < 4, `(reh3) stop 500 stays at the anchored pivot after a hue slide (L* ${L500after.toFixed(1)} vs ${L500before.toFixed(1)})`);
+  const spreadAfter = rehSpread(app.doc, idx);
+  ok(spreadAfter.every((v, k) => Math.abs(v - spreadBefore[k]) < 8), `(reh3b) stops 200/500/800 keep the same lightness spread (${spreadAfter.map((v) => v.toFixed(0))} vs ${spreadBefore.map((v) => v.toFixed(0))})`);
+  ok(pH.preDetachHue === hue0 && pH.preDetachChroma === chroma0 && pH.preDetachLift === lift0, "(reh4) the first drag stamps the pre-edit hue/chroma/lift snapshot");
+
+  // Chroma drag: anchor stays, tone stays, the first snapshot is NOT overwritten by the second edit.
+  app.render(); flushRaf();
+  const chromaInput = findFk("slider:Chroma");
+  chromaInput.value = String(Math.max(0, chroma0 - 30));
+  chromaInput.dispatch("input", {});
+  app.commitDrag();
+  const pC = app.doc.palettes[idx];
+  ok(typeof pC.anchor === "string" && Math.abs(lstarHex(pC.anchor) - anchorL) < 3, `(reh5) a Chroma drag keeps the anchor at its tone (got ${pC.anchor})`);
+  ok(pC.preDetachHue === hue0 && pC.preDetachChroma === chroma0, `(reh5b) a second edit does not overwrite the FIRST snapshot (got hue=${pC.preDetachHue}/chroma=${pC.preDetachChroma}, want ${hue0}/${chroma0})`);
+
+  // Reset restores the anchor, the snapshot and the original ramp.
+  app.render(); flushRaf();
+  const rehText = (e) => (e._text || "") + (e.children || []).map(rehText).join("");
+  const rehBtn = walk(app.querySelector(".right-pane") || app, (e) => e.tagName === "BUTTON" && /Reset to source color/.test(rehText(e)))[0];
+  ok(!!rehBtn, "(reh6) the Reset button renders for a re-seeded palette (anchor present but no longer the source)");
+  if (rehBtn) rehBtn.click();
+  flushRaf();
+  const pR = app.doc.palettes[idx];
+  ok(pR.anchor === anchor0 && pR.hue === hue0 && pR.chroma === chroma0, `(reh7) Reset restores anchor, hue and chroma (got ${pR.anchor}/${pR.hue}/${pR.chroma})`);
+  ok(pR.preDetachHue === undefined, "(reh7b) the snapshot is cleared once restored");
+  app.render(); flushRaf();
+  ok(!walk(app.querySelector(".right-pane") || app, (e) => e.tagName === "BUTTON" && /Reset to source color/.test(rehText(e)))[0], "(reh7c) the Reset button hides again once the anchor is back at source");
+
+  // The default kit's Primary, slid to green: pure helper, the ticket's repro numbers.
+  const dk = defaultDocumentREH();
+  const prim = dk.palettes.findIndex((q) => q.name === "Primary");
+  const primAnchorL = lstarHex(dk.palettes[prim].anchor);
+  const seeded = typeof app.reseedAnchor === "function" ? app.reseedAnchor(dk.palettes[prim], { hue: 150 }) : null;
+  ok(typeof seeded === "string" && Math.abs(lstarHex(seeded) - primAnchorL) < 3, `(reh8) reseedAnchor moves default Primary to hue 150 at its own tone (L* ${seeded && lstarHex(seeded).toFixed(1)} vs ${primAnchorL.toFixed(1)})`);
+  const dk2 = JSON.parse(JSON.stringify(dk));
+  dk2.palettes[prim].hue = 150; dk2.palettes[prim].anchor = seeded;
+  const L500dk = lstarHex(stop500(dk2, prim));
+  ok(L500dk < 55, `(reh8b) default Primary at hue 150 renders stop 500 at L* ${L500dk.toFixed(1)}, the anchored pivot, not the unanchored ~64`);
+  // no-edit identity: a palette with no anchor yields null, and seeding at its own hue is a near no-op.
+  ok(typeof app.reseedAnchor === "function" && app.reseedAnchor({ hue: 10, chroma: 50 }, { hue: 20 }) === null, "(reh9) a palette with no anchor re-seeds to null (nothing to move)");
+  app.commit((d) => { d.palettes[idx].lift = d.palettes[idx].lift; }); // leave the doc settled for the next group
 }
 
 // (rst-corpus) extend C12's coverage from one sample palette to the FULL anchored corpus across ALL

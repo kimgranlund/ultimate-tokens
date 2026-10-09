@@ -743,7 +743,7 @@ Format: Context → Decision → Rationale → Consequences → Status.
   window `[9.95, 95.05]` L\*, at ramp stop 500 in all three tone modes. A second field,
   `sourceAnchor`, carries the generator's own copy: it is written only by `scripts/gen-categories.mjs`
   and `defaultDocument()`, never by the UI. Editing `hue` or `chroma` DETACHES the palette (`anchor`
-  is removed, the palette becomes ordinary) while `sourceAnchor` survives, so the inspector can offer
+  is removed, the palette becomes ordinary; superseded by T-0045 on 2026-10-08: the edit re-seeds `anchor` at the new hue and the old anchor's tone, so the ramp keeps its pivot) while `sourceAnchor` survives, so the inspector can offer
   a Reset that restores the sampled colour exactly. `skew` and `lift` never detach and never move the
   anchor: they warp the ramp around the pivot, not through it.
 - **Rationale.** The sample is the intent; a fit is a lossy encoding of it. Storing the hex makes the
