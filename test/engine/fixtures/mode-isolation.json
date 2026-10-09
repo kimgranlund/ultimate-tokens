@@ -1,7 +1,7 @@
 {
- "owner": "the plan that moves perceptual or peak, or edits any curated corpus document or the default kit (the fingerprint covers their rendered content), re-captures this fixture in its own change and names the new sha here; #725 moved perceptual and peak at U2/U3 and re-captured; the next plan that moves them re-captures",
- "capturedAt": "e75525002e9d90125af1284dce546ef6006614e7",
+ "owner": "the plan that moves perceptual or peak, or edits any curated corpus document or the default kit (the fingerprint covers their rendered content), re-captures this fixture in its own change and names the new sha here; #725 moved perceptual and peak at U2/U3 and re-captured; T-0040 (ramp@2, ADR-036) moved them and re-captured; the next plan that moves them re-captures",
+ "capturedAt": "13b96e52bda05ffb98dd9ea3908acd73fdbe9716",
  "corpus": "3780 corpus + 16 default kit",
- "perceptual": "22a43e80320a8c95",
- "peak": "5f0eabbbe9b3c154"
+ "perceptual": "079e86374a2675dd",
+ "peak": "0328c2527f34d8b8"
 }
