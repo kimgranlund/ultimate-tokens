@@ -21,7 +21,7 @@
 //   hctToRgb(hue, chroma, tone) -> { rgb:[r,g,b] (0-255 ints), inGamut, lstar }
 //   maxChromaInGamut(hue, tone) -> number   peakC(hue) -> { c, tone }
 //   oklchToCam16Hue(h)          -> CAM16 hue (degrees)
-import { hctToRgb, hctToOklch, maxChromaInGamut, peakC, oklchToCam16Hue, lstarFromRgb, cam16FromRgb } from "./hct.js";
+import { hctToRgb, hctToOklch, maxChromaInGamut, peakC, oklchToCam16Hue, lstarFromRgb, cam16FromRgb, boundedCache } from "./hct.js";
 import { okhslToRgb, okhslToRgbFloat, rgbToOkhsl, rgbToOklchHue, rgbToOklabChroma } from "./okhsl.js";
 
 // ── Stop sets ────────────────────────────────────────────────────────────────
@@ -813,7 +813,27 @@ export function solveSForChroma(hue, l, chroma) {
 // (measured on a near-grey yellow anchor: C 5.7, 13.8, 6.7 at successive steps); the hue is averaged
 // between steps and the loop stops once the hue settles under a degree. Achromatic renders (C at or
 // under 1) read the OKLCH hue's CAM16 image at `frac` of its peak.
+// ── The band memos (ramp@2, T-0040, ADR-036) ─────────────────────────────────────────────────────
+// Exact-key `boundedCache` memos on the band rule's three searches (solveSForFraction, bandStopOkhsl,
+// snapBandPixel), each capped at BAND_MEMO_CAP. #686: the key is the exact floats, never a rounded
+// bucket, so no first caller decides a later caller's value (docs/references/knowledge-01-color-engine.md).
+// An unedited palette re-renders its band stops and blend targets from the memo, so an edit pays the
+// searches once, for the edited palette (measured: the default kit's edit render 7.2x ramp@1 without,
+// see the T-0040 board for the ratio with). A hit returns a fresh copy of any cached array, so no caller
+// can mutate the cache. Not a paletteStops memo: its records are mutable objects that dampStops, derive
+// and the role chain read and write (#686's original defect). One kit is 16 palettes x 6 band stops x 3
+// tone modes x 2 hue spaces, 576 band stops; the cap holds several kits' worth.
+const BAND_MEMO_CAP = 4096;
+const _sffMemo = boundedCache(BAND_MEMO_CAP), _bandMemo = boundedCache(BAND_MEMO_CAP), _snapMemo = boundedCache(BAND_MEMO_CAP);
 function solveSForFraction(hue, l, tone, frac) {
+  const key = hue + "|" + l + "|" + tone + "|" + frac;
+  const hit = _sffMemo.get(key);
+  if (hit !== undefined) return hit;
+  const s = solveSForFractionUncached(hue, l, tone, frac);
+  _sffMemo.set(key, s);
+  return s;
+}
+function solveSForFractionUncached(hue, l, tone, frac) {
   let camHue = oklchToCam16Hue(hue, Math.min(1, Math.max(0, frac)));
   let s = 0;
   for (let i = 0; i < 6; i++) {
@@ -830,6 +850,12 @@ function solveSForFraction(hue, l, tone, frac) {
 // l solved for the shared L* (solveLForTone) and s for the tint (solveSForFraction), each twice since
 // each solve moves the other a little. `camHue` is the CAM16 hue the render reads (null while achromatic).
 function bandStopOkhsl(hue, tone, frac) {
+  const key = hue + "|" + tone + "|" + frac;
+  let v = _bandMemo.get(key);
+  if (v === undefined) { v = bandStopOkhslUncached(hue, tone, frac); _bandMemo.set(key, v); }
+  return { ...v, rgb: v.rgb.slice() };
+}
+function bandStopOkhslUncached(hue, tone, frac) {
   if (tone >= 100) return { s: 0, l: 1, rgb: [255, 255, 255], camHue: null };
   if (tone <= 0) return { s: 0, l: 0, rgb: [0, 0, 0], camHue: null };
   let l = okhslLAt(tone), s = 0;
@@ -863,6 +889,12 @@ function bandStopOkhsl(hue, tone, frac) {
 // is nearest `tone`, so the band never rises over its neighbour; none under it either: the render.
 const SNAP_HUE_WEIGHT = 0.5;
 function snapBandPixel(rgb, hue, tone, fraction, maxTone = Infinity) {
+  const key = rgb.join(",") + "|" + hue + "|" + tone + "|" + fraction + "|" + maxTone;
+  let v = _snapMemo.get(key);
+  if (v === undefined) { v = snapBandPixelUncached(rgb, hue, tone, fraction, maxTone); _snapMemo.set(key, v); }
+  return v.slice();
+}
+function snapBandPixelUncached(rgb, hue, tone, fraction, maxTone) {
   const TOL = 0.45, RADIUS = 3, HUE_TOL = 12;
   const [r0, g0, b0] = rgb;
   let best = null, bestScore = Infinity, bestDl = Infinity;
