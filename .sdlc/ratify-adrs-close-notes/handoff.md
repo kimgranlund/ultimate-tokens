@@ -2,7 +2,7 @@
 id: T-0046
 title: "Ratify ADR-035 and ADR-036 (user ruling 2026-10-09) and close the two resolved PR #813 notes"
 type: chore           # feature | bug | chore | spike | idea
-status: ready        # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: done        # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: L2             # L1 | L2 | L3 | L4 (L5 reserved)
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -21,3 +21,7 @@ The user ruled on 2026-10-09 to ratify ADR-035 and ADR-036 and to close two reso
 - `grep -c "DECIDED 2026-10-09" docs/references/decision-records.md` prints at least 2 and the ADR-035 and ADR-036 Status lines no longer say PROPOSED: `! awk 'NR>=1357 && NR<=1480 && /\*\*Status/' docs/references/decision-records.md | grep -q PROPOSED`
 - `grep -q "resolved" .sdlc/notes.md` and the PR #813 pixel-review note is gone: `! grep -q "two PR #813 pixel-review items stay open" .sdlc/notes.md`
 - `node test/repo/em-dash.mjs` and `node test/repo/citations.mjs` pass, and `npm test` passes.
+
+## Closed
+
+2026-10-09: ADR-035, ADR-036 and ADR-037 ratified by the user (2026-10-09 ruling) and the resolved PR #813 notes closed; verified by npm test and the em-dash and citation gates.
