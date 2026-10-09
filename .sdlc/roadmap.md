@@ -43,6 +43,3 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 | T-0037 | [radix-role-tooltips](radix-role-tooltips/handoff.md) | Radix colors: hover tooltip with each step's role and intent | feature | L2 | P2 | none | 🔵 ready |
 | T-0038 | [peer-luminosity](peer-luminosity/handoff.md) | Brightest steps do not share luminosity across peer palettes (diagnose first) | spike | L2 | P2 | none | 🟢 done |
 | T-0039 | [peer-luminosity-diagnose](peer-luminosity-diagnose/handoff.md) | Brightest steps do not share luminosity across peer palettes (diagnose first) | spike | L2 | P2 | none | 🔵 ready |
-| T-0040 | [match-peer-lightness](match-peer-lightness/handoff.md) | Opt-in match-peer-lightness mode: anchored palettes share lightness per stop across peers | feature | L4 | P2 | none | 🔵 ready |
-| T-0041 | [docs-planning-to-specs](docs-planning-to-specs/handoff.md) | Move ui-plan.md and decomposition.md from docs/planning to docs/specs (T-0034 verifier ruling) | chore | L1 | P2 | none | 🔵 ready |
-| T-0042 | [docs-leftovers](docs-leftovers/handoff.md) | Docs and copy leftovers from T-0033 and T-0034 (ADR cites, size-ramp copy, store-copy link, notes) | chore | L1 | P2 | none | 🔵 ready |
