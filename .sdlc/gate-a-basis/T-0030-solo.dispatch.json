@@ -1,0 +1,19 @@
+{
+  "subagent_type": "sdlc-lite:solo-L2",
+  "name": "T-0030-solo",
+  "description": "solo L2: T-0030",
+  "model": "sonnet",
+  "effort": "xhigh",
+  "prompt": "Handoff: .sdlc/gate-a-basis/handoff.md\nBrief: deliver ticket .sdlc/gate-a-basis/handoff.md end to end in this session as the solo agent. Read the ticket and the files it names, make the smallest change that meets its done criterion, run every check command it names and rerun them all after a fix, and report files changed, each check with its outcome, and anything still open. For a ticket of level L2 or L3 write the handoff's ## Acceptance criteria if it has none, end with your report, and say `verify: needed`: the parent runs the one batched independent verifier. No person is present: never ask the user and never use AskUserQuestion. You work on your own worktree branch: commit early and often, one `WIP T-0030` commit after each green check and a final commit `T-0030: Chroma-envelope Gate A: record the OKHSL basis so rule 2 covers every uncapped stop (#807 follow-up)` when every check is green. Never push, open a PR, or publish: fanout.py land merges your branch, runs the gates, and closes the ticket.",
+  "run_in_background": true,
+  "isolation": "worktree",
+  "ticket": "T-0030",
+  "tier": "L2",
+  "branch": "worktree-T-0030-solo",
+  "worktree": ".claude/worktrees/T-0030-solo",
+  "handoff": ".sdlc/gate-a-basis/handoff.md",
+  "verifier": "/Library/Developer/CommandLineTools/usr/bin/python3 /Users/kimgranlund/.claude/plugins/cache/sdlc-lite/sdlc-lite/0.21.3/scripts/dispatch.py prepare --solo-model sonnet verifier L2 .claude/worktrees/T-0030-solo/.sdlc/gate-a-basis/handoff.md",
+  "attempt_id": "e2ea74a1b1f14428890a87a7ba428ff2",
+  "role": "solo",
+  "level": "L2"
+}
