@@ -37,6 +37,7 @@ const MODS = [
   ...CATEGORY_FILES.filter((f) => f !== "index.js").map((f) => [categoryKey(f), `${CATEGORY_DIR}/${f}`]),
   ["categoryIndex", `${CATEGORY_DIR}/index.js`],
   ["zip", "src/ui/zip.mjs"],
+  ["tipPosition", "src/ui/tip-position.mjs"], // T-0043: pure rect math for the Radix step tooltip, imported by sections/color.js
   ["figmaMigrations", "figma/binder/migrations.mjs"],
   ["modeApplyPlan", "figma/binder/mode-apply-plan.mjs"],
   ["stylePlan", "figma/binder/style-plan.mjs"],
@@ -61,7 +62,7 @@ const MODS = [
   ["app", "src/ui/app.js"],
 ];
 const KEY = { "hct.js": "hct", "okhsl.js": "okhsl", "semantic.js": "semantic", "tonal.js": "tonal", "derive.mjs": "derive", "font-fallbacks.mjs": "fontFallbacks", "type.mjs": "type", "geometry.mjs": "geometry", "flags.js": "flags", "persist.js": "persist",
-  "ds-gates.js": "dsGates", "exports.js": "exports", "ds-export.js": "dsExport", "figma-plugin-assets.js": "figmaPlugin", "mcp-assets.js": "mcpAssets", "describe-mcp-assets.js": "describeMcpAssets", "type-fonts.js": "typeFonts", "zip.mjs": "zip", "mode-apply-plan.mjs": "modeApplyPlan", "migrations.mjs": "figmaMigrations", "live-diff.mjs": "liveDiff", "collections.js": "collections", "style-plan.mjs": "stylePlan", "icon-systems.mjs": "iconSystems", "motion.mjs": "motion", "icons.js": "icons", "data-hues.mjs": "dataHues", "prime.mjs": "prime", "resolve.mjs": "resolve", "controls.mjs": "controls", "layers.mjs": "layers", "layer-pins.mjs": "layerPins", "model.mjs": "model",
+  "ds-gates.js": "dsGates", "exports.js": "exports", "ds-export.js": "dsExport", "figma-plugin-assets.js": "figmaPlugin", "mcp-assets.js": "mcpAssets", "describe-mcp-assets.js": "describeMcpAssets", "type-fonts.js": "typeFonts", "zip.mjs": "zip", "tip-position.mjs": "tipPosition", "mode-apply-plan.mjs": "modeApplyPlan", "migrations.mjs": "figmaMigrations", "live-diff.mjs": "liveDiff", "collections.js": "collections", "style-plan.mjs": "stylePlan", "icon-systems.mjs": "iconSystems", "motion.mjs": "motion", "icons.js": "icons", "data-hues.mjs": "dataHues", "prime.mjs": "prime", "resolve.mjs": "resolve", "controls.mjs": "controls", "layers.mjs": "layers", "layer-pins.mjs": "layerPins", "model.mjs": "model",
   "app-helpers.mjs": "appHelpers", "core.mjs": "chartsCore", "render.mjs": "chartsRender", "color.js": "colorSection", "typography.js": "typeSection", "geometry.js": "geomSection",
   "drawer.js": "drawerMixin", "apply-gate.js": "applyGateMixin", "settings.js": "settingsMixin",
   ...Object.fromEntries(CATEGORY_FILES.map((f) => [f, categoryKey(f)])) };

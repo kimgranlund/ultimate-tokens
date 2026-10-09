@@ -758,16 +758,20 @@ ultimate-tokens.reordering, ultimate-tokens.reordering * { cursor: grabbing !imp
 .radix-step:first-child { border-radius: 6px 0 0 6px; }
 .radix-step:last-child { border-radius: 0 6px 6px 0; }
 .radix-step:hover, .radix-step:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 2; }
-/* the step tooltip (T-0037): `Step N: <role>` + one line of intent, read from the data-tip attribute (set from
-   RADIX_STEP_GUIDE). Shown on hover AND keyboard focus (the steps are tabindex=0), never hover-only; a CSS
-   pseudo-element, not a title, because a title does not show on focus. */
-.radix-step::after {
-  content: attr(data-tip); display: none; position: absolute; top: calc(100% + 6px); left: 0; z-index: 5;
-  inline-size: max-content; max-inline-size: 220px; padding: 6px 8px; border-radius: var(--r-sm);
-  background: var(--ink); color: var(--bg); box-shadow: var(--shadow-lg);
-  font-size: 12px; line-height: 1.4; text-align: left; white-space: pre-line; pointer-events: none;
+/* the step tooltip (T-0037, moved out of the scene in T-0043): `Step N: <role>` + one line of intent, read from the
+   hovered or focused swatch's data-tip (set from RADIX_STEP_GUIDE). ONE shared element, a manual popover appended to
+   the app root, so the canvas clip and the scene zoom never touch it; app.js places it from the swatch's rect with
+   tip-position.mjs. Shown on hover AND keyboard focus (the steps are tabindex=0), never hover-only. The text is
+   upright (the swatch is an <i>; nothing here inherits from it) and sized from the chip text role. `.open` is the
+   source of truth, so a host without the Popover API still shows it as a fixed box. */
+.radix-tip {
+  position: fixed; inset: auto; margin: 0; display: none; z-index: 5;
+  inline-size: max-content; max-inline-size: min(220px, calc(100vw - 16px)); box-sizing: border-box;
+  padding: var(--sh-part-inset) var(--sh-control-inset); border: 0; border-radius: var(--r-sm);
+  background: var(--ink); color: var(--bg); box-shadow: var(--shadow-lg); overflow: visible;
+  font-family: inherit; font-style: normal; font-size: var(--sh-chip-text); line-height: 1.4; text-align: left; white-space: pre-line; pointer-events: none;
 }
-.radix-step:hover::after, .radix-step:focus-visible::after { display: block; }
+.radix-tip.open { display: block; }
 .radix-collision .radix-badge { opacity: .85; }
 .radix-badge { font-size: 12px; color: var(--ink-dim); }
 .radix-empty { color: var(--ink-dim); padding: 40px 0; text-align: center; }
@@ -12249,6 +12253,43 @@ function zipStore(files, { date = new Date() } = {}) {
 
 return { crc32, zipStore };
 })();
+__M.tipPosition = (function(){
+// tip-position.mjs, the rect math for the one shared step tooltip (T-0043). Pure and DOM-free: callers pass
+// plain rects, so the flip rules are unit-tested without a browser.
+//
+// A tooltip opens below its anchor, left edges aligned. Near the right edge of the window it shifts left until
+// it fits; near the bottom edge it flips above the anchor (when that side has room, else it takes the roomier
+// side and clamps). It never leaves the window by more than the margin, whatever the anchor's position.
+
+/**
+ * @param {{left:number,top:number,right:number,bottom:number}} anchor  the swatch's bounding rect, in viewport px
+ * @param {{width:number,height:number}} tip                              the tooltip's own size
+ * @param {{width:number,height:number}} view                             the window (viewport) size
+ * @param {{gap?:number,margin?:number}} [opts]                           gap to the anchor; margin to the window edge
+ * @returns {{left:number,top:number,placement:"below"|"above"}}
+ */
+function placeTip(anchor, tip, view, { gap = 6, margin = 8 } = {}) {
+  const maxLeft = Math.max(margin, view.width - margin - tip.width);
+  const left = Math.min(Math.max(anchor.left, margin), maxLeft);
+
+  const belowTop = anchor.bottom + gap;
+  const aboveTop = anchor.top - gap - tip.height;
+  const maxTop = Math.max(margin, view.height - margin - tip.height);
+  const fitsBelow = belowTop <= maxTop;
+  const fitsAbove = aboveTop >= margin;
+
+  if (fitsBelow) return { left, top: belowTop, placement: "below" };
+  if (fitsAbove) return { left, top: aboveTop, placement: "above" };
+  // neither side fits (a tiny window or a tall tip): take the side with more room and clamp into the window
+  const roomBelow = view.height - anchor.bottom;
+  const roomAbove = anchor.top;
+  const below = roomBelow >= roomAbove;
+  const top = Math.min(Math.max(below ? belowTop : aboveTop, margin), maxTop);
+  return { left, top, placement: below ? "below" : "above" };
+}
+
+return { placeTip };
+})();
 __M.figmaMigrations = (function(){
 // migrations.mjs, the ACTIVE rename/retire migration maps (TKT-0012 capability). TKT-0013 carries
 // the ADR-016 kebab wave below. One module, imported by the app (float plans, color apply message,
@@ -15592,6 +15633,7 @@ function renderChart(spec) {
 return { renderChart };
 })();
 __M.colorSection = (function(){
+const { placeTip } = __M.tipPosition;
 const { DEFAULT_CONTROLS, PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hasDataPalettes, hexToOklch, mintDataPalettes, nextPaletteName, paletteGroup, paletteGroupLabel, paletteNameClash, projectView, RADIX_STEP_GUIDE, radixCollisionBadge, radixExportKey, radixKeyCollision, rederiveDataHues, seedFromKeyColor, slug } = __M.model;
 const { RELATIONSHIPS, deriveNeutral, deriveRelative } = __M.derive;
 const { chromaEnvelope, envelopePresetOf } = __M.tonal;
@@ -16634,8 +16676,9 @@ class ColorSectionImpl {
         const leaf = group[String(step)];
         const val = leaf && leaf.value ? leaf.value : { base: "transparent", _dark: "transparent" };
         const paint = scheme === "dark" ? val._dark : val.base;
-        // the hover/focus tooltip (T-0037): `Step N: <role>` + the one-line intent from RADIX_STEP_GUIDE, drawn by the
-        // .radix-step::after rule from data-tip; tabindex=0 so keyboard focus shows it too, aria-label so a screen reader hears it
+        // the hover/focus tooltip (T-0037): `Step N: <role>` + the one-line intent from RADIX_STEP_GUIDE, held in data-tip
+        // and shown by ONE shared .radix-tip outside the zoomed scene (T-0043, _showRadixTip); tabindex=0 so keyboard focus
+        // shows it too, aria-label so a screen reader hears it
         const guide = RADIX_STEP_GUIDE[step - 1];
         steps.push(h("i", { class: "radix-step", style: `background:${paint}`, tabindex: "0", role: "img", "data-tip": `Step ${step}: ${guide.role}\n${guide.intent}`, "aria-label": `${p.name} step ${step}: ${guide.role}. ${guide.intent}` }));
       }
@@ -16658,7 +16701,70 @@ class ColorSectionImpl {
         collision ? h("span", { class: "radix-badge" }, radixCollisionBadge(key)) : null,
       );
     });
-    return h("div", { class: "radix-scene" }, ...rows);
+    const scene = h("div", { class: "radix-scene" }, ...rows);
+    // ONE delegated set of handlers for all 384 swatches (T-0043): the tooltip is a single element outside the scene,
+    // so it is not clipped by .canvas-area, not scaled by the zoom, and a swatch only has to say "show me".
+    const swatchOf = (t) => { for (let n = t; n && n !== scene; n = n.parentNode) if (n.classList && n.classList.contains("radix-step")) return n; return null; };
+    scene.addEventListener("mouseover", (e) => { const s = swatchOf(e.target); if (s) this._showRadixTip(s); });
+    scene.addEventListener("mouseout", (e) => { if (swatchOf(e.target) && !swatchOf(e.relatedTarget)) this._hideRadixTip(); }); // moving onto a neighbour just re-points the tip
+    scene.addEventListener("focusin", (e) => { const s = swatchOf(e.target); if (s) this._showRadixTip(s); });
+    scene.addEventListener("focusout", (e) => { if (swatchOf(e.target) && !swatchOf(e.relatedTarget)) this._hideRadixTip(); });
+    return scene;
+  }
+
+
+  // _radixTipEl, the one shared step tooltip, created on first use and kept for the life of the app: a native
+  // manual popover (top layer, so no ancestor clips or scales it) appended to the app root after each render
+  // (render() rebuilds the subtree and drops it). A host without the Popover API shows it as a plain
+  // position:fixed box via the `.open` class; the class is the source of truth for both.
+  _radixTipEl() {
+    if (!this._radixTip) {
+      const tip = h("div", { class: "radix-tip", id: "radix-tip", role: "tooltip" });
+      tip.setAttribute("popover", "manual");
+      this._radixTip = tip;
+    }
+    return this._radixTip;
+  }
+
+
+  // _showRadixTip(anchor), fill the tooltip from the swatch's data-tip, measure it, and place it from the swatch's
+  // bounding rect with placeTip (below by default; above near the bottom edge; shifted left near the right edge).
+  _showRadixTip(anchor) {
+    const text = anchor.getAttribute("data-tip");
+    if (!text) return;
+    const tip = this._radixTipEl();
+    if (!Array.from(this.children).includes(tip)) this.append(tip); // render() drops it with the rest of the subtree
+    if (this._radixTipFor && this._radixTipFor !== anchor) this._radixTipFor.removeAttribute("aria-describedby");
+    tip.textContent = text;
+    tip.classList.add("open");
+    try { if (typeof tip.showPopover === "function" && !tip.matches(":popover-open")) tip.showPopover(); } catch { /* not attached yet */ }
+    tip.style.left = "0px"; tip.style.top = "0px"; // measure at a fixed origin, so a stale position cannot squeeze the box
+    const r = tip.getBoundingClientRect();
+    const root = document.documentElement;
+    const view = { width: root.clientWidth || window.innerWidth || 0, height: root.clientHeight || window.innerHeight || 0 };
+    const at = placeTip(anchor.getBoundingClientRect(), { width: r.width, height: r.height }, view);
+    tip.style.left = Math.round(at.left) + "px";
+    tip.style.top = Math.round(at.top) + "px";
+    tip.setAttribute("data-placement", at.placement);
+    anchor.setAttribute("aria-describedby", "radix-tip");
+    this._radixTipFor = anchor;
+  }
+
+
+  // _hideRadixTip, hide it (blur, mouse-out, Esc, a pan or zoom, a re-render). Safe to call when nothing shows.
+  _hideRadixTip() {
+    const tip = this._radixTip;
+    if (!tip || !tip.classList.contains("open")) return;
+    tip.classList.remove("open");
+    try { if (typeof tip.hidePopover === "function" && tip.matches(":popover-open")) tip.hidePopover(); } catch { /* already hidden */ }
+    if (this._radixTipFor) this._radixTipFor.removeAttribute("aria-describedby");
+    this._radixTipFor = null;
+  }
+
+
+  // _radixTipOpen, is the step tooltip showing?
+  _radixTipOpen() {
+    return !!this._radixTip && this._radixTip.classList.contains("open");
   }
 
 
@@ -21363,6 +21469,8 @@ class HctApp extends HTMLElement {
     this._dragSnap = null; // pending pre-drag snapshot (a slider drag = ONE step)
     this._dragTimer = null; // debounce timer that commits a settled drag
     this._activeDragCleanup = null; // set while a _bindRangeDrag pointer-drag is in flight, removes its window-level move/up/cancel listeners (disconnectedCallback safety net)
+    this._radixTip = null; // the one shared Radix step tooltip (T-0043), created on first hover/focus
+    this._radixTipFor = null; // the swatch it currently describes
     this.HISTORY_MAX = 100;
     setColorScheme(this.theme); // flip the chrome's light-dark() tokens to the initial theme
     this._installKeyboard(); // editor-scoped keyboard shortcuts (guarded vs text inputs)
@@ -21690,6 +21798,8 @@ class HctApp extends HTMLElement {
     // Esc with the canvas-header overflow menu open belongs to the menu: the browser closes the popover and
     // returns focus to its trigger. Deselecting here would re-render the whole subtree under it.
     if (e.key === "Escape" && this._toolsMenuOpen()) return;
+    // Esc with the Radix step tooltip showing dismisses just the tooltip (WCAG 1.4.13), not the selection.
+    if (e.key === "Escape" && this._radixTipOpen()) { this._hideRadixTip(); return; }
 
     switch (e.key) {
       case "ArrowUp":
@@ -21812,7 +21922,9 @@ class HctApp extends HTMLElement {
     // swap and put the user exactly back AFTER, so any fk-tagged input survives a
     // full render, not just the few with bespoke liveRefresh patches.
     const focus = this._captureFocus();
+    this._hideRadixTip(); // the swatch it points at is about to be replaced
     this.replaceChildren(this.view === "gallery" ? this.renderGallery() : this.renderEditor());
+    if (this._radixTip) this.append(this._radixTip); // the one shared step tooltip survives the rebuild (hidden)
     this.dataset.theme = this.theme;
     this.dataset.motion = this.motion; // styles.css gates transitions/animations on [data-motion]
     this._applyShellGeometry();
@@ -23069,6 +23181,7 @@ class HctApp extends HTMLElement {
       const { panX, panY, zoom } = this.viewport;
       scene.style.transform = `translate(-50%, -50%) translate(${panX}px, ${panY}px) scale(${zoom})`;
     }
+    this._hideRadixTip(); // a pan or zoom moves the swatch out from under its tooltip
     const pct = Math.round(this.viewport.zoom * 100) + "%";
     for (const r of this.querySelectorAll(".zoom-readout")) r.textContent = pct; // the inline tool and the overflow menu each carry one
     this.paintCanvasFooter();
