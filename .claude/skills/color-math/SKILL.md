@@ -38,10 +38,18 @@ of `paletteStops`, which hands `perceptual`/`peak` to `okhslStops`):
   evenly in OKHSL's perceptually-uniform `l`; chroma is a gamut-proportional OKHSL saturation; **in-gamut
   by OKHSL's construction.** Shaped by `lmin`/`lmax`/`damp`(+`dampCurve`/`dampAmp`/`dampBias`)/`vibrancy`/`cuspPull`.
 - **`even`** → the **CIELAB-L\* path** (`toneAt` + the `shape`/`skew`/`lift`/`relChroma`/`chromaFloor` math).
-  **`curve`, `skew`, `lift`, `relChroma`, `chromaFloor` apply to `even` mode ONLY.** Per-stop tone is the
+  **`curve`, `skew`, `lift`, `relChroma`, `chromaFloor` apply to `even` mode ONLY** (`ramp@2` exception:
+  `chromaFloor` is also the band tint in every mode, see below). Per-stop tone is the
   same L\* for every hue (tone-aligned); chroma is `% of the base-hue peak`, edge-damped, clamped to `maxc`.
 
-> ⚠️ A change to `toneAt`/`curve`/`chromaFloor`/`relChroma` affects **only `even`**. The default users see
+> ⚠️ `ramp@2` (T-0040, ADR-036; the live `tonal.js`, `ramp@1` frozen in `layers/ramp@1.mjs`) adds the band
+> rule in every mode: stops 050 to 100 and 900 to 950 sit on the shared ladder `sharedToneAt` with one tint,
+> `chromaFloor / 100` of the gamut ceiling (capped by a low-chroma anchor's own on perceptual and peak), and
+> are pixel-snapped last. `matchPeerLightness` (schema v11, `ramp@2` only) puts every stop on that ladder;
+> stop 500 then leaves the anchor pixel. Read knowledge-02 §9 before touching either.
+>
+> ⚠️ A change to `toneAt`/`curve`/`chromaFloor`/`relChroma` affects **only `even`** (and, on `ramp@2`,
+> `chromaFloor` moves every mode's band tint). The default users see
 > is `perceptual`/OKHSL. Read the `DEFAULT_CONTROLS` block in tonal.js (all comments) before editing,
 > it states which control feeds which path. The tonal verifier pins `toneMode:"even", chromaFloor:0`
 > (the `CTL` pin in `test/engine/tonal.mjs`) for the CIELAB gates and tests the OKHSL paths separately

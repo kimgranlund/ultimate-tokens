@@ -113,6 +113,7 @@ try {
   await evalJS(`(()=>{const up=${el}.querySelector('[data-fk="matchpeer:upgrade"]');if(up)up.click();})()`); await sleep(300);
   await evalJS(`${el}.querySelector('[data-fk="matchpeer:on"]').click()`); await sleep(500);
   ok(await evalJS(`${el}.doc.matchPeerLightness === true && ${el}.querySelector('[data-fk="matchpeer:on"]').classList.contains("on")`), "Match peer lightness switches On from the Global inspector");
+  await evalJS(`${el}.querySelector('[data-fk="matchpeer:on"]').scrollIntoView({ block: "center" })`); await sleep(200);
   const mplShot = await send("Page.captureScreenshot", { format: "png" });
   writeFileSync(resolve(OUT, "match-peer-lightness.png"), Buffer.from(mplShot.data, "base64"));
   console.log("  · screenshot → smoke-out/match-peer-lightness.png");
