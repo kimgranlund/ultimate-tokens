@@ -463,7 +463,7 @@ export function defaultDocument() {
     roleOverrides: {}, // per-doc semantic-mapping re-points (empty = canonical role table)
     type: { ...DEFAULT_TYPE }, // typography config (treatment + body base), see engine/type.mjs
     geometry: { ...DEFAULT_GEOMETRY }, // dimensional config (tier, scale, radius, spaceBase), see engine/geometry.mjs
-    // layers (#788, ADR-033): a new document pins every compute layer's latest version; a stored one
+    // layers (#788, ADR-034): a new document pins every compute layer's latest version; a stored one
     // keeps its own pins through hydrate (R100).
     layers: { ...LATEST },
   };
@@ -571,7 +571,7 @@ export function stateOf(doc) {
     // `baseChroma` is touched on the palette itself: engine/layers.mjs's compute resolves the ramp's
     // damper value (#785, #804: the palette's own Base chroma times the global k) AND the prime
     // system's k through engine/resolve.mjs's rampChromaOf/primeChromaOf, once, for projectView and
-    // every exporter alike, so the two paths can never resolve differently (Risk 0b, ADR-033).
+    // every exporter alike, so the two paths can never resolve differently (Risk 0b, ADR-034).
     palettes: resolvedPalettes(doc),
     roleOverrides: doc.roleOverrides ?? {}, // threaded to the exporters so re-points reach the output
     layers: docPins(doc), // the compute-layer pins (#788): compute runs them, every export stamps them
@@ -883,7 +883,7 @@ export function paletteKeyColors(doc) {
 // Reads compute(state) (the ramp, prime and role layers) + the exporters. The app renders
 // EVERYTHING on the right from this; nothing here is stored back on the doc.
 export function projectView(doc) {
-  // compute(state) (engine/layers.mjs, ADR-033) is the ONE evaluation of the colour layers: every
+  // compute(state) (engine/layers.mjs, ADR-034) is the ONE evaluation of the colour layers: every
   // palette's ramp chroma (its own Base chroma times the global k), its 25-stop ramp, its prime
   // swatches and its role chain (accent ref, on-color policy, per-doc overrides). This view and every
   // export below (derivedAll) read that same result, so the canvas and the exports cannot resolve a

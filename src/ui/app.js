@@ -1474,7 +1474,7 @@ class HctApp extends HTMLElement {
       [
         { id: "color", label: "Color", title: "Color: palettes, scrims & semantic roles" },
         { id: "typography", label: "Typography", title: "Typography: type scale, treatments & the full specimen" },
-        { id: "geometry", label: "Geometry", title: "Geometry: size ramp & dimensional tokens (preview)" },
+        { id: "geometry", label: "Geometry", title: "Geometry: the Maison ladder & dimensional tokens (preview)" },
       ],
       this.section,
       (id) => this.setSection(id),

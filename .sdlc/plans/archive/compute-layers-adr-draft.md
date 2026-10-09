@@ -60,4 +60,4 @@ Reading: the algorithms are already pure and mostly DOM-free; what is missing is
 - R100 (Q1): old versions stay runnable for docs pinned to them; every preset pins the latest.
 - R101 (Q2): exports stamp pins with one `EXPORT_SCHEMA_VERSION` bump, relative to the value when U4 lands (4 or 5; first to land takes 4).
 - R102 (Q3): the cam16 branch and `baseIntensity` go (section 3a says where each survives, if at all).
-- Approved and appended as ADR-028 in `decision-records.md`.
+- Approved and appended as ADR-034 in `decision-records.md`.
