@@ -49,3 +49,4 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 | T-0043 | [radix-tooltip-popover](radix-tooltip-popover/handoff.md) | Radix step tooltip: render outside the canvas scene (no clipping, no zoom scaling, upright text) | bug | L2 | P2 | none | 🟢 done |
 | T-0044 | [ui-standardization](ui-standardization/handoff.md) | UI standardization: shell type roles, container and control anatomy, glyph motion, product-sm default | feature | L4 | P2 | none | 🔵 ready |
 | T-0045 | [hue-slider-detaches-anchor](hue-slider-detaches-anchor/handoff.md) | Dragging a palette's Hue deletes its anchor, so the ramp jumps to the unanchored curve (stop 500 L* 73 vs 51) and looks washed out | bug | L2 | P2 | none | 🟢 done |
+| T-0046 | [ratify-adrs-close-notes](ratify-adrs-close-notes/handoff.md) | Ratify ADR-035 and ADR-036 (user ruling 2026-10-09) and close the two resolved PR #813 notes | chore | L2 | P2 | none | 🔵 ready |
