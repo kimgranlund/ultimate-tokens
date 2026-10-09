@@ -44,3 +44,6 @@ Depends on: step 7. Edits `src/ui/styles.css` (the `"step-8"` family and the con
 - (red) `test "$(grep -c '\["anatomy: ' test/repo/ui-polish.mjs)" -ge 5 && node test/repo/ui-polish.mjs`
 - (guard) `node test/repo/citations.mjs`
 - (guard) `test -z "$(git diff --name-only "$SDLC_BASE_SHA" -- src/ui/app.js src/ui/app-helpers.mjs src/ui/sections src/ui/overlays src/ui/icons.js test/ui test/smoke scripts .claude/skills)$(git ls-files --others --exclude-standard -- src/ui/sections src/ui/overlays test/ui test/smoke scripts)"`
+
+## Notes
+- step 6 verifier ruling: `.settings-nav-item.on` (styles.css ~:1393) now matches rest and hover ink, so selected shows only by background and looks like hover. Give it a distinct selected cue, a state-colour exception the role rules allow (accent ink or an inset marker), and keep the gate green.
