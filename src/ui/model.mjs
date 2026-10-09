@@ -454,6 +454,7 @@ export function defaultDocument() {
     primeChroma: 100,
     hueSpace: ENGINE_DEFAULT_CONTROLS.hueSpace,
     relChroma: ENGINE_DEFAULT_CONTROLS.relChroma,
+    matchPeerLightness: ENGINE_DEFAULT_CONTROLS.matchPeerLightness,
     chromaFloor: ENGINE_DEFAULT_CONTROLS.chromaFloor,
     toneMode: ENGINE_DEFAULT_CONTROLS.toneMode,
     vibrancy: ENGINE_DEFAULT_CONTROLS.vibrancy,
@@ -592,6 +593,7 @@ export function stateOf(doc) {
     primeChroma: c.primeChroma,
     hueSpace: c.hueSpace,
     relChroma: c.relChroma,
+    matchPeerLightness: c.matchPeerLightness, // read by ramp@2 only (T-0040, ADR-037)
     chromaFloor: c.chromaFloor,
     toneMode: c.toneMode,
     vibrancy: c.vibrancy,

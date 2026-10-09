@@ -10,7 +10,7 @@
 // LATEST, the version a new document pins for each shipped layer, in registry order.
 // test/engine/layer-pins.mjs checks it equals latestOf(REGISTRY) in layers.mjs, so a version bump
 // registers the new layer there and moves its number here, in the same change.
-export const LATEST = Object.freeze({ controls: 1, ramp: 1, prime: 1, roles: 1, type: 1, geometry: 1 });
+export const LATEST = Object.freeze({ controls: 1, ramp: 2, prime: 1, roles: 1, type: 1, geometry: 1 });
 
 // pinsOf(stored, latest), one pin per id of `latest`, read off a stored `layers` map: a missing or
 // non-numeric pin is version 1 (the clamp for a malformed pin; a document saved before pins is

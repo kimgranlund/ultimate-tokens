@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // report-compute-neutral.mjs, the byte-neutrality report for the compute-layers refactor (#788, ADR-034).
 //
-//   node scripts/report-compute-neutral.mjs --base <rev> [--only <category>|default-kit] [--perturb] [--migrate]
+//   node scripts/report-compute-neutral.mjs --base <rev> [--only <category>|default-kit] [--perturb] [--migrate] [--pin <layer>=<version>]...
 //
 // Why: report-preset-fidelity.mjs --identity-control renders each palette through `rampChromaOf` and
 // `paletteStops` alone, so it never reaches compute(), projectView() or derivedAll() and cannot see a
@@ -37,6 +37,13 @@
 // and this tree's `hydrate` of that document stamped `schemaVersion: 9`, a saved v9 kit, on the head
 // side. It prints `migrate: <n> subjects hydrated by head`, n counting the head subjects whose hydrate
 // carried a `layers` map; fewer than every subject fails the run.
+//
+// `--pin <layer>=<version>` (repeatable, T-0040): once the subjects are hydrated, each subject's document,
+// and its head-side document under --migrate, renders with that layer pinned: `{ ...doc, layers: {
+// ...doc.layers, [layer]: version } }`. Why: a stored kit keeps the pins it was saved with (ADR-034), and
+// the base `defaultDocument()` already pins the latest `ramp` once a newer ramp is registered, so
+// without a pin both trees render the default kit at the live ramp; `--pin ramp=1` reads the R100
+// neutrality of a `ramp@1` kit. A value that is not a word, `=`, and a positive integer is a usage error.
 //
 // Output: `subjects <n>`, the `normalized` lines, one `<surface>: <d> of <t> cells differ` line per
 // surface (with up to three witnesses), and last `<n> differing cells`. Exit 0 only at 0, 1 on any difference or a render that
@@ -86,17 +93,19 @@ if (!isMainThread) {
 async function main() {
   const HERE = dirname(fileURLToPath(import.meta.url));
   const REPO_ROOT = pathJoin(HERE, "..");
-  const USAGE = "usage: node scripts/report-compute-neutral.mjs --base <rev> [--only <category>|default-kit] [--perturb] [--migrate]";
+  const USAGE = "usage: node scripts/report-compute-neutral.mjs --base <rev> [--only <category>|default-kit] [--perturb] [--migrate] [--pin <layer>=<version>]...";
   const args = process.argv.slice(2);
-  const known = new Set(["--base", "--only", "--perturb", "--migrate"]);
+  const known = new Set(["--base", "--only", "--perturb", "--migrate", "--pin"]);
   const baseIdx = args.indexOf("--base");
   const onlyIdx = args.indexOf("--only");
   const perturb = args.includes("--perturb");
   const migrate = args.includes("--migrate");
   const rev = baseIdx >= 0 ? args[baseIdx + 1] : null;
   const only = onlyIdx >= 0 ? args[onlyIdx + 1] : null;
-  const stray = args.filter((a, i) => a.startsWith("--") ? !known.has(a) : !(i > 0 && (args[i - 1] === "--base" || args[i - 1] === "--only")));
-  if (!rev || rev.startsWith("--") || (onlyIdx >= 0 && (!only || only.startsWith("--"))) || stray.length) {
+  const pinArgs = args.flatMap((a, i) => (a === "--pin" ? [args[i + 1]] : []));
+  const pins = pinArgs.map((v) => /^([A-Za-z]\w*)=([1-9]\d*)$/.exec(v ?? ""));
+  const stray = args.filter((a, i) => a.startsWith("--") ? !known.has(a) : !(i > 0 && (args[i - 1] === "--base" || args[i - 1] === "--only" || args[i - 1] === "--pin")));
+  if (!rev || rev.startsWith("--") || (onlyIdx >= 0 && (!only || only.startsWith("--"))) || stray.length || pins.some((m) => !m)) {
     console.error(USAGE);
     process.exit(2);
   }
@@ -148,7 +157,10 @@ async function main() {
     const { PRESETS } = await import(pathToFileURL(pathJoin(baseCatDir, `${slug}.js`)).href);
     for (const preset of PRESETS) subjects.push({ label: `${slug}/${preset.name}`, doc: basePersist.hydrate({ ...preset }), ...(migrate ? { head: headPersist.hydrate({ ...preset }) } : {}) });
   }
-  console.log(`report-compute-neutral --base ${rev}${only ? ` --only ${only}` : ""}${perturb ? " --perturb" : ""}${migrate ? " --migrate" : ""}`);
+  // --pin: applied after hydrate, to both sides of every subject (see the header)
+  const pinned = (doc) => pins.reduce((d, [, layer, version]) => ({ ...d, layers: { ...d.layers, [layer]: Number(version) } }), doc);
+  for (const s of subjects) { s.doc = pinned(s.doc); if (s.head) s.head = pinned(s.head); }
+  console.log(`report-compute-neutral --base ${rev}${only ? ` --only ${only}` : ""}${perturb ? " --perturb" : ""}${migrate ? " --migrate" : ""}${pinArgs.map((v) => ` --pin ${v}`).join("")}`);
   console.log(`subjects ${subjects.length}`);
   if (subjects.length === 0) { console.log("FAIL: vacuity, no subjects loaded"); process.exit(1); }
   if (migrate) {

@@ -252,17 +252,17 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
   // [family, light floor, dark floor], max(AA, own measured ratio floored to 1 decimal)
   const FLOORS = {
     perceptual: [
-      ["Neutral", 6.8, 4.73],   // measured 7.0635 / 4.7301 at T-0014 vibrancy 50 (dark re-pinned 4.8 to 4.73, ADR-030) - pending U4: dark was 4.9 at bf2aaf6
-      ["Primary", 7.1, 4.9],   // measured 7.10 / 4.98
+      ["Neutral", 6.8, 4.66],   // measured 7.0635 / 4.7301 at T-0014 vibrancy 50 (dark re-pinned 4.8 to 4.73, ADR-030); T-0040 re-pin (ramp@2 band rule, ADR-037), dark was 4.73: the remap onto the shared band edge moves the interior, dark accent #667496 reads 4.66 - pending U4: dark was 4.9 at bf2aaf6
+      ["Primary", 7.1, 4.83],   // measured 7.10 / 4.98; T-0040 re-pin (ramp@2 band rule, ADR-037): dark was 4.9
       ["Secondary", 5.2, 5.2],   // measured 5.24 / 5.22 - pending U4: dark was 6.1 at bf2aaf6
-      ["Tertiary", 7.8, 5.5],   // measured 8.0851 / 5.5148 at T-0014 vibrancy 50 (dark re-pinned 5.6 to 5.5, ADR-030)
+      ["Tertiary", 7.8, 5.45],   // measured 8.0851 / 5.5148 at T-0014 vibrancy 50 (dark re-pinned 5.6 to 5.5, ADR-030); T-0040 re-pin (ramp@2 band rule, ADR-037): dark was 5.5
       ["Info", 6.7, 4.6],   // measured 6.9864 / 4.6403 at T-0014 vibrancy 50 (dark re-pinned 4.7 to 4.6, ADR-030)
       ["Success", 7.1, 4.9],   // measured 7.3922 / 4.9392 at T-0014 vibrancy 50 (dark re-pinned 5.0 to 4.9, ADR-030)
       ["Warning", 9.1, 5.4],   // measured 9.4994 / 5.4853 at T-0014 vibrancy 50 (dark re-pinned 5.6 to 5.4, ADR-030)
-      ["Danger", 8.2, 5.8],   // measured 8.4655 / 5.8325 at T-0014 vibrancy 50 (dark re-pinned 5.9 to 5.8, ADR-030)
+      ["Danger", 8.2, 5.77],   // measured 8.4655 / 5.8325 at T-0014 vibrancy 50 (dark re-pinned 5.9 to 5.8, ADR-030); T-0040 re-pin (ramp@2 band rule, ADR-037): dark was 5.8
       ["Data 1", 6.0, 4.6],   // measured 6.00 / 4.68 - pending U4: dark was 5.5 at bf2aaf6
       ["Data 2", 6.3, 4.7],   // measured 6.33 / 4.75 - pending U4: dark was 4.9 at bf2aaf6
-      ["Data 3", 6.1, 4.6],   // measured 6.3087 / 4.6229 at T-0014 vibrancy 50 (dark re-pinned 4.8 to 4.6, ADR-030); 6.14 / 4.88 at #725 U3 revision 8 (was 6.10 / 4.92; dark re-pinned 4.9 to 4.8 per R77 Q7) - pending U4: dark was 5.1 at bf2aaf6
+      ["Data 3", 6.1, 4.54],   // measured 6.3087 / 4.6229 at T-0014 vibrancy 50 (dark re-pinned 4.8 to 4.6, ADR-030); 6.14 / 4.88 at #725 U3 revision 8 (was 6.10 / 4.92; dark re-pinned 4.9 to 4.8 per R77 Q7) - pending U4: dark was 5.1 at bf2aaf6; T-0040 re-pin (ramp@2 band rule, ADR-037): dark was 4.6
       ["Data 4", 5.6, 4.7],   // measured 5.67 / 4.80 - pending U4: dark was 5.5 at bf2aaf6
       ["Data 5", 5.4, 5.0],   // measured 5.45 / 5.06 - pending U4: dark was 5.8 at bf2aaf6
       ["Data 6", 5.1, 5.2],   // measured 5.16 / 5.28 - pending U4: dark was 6.2 at bf2aaf6
@@ -277,40 +277,40 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
       // light 5.5->5.6, Success light 7.6->7.7, Warning dark 5.2->5.3, Data 1 light 6.2->6.3, Data 3
       // light 6.4->6.5, Data 5 light 5.7->5.8 - each marked "re-pinned pass 5" below, in place of the
       // "pending U4" note the re-measurement supersedes for that one side.
-      ["Neutral", 7.2, 4.6],   // measured 7.2938 / 4.6509
-      ["Primary", 7.4, 4.7],   // measured 7.4983 / 4.7966 - re-pinned U4 integration (was 7.5/4.8): U3's damp/dampCurve retune, landed after this table was captured, moved it slightly
-      ["Secondary", 5.6, 5.5],   // measured 5.6078 / 5.5335 - light re-pinned pass 5 (was 5.5, floor(measured) is 5.6); dark pending U4: was 5.8 at bf2aaf6
-      ["Tertiary", 8.2, 5.2],   // measured 8.2782 / 5.2571
+      ["Neutral", 7.2, 4.58],   // measured 7.2938 / 4.6509; T-0040 re-pin (ramp@2 band rule, ADR-037): dark was 4.6
+      ["Primary", 7.4, 4.69],   // measured 7.4983 / 4.7966 - re-pinned U4 integration (was 7.5/4.8): U3's damp/dampCurve retune, landed after this table was captured, moved it slightly; T-0040 re-pin (ramp@2 band rule, ADR-037): dark was 4.7
+      ["Secondary", 5.58, 5.5],   // measured 5.6078 / 5.5335 - light re-pinned pass 5 (was 5.5, floor(measured) is 5.6); dark pending U4: was 5.8 at bf2aaf6; T-0040 re-pin (ramp@2 band rule, ADR-037): light was 5.6
+      ["Tertiary", 8.2, 5.17],   // measured 8.2782 / 5.2571; T-0040 re-pin (ramp@2 band rule, ADR-037): dark was 5.2
       ["Info", 7.2, 4.5],   // measured 7.2338 / 4.5768 - re-pinned U4 integration (was 7.2/4.6): U3's damp/dampCurve retune, landed after this table was captured, moved it slightly
-      ["Success", 7.7, 4.9],   // measured 7.7219 / 4.9081 - light re-pinned pass 5 (was 7.6, floor(measured) is 7.7); dark pending U4: light was 8.0 at bf2aaf6, dark was 5.1 at bf2aaf6
+      ["Success", 7.7, 4.86],   // measured 7.7219 / 4.9081 - light re-pinned pass 5 (was 7.6, floor(measured) is 7.7); dark pending U4: light was 8.0 at bf2aaf6, dark was 5.1 at bf2aaf6; T-0040 re-pin (ramp@2 band rule, ADR-037): dark was 4.9
       ["Warning", 9.8, 5.2],   // measured 9.8756 / 5.2819 - re-pinned #701 U1 (owner ruling R44, chroma-floor-U1.md): the even shoulder's neighbourhood term at the anchor stop moves stops 450/550, both DOWN here (was 9.9/5.3, floor(measured) is 9.8/5.2); AA (4.5) still clears by a wide margin
-      ["Danger", 8.6, 5.6],   // measured 8.6973 / 5.6465 - re-pinned U4 integration (was 8.7/5.6): U3's damp/dampCurve retune, landed after this table was captured, moved it slightly
-      ["Data 1", 6.3, 4.9],   // measured 6.3149 / 4.9736 - light re-pinned pass 5 (was 6.2, floor(measured) is 6.3); dark pending U4: was 5.8 at bf2aaf6
+      ["Danger", 8.6, 5.53],   // measured 8.6973 / 5.6465 - re-pinned U4 integration (was 8.7/5.6): U3's damp/dampCurve retune, landed after this table was captured, moved it slightly; T-0040 re-pin (ramp@2 band rule, ADR-037): dark was 5.6
+      ["Data 1", 6.28, 4.9],   // measured 6.3149 / 4.9736 - light re-pinned pass 5 (was 6.2, floor(measured) is 6.3); dark pending U4: was 5.8 at bf2aaf6; T-0040 re-pin (ramp@2 band rule, ADR-037): light was 6.3
       ["Data 2", 6.6, 4.6],   // measured 6.6726 / 4.6487 - pending U4: dark was 5.8 at bf2aaf6
       ["Data 3", 6.4, 4.8],   // measured 6.4562 / 4.8036 - light re-pinned #701 U1 (owner ruling R44, chroma-floor-U1.md): the even shoulder moves stop 450/550, DOWN here (was 6.5, floor(measured) is 6.4); dark pending U4: was 5.8 at bf2aaf6
-      ["Data 4", 6.0, 5.1],   // measured 6.0537 / 5.1407 - pending U4: dark was 5.8 at bf2aaf6
+      ["Data 4", 6.0, 5.07],   // measured 6.0537 / 5.1407 - pending U4: dark was 5.8 at bf2aaf6; T-0040 re-pin (ramp@2 band rule, ADR-037): dark was 5.1
       ["Data 5", 5.7, 5.3],   // measured 5.7748 / 5.3436 - light re-pinned #701 U1 (owner ruling R44, chroma-floor-U1.md): the even shoulder moves stop 450/550, DOWN here (was 5.8, floor(measured) is 5.7); dark pending U4: was 5.8 at bf2aaf6
       ["Data 6", 5.5, 5.5],   // measured 5.5494 / 5.5467 - pending U4: dark was 5.8 at bf2aaf6
       ["Data 7", 5.6, 5.4],   // measured 5.6846 / 5.4779 - pending U4: dark was 5.8 at bf2aaf6
       ["Data 8", 5.7, 5.3],   // measured 5.7955 / 5.3049 - light re-pinned #701 U1 (owner ruling R44, chroma-floor-U1.md): the even shoulder moves stop 450/550, DOWN here (was 5.8, floor(measured) is 5.7); dark pending U4: was 5.8 at bf2aaf6
     ],
     peak: [
-      ["Neutral", 7.2, 4.6],   // measured 7.21 / 4.66
-      ["Primary", 7.4, 4.7],   // measured 7.44 / 4.77
-      ["Secondary", 5.5, 5.6],   // measured 5.53 / 5.60 - pending U4: light was 11.5 at bf2aaf6, dark was 15.1 at bf2aaf6
-      ["Tertiary", 8.1, 5.3],   // measured 8.1825 / 5.3795 - light re-pinned #725 U2 (was 8.2, measured 8.20): moved by the U2 engine hunk (ec496bd0), floor(measured) is 8.1; pending U4: dark was 5.5 at bf2aaf6
+      ["Neutral", 7.17, 4.6],   // measured 7.21 / 4.66; T-0040 re-pin (ramp@2 band rule, ADR-037): light was 7.2
+      ["Primary", 7.29, 4.7],   // measured 7.44 / 4.77; T-0040 re-pin (ramp@2 band rule, ADR-037): light was 7.4
+      ["Secondary", 5.43, 5.50],   // measured 5.53 / 5.60 - pending U4: light was 11.5 at bf2aaf6, dark was 15.1 at bf2aaf6; T-0040 re-pin (ramp@2 band rule, ADR-037): light was 5.5, dark was 5.6
+      ["Tertiary", 8.03, 5.3],   // measured 8.1825 / 5.3795 - light re-pinned #725 U2 (was 8.2, measured 8.20): moved by the U2 engine hunk (ec496bd0), floor(measured) is 8.1; pending U4: dark was 5.5 at bf2aaf6; T-0040 re-pin (ramp@2 band rule, ADR-037): light was 8.1
       ["Info", 7.0, 4.5],   // measured 7.10 / 4.57 - pending U4: dark was 7.7 at bf2aaf6
       ["Success", 7.5, 4.8],   // measured 7.5994 / 4.8740 at #725 U3 revision 8 (was 7.60 / 4.88; light re-pinned 7.6 to 7.5 per R77 Q7) - pending U4: dark was 11.8 at bf2aaf6
-      ["Warning", 9.6, 5.2],   // measured 9.69 / 5.28 - pending U4: dark was 7.4 at bf2aaf6
-      ["Danger", 8.6, 5.6],   // measured 8.63 / 5.68
-      ["Data 1", 6.3, 4.9],   // measured 6.34 / 4.99 - pending U4: light was 10.0 at bf2aaf6, dark was 6.7 at bf2aaf6
-      ["Data 2", 6.6, 4.5],   // measured 6.63 / 4.55 - pending U4: dark was 5.5 at bf2aaf6
-      ["Data 3", 6.4, 4.7],   // measured 6.43 / 4.72 - pending U4: dark was 5.1 at bf2aaf6
-      ["Data 4", 5.9, 5.0],   // measured 5.98 / 5.09 - pending U4: light was 6.3 at bf2aaf6, dark was 8.7 at bf2aaf6
-      ["Data 5", 5.6, 5.3],   // measured 5.69 / 5.33 - pending U4: light was 12.8 at bf2aaf6, dark was 16.7 at bf2aaf6
+      ["Warning", 9.58, 5.2],   // measured 9.69 / 5.28 - pending U4: dark was 7.4 at bf2aaf6; T-0040 re-pin (ramp@2 band rule, ADR-037): light was 9.6
+      ["Danger", 8.47, 5.6],   // measured 8.63 / 5.68; T-0040 re-pin (ramp@2 band rule, ADR-037): light was 8.6
+      ["Data 1", 6.29, 4.9],   // measured 6.34 / 4.99 - pending U4: light was 10.0 at bf2aaf6, dark was 6.7 at bf2aaf6; T-0040 re-pin (ramp@2 band rule, ADR-037): light was 6.3
+      ["Data 2", 6.52, 4.5],   // measured 6.63 / 4.55 - pending U4: dark was 5.5 at bf2aaf6; T-0040 re-pin (ramp@2 band rule, ADR-037): light was 6.6
+      ["Data 3", 6.31, 4.64],   // measured 6.43 / 4.72 - pending U4: dark was 5.1 at bf2aaf6; T-0040 re-pin (ramp@2 band rule, ADR-037): light was 6.4, dark was 4.7
+      ["Data 4", 5.89, 5.0],   // measured 5.98 / 5.09 - pending U4: light was 6.3 at bf2aaf6, dark was 8.7 at bf2aaf6; T-0040 re-pin (ramp@2 band rule, ADR-037): light was 5.9
+      ["Data 5", 5.6, 5.23],   // measured 5.69 / 5.33 - pending U4: light was 12.8 at bf2aaf6, dark was 16.7 at bf2aaf6; T-0040 re-pin (ramp@2 band rule, ADR-037): dark was 5.3
       ["Data 6", 5.4, 5.5],   // measured 5.44 / 5.60 - pending U4: light was 11.6 at bf2aaf6, dark was 15.0 at bf2aaf6
-      ["Data 7", 5.5, 5.4],   // measured 5.58 / 5.48 - pending U4: light was 11.8 at bf2aaf6, dark was 15.5 at bf2aaf6
-      ["Data 8", 5.7, 5.3],   // measured 5.75 / 5.32 - pending U4: light was 6.3 at bf2aaf6, dark was 8.8 at bf2aaf6
+      ["Data 7", 5.49, 5.4],   // measured 5.58 / 5.48 - pending U4: light was 11.8 at bf2aaf6, dark was 15.5 at bf2aaf6; T-0040 re-pin (ramp@2 band rule, ADR-037): light was 5.5
+      ["Data 8", 5.66, 5.3],   // measured 5.75 / 5.32 - pending U4: light was 6.3 at bf2aaf6, dark was 8.8 at bf2aaf6; T-0040 re-pin (ramp@2 band rule, ADR-037): light was 5.7
     ],
   };
   let checked = 0;
@@ -366,28 +366,34 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
   };
   const PENDING_U4 = [
     // [mode, family, side, floor pinned at this commit]
+    // T-0040 (ramp@2 band rule, ADR-037): the remap onto the shared band edges moves the accents, perceptual
+    // Data 3 dark 4.6 -> 4.54; even Success dark 4.9 -> 4.86; even Data 4 dark 5.1 -> 5.07; peak Secondary
+    // light 5.5 -> 5.43; peak Secondary dark 5.6 -> 5.5; peak Data 1 light 6.3 -> 6.29; peak Data 3 dark 4.7
+    // -> 4.64; peak Data 4 light 5.9 -> 5.89; peak Data 5 dark 5.3 -> 5.23; peak Data 7 light 5.5 -> 5.49;
+    // peak Data 8 light 5.7 -> 5.66.
     // perceptual Neutral dark 4.8 -> 4.73 and Data 3 dark 4.8 -> 4.6 at T-0014 (vibrancy default 0 to 50, ADR-030).
-    ["perceptual", "Neutral", "dark", 4.73], ["perceptual", "Secondary", "dark", 5.2],
+    // perceptual Neutral dark 4.73 -> 4.66 at T-0040 (ramp@2 band rule, ADR-037).
+    ["perceptual", "Neutral", "dark", 4.66], ["perceptual", "Secondary", "dark", 5.2],
     ["perceptual", "Data 1", "dark", 4.6], ["perceptual", "Data 2", "dark", 4.7],
     // perceptual Data 3 dark 4.9 -> 4.8 at #725 U3 (R77 Q7, a declared cost of the retune: 4.9376 -> 4.8869).
-    ["perceptual", "Data 3", "dark", 4.6], ["perceptual", "Data 4", "dark", 4.7],
+    ["perceptual", "Data 3", "dark", 4.54], ["perceptual", "Data 4", "dark", 4.7],
     ["perceptual", "Data 5", "dark", 5.0], ["perceptual", "Data 6", "dark", 5.2],
     ["perceptual", "Data 7", "dark", 5.1], ["perceptual", "Data 8", "dark", 4.9],
     ["even", "Secondary", "dark", 5.5], ["even", "Success", "light", 7.6],
-    ["even", "Success", "dark", 4.9], ["even", "Data 1", "dark", 4.9],
+    ["even", "Success", "dark", 4.86], ["even", "Data 1", "dark", 4.9],
     ["even", "Data 2", "dark", 4.6], ["even", "Data 3", "dark", 4.8],
-    ["even", "Data 4", "dark", 5.1], ["even", "Data 5", "dark", 5.3],
+    ["even", "Data 4", "dark", 5.07], ["even", "Data 5", "dark", 5.3],
     ["even", "Data 6", "dark", 5.5], ["even", "Data 7", "dark", 5.4],
-    ["even", "Data 8", "dark", 5.3], ["peak", "Secondary", "light", 5.5],
-    ["peak", "Secondary", "dark", 5.6], ["peak", "Tertiary", "dark", 5.3],
+    ["even", "Data 8", "dark", 5.3], ["peak", "Secondary", "light", 5.43],
+    ["peak", "Secondary", "dark", 5.5], ["peak", "Tertiary", "dark", 5.3],
     ["peak", "Info", "dark", 4.5], ["peak", "Success", "dark", 4.8],
-    ["peak", "Warning", "dark", 5.2], ["peak", "Data 1", "light", 6.3],
+    ["peak", "Warning", "dark", 5.2], ["peak", "Data 1", "light", 6.29],
     ["peak", "Data 1", "dark", 4.9], ["peak", "Data 2", "dark", 4.5],
-    ["peak", "Data 3", "dark", 4.7], ["peak", "Data 4", "light", 5.9],
+    ["peak", "Data 3", "dark", 4.64], ["peak", "Data 4", "light", 5.89],
     ["peak", "Data 4", "dark", 5.0], ["peak", "Data 5", "light", 5.6],
-    ["peak", "Data 5", "dark", 5.3], ["peak", "Data 6", "light", 5.4],
-    ["peak", "Data 6", "dark", 5.5], ["peak", "Data 7", "light", 5.5],
-    ["peak", "Data 7", "dark", 5.4], ["peak", "Data 8", "light", 5.7],
+    ["peak", "Data 5", "dark", 5.23], ["peak", "Data 6", "light", 5.4],
+    ["peak", "Data 6", "dark", 5.5], ["peak", "Data 7", "light", 5.49],
+    ["peak", "Data 7", "dark", 5.4], ["peak", "Data 8", "light", 5.66],
     ["peak", "Data 8", "dark", 5.3],
   ];
   // checkFloors(floors, baseline, pending) -> violation strings. A cell below baseline that is not in
@@ -420,7 +426,7 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
     scratchUnlisted.perceptual.find((r) => r[0] === "Primary")[1] = FLOORS_BF2AAF6.perceptual["Primary"][0] - 0.5; // Primary/light is not in PENDING_U4
     if (checkFloors(scratchUnlisted, FLOORS_BF2AAF6, PENDING_U4).length === 0) FAIL("role-contrast", "Q-B negative control DID NOT bite: lowering an unlisted floor below its bf2aaf6 value passed checkFloors()");
     const scratchListed = JSON.parse(JSON.stringify(FLOORS));
-    scratchListed.perceptual.find((r) => r[0] === "Neutral")[2] = 4.0; // Neutral/dark IS in PENDING_U4, pinned at 4.73
+    scratchListed.perceptual.find((r) => r[0] === "Neutral")[2] = 4.0; // Neutral/dark IS in PENDING_U4, pinned at 4.66 (T-0040)
     if (checkFloors(scratchListed, FLOORS_BF2AAF6, PENDING_U4).length === 0) FAIL("role-contrast", "Q-B negative control DID NOT bite: eroding a PENDING_U4-listed floor further passed checkFloors()");
   }
   const floorViolations = checkFloors(FLOORS, FLOORS_BF2AAF6, PENDING_U4);

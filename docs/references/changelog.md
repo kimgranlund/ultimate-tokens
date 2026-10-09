@@ -3,6 +3,26 @@
 Entries 1.69 to 1.73 were written after 1.68, for changes that landed between 1.66 and 1.67; each
 carries its landing date.
 
+## 1.74 - 2026-10-09 - ramp@2 matches the lightest and darkest stops across palettes, and Match peer lightness matches every stop (T-0040)
+
+**The band rule (ADR-037).** New documents and presets render with `ramp@2`: stops 050 to 100 and 900 to
+950 of every palette sit on one shared L* ladder with one tint (`chromaFloor` percent of the gamut
+ceiling, capped by a low-chroma anchor's own on perceptual and peak, so grey anchors keep grey ends),
+pixel-snapped last, in every tone mode. On the default kit the L* spread at stop 100 falls from 7.46 to
+0.78 (perceptual) and the tint spread from 0.42 to 0.03; Radix steps 1 and 12 inherit it. The anchor
+stays verbatim at stop 500 inside the pivot window, which clamps five more corpus anchors (Istanbul
+(Eminönü), Saint-Malo, Wadi Rum, Carlsbad, Kea). `ramp@1` is frozen; a stored kit keeps rendering with it
+until the Global inspector's "Upgrade to latest" re-pins every layer.
+
+**Match peer lightness.** An opt-in Global inspector control (`matchPeerLightness`, schema 11): every
+stop lands on the shared ladder, so a stop number means one lightness across the kit (spread at most 0.89
+L*); stop 500 leaves the anchor pixel while its hue and chroma lead, and Skew, Cusp pull and Vibrancy hide.
+Chroma floor now shows in every tone mode on a `ramp@2` kit.
+
+**Declared cost.** A very dark or very light verbatim anchor compresses its interior next to the shared
+edge: 29 of 3,380 anchored corpus palettes on perceptual (41 peak, 6 even) repeat a display swatch, and
+the gates' cited lists grew (board: `docs/reports/2026-10-09-ramp2-extremes.md`).
+
 ## 1.73 - 2026-10-08 - container components compose by the half law, and shell controls read one set of cell roles (#818)
 
 **The half law (ADR-033).** Each geometry cell gains `partHeight = height - inset` and

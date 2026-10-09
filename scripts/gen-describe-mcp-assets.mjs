@@ -44,6 +44,7 @@ const FILES = [
   "src/engine/type.mjs",
   "src/engine/geometry.mjs",
   "src/engine/layer-pins.mjs",
+  "src/engine/layers/ramp@1.mjs",
   "src/engine/layers.mjs",
   "src/engine/exports.js",
   "src/engine/ds-export.js",

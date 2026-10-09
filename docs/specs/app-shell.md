@@ -128,13 +128,13 @@ anchor. "Interface" is the method's contract, not its body.
 | **LLD-C4** | Section switcher | `sectionSwitcher` :1476 / `setSection` :1496 | SPEC-R12 |
 | **LLD-C5** | Left pane (Analysis rail) | `renderLeftPane` :1727 | SPEC-R11, SPEC-R5, SPEC-R6 |
 | **LLD-C6** | Center (canvas) | `renderCenter` :1837 | SPEC-R11, SPEC-R2, SPEC-R3 |
-| **LLD-C6a** | Canvas header | `renderCanvasHeader` `sections/color.js:787` | SPEC-R11, SPEC-R7 |
-| **LLD-C6b** | Canvas area / scene | `renderCanvasArea` `sections/color.js:834` | SPEC-R10 (pannable canvas), SPEC-R2 |
+| **LLD-C6a** | Canvas header | `renderCanvasHeader` `sections/color.js:796` | SPEC-R11, SPEC-R7 |
+| **LLD-C6b** | Canvas area / scene | `renderCanvasArea` `sections/color.js:843` | SPEC-R10 (pannable canvas), SPEC-R2 |
 | **LLD-C6c** | Canvas footer | `renderCanvasFooter` :2081 / `paintCanvasFooter` :2079 | SPEC-R5 |
 | **LLD-C7** | Right pane (context inspector) | `renderRightPane` :2123 | SPEC-R11, SPEC-R3, SPEC-R4 |
 | **LLD-C8** | App-footer | `renderAppFooter` :2373 / `paintAppFooter` :2393 | SPEC-R6, SPEC-R1 |
 | **LLD-C9** | Pane-collapse toggles | `toggleLeftPane`/`toggleRightPane` :1509 / `paneToggle` :1519 | SPEC-R10 (density) |
-| **LLD-C10** | Overlays (drawer, dialogs, toast) | `renderDrawer` `overlays/drawer.js:33` / `renderSettings` `overlays/settings.js:496` / `renderNewPalette` `sections/color.js:470` / `renderApplyGate` `overlays/apply-gate.js:362` | SPEC-R8, SPEC-R2, SPEC-R1 |
+| **LLD-C10** | Overlays (drawer, dialogs, toast) | `renderDrawer` `overlays/drawer.js:33` / `renderSettings` `overlays/settings.js:496` / `renderNewPalette` `sections/color.js:479` / `renderApplyGate` `overlays/apply-gate.js:362` | SPEC-R8, SPEC-R2, SPEC-R1 |
 
 ### 2.1 Region responsibilities (the non-obvious contracts)
 
@@ -299,7 +299,7 @@ the toggle relocates (see §6).
 |------|-------|----------|
 | **No palette enabled / empty set** | LLD-C6, LLD-C8 | `projectView` yields an empty `view.palettes`; footer paints `0 palettes`; canvas renders an empty scene (no throw). Export of an all-disabled set yields tokens-only JSON with a `$note` (engine-side). |
 | **Selected index out of range** | LLD-C5, LLD-C7 | `selectedIndex()` + `view.palettes[idx]` guarded; name falls back to `""`, cards render `n/a` empties (`an-empty`). |
-| **No story for the set** | LLD-C7 | `view.story` is falsy → the Global inspector renders no Story section (`renderGlobalInspector`, `sections/color.js:2075`); nothing else depends on it. |
+| **No story for the set** | LLD-C7 | `view.story` is falsy → the Global inspector renders no Story section (`renderGlobalInspector`, `sections/color.js:2087`); nothing else depends on it. |
 | **Two scheme columns + live drag** | LLD-C6b, §4.2 | `liveRefresh` patches each `.compare-col` in place under its own `_inScheme`, so the columns, the scene and its pan/zoom transform survive the drag. |
 | **Render mid-open-drawer** | LLD-C10, §4.1 | Fresh closed `<dialog>` each render; the open drawer is re-`showModal()`'d post-mount so it survives. |
 | **Focus/caret during a drag** | LLD-C3, §4.2 | Partial `liveRefresh` never rebuilds the header or the active control; the doc-name `<input>` keeps focus + caret while typing (rename settles on `change`). |

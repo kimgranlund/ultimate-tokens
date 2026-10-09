@@ -13,7 +13,8 @@
 // documents, none is swatch-only. scripts/gen-categories.mjs (run by `npm test` through
 // `gen:categories`) turns each spec into src/ui/categories/<slug>.js `PRESETS`, and every preset
 // carries the whole document control surface (curve/damp/toneMode/accentRef/onColorMode/lmin/lmax/…
-// plus `palettes`), so `hydrate(preset)` is a real document and `derivedAll(doc)` is the production
+// plus `palettes`), so `presetDoc(preset)` (hydrate, pinned to the latest layers as the app opens a
+// preset) is a real document and `derivedAll(doc)` is the production
 // role ladder, the same call exportRadix makes (`const palettes = derivedAll(state)`,
 // src/engine/exports.js:1280; derivedAll itself at :371) and the same one `projectView(...).exports`
 // drives. 343 documents, 3780 palettes, 7560 accent/on-color cells per tone mode, 22680 across the
@@ -73,7 +74,7 @@
 // full sweep in CI is what actually covers the corpus.
 import { derivedAll, isDataPalette } from "../../src/engine/exports.js";
 import { contrastRatio } from "../../src/ui/model.mjs";
-import { hydrate, DOMAINS } from "../../src/ui/persist.js";
+import { presetDoc, DOMAINS } from "../../src/ui/persist.js";
 import { gateReport } from "../gate-report.mjs";
 import { pickVolume, SAMPLE_SEED } from "./lib/corpus-sample.mjs";
 
@@ -133,7 +134,7 @@ for (const cat of CATS) {
   }
   const g = cat === IDENTITY ? null : (gallery[cat] = { cells: 0, under: 0, worst: Infinity, worstAt: "", named: 0 });
   for (const preset of docs) {
-    const doc = hydrate(preset);
+    const doc = presetDoc(preset);
     docsMeasured++;
     const key = docKey(preset.name);
     if (cat === IDENTITY) {

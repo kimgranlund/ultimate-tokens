@@ -18,8 +18,9 @@
 //
 //   node test/engine/even-dips-gate.mjs [--full] [--floor-scale <k>]
 //
-// The negative control runs on every invocation: a data-URL copy of src/engine/tonal.js with
-// `evenChroma`'s floor restored to its pre-#701 gamut-relative form (chromaFloor% * maxc at every stop,
+// The negative control runs on every invocation: a data-URL copy of the frozen ramp@1 layer
+// (src/engine/layers/ramp@1.mjs, since T-0040: ramp@2's band blend absorbs these dips, see scaledEngine)
+// with `evenChroma`'s floor restored to its pre-#701 gamut-relative form (chromaFloor% * maxc at every stop,
 // `floorRef` dropped) and scaled 1.6x must produce more than 0 dips, or the script fails with
 // `negative control DID NOT bite`. `--floor-scale <k>` runs the MAIN sweep on that patched engine at
 // scale k instead (the verifier's by-hand control: `--floor-scale 1.6` prints a non-zero count and
@@ -52,7 +53,10 @@
 //       15.51 at 100 / 200 / 300), a floor that rose with the rotated hue's gamut ceiling, which
 //       `evenChroma`'s floorMaxc cap (the stop's ceiling at the unrotated hue) retires. -45 was already
 //       clean before the cap (its control cells do not dip), so the -45 cells are held by the cap's
-//       identity with the unrotated floor, and the bite proof is the -30 notch;
+//       identity with the unrotated floor, and the bite proof is the -30 notch. Since T-0040 ramp@2's band
+//       tint reads the same capped ceiling (`fm`, paletteStopsAnchored's chromaAt): read at the rotated hue
+//       it dipped at stop 100 under +/-60 (oklch Success +60: 10.43 / 6.86 / 12.30 at 075 / 100 / 125), so
+//       both controls below put the tint back on the rotated ceiling along with the floor;
 //   (b2) rendered path, random: RANDOM_PALETTES anchored palettes drawn from mulberry32(RANDOM_SEED) over
 //       the persisted control domain (randomPalette below, draw order fixed), the kit's curve, tension,
 //       lmin, lmax, damp, dampCurve, dampBias and vibrancy, both stop sets, stop 500 excluded. The chroma
@@ -67,10 +71,12 @@
 // (paletteStopsAnchored). Each control must print more dips than its line's bound or the script fails
 // `negative control DID NOT bite`; a patch target that is not in src/engine/tonal.js exactly once fails the
 // script too. (b1) has a second control, #784's: the engine with FLOOR_MAXC_TARGET's cap dropped (`fm` =
-// `mc`, the floor reading the stop's own rotated-hue ceiling), which must reproduce the notch on the
-// #774902 palette at hueShift -30 (oklch), with the pinned neighbours NOTCH_PIN (19 stops 150/200/250 =
-// 16.58/11.80/15.51, 25 stops 175/200/250 = 15.23/11.80/15.51) and 11.80 at stop 200, while the shipped
-// engine holds no dip there. Each control and line prints its own ms. `--floor-scale` skips the grid.
+// `mc`, the floor reading the stop's own rotated-hue ceiling), which must print dips on (b1)'s grid and,
+// on the frozen ramp@1 layer (T-0040: ramp@2's band rule closes the notch even uncapped), reproduce the
+// notch on the #774902 palette at hueShift -30 (oklch), with the pinned neighbours NOTCH_PIN (19 stops
+// 150/200/250 = 16.58/11.80/15.51, 25 stops 175/200/250 = 15.23/11.80/15.51) and 11.80 at stop 200, while
+// the shipped engine holds no dip there. Each control and line prints its own ms. `--floor-scale` skips
+// the grid.
 import { readFileSync } from "node:fs";
 import { hydrate } from "../../src/ui/persist.js";
 import { defaultDocument, rampChromaOf } from "../../src/ui/model.mjs";
@@ -90,7 +96,11 @@ const NOTCH_SHIFTS = [-26, -27, -28, -29, -30, -31, -32];
 // #784's pinned neighbours of the notch on the engine WITHOUT the floorMaxc cap (what the gate's control
 // prints): the kit's #774902 palette at hueShift -30, oklch, kit controls, dampAmp 0, toneMode even. 19
 // stops: 150 / 200 / 250; 25 stops: 175 / 200 / 250. Stop 200 sits more than 3 C under both neighbours.
+// Read on the frozen ramp@1 layer since T-0040 (ADR-037): ramp@2 without the cap reads 16.62 / 13.87 /
+// 17.83 (19 stops) and 13.64 / 13.87 / 17.83 (25 stops), no notch to pin, so the #784 notch is reproduced
+// where it occurred (src/engine/layers/ramp@1.mjs, never edited) and the pin cannot drift.
 const NOTCH_PIN = { 19: ["16.58", "11.80", "15.51"], 25: ["15.23", "11.80", "15.51"] };
+const RAMP_V1 = "../../src/engine/layers/ramp@1.mjs";
 const RANDOM_SEED = 766;
 const RANDOM_PALETTES = 1000;
 // (b2)'s bound: this block's dip count on the merge-base engine, 8428280e (floorref-hue U2 pass 3, read
@@ -107,22 +117,26 @@ const argScale = (() => {
   return k;
 })();
 
-// a data-URL copy of src/engine/tonal.js with `target` (which must occur exactly once) replaced
-async function patchedEngine(target, replacement, name) {
-  const src = readFileSync(new URL("../../src/engine/tonal.js", import.meta.url), "utf8");
+// a data-URL copy of `file` (src/engine/tonal.js, or the frozen ramp@1 layer for #784's notch pin) with
+// `target` (which must occur exactly once) replaced; its relative imports are resolved against `file`
+async function patchedEngine(target, replacement, name, file = "../../src/engine/tonal.js") {
+  const url = new URL(file, import.meta.url);
+  const src = readFileSync(url, "utf8");
   if (src.split(target).length !== 2) {
-    console.log(`FAIL: the patch target string was not found exactly once  -  the engine line moved, update ${name}`);
+    console.log(`FAIL: the patch target string was not found exactly once in ${file}  -  the engine line moved, update ${name}`);
     process.exit(1);
   }
   const patched = src
-    .replace('from "./hct.js"', `from "${new URL("../../src/engine/hct.js", import.meta.url).href}"`)
-    .replace('from "./okhsl.js"', `from "${new URL("../../src/engine/okhsl.js", import.meta.url).href}"`)
+    .replace(/from "(\.\.?\/[^"]+)"/g, (_, rel) => `from "${new URL(rel, url).href}"`)
     .replace(target, replacement);
   return import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
 }
 
-// the pre-#701 floor (floorRef dropped), scaled k
-const scaledEngine = (k) => patchedEngine(FLOOR_TARGET, `const floorC = Math.min((((chromaFloor ?? 0) * ${k}) / 100) * maxc, intended);`, "FLOOR_TARGET");
+// the pre-#701 floor (floorRef dropped), scaled k, on the frozen ramp@1 layer since T-0040 (ADR-037):
+// ramp@2 blends every stop but 500 toward the band tint (weight 0 at 500, 1 at the band edge), which
+// absorbs the scaled floor's gate-path dips (ramp@2 reads 0 at 1.6x, 2x, 2.5x and 3x; ramp@1's are all
+// at stop 400), so the control is read where the pre-#701 floor's dips occur
+const scaledEngine = (k) => patchedEngine(FLOOR_TARGET, `const floorC = Math.min((((chromaFloor ?? 0) * ${k}) / 100) * maxc, intended);`, "FLOOR_TARGET", RAMP_V1);
 
 const docs = [];
 for (const slug of CATS) {
@@ -255,13 +269,15 @@ if (argScale === null) {
   }
 
   // (b1)'s #784 control: the engine without the floorMaxc cap (`fm` = the stop's own rotated-hue maxc, the
-  // floor of the head before #784). It must reproduce the notch on the kit's #774902 palette at hueShift -30
-  // (oklch) at stop 200, with the pinned neighbours, on both stop sets, and print dips on (b1)'s grid
-  // (the real engine's bound there is 0); a patch target that is not in tonal.js exactly once fails the script.
+  // floor of the head before #784). It must print dips on (b1)'s grid (the real engine's bound there is 0)
+  // and, read on the frozen ramp@1 layer (NOTCH_PIN), reproduce the notch on the kit's #774902 palette at
+  // hueShift -30 (oklch) at stop 200, with the pinned neighbours, on both stop sets; a patch target that is
+  // not in tonal.js or ramp@1.mjs exactly once fails the script.
   const t0 = performance.now();
   const notchPal = kit.palettes.find((p) => p.anchor === NOTCH_ANCHOR);
   if (!notchPal) { console.log(`FAIL: the default kit has no ${NOTCH_ANCHOR} palette  -  update NOTCH_ANCHOR`); process.exit(1); }
   const noCap = await engineFor(FLOOR_MAXC_TARGET, "const fm = mc;", "FLOOR_MAXC_TARGET");
+  const noCapV1 = await patchedEngine(FLOOR_MAXC_TARGET, "const fm = mc;", "FLOOR_MAXC_TARGET", RAMP_V1);
   const notchRamp = (engine, stops) => engine.paletteStops({ hue: notchPal.hue, chroma: rampChromaOf(notchPal, kit), skew: notchPal.skew, lift: notchPal.lift, hueShift: -30, hueSameDir: false, cuspPull: notchPal.cuspPull, anchor: notchPal.anchor }, gridControls("oklch"), stops);
   const chromaAtStop = (ramp, stop) => ramp.find((r) => r.stop === stop).chroma.toFixed(2);
   const ctl = gridRendered(noCap);
@@ -269,13 +285,13 @@ if (argScale === null) {
   if (ctl.dips.length === 0) { console.log("FAIL: negative control DID NOT bite  -  the floor read at the rotated hue produced 0 (b1) dips"); process.exit(1); }
   for (const stops of [REAL.STOPS, REAL.EXPORT_STOPS]) {
     const n = stops.length, at = n === 19 ? [150, 200, 250] : [175, 200, 250];
-    const got = at.map((s) => chromaAtStop(notchRamp(noCap, stops), s));
+    const got = at.map((s) => chromaAtStop(notchRamp(noCapV1, stops), s));
     const want = NOTCH_PIN[n];
     const real = at.map((s) => chromaAtStop(notchRamp(REAL, stops), s));
-    console.log(`  notch pin ${n} stops, stops ${at.join("/")}: control ${got.join(" / ")} (pinned ${want.join(" / ")}), engine ${real.join(" / ")}`);
+    console.log(`  notch pin ${n} stops, stops ${at.join("/")}: control (ramp@1) ${got.join(" / ")} (pinned ${want.join(" / ")}), engine ${real.join(" / ")}`);
     if (got.join() !== want.join()) { console.log(`FAIL: the control's notch neighbours moved off the pin on ${n} stops  -  the notch is no longer the #784 one, re-pin NOTCH_PIN`); process.exit(1); }
     const key = `notch ${n} stops`;
-    if (gridDips(notchRamp(noCap, stops), key, true).length === 0) { console.log(`FAIL: negative control DID NOT bite  -  no stop-200 notch on ${n} stops at hueShift -30`); process.exit(1); }
+    if (gridDips(notchRamp(noCapV1, stops), key, true).length === 0) { console.log(`FAIL: negative control DID NOT bite  -  no stop-200 notch on ${n} stops at hueShift -30`); process.exit(1); }
     if (gridDips(notchRamp(REAL, stops), key, true).length !== 0) { console.log(`FAIL: the engine still has the #784 notch on ${n} stops at hueShift -30`); gridFailed = true; }
   }
 }
@@ -284,12 +300,12 @@ if (argScale === null) {
 // PASS: the same sweep on the pre-#701 floor at 1.6x must see dips, or this gate is blind.
 if (argScale === null) {
   const ctl = sweep(await scaledEngine(CONTROL_SCALE));
-  console.log(`  negative control (pre-#701 floor, ${CONTROL_SCALE}x): ${ctl.dips.length} dips (want > 0)`);
+  console.log(`  negative control (pre-#701 floor, ${CONTROL_SCALE}x, ramp@1): ${ctl.dips.length} dips (want > 0)`);
   if (ctl.dips.length === 0) { console.log("FAIL: negative control DID NOT bite  -  the pre-#701 floor at 1.6x produced 0 gate-path dips, pick a different probe"); process.exit(1); }
 }
 
 const main = sweep(argScale === null ? REAL : await scaledEngine(argScale));
-const scaleNote = argScale === null ? "" : `, pre-#701 floor scaled ${argScale}x`;
+const scaleNote = argScale === null ? "" : `, pre-#701 floor scaled ${argScale}x on ramp@1`;
 for (const n of main.dips) console.log(`    dip ${n}`);
 console.log(`  dip-gate even gate-path (no anchor): ${main.dips.length} dips (19 + 25 stops, ${main.corpusPalettes} palettes + default kit ${kit.palettes.length}, no baseline${scaleNote})`);
 const failed = gridFailed || main.dips.length > 0;

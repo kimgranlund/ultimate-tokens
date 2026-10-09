@@ -18,6 +18,7 @@ import * as T from "../../src/engine/tonal.js";
 import * as E from "../../src/engine/hct.js";
 import { rgbToOklchHue, rgbToOkhsl, okhslToRgb } from "../../src/engine/okhsl.js";
 import { sampleCorpus, SAMPLE_SEED } from "./lib/corpus-sample.mjs";
+import * as R1 from "../../src/engine/layers/ramp@1.mjs";
 
 const RT = JSON.parse(readFileSync(new URL("../../docs/reference/data/role-table.json", import.meta.url), "utf8"));
 const DEFAULTS = RT.defaults;                       // 8 palettes {name,hue,chroma,skew,lift,on}
@@ -36,6 +37,36 @@ const fails = [];
 const FAIL = (g, m) => { if (!fails.some((f) => f.startsWith(g + ":"))) fails.push(`${g}: ${m}`); };
 const angDiff = (a, b) => { let d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
 const rampOf = (p) => T.paletteStops({ hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift }, CTL, STOPS);
+
+// T-0040 (ramp@2, ADR-037): the band rule, re-derived from its definition for the groups below that read
+// a stop against the palette's own construction (written for ramp@1, which renders that construction
+// unremapped and is frozen in src/engine/layers/ramp@1.mjs). A band stop (T.inBand: 050 to 100 and 900
+// to 950) sits on the shared ladder, its pixel L* within BAND_L_TOL of T.sharedToneAt(stop) (the snap's
+// own window; a shared tone at 100 or 0 renders pure white or black); a group that skips a band stop
+// asserts this in its place, so no skip empties a check. `bandW` is the chroma blend weight: 0 at 500, 1
+// at the band edges (100, 900), a smoothstep of the liftStop distance from 500 over the edge's own.
+// `bandTone` is an unanchored even-path stop's tone: the palette's own toneAt remapped affinely per side
+// so 100 and 900 land on the shared ladder, pivoting on toneAt(500) clamped into
+// pivotWindow(ctl, BAND_PIVOT_ROOM).
+const BAND_L_TOL = 0.45;
+const bandToneOk = (r, ctl) => {
+  const t = T.sharedToneAt(r.stop, ctl);
+  return t >= 100 || t <= 0 || Math.abs(E.lstarFromRgb(r.rgb) - t) <= BAND_L_TOL + 1e-9;
+};
+const bandW = (stop, lift) => {
+  if (T.inBand(stop)) return 1;
+  const edge = stop < 500 ? T.BAND_EDGE.light : T.BAND_EDGE.dark;
+  const t = Math.min(1, Math.abs(T.liftStop(stop, lift) - T.liftStop(500, lift)) / Math.abs(T.liftStop(edge, lift) - T.liftStop(500, lift)));
+  return t * t * (3 - 2 * t);
+};
+const bandTone = (stop, skew, lift, ctl) => {
+  const own = (s) => T.toneAt(s, skew, lift, ctl);
+  const [lo, hi] = T.pivotWindow(ctl, T.BAND_PIVOT_ROOM);
+  const pivot = Math.min(hi, Math.max(lo, own(500)));
+  if (stop === 500) return pivot;
+  const edge = stop < 500 ? T.BAND_EDGE.light : T.BAND_EDGE.dark;
+  return pivot + (T.sharedToneAt(edge, ctl) - pivot) * ((own(stop) - own(500)) / (own(edge) - own(500)));
+};
 
 // FULL sweeps every curated document; the default (SAMPLED) canaries one seeded volume per gallery
 // category plus brands in full, via the shared picker (#713 U1, test/engine/lib/corpus-sample.mjs).
@@ -83,8 +114,15 @@ for (const p of DEFAULTS) {
 }
 
 // ── hpg-tonal-curve-fidelity: emitted-PIXEL L* == toneAt within |dL*|<=1.0 (anti-tautology) ─
+//    T-0040 (ramp@2, ADR-037): toneAt is now read through the band rule, `bandTone` (the palette's own
+//    toneAt remapped onto the shared band edges, was toneAt itself); a band stop is held on the shared
+//    ladder instead (bandToneOk). The remap moved Neutral stop 125 from 91.28 to 94.10, for instance.
 for (const p of DEFAULTS) for (const r of rampOf(p)) {
-  const want = T.toneAt(r.stop, p.skew, p.lift, CTL);
+  if (T.inBand(r.stop)) {
+    if (!bandToneOk(r, CTL)) FAIL("curve-fidelity", `${p.name} band stop ${r.stop}: pixel L* ${E.lstarFromRgb(r.rgb).toFixed(2)} vs shared ${T.sharedToneAt(r.stop, CTL).toFixed(2)} (>${BAND_L_TOL})`);
+    continue;
+  }
+  const want = bandTone(r.stop, p.skew, p.lift, CTL);
   if (want >= 100 || want <= 0) continue;            // clamp ends exempt
   const lPix = E.lstarFromRgb(r.rgb);                // measured from the EMITTED color, not r.tone
   if (Math.abs(lPix - want) > 1.0) FAIL("curve-fidelity", `${p.name} stop ${r.stop}: pixel L* ${lPix.toFixed(2)} vs toneAt ${want.toFixed(2)} (>1)`);
@@ -95,7 +133,11 @@ for (const p of DEFAULTS) for (const r of rampOf(p)) {
   for (const curve of CURVES) for (const skew of SKEWS) {
     const ctl = { ...CTL, curve };
     for (const r of T.paletteStops({ hue: p.hue, chroma: p.chroma, skew, lift: 0 }, ctl, STOPS)) {
-      const want = T.toneAt(r.stop, skew, 0, ctl);
+      if (T.inBand(r.stop)) {
+        if (!bandToneOk(r, ctl)) { FAIL("curve-fidelity", `${curve} skew ${skew} band stop ${r.stop}: pixel L* off the shared ladder > ${BAND_L_TOL}`); break; }
+        continue;
+      }
+      const want = bandTone(r.stop, skew, 0, ctl);
       if (want >= 100 || want <= 0) continue;
       if (Math.abs(E.lstarFromRgb(r.rgb) - want) > 1.0) { FAIL("curve-fidelity", `${curve} skew ${skew} stop ${r.stop}: pixel L* off > 1`); break; }
     }
@@ -142,7 +184,10 @@ for (const p of DEFAULTS) {
   const dL = signed(hueAt(r50, 250), base), dD = signed(hueAt(r50, 750), base);
   if (!(dL < -2 && dD > 2)) FAIL("edge-hue", `+hueShift didn't torsion light(−)/dark(+): light ${dL.toFixed(1)}° dark ${dD.toFixed(1)}°`);
   // (e) MIRROR, ramp(+H)[dark stop] hue == ramp(−H)[light mirror stop] hue (symmetric per-side).
-  if (angDiff(hueAt(r50, 750), hueAt(rN, 250)) > 2.0) FAIL("edge-hue", "hueShift not mirror-symmetric (+H dark vs −H light)");
+  //     T-0040 (ramp@2, ADR-037): read at 650 / 350 (was 750 / 250): the band rule's blend toward the
+  //     band tint (chromaFloor 0 in CTL, grey) leaves 750 / 250 at CAM16 C 5, where an 8-bit pixel's hue
+  //     is rounding noise (5.3 degrees apart), the floor this group's own `chromatic` filter exempts.
+  if (angDiff(hueAt(r50, 650), hueAt(rN, 350)) > 2.0) FAIL("edge-hue", "hueShift not mirror-symmetric (+H dark vs −H light)");
   // (f) SAME-DIRECTION mode (hueSameDir), both ends bend the SAME way, matching the LIGHT
   //     end: hueShift·(−|s|), target base−shift·|s|. At +shift both ends rotate the SAME sign
   //     (the light end's), e.g. a light+20/dark−20 opposite becomes light+20/dark+20.
@@ -194,19 +239,28 @@ for (const p of DEFAULTS) {
   //     above: an independent re-derivation of the BEHAVIOUR, not chromaEnvelope's own code.
   const evenDamp = 100 - (100 - CTL.damp) * T.EVEN_DAMP_FACTOR;
   const evenDampCurve = (CTL.dampCurve ?? 1.5) * T.EVEN_DAMP_FACTOR;
+  //     T-0040 (ramp@2, ADR-037): the band rule then blends each stop's chroma toward the band tint
+  //     (chromaFloor % of the stop's ceiling, 0 in CTL) by its blend weight `bandW`, so the legacy value
+  //     is read times (1 - w) (was the legacy value itself); a band stop renders the tint on the shared
+  //     ladder (bandToneOk in its place).
   for (const p of SAT) {
     const tgt = tgtOf(p);
     const maxc500 = at(ramp(p, {}), 500).maxc;
     const floor500 = Math.min((CTL.chromaFloor / 100) * maxc500, tgt);
     const anchorWant = Math.min(maxc500, Math.max(tgt, floor500));
     for (const r of ramp(p, {})) {
+      if (T.inBand(r.stop)) {
+        if (!bandToneOk(r, CTL)) FAIL("damping-curve", `${p.name} band stop ${r.stop}: pixel L* off the shared ladder > ${BAND_L_TOL}`);
+        continue;
+      }
       // Capped at 1, as chromaEnvelope caps `sd` (#681 U10, pre-land F3): under a lift the raw lifted
       // distance can pass 450, and the legacy form never read a position past the ramp end.
       const uLeg = Math.min(1, Math.abs(T.liftStop(r.stop, p.lift) - T.liftStop(500, p.lift)) / 450);
       const tLeg = Math.min(1, uLeg / T.EVEN_NEIGHBOURHOOD_R);
       const plateauLeg = tLeg * tLeg * (3 - 2 * tLeg);
       const legacyWant = Math.min(tgt * Math.max(0, 1 - (evenDamp / 100) * uLeg ** evenDampCurve * plateauLeg), r.maxc);
-      const want = rOf(p) * Math.min(legacyWant, anchorWant);
+      const w = bandW(r.stop, p.lift), tint = (CTL.chromaFloor / 100) * r.maxc;
+      const want = rOf(p) * (Math.min(legacyWant, anchorWant) * (1 - w) + tint * w);
       if (Math.abs(r.chroma - want) > 1e-6) FAIL("damping-curve", `${p.name} default != legacy at stop ${r.stop}: ${r.chroma.toFixed(4)} vs ${want.toFixed(4)}`);
     }
   }
@@ -378,7 +432,12 @@ for (const mode of ["perceptual", "peak"]) {
   //     #701 U2 re-derivation (revision 14): the same 11 stops. The floor's gamut reference is now
   //     min(maxc, floorRef), floorRef the widest ceiling among stops 450/500/550; at this probe the
   //     cap leaves every one of the 11 still diverging and adds none.
-  const SAT_FLOOR_EXCEPT = new Set([100, 125, 150, 175, 200, 250, 300, 875, 900, 925, 950]);
+  //     T-0040 (ramp@2, ADR-037): chromaFloor is also the band rule's end tint (the band stops render it)
+  //     and the target every interior stop's chroma blends toward by its blend weight, which is above 0
+  //     everywhere but stop 500, so on ramp@2 the floor moves every stop of a vibrant ramp but 500 and the
+  //     white 050 (was the 11 above): 75, 350 to 450, 550 to 850 join. Stop 500 (blend weight 0) and 050
+  //     stay identical, so the check still bites there; (c) still holds byte for byte.
+  const SAT_FLOOR_EXCEPT = new Set([75, 100, 125, 150, 175, 200, 250, 300, 350, 400, 450, 550, 600, 650, 700, 750, 800, 825, 850, 875, 900, 925, 950]);
   const s0 = ramp(145, 99, 0), sF = ramp(145, 99, 40);
   let satExceptSeen = new Set();
   for (let i = 0; i < s0.length; i++) {
@@ -988,7 +1047,11 @@ for (const mode of ["perceptual", "peak"]) {
         const ctl = OK(mode, { hueSpace, vibrancy: 0, damp: 0 });
         const lLight = T.okhslLAt(ctl.lmax), lDark = T.okhslLAt(ctl.lmin);
         const cuspL = T.okhslLAt(E.peakC(T.effHue(p.hue, hueSpace, T.hueAnchorFrac(p, ctl))).tone);
-        const rows = T.paletteStops({ hue: p.hue, chroma: 100, skew: p.skew, lift: p.lift }, ctl, STOPS);
+        // T-0040 (ramp@2, ADR-037): read on the frozen ramp@1 layer (was the live engine). The band rule
+        // remaps this distribution onto the shared band edges and blends its chroma toward the end tint,
+        // re-holding l for the held L*, so on ramp@2 no stop but 500 reads the unwarped l; ramp@1 renders
+        // the distribution itself, and (i r2) below holds ramp@2 to it at the pivot and on the ladder.
+        const rows = R1.paletteStops({ hue: p.hue, chroma: 100, skew: p.skew, lift: p.lift }, ctl, STOPS);
         for (const r of rows) {
           const want = mode === "peak"
             ? (r.stop <= 500 ? lLight + (cuspL - lLight) * ((r.stop - 50) / 450) : cuspL + (lDark - cuspL) * ((r.stop - 500) / 450))
@@ -1009,6 +1072,33 @@ for (const mode of ["perceptual", "peak"]) {
   if (seenCapLExceptions.size !== CAP_L_EXCEPTIONS.size) {
     const missing = [...CAP_L_EXCEPTIONS].filter((k) => !seenCapLExceptions.has(k));
     FAIL("skew-lift-okhsl", `(i) ${missing.length} of the ${CAP_L_EXCEPTIONS.size} cited CAP_L_EXCEPTIONS were not observed this run (${missing.join(", ")})  -  either fixed (remove from the list) or the corpus changed under it`);
+  }
+  // (i r2) T-0040 (ramp@2, ADR-037): the live ramp keeps (i)'s distribution where the band rule leaves
+  //     it: at skew 0 + lift 0 and damp 0, its stop 500 (the remap's pivot, blend weight 0) is ramp@1's own
+  //     pixel, and every band stop sits on the shared ladder (bandToneOk). A pivot the band rule clamps
+  //     (ramp@1's stop 500 outside pivotWindow(ctl, BAND_PIVOT_ROOM), a peak cusp near white: Data 5,
+  //     Data 7) is held at the window edge instead, within 0.6 L*; one within 0.3 L* of the edge, where
+  //     the pixel's rounding decides the side, is set aside. Same palettes, modes, hue spaces and controls
+  //     as (i).
+  {
+    let checked = 0;
+    for (const mode of ["perceptual", "peak"]) for (const hueSpace of ["oklch", "cam16"]) for (const p of zeroDefaults) {
+      const ctl = OK(mode, { hueSpace, vibrancy: 0, damp: 0 });
+      const args = { hue: p.hue, chroma: 100, skew: p.skew, lift: p.lift };
+      const live = T.paletteStops(args, ctl, STOPS), frozen = R1.paletteStops(args, ctl, STOPS);
+      const at500 = (rows) => rows.find((r) => r.stop === 500);
+      const [lo, hi] = T.pivotWindow(ctl, T.BAND_PIVOT_ROOM);
+      const L1 = E.lstarFromRgb(at500(frozen).rgb), L2 = E.lstarFromRgb(at500(live).rgb);
+      if (L1 >= lo + 0.3 && L1 <= hi - 0.3) {
+        if (at500(live).hex !== at500(frozen).hex) FAIL("skew-lift-okhsl", `(i r2) ${mode}/${hueSpace} ${p.name}: stop 500 ${at500(live).hex} is not ramp@1's unwarped ${at500(frozen).hex}`);
+      } else if (L1 < lo - 0.3 || L1 > hi + 0.3) {
+        const edge = Math.min(hi, Math.max(lo, L1));
+        if (Math.abs(L2 - edge) > 0.6) FAIL("skew-lift-okhsl", `(i r2) ${mode}/${hueSpace} ${p.name}: clamped stop 500 reads L* ${L2.toFixed(2)}, not the window edge ${edge.toFixed(2)} (ramp@1 ${L1.toFixed(2)})`);
+      }
+      for (const r of live) if (T.inBand(r.stop) && !bandToneOk(r, ctl)) FAIL("skew-lift-okhsl", `(i r2) ${mode}/${hueSpace} ${p.name} band stop ${r.stop}: pixel L* off the shared ladder > ${BAND_L_TOL}`);
+      checked++;
+    }
+    if (checked !== 4 * zeroDefaults.length) FAIL("skew-lift-okhsl", `(i r2) covered ${checked} ramps`);
   }
 
   // (i b) the tone hold (#725 U3, R69) carries (i)'s distribution to the shipped damp: every default
@@ -1078,8 +1168,10 @@ for (const mode of ["perceptual", "peak"]) {
   //   (b) RENDERED: the emitted pixels' OKHSL lightness never RISES across the grid, to within the 3e-3
   //       read-back budget of (i).
   //   (c) MEASURED: the reported `tone`  -  the CIELAB L* of the 8-bit triple the ramp actually emits  - 
-  //       never rises, over the same grid, beyond a NAMED, CITED exception list (GRID_R2_EXCEPTIONS
-  //       below). This used to carry a 0.152 L* allowance: L* moves with CHROMA as well as lightness,
+  //       never rises over the same grid: 0, with no exception since T-0040 (ramp@2, ADR-037), which
+  //       retired the NAMED, CITED exception list (GRID_R2_EXCEPTIONS, now RAMP1_GRID_RISES below, the
+  //       leg's ramp@1 negative control). The history of that list follows.
+  //       This used to carry a 0.152 L* allowance: L* moves with CHROMA as well as lightness,
   //       the damping was positioned on the RAW stop while the lightness was read at the LIFTED one, and
   //       at a domain extreme a step whose lightness lift had compressed to near nothing still took a
   //       full damping step, fell off the OKHSL s=1 clipping cliff, and measured UP (#668: worst 0.154
@@ -1095,7 +1187,8 @@ for (const mode of ["perceptual", "peak"]) {
   //       load-bearing both directions, same shape as C6(ii)'s KNOWN_BASELINE_DUP: deleting an entry
   //       reproduces a FAIL naming that exact cell; an unlisted 22nd cell fails too. The lift-0 slice is
   //       the negative control that says the skew gamma was never part of it: it is asserted separately
-  //       below, so a future change that made skew produce upticks could not hide inside the list.
+  //       below, so a future change that made skew produce upticks could not hide inside the list (with
+  //       the list empty, any rise fails (iii c) itself; the lift-0 clause still names the mechanism).
   const SKEW_G = [-100, -50, -20, 0, 40, 50, 100];
   const LIFT_G = [-40, -20, -5, 0, 5, 15, 20, 40];
   const HUES_G = [...new Set(DEFAULTS.map((d) => d.hue))];
@@ -1138,7 +1231,13 @@ for (const mode of ["perceptual", "peak"]) {
   // described above are not reproduced there; the 25 below are, identically on the pre-#785 engine at 100 (they
   // were never in reach while the grid read 95). All lift 40 or 5, hues 107/145/152/165, L* 90.66 to
   // 99.50, each rise +0.0036 to +0.0915 L*. Damped-ramp monotonicity below 100 is not bounded here (Q2).
-  const GRID_R2_EXCEPTIONS = new Set([
+  // Emptied at T-0040 (ramp@2, ADR-037): the FULL grid reads 0 rises of 10,080 cells on ramp@2, so the
+  // cited list is gone and (iii c) bounds the live grid at 0 with no exception. The 25 keys below are
+  // the frozen ramp@1 layer's rises (src/engine/layers/ramp@1.mjs reads exactly these 25 on the FULL
+  // grid), kept as the leg's negative control: each must still read its first rise, at its own stop
+  // pair, on ramp@1 through the grid's own predicate and controls, so (iii c) is shown to see a rise.
+  // 25 renders, run in FULL and SAMPLED alike.
+  const RAMP1_GRID_RISES = [
     "perceptual|oklch|152|40|40|0|175&200", // +0.0036 at L* 98.04
     "perceptual|oklch|152|-20|40|100|300&350", // +0.0103 at L* 96.30
     "perceptual|oklch|152|0|40|100|150&175", // +0.0439 at L* 98.36
@@ -1164,12 +1263,21 @@ for (const mode of ["perceptual", "peak"]) {
     "peak|cam16|165|-100|40|100|250&300", // +0.0216 at L* 90.66
     "peak|cam16|145|-50|40|100|250&300", // +0.0201 at L* 94.47
     "peak|cam16|152|0|40|100|175&200", // +0.0702 at L* 98.18
-  ]);
+  ];
+  // the index of a ramp's first measured L* rise, or -1: (iii c)'s predicate, shared by the grid and the
+  // ramp@1 control
+  const firstRise = (rows) => rows.findIndex((r, i) => i > 0 && r.tone > rows[i - 1].tone);
+  for (const key of RAMP1_GRID_RISES) {
+    const [mode, hueSpace, hue, skew, lift, vibrancy, pair] = key.split("|");
+    const rows = R1.paletteStops({ hue: +hue, chroma: 100, skew: +skew, lift: +lift }, OK(mode, { hueSpace, vibrancy: +vibrancy }), STOPS);
+    const i = firstRise(rows);
+    if (i < 0 || `${STOPS[i - 1]}&${STOPS[i]}` !== pair)
+      FAIL("skew-lift-okhsl", `(iii c negative control) ${key} reads ${i < 0 ? "no rise" : `its first rise at ${STOPS[i - 1]}&${STOPS[i]}`} on the frozen ramp@1 layer  -  the control no longer shows the rise predicate bites`);
+  }
   // this grid is synthetic, not a corpus sweep, but at an estimated 16s quiet it decides whether the
   // 120s ceiling holds (#713 design section); SAMPLED thins it to every fifth hue, offset by
   // SAMPLE_SEED % 5, the same thinning prime.mjs's own grids use.
   const GRID_HUES = FULL ? HUES_G : HUES_G.filter((_, i) => i % 5 === SAMPLE_SEED % 5);
-  const seenGridException = new Set();
   let gridCells = 0, measuredUpticks = 0, zeroLiftUpticks = 0, worstRise = 0, worstCell = "";
   for (const mode of ["perceptual", "peak"]) for (const hueSpace of ["oklch", "cam16"]) for (const vibrancy of [0, 50, 100])
     for (const skew of SKEW_G) for (const lift of LIFT_G) for (const hue of GRID_HUES) {
@@ -1180,24 +1288,18 @@ for (const mode of ["perceptual", "peak"]) {
         FAIL("skew-lift-okhsl", `(iii b) ${mode}/${hueSpace} hue ${hue} skew ${skew} lift ${lift} vibrancy ${vibrancy}: OKHSL lightness ROSE at stop ${STOPS[i - 1]}->${STOPS[i]} (${ls[i - 1].toFixed(5)} -> ${ls[i].toFixed(5)})`);
         break;
       }
-      for (let i = 1; i < rows.length; i++) if (rows[i].tone > rows[i - 1].tone) {
+      const i = firstRise(rows);
+      if (i > 0) {
         const key = `${mode}|${hueSpace}|${hue}|${skew}|${lift}|${vibrancy}|${STOPS[i - 1]}&${STOPS[i]}`;
-        if (GRID_R2_EXCEPTIONS.has(key)) { seenGridException.add(key); break; }
         measuredUpticks++;
         if (rows[i].tone - rows[i - 1].tone > worstRise) { worstRise = rows[i].tone - rows[i - 1].tone; worstCell = `${mode}/${hueSpace} hue ${hue} skew ${skew} lift ${lift} vibrancy ${vibrancy} stop ${STOPS[i - 1]}->${STOPS[i]} (${rows[i - 1].tone.toFixed(4)} -> ${rows[i].tone.toFixed(4)}) key ${key}`; }
         if (lift === 0) zeroLiftUpticks++;
-        break;
       }
     }
   if (gridCells < 2 * 2 * 3 * SKEW_G.length * LIFT_G.length * GRID_HUES.length)
     FAIL("skew-lift-okhsl", `(iii b) grid only covered ${gridCells} cells`);
   if (measuredUpticks)
-    FAIL("skew-lift-okhsl", `(iii c) measured CIELAB L* ROSE on ${measuredUpticks} of ${gridCells} grid cells beyond the ${GRID_R2_EXCEPTIONS.size} cited exceptions, worst +${worstRise.toFixed(4)} L* at ${worstCell}  -  the damping is travelling where the lightness is not (#668)`);
-  // exact under FULL; SAMPLED's thinned hue grid cannot reach every cited cell (#713 design section).
-  if (FULL && seenGridException.size !== GRID_R2_EXCEPTIONS.size) {
-    const missing = [...GRID_R2_EXCEPTIONS].filter((k) => !seenGridException.has(k));
-    FAIL("skew-lift-okhsl", `(iii c) ${missing.length} of the ${GRID_R2_EXCEPTIONS.size} cited R2 grid exceptions were not observed this run (${missing.join(", ")})  -  either fixed (remove from the list) or the grid changed under it (re-diagnose before loosening further)`);
-  }
+    FAIL("skew-lift-okhsl", `(iii c) measured CIELAB L* ROSE on ${measuredUpticks} of ${gridCells} grid cells (no cited exception since T-0040), worst +${worstRise.toFixed(4)} L* at ${worstCell}  -  the damping is travelling where the lightness is not (#668)`);
   if (zeroLiftUpticks)
     FAIL("skew-lift-okhsl", `(iii c) ${zeroLiftUpticks} of the upticks are at lift 0  -  the skew gamma now produces them too, so positioning the damping on liftStop alone no longer covers the mechanism (#668)`);
 
@@ -1257,12 +1359,17 @@ for (const mode of ["perceptual", "peak"]) {
 
   // (vi) the warp stays PURE in the single stop value: the 19-stop display ramp and the 25-stop export
   //      ramp must still agree at every shared stop (no whole-ramp renormalisation crept in).
+  //      T-0040 (ramp@2, ADR-037): a stop the pixel pass moved on either set (`refined`) is set aside: the
+  //      pass compares a stop to its neighbour in whichever array it is given (tonal.js
+  //      enforceMonotonePixelL, stop-set dependent by its own header), and ramp@2 also runs it after the
+  //      damper, where Data 7 (Base chroma 95, peak) moves stop 150 under its 25-stop neighbour 125.
   for (const p of DEFAULTS) for (const mode of ["perceptual", "peak"]) {
     const pal = { hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift };
     const d19 = T.paletteStops(pal, OK(mode), T.STOPS);
     const d25 = T.paletteStops(pal, OK(mode), T.EXPORT_STOPS);
     for (const r of d19) {
       const m = d25.find((x) => x.stop === r.stop);
+      if (r.refined || m.refined) continue;
       if (m.hex !== r.hex) { FAIL("skew-lift-okhsl", `(vi) ${mode} ${p.name}: stop ${r.stop} is ${r.hex} on the 19-stop ramp but ${m.hex} on the 25-stop ramp`); break; }
     }
   }
@@ -1405,70 +1512,150 @@ for (const mode of ["perceptual", "peak"]) {
   // 850&875 and even|60 900&925, are each hit by two different presets that happen to share the
   // identical mode/hue/chroma/skew/lift/stop-pair signature, so the Set naturally collapses them to one
   // entry each  -  `seenBaselineDup` still marks the key seen either way). The negative control right
-  // after this gate still proves an UNLISTED collision is caught. 18 keys come first, then Nike
-  // tertiary-muted's four at hue 36 (#744; see their own comment below). The counts above are #744's:
-  // #725 U3 re-froze the list to 30 keys and T-0014 to 32 (each note, in the list, names every key it moved).
+  // after this gate still proves an UNLISTED collision is caught. The counts above are #744's: #725 U3
+  // re-froze the list to 30 keys, T-0014 to 32 and T-0040 to 380 (its note, in the list, gives the cause).
   const KNOWN_BASELINE_DUP = new Set([
-    "even|240|100.00|0|0|25-stop|900&925",
-    "even|79|100.00|0|0|25-stop|75&100",
-    "even|280|100.00|0|0|25-stop|850&875",
-    "peak|150|100.00|0|0|25-stop|825&850",
-    "even|250|100.00|0|0|25-stop|900&925",
-    "even|92|100.00|0|0|25-stop|75&100",
-    "even|100|100.00|0|0|25-stop|900&925",
-    "even|60|100.00|0|0|25-stop|900&925",
-    "even|65|100.00|0|0|25-stop|900&925",
-    // Nike tertiary-muted (anchor #FFFFFF, resolved chroma 100.00 on this group): adjacent near-white
-    // stops round to the identical 8-bit hex, the same rounding-collision class every other member of
-    // this list already names. At hue 0 it held five keys: even 50&75, 100&125 and 175&200 entered with
-    // #681, peak 75&100 and 150&175 with #739 (the ramp renders at the palette's OWN hue instead of the
-    // anchor's rounding-residue one). Since #744 the generator gives a hueless sample its entry's
-    // derived neutral hue (36, not the sample's own 0), so #744 swaps those five for the four below:
-    // peak 75&100 and the three even pairs at hue 36; peak 150&175 no longer collides. A mechanical
-    // re-freeze, not a new construction defect (achromatic-anchor U1-4, #739's plan row, proves every OTHER anchored ramp in the corpus byte-identical).
-    "even|36|100.00|0|0|25-stop|50&75",
-    "even|36|100.00|0|0|25-stop|100&125",
-    "even|36|100.00|0|0|25-stop|175&200",
-    // #725 U3 freeze (R74, "frozen once at U3 with the movement declared"), measured FULL on U3's head
-    // (hold + retune, revision 8 hue): 22 -> 30 keys, 18 added and 10 removed. Every added key sits at
-    // stops 50 to 150 or 800 to 925, or at Nike tertiary-muted's window-clamped #FFFFFF (L* 100, the
-    // 175&200 key), the same 8-bit rounding-collision class as the keys above. Revision 8 (the anchor's
-    // own OKLCH hue, no per-stop solve) adds perceptual|60 800&825: travel "Khumbu" tertiary-muted and
-    // "Rub' al Khali" primary-muted, both #1F1A16 (L* 9.70, window-clamped), whose peak 800&825 is
-    // already cited, and peak|280 875&900: music "The late-night club" primary-muted and "UK '77"
-    // secondary, both #1F1F23 (L* 11.91), #121213 at both stops (925&950 at U2's head). Pass 1's peak|60
-    // 850&875, peak|88 100&125, peak|250 825&850 and peak|270 850&875 do not reproduce at revision 8. Nike's peak stops 50, 75 and 100 now share one
-    // hex, so with 50&75 cited the gate keys the third as 50&100 and #744's peak 75&100 (above) is
-    // re-keyed here, not fixed. Removed: peak|80 875&900 (travel "Wadi Rum" primary, the tone hold
-    // separates its dark stops), peak|36 75&100 (re-keyed), and 8 keys U2's head already did not
-    // reproduce (peak|240 825&850, peak|280 800&825, perceptual|270 and peak|270 800&825, peak|78
-    // 850&875, perceptual|65 800&825, perceptual|80 and peak|80 800&825).
-    // T-0014 re-freeze (vibrancy default 0 to 50, ADR-030), measured FULL at vibrancy 50: 30 -> 32 keys,
-    // 5 added and 3 removed, all perceptual (peak and even read no vibrancy), all at stops 75 to 175 or
-    // 850 to 900, the same 8-bit rounding-collision class. Added: perceptual|36 75&100 (#FEFEFE) and
-    // 150&175 (#FCFCFC), Nike tertiary-muted; perceptual|270 875&900 (#121213); perceptual|250 850&875
-    // (#121314); perceptual|60 875&900 (#131211, two presets share the key). Removed, no longer
-    // reproduced: perceptual|36 100&125, perceptual|270 850&875, perceptual|60 800&825.
-    "perceptual|36|100.00|0|0|25-stop|75&100",
-    "perceptual|36|100.00|0|0|25-stop|150&175",
-    "perceptual|270|100.00|0|0|25-stop|875&900",
-    "perceptual|250|100.00|0|0|25-stop|850&875",
-    "perceptual|60|100.00|0|0|25-stop|875&900",
-    "perceptual|280|100.00|0|0|25-stop|825&850",
-    "peak|36|100.00|0|0|19-stop|50&100",
-    "peak|36|100.00|0|0|25-stop|50&75",
-    "peak|36|100.00|0|0|25-stop|50&100",
-    "peak|36|100.00|0|0|25-stop|125&150",
-    "peak|36|100.00|0|0|25-stop|175&200",
-    "peak|60|100.00|0|0|25-stop|800&825",
-    "peak|60|100.00|0|0|25-stop|900&925",
-    "peak|79|100.00|0|0|25-stop|75&100",
-    "peak|86|100.00|0|0|25-stop|50&75",
-    "peak|90|100.00|0|0|25-stop|75&100",
-    "peak|92|100.00|0|0|25-stop|75&100",
-    "peak|250|100.00|0|0|25-stop|875&900",
-    "peak|280|100.00|0|0|25-stop|825&850",
-    "peak|280|100.00|0|0|25-stop|875&900",
+  // T-0040 re-freeze (ramp@2 band rule, ADR-037), measured FULL on the ramp@2 engine: 32 -> 380 keys,
+  // 375 added and 27 removed (177 perceptual, 168 peak, 35 even; 126 on the 19-stop display
+  // set, 254 on the 25-stop export set; 84 on the light side, 296 on the dark). A run of one hex over
+  // three or more stops is keyed from its first stop (a cited key does not move `seen`). The earlier
+  // entries' history (#681, #725 U3, #739, #744, T-0014) is in git; 5 of their keys still reproduce.
+  // The cause is one declared cost of the band rule, not a construction defect: band stops sit on the
+  // shared ladder (stop 900 at L* 11.18 and stop 100 at 94.91 on perceptual and peak at the defaults)
+  // while an in-window anchored pivot stays verbatim (ADR-026), so a dark anchor (L* at or under 15.6 in
+  // the corpus) or a light one (at or over 92.7) has its 500-to-edge interior compressed into a few L*,
+  // where adjacent stops round to one 8-bit pixel. Measured on the 19-stop display set: 29 of 3,380
+  // anchored corpus palettes on perceptual, 41 on peak and 6 on even show a repeated swatch (ramp@1: 0,
+  // 1, 0). The near-white removals are ramp@1's gamut-edge collisions that the band snap now separates.
+  // A distinctness pass, or a wider anchored pivot room, is a follow-up decision
+  // (docs/reports/2026-10-09-ramp2-extremes.md).
+    "perceptual|36|100.00|0|0|19-stop|100&150", "perceptual|36|100.00|0|0|19-stop|100&200", "perceptual|36|100.00|0|0|19-stop|100&250",
+    "perceptual|36|100.00|0|0|19-stop|100&300", "perceptual|36|100.00|0|0|19-stop|100&350", "perceptual|36|100.00|0|0|19-stop|100&400",
+    "perceptual|36|100.00|0|0|19-stop|450&500", "perceptual|36|100.00|0|0|25-stop|100&125", "perceptual|36|100.00|0|0|25-stop|100&150",
+    "perceptual|36|100.00|0|0|25-stop|100&175", "perceptual|36|100.00|0|0|25-stop|100&200", "perceptual|36|100.00|0|0|25-stop|100&250",
+    "perceptual|36|100.00|0|0|25-stop|100&300", "perceptual|36|100.00|0|0|25-stop|100&350", "perceptual|36|100.00|0|0|25-stop|100&400",
+    "perceptual|36|100.00|0|0|25-stop|450&500", "perceptual|40|100.00|0|0|25-stop|825&850", "perceptual|40|100.00|0|0|25-stop|850&875",
+    "perceptual|48|100.00|0|0|25-stop|825&850", "perceptual|58|100.00|0|0|19-stop|550&600", "perceptual|58|100.00|0|0|19-stop|600&650",
+    "perceptual|58|100.00|0|0|19-stop|600&700", "perceptual|58|100.00|0|0|19-stop|600&750", "perceptual|58|100.00|0|0|19-stop|650&700",
+    "perceptual|58|100.00|0|0|19-stop|650&750", "perceptual|58|100.00|0|0|19-stop|800&850", "perceptual|58|100.00|0|0|25-stop|550&600",
+    "perceptual|58|100.00|0|0|25-stop|600&650", "perceptual|58|100.00|0|0|25-stop|600&700", "perceptual|58|100.00|0|0|25-stop|600&750",
+    "perceptual|58|100.00|0|0|25-stop|650&700", "perceptual|58|100.00|0|0|25-stop|650&750", "perceptual|58|100.00|0|0|25-stop|800&825",
+    "perceptual|58|100.00|0|0|25-stop|800&850", "perceptual|58|100.00|0|0|25-stop|800&875", "perceptual|60|100.00|0|0|19-stop|500&550",
+    "perceptual|60|100.00|0|0|19-stop|550&600", "perceptual|60|100.00|0|0|19-stop|650&700", "perceptual|60|100.00|0|0|19-stop|650&750",
+    "perceptual|60|100.00|0|0|19-stop|800&850", "perceptual|60|100.00|0|0|25-stop|500&550", "perceptual|60|100.00|0|0|25-stop|550&600",
+    "perceptual|60|100.00|0|0|25-stop|650&700", "perceptual|60|100.00|0|0|25-stop|650&750", "perceptual|60|100.00|0|0|25-stop|800&825",
+    "perceptual|60|100.00|0|0|25-stop|800&850", "perceptual|60|100.00|0|0|25-stop|825&850", "perceptual|60|100.00|0|0|25-stop|825&875",
+    "perceptual|60|100.00|0|0|25-stop|850&875", "perceptual|65|100.00|0|0|19-stop|600&650", "perceptual|65|100.00|0|0|19-stop|600&700",
+    "perceptual|65|100.00|0|0|19-stop|600&750", "perceptual|65|100.00|0|0|25-stop|600&650", "perceptual|65|100.00|0|0|25-stop|600&700",
+    "perceptual|65|100.00|0|0|25-stop|600&750", "perceptual|65|100.00|0|0|25-stop|800&825", "perceptual|78|100.00|0|0|19-stop|600&650",
+    "perceptual|78|100.00|0|0|19-stop|750&800", "perceptual|78|100.00|0|0|25-stop|600&650", "perceptual|78|100.00|0|0|25-stop|750&800",
+    "perceptual|78|100.00|0|0|25-stop|750&825", "perceptual|80|100.00|0|0|19-stop|500&550", "perceptual|80|100.00|0|0|19-stop|600&650",
+    "perceptual|80|100.00|0|0|19-stop|700&750", "perceptual|80|100.00|0|0|19-stop|700&800", "perceptual|80|100.00|0|0|19-stop|700&850",
+    "perceptual|80|100.00|0|0|25-stop|500&550", "perceptual|80|100.00|0|0|25-stop|600&650", "perceptual|80|100.00|0|0|25-stop|700&750",
+    "perceptual|80|100.00|0|0|25-stop|700&800", "perceptual|80|100.00|0|0|25-stop|700&825", "perceptual|80|100.00|0|0|25-stop|700&850",
+    "perceptual|80|100.00|0|0|25-stop|800&825", "perceptual|80|100.00|0|0|25-stop|850&875", "perceptual|86|100.00|0|0|25-stop|100&125",
+    "perceptual|88|100.00|0|0|25-stop|100&125", "perceptual|90|100.00|0|0|25-stop|100&125", "perceptual|90|100.00|0|0|25-stop|125&150",
+    "perceptual|90|100.00|0|0|25-stop|825&850", "perceptual|92|100.00|0|0|19-stop|100&150", "perceptual|92|100.00|0|0|25-stop|100&125",
+    "perceptual|92|100.00|0|0|25-stop|100&150", "perceptual|92|100.00|0|0|25-stop|175&200", "perceptual|100|100.00|0|0|25-stop|825&850",
+    "perceptual|138|100.00|0|0|19-stop|100&150", "perceptual|138|100.00|0|0|19-stop|250&300", "perceptual|138|100.00|0|0|19-stop|250&350",
+    "perceptual|138|100.00|0|0|19-stop|250&400", "perceptual|138|100.00|0|0|19-stop|450&500", "perceptual|138|100.00|0|0|25-stop|100&125",
+    "perceptual|138|100.00|0|0|25-stop|100&150", "perceptual|138|100.00|0|0|25-stop|175&200", "perceptual|138|100.00|0|0|25-stop|250&300",
+    "perceptual|138|100.00|0|0|25-stop|250&350", "perceptual|138|100.00|0|0|25-stop|250&400", "perceptual|138|100.00|0|0|25-stop|450&500",
+    "perceptual|150|100.00|0|0|19-stop|550&600", "perceptual|150|100.00|0|0|19-stop|650&700", "perceptual|150|100.00|0|0|19-stop|650&750",
+    "perceptual|150|100.00|0|0|25-stop|550&600", "perceptual|150|100.00|0|0|25-stop|650&700", "perceptual|150|100.00|0|0|25-stop|650&750",
+    "perceptual|150|100.00|0|0|25-stop|825&850", "perceptual|150|100.00|0|0|25-stop|825&875", "perceptual|228|100.00|0|0|25-stop|100&125",
+    "perceptual|230|100.00|0|0|25-stop|100&125", "perceptual|235|100.00|0|0|25-stop|100&125", "perceptual|235|100.00|0|0|25-stop|175&200",
+    "perceptual|240|100.00|0|0|19-stop|750&800", "perceptual|240|100.00|0|0|19-stop|750&850", "perceptual|240|100.00|0|0|25-stop|750&800",
+    "perceptual|240|100.00|0|0|25-stop|750&825", "perceptual|240|100.00|0|0|25-stop|750&850", "perceptual|240|100.00|0|0|25-stop|750&875",
+    "perceptual|250|100.00|0|0|19-stop|550&600", "perceptual|250|100.00|0|0|19-stop|650&700", "perceptual|250|100.00|0|0|19-stop|800&850",
+    "perceptual|250|100.00|0|0|25-stop|550&600", "perceptual|250|100.00|0|0|25-stop|650&700", "perceptual|250|100.00|0|0|25-stop|800&825",
+    "perceptual|250|100.00|0|0|25-stop|800&850", "perceptual|250|100.00|0|0|25-stop|800&875", "perceptual|250|100.00|0|0|25-stop|825&850",
+    "perceptual|250|100.00|0|0|25-stop|850&875", "perceptual|270|100.00|0|0|19-stop|500&550", "perceptual|270|100.00|0|0|19-stop|500&600",
+    "perceptual|270|100.00|0|0|19-stop|550&600", "perceptual|270|100.00|0|0|19-stop|650&700", "perceptual|270|100.00|0|0|19-stop|700&750",
+    "perceptual|270|100.00|0|0|19-stop|700&800", "perceptual|270|100.00|0|0|19-stop|750&800", "perceptual|270|100.00|0|0|19-stop|800&850",
+    "perceptual|270|100.00|0|0|25-stop|500&550", "perceptual|270|100.00|0|0|25-stop|500&600", "perceptual|270|100.00|0|0|25-stop|550&600",
+    "perceptual|270|100.00|0|0|25-stop|650&700", "perceptual|270|100.00|0|0|25-stop|700&750", "perceptual|270|100.00|0|0|25-stop|700&800",
+    "perceptual|270|100.00|0|0|25-stop|750&800", "perceptual|270|100.00|0|0|25-stop|800&825", "perceptual|270|100.00|0|0|25-stop|800&850",
+    "perceptual|270|100.00|0|0|25-stop|825&850", "perceptual|270|100.00|0|0|25-stop|825&875", "perceptual|272|100.00|0|0|25-stop|850&875",
+    "perceptual|280|100.00|0|0|19-stop|500&550", "perceptual|280|100.00|0|0|19-stop|550&600", "perceptual|280|100.00|0|0|19-stop|600&650",
+    "perceptual|280|100.00|0|0|19-stop|600&700", "perceptual|280|100.00|0|0|19-stop|700&750", "perceptual|280|100.00|0|0|19-stop|750&800",
+    "perceptual|280|100.00|0|0|19-stop|800&850", "perceptual|280|100.00|0|0|25-stop|500&550", "perceptual|280|100.00|0|0|25-stop|550&600",
+    "perceptual|280|100.00|0|0|25-stop|600&650", "perceptual|280|100.00|0|0|25-stop|600&700", "perceptual|280|100.00|0|0|25-stop|700&750",
+    "perceptual|280|100.00|0|0|25-stop|750&800", "perceptual|280|100.00|0|0|25-stop|750&825", "perceptual|280|100.00|0|0|25-stop|800&825",
+    "perceptual|280|100.00|0|0|25-stop|800&850", "perceptual|280|100.00|0|0|25-stop|800&875", "perceptual|280|100.00|0|0|25-stop|825&850",
+    "perceptual|280|100.00|0|0|25-stop|825&875", "perceptual|280|100.00|0|0|25-stop|850&875", "perceptual|300|100.00|0|0|19-stop|550&600",
+    "perceptual|300|100.00|0|0|19-stop|600&650", "perceptual|300|100.00|0|0|19-stop|600&700", "perceptual|300|100.00|0|0|19-stop|650&700",
+    "perceptual|300|100.00|0|0|25-stop|550&600", "perceptual|300|100.00|0|0|25-stop|600&650", "perceptual|300|100.00|0|0|25-stop|600&700",
+    "perceptual|300|100.00|0|0|25-stop|650&700", "perceptual|300|100.00|0|0|25-stop|800&825", "perceptual|300|100.00|0|0|25-stop|825&850",
+    "perceptual|300|100.00|0|0|25-stop|850&875", "perceptual|320|100.00|0|0|19-stop|800&850", "perceptual|320|100.00|0|0|25-stop|825&850",
+    "peak|8|100.00|0|0|25-stop|100&125", "peak|36|100.00|0|0|19-stop|150&200", "peak|36|100.00|0|0|19-stop|150&250",
+    "peak|36|100.00|0|0|19-stop|150&300", "peak|36|100.00|0|0|19-stop|150&350", "peak|36|100.00|0|0|19-stop|150&400",
+    "peak|36|100.00|0|0|19-stop|450&500", "peak|36|100.00|0|0|25-stop|125&150", "peak|36|100.00|0|0|25-stop|125&175",
+    "peak|36|100.00|0|0|25-stop|125&200", "peak|36|100.00|0|0|25-stop|125&250", "peak|36|100.00|0|0|25-stop|125&300",
+    "peak|36|100.00|0|0|25-stop|125&350", "peak|36|100.00|0|0|25-stop|125&400", "peak|36|100.00|0|0|25-stop|450&500",
+    "peak|40|100.00|0|0|25-stop|825&850", "peak|56|100.00|0|0|25-stop|850&875", "peak|58|100.00|0|0|19-stop|550&600",
+    "peak|58|100.00|0|0|19-stop|550&650", "peak|58|100.00|0|0|19-stop|550&700", "peak|58|100.00|0|0|19-stop|550&750",
+    "peak|58|100.00|0|0|19-stop|550&800", "peak|58|100.00|0|0|19-stop|550&850", "peak|58|100.00|0|0|19-stop|700&750",
+    "peak|58|100.00|0|0|25-stop|550&600", "peak|58|100.00|0|0|25-stop|550&650", "peak|58|100.00|0|0|25-stop|550&700",
+    "peak|58|100.00|0|0|25-stop|550&750", "peak|58|100.00|0|0|25-stop|550&800", "peak|58|100.00|0|0|25-stop|550&825",
+    "peak|58|100.00|0|0|25-stop|550&850", "peak|58|100.00|0|0|25-stop|700&750", "peak|58|100.00|0|0|25-stop|800&825",
+    "peak|60|100.00|0|0|19-stop|550&600", "peak|60|100.00|0|0|19-stop|600&650", "peak|60|100.00|0|0|19-stop|700&750",
+    "peak|60|100.00|0|0|19-stop|700&800", "peak|60|100.00|0|0|19-stop|750&800", "peak|60|100.00|0|0|19-stop|800&850",
+    "peak|60|100.00|0|0|25-stop|550&600", "peak|60|100.00|0|0|25-stop|600&650", "peak|60|100.00|0|0|25-stop|700&750",
+    "peak|60|100.00|0|0|25-stop|700&800", "peak|60|100.00|0|0|25-stop|700&825", "peak|60|100.00|0|0|25-stop|750&800",
+    "peak|60|100.00|0|0|25-stop|800&825", "peak|60|100.00|0|0|25-stop|825&850", "peak|60|100.00|0|0|25-stop|850&875",
+    "peak|64|100.00|0|0|25-stop|800&825", "peak|65|100.00|0|0|19-stop|600&650", "peak|65|100.00|0|0|19-stop|700&750",
+    "peak|65|100.00|0|0|25-stop|600&650", "peak|65|100.00|0|0|25-stop|700&750", "peak|65|100.00|0|0|25-stop|850&875",
+    "peak|78|100.00|0|0|19-stop|750&800", "peak|78|100.00|0|0|25-stop|750&800", "peak|79|100.00|0|0|19-stop|300&350",
+    "peak|79|100.00|0|0|25-stop|125&150", "peak|79|100.00|0|0|25-stop|300&350", "peak|80|100.00|0|0|19-stop|600&650",
+    "peak|80|100.00|0|0|19-stop|650&700", "peak|80|100.00|0|0|19-stop|800&850", "peak|80|100.00|0|0|25-stop|600&650",
+    "peak|80|100.00|0|0|25-stop|650&700", "peak|80|100.00|0|0|25-stop|800&825", "peak|80|100.00|0|0|25-stop|800&850",
+    "peak|80|100.00|0|0|25-stop|800&875", "peak|86|100.00|0|0|25-stop|100&125", "peak|88|100.00|0|0|25-stop|125&150",
+    "peak|90|100.00|0|0|25-stop|125&150", "peak|90|100.00|0|0|25-stop|800&825", "peak|90|100.00|0|0|25-stop|825&850",
+    "peak|92|100.00|0|0|25-stop|100&125", "peak|92|100.00|0|0|25-stop|125&150", "peak|92|100.00|0|0|25-stop|175&200",
+    "peak|100|100.00|0|0|19-stop|650&700", "peak|100|100.00|0|0|19-stop|800&850", "peak|100|100.00|0|0|25-stop|650&700",
+    "peak|100|100.00|0|0|25-stop|800&825", "peak|100|100.00|0|0|25-stop|800&850", "peak|108|100.00|0|0|25-stop|100&125",
+    "peak|118|100.00|0|0|25-stop|100&125", "peak|124|100.00|0|0|25-stop|150&175", "peak|138|100.00|0|0|19-stop|100&150",
+    "peak|138|100.00|0|0|19-stop|200&250", "peak|138|100.00|0|0|19-stop|350&400", "peak|138|100.00|0|0|19-stop|450&500",
+    "peak|138|100.00|0|0|25-stop|150&175", "peak|138|100.00|0|0|25-stop|200&250", "peak|138|100.00|0|0|25-stop|300&350",
+    "peak|138|100.00|0|0|25-stop|300&400", "peak|138|100.00|0|0|25-stop|450&500", "peak|140|100.00|0|0|25-stop|100&125",
+    "peak|150|100.00|0|0|19-stop|550&600", "peak|150|100.00|0|0|19-stop|800&850", "peak|150|100.00|0|0|25-stop|550&600",
+    "peak|150|100.00|0|0|25-stop|800&825", "peak|150|100.00|0|0|25-stop|800&850", "peak|150|100.00|0|0|25-stop|800&875",
+    "peak|220|100.00|0|0|25-stop|100&125", "peak|228|100.00|0|0|25-stop|100&125", "peak|230|100.00|0|0|25-stop|100&125",
+    "peak|235|100.00|0|0|25-stop|100&125", "peak|240|100.00|0|0|19-stop|550&600", "peak|240|100.00|0|0|19-stop|800&850",
+    "peak|240|100.00|0|0|25-stop|550&600", "peak|240|100.00|0|0|25-stop|800&825", "peak|240|100.00|0|0|25-stop|800&850",
+    "peak|250|100.00|0|0|19-stop|550&600", "peak|250|100.00|0|0|19-stop|750&800", "peak|250|100.00|0|0|19-stop|750&850",
+    "peak|250|100.00|0|0|25-stop|550&600", "peak|250|100.00|0|0|25-stop|750&800", "peak|250|100.00|0|0|25-stop|750&825",
+    "peak|250|100.00|0|0|25-stop|750&850", "peak|250|100.00|0|0|25-stop|750&875", "peak|250|100.00|0|0|25-stop|825&850",
+    "peak|252|100.00|0|0|25-stop|825&850", "peak|268|100.00|0|0|25-stop|825&850", "peak|268|100.00|0|0|25-stop|850&875",
+    "peak|270|100.00|0|0|19-stop|500&550", "peak|270|100.00|0|0|19-stop|550&600", "peak|270|100.00|0|0|19-stop|700&750",
+    "peak|270|100.00|0|0|19-stop|800&850", "peak|270|100.00|0|0|25-stop|500&550", "peak|270|100.00|0|0|25-stop|550&600",
+    "peak|270|100.00|0|0|25-stop|700&750", "peak|270|100.00|0|0|25-stop|800&825", "peak|270|100.00|0|0|25-stop|800&850",
+    "peak|270|100.00|0|0|25-stop|800&875", "peak|280|100.00|0|0|19-stop|550&600", "peak|280|100.00|0|0|19-stop|550&650",
+    "peak|280|100.00|0|0|19-stop|600&650", "peak|280|100.00|0|0|19-stop|650&700", "peak|280|100.00|0|0|19-stop|700&750",
+    "peak|280|100.00|0|0|19-stop|750&800", "peak|280|100.00|0|0|19-stop|800&850", "peak|280|100.00|0|0|25-stop|550&600",
+    "peak|280|100.00|0|0|25-stop|550&650", "peak|280|100.00|0|0|25-stop|600&650", "peak|280|100.00|0|0|25-stop|650&700",
+    "peak|280|100.00|0|0|25-stop|700&750", "peak|280|100.00|0|0|25-stop|750&800", "peak|280|100.00|0|0|25-stop|750&825",
+    "peak|280|100.00|0|0|25-stop|800&825", "peak|280|100.00|0|0|25-stop|800&850", "peak|280|100.00|0|0|25-stop|800&875",
+    "peak|280|100.00|0|0|25-stop|825&850", "peak|280|100.00|0|0|25-stop|825&875", "peak|280|100.00|0|0|25-stop|850&875",
+    "peak|282|100.00|0|0|25-stop|800&825", "peak|295|100.00|0|0|25-stop|850&875", "peak|300|100.00|0|0|19-stop|550&600",
+    "peak|300|100.00|0|0|19-stop|650&700", "peak|300|100.00|0|0|19-stop|650&750", "peak|300|100.00|0|0|19-stop|650&800",
+    "peak|300|100.00|0|0|19-stop|700&750", "peak|300|100.00|0|0|19-stop|700&800", "peak|300|100.00|0|0|19-stop|800&850",
+    "peak|300|100.00|0|0|25-stop|550&600", "peak|300|100.00|0|0|25-stop|650&700", "peak|300|100.00|0|0|25-stop|650&750",
+    "peak|300|100.00|0|0|25-stop|650&800", "peak|300|100.00|0|0|25-stop|700&750", "peak|300|100.00|0|0|25-stop|700&800",
+    "peak|300|100.00|0|0|25-stop|800&825", "peak|300|100.00|0|0|25-stop|800&850", "peak|320|100.00|0|0|25-stop|850&875",
+    "even|36|100.00|0|0|25-stop|125&150", "even|36|100.00|0|0|25-stop|125&175", "even|40|100.00|0|0|25-stop|825&850",
+    "even|56|100.00|0|0|25-stop|850&875", "even|58|100.00|0|0|25-stop|800&825", "even|60|100.00|0|0|19-stop|700&750",
+    "even|60|100.00|0|0|25-stop|700&750", "even|60|100.00|0|0|25-stop|800&825", "even|60|100.00|0|0|25-stop|825&850",
+    "even|60|100.00|0|0|25-stop|850&875", "even|65|100.00|0|0|25-stop|850&875", "even|80|100.00|0|0|19-stop|800&850",
+    "even|80|100.00|0|0|25-stop|800&825", "even|80|100.00|0|0|25-stop|800&850", "even|80|100.00|0|0|25-stop|850&875",
+    "even|88|100.00|0|0|25-stop|100&125", "even|90|100.00|0|0|25-stop|825&850", "even|90|100.00|0|0|25-stop|850&875",
+    "even|150|100.00|0|0|25-stop|825&850", "even|240|100.00|0|0|19-stop|800&850", "even|240|100.00|0|0|25-stop|800&825",
+    "even|240|100.00|0|0|25-stop|800&850", "even|240|100.00|0|0|25-stop|800&875", "even|250|100.00|0|0|19-stop|650&700",
+    "even|250|100.00|0|0|19-stop|750&800", "even|250|100.00|0|0|25-stop|650&700", "even|250|100.00|0|0|25-stop|750&800",
+    "even|250|100.00|0|0|25-stop|825&850", "even|252|100.00|0|0|25-stop|850&875", "even|270|100.00|0|0|19-stop|800&850",
+    "even|270|100.00|0|0|25-stop|800&825", "even|270|100.00|0|0|25-stop|800&850", "even|280|100.00|0|0|25-stop|800&825",
+    "even|280|100.00|0|0|25-stop|825&850", "even|300|100.00|0|0|25-stop|800&825",
   ]);
   const seenBaselineDup = new Set();
 
@@ -2049,7 +2236,7 @@ for (const mode of ["perceptual", "peak"]) {
       const okhslUrl = new URL("../../src/engine/okhsl.js", import.meta.url).href;
       // #725 revision 8: the anchored path's damped `s` is holdTone's own (the per-stop hue solve that
       // read a separate `s` line is gone), so the saturation patch amplifies the envelope it is given.
-      const NEEDLE = "const hold = holdTone(hue, intendedS, l, env);";
+      const NEEDLE = "const hold = holdTone(hue, intendedS, l, env, tgt);";
       // #725 U2: the anchored peak path caps every stop at stop 500's chroma, which absorbs a saturation
       // amplification by construction, so the patch also lifts that cap (the regression it guards).
       const CAP_NEEDLE = "const capPeak = mode === \"peak\" && (controls.dampAmp ?? 0) === 0;";
@@ -2059,7 +2246,7 @@ for (const mode of ["perceptual", "peak"]) {
         const patched = realSrc
           .replace('from "./hct.js"', `from "${hctUrl}"`)
           .replace('from "./okhsl.js"', `from "${okhslUrl}"`)
-          .replace(NEEDLE, "const hold = holdTone(hue, intendedS, l, env * 1.6);")
+          .replace(NEEDLE, "const hold = holdTone(hue, intendedS, l, env * 1.6, tgt);")
           .replace(CAP_NEEDLE, "const capPeak = false;");
         const BuggyT = await import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
         // peakResult.witness is `${doc.__presetName}/${pal.name}` (this function's own return shape).
@@ -2189,19 +2376,29 @@ for (const mode of ["perceptual", "peak"]) {
   //     T-0014 (vibrancy default 0 to 50, ADR-030): the perceptual pin moved 517576c558838c97 ->
   //     f311872069c3b5b1, the same pre-damper engine (306f9a9e) rendered at vibrancy 50, which hashes
   //     f311872069c3b5b1 there and still 517576c558838c97 at vibrancy 0; peak and even did not move.
-  const AT100 = { perceptual: "f311872069c3b5b1", peak: "5b1905c4160c2a85", even: "98d8a73594eb7383" };
+  //     T-0040 (ramp@2, ADR-037): the band rule moves the at-100 render (the shared ladder and tint at
+  //     the ends, the remap and blend between), so each pin is the ramp@2 at-100 render (was perceptual
+  //     f311872069c3b5b1, peak 5b1905c4160c2a85, even 98d8a73594eb7383, the pre-damper engine's; ramp@1
+  //     still renders those, frozen).
+  const AT100 = { perceptual: "5d08d9ec45e38527", peak: "6df6a8c086447728", even: "c2a31b5e26d768b3" };
   for (const toneMode of ["perceptual", "peak", "even"]) {
     const at100 = render(100, toneMode);
     const got = createHash("sha256").update(at100.map((r) => r.hex).join(",")).digest("hex").slice(0, 16);
-    if (got !== AT100[toneMode]) red.push(`(i) ${toneMode} Primary at 100 hashes ${got}, not the pre-damper render ${AT100[toneMode]}`);
+    if (got !== AT100[toneMode]) red.push(`(i) ${toneMode} Primary at 100 hashes ${got}, not the pinned ramp@2 at-100 render ${AT100[toneMode]}`);
     // (ii) at 50 and 10, every stop is r times its at-100 coordinate; perceptual and peak read OKHSL s
     //      back from the hex (within 0.02), even reads the `chroma` field (within max(0.5, 3%): hex
     //      quantization and the per-stop hue solve); stop 500 moves too (no stop-500 pin).
+    //      T-0040 (ramp@2, ADR-037): a band stop is re-snapped after the damper (the pixel nearest the
+    //      shared L* at r times the end tint), so it is held on the shared ladder instead (bandToneOk).
     for (const g of [50, 10]) {
       const r = g / 100, damped = render(g, toneMode);
       const off = [];
       for (let i = 0; i < at100.length; i++) {
         const a = at100[i], b = damped[i];
+        if (T.inBand(a.stop)) {
+          if (!bandToneOk(b, ctlOf(toneMode))) off.push(`${a.stop} band pixel L* off the shared ladder`);
+          continue;
+        }
         if (toneMode === "even") {
           if (Math.abs(b.chroma - r * a.chroma) > Math.max(0.5, 0.03 * a.chroma)) off.push(`${a.stop} C ${b.chroma.toFixed(2)} not ${r} x ${a.chroma.toFixed(2)}`);
         } else if (Math.abs(sOf(b) - r * sOf(a)) > 0.02) off.push(`${a.stop} s ${sOf(b).toFixed(4)} not ${r} x ${sOf(a).toFixed(4)}`);
@@ -2242,6 +2439,12 @@ for (const mode of ["perceptual", "peak"]) {
         for (let i = 0; i < at100.length; i++) {
           rows++;
           const a = at100[i], b = damped[i], floor = floorOf(a.rgb) + floorOf(b.rgb);
+          // T-0040 (ramp@2, ADR-037): a band stop is re-snapped after the damper onto the shared ladder
+          // (bandToneOk in its place), so its L* is the ladder's, not its at-100 pixel's
+          if (T.inBand(a.stop)) {
+            if (!bandToneOk(b, ctl) && !outside++) firstOutside = `${toneMode}/${hueSpace} ${p.name} ${g} band stop ${a.stop}: L* off the shared ladder > ${BAND_L_TOL}`;
+            continue;
+          }
           if (Math.abs(a.tone - b.tone) > floor && !outside++) firstOutside = `${toneMode}/${hueSpace} ${p.name} ${g} stop ${a.stop}: L* ${b.tone.toFixed(3)} against ${a.tone.toFixed(3)} at 100, past the rounding floor ${floor.toFixed(3)}`;
         }
       }
@@ -2251,7 +2454,7 @@ for (const mode of ["perceptual", "peak"]) {
   }
   if (red.length) FAIL("group-chroma-damper", `${red.length} red: ${red.join("; ")}`);
   else
-    console.log(`group-chroma-damper: kit Primary at 100 matches the pre-damper render in 3 modes; 50, 10 and 0 scale every stop by g/100; tone held on ${rows} rows`);
+    console.log(`group-chroma-damper: kit Primary at 100 matches its pinned ramp@2 at-100 render in 3 modes; 50, 10 and 0 scale every stop by g/100; tone held on ${rows} rows`);
 }
 
 // ── envelope-presets (#778): the named envelope curves are the spec. (a) every preset reads exactly 1
@@ -2289,6 +2492,27 @@ for (const mode of ["perceptual", "peak"]) {
   else console.log(`envelope-presets: ${P.length} presets read env(500) = 1 in 3 modes x 3 lifts and name back; Curated meets the ruled bars; the dampCurve 3 control bites`);
 }
 
+// ── vibrancy-match-peer (T-0040, ADR-037): the vibrancy and cusp-pull groups above render with
+// Match peer lightness off (their controls carry no flag), the mode they describe. With the mode on,
+// every stop's tone is the shared ladder's, so vibrancy and cusp pull move nothing: a perceptual
+// palette renders byte-identical ramps at vibrancy 0 and 100 and at cusp pull 0 and 100, anchored and
+// not, where the same pairs with the mode off differ (the control).
+{
+  const pal = { hue: 95, chroma: 90, skew: 0, lift: 0 };
+  const hexes = (palette, extra) => T.paletteStops(palette, { ...T.DEFAULT_CONTROLS, toneMode: "perceptual", ...extra }, T.EXPORT_STOPS).map((r) => r.hex).join(" ");
+  const anchored = { ...pal, anchor: defaultDocument().palettes.find((p) => p.name === "Warning").anchor };
+  let same = 0, differOff = 0;
+  for (const palette of [pal, anchored]) {
+    if (hexes(palette, { vibrancy: 0, matchPeerLightness: true }) === hexes(palette, { vibrancy: 100, matchPeerLightness: true })) same++;
+    if (hexes({ ...palette, cuspPull: 0 }, { matchPeerLightness: true }) === hexes({ ...palette, cuspPull: 100 }, { matchPeerLightness: true })) same++;
+    if (hexes(palette, { vibrancy: 0 }) !== hexes(palette, { vibrancy: 100 })) differOff++;
+    if (hexes({ ...palette, cuspPull: 0 }, {}) !== hexes({ ...palette, cuspPull: 100 }, {})) differOff++;
+  }
+  if (same !== 4) FAIL("vibrancy-match-peer", `with the mode on ${4 - same} of 4 vibrancy / cusp-pull pairs still move the ramp`);
+  if (differOff !== 4) FAIL("vibrancy-match-peer", `control: with the mode off only ${differOff} of 4 pairs differ, so the predicate cannot tell the modes apart`);
+  if (same === 4 && differOff === 4) console.log(`  pass  vibrancy-match-peer: 4 of 4 vibrancy 0/100 and cusp pull 0/100 pairs byte-identical with the mode on (perceptual, hue 95, unanchored and on the default kit's Warning anchor); control: 4 of 4 differ with the mode off`);
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
 // The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
 // call (#695), so a gate missing from the list below still shows up, loudly, instead of a real
@@ -2300,7 +2524,7 @@ for (const mode of ["perceptual", "peak"]) {
 // keeps every doc citation into the gates above from drifting by a line (same convention as
 // test/ui/persist.mjs's mid-file gate-report.mjs import).
 import { gateReport } from "../gate-report.mjs";
-const DECLARED = ["ingamut", "monotonic", "white-endpoint", "chroma-target", "curve-fidelity", "hue-stability", "damping-curve", "edge-hue", "rel-chroma", "okhsl-modes", "chroma-floor", "cusp-pull", "lift-monotonic", "skew-lift-okhsl", "vibrancy", "oklch-hue-anchor", "hue-solver-best", "intensity-legacy", "ac004-greps", "chroma-envelope", "dip-gate-even", "okl-order", "group-chroma-damper", "envelope-presets", "report-static"];
+const DECLARED = ["ingamut", "monotonic", "white-endpoint", "chroma-target", "curve-fidelity", "hue-stability", "damping-curve", "edge-hue", "rel-chroma", "okhsl-modes", "chroma-floor", "cusp-pull", "lift-monotonic", "skew-lift-okhsl", "vibrancy", "oklch-hue-anchor", "hue-solver-best", "intensity-legacy", "ac004-greps", "chroma-envelope", "dip-gate-even", "okl-order", "group-chroma-damper", "envelope-presets", "vibrancy-match-peer", "report-static"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 console.log(`  (${FULL ? `FULL: ${CORPUS_DOC_COUNT} curated documents, ${CORPUS_PALETTE_COUNT} palettes` : `SAMPLED seed ${SAMPLE_SEED}: ${CORPUS_DOC_COUNT} curated documents, ${CORPUS_PALETTE_COUNT} palettes`})`);
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }

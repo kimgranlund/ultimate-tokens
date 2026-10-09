@@ -18,6 +18,7 @@ const MODS = [
   ["collections", "src/engine/collections.js"],
   ["hct", "src/engine/hct.js"], ["okhsl", "src/engine/okhsl.js"], ["semantic", "src/engine/semantic.js"],
   ["tonal", "src/engine/tonal.js"], ["derive", "src/engine/derive.mjs"],
+  ["rampV1", "src/engine/layers/ramp@1.mjs"], // frozen ramp layer v1 (T-0040), imports hct/okhsl only (above); BEFORE layers (which registers it)
   ["fontFallbacks", "src/engine/font-fallbacks.mjs"], // pure, zero-dep; BEFORE type/ds-export (which import it)
   ["type", "src/engine/type.mjs"], ["geometry", "src/engine/geometry.mjs"], ["flags", "src/engine/flags.js"],
   ["iconSystems", "src/engine/icon-systems.mjs"], // pure registry; BEFORE persist (which imports it)
@@ -63,7 +64,7 @@ const MODS = [
   ["app", "src/ui/app.js"],
 ];
 const KEY = { "hct.js": "hct", "okhsl.js": "okhsl", "semantic.js": "semantic", "tonal.js": "tonal", "derive.mjs": "derive", "font-fallbacks.mjs": "fontFallbacks", "type.mjs": "type", "geometry.mjs": "geometry", "flags.js": "flags", "persist.js": "persist",
-  "ds-gates.js": "dsGates", "exports.js": "exports", "ds-export.js": "dsExport", "figma-plugin-assets.js": "figmaPlugin", "mcp-assets.js": "mcpAssets", "describe-mcp-assets.js": "describeMcpAssets", "type-fonts.js": "typeFonts", "zip.mjs": "zip", "tip-position.mjs": "tipPosition", "mode-apply-plan.mjs": "modeApplyPlan", "migrations.mjs": "figmaMigrations", "live-diff.mjs": "liveDiff", "collections.js": "collections", "style-plan.mjs": "stylePlan", "icon-systems.mjs": "iconSystems", "motion.mjs": "motion", "icons.js": "icons", "data-hues.mjs": "dataHues", "prime.mjs": "prime", "resolve.mjs": "resolve", "controls.mjs": "controls", "layers.mjs": "layers", "layer-pins.mjs": "layerPins", "model.mjs": "model", "shell-roles.mjs": "shellRoles",
+  "ds-gates.js": "dsGates", "exports.js": "exports", "ds-export.js": "dsExport", "figma-plugin-assets.js": "figmaPlugin", "mcp-assets.js": "mcpAssets", "describe-mcp-assets.js": "describeMcpAssets", "type-fonts.js": "typeFonts", "zip.mjs": "zip", "tip-position.mjs": "tipPosition", "mode-apply-plan.mjs": "modeApplyPlan", "migrations.mjs": "figmaMigrations", "live-diff.mjs": "liveDiff", "collections.js": "collections", "style-plan.mjs": "stylePlan", "icon-systems.mjs": "iconSystems", "motion.mjs": "motion", "icons.js": "icons", "data-hues.mjs": "dataHues", "prime.mjs": "prime", "resolve.mjs": "resolve", "controls.mjs": "controls", "layers.mjs": "layers", "ramp@1.mjs": "rampV1", "layer-pins.mjs": "layerPins", "model.mjs": "model", "shell-roles.mjs": "shellRoles",
   "app-helpers.mjs": "appHelpers", "core.mjs": "chartsCore", "render.mjs": "chartsRender", "color.js": "colorSection", "typography.js": "typeSection", "geometry.js": "geomSection",
   "drawer.js": "drawerMixin", "apply-gate.js": "applyGateMixin", "settings.js": "settingsMixin",
   ...Object.fromEntries(CATEGORY_FILES.map((f) => [f, categoryKey(f)])) };

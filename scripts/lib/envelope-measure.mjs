@@ -59,13 +59,18 @@ export const NAMED_EXCEPTIONS = new Map([
 ]);
 
 // The cusp-run count's window (#725 R74, C2.2): on the anchored path only anchors whose CIE L* sits
-// inside the ramp window [RAMP_L_MIN, RAMP_L_MAX] (src/engine/tonal.js, 9.95 to 95.05) count toward
-// the perceptual rule. An anchor outside it renders a clamped pivot, not its own hex, at stop 500, so
-// a run measured against that stop is the clamp's, not the envelope's. Every violation the window
-// removes from the count is still returned (`perceptualWindowExcluded`) and printed by name.
+// inside the ramp's pivot window count toward the perceptual rule. An anchor outside it renders a
+// clamped pivot, not its own hex, at stop 500, so a run measured against that stop is the clamp's, not
+// the envelope's. Every violation the window removes from the count is still returned
+// (`perceptualWindowExcluded`) and printed by name. ramp@2 (T-0040, ADR-037): the window is the
+// engine's `pivotWindow(controls)`, [RAMP_L_MIN, RAMP_L_MAX] narrowed to the band interior by one 0.55
+// L* step ([11.73, 94.36] on perceptual and peak at the defaults), so it reads the palette's controls.
 const anchorLstar = (pal) => (typeof pal.anchor === "string" && /^#[0-9a-f]{6}$/i.test(pal.anchor)
   ? lstarFromRgb(hexToRgb(pal.anchor)) : null);
-export const inRampWindow = (lstar) => lstar >= T.RAMP_L_MIN && lstar <= T.RAMP_L_MAX;
+export const inRampWindow = (lstar, controls) => {
+  const [lo, hi] = T.pivotWindow(controls);
+  return lstar >= lo && lstar <= hi;
+};
 
 export function percentile(sorted, p) {
   if (sorted.length === 0) return NaN;
@@ -157,7 +162,7 @@ export async function measureEnvelope({ dampAmpOverride = null, dampOverride = n
         }
         if (runs > 0 && isAdia) adiaAboveTotal[mode]++;
         const lstar = gatePath ? null : anchorLstar(pal);
-        const outside = lstar !== null && !inRampWindow(lstar);
+        const outside = lstar !== null && !inRampWindow(lstar, controls);
         if (outside) outsideWindow++;
         if (!isAdia) {
           const why = [];
@@ -218,29 +223,36 @@ async function engineOf(engineDir) {
 export const TOL_CODES = 1;
 export const TOL_CODES_TWICE = 2;
 export const TOL_CODES_REFINED = 4;
+// TOL_CODES_SNAPPED (T-0040, ramp@2): a band stop's pixel is chosen by `snapBandPixel` from the plus or
+// minus 3 per channel neighbourhood of its rounded render (RADIUS 3 plus the rounding), two-sided.
+export const TOL_CODES_SNAPPED = 4;
 // The gamut edge, the one clipping named: OKHSL s saturates at the sRGB boundary and no 8-bit pixel
 // reads exactly 1, so an emitted pixel with a channel at 0 or 255 whose s reads at least EDGE_S widens
 // its range to 1.
 export const EDGE_S = 0.999;
-export const RESIDUE_CLASSES = ["plain", "damped", "capped", "refined"];
+export const RESIDUE_CLASSES = ["plain", "damped", "capped", "refined", "snapped"];
 
 export function stopClass(record) {
   if (record.refined) return "refined";
+  if (record.snapped) return "snapped";
   if (record.capped) return "capped";
   if ((record.damper ?? 1) < 1) return "damped";
   return "plain";
 }
 
 // The path unit: OKHSL s on perceptual and peak; CAM16 C on even, where an achromatic pixel reads 0
-// (the white point: under the engine's viewing conditions CAM16 reads #FFFFFF at C 2.869).
+// (the white point: under the engine's viewing conditions CAM16 reads #FFFFFF at C 2.869). An exact
+// grey reads s 0 on perceptual and peak too (T-0040: OKHSL reads a grey at about 1e-6 of round-off,
+// over a ramp@2 band stop's grey model of exactly 0).
 export function unitOf(rgb, mode) {
-  if (mode !== "even") return rgbToOkhsl(rgb).s;
-  return rgb[0] === rgb[1] && rgb[1] === rgb[2] ? 0 : cam16FromRgb(rgb).chroma;
+  const grey = rgb[0] === rgb[1] && rgb[1] === rgb[2];
+  if (mode !== "even") return grey ? 0 : rgbToOkhsl(rgb).s;
+  return grey ? 0 : cam16FromRgb(rgb).chroma;
 }
 
 export function residueOf(record, mode) {
   const cls = stopClass(record);
-  const k = cls === "refined" ? TOL_CODES_REFINED : cls === "plain" ? TOL_CODES : TOL_CODES_TWICE;
+  const k = cls === "refined" ? TOL_CODES_REFINED : cls === "snapped" ? TOL_CODES_SNAPPED : cls === "plain" ? TOL_CODES : TOL_CODES_TWICE;
   const model = record.model;
   const [r0, g0, b0] = record.rgb;
   const readback = unitOf(record.rgb, mode);
