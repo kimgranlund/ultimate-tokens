@@ -60,6 +60,8 @@ import { ApplyGateMixin } from "./overlays/apply-gate.js";
 import { SettingsMixin } from "./overlays/settings.js";
 
 let geomHostSeq = 0; // per-instance keys for the host-scoped geometry roles (_applyShellGeometry)
+// the editor chrome's default cell (T-0044, user ruling): product tier, sm scale, round corners; the host's size stays md
+const SHELL_DEFAULT_GEOMETRY = Object.freeze({ tier: "product", scale: "sm", radius: "round" });
 
 // scopeGeomCSS, rewrites the engine's document-level geometry CSS (geomTokensSizesCSS + geomResolverCSS)
 // onto one host: the :root primitives and default context land on the keyed host, a [data-A="V"] context
@@ -125,7 +127,7 @@ class HctApp extends HTMLElement {
     this.theme = "system"; // app chrome color scheme: system (follows OS) | light | dark
     this.motion = "system"; // animation preference: system (respect prefers-reduced-motion) | reduced (always minimal), app pref
     this.fontMode = "premium"; // rendering-reliability pref: premium (as-designed families) | google (every family google-fonts-safe, per src/engine/font-fallbacks.mjs), app pref, NOT doc-bound
-    this.shellGeometry = null; // the editor chrome's own { tier, scale, radius }: null follows the kit's doc.geometry, app pref, NOT doc-bound
+    this.shellGeometry = null; // the editor chrome's own cell, app pref, NOT doc-bound: null is SHELL_DEFAULT_GEOMETRY (product, sm), "kit" follows doc.geometry, an object { tier, scale, radius } pins a custom cell
     this._geomRolesStyle = null; // this host's <style id="ut-geometry-roles-<key>"> in document.head (the shell's --control-* roles), created on first render
     this._loadAppPrefs(); // persisted APP prefs (theme/motion/fontMode/shellGeometry), loaded before setColorScheme below
     this.exportOpen = false;
@@ -2500,22 +2502,25 @@ class HctApp extends HTMLElement {
       if (p.motion === "reduced" || p.motion === "system") this.motion = p.motion;
       if (p.fontMode === "premium" || p.fontMode === "google") this.fontMode = p.fontMode;
       const sg = p.shellGeometry;
-      if (sg && Object.prototype.hasOwnProperty.call(TIERS, sg.tier) && SCALES.includes(sg.scale) && Object.prototype.hasOwnProperty.call(RADIUS_MODES, sg.radius)) {
+      if (sg === "kit") this.shellGeometry = "kit";
+      else if (sg && Object.prototype.hasOwnProperty.call(TIERS, sg.tier) && SCALES.includes(sg.scale) && Object.prototype.hasOwnProperty.call(RADIUS_MODES, sg.radius)) {
         this.shellGeometry = { tier: sg.tier, scale: sg.scale, radius: sg.radius };
       }
     } catch { /* storage unavailable / corrupt record → defaults */ }
   }
 
-  // shellGeometry is written only when set, so a record that follows the kit keeps the three chrome keys.
+  // shellGeometry is written only when not null ("kit" or a custom cell), so a record on the default keeps the three chrome keys.
   _saveAppPrefs() {
     const rec = { theme: this.theme, motion: this.motion, fontMode: this.fontMode, ...(this.shellGeometry ? { shellGeometry: this.shellGeometry } : {}) };
     try { localStorage.setItem(this._appPrefsKey(), JSON.stringify(rec)); } catch { /* storage unavailable */ }
   }
 
-  // _effectiveShellGeometry(), the chrome's { tier, scale, radius }: the Settings override, else the
-  // kit's doc.geometry, else the default (the gallery has no doc).
+  // _effectiveShellGeometry(), the chrome's { tier, scale, radius }, by shellGeometry's three states: null is
+  // SHELL_DEFAULT_GEOMETRY; "kit" follows the kit's doc.geometry, else DEFAULT_GEOMETRY (the gallery has no doc);
+  // an object is the Settings custom cell. An invalid field falls back per field to DEFAULT_GEOMETRY.
   _effectiveShellGeometry() {
-    const g = this.shellGeometry || (this.doc && this.doc.geometry) || DEFAULT_GEOMETRY;
+    const sg = this.shellGeometry;
+    const g = !sg ? SHELL_DEFAULT_GEOMETRY : sg === "kit" ? (this.doc && this.doc.geometry) || DEFAULT_GEOMETRY : sg;
     return {
       tier: Object.prototype.hasOwnProperty.call(TIERS, g.tier) ? g.tier : DEFAULT_GEOMETRY.tier,
       scale: SCALES.includes(g.scale) ? g.scale : DEFAULT_GEOMETRY.scale,

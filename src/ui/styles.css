@@ -69,8 +69,8 @@ body {
 
 ultimate-tokens { display: block; height: 100vh; font: var(--ui-body-font); color: var(--ui-body-ink); }
 /* Shell geometry aliases: the host carries [data-tier/scale/radius/size] (app.js _applyShellGeometry),
-   so the resolved --control-* / --chip-* / --radius-* roles land here. Fallbacks are the product-md-md
-   round cell. The header and canvas-header bands (--hh/--ch) grow with the control height and keep
+   so the resolved --control-* / --chip-* / --radius-* roles land here. Fallbacks are the product-sm-md
+   round cell, the shell's default (SHELL_DEFAULT_GEOMETRY, app.js). The header and canvas-header bands (--hh/--ch) grow with the control height and keep
    their :root literals as the floor; --fh and --r-sm/--r/--r-lg stay literal.
    The --ui-* roles below are the shell's text roles (UI_ROLES in shell-roles.mjs): each role's
    font, tracking, case and ink, plus the four weights and the glyph motion set. Each font reads a
@@ -78,17 +78,17 @@ ultimate-tokens { display: block; height: 100vh; font: var(--ui-body-font); colo
    host from shellRolesCSS into the keyed head <style>; the font fallbacks are the product-sm-md cell.
    No other rule declares a --ui-* property: a rule reads these roles, it never redefines one. */
 ultimate-tokens {
-  --sh-control-height: var(--control-height, 32px);
-  --sh-control-inset: var(--control-inset, 8px);
-  --sh-control-text: var(--control-text, 14px);
-  --sh-control-icon: var(--control-icon, 16px);
-  --sh-control-radius: var(--radius-control, 14px);
-  --sh-radius-inset: var(--radius-inset, 10px);
-  --sh-part-height: var(--control-part-height, 24px);
-  --sh-part-inset: var(--control-part-inset, 4px);
-  --sh-chip-height: var(--chip-height, 24px);
-  --sh-chip-inset: var(--chip-inset, 5.5px);
-  --sh-chip-text: var(--chip-text, 12px);
+  --sh-control-height: var(--control-height, 28px);
+  --sh-control-inset: var(--control-inset, 7px);
+  --sh-control-text: var(--control-text, 13px);
+  --sh-control-icon: var(--control-icon, 14px);
+  --sh-control-radius: var(--radius-control, 13px);
+  --sh-radius-inset: var(--radius-inset, 9.5px);
+  --sh-part-height: var(--control-part-height, 21px);
+  --sh-part-inset: var(--control-part-inset, 3.5px);
+  --sh-chip-height: var(--chip-height, 20px);
+  --sh-chip-inset: var(--chip-inset, 4.5px);
+  --sh-chip-text: var(--chip-text, 10px);
   --sh-radius-card: var(--radius-card, 16.5px); --sh-radius-mark: var(--radius-mark, 6.5px);
   --ui-weight-regular: 400; --ui-weight-medium: 500; --ui-weight-strong: 600; --ui-weight-heavy: 700;
   --ui-motion-fast: 120ms; --ui-motion-base: 180ms; --ui-motion-ease: cubic-bezier(.2, 0, 0, 1);
@@ -1034,9 +1034,10 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
   margin-top: 14px; border: none; border-radius: 10px;
   padding: 9px 18px; font-weight: 650; font-size: 14px; cursor: default;
 }
-/* the collapse/expand affordance for the preview gallery, a quiet eyebrow-style ghost button */
+/* the collapse/expand affordance for the preview gallery, a quiet eyebrow-style ghost button; its label may wrap
+   (white-space normal) so the trailing disclosure caret stays inside the pane at a large shell cell */
 .ex-collapse-toggle {
-  align-self: flex-start; background: none; border: none; padding: 2px 0; cursor: pointer;
+  align-self: flex-start; background: none; border: none; padding: 2px 0; cursor: pointer; white-space: normal; text-align: start;
   font: var(--ui-kicker-font); letter-spacing: var(--ui-kicker-tracking); text-transform: var(--ui-kicker-case);
   color: var(--ui-kicker-ink); opacity: .8;
 }

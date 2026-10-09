@@ -84,8 +84,8 @@ body {
 
 ultimate-tokens { display: block; height: 100vh; font: var(--ui-body-font); color: var(--ui-body-ink); }
 /* Shell geometry aliases: the host carries [data-tier/scale/radius/size] (app.js _applyShellGeometry),
-   so the resolved --control-* / --chip-* / --radius-* roles land here. Fallbacks are the product-md-md
-   round cell. The header and canvas-header bands (--hh/--ch) grow with the control height and keep
+   so the resolved --control-* / --chip-* / --radius-* roles land here. Fallbacks are the product-sm-md
+   round cell, the shell's default (SHELL_DEFAULT_GEOMETRY, app.js). The header and canvas-header bands (--hh/--ch) grow with the control height and keep
    their :root literals as the floor; --fh and --r-sm/--r/--r-lg stay literal.
    The --ui-* roles below are the shell's text roles (UI_ROLES in shell-roles.mjs): each role's
    font, tracking, case and ink, plus the four weights and the glyph motion set. Each font reads a
@@ -93,17 +93,17 @@ ultimate-tokens { display: block; height: 100vh; font: var(--ui-body-font); colo
    host from shellRolesCSS into the keyed head <style>; the font fallbacks are the product-sm-md cell.
    No other rule declares a --ui-* property: a rule reads these roles, it never redefines one. */
 ultimate-tokens {
-  --sh-control-height: var(--control-height, 32px);
-  --sh-control-inset: var(--control-inset, 8px);
-  --sh-control-text: var(--control-text, 14px);
-  --sh-control-icon: var(--control-icon, 16px);
-  --sh-control-radius: var(--radius-control, 14px);
-  --sh-radius-inset: var(--radius-inset, 10px);
-  --sh-part-height: var(--control-part-height, 24px);
-  --sh-part-inset: var(--control-part-inset, 4px);
-  --sh-chip-height: var(--chip-height, 24px);
-  --sh-chip-inset: var(--chip-inset, 5.5px);
-  --sh-chip-text: var(--chip-text, 12px);
+  --sh-control-height: var(--control-height, 28px);
+  --sh-control-inset: var(--control-inset, 7px);
+  --sh-control-text: var(--control-text, 13px);
+  --sh-control-icon: var(--control-icon, 14px);
+  --sh-control-radius: var(--radius-control, 13px);
+  --sh-radius-inset: var(--radius-inset, 9.5px);
+  --sh-part-height: var(--control-part-height, 21px);
+  --sh-part-inset: var(--control-part-inset, 3.5px);
+  --sh-chip-height: var(--chip-height, 20px);
+  --sh-chip-inset: var(--chip-inset, 4.5px);
+  --sh-chip-text: var(--chip-text, 10px);
   --sh-radius-card: var(--radius-card, 16.5px); --sh-radius-mark: var(--radius-mark, 6.5px);
   --ui-weight-regular: 400; --ui-weight-medium: 500; --ui-weight-strong: 600; --ui-weight-heavy: 700;
   --ui-motion-fast: 120ms; --ui-motion-base: 180ms; --ui-motion-ease: cubic-bezier(.2, 0, 0, 1);
@@ -1049,9 +1049,10 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
   margin-top: 14px; border: none; border-radius: 10px;
   padding: 9px 18px; font-weight: 650; font-size: 14px; cursor: default;
 }
-/* the collapse/expand affordance for the preview gallery, a quiet eyebrow-style ghost button */
+/* the collapse/expand affordance for the preview gallery, a quiet eyebrow-style ghost button; its label may wrap
+   (white-space normal) so the trailing disclosure caret stays inside the pane at a large shell cell */
 .ex-collapse-toggle {
-  align-self: flex-start; background: none; border: none; padding: 2px 0; cursor: pointer;
+  align-self: flex-start; background: none; border: none; padding: 2px 0; cursor: pointer; white-space: normal; text-align: start;
   font: var(--ui-kicker-font); letter-spacing: var(--ui-kicker-tracking); text-transform: var(--ui-kicker-case);
   color: var(--ui-kicker-ink); opacity: .8;
 }
@@ -21077,16 +21078,18 @@ class SettingsMixinImpl {
     };
   }
 
-  // The Shell geometry row: Follow kit (shellGeometry null, the chrome reads doc.geometry) or Custom,
-  // which seeds from the current effective geometry and reveals one tier, scale and radius row.
+  // The Shell geometry row: Default (shellGeometry null, the product-sm cell), Follow kit ("kit", the chrome
+  // reads doc.geometry) or Custom, which seeds from the current effective geometry and reveals one tier,
+  // scale and radius row.
   _shellGeometryRows() {
     const sg = this.shellGeometry;
     const setShell = (next) => { this.shellGeometry = next; this._saveAppPrefs(); this.render(); };
     const opts = (ids) => ids.map((id) => ({ id, label: id[0].toUpperCase() + id.slice(1) }));
-    const rows = [this._settingRow("Shell geometry", "The editor chrome's control sizes and corners. Follow kit uses this document's Geometry; Custom pins a tier, scale, and radius on this device.",
-      [{ id: "kit", label: "Follow kit" }, { id: "custom", label: "Custom" }], sg ? "custom" : "kit",
-      (id) => setShell(id === "custom" ? { ...this._effectiveShellGeometry() } : null), "setshellgeom")];
-    if (sg) {
+    const custom = !!sg && typeof sg === "object";
+    const rows = [this._settingRow("Shell geometry", "The editor chrome's control sizes and corners. Default is product, sm; Follow kit uses this document's Geometry; Custom pins a tier, scale, and radius on this device.",
+      [{ id: "default", label: "Default" }, { id: "kit", label: "Follow kit" }, { id: "custom", label: "Custom" }], custom ? "custom" : sg === "kit" ? "kit" : "default",
+      (id) => setShell(id === "custom" ? { ...this._effectiveShellGeometry() } : id === "kit" ? "kit" : null), "setshellgeom")];
+    if (custom) {
       rows.push(
         this._settingRow("Shell tier", "The control height family.", opts(Object.keys(TIERS)), sg.tier, (id) => setShell({ ...sg, tier: id }), "setshelltier"),
         this._settingRow("Shell scale", "The density step within the tier.", opts(SCALES), sg.scale, (id) => setShell({ ...sg, scale: id }), "setshellscale"),
@@ -21483,6 +21486,8 @@ const { ApplyGateMixin } = __M.applyGateMixin;
 const { SettingsMixin } = __M.settingsMixin;
 
 let geomHostSeq = 0; // per-instance keys for the host-scoped geometry roles (_applyShellGeometry)
+// the editor chrome's default cell (T-0044, user ruling): product tier, sm scale, round corners; the host's size stays md
+const SHELL_DEFAULT_GEOMETRY = Object.freeze({ tier: "product", scale: "sm", radius: "round" });
 
 // scopeGeomCSS, rewrites the engine's document-level geometry CSS (geomTokensSizesCSS + geomResolverCSS)
 // onto one host: the :root primitives and default context land on the keyed host, a [data-A="V"] context
@@ -21548,7 +21553,7 @@ class HctApp extends HTMLElement {
     this.theme = "system"; // app chrome color scheme: system (follows OS) | light | dark
     this.motion = "system"; // animation preference: system (respect prefers-reduced-motion) | reduced (always minimal), app pref
     this.fontMode = "premium"; // rendering-reliability pref: premium (as-designed families) | google (every family google-fonts-safe, per src/engine/font-fallbacks.mjs), app pref, NOT doc-bound
-    this.shellGeometry = null; // the editor chrome's own { tier, scale, radius }: null follows the kit's doc.geometry, app pref, NOT doc-bound
+    this.shellGeometry = null; // the editor chrome's own cell, app pref, NOT doc-bound: null is SHELL_DEFAULT_GEOMETRY (product, sm), "kit" follows doc.geometry, an object { tier, scale, radius } pins a custom cell
     this._geomRolesStyle = null; // this host's <style id="ut-geometry-roles-<key>"> in document.head (the shell's --control-* roles), created on first render
     this._loadAppPrefs(); // persisted APP prefs (theme/motion/fontMode/shellGeometry), loaded before setColorScheme below
     this.exportOpen = false;
@@ -23923,22 +23928,25 @@ class HctApp extends HTMLElement {
       if (p.motion === "reduced" || p.motion === "system") this.motion = p.motion;
       if (p.fontMode === "premium" || p.fontMode === "google") this.fontMode = p.fontMode;
       const sg = p.shellGeometry;
-      if (sg && Object.prototype.hasOwnProperty.call(TIERS, sg.tier) && SCALES.includes(sg.scale) && Object.prototype.hasOwnProperty.call(RADIUS_MODES, sg.radius)) {
+      if (sg === "kit") this.shellGeometry = "kit";
+      else if (sg && Object.prototype.hasOwnProperty.call(TIERS, sg.tier) && SCALES.includes(sg.scale) && Object.prototype.hasOwnProperty.call(RADIUS_MODES, sg.radius)) {
         this.shellGeometry = { tier: sg.tier, scale: sg.scale, radius: sg.radius };
       }
     } catch { /* storage unavailable / corrupt record → defaults */ }
   }
 
-  // shellGeometry is written only when set, so a record that follows the kit keeps the three chrome keys.
+  // shellGeometry is written only when not null ("kit" or a custom cell), so a record on the default keeps the three chrome keys.
   _saveAppPrefs() {
     const rec = { theme: this.theme, motion: this.motion, fontMode: this.fontMode, ...(this.shellGeometry ? { shellGeometry: this.shellGeometry } : {}) };
     try { localStorage.setItem(this._appPrefsKey(), JSON.stringify(rec)); } catch { /* storage unavailable */ }
   }
 
-  // _effectiveShellGeometry(), the chrome's { tier, scale, radius }: the Settings override, else the
-  // kit's doc.geometry, else the default (the gallery has no doc).
+  // _effectiveShellGeometry(), the chrome's { tier, scale, radius }, by shellGeometry's three states: null is
+  // SHELL_DEFAULT_GEOMETRY; "kit" follows the kit's doc.geometry, else DEFAULT_GEOMETRY (the gallery has no doc);
+  // an object is the Settings custom cell. An invalid field falls back per field to DEFAULT_GEOMETRY.
   _effectiveShellGeometry() {
-    const g = this.shellGeometry || (this.doc && this.doc.geometry) || DEFAULT_GEOMETRY;
+    const sg = this.shellGeometry;
+    const g = !sg ? SHELL_DEFAULT_GEOMETRY : sg === "kit" ? (this.doc && this.doc.geometry) || DEFAULT_GEOMETRY : sg;
     return {
       tier: Object.prototype.hasOwnProperty.call(TIERS, g.tier) ? g.tier : DEFAULT_GEOMETRY.tier,
       scale: SCALES.includes(g.scale) ? g.scale : DEFAULT_GEOMETRY.scale,

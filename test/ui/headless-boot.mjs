@@ -154,32 +154,41 @@ flushRaf();
 ok(app.view === "editor", "openSet entered editor view");
 ok(app.doc && app.doc.palettes.length === DEFAULT_PALETTES, `doc has ${DEFAULT_PALETTES} palettes`);
 
-// ── (shg) the shell receives the geometry roles: host [data-tier/scale/size/radius] + one head <style> ──
+// ── (shg) the shell receives the geometry roles: host [data-tier/scale/size/radius] + one head <style>; the
+// shell's cell is the product-sm default (null), the kit's doc.geometry ("kit") or a Custom object ──
 {
   const hostGeom = () => [app.dataset.tier, app.dataset.scale, app.dataset.size, app.dataset.radius].join(",");
   const fkBtn = (fk) => { let f = null; const w = (n) => { if (f || !n) return; if (n.attrs && n.attrs["data-fk"] === fk) { f = n; return; } (n.children || []).forEach(w); }; w(app); return f; };
-  ok(app.shellGeometry === null && hostGeom() === "product,md,md,round", `(shg1) a fresh doc's host carries product, md, md, round (got ${hostGeom()})`);
-  app.commit((d) => { d.geometry = { ...d.geometry, tier: "content", scale: "lg", radius: "pill" }; }); flushRaf();
-  ok(hostGeom() === "content,lg,md,pill", `(shg2) a doc.geometry commit updates the host attributes (got ${hostGeom()})`);
-  app.undo(); flushRaf();
-  ok(hostGeom() === "product,md,md,round", `(shg2) undoing the commit restores them (got ${hostGeom()})`);
-  // Settings › Appearance › Shell geometry: Custom seeds from the kit, then a tier/scale/radius pick wins over the doc
+  const prefs = () => JSON.parse(localStorage.getItem("ultimate-tokens-app-prefs-v1") || "{}");
+  ok(app.shellGeometry === null && hostGeom() === "product,sm,md,round", `(shg1) a fresh app's shell is the default cell: shellGeometry null, host product, sm, md, round (got ${JSON.stringify(app.shellGeometry)}, ${hostGeom()})`);
+  // Settings › Appearance › Shell geometry: Default (null) · Follow kit ("kit") · Custom (an object)
   app.openSettings(); app.settingsSection = "appearance"; app.render(); flushRaf();
+  const kit = fkBtn("setshellgeom:kit");
+  ok(!!kit && !!fkBtn("setshellgeom:default") && !!fkBtn("setshellgeom:custom"), "(shg2) the Shell geometry row renders Default, Follow kit and Custom");
+  if (kit) kit.click();
+  flushRaf();
+  ok(app.shellGeometry === "kit" && hostGeom() === "product,md,md,round", `(shg2) Follow kit sets "kit" and the host follows the doc's product, md, round (got ${JSON.stringify(app.shellGeometry)}, ${hostGeom()})`);
+  ok(prefs().shellGeometry === "kit", `(shg3) Follow kit stores "kit" in the app-prefs record (got ${JSON.stringify(prefs().shellGeometry)})`);
+  app.commit((d) => { d.geometry = { ...d.geometry, tier: "content", scale: "lg", radius: "pill" }; }); flushRaf();
+  ok(hostGeom() === "content,lg,md,pill", `(shg2) under Follow kit a doc.geometry commit moves the host (got ${hostGeom()})`);
+  app.undo(); flushRaf();
+  ok(hostGeom() === "product,md,md,round", `(shg2) undoing the commit restores it (got ${hostGeom()})`);
+  // Custom seeds from the effective cell, then a tier/scale/radius pick wins over the doc
   const custom = fkBtn("setshellgeom:custom");
   ok(!!custom, "(shg3) the Shell geometry row renders a Custom option");
   if (custom) custom.click();
   flushRaf();
   for (const fk of ["setshelltier:micro", "setshellscale:sm", "setshellradius:sharp"]) { const b = fkBtn(fk); ok(!!b, `(shg3) the Custom row renders ${fk}`); if (b) b.click(); flushRaf(); }
   app.commit((d) => { d.geometry = { ...d.geometry, tier: "content", scale: "lg", radius: "pill" }; }); flushRaf();
-  ok(hostGeom() === "micro,sm,md,sharp", `(shg3) a Settings override wins over the doc (got ${hostGeom()})`);
-  const saved = JSON.parse(localStorage.getItem("ultimate-tokens-app-prefs-v1") || "{}");
-  ok(saved.shellGeometry && saved.shellGeometry.tier === "micro" && saved.shellGeometry.radius === "sharp", "(shg3) the override persists with the app prefs");
-  const follow = fkBtn("setshellgeom:kit");
-  if (follow) follow.click();
+  ok(hostGeom() === "micro,sm,md,sharp", `(shg3) a Custom cell wins over the doc (got ${hostGeom()})`);
+  const saved = prefs();
+  ok(saved.shellGeometry && saved.shellGeometry.tier === "micro" && saved.shellGeometry.radius === "sharp", "(shg3) the Custom cell persists with the app prefs");
+  const def = fkBtn("setshellgeom:default");
+  if (def) def.click();
   flushRaf();
-  ok(app.shellGeometry === null && hostGeom() === "content,lg,md,pill", `(shg3) Follow kit drops the override and the host follows the doc again (got ${hostGeom()})`);
+  ok(app.shellGeometry === null && hostGeom() === "product,sm,md,round" && !("shellGeometry" in prefs()), `(shg3) Default returns to null, the host to product, sm, md, round, and the record drops the key (got ${JSON.stringify(app.shellGeometry)}, ${hostGeom()})`);
   app.undo(); app.closeSettings(); app.settingsSection = "mapping"; flushRaf();
-  ok(hostGeom() === "product,md,md,round", `(shg3) state restored for the groups below (got ${hostGeom()})`);
+  ok(hostGeom() === "product,sm,md,round", `(shg3) state restored for the groups below (got ${hostGeom()})`);
   const st = app._geomRolesStyle;
   const key = app.dataset.utGeom;
   ok(!!key && !!st && st.id === `ut-geometry-roles-${key}` && st.parentNode === document.head, `(shg4) app._geomRolesStyle is <style id="ut-geometry-roles-<key>"> in document.head, keyed by the host's data-ut-geom (key ${key}, id ${st && st.id})`);
@@ -210,6 +219,22 @@ ok(app.doc && app.doc.palettes.length === DEFAULT_PALETTES, `doc has ${DEFAULT_P
   app.shellGeometry = { tier: "content", scale: "lg", radius: "round" }; app.render(); flushRaf();
   const n = app._geomScaleFor("base").cells["content-lg-md"].text;
   ok(roleBlock().includes(`--ui-text-step-0: ${n}px;`), `(shg7) a content-lg override sets --ui-text-step-0: ${n}px; (got ${JSON.stringify(roleBlock())})`);
+  app.shellGeometry = null; app.render(); flushRaf();
+  // (shg8) app-prefs records load through _loadAppPrefs: no shellGeometry key (a pre-T-0044 record) leaves the
+  // default null, "kit" loads "kit", a bad object leaves null
+  const PREFS = "ultimate-tokens-app-prefs-v1";
+  const keep = localStorage.getItem(PREFS);
+  const loadRec = (extra) => {
+    app.shellGeometry = null;
+    localStorage.setItem(PREFS, JSON.stringify({ theme: app.theme, motion: app.motion, fontMode: app.fontMode, ...extra }));
+    app._loadAppPrefs();
+    return app.shellGeometry;
+  };
+  ok(loadRec({}) === null, "(shg8) a record with no shellGeometry key leaves null (the default cell)");
+  ok(loadRec({ shellGeometry: "kit" }) === "kit", "(shg8) a record with \"kit\" loads \"kit\"");
+  const badRec = loadRec({ shellGeometry: { tier: "huge", scale: "sm", radius: "round" } });
+  ok(badRec === null, `(shg8) a record with a bad object leaves null (got ${JSON.stringify(badRec)})`);
+  if (keep === null) localStorage.removeItem(PREFS); else localStorage.setItem(PREFS, keep);
   app.shellGeometry = null; app.render(); flushRaf();
 }
 
