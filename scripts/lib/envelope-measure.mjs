@@ -62,7 +62,7 @@ export const NAMED_EXCEPTIONS = new Map([
 // inside the ramp's pivot window count toward the perceptual rule. An anchor outside it renders a
 // clamped pivot, not its own hex, at stop 500, so a run measured against that stop is the clamp's, not
 // the envelope's. Every violation the window removes from the count is still returned
-// (`perceptualWindowExcluded`) and printed by name. ramp@2 (T-0040, ADR-036): the window is the
+// (`perceptualWindowExcluded`) and printed by name. ramp@2 (T-0040, ADR-037): the window is the
 // engine's `pivotWindow(controls)`, [RAMP_L_MIN, RAMP_L_MAX] narrowed to the band interior by one 0.55
 // L* step ([11.73, 94.36] on perceptual and peak at the defaults), so it reads the palette's controls.
 const anchorLstar = (pal) => (typeof pal.anchor === "string" && /^#[0-9a-f]{6}$/i.test(pal.anchor)

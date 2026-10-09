@@ -381,7 +381,7 @@ function clampOverrides(o) {
 // doc then serializes with `layers`. layer-pins.mjs's pinsOf then clamps each pin to [1, latest] and
 // hydrate drops an id the registry does not name, reported through DROPPED_KEYS.
 //
-// v11 (T-0040, ADR-036): a document carries the boolean `matchPeerLightness` (Match peer lightness,
+// v11 (T-0040, ADR-037): a document carries the boolean `matchPeerLightness` (Match peer lightness,
 // read by the `ramp@2` layer only). An absent or non-true value reads false, the rendering every doc
 // had before, so the RENAME_MAPS entry translates nothing; it marks the version that added the key.
 export const CURRENT_SCHEMA_VERSION = 11;
@@ -461,7 +461,7 @@ const RENAME_MAPS = [
     stampLayers: true,
   },
   {
-    // Match peer lightness (T-0040, ADR-036): the `matchPeerLightness` flag. An absent key reads false
+    // Match peer lightness (T-0040, ADR-037): the `matchPeerLightness` flag. An absent key reads false
     // (hydrate below), which is how every earlier doc renders, so nothing is translated.
     version: 11,
   },

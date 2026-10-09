@@ -1,5 +1,5 @@
 // tonal.js, tonal-scale generation module (vanilla ESM, no deps). This file is the live `ramp@2`
-// compute layer (T-0040, ADR-036); `ramp@1`, the ramp before the band rule, is frozen verbatim in
+// compute layer (T-0040, ADR-037); `ramp@1`, the ramp before the band rule, is frozen verbatim in
 // src/engine/layers/ramp@1.mjs and never edited (ADR-034).
 //
 // Builds a palette's per-stop ramp from global controls + a palette's
@@ -64,7 +64,7 @@ export const DEFAULT_CONTROLS = {
   // Light/dark-end chroma floor (% of each stop's gamut ceiling) for the "even" path, lifts the
   // damping-starved ends back toward the palette's intended chroma so LOW-chroma ramps don't collapse
   // to a near-white "dead zone", WITHOUT muting saturated palettes (see paletteStops). Default on.
-  // ramp@2 (T-0040, ADR-036) also reads it in EVERY tone mode as the band rule's shared end tint, the
+  // ramp@2 (T-0040, ADR-037) also reads it in EVERY tone mode as the band rule's shared end tint, the
   // fraction of each band stop's gamut ceiling (capped by a low-chroma anchor's own on perceptual and peak).
   chromaFloor: 40,
   // Ramp distribution mode (how stops map to lightness):
@@ -96,7 +96,7 @@ export const DEFAULT_CONTROLS = {
   // to 550 (light) / 450 (dark), mode-specific, better contrast per scheme. "single": both modes map to
   // 500, one mode-agnostic accent token. Applied via applyAccentRef alongside applyOnColorContrast.
   accentRef: "mode",
-  // Match peer lightness (T-0040, ADR-036; read by ramp@2 only, `ramp@1` never reads it). false
+  // Match peer lightness (T-0040, ADR-037; read by ramp@2 only, `ramp@1` never reads it). false
   // (default): the band rule matches the lightest and darkest stops across a kit's palettes (stops 050
   // to 100 and 900 to 950) and each palette keeps its own curve between, its anchor at stop 500. true:
   // the tone edge moves to 500 on both sides, every stop's tone is `sharedToneAt(stop)`, so a stop number
@@ -740,7 +740,7 @@ function resolveAnchor(palette) {
 // minimum gap needs against the corpus's actual source L* distribution).
 export const RAMP_L_MIN = 9.95, RAMP_L_MAX = 95.05;
 
-// ── The band rule (ramp@2, T-0040, ADR-036) ─────────────────────────────────────────────────────
+// ── The band rule (ramp@2, T-0040, ADR-037) ─────────────────────────────────────────────────────
 // BAND_EDGE: the two band edges, one module-level pair every path reads. Radix step 1 reads stop 100
 // light and 900 dark, step 12 reads the onSurface role (950 light, 050 dark): all band stops in both
 // schemes. The opt-in match-peer-lightness mode (step 4) moves the tone edge to 500.
@@ -824,7 +824,7 @@ export function solveSForChroma(hue, l, chroma) {
 // (measured on a near-grey yellow anchor: C 5.7, 13.8, 6.7 at successive steps); the hue is averaged
 // between steps and the loop stops once the hue settles under a degree. Achromatic renders (C at or
 // under 1) read the OKLCH hue's CAM16 image at `frac` of its peak.
-// ── The band memos (ramp@2, T-0040, ADR-036) ─────────────────────────────────────────────────────
+// ── The band memos (ramp@2, T-0040, ADR-037) ─────────────────────────────────────────────────────
 // Exact-key `boundedCache` memos on the band rule's three searches (solveSForFraction, bandStopOkhsl,
 // snapBandPixel), each capped at BAND_MEMO_CAP. #686: the key is the exact floats, never a rounded
 // bucket, so no first caller decides a later caller's value (docs/references/knowledge-01-color-engine.md).
@@ -1241,7 +1241,7 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
   // discontinuity that broke monotonicity before this branch existed. Only sources strictly inside
   // the window get the verbatim, byte-exact stop-500 special case below.
   // ramp@2: the window is the band interior (pivotWindow), RAMP_L_MIN/MAX narrowed by BAND_PIVOT_GAP.
-  // Match peer lightness (ADR-036): stop 500 sits on the shared ladder like every other stop, so it is a
+  // Match peer lightness (ADR-037): stop 500 sits on the shared ladder like every other stop, so it is a
   // construction at the anchor's hue and chroma basis, as a clamped pivot is.
   const match = controls.matchPeerLightness === true;
   const [winLo, winHi] = pivotWindow(controls);
@@ -1382,7 +1382,7 @@ export function paletteStops(palette, controls, stops) {
   // The band rule (ramp@2): the pivot is the palette's own toneAt(500), clamped into the band interior
   // (pivotWindow; an extreme skew or lift can put toneAt(500) past the shared edge); a band stop takes
   // the shared ladder, an interior stop toneAt remapped onto [shared(100), pivot] / [pivot, shared(900)].
-  // Match peer lightness (ADR-036): every stop, 500 included, on the shared ladder.
+  // Match peer lightness (ADR-037): every stop, 500 included, on the shared ladder.
   const match = controls.matchPeerLightness === true;
   const [winLo, winHi] = pivotWindow(controls, BAND_PIVOT_ROOM);
   const pivotTone = match ? sharedToneAt(500, controls) : Math.min(winHi, Math.max(winLo, toneAt(500, palette.skew, lift, ctl)));
@@ -1825,7 +1825,7 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
   // so interpolating in l - where the saturation the ramp actually renders at is a constant multiplier
   // and does not re-enter the lightness computation - is the more faithful ladder.
   // ramp@2: the window is the band interior (pivotWindow), RAMP_L_MIN/MAX narrowed by BAND_PIVOT_GAP.
-  // Match peer lightness (ADR-036): stop 500 sits on the shared ladder like every other stop, so it is a
+  // Match peer lightness (ADR-037): stop 500 sits on the shared ladder like every other stop, so it is a
   // construction at the anchor's hue and chroma basis, as a clamped pivot is.
   const match = controls.matchPeerLightness === true;
   const [winLo, winHi] = pivotWindow(controls);
@@ -1893,7 +1893,7 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
       const bandHue = b.camHue === null ? null : !oklchSpace && !anchor.achromatic ? camTarget : b.camHue;
       return { hue, s: b.s, l: b.l, rgb, chroma: cam16FromRgb(rgb).chroma, toneTarget: tone, toneHeld: lstarFromRgb(b.rgb), env, tint: b.s, band, bandHue };
     }
-    // Match peer lightness (ADR-036): l renders the shared L* at the anchor's saturation (no ladder, no
+    // Match peer lightness (ADR-037): l renders the shared L* at the anchor's saturation (no ladder, no
     // vibrancy blend); otherwise the two curve shapes about the pivot, blended by `t`.
     let l;
     if (match) l = stop === 500 ? pivotL : solveLForTone(seedH, sBasis, sharedToneAt(stop, controls));
@@ -2061,7 +2061,7 @@ function okhslStops(palette, controls, stops, mode) {
   const l500own = lightnessAt(ANCHOR_STOP, tPal);
   const pivotToneOwn = lstarFromRgb(okhslToRgbFloat(hOk, sBasis, l500own));
   const pivotTone = Math.min(winHi, Math.max(winLo, pivotToneOwn));
-  // Match peer lightness (ADR-036): every stop, 500 included, renders the shared L* at the key saturation.
+  // Match peer lightness (ADR-037): every stop, 500 included, renders the shared L* at the key saturation.
   const match = controls.matchPeerLightness === true;
   const pivotL = match ? solveLForTone(hOk, sBasis, sharedToneAt(ANCHOR_STOP, controls))
     : pivotTone === pivotToneOwn ? l500own : solveLForTone(hOk, sBasis, pivotTone);

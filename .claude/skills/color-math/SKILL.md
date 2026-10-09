@@ -42,7 +42,7 @@ of `paletteStops`, which hands `perceptual`/`peak` to `okhslStops`):
   `chromaFloor` is also the band tint in every mode, see below). Per-stop tone is the
   same L\* for every hue (tone-aligned); chroma is `% of the base-hue peak`, edge-damped, clamped to `maxc`.
 
-> ⚠️ `ramp@2` (T-0040, ADR-036; the live `tonal.js`, `ramp@1` frozen in `layers/ramp@1.mjs`) adds the band
+> ⚠️ `ramp@2` (T-0040, ADR-037; the live `tonal.js`, `ramp@1` frozen in `layers/ramp@1.mjs`) adds the band
 > rule in every mode: stops 050 to 100 and 900 to 950 sit on the shared ladder `sharedToneAt` with one tint,
 > `chromaFloor / 100` of the gamut ceiling (capped by a low-chroma anchor's own on perceptual and peak), and
 > are pixel-snapped last. `matchPeerLightness` (schema v11, `ramp@2` only) puts every stop on that ladder;

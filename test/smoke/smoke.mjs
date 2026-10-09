@@ -107,7 +107,7 @@ try {
   writeFileSync(resolve(OUT, "scheme-color.png"), Buffer.from(cmpShot.data, "base64"));
   console.log("  · screenshot → smoke-out/scheme-color.png");
 
-  // Match peer lightness (T-0040, ADR-036): the Global inspector's own row, switched On through its
+  // Match peer lightness (T-0040, ADR-037): the Global inspector's own row, switched On through its
   // segment, every palette on the shared ladder; one screenshot for the T-0040 board, then Off again.
   await evalJS(`(()=>{${el}._deselect();${el}.render();})()`); await sleep(200);
   await evalJS(`(()=>{const up=${el}.querySelector('[data-fk="matchpeer:upgrade"]');if(up)up.click();})()`); await sleep(300);

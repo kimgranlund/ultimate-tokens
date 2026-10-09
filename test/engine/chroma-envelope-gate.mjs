@@ -19,7 +19,7 @@
 //   pivot); on even `model` equals
 //   min(maxc, max(min(basis*env, maxc), floor), anchorCap) to 1e-9 relative (at stops not `refined`,
 //   not damped by the group, and not the anchored path's stop 500, which is the anchor itself).
-//   The band clause (ramp@2, T-0040, ADR-036): every stop's own value above blends toward the band
+//   The band clause (ramp@2, T-0040, ADR-037): every stop's own value above blends toward the band
 //   tint by the band weight w, written here from the rule (SPEC's bandLight/bandDark edges): w is 1 at
 //   and past each edge and a smoothstep of the liftStop distance from 500 to the edge between, so the
 //   own-value forms above hold as written only where w is 0 (stop 500). Elsewhere the model is

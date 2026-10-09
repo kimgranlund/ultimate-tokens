@@ -5,7 +5,7 @@ carries its landing date.
 
 ## 1.74 - 2026-10-09 - ramp@2 matches the lightest and darkest stops across palettes, and Match peer lightness matches every stop (T-0040)
 
-**The band rule (ADR-036).** New documents and presets render with `ramp@2`: stops 050 to 100 and 900 to
+**The band rule (ADR-037).** New documents and presets render with `ramp@2`: stops 050 to 100 and 900 to
 950 of every palette sit on one shared L* ladder with one tint (`chromaFloor` percent of the gamut
 ceiling, capped by a low-chroma anchor's own on perceptual and peak, so grey anchors keep grey ends),
 pixel-snapped last, in every tone mode. On the default kit the L* spread at stop 100 falls from 7.46 to

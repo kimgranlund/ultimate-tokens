@@ -1334,7 +1334,9 @@ Format: Context → Decision → Rationale → Consequences → Status.
     `meta.layers`, DTCG `$extensions["com.ultimate-tokens"].layers`, UI3 and the design-system
     `tokens.json` `$layers`. The DESIGN.md frontmatter takes no new key. The brand kit is
     `ultimate-tokens-brand-kit/7` and the brand-kit MCP server 0.7.0.
-  - The editor's "upgrade to latest" action is not in this change.
+  - The editor's "upgrade to latest" action is not in this change. Amended 2026-10-09 (T-0040,
+    ADR-037): the Global inspector of a `ramp@1` kit offers "Upgrade to latest", which sets every
+    layer pin to `LATEST` and re-renders.
 - **Alternatives rejected.**
   | Alternative | Why rejected |
   |---|---|
@@ -1490,8 +1492,7 @@ Format: Context → Decision → Rationale → Consequences → Status.
   change there moves both versions and reds the gates. The corpus gates open presets through
   `presetDoc`, so they read `ramp@2`. This amends ADR-034's "the editor's upgrade to latest action is
   not in this change": the Global inspector of a `ramp@1` kit now offers "Upgrade to latest", which
-  sets every layer pin to `LATEST` and re-renders (ADR-034's section is absent from this lane's file,
-  so the amendment is recorded here).
+  sets every layer pin to `LATEST` and re-renders.
 - **Match peer lightness.** `matchPeerLightness` (default false, schema v11, read by `ramp@2` only)
   moves the tone edge to 500 on both sides: every stop's tone is `sharedToneAt(stop)` and every pixel
   is snapped onto it (L* spread at most 0.89 over all 25 stops of the default kit, both hue spaces,

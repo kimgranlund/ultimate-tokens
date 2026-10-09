@@ -2426,7 +2426,7 @@ ok(isEnabledSeg(segForcedOff.children[0]) === false && isEnabledSeg(segForcedOn.
 app.sets = app.sets.filter((s) => s.id !== "hs-test-set");
 app.openSet(app.sets[0].id); flushRaf();
 
-// ── (mpl) Match peer lightness (T-0040, ADR-036): the Global inspector's own row on a ramp@2 kit, the
+// ── (mpl) Match peer lightness (T-0040, ADR-037): the Global inspector's own row on a ramp@2 kit, the
 // "Upgrade to latest" button on a ramp@1 kit, and the per-palette and global sliders the mode makes
 // moot (Skew, Cusp pull, Vibrancy) hidden while it is on. A fresh defaultDocument() in its own
 // throwaway set, the hs-test-set discipline above, so app.sets[0] is never written.
@@ -3885,7 +3885,7 @@ flushRaf();
   const scaledHex = (st, r) => { const { h, s, l } = okGID(st.rgb); const hold = htGID(h, s, l, r); return Math.abs(hold.s - Math.min(1, r * s)) < 1e-12 ? hexOf(o2rGID(shGID(h, hold.s, hold.l), hold.s, hold.l)) : "ratio-off"; };
   const hexesGID = (r) => JSON.stringify(r.map((s) => s.hex));
   const direct50 = neutralAt(50);
-  // T-0040 (ramp@2, ADR-036): a band stop (050 to 100, 900 to 950) is re-snapped after the damper
+  // T-0040 (ramp@2, ADR-037): a band stop (050 to 100, 900 to 950) is re-snapped after the damper
   // (tonal.js dampStops: the pixel nearest the shared L* at r x the end tint), so it is not the scaled
   // pixel; ratioOff skips the band stops and (gid3) asserts in their place that each damped band stop's
   // pixel L* sits within 0.45 of the shared ladder (sharedToneAt), the snap's own window.
@@ -3917,7 +3917,7 @@ flushRaf();
   // ramp to about 4% of its at-100 saturation, its vivid middle (stops 400 to 600) included. Read as
   // OKHSL s over owner4-span: stops 200 to 800 whose at-100 s is at least 0.3 (under it one 8-bit code
   // moves s(4)/s(100) by more than the bound's half width, so hex quantization dominates; T-0040 re-pin,
-  // ADR-036, was 0.05: the band rule blends stops 200 and 800 toward the end tint, s 0.27 at 100, and
+  // ADR-037, was 0.05: the band rule blends stops 200 and 800 toward the end tint, s 0.27 at 100, and
   // stop 800's one-code #2B2B2C read 0.057). Each stop the threshold sets aside is held instead on the
   // coordinate dampStops scales (scaledHex, as gid3 reads it), so none drops out unchecked. Prime chroma
   // never reaches the ramp: the base-4 ramp is the same with the global Prime chroma at 100 and 0.

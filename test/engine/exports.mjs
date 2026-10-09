@@ -524,7 +524,7 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (ddRaw.primary["50"].value !== "oklch(1 0 0)") FAIL("panda", `EX-1 colors.primary.50 = ${ddRaw.primary["50"].value}`);
   // #725 U3 re-pin (was oklch(0.1763 0.014 258.36), #0D1117): the damp retune greys stop 950 further
   // (#101011) while the tone hold keeps its undamped CIE L*; stop 500 and 50 did not move.
-  // T-0040 re-pin (ramp@2 band rule, ADR-036), was oklch(0.1735 0.002 286.18): stop 950 is a band stop,
+  // T-0040 re-pin (ramp@2 band rule, ADR-037), was oklch(0.1735 0.002 286.18): stop 950 is a band stop,
   // the shared L* with the shared tint (chromaFloor % of its gamut ceiling) at the anchor's hue.
   if (ddRaw.primary["950"].value !== "oklch(0.1729 0.0179 263.93)") FAIL("panda", `EX-1 colors.primary.950 = ${ddRaw.primary["950"].value}`);
   if (ddRaw.neutral["500"].value !== "oklch(0.5056 0.0552 267.76)") FAIL("panda", `EX-1 colors.neutral.500 = ${ddRaw.neutral["500"].value}`);
@@ -534,17 +534,17 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   if (ddRaw.primary.prime.dimmest.value !== "oklch(0.2678 0.1038 258.99)") FAIL("panda", `EX-1 colors.primary.prime.dimmest = ${ddRaw.primary.prime.dimmest.value}`); // T-0015 re-pin (oklch holds the anchor's OKLCH hue on the ladder), was oklch(0.2669 0.1023 258.76)
   if (JSON.stringify(ddRaw.primary.prime.DEFAULT) !== JSON.stringify(ddRaw.primary.prime.prime)) FAIL("panda", "EX-1 colors.primary.prime.DEFAULT != .prime");
   if (ddRaw.constant.backdrop.value !== "oklch(0 0 0 / 80%)") FAIL("panda", `EX-1 colors.constant.backdrop = ${ddRaw.constant.backdrop.value}`);
-  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.4638 0.1596 258.94)", _dark: "oklch(0.5564 0.1832 258.91)" })) // T-0040 re-pin (ramp@2 band rule, ADR-036), was base oklch(0.4621 0.1645 258.77) / dark oklch(0.5534 0.1923 258.93); T-0014 re-pin (vibrancy 50), was base oklch(0.4669 0.1671 258.98) / dark oklch(0.5476 0.1923 259.11); #725 U3 re-pin, dark was oklch(0.5506 0.1922 259.07)
+  if (JSON.stringify(ddSem.primary.DEFAULT.value) !== JSON.stringify({ base: "oklch(0.4638 0.1596 258.94)", _dark: "oklch(0.5564 0.1832 258.91)" })) // T-0040 re-pin (ramp@2 band rule, ADR-037), was base oklch(0.4621 0.1645 258.77) / dark oklch(0.5534 0.1923 258.93); T-0014 re-pin (vibrancy 50), was base oklch(0.4669 0.1671 258.98) / dark oklch(0.5476 0.1923 259.11); #725 U3 re-pin, dark was oklch(0.5506 0.1922 259.07)
     FAIL("panda", `EX-2 colors.primary.DEFAULT = ${JSON.stringify(ddSem.primary.DEFAULT.value)}`);
-  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.3885 0.0918 258.69)", _dark: "oklch(0.6645 0.1172 259.22)" })) // T-0040 re-pin (ramp@2 band rule, ADR-036), was base oklch(0.3808 0.1161 259.05) / dark oklch(0.6588 0.148 258.89); T-0014 re-pin (vibrancy 50), was base oklch(0.3962 0.1205 259.03) / dark oklch(0.6405 0.1518 258.99); #725 U3 re-pin, was base oklch(0.3971 0.1239 258.91) / dark oklch(0.6413 0.1547 259.07); base re-pinned again at revision 8 (was oklch(0.3951 0.1194 258.53)): the anchored oklch hue is the anchor's own, no per-stop solve
+  if (JSON.stringify(ddSem.primary.hover.value) !== JSON.stringify({ base: "oklch(0.3885 0.0918 258.69)", _dark: "oklch(0.6645 0.1172 259.22)" })) // T-0040 re-pin (ramp@2 band rule, ADR-037), was base oklch(0.3808 0.1161 259.05) / dark oklch(0.6588 0.148 258.89); T-0014 re-pin (vibrancy 50), was base oklch(0.3962 0.1205 259.03) / dark oklch(0.6405 0.1518 258.99); #725 U3 re-pin, was base oklch(0.3971 0.1239 258.91) / dark oklch(0.6413 0.1547 259.07); base re-pinned again at revision 8 (was oklch(0.3951 0.1194 258.53)): the anchored oklch hue is the anchor's own, no per-stop solve
     FAIL("panda", `EX-2 colors.primary.hover = ${JSON.stringify(ddSem.primary.hover.value)}`);
   if (JSON.stringify(ddSem.primary["on-primary"].value) !== JSON.stringify({ base: "oklch(1 0 0)", _dark: "oklch(1 0 0)" }))
     FAIL("panda", `EX-2 colors.primary.on-primary = ${JSON.stringify(ddSem.primary["on-primary"].value)}`);
-  if (JSON.stringify(ddSem.neutral["on-surface"].value) !== JSON.stringify({ base: "oklch(0.182 0.0177 263.98)", _dark: "oklch(1 0 0)" })) // T-0040 re-pin (ramp@2 band rule, ADR-036: stop 950 carries the shared tint), base was oklch(0.1776 0 0); #725 U3 re-pin, base was oklch(0.1774 0.0044 264.46)
+  if (JSON.stringify(ddSem.neutral["on-surface"].value) !== JSON.stringify({ base: "oklch(0.182 0.0177 263.98)", _dark: "oklch(1 0 0)" })) // T-0040 re-pin (ramp@2 band rule, ADR-037: stop 950 carries the shared tint), base was oklch(0.1776 0 0); #725 U3 re-pin, base was oklch(0.1774 0.0044 264.46)
     FAIL("panda", `EX-2 colors.neutral.on-surface = ${JSON.stringify(ddSem.neutral["on-surface"].value)}`);
   if (Object.keys(ddSem.primary).length !== 53) FAIL("panda", `EX-2 expected 53 keys under semanticTokens.colors.primary, got ${Object.keys(ddSem.primary).length}`);
   if (Object.keys(ddSem).length !== 16) FAIL("panda", `EX-2 expected 16 palette groups, got ${Object.keys(ddSem).length}`);
-  if (!ddSem["data-1"] || ddSem["data-1"].DEFAULT.value.base !== "oklch(0.5113 0.2196 272.19)") FAIL("panda", `EX-2 data-1.DEFAULT.base = ${ddSem["data-1"] && ddSem["data-1"].DEFAULT.value.base}`); // T-0040 re-pin (ramp@2 band rule, ADR-036), was oklch(0.5093 0.2338 272.35); T-0014 re-pin (vibrancy 50), was oklch(0.5163 0.2329 272.15); #725 U3 re-pin, was oklch(0.5184 0.2316 272.29)
+  if (!ddSem["data-1"] || ddSem["data-1"].DEFAULT.value.base !== "oklch(0.5113 0.2196 272.19)") FAIL("panda", `EX-2 data-1.DEFAULT.base = ${ddSem["data-1"] && ddSem["data-1"].DEFAULT.value.base}`); // T-0040 re-pin (ramp@2 band rule, ADR-037), was oklch(0.5093 0.2338 272.35); T-0014 re-pin (vibrancy 50), was oklch(0.5163 0.2329 272.15); #725 U3 re-pin, was oklch(0.5184 0.2316 272.29)
 
   // disabled palette absent from both trees.
   const disabledPanda = X.exportPanda(oneOff);

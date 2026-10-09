@@ -22,7 +22,7 @@
 // (`unknown` outside git) in its `capturedAt` field, and prints that sha - used only by hand, by the plan
 // that moves perceptual or peak or edits a curated corpus document or the default kit (the scope of the
 // fixture's `owner` field and of the fingerprint note above);
-// #725 moved perceptual and peak at U2/U3 and re-captured, T-0040 (ramp@2, ADR-036) again; the next plan
+// #725 moved perceptual and peak at U2/U3 and re-captured, T-0040 (ramp@2, ADR-037) again; the next plan
 // that moves them re-captures.
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
@@ -71,7 +71,7 @@ if (CAPTURE) {
   let sha = "unknown";
   try { sha = execFileSync("git", ["rev-parse", "HEAD"], { cwd: new URL("../..", import.meta.url) }).toString().trim(); } catch { /* detached/no-git scratch context: leave "unknown" */ }
   const fx = {
-    owner: "the plan that moves perceptual or peak, or edits any curated corpus document or the default kit (the fingerprint covers their rendered content), re-captures this fixture in its own change and names the new sha here; #725 moved perceptual and peak at U2/U3 and re-captured; T-0040 (ramp@2, ADR-036) moved them and re-captured; the next plan that moves them re-captures",
+    owner: "the plan that moves perceptual or peak, or edits any curated corpus document or the default kit (the fingerprint covers their rendered content), re-captures this fixture in its own change and names the new sha here; #725 moved perceptual and peak at U2/U3 and re-captured; T-0040 (ramp@2, ADR-037) moved them and re-captured; the next plan that moves them re-captures",
     capturedAt: sha,
     corpus: corpusLabel,
     perceptual,

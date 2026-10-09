@@ -38,7 +38,7 @@ const FAIL = (g, m) => { if (!fails.some((f) => f.startsWith(g + ":"))) fails.pu
 const angDiff = (a, b) => { let d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
 const rampOf = (p) => T.paletteStops({ hue: p.hue, chroma: p.chroma, skew: p.skew, lift: p.lift }, CTL, STOPS);
 
-// T-0040 (ramp@2, ADR-036): the band rule, re-derived from its definition for the groups below that read
+// T-0040 (ramp@2, ADR-037): the band rule, re-derived from its definition for the groups below that read
 // a stop against the palette's own construction (written for ramp@1, which renders that construction
 // unremapped and is frozen in src/engine/layers/ramp@1.mjs). A band stop (T.inBand: 050 to 100 and 900
 // to 950) sits on the shared ladder, its pixel L* within BAND_L_TOL of T.sharedToneAt(stop) (the snap's
@@ -114,7 +114,7 @@ for (const p of DEFAULTS) {
 }
 
 // ── hpg-tonal-curve-fidelity: emitted-PIXEL L* == toneAt within |dL*|<=1.0 (anti-tautology) ─
-//    T-0040 (ramp@2, ADR-036): toneAt is now read through the band rule, `bandTone` (the palette's own
+//    T-0040 (ramp@2, ADR-037): toneAt is now read through the band rule, `bandTone` (the palette's own
 //    toneAt remapped onto the shared band edges, was toneAt itself); a band stop is held on the shared
 //    ladder instead (bandToneOk). The remap moved Neutral stop 125 from 91.28 to 94.10, for instance.
 for (const p of DEFAULTS) for (const r of rampOf(p)) {
@@ -184,7 +184,7 @@ for (const p of DEFAULTS) {
   const dL = signed(hueAt(r50, 250), base), dD = signed(hueAt(r50, 750), base);
   if (!(dL < -2 && dD > 2)) FAIL("edge-hue", `+hueShift didn't torsion light(−)/dark(+): light ${dL.toFixed(1)}° dark ${dD.toFixed(1)}°`);
   // (e) MIRROR, ramp(+H)[dark stop] hue == ramp(−H)[light mirror stop] hue (symmetric per-side).
-  //     T-0040 (ramp@2, ADR-036): read at 650 / 350 (was 750 / 250): the band rule's blend toward the
+  //     T-0040 (ramp@2, ADR-037): read at 650 / 350 (was 750 / 250): the band rule's blend toward the
   //     band tint (chromaFloor 0 in CTL, grey) leaves 750 / 250 at CAM16 C 5, where an 8-bit pixel's hue
   //     is rounding noise (5.3 degrees apart), the floor this group's own `chromatic` filter exempts.
   if (angDiff(hueAt(r50, 650), hueAt(rN, 350)) > 2.0) FAIL("edge-hue", "hueShift not mirror-symmetric (+H dark vs −H light)");
@@ -239,7 +239,7 @@ for (const p of DEFAULTS) {
   //     above: an independent re-derivation of the BEHAVIOUR, not chromaEnvelope's own code.
   const evenDamp = 100 - (100 - CTL.damp) * T.EVEN_DAMP_FACTOR;
   const evenDampCurve = (CTL.dampCurve ?? 1.5) * T.EVEN_DAMP_FACTOR;
-  //     T-0040 (ramp@2, ADR-036): the band rule then blends each stop's chroma toward the band tint
+  //     T-0040 (ramp@2, ADR-037): the band rule then blends each stop's chroma toward the band tint
   //     (chromaFloor % of the stop's ceiling, 0 in CTL) by its blend weight `bandW`, so the legacy value
   //     is read times (1 - w) (was the legacy value itself); a band stop renders the tint on the shared
   //     ladder (bandToneOk in its place).
@@ -432,7 +432,7 @@ for (const mode of ["perceptual", "peak"]) {
   //     #701 U2 re-derivation (revision 14): the same 11 stops. The floor's gamut reference is now
   //     min(maxc, floorRef), floorRef the widest ceiling among stops 450/500/550; at this probe the
   //     cap leaves every one of the 11 still diverging and adds none.
-  //     T-0040 (ramp@2, ADR-036): chromaFloor is also the band rule's end tint (the band stops render it)
+  //     T-0040 (ramp@2, ADR-037): chromaFloor is also the band rule's end tint (the band stops render it)
   //     and the target every interior stop's chroma blends toward by its blend weight, which is above 0
   //     everywhere but stop 500, so on ramp@2 the floor moves every stop of a vibrant ramp but 500 and the
   //     white 050 (was the 11 above): 75, 350 to 450, 550 to 850 join. Stop 500 (blend weight 0) and 050
@@ -1047,7 +1047,7 @@ for (const mode of ["perceptual", "peak"]) {
         const ctl = OK(mode, { hueSpace, vibrancy: 0, damp: 0 });
         const lLight = T.okhslLAt(ctl.lmax), lDark = T.okhslLAt(ctl.lmin);
         const cuspL = T.okhslLAt(E.peakC(T.effHue(p.hue, hueSpace, T.hueAnchorFrac(p, ctl))).tone);
-        // T-0040 (ramp@2, ADR-036): read on the frozen ramp@1 layer (was the live engine). The band rule
+        // T-0040 (ramp@2, ADR-037): read on the frozen ramp@1 layer (was the live engine). The band rule
         // remaps this distribution onto the shared band edges and blends its chroma toward the end tint,
         // re-holding l for the held L*, so on ramp@2 no stop but 500 reads the unwarped l; ramp@1 renders
         // the distribution itself, and (i r2) below holds ramp@2 to it at the pivot and on the ladder.
@@ -1073,7 +1073,7 @@ for (const mode of ["perceptual", "peak"]) {
     const missing = [...CAP_L_EXCEPTIONS].filter((k) => !seenCapLExceptions.has(k));
     FAIL("skew-lift-okhsl", `(i) ${missing.length} of the ${CAP_L_EXCEPTIONS.size} cited CAP_L_EXCEPTIONS were not observed this run (${missing.join(", ")})  -  either fixed (remove from the list) or the corpus changed under it`);
   }
-  // (i r2) T-0040 (ramp@2, ADR-036): the live ramp keeps (i)'s distribution where the band rule leaves
+  // (i r2) T-0040 (ramp@2, ADR-037): the live ramp keeps (i)'s distribution where the band rule leaves
   //     it: at skew 0 + lift 0 and damp 0, its stop 500 (the remap's pivot, blend weight 0) is ramp@1's own
   //     pixel, and every band stop sits on the shared ladder (bandToneOk). A pivot the band rule clamps
   //     (ramp@1's stop 500 outside pivotWindow(ctl, BAND_PIVOT_ROOM), a peak cusp near white: Data 5,
@@ -1347,7 +1347,7 @@ for (const mode of ["perceptual", "peak"]) {
 
   // (vi) the warp stays PURE in the single stop value: the 19-stop display ramp and the 25-stop export
   //      ramp must still agree at every shared stop (no whole-ramp renormalisation crept in).
-  //      T-0040 (ramp@2, ADR-036): a stop the pixel pass moved on either set (`refined`) is set aside: the
+  //      T-0040 (ramp@2, ADR-037): a stop the pixel pass moved on either set (`refined`) is set aside: the
   //      pass compares a stop to its neighbour in whichever array it is given (tonal.js
   //      enforceMonotonePixelL, stop-set dependent by its own header), and ramp@2 also runs it after the
   //      damper, where Data 7 (Base chroma 95, peak) moves stop 150 under its 25-stop neighbour 125.
@@ -1503,7 +1503,7 @@ for (const mode of ["perceptual", "peak"]) {
   // after this gate still proves an UNLISTED collision is caught. The counts above are #744's: #725 U3
   // re-froze the list to 30 keys, T-0014 to 32 and T-0040 to 380 (its note, in the list, gives the cause).
   const KNOWN_BASELINE_DUP = new Set([
-  // T-0040 re-freeze (ramp@2 band rule, ADR-036), measured FULL on the ramp@2 engine: 32 -> 380 keys,
+  // T-0040 re-freeze (ramp@2 band rule, ADR-037), measured FULL on the ramp@2 engine: 32 -> 380 keys,
   // 375 added and 27 removed (177 perceptual, 168 peak, 35 even; 126 on the 19-stop display
   // set, 254 on the 25-stop export set; 84 on the light side, 296 on the dark). A run of one hex over
   // three or more stops is keyed from its first stop (a cited key does not move `seen`). The earlier
@@ -2364,7 +2364,7 @@ for (const mode of ["perceptual", "peak"]) {
   //     T-0014 (vibrancy default 0 to 50, ADR-030): the perceptual pin moved 517576c558838c97 ->
   //     f311872069c3b5b1, the same pre-damper engine (306f9a9e) rendered at vibrancy 50, which hashes
   //     f311872069c3b5b1 there and still 517576c558838c97 at vibrancy 0; peak and even did not move.
-  //     T-0040 (ramp@2, ADR-036): the band rule moves the at-100 render (the shared ladder and tint at
+  //     T-0040 (ramp@2, ADR-037): the band rule moves the at-100 render (the shared ladder and tint at
   //     the ends, the remap and blend between), so each pin is the ramp@2 at-100 render (was perceptual
   //     f311872069c3b5b1, peak 5b1905c4160c2a85, even 98d8a73594eb7383, the pre-damper engine's; ramp@1
   //     still renders those, frozen).
@@ -2376,7 +2376,7 @@ for (const mode of ["perceptual", "peak"]) {
     // (ii) at 50 and 10, every stop is r times its at-100 coordinate; perceptual and peak read OKHSL s
     //      back from the hex (within 0.02), even reads the `chroma` field (within max(0.5, 3%): hex
     //      quantization and the per-stop hue solve); stop 500 moves too (no stop-500 pin).
-    //      T-0040 (ramp@2, ADR-036): a band stop is re-snapped after the damper (the pixel nearest the
+    //      T-0040 (ramp@2, ADR-037): a band stop is re-snapped after the damper (the pixel nearest the
     //      shared L* at r times the end tint), so it is held on the shared ladder instead (bandToneOk).
     for (const g of [50, 10]) {
       const r = g / 100, damped = render(g, toneMode);
@@ -2427,7 +2427,7 @@ for (const mode of ["perceptual", "peak"]) {
         for (let i = 0; i < at100.length; i++) {
           rows++;
           const a = at100[i], b = damped[i], floor = floorOf(a.rgb) + floorOf(b.rgb);
-          // T-0040 (ramp@2, ADR-036): a band stop is re-snapped after the damper onto the shared ladder
+          // T-0040 (ramp@2, ADR-037): a band stop is re-snapped after the damper onto the shared ladder
           // (bandToneOk in its place), so its L* is the ladder's, not its at-100 pixel's
           if (T.inBand(a.stop)) {
             if (!bandToneOk(b, ctl) && !outside++) firstOutside = `${toneMode}/${hueSpace} ${p.name} ${g} band stop ${a.stop}: L* off the shared ladder > ${BAND_L_TOL}`;
@@ -2480,7 +2480,7 @@ for (const mode of ["perceptual", "peak"]) {
   else console.log(`envelope-presets: ${P.length} presets read env(500) = 1 in 3 modes x 3 lifts and name back; Curated meets the ruled bars; the dampCurve 3 control bites`);
 }
 
-// ── vibrancy-match-peer (T-0040, ADR-036): the vibrancy and cusp-pull groups above render with
+// ── vibrancy-match-peer (T-0040, ADR-037): the vibrancy and cusp-pull groups above render with
 // Match peer lightness off (their controls carry no flag), the mode they describe. With the mode on,
 // every stop's tone is the shared ladder's, so vibrancy and cusp pull move nothing: a perceptual
 // palette renders byte-identical ramps at vibrancy 0 and 100 and at cusp pull 0 and 100, anchored and

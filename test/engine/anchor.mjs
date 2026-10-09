@@ -484,7 +484,7 @@ const DUPE_ALLOW = [
 // would jump away from that pivot and invert the ramp at 550/450, which is exactly what broke before
 // this branch existed). `prime.DEFAULT` (the token, C2 above) stays exact for ALL 3,380 regardless,
 // only the ramp's own stop 500 clamps.
-// T-0040 (ramp@2, ADR-036): the window is `pivotWindow(controls)` (exported by tonal.js), read per
+// T-0040 (ramp@2, ADR-037): the window is `pivotWindow(controls)` (exported by tonal.js), read per
 // document and tone mode: [RAMP_L_MIN, RAMP_L_MAX] narrowed to the band interior by one 0.55 L* step,
 // perceptual and peak [11.73, 94.36] at the defaults (even keeps [9.95, 95.05]). It adds 5 clamped
 // sources, each on perceptual and peak only, the declared change (conductor decision (a)): Istanbul
@@ -565,7 +565,7 @@ const RAMP_WINDOW_ALLOW = [
 // "Lake Baikal" secondary #E0E5E6 (already not reproduced at U2's head). Pass 1's 3 other members are
 // gone at revision 8 (the anchor's own OKLCH hue, no per-stop solve): literature "Bleak House"
 // tertiary-muted (peak 900&950 0.789), music "Motown" tertiary-muted and "Pop-punk" secondary (0.730).
-// T-0040 re-freeze (ramp@2 band rule, ADR-036), measured FULL on the ramp@2 engine: 79 -> 193, 118 added
+// T-0040 re-freeze (ramp@2 band rule, ADR-037), measured FULL on the ramp@2 engine: 79 -> 193, 118 added
 // and 4 removed. The band stops sit on the shared ladder (stop 100 at L* 94.91 and 900 at 11.18 on
 // perceptual and peak at the defaults) while an in-window anchor stays verbatim at 500, so the
 // edge-to-500 interior is compressed for a light or dark anchor and adjacent display stops fall under
@@ -799,7 +799,7 @@ const RAMP_GAP_ALLOW = [
 // to 950 stops, 25 of 25 unique), travel "Patmos" tertiary-muted and "Viennese kaffeehaus" primary-
 // muted (already not reproduced at U2's head). Pass 1's Trulli secondary and Black metal secondary are
 // unique again at revision 8.
-// T-0040 re-freeze (ramp@2 band rule, ADR-036), measured FULL on the ramp@2 engine: 19 -> 107, 89 added
+// T-0040 re-freeze (ramp@2 band rule, ADR-037), measured FULL on the ramp@2 engine: 19 -> 107, 89 added
 // and 1 removed, the same compression as RAMP_GAP_ALLOW's T-0040 note: on the 25-stop export ramp a
 // compressed interior lands two adjacent stops on one 8-bit pixel. 70 additions are dark anchors (L*
 // 9.7 to 20.2, among them three of the five new window clamps), 19 light (L* 79.8 to 94.5, Kea
@@ -937,7 +937,7 @@ const RAMP_DISTINCT_ALLOW = [
 // #725 U3 freeze (R74), measured FULL on U3's head: 17 -> 15, 0 added. Removed: travel "Helsinki-
 // Rovaniemi night train" secondary-muted #ACADAE [peak] and [perceptual], the #739 pair, which U2's
 // head already did not reproduce (the 15 even-mode members are unchanged).
-// T-0040 re-freeze (ramp@2 band rule, ADR-036), measured FULL on the ramp@2 engine: 15 -> 99, 84 added,
+// T-0040 re-freeze (ramp@2 band rule, ADR-037), measured FULL on the ramp@2 engine: 15 -> 99, 84 added,
 // none removed, every addition on even. Each is a near-grey anchor (CAM16 C about 2 to 3.5) whose 450 and
 // 550 already read under 70% on ramp@1 but within 3 C of it; the even band tint, chromaFloor% of the
 // stop's ceiling and not capped by the anchor (R69: the even floor tints an achromatic anchor's ramp),
@@ -2025,7 +2025,7 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
   console.log(`  ${fails.some((f) => f.startsWith("achromatic-anchor:")) ? "FAIL" : "pass"}  achromatic-anchor: even ${bound} of ${10 - skipped} anchored/twin hue distances at most 12deg (#808080, #808081, #FFFFFF, #000000, #010101 x stop 300/700, ${skipped} skipped under CAM16 C 5 - a near-white/black anchor's own nearest stop); perceptual/peak ${greyOk} of ${greyCells} cells CAM16 C below ${ACHROMATIC_CELL_C}; #808082 (OKLab C ${twoOff.toFixed(4)}, above the constant) chromatic and hue-stable across a moved palette hue: ${chromaticIdentical}`);
 }
 
-// ── anchor-match-peer (T-0040, ADR-036): with Match peer lightness on, stop 500 sits on the shared
+// ── anchor-match-peer (T-0040, ADR-037): with Match peer lightness on, stop 500 sits on the shared
 // ladder, so it leaves the anchor pixel (C3, stop 500 verbatim, is a mode-off rule: every document the
 // sweeps above render is mode off), while the anchor's hue still leads: in each tone mode at least one
 // default-kit stop 500 differs from its anchor, every chromatic stop 500 (OKLCH C 0.04 and over, the

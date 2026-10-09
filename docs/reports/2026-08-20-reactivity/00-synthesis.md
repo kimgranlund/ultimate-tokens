@@ -54,7 +54,7 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
 | # | Finding | Evidence | Fix shape |
 |---|---|---|---|
 | D1 | `sweep-scan`/`sweep-delete` failures never reply → `sweepBusy` wedges; Cleanup panel disabled for the session | 04 §B; the `postMessage` catch at figma/plugin/code.js:270-284 special-cased only the `apply` case at :279 (fixed in #459) | code.js catch posts `sweep-scanned {texts:[],paints:[]}` / `sweep-done {removed:0}`, mirroring the apply carve-out |
-| D2 | `selectPalette()` mutates `doc.selected`, renders, never saves → false "unsaved" badge | 01 §B1; sections/color.js:248-253 | add `this.save()` (or route through `edit()`) |
+| D2 | `selectPalette()` mutates `doc.selected`, renders, never saves → false "unsaved" badge | 01 §B1; sections/color.js:257-262 | add `this.save()` (or route through `edit()`) |
 
 ### Fix soon (performance)
 
@@ -76,7 +76,7 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
 | H1 | `_onReorderUp()` hand-rolls the commit ladder | 01 §B2; color.js:1582-1637 (fixed in #462) | route through `this.commit(fn)` |
 | H2 | `mixinInto` has no method-collision guard (zero collisions today, verified; nothing catches the first one) | 01 §B3, 04 §C; app.js:2790-2808 (guard added in #462) | throw on duplicate own-property name during composition |
 | H3 | Gallery crash vector: set records never shape-validated; `buildTiles` search does `s.name.toLowerCase()` unguarded | 03 §C; app.js:734-736, `sanitizeSetRecords` app-helpers.mjs:104-109 (fixed in #468) | per-record shape check in `loadSets`/`receiveStoredSets` (or a `String(s.name||"")` guard) |
-| H4 | `tokenOverrides` keys never validated against voice/step domains → typo'd/retired keys accumulate as permanent inert orphans | 03 §B5; persist.js:830-841 (`validLead`, fixed in #461) | drop unknown-voice/step keys in `clampTokenOverrides` (RENAME_MAPS already translates legitimate renames) |
+| H4 | `tokenOverrides` keys never validated against voice/step domains → typo'd/retired keys accumulate as permanent inert orphans | 03 §B5; persist.js:840-851 (`validLead`, fixed in #461) | drop unknown-voice/step keys in `clampTokenOverrides` (RENAME_MAPS already translates legitimate renames) |
 | H5 | `clampProfile` has no rename-forward story (a FLAG_KEYS rename silently drops overrides); app-prefs/apply-consent sit outside `migrateStorageKeys()` undocumented at that site | 03 §B3–B4 | add a one-line comment at `migrateStorageKeys()` naming the exclusion as deliberate; add a rename-map seam to clampProfile only if flags ever rename |
 | H6 | `_applyBusy` has no timeout (a lost reply wedges apply for the session, narrower than D1 since code.js always answers `apply`) | 04 §B | decide: accept (document) or add a timeout fallback consistent with D1's fix |
 
@@ -86,7 +86,7 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
 - `this.view` (route string) vs local `view` (`projectView` result) one underscore apart at app.js:316 (documented at app.js:655-657), rename the route field (e.g. `this.route`) or the locals.
 - `disconnectedCallback` teardown set asymmetric with what connectedCallback registers (`_liveRaf`, `_dragTimer`, `_toastT`, window-level drag listeners), inert for a page-lifetime singleton; either complete the inventory or comment why it's deliberately partial (01 §B6, 04 §D).
 - Stale copy in `graphGeomComposition` (geometry.js:554) contradicts its own card title, font DOES still compose from Type's UI-control voice (02 §B6).
-- `okhslLAt` (`src/engine/tonal.js:1096`) lost its module-level `_okL` memo Map, the one true exception to "engines are pure, no module state" this review found - deleted at #738, measured not load-bearing (0.40-0.90 us per uncached call on a quiet host, median 1.54 us at load 67); the function is now plain and pure like its siblings, and the comment above it says why no memo sits there.
+- `okhslLAt` (`src/engine/tonal.js:1490`) lost its module-level `_okL` memo Map, the one true exception to "engines are pure, no module state" this review found - deleted at #738, measured not load-bearing (0.40-0.90 us per uncached call on a quiet host, median 1.54 us at load 67); the function is now plain and pure like its siblings, and the comment above it says why no memo sits there.
 
 ## Deliberately fine: do not "fix"
 

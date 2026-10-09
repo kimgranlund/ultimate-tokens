@@ -1,4 +1,4 @@
-// ramp@1.mjs, the ramp layer at version 1 (T-0040, ADR-036; vanilla ESM, pure, no DOM). FROZEN: never
+// ramp@1.mjs, the ramp layer at version 1 (T-0040, ADR-037; vanilla ESM, pure, no DOM). FROZEN: never
 // edited once landed; FROZEN.json holds its SHA-256 and test/engine/layers.mjs fails on any change.
 // Below this header is src/engine/tonal.js as it stood when ramp@2 was registered, byte for byte but
 // for its two import specifiers, which point one folder up. It depends on ../hct.js and ../okhsl.js,

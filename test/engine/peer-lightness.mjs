@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// peer-lightness.mjs (T-0040, ADR-036): ramp@2's band rule across peers. Every enabled palette of a
+// peer-lightness.mjs (T-0040, ADR-037): ramp@2's band rule across peers. Every enabled palette of a
 // kit lands at the same CIELAB L* at the two end bands (stops 075, 100, 900, 925, 950, and so the
 // Radix light and dark steps 1 and 12) and carries one shared tint there, in every tone mode,
 // anchored or not, damped or not. Measured on the rendered pixel (`projectView`, the surface the
@@ -16,7 +16,7 @@
 //     damped palettes included; over the palettes at the full shared tint (ramp chroma 100: a damped
 //     palette's tint is r times the target by design; and, in perceptual and peak, unanchored or an
 //     anchor whose own gamut fraction is at least chromaFloor / 100: a lower one caps the tint at its
-//     own, ADR-036; in peak also an anchor whose own chroma is at least the tint's at every band stop:
+//     own, ADR-037; in peak also an anchor whose own chroma is at least the tint's at every band stop:
 //     peak caps every stop at its stop 500, R69) the gamut-fraction spread (CAM16 chroma over the ceiling at the pixel's own hue and
 //     L*) is at most 0.10 at 100 and 900 and 0.15 at 075, 925 and 950, and every fraction is at least
 //     0.25. The pass line counts the palettes set aside as capped.

@@ -1845,7 +1845,7 @@ export class ColorSectionImpl {
             }),
           )
         : false,
-      // Match peer lightness (T-0040, ADR-036) puts every stop on the shared ladder, so Skew moves no
+      // Match peer lightness (T-0040, ADR-037) puts every stop on the shared ladder, so Skew moves no
       // lightness there and is hidden; Lift stays (it still shapes chroma) and says so.
       isEven && !this.doc.matchPeerLightness ? this.slider("Skew", p.skew, -100, 100, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].skew = v))) : false,
       isEven ? titled(this.slider("Lift", p.lift, -40, 40, 1, (v) => fmt(v), (v) => this.editDrag((d) => (d.palettes[i].lift = v))), "Lightens (+) or darkens (-) the mid stops. With Match peer lightness on, Lift shapes chroma only.") : false,
@@ -2137,7 +2137,7 @@ export class ColorSectionImpl {
       this.slider("L* max", d.lmax, 60, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.lmax = v))),
       this.slider("Damp", d.damp, 0, 100, 1, (v) => fmt(v), (v) => this.editDrag((doc) => (doc.damp = v))),
       // chroma floor: lifts the damped light/dark ends back toward the palette's intended chroma so
-      // low-chroma ramps don't dead-zone to near-white; never over-saturates. ramp@2 (T-0040, ADR-036)
+      // low-chroma ramps don't dead-zone to near-white; never over-saturates. ramp@2 (T-0040, ADR-037)
       // also reads it in every tone mode as the shared end tint, so it shows in every mode on a ramp@2
       // document and in even only on a ramp@1 one (ramp@1 reads it only there).
       d.toneMode === "even" || docPins(d).ramp >= 2
@@ -2210,7 +2210,7 @@ export class ColorSectionImpl {
           ),
         );
       })(),
-      // Match peer lightness (T-0040, ADR-036), a row of its own: the right pane is 300 px and a third
+      // Match peer lightness (T-0040, ADR-037), a row of its own: the right pane is 300 px and a third
       // field in the row above would leave about 83 px per field. ramp@2 reads the flag and ramp@1 never
       // does, so a ramp@1 kit offers "Upgrade to latest" instead, which re-pins every compute layer to
       // its latest version (ADR-034's upgrade action) and re-renders.

@@ -1,6 +1,6 @@
 # ramp@2 extremes and Match peer lightness: the before and after board (2026-10-09)
 
-Evidence for T-0040 (ADR-036). `ramp@2` puts the lightest and darkest stops of every palette (050 to
+Evidence for T-0040 (ADR-037). `ramp@2` puts the lightest and darkest stops of every palette (050 to
 100 and 900 to 950) on one shared lightness ladder with one tint, in every tone mode, and the opt-in
 Match peer lightness mode puts every stop on that ladder. Stored kits keep rendering with `ramp@1`
 until upgraded. Everything below is measured on the lane `plan/match-peer-lightness`.

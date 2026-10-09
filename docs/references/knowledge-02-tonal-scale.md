@@ -444,7 +444,7 @@ itself is stored and both of the places a user reads "the" colour reproduce it b
 The two scopes differ on purpose. At the defaults the TOKEN is exact for all 3,380: a source outside the ramp window
 still exports its own hex at `prime.DEFAULT`. The RAMP clamps: for the 10 named out-of-window sources
 (9 dark ones between 7.32 and 9.84 L\*, plus one pure white; `ramp@2` adds Istanbul (Eminönü), Saint-Malo, Wadi
-Rum, Carlsbad and Kea on perceptual and peak, ADR-036) stop 500 lands at the window edge nearest
+Rum, Carlsbad and Kea on perceptual and peak, ADR-037) stop 500 lands at the window edge nearest
 the source, because forcing the verbatim pixel at a clamped pivot would jump away from the window edge
 its own neighbours are shaped around, which is the discontinuity that broke monotonicity before this
 branch existed. Both allow-lists are frozen by name and count in the gates, not by a threshold.
@@ -516,7 +516,7 @@ untouched: it renders from its own hue exactly as before this ticket. `rgbToOkhs
 (`s = 0`, Ticket #681 U10) and pure white (`s = 0`, this ticket) as achromatic; `#FFFFFF`'s OKLab L
 rounds to 0.99999999, not exactly 1, so the white guard checks a tolerance rather than `L >= 1`.
 
-**The band rule (`ramp@2`, T-0040, ADR-036).** `ramp@2` matches the extremes across a kit's palettes,
+**The band rule (`ramp@2`, T-0040, ADR-037).** `ramp@2` matches the extremes across a kit's palettes,
 in every tone mode, anchored or not. The band stops (050 to 100 and 900 to 950, `BAND_EDGE`) take one
 palette-free L\* ladder, `sharedToneAt(stop, controls)` (stop 100 at L\* 94.91 and stop 900 at 11.18 on
 perceptual and peak at the defaults), and one tint, `chromaFloor / 100` of each stop's gamut ceiling:
@@ -528,7 +528,7 @@ The last operation is the pixel snap: each band stop's 8-bit pixel lies within 0
 nearest the tint on the stop's hue line, never over its predecessor. The anchored pivot keeps the
 verbatim anchor inside `pivotWindow` (the ramp window narrowed by one 0.55 L\* step from the shared
 edge); the cost is a compressed interior next to the shared edge for a very dark or very light anchor,
-where adjacent stops can share a pixel (declared in ADR-036 and the gates' cited lists). A kit stored
+where adjacent stops can share a pixel (declared in ADR-037 and the gates' cited lists). A kit stored
 without pins hydrates at `ramp@1` and renders as before; the editor offers "Upgrade to latest".
 
 **Match peer lightness (`matchPeerLightness`, schema v11).** Off by default and read by `ramp@2` only.
