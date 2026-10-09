@@ -127,7 +127,7 @@ The spread has three independent sources. In the default kit they stack; none is
 1. Anchor pivot lightness (the dominant one at stop 500, and the reason mid-ramp steps 6 to 9 differ).
    Every default palette carries an `anchor`. The anchored branches pin stop 500 to the anchor
    verbatim and run each side affinely from the anchor's own tone to the shared ends:
-   `anchorLerp` (`src/engine/tonal.js:989`) with `pivotTone` (even, `tonal.js:1175`) or `pivotL`
+   `anchorLerp` (`src/engine/tonal.js:1063`) with `pivotTone` (even, `tonal.js:1219`) or `pivotL`
    (OKHSL, `tonal.js:1818`). Tone at a stop is therefore a function of the anchor's own lightness.
    Default anchors range OKLab L 0.448 (Warning `#774902`) to 0.560 (Data 3 `#D6153B`). Two palettes
    with different anchor lightness cannot share lightness at 500, and the offset decays toward the
@@ -140,7 +140,7 @@ The spread has three independent sources. In the default kit they stack; none is
    plus a dark anchor. Zeroing skew and lift on the anchored kit cuts the stop 100 to 200 spread by
    55 to 75 percent (Table 3, rows 1 and 2).
 3. Cusp pull (`vibrancy`, default 50) on UNANCHORED palettes in `perceptual` and `peak`.
-   `lightnessAt` (`tonal.js:1895`) blends an even distribution with one that puts the hue's chroma
+   `lightnessAt` (`tonal.js:1963`) blends an even distribution with one that puts the hue's chroma
    cusp at stop 500, so yellow reads lighter and blue darker (the engine's stated intent,
    `DEFAULT_CONTROLS` comment at the `toneMode` default in `DEFAULT_CONTROLS`). On anchored palettes this does not apply (the pivot
    is the anchor, `tonal.js:1818` blends two curve shapes about one pivot), so it is not the cause for

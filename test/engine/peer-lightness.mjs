@@ -16,7 +16,8 @@
 //     damped palettes included; over the palettes at the full shared tint (ramp chroma 100: a damped
 //     palette's tint is r times the target by design; and, in perceptual and peak, unanchored or an
 //     anchor whose own gamut fraction is at least chromaFloor / 100: a lower one caps the tint at its
-//     own, ADR-036) the gamut-fraction spread (CAM16 chroma over the ceiling at the pixel's own hue and
+//     own, ADR-036; in peak also an anchor whose own chroma is at least the tint's at every band stop:
+//     peak caps every stop at its stop 500, R69) the gamut-fraction spread (CAM16 chroma over the ceiling at the pixel's own hue and
 //     L*) is at most 0.10 at 100 and 900 and 0.15 at 075, 925 and 950, and every fraction is at least
 //     0.25. The pass line counts the palettes set aside as capped.
 //   peer-lightness extremes control: the same predicate on the default kit pinned `ramp: 1` must fail
@@ -30,7 +31,7 @@ import { presetDoc } from "../../src/ui/persist.js";
 import { LATEST } from "../../src/engine/layer-pins.mjs";
 import { lstarFromRgb, cam16FromRgb, maxChromaInGamut } from "../../src/engine/hct.js";
 import { rgbToOklabChroma } from "../../src/engine/okhsl.js";
-import { paletteStops, DEFAULT_CONTROLS, EXPORT_STOPS } from "../../src/engine/tonal.js";
+import { paletteStops, sharedToneAt, DEFAULT_CONTROLS, EXPORT_STOPS } from "../../src/engine/tonal.js";
 import { sampleCorpus } from "./lib/corpus-sample.mjs";
 
 const FULL = process.argv.includes("--full");
@@ -56,14 +57,20 @@ const spread = (xs) => (xs.length ? Math.max(...xs) - Math.min(...xs) : 0);
 // fullTint(pal, d, toneMode): the palette renders the full shared tint at its band stops. Read from the
 // palette's own inputs, not the engine's record: ramp chroma 100 and, in perceptual and peak, no anchor
 // or an anchor whose OKLab C is at least 0.002 (#739's achromatic bound) and whose CAM16 chroma over the
-// gamut ceiling at its own hue and L* is at least chromaFloor / 100.
+// gamut ceiling at its own hue and L* is at least chromaFloor / 100; in peak (no stop above stop 500's
+// chroma, R69) also at least the tint's chroma, chromaFloor % of the ceiling at the anchor's hue and the
+// shared L*, at every band stop (half a C of margin, the cap's own).
 const fullTint = (pal, d, toneMode) => {
   if (rampChromaOf(pal, d) !== 100) return false;
   if (toneMode === "even" || typeof pal.anchor !== "string") return true;
   const rgb = hexToRgb(pal.anchor);
   if (rgbToOklabChroma(rgb) < 0.002) return false;
   const cam = cam16FromRgb(rgb), m = maxChromaInGamut(cam.hue, lstarFromRgb(rgb));
-  return (m > 0 ? Math.min(1, cam.chroma / m) : 0) >= (d.chromaFloor ?? 0) / 100;
+  const floor = (d.chromaFloor ?? 0) / 100;
+  if ((m > 0 ? Math.min(1, cam.chroma / m) : 0) < floor) return false;
+  if (toneMode !== "peak") return true;
+  const ctl = { ...DEFAULT_CONTROLS, lmin: d.lmin ?? DEFAULT_CONTROLS.lmin, lmax: d.lmax ?? DEFAULT_CONTROLS.lmax, toneMode };
+  return BAND_STOPS.every((s) => floor * maxChromaInGamut(cam.hue, sharedToneAt(s, ctl)) <= cam.chroma - 0.5);
 };
 
 // readings(doc, toneMode): per band stop and per Radix step, the enabled palettes' pixel L* and, for

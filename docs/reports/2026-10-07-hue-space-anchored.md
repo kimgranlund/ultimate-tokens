@@ -121,7 +121,7 @@ pass  anchor-f4 hueSpace bound control: planted render (default kit Primary perc
 - Perceptual 0.0164 and peak 0.0169 match the plan-time prototype (0.0164 and 0.0169), under the
   per-mode bound of 0.02 (decision 1). The even ramp reads 0.0281, above its 0.01 magnitude floor.
 - The cap ruling (step 2 item 3): the peak cap call `capChromaAtHeldTone(hue, s, l, rgb, chroma,
-  ceiling, null, true)` (`src/engine/tonal.js:1863`) passes `null` in both spaces, so a capped stop
+  ceiling, null, true)` (`src/engine/tonal.js:1906`) passes `null` in both spaces, so a capped stop
   keeps its own pre-cap OKLCH hue, which the `cam16` solve already put on the anchor's CAM16 line. The
   architect's interface passed the anchor's CAM16 hue instead; step 2's plan-time prototype over the
   full corpus and default kit measured the cap-moved peak stops at 0.0202 OKLab dE between spaces
@@ -140,8 +140,8 @@ re-pin's own inline note and in the step 1 and step 2 builder results.
 | panda EX-1 `prime.dimmest` (step 1) | `test/engine/exports.mjs:532` | `oklch(0.2669 0.1023 258.76)` | `oklch(0.2678 0.1038 258.99)` |
 | `ladder-span` `SPAN_PX_EXPECTED` (step 1) | `test/engine/prime.mjs:1192` | 364 | 365 (`SPAN_CONSTRUCTED_EXPECTED` 363 held) |
 | shadcn baseline (step 2) | `test/engine/fixtures/shadcn-baseline.css`, T-0015 note `:88` | T-0014 capture | re-captured at `hueSpace: "cam16"`: 19 / 19 / 19 lines moved (ALL / BRAND_ONLY / ALL_DATA_OFF), line counts 124 / 115 / 115 unchanged |
-| radix baseline (step 2) | `test/engine/fixtures/radix-baseline.json`, note `test/engine/exports.mjs:901` | T-0014 capture | re-captured: 550 / 306 / 286 leaves moved (ALL / BRAND_ONLY / COLLIDING), leaf counts and key order unchanged; the unanchored Accent and Error palettes byte-identical |
-| `anchor-f4` hue-space case (step 2) | `test/engine/anchor.mjs:1289` `HUE_SPACE_MODE_BOUND` | one even-only case and the Q-D invisibility block: `HUE_SPACE_DELTA_E_BOUND` 0.01, `HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED` 0.02, `HUE_SPACE_CODES_BOUND` 2 with its default-kit codes gate, `maxChannelDiff`, the `capped` scope and its vacuity check, the recorded 33/34-code control | removed; three cases `hueSpace-even` (floor 0.01 kept), `hueSpace-perceptual` and `hueSpace-peak` (bound 0.02 each), and the `hueSpace bound control` |
+| radix baseline (step 2) | `test/engine/fixtures/radix-baseline.json`, note `test/engine/exports.mjs:903` | T-0014 capture | re-captured: 550 / 306 / 286 leaves moved (ALL / BRAND_ONLY / COLLIDING), leaf counts and key order unchanged; the unanchored Accent and Error palettes byte-identical |
+| `anchor-f4` hue-space case (step 2) | `test/engine/anchor.mjs:1609` `HUE_SPACE_MODE_BOUND` | one even-only case and the Q-D invisibility block: `HUE_SPACE_DELTA_E_BOUND` 0.01, `HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED` 0.02, `HUE_SPACE_CODES_BOUND` 2 with its default-kit codes gate, `maxChannelDiff`, the `capped` scope and its vacuity check, the recorded 33/34-code control | removed; three cases `hueSpace-even` (floor 0.01 kept), `hueSpace-perceptual` and `hueSpace-peak` (bound 0.02 each), and the `hueSpace bound control` |
 | `prime-huespace` and its control (step 1) | `test/engine/anchor.mjs` | none | new: at least one default-kit ladder moves above 0.01 OKLab dE between spaces, rung 3 moves 0 |
 | `anchor-identity`, `key-anchor corpus`, `anchor-k`, `anchor-k scale control` (step 1) | `test/engine/anchor.mjs` | `hueSpace` of the preset only | both spaces, 6,760 renders each |
 | `(hs)` Q-D block (step 3) | `test/ui/headless-boot.mjs` | the control disabled on an all-anchored perceptual document, with a note | `(hse1)` to `(hse7)`: the control is live and the click moves Primary's prime ladder |

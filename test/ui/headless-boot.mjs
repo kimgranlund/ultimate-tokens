@@ -3767,7 +3767,8 @@ flushRaf();
 // group layer: a palette's group is grouping metadata only. ─────────────────────────────────────
 {
   const { defaultDocument: ddGID, paletteGroup: pgGID, projectView: pvGID, rampChromaOf: rcGID } = await import("../../src/ui/model.mjs");
-  const { paletteStops: psGID, EXPORT_STOPS: esGID, holdTone: htGID, solveOkhslHue: shGID } = await import("../../src/engine/tonal.js");
+  const { paletteStops: psGID, EXPORT_STOPS: esGID, holdTone: htGID, solveOkhslHue: shGID, sharedToneAt: stGID, inBand: ibGID } = await import("../../src/engine/tonal.js");
+  const { lstarFromRgb: lsGID } = await import("../../src/engine/hct.js");
   const { rgbToOkhsl: okGID, okhslToRgb: o2rGID } = await import("../../src/engine/okhsl.js");
 
   // (gid1) a FRESH default document resolves Neutral to rampChroma 100, matching a DIRECT engine
@@ -3791,9 +3792,14 @@ flushRaf();
   const scaledHex = (st, r) => { const { h, s, l } = okGID(st.rgb); const hold = htGID(h, s, l, r); return Math.abs(hold.s - Math.min(1, r * s)) < 1e-12 ? hexOf(o2rGID(shGID(h, hold.s, hold.l), hold.s, hold.l)) : "ratio-off"; };
   const hexesGID = (r) => JSON.stringify(r.map((s) => s.hex));
   const direct50 = neutralAt(50);
-  const ratioOff = (damped, at100, r) => damped.filter((s, i) => s.hex !== scaledHex(at100[i], r)).map((s) => s.stop);
+  // T-0040 (ramp@2, ADR-036): a band stop (050 to 100, 900 to 950) is re-snapped after the damper
+  // (tonal.js dampStops: the pixel nearest the shared L* at r x the end tint), so it is not the scaled
+  // pixel; ratioOff skips the band stops and (gid3) asserts in their place that each damped band stop's
+  // pixel L* sits within 0.45 of the shared ladder (sharedToneAt), the snap's own window.
+  const ratioOff = (damped, at100, r) => damped.filter((s, i) => !ibGID(s.stop) && s.hex !== scaledHex(at100[i], r)).map((s) => s.stop);
   const off50 = ratioOff(direct50, direct100, 0.5);
-  ok(hexesGID(freshView.palettes[nIdx].fullRamp) !== hexesGID(direct50) && off50.length === 0 && direct50.find((s) => s.stop === 500).hex !== direct100.find((s) => s.stop === 500).hex, `(gid3) a fresh doc's Neutral ramp differs from the chroma-50 ramp, and every chroma-50 stop is its at-100 stop's OKHSL s scaled by 0.5, stop 500 included (off at: ${off50.join(" ") || "none"})`);
+  const bandOff50 = direct50.filter((s) => ibGID(s.stop) && !(Math.abs(lsGID(s.rgb) - stGID(s.stop, ctlGID)) <= 0.45 || stGID(s.stop, ctlGID) >= 100)).map((s) => s.stop);
+  ok(hexesGID(freshView.palettes[nIdx].fullRamp) !== hexesGID(direct50) && off50.length === 0 && bandOff50.length === 0 && direct50.find((s) => s.stop === 500).hex !== direct100.find((s) => s.stop === 500).hex, `(gid3) a fresh doc's Neutral ramp differs from the chroma-50 ramp, every chroma-50 interior stop is its at-100 stop's OKHSL s scaled by 0.5, stop 500 included (off at: ${off50.join(" ") || "none"}), and every chroma-50 band stop sits within 0.45 L* of the shared ladder (off at: ${bandOff50.join(" ") || "none"})`);
   // control: the same predicate reds on the wrong ratio, so a damper that skipped or misread r shows.
   ok(ratioOff(direct50, direct100, 0.6).length > 0, "(gid3 control) the ratio predicate flags the chroma-50 ramp against r 0.6");
   ok(hexesGID(neutralAt(10)) !== hexesGID(neutralAt(30)), "(gid3b) the damper keeps biting low: Neutral's chroma-10 ramp differs from its chroma-30 ramp");
@@ -3816,17 +3822,23 @@ flushRaf();
 
   // (gid-owner4) #785 U2, the owner's screenshot (2026-10-03): Base chroma 4 must mute Primary's whole
   // ramp to about 4% of its at-100 saturation, its vivid middle (stops 400 to 600) included. Read as
-  // OKHSL s over owner4-span: stops 200 to 800 whose at-100 s exceeds 0.05 (outside it 8-bit hex
-  // quantization dominates). Prime chroma never reaches the ramp: the base-4 ramp is the same with
-  // the global Prime chroma at 100 and 0.
+  // OKHSL s over owner4-span: stops 200 to 800 whose at-100 s is at least 0.3 (under it one 8-bit code
+  // moves s(4)/s(100) by more than the bound's half width, so hex quantization dominates; T-0040 re-pin,
+  // ADR-036, was 0.05: the band rule blends stops 200 and 800 toward the end tint, s 0.27 at 100, and
+  // stop 800's one-code #2B2B2C read 0.057). Each stop the threshold sets aside is held instead on the
+  // coordinate dampStops scales (scaledHex, as gid3 reads it), so none drops out unchecked. Prime chroma
+  // never reaches the ramp: the base-4 ramp is the same with the global Prime chroma at 100 and 0.
   {
     const sGID = (hex) => okGID([1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))).s;
     const primaryAt = (base, prime) => { const d = ddGID(); d.primeChroma = prime; d.palettes = d.palettes.map((p) => (p.name === "Primary" ? { ...p, baseChroma: base } : p)); return pvGID(d).palettes.find((p) => p.name === "Primary").fullRamp; };
     const at100 = primaryAt(100, 100), at4 = primaryAt(4, 100), at4p0 = primaryAt(4, 0);
-    const span = at100.map((s, i) => ({ stop: s.stop, s100: sGID(s.hex), s4: sGID(at4[i].hex) })).filter((x) => x.stop >= 200 && x.stop <= 800 && x.s100 > 0.05);
+    const all = at100.map((s, i) => ({ stop: s.stop, s100: sGID(s.hex), s4: sGID(at4[i].hex), st100: s, hex4: at4[i].hex })).filter((x) => x.stop >= 200 && x.stop <= 800 && x.s100 > 0.05);
+    const span = all.filter((x) => x.s100 >= 0.3);
+    const setAside = all.filter((x) => x.s100 < 0.3);
+    const asideOff = setAside.filter((x) => x.hex4 !== scaledHex(x.st100, 0.04)).map((x) => x.stop);
     const outside = span.filter((x) => !(x.s4 / x.s100 >= 0.025 && x.s4 / x.s100 <= 0.055));
     const covers = [400, 500, 600].every((st) => span.some((x) => x.stop === st));
-    ok(span.length > 0 && covers && outside.length === 0 && hexesGID(at4) === hexesGID(at4p0), `(gid-owner4) Base chroma 4 holds Primary's owner4-span (${span.length} stops, 400/500/600 in: ${covers}) at s(4)/s(100) in [0.025, 0.055] (outside: ${outside.map((x) => `${x.stop}:${(x.s4 / x.s100).toFixed(3)}`).join(" ") || "none"}; 500 reads ${((span.find((x) => x.stop === 500) || {}).s4 / (span.find((x) => x.stop === 500) || {}).s100).toFixed(3)}), and prime 100 and 0 render it the same: ${hexesGID(at4) === hexesGID(at4p0)}`);
+    ok(span.length > 0 && covers && outside.length === 0 && asideOff.length === 0 && hexesGID(at4) === hexesGID(at4p0), `(gid-owner4) Base chroma 4 holds Primary's owner4-span (${span.length} stops, 400/500/600 in: ${covers}) at s(4)/s(100) in [0.025, 0.055] (outside: ${outside.map((x) => `${x.stop}:${(x.s4 / x.s100).toFixed(3)}`).join(" ") || "none"}; 500 reads ${((span.find((x) => x.stop === 500) || {}).s4 / (span.find((x) => x.stop === 500) || {}).s100).toFixed(3)}), the ${setAside.length} set-aside stops (${setAside.map((x) => x.stop).join(" ") || "none"}) are their at-100 s scaled by 0.04 (off at: ${asideOff.join(" ") || "none"}), and prime 100 and 0 render it the same: ${hexesGID(at4) === hexesGID(at4p0)}`);
   }
 }
 

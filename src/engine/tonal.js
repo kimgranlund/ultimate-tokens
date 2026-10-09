@@ -844,11 +844,35 @@ function solveSForFractionUncached(hue, l, tone, frac) {
     if (Math.abs(d) < 1) break;
     camHue = (((camHue + d / 2) % 360) + 360) % 360;
   }
+  // Verified on the measure the snap and the gate read, the render's own gamut fraction (CAM16 chroma
+  // over the ceiling at its own CAM16 hue and L*, an exact grey reading 0). Near white a hue whose
+  // ceiling turns steeply with chroma can leave the fixed point cycling between two ceilings (measured:
+  // OKLCH hue 78 at L* 94.9, a 0.069 target rendered at 0.41, C 6.06 against its anchor's 3.20). A miss
+  // over 0.02 scans s over [0, 1] in 64 steps and keeps the s whose fraction is nearest (a target under
+  // CAM16's neutral reading, about C 2.8 near white, lands on the grey).
+  const fracOf = (x) => {
+    if (!(x > 0)) return 0;
+    const c = cam16FromRgb(okhslToRgbFloat(hue, x, l));
+    const m = maxChromaInGamut(c.hue, tone);
+    return m > 0 ? Math.min(1, c.chroma / m) : 0;
+  };
+  let err = Math.abs(fracOf(s) - frac);
+  if (err <= 0.02) return s;
+  for (let k = 0; k <= 64; k++) {
+    const x = k / 64, e = Math.abs(fracOf(x) - frac);
+    if (e < err) { err = e; s = x; }
+  }
   return s;
 }
 // bandStopOkhsl(hue, tone, frac): a band stop's continuous OKHSL colour on the perceptual/peak paths:
 // l solved for the shared L* (solveLForTone) and s for the tint (solveSForFraction), each twice since
 // each solve moves the other a little. `camHue` is the CAM16 hue the render reads (null while achromatic).
+// A tint the solve cannot reach lands on the grey: near white, under an anchor-capped fraction (a muted
+// anchor's 0.17 of a ceiling of a few C), the target sits under CAM16's own reading of the neutral (white
+// reads C 2.87), so the solve bottoms out at s 2^-25. That s is the grey, exactly 0, with no hue: read
+// at the white point's CAM16 hue (209) instead, the snap took a warm off-white (#FBF6F5 at stop 075 of a
+// violet palette, CAM16 C 0.40 scoring nearer the fraction than the grey's 0) and Gate B read the
+// model under the cube's least s.
 function bandStopOkhsl(hue, tone, frac) {
   const key = hue + "|" + tone + "|" + frac;
   let v = _bandMemo.get(key);
@@ -863,11 +887,13 @@ function bandStopOkhslUncached(hue, tone, frac) {
     s = solveSForFraction(hue, l, tone, frac);
     l = solveLForTone(hue, s, tone);
   }
+  if (s <= BAND_GREY_S) { s = 0; l = solveLForTone(hue, 0, tone); }
   const rgb = okhslToRgbFloat(hue, s, l);
   const cam = cam16FromRgb(rgb);
-  return { s, l, rgb, camHue: cam.chroma > 1 ? cam.hue : null };
+  return { s, l, rgb, camHue: s > 0 && cam.chroma > 1 ? cam.hue : null };
 }
-// snapBandPixel(rgb, hue, tone, fraction, maxTone): the last operation on a band stop, at every ramp
+const BAND_GREY_S = 1e-6;
+// snapBandPixel(rgb, hue, tone, fraction, maxTone, maxChroma): the last operation on a band stop, at every ramp
 // chroma. The 8-bit pixel is chosen from the plus or minus 3 per channel neighbourhood of the rounded
 // render, among candidates with |L* - tone| <= 0.45 (and, when the candidate's CAM16 chroma is above 1,
 // a CAM16 hue within 12 degrees of `hue`): the one nearest the target in the chroma plane, its gamut
@@ -881,24 +907,29 @@ function bandStopOkhslUncached(hue, tone, frac) {
 // the ceiling is a few C and one code moves the hue by tens of degrees). An exact grey reads
 // fraction 0 (CAM16 reads a neutral above 0, white at 2.87). `maxTone` excludes candidates at or above
 // the preceding stop's pixel L*, so a band pixel never rises over its neighbour and the monotone pass
-// never has to move one. Why a search: rounding alone spreads the fraction by up to 0.42 at stop 075
+// never has to move one; `maxChroma` excludes candidates over a CAM16 chroma (a peak-capped band stop's
+// ramp-own stop 500). Why a search: rounding alone spreads the fraction by up to 0.42 at stop 075
 // across the default kit's hues (one hue rounds to pure white) and the L* by more than the rounding of
 // one channel; the search measured at most 0.035 and 0.88 L* across peers. No candidate inside the L*
 // window (a near-black anchor whose interior rounded under the band's window: Nike secondary #101820,
-// perceptual, stop 875 at 10.43 against the band's 11.18 - 0.45): the neighbour under `maxTone` whose L*
-// is nearest `tone`, so the band never rises over its neighbour; none under it either: the render.
+// perceptual, stop 875 at 10.43 against the band's 11.18 - 0.45): the neighbour inside (`minTone`,
+// `maxTone`) whose L* is nearest `tone`, at or under `maxChroma` when one is, so the band never rises over
+// its neighbour; none inside either: the render. `minTone` (the light band only, finishRamp) keeps a
+// light band pixel over stop 500's.
 const SNAP_HUE_WEIGHT = 0.5;
-function snapBandPixel(rgb, hue, tone, fraction, maxTone = Infinity) {
-  const key = rgb.join(",") + "|" + hue + "|" + tone + "|" + fraction + "|" + maxTone;
+function snapBandPixel(rgb, hue, tone, fraction, maxTone = Infinity, maxChroma = Infinity, minTone = -Infinity) {
+  const key = rgb.join(",") + "|" + hue + "|" + tone + "|" + fraction + "|" + maxTone + "|" + maxChroma + "|" + minTone;
   let v = _snapMemo.get(key);
-  if (v === undefined) { v = snapBandPixelUncached(rgb, hue, tone, fraction, maxTone); _snapMemo.set(key, v); }
+  if (v === undefined) { v = snapBandPixelUncached(rgb, hue, tone, fraction, maxTone, maxChroma, minTone); _snapMemo.set(key, v); }
   return v.slice();
 }
-function snapBandPixelUncached(rgb, hue, tone, fraction, maxTone) {
+function snapBandPixelUncached(rgb, hue, tone, fraction, maxTone, maxChroma, minTone) {
   const TOL = 0.45, RADIUS = 3, HUE_TOL = 12;
   const [r0, g0, b0] = rgb;
   let best = null, bestScore = Infinity, bestDl = Infinity;
-  let under = null, underDl = Infinity; // the no-candidate fallback: nearest `tone` under maxTone
+  // the no-candidate fallbacks: the nearest `tone` inside (minTone, maxTone) at or under maxChroma, then
+  // ignoring the chroma bound
+  let under = null, underDl = Infinity, underAny = null, underAnyDl = Infinity;
   for (let dr = -RADIUS; dr <= RADIUS; dr++) {
     const r = r0 + dr;
     if (r < 0 || r > 255) continue;
@@ -911,11 +942,14 @@ function snapBandPixelUncached(rgb, hue, tone, fraction, maxTone) {
         const cand = [r, g, b];
         const L = lstarFromRgb(cand);
         const dl = Math.abs(L - tone);
-        if (L < maxTone && dl < underDl) { under = cand; underDl = dl; }
-        if (dl > TOL || L >= maxTone) continue;
+        if (L >= maxTone || L <= minTone) continue;
+        if (dl < underAnyDl) { underAny = cand; underAnyDl = dl; }
+        if (dl < underDl && (maxChroma === Infinity || cam16FromRgb(cand).chroma <= maxChroma)) { under = cand; underDl = dl; }
+        if (dl > TOL) continue;
         const grey = r === g && g === b;
         const cam = grey ? null : cam16FromRgb(cand);
         const chroma = grey ? 0 : cam.chroma;
+        if (chroma > maxChroma) continue;
         if (chroma > 1 && hue !== null) {
           const d = Math.abs(cam.hue - hue) % 360;
           if (Math.min(d, 360 - d) > HUE_TOL) continue;
@@ -931,7 +965,7 @@ function snapBandPixelUncached(rgb, hue, tone, fraction, maxTone) {
       }
     }
   }
-  return best ?? under ?? rgb;
+  return best ?? under ?? underAny ?? rgb;
 }
 // snapBandStops(stopsOut, controls, r, mode, side): snaps every band stop of a built ramp in ascending
 // stop order at tone sharedToneAt(stop) and fraction r x the stop's own `tintFrac` (the path's per-palette
@@ -955,14 +989,20 @@ function snapBandStops(stopsOut, controls, r, mode, side = "both") {
     const tone = sharedToneAt(st.stop, controls);
     if (tone >= 100 || tone <= 0) { st.snapped = false; continue; }
     const maxTone = k > 0 ? lstarFromRgb(stopsOut[order[k - 1]].rgb) - 1e-9 : Infinity;
+    // a light band pixel stays over stop 500's, so the interior between always has room (finishRamp)
+    const p500 = st.stop <= BAND_EDGE.light ? stopsOut.find((x) => x.stop === 500) : undefined;
+    const minTone = p500 ? lstarFromRgb(p500.rgb) + 1e-9 : -Infinity;
     // the snap's reference hue: the even path's own CAM16 hue (`hue`), else the OKHSL band render's
     // (`bandHue`: the float render's CAM16 hue, or the anchor's in "cam16"; null while it reads
     // achromatic), never the rounded pixel's, whose hue is quantisation noise at a faint tint (the
     // default kit's Data 1 stop 950 rounded 10 degrees off).
     const cam0 = cam16FromRgb(st.rgb);
     const hue = st.hue !== undefined ? (cam0.chroma > 1 ? st.hue : null) : st.bandHue !== undefined ? st.bandHue : cam0.chroma > 1 ? cam0.hue : null;
-    const fraction = r * (st.tintFrac ?? tintFraction(controls));
-    const pixel = snapBandPixel(st.rgb, hue, tone, fraction, maxTone);
+    // an OKHSL band stop on the grey (bandStopOkhsl: an unreachable tint) snaps to the grey
+    const fraction = okhsl && st.model === 0 ? 0 : r * (st.tintFrac ?? tintFraction(controls));
+    // a peak-capped band stop (okhslStopsAnchored) is bounded by the ramp's own stop-500 chroma
+    const c500 = st.peakCap ? (stopsOut.find((x) => x.stop === 500) ?? {}).chroma : undefined;
+    const pixel = snapBandPixel(st.rgb, hue, tone, fraction, maxTone, c500 > 0 ? c500 : Infinity, minTone);
     st.snapped = true;
     st.rgb = pixel;
     st.hex = "#" + pixel.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
@@ -973,17 +1013,19 @@ function snapBandStops(stopsOut, controls, r, mode, side = "both") {
     st.maxc = maxChromaInGamut(st.hue ?? cam.hue, okhsl ? L : st.tone);
   }
 }
-// finishRamp(stopsOut, controls, mode, pivotFixed): the ramp@2 tail on every path, top down. (1) Snap the
-// light band (050 to 100). (2) Hold every other stop of the interior under its preceding stop's final
-// pixel L* (enforceMonotonePixelL), and, on the light side of a verbatim anchor (`pivotFixed`), over the
-// anchor's pixel L*: the light-side interior of an anchor next to the clamped window has under one 8-bit
-// code of L* per stop (Nike tertiary-muted #FFFFFF: stops 125 to 500 share 0.55 L*), and a stop that
-// rounds under the pivot must be lifted, where the one-sided pass could only lower. A constructed stop
-// 500 (unanchored, or an anchor clamped into pivotWindow) is held like any interior stop. (3) Snap the
-// dark band (900 to 950) under the interior's final pixels. Every rendered ramp descends in pixel L*.
-function finishRamp(stopsOut, controls, mode, pivotFixed) {
+// finishRamp(stopsOut, controls, mode, maxChroma): the ramp@2 tail on every path, top down. Stop 500 is
+// fixed throughout: the verbatim anchor, a clamped pivot or an unanchored one, each built at its own
+// target (moving a clamped 500 lowered its chroma under the peak cap's ceiling: Kea primary-muted
+// #E1F5DA, peak, 16.84 against interior stops at 17.37). (1) Snap the light band (050 to 100), each pixel
+// over stop 500's. (2) Hold every interior stop under its preceding stop's final pixel L* and, on the
+// light side, over stop 500's (enforceMonotonePixelL): the light-side interior of an anchor next to the
+// clamped window has under one 8-bit code of L* per stop (Nike tertiary-muted #FFFFFF: stops 125 to 500
+// share 0.55 L*), and a stop that rounds under the pivot is lifted, where the one-sided pass could only
+// lower. (3) Snap the dark band (900 to 950) under the interior's final pixels. Every rendered ramp
+// descends in pixel L*.
+function finishRamp(stopsOut, controls, mode, maxChroma = Infinity) {
   snapBandStops(stopsOut, controls, 1, mode, "light");
-  enforceMonotonePixelL(stopsOut, pivotFixed);
+  enforceMonotonePixelL(stopsOut, maxChroma);
   snapBandStops(stopsOut, controls, 1, mode, "dark");
   return stopsOut;
 }
@@ -1087,20 +1129,21 @@ function anchorLerp(pivot, edgeLight, edgeDark, stop, skew, lift, curve, tension
 // swapped RGB's own CAM16 chroma, `maxc` is the gamut ceiling at that RGB's own hue and pixel tone.
 // `inGamut` needs no update - the search only ever considers `[0,255]^3` candidates, so it was, and
 // stays, `true`.
-// ramp@2 (T-0040): `enforceMonotonePixelL(stopsOut, pivotFixed)` skips the band stops (snapBandStops
-// owns their pixels) and stop 500 when `pivotFixed` (the verbatim anchor). Every other stop, in ascending
-// stop order, must sit at or under its preceding stop's final pixel L* (`hi`, as before) and, on the
-// light side of a verbatim anchor, at or over the anchor's pixel L* (`lo`, new: a light-side stop that
-// rounds under the pivot is lifted, where the one-sided pass could only lower). A stop inside [lo, hi]
-// is kept; otherwise the nearest RGB neighbour within the radius inside [lo, hi] is taken; with none,
-// the preceding stop's pixel is repeated (a duplicate, never a rise; measured to fire on no stop of the
-// default kit or the SAMPLED corpus, a safety net).
-function enforceMonotonePixelL(stopsOut, pivotFixed) {
+// ramp@2 (T-0040): `enforceMonotonePixelL(stopsOut, maxChroma)` skips the band stops (snapBandStops owns
+// their pixels) and stop 500 (fixed: finishRamp's comment). Every other stop, in ascending stop order,
+// must sit at or under its preceding stop's final pixel L* (`hi`, as before) and, on the light side, at
+// or over stop 500's (`lo`, new: a light-side stop that rounds under the pivot is lifted, where the
+// one-sided pass could only lower). A stop inside [lo, hi] is kept; otherwise the nearest RGB neighbour
+// within the radius inside [lo, hi] is taken (and, on the anchored peak path, at or under `maxChroma`,
+// the ramp's stop-500 chroma, so the pass never undoes the peak cap: The Matrix tertiary-muted #1F1F24
+// stop 700 moved to C 5.73 over its 500's 5.48); with none, the preceding stop's pixel is repeated (a
+// duplicate, never a rise; measured to fire on no stop of the default kit or the corpus, a safety net).
+function enforceMonotonePixelL(stopsOut, maxChroma = Infinity) {
   const EPS = 1e-9;
   const RADIUS = 3;
   const order = byStop(stopsOut);
   const L = (st) => lstarFromRgb(st.rgb);
-  const pivot = pivotFixed ? stopsOut.find((st) => st.stop === 500) : undefined;
+  const pivot = stopsOut.find((st) => st.stop === 500);
   for (let k = 1; k < order.length; k++) {
     const cur = stopsOut[order[k]];
     if (inBand(cur.stop) || (pivot && cur === pivot)) continue;
@@ -1123,6 +1166,7 @@ function enforceMonotonePixelL(stopsOut, pivotFixed) {
           if (dr === 0 && dg === 0 && db === 0) continue;
           const l = lstarFromRgb([r, g, b]);
           if (l > hi + EPS || l < lo - EPS) continue;
+          if (maxChroma < Infinity && cam16FromRgb([r, g, b]).chroma > maxChroma) continue;
           const dist = dr * dr + dg * dg + db * db;
           if (dist < bestDist) { bestDist = dist; best = [r, g, b]; }
         }
@@ -1258,7 +1302,7 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
       out.rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
     return { stop, tone, chroma, hue, maxc, rgb: out.rgb, hex, inGamut: out.inGamut, env, model: chroma, basis, floor, tint, tintFrac: frac };
   });
-  return finishRamp(built, controls, controls.toneMode, !clamped);
+  return finishRamp(built, controls, controls.toneMode);
 }
 
 // paletteStops, full per-stop pipeline for one palette.
@@ -1403,7 +1447,7 @@ export function paletteStops(palette, controls, stops) {
     if (dampAmp === 0) rec.anchorCap = anchorChroma;
     return rec;
   });
-  return finishRamp(built, controls, mode, false);
+  return finishRamp(built, controls, mode);
 }
 
 // ── OKHSL distribution path (toneMode "perceptual" | "peak") ──────────────────────────────────────
@@ -1856,23 +1900,47 @@ function okhslStopsAnchored(palette, controls, stops, anchor, mode) {
       };
     }
     let { hue, s, l, rgb, chroma, toneTarget, toneHeld, env, tint, band, hold, w, tintHue, bandHue } = preCap(stop);
-    let capped = false;
-    // the band rule's tint is the spec at a band stop, so the peak cap reads interior stops only, and
-    // reads the stop's OWN value: the blend toward the tint (ramp@2) is applied after the cap, else a
-    // near-grey anchor's capped interior meets its tinted band in a chroma cliff at the edge.
+    let capped = false, tintFracStop = frac, peakCap = false;
+    // the stop's own value is capped first (ramp@1's order, which keeps the two hue spaces within 0.02
+    // OKLab dE on capped stops); the blend below can carry it back over the ceiling, capped again there
     if (capPeak && !band && chroma > ceiling + 1e-6) ({ s, l, rgb, chroma, capped } = capChromaAtHeldTone(hue, s, l, rgb, chroma, ceiling, null, true));
     if (!band) {
-      const bl = blendTint(hue, s, hold, frac, w, tintHue);
+      // on peak the blend's tint is capped at the ceiling too (at the anchor's CAM16 hue and the stop's
+      // held L*), so a muted anchor's blend lands under its stop 500 without a second cap in most stops
+      const mcB = capPeak ? maxChromaInGamut(anchor.cam.hue, hold.target) : 0;
+      const fracB = capPeak && mcB > 0 ? Math.min(frac, Math.max(0, (ceiling - 0.5) / mcB)) : frac;
+      const bl = blendTint(hue, s, hold, fracB, w, tintHue);
       tint = bl.tint;
       if (w > 0) { s = bl.s; l = bl.l; rgb = okhslToRgb(hue, s, l); chroma = cam16FromRgb(rgb).chroma; toneHeld = bl.held; }
     }
+    // The peak cap reads the stop's final value, after the band rule's blend (ramp@2): no stop above
+    // stop 500's own chroma, the blended interior and the band tint included, so a muted anchor's ends
+    // stay no richer than its 500 (capped before the blend, a 40% tint read 2.19x stop 500 at stop 150 on
+    // a SAMPLED muted anchor, tonal.mjs C6 v). A band stop's tint fraction is capped where its chroma,
+    // the fraction times the stop's gamut ceiling, would pass half a CAM16 C under the ceiling
+    // (capChromaAtHeldTone's margin), and its snap is bounded by the ramp's own stop-500 chroma
+    // (`peakCap`; the rounded render alone under-reads: a near-grey anchor's 0.06 fraction of a pale
+    // stop's wide ceiling snapped to C 6.06 against its stop 500's 3.20).
+    if (capPeak && band) {
+      const mcStop = maxChromaInGamut(cam16FromRgb(okhslToRgbFloat(hue, s, l)).hue, toneTarget);
+      const fracMax = mcStop > 0 ? Math.max(0, (ceiling - 0.5) / mcStop) : 0;
+      if (frac > fracMax) {
+        tintFracStop = fracMax;
+        const b = bandStopOkhsl(hue, toneTarget, tintFracStop);
+        s = b.s; l = b.l; rgb = b.rgb.map(Math.round); chroma = cam16FromRgb(rgb).chroma; tint = b.s;
+        capped = true;
+      }
+      peakCap = true;
+    } else if (capPeak && chroma > ceiling + 1e-6) ({ s, l, rgb, chroma, capped } = capChromaAtHeldTone(hue, s, l, rgb, chroma, ceiling, null, true));
+    // (a stop capped before the blend whose blended value stays under the ceiling keeps capped true)
     const tone = lstarFromRgb(rgb);
     const hex = "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
-    const rec = { stop, tone, chroma, maxc: maxChromaInGamut(anchor.cam.hue, tone), rgb, hex, inGamut: true, capped, toneTarget, toneHeld, env, model: s, basis: anchor.okhsl.s, tint, tintFrac: frac };
+    const rec = { stop, tone, chroma, maxc: maxChromaInGamut(anchor.cam.hue, tone), rgb, hex, inGamut: true, capped, toneTarget, toneHeld, env, model: s, basis: anchor.okhsl.s, tint, tintFrac: tintFracStop };
     if (band) rec.bandHue = bandHue;
+    if (peakCap) rec.peakCap = true;
     return rec;
   });
-  return finishRamp(built, controls, mode, !clamped);
+  return finishRamp(built, controls, mode, capPeak ? ceiling : Infinity);
 }
 
 function okhslStops(palette, controls, stops, mode) {
@@ -2011,7 +2079,7 @@ function okhslStops(palette, controls, stops, mode) {
     // HCT fallback above is validated in-gamut too, per its own engine contract).
     return { stop, tone, chroma, maxc: maxChromaInGamut(baseHue, tone), rgb, hex, inGamut: true, capped, toneTarget: hold.target, toneHeld, env, model: s, basis: keyS, tint: bl.tint, tintFrac: frac };
   });
-  return finishRamp(built, controls, mode, false);
+  return finishRamp(built, controls, mode);
 }
 
 // ── Group chroma damper (#785 U2, owner rulings R94 to R98) ───────────────────────────────────────
@@ -2066,6 +2134,17 @@ function dampStops(at100, r, mode, hueSpace, controls) {
     out.hex = "#" + out.rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
     return out;
   });
-  if (controls) snapBandStops(out, controls, r, mode);
+  if (controls) {
+    // ramp@2: the damped ramp ends like the at-100 one (finishRamp): the light band re-snapped, the
+    // interior held under its predecessor (and over stop 500 on the light side; the damped 500 is
+    // fixed), the dark band re-snapped under it. The damper's re-hold and rounding can flip two interior
+    // stops the band rule leaves under an 8-bit code apart (role-table Data 7, peak, Base chroma 95:
+    // 125 -> 150 read 94.38 -> 94.48). On the anchored peak path the pass is bounded by the damped
+    // stop 500's chroma, as the at-100 pass is by its own.
+    const c500 = (out.find((st) => st.stop === 500) ?? {}).chroma;
+    snapBandStops(out, controls, r, mode, "light");
+    enforceMonotonePixelL(out, out.some((st) => st.peakCap) && c500 > 0 ? c500 : Infinity);
+    snapBandStops(out, controls, r, mode, "dark");
+  }
   return out;
 }
