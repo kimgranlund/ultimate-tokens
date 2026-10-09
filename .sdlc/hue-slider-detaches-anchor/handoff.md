@@ -2,7 +2,7 @@
 id: T-0045
 title: "Dragging a palette's Hue deletes its anchor, so the ramp jumps to the unanchored curve (stop 500 L* 73 vs 51) and looks washed out"
 type: bug             # feature | bug | chore | spike | idea
-status: ready        # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: done        # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: L2             # L1 | L2 | L3 | L4 (L5 reserved)
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -36,3 +36,7 @@ The failing test lands before or with the fix, never after. Do not change `tonal
 - A Hue drag on an anchored palette keeps a valid `anchor` at the same L* (within 3) and stop 500 within 4 L* of its pre-drag value; the default Primary at hue 150 renders stop 500 below L* 55 (was 64): check by reading the `(reh)` group's assertions and running a node projectView repro.
 - A Chroma drag keeps the anchor, a second edit keeps the first snapshot, Reset restores anchor, hue, chroma, lift and the ramp.
 - `npm test` passes.
+
+## Closed
+
+2026-10-08: delivered by the solo agent (level L2); one independent batched verifier passed before the merge
