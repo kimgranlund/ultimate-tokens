@@ -10,7 +10,7 @@
   "effort": "xhigh",
   "routing_reason": "Caller selected this role and level; no task-specific rationale supplied.",
   "reason_source": "fallback",
-  "status": "running",
+  "status": "completed",
   "started_at": "2026-10-09T00:00:19.506938+00:00",
   "project": "/Users/kimgranlund/Projects/nonoun/ultimate-tokens",
   "handoff": "/Users/kimgranlund/Projects/nonoun/ultimate-tokens/.sdlc/match-peer-lightness/handoff.md",
@@ -89,5 +89,8 @@
     "worktree-agent-a8233f575cf66e2bd",
     "worktree-agent-abe86b04568ef6f79",
     "worktree-agent-adc629a9791e0c876"
-  ]
+  ],
+  "exit_code": 0,
+  "finished_at": "2026-10-09T00:44:38.766508+00:00",
+  "agent_id": "a0040-planner-L3-598db051bd26df11"
 }
