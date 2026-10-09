@@ -27,7 +27,7 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 | T-0021 | [gh-788](gh-788/handoff.md) | Compute layers: rebase U1-U3 onto main, then U4 pins and U5 ramp@2 on schema v9 (#788) | feature | L4 | P2 | none | 🟢 done |
 | T-0022 | [gh-811b](gh-811b/handoff.md) | Describe eval runner: parse the leading JSON object of a string-typed families (Haiku 5.5 appends trailing text) | bug | L1 | P2 | none | 🟢 done |
 | T-0023 | [geometry-tokens-snapshot](geometry-tokens-snapshot/handoff.md) | Retire docs/assets/geometry-tokens.json, the frozen six-size snapshot (T-0017 follow-up) | chore | L2 | P2 | none | 🟢 done |
-| T-0024 | [gate-a-narrowing](gate-a-narrowing/handoff.md) | Gate A narrowing from #807: can the chroma-envelope gate cover stops where OKHSL keyS reads above 1? | spike | L1 | P2 | none | 🔵 ready |
+| T-0024 | [gate-a-narrowing](gate-a-narrowing/handoff.md) | Gate A narrowing from #807: can the chroma-envelope gate cover stops where OKHSL keyS reads above 1? | spike | L1 | P2 | none | 🟢 done |
 | T-0025 | [inspector-review-fixes](inspector-review-fixes/handoff.md) | Color inspector follow-ups from the PR #814 review (Mapping/Radix reachability, drag-reorder context flip, keyboard path back to Global) | bug | L2 | P2 | none | 🟢 done |
 | T-0026 | [figma-legacy-size-renames](figma-legacy-size-renames/handoff.md) | Figma apply must not prune legacy size/* variables on an existing file (PR #813 review, major 1) | bug | L3 | P2 | none | 🟢 done |
 | T-0027 | [geometry-compound-insets](geometry-compound-insets/handoff.md) | Compound insets and radius composition for container components (segmented, listbox), square ghost icon buttons, unstyled palette name input | feature | L4 | P2 | none | 🟢 done |
@@ -49,3 +49,4 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 | T-0043 | [radix-tooltip-popover](radix-tooltip-popover/handoff.md) | Radix step tooltip: render outside the canvas scene (no clipping, no zoom scaling, upright text) | bug | L2 | P2 | none | 🟢 done |
 | T-0044 | [ui-standardization](ui-standardization/handoff.md) | UI standardization: shell type roles, container and control anatomy, glyph motion, product-sm default | feature | L4 | P2 | none | 🔵 ready |
 | T-0045 | [hue-slider-detaches-anchor](hue-slider-detaches-anchor/handoff.md) | Dragging a palette's Hue deletes its anchor, so the ramp jumps to the unanchored curve (stop 500 L* 73 vs 51) and looks washed out | bug | L2 | P2 | none | 🟢 done |
+| T-0046 | [ratify-adrs-close-notes](ratify-adrs-close-notes/handoff.md) | Ratify ADR-035 and ADR-036 (user ruling 2026-10-09) and close the two resolved PR #813 notes | chore | L2 | P2 | none | 🔵 ready |

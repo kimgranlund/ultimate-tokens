@@ -1,0 +1,21 @@
+{
+  "subagent_type": "sdlc-lite:solo-L1",
+  "name": "T-0024-solo",
+  "description": "T-0024 solo L1 Gate A",
+  "model": "sonnet",
+  "effort": "low",
+  "prompt": "T-0024 Gate A narrowing from #807: can | solo L1\nHandoff: .sdlc/gate-a-narrowing/handoff.md\nBrief: deliver ticket .sdlc/gate-a-narrowing/handoff.md end to end in this session as the solo agent. Read the ticket and the files it names, make the smallest change that meets its done criterion, run every check command it names and after a fix rerun the checks that fix can affect (every check when unsure), keeping any `(red)` control, and report files changed, each check with its outcome, and anything still open. For a ticket of level L2 or L3 write the handoff's ## Acceptance criteria if it has none, end with your report, and say `verify: needed`: the parent runs the one batched independent verifier. No person is present: never ask the user and never use AskUserQuestion. You work on your own worktree branch: commit early and often, one `WIP T-0024` commit after each green check and a final commit `T-0024: Gate A narrowing from #807: can the chroma-envelope gate cover stops where OKHSL keyS reads above 1?` when every check is green. Never push, open a PR, or publish: fanout.py land merges your branch, runs the gates, and closes the ticket.",
+  "run_in_background": true,
+  "isolation": "worktree",
+  "ticket": "T-0024",
+  "tier": "L1",
+  "prune": false,
+  "branch": "worktree-T-0024-solo",
+  "worktree": ".claude/worktrees/T-0024-solo",
+  "handoff": ".sdlc/gate-a-narrowing/handoff.md",
+  "verifier": null,
+  "base_sha": "c04e8f015ba3c78859cc96eccdc76ff6ba1db9eb",
+  "attempt_id": "d94b45cab2524fdf98183ee62a205e6a",
+  "role": "solo",
+  "level": "L1"
+}
