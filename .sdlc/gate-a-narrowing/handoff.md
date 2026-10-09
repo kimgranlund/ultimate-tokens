@@ -2,7 +2,7 @@
 id: T-0024
 title: "Gate A narrowing from #807: can the chroma-envelope gate cover stops where OKHSL keyS reads above 1?"
 type: spike           # feature | bug | chore | spike | idea
-status: ready     # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: done     # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: L1             # L1 | L2 | L3 | L4 (L5 reserved)
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -18,3 +18,7 @@ Answer: (1) why keyS above 1 happens and what the engine does there; (2) whether
 
 ## Constraints
 Read-only. Output the architect manifest only.
+
+## Closed
+
+2026-10-09: Already fixed by T-0030 (#816, 53ae537a): OKHSL stop records carry basis keyS and Gate A rule 2' models the clamp, so the keyS above 1 exclusion is gone. Solo read of the code and history confirms; no change needed.

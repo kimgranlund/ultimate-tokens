@@ -1382,8 +1382,8 @@ Format: Context → Decision → Rationale → Consequences → Status.
   `src/ui/sections/*.js`, no `innerHTML` in `src/ui/app-helpers.mjs`, and none in `src/ui/charts/*.mjs`.
   The `fill: none` rule and the `.an-svg` classes are gone; a new chart is a `renderChart` spec. Smoke
   covers the chart cards in light and dark for all three sections.
-- **Status.** PROPOSED 2026-10-08 (T-0029). Ratification is the owner's: the owner edits this line to
-  DECIDED, or amends the text under the file's amendment shape.
+- **Status.** DECIDED 2026-10-09 (T-0029), ratified by the owner (user ruling 2026-10-09). Amend the text
+  under the file's amendment shape.
 
 ## ADR-036: The editor shell's text roles, control anatomy, glyph motion and product-sm default cell
 - **Context.** T-0044. The editor chrome carried 591 literal text and geometry declarations in
@@ -1447,8 +1447,8 @@ Format: Context → Decision → Rationale → Consequences → Status.
   tokens; the headless (shg) group covers the tri-state; smoke checks compound containers and control
   polish at product-sm and content-lg in light and dark, control text at both, and the caret's reduced
   motion duration.
-- **Status.** PROPOSED 2026-10-09 (T-0044). Ratification is the owner's: the owner edits this line to
-  DECIDED, or amends the text under the file's amendment shape.
+- **Status.** DECIDED 2026-10-09 (T-0044), ratified by the owner (user ruling 2026-10-09). Amend the text
+  under the file's amendment shape.
 
 ## ADR-037: Ramp version 2 matches the lightest and darkest stops across palettes, and Match peer lightness matches every stop
 - **Context.** T-0040. On `ramp@1` every palette of a kit chose its own lightness at every stop, the
@@ -1517,8 +1517,8 @@ Format: Context → Decision → Rationale → Consequences → Status.
   distinct 19 to 107, notch 15 to 99, every notch addition on even). Gate A reads the band clause from
   the rule. The shadcn and Radix baselines and the Adia exports stay `ramp@1`-pinned. The board is
   `docs/reports/2026-10-09-ramp2-extremes.md`.
-- **Status.** PROPOSED 2026-10-09 (T-0040). Ratification is the owner's: the owner edits this line to
-  DECIDED, or amends the text under the file's amendment shape.
+- **Status.** DECIDED 2026-10-09 (T-0040), ratified by the owner (user ruling 2026-10-09). Amend the text
+  under the file's amendment shape.
 
 ## Quick map: decisions an enhancing agent is most likely to "fix" (don't)
 | ADR | Looks wrong because… | But it's intentional because… |

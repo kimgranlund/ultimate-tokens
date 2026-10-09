@@ -18,7 +18,7 @@
 
 ## PR #813 review follow-ups (2026-10-08)
 - Major 1 and minor 8 (Figma legacy size renames, alias changed-count): ticket T-0026, planner running.
-- Held until T-0025 lands (they edit `src/ui/app.js`, `styles.css`, `icons.js`): major 2 (`icons.js:54` inline `width:var(--sh-control-icon, Npx)`, which T-0027 step 5 no longer applies to an explicit `icon(name,{size})`, and the geometry specimen glyph sizes; the `geo-row` headless check reads the span not the svg), major 3 (`app.js` ~:2334-2342 injects unscoped `:where(:root)` and `:where(*, :host)` role rules into `document.head`; scope them to `:where(ultimate-tokens)`; two instances share style ids), minor 6 (`geometry.mjs:314` breakpoint CSS uses `:root`, use `:where(:root)`), minor 7 (`test/engine/categories.mjs:266-272` pass-through leg vacuous and still checks `doc.geometry.ramp`; stale comments in `categories.mjs:6`, `gen-categories.mjs:224,445`, `mode-apply-plan.mjs:250`). Pixel-review defects whose majors landed in #818 are spent; still open: faint light-theme headings, micro-sm switch.
+- Held until T-0025 lands (they edit `src/ui/app.js`, `styles.css`, `icons.js`): major 2 (`icons.js:54` inline `width:var(--sh-control-icon, Npx)`, which T-0027 step 5 no longer applies to an explicit `icon(name,{size})`, and the geometry specimen glyph sizes; the `geo-row` headless check reads the span not the svg), major 3 (`app.js` ~:2334-2342 injects unscoped `:where(:root)` and `:where(*, :host)` role rules into `document.head`; scope them to `:where(ultimate-tokens)`; two instances share style ids), minor 6 (`geometry.mjs:314` breakpoint CSS uses `:root`, use `:where(:root)`), minor 7 (`test/engine/categories.mjs:266-272` pass-through leg vacuous and still checks `doc.geometry.ramp`; stale comments in `categories.mjs:6`, `gen-categories.mjs:224,445`, `mode-apply-plan.mjs:250`). Pixel-review defects whose majors landed in #818 are spent; the faint light-theme headings and micro-sm switch were resolved by T-0044 (2026-10-09).
 - Held until T-0021 lands (`persist.js`): minor 4 (pre-v9 geometry with neither treatment nor baseHeight lands on 32px default, not 28) and minor 5 (mode migration collapses a materialized 28/26/24 set to sm/sm/sm with no warning).
 
 ## T-0026: Figma apply must not prune legacy size/* variables on an existing file (PR #813 review, major 1) (2026-10-08)
@@ -38,7 +38,7 @@
 - note: the three micro cells (micro-sm-sm, micro-sm-md, micro-md-sm) have a chip taller than the part. The step 1 test names them literally as exceptions to the compound law.
 - note: `.account-license-input`, `.tok-input`, `.settings-nav-item` and `.linklike` sit outside the selector list in `test/repo/control-text.mjs`, by design.
 - note: step 5 moved 93 `src/ui/app.js` doc cites by number, so a concurrent lane that edits `src/ui/app.js` will conflict on them at merge.
-- note: two PR #813 pixel-review items stay open in `.sdlc/notes.md`, the faint light-theme headings and the micro-sm switch, because no record says what was seen.
+- resolved: the two PR #813 pixel-review items, the faint light-theme headings and the micro-sm switch, were fixed by T-0044 (kickers use the dim ink, the switch is on the cell anatomy row) and closed with the user's approval on 2026-10-09.
 - note: `panda-smoke` runs only in CI, so it has not been seen green for this branch.
 
 ## T-0021: Compute layers: rebase U1-U3 onto main, then U4 pins and U5 ramp@2 on schema v9 (#788) (2026-10-08)
