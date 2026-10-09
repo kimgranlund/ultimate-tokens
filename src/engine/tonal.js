@@ -10,9 +10,10 @@
 //
 // The band rule (ramp@2, T-0040): the two end bands, stops at or below BAND_EDGE.light (100) and at
 // or above BAND_EDGE.dark (900), sit on a palette-free L* ladder shared by every palette of a kit
-// (`sharedToneAt`) and carry one shared tint, `chromaFloor`% of each stop's own gamut ceiling, in
-// every tone mode, anchored or not, so peer palettes meet at the same lightness at both ends with
-// only a faint hue left. Between stop 500 and each band edge the palette's own construction is kept,
+// (`sharedToneAt`) and carry one shared tint, `chromaFloor`% of each stop's own gamut ceiling (on the
+// anchored even path under hueShift, the ceiling at the hue before edge rotation, capped at the rotated
+// one's, as that path's floor reads it since #784), in every tone mode, anchored or not, so peer
+// palettes meet at the same lightness at both ends with only a faint hue left. Between stop 500 and each band edge the palette's own construction is kept,
 // affinely remapped so stop 100 and 900 land on the shared ladder, and chroma blends from the
 // palette's own value at 500 to the tint at the edge (`bandWeight`). Every band stop's 8-bit pixel is
 // chosen last, by `snapBandPixel`, at every ramp chroma (the group damper re-snaps, `dampStops`).
@@ -1301,8 +1302,13 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
     // stop's gamut ceiling at hRef (the hue before edge rotation), capped at mc: evenChroma's floorMaxc
     // (#784 explains why the floor must not read the rotated ceiling). chromaAt returns the chroma with its
     // basis (the un-damped intended chroma) and floor; the solve's wrapper hands it the number alone.
-    // The band rule (ramp@2): `tint` is chromaFloor% of the stop's gamut ceiling at its own hue and
-    // tone; a band stop renders it, an interior stop blends its own value toward it by `w`.
+    // The band rule (ramp@2): `tint` is chromaFloor% of the floor's own ceiling `fm`, the stop's gamut
+    // ceiling at its tone and at the hue before edge rotation, capped at the rotated hue's; a band stop
+    // renders it, an interior stop blends its own value toward it by `w`. Not the rotated hue's ceiling
+    // (#784's reason, the floor's): near white that ceiling swings by tens of C over a few degrees, so
+    // under hueShift a band stop whose rotated hue left the yellow cusp dipped under both neighbours
+    // (oklch Success hueShift +60, stop 100: 10.43 / 6.86 / 12.30 at 075 / 100 / 125). At hueShift 0 fm is
+    // mc and the tint is as before. `tintFrac` is the tint over mc, so the snap and the damper target it.
     const chromaAt = (h, hRef = h) => {
       const mc = maxChromaInGamut(h, tone);
       const anchorIntendedH = controls.relChroma ? anchorRelFrac * mc : anchor.cam.chroma;
@@ -1310,9 +1316,10 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
       const intendedH = anchorChromaBasis(stop, 500, lift, anchorIntendedH, groupIntendedH);
       const fm = Math.min(mc, maxChromaInGamut(hRef, tone));
       const fr = floorRefAt(hRef, fm, pivotTone, tone450, tone550);
-      const tint = frac * mc;
+      const tint = frac * fm;
+      const tintFrac = fm < mc ? (frac * fm) / mc : frac;
       const own = evenChroma(mc, intendedH, env, controls.chromaFloor, fr, fm);
-      return { chroma: own + (tint - own) * w, basis: intendedH, floor: evenFloor(mc, intendedH, controls.chromaFloor, fr, fm), tint };
+      return { chroma: own + (tint - own) * w, basis: intendedH, floor: evenFloor(mc, intendedH, controls.chromaFloor, fr, fm), tint, tintFrac };
     };
     let resolvedHue = seedHue;
     if (oklchSpace) {
@@ -1325,12 +1332,12 @@ function paletteStopsAnchored(palette, controls, stops, anchor) {
     }
     const hue = (((resolvedHue + shift * dir) % 360) + 360) % 360;
     const maxc = maxChromaInGamut(hue, tone);
-    const { chroma, basis, floor, tint } = chromaAt(hue, resolvedHue);
+    const { chroma, basis, floor, tint, tintFrac } = chromaAt(hue, resolvedHue);
     const out = hctToRgb(hue, chroma, tone);
     const hex =
       "#" +
       out.rgb.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
-    return { stop, tone, chroma, hue, maxc, rgb: out.rgb, hex, inGamut: out.inGamut, env, model: chroma, basis, floor, tint, tintFrac: frac };
+    return { stop, tone, chroma, hue, maxc, rgb: out.rgb, hex, inGamut: out.inGamut, env, model: chroma, basis, floor, tint, tintFrac };
   });
   return finishRamp(built, controls, controls.toneMode);
 }

@@ -288,6 +288,11 @@ What moved on purpose:
 - The unanchored pivot keeps eight 0.55 L* steps of room from the shared edge (`BAND_PIVOT_ROOM`), so a
   light-cusp hue's stop 500 moves down on peak (a yellow cusp at L* 94).
 - The five clamped anchors above (`RAMP_WINDOW_ALLOW` 10 to 15).
+- On the anchored even path under hueShift the band tint reads the floor's capped ceiling (`fm`, the
+  stop's ceiling at the hue before edge rotation, at most the rotated one's), as the floor has since
+  #784. Read at the rotated hue it dipped at stop 100 (oklch Success +60: C 10.43 / 6.86 / 12.30 at
+  075 / 100 / 125; Danger -60 likewise), 4 dips on `gate:even-dips` (b1). No corpus or default-kit
+  cell moves: no anchored preset palette carries a hueShift, and at hueShift 0 the cap is the identity.
 - The compression next to the shared edge, the one declared cost: a verbatim anchor at L* 15.6 or
   under, or 92.7 or over, has its 500-to-edge interior squeezed into a few L*, where adjacent stops
   can round to one pixel. On the 19-stop display ramp 29 of 3,380 anchored corpus palettes on
@@ -309,6 +314,8 @@ Every re-pin (file, old, new):
 | `test/engine/exports.mjs` | EX-1 `primary.950`, EX-2 primary, hover, neutral on-surface, data-1 | `ramp@1` values | `ramp@2` values (`oklch(0.1729 0.0179 263.93)` at 950) |
 | `test/ui/headless-boot.mjs` | gid3, gid-owner4 | interior ratios at every stop | band stops within 0.45 L* of the shared ladder |
 | `test/engine/chroma-envelope-gate.mjs` | Gate A | rule 2' at every stop | the band clause (blend weight and tint fraction from the rule) |
+| `test/engine/tonal.mjs` | skew-lift-okhsl (iii c) cited rises | 25 cited exceptions | 0 (ramp@2 reads 0 of 10,080); the 25 kept as a frozen `ramp@1` negative control |
+| `test/engine/even-dips-gate.mjs` | #784 notch pin, pre-#701 floor control | read on the live engine | read on frozen `ramp@1` (ramp@2's band rule closes both) |
 
 ## Follow-ups
 

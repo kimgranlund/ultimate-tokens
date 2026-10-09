@@ -1470,7 +1470,10 @@ Format: Context → Decision → Rationale → Consequences → Status.
     keeps ends no richer than itself (the default kit's Neutral reads 0.38 against the floor's 0.40).
     A tint under CAM16's own reading of the neutral (near white under a capped fraction) renders the
     exact grey. The even path and every unanchored palette read `chromaFloor / 100` uncapped (R69: the
-    even floor tints an achromatic anchor's ramp).
+    even floor tints an achromatic anchor's ramp). Under hueShift the anchored even path reads the
+    ceiling at the hue before edge rotation, capped at the rotated one's, as its floor has since #784:
+    read at the rotated hue, the near-white ceiling swings with a few degrees of hue and stop 100 dipped
+    under both neighbours (`gate:even-dips` (b1)).
   - The interior is the palette's own construction, remapped affinely onto [shared(100), pivot] and
     [pivot, shared(900)], and its chroma blends toward the tint by a smoothstep of the `liftStop`
     distance from 500 (0 at the pivot, 1 at the edge), so stop 500 keeps the palette's own chroma basis.

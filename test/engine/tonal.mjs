@@ -1168,8 +1168,10 @@ for (const mode of ["perceptual", "peak"]) {
   //   (b) RENDERED: the emitted pixels' OKHSL lightness never RISES across the grid, to within the 3e-3
   //       read-back budget of (i).
   //   (c) MEASURED: the reported `tone`  -  the CIELAB L* of the 8-bit triple the ramp actually emits  - 
-  //       never rises, over the same grid, beyond a NAMED, CITED exception list (GRID_R2_EXCEPTIONS
-  //       below). This used to carry a 0.152 L* allowance: L* moves with CHROMA as well as lightness,
+  //       never rises over the same grid: 0, with no exception since T-0040 (ramp@2, ADR-037), which
+  //       retired the NAMED, CITED exception list (GRID_R2_EXCEPTIONS, now RAMP1_GRID_RISES below, the
+  //       leg's ramp@1 negative control). The history of that list follows.
+  //       This used to carry a 0.152 L* allowance: L* moves with CHROMA as well as lightness,
   //       the damping was positioned on the RAW stop while the lightness was read at the LIFTED one, and
   //       at a domain extreme a step whose lightness lift had compressed to near nothing still took a
   //       full damping step, fell off the OKHSL s=1 clipping cliff, and measured UP (#668: worst 0.154
@@ -1185,7 +1187,8 @@ for (const mode of ["perceptual", "peak"]) {
   //       load-bearing both directions, same shape as C6(ii)'s KNOWN_BASELINE_DUP: deleting an entry
   //       reproduces a FAIL naming that exact cell; an unlisted 22nd cell fails too. The lift-0 slice is
   //       the negative control that says the skew gamma was never part of it: it is asserted separately
-  //       below, so a future change that made skew produce upticks could not hide inside the list.
+  //       below, so a future change that made skew produce upticks could not hide inside the list (with
+  //       the list empty, any rise fails (iii c) itself; the lift-0 clause still names the mechanism).
   const SKEW_G = [-100, -50, -20, 0, 40, 50, 100];
   const LIFT_G = [-40, -20, -5, 0, 5, 15, 20, 40];
   const HUES_G = [...new Set(DEFAULTS.map((d) => d.hue))];
@@ -1228,7 +1231,13 @@ for (const mode of ["perceptual", "peak"]) {
   // described above are not reproduced there; the 25 below are, identically on the pre-#785 engine at 100 (they
   // were never in reach while the grid read 95). All lift 40 or 5, hues 107/145/152/165, L* 90.66 to
   // 99.50, each rise +0.0036 to +0.0915 L*. Damped-ramp monotonicity below 100 is not bounded here (Q2).
-  const GRID_R2_EXCEPTIONS = new Set([
+  // Emptied at T-0040 (ramp@2, ADR-037): the FULL grid reads 0 rises of 10,080 cells on ramp@2, so the
+  // cited list is gone and (iii c) bounds the live grid at 0 with no exception. The 25 keys below are
+  // the frozen ramp@1 layer's rises (src/engine/layers/ramp@1.mjs reads exactly these 25 on the FULL
+  // grid), kept as the leg's negative control: each must still read its first rise, at its own stop
+  // pair, on ramp@1 through the grid's own predicate and controls, so (iii c) is shown to see a rise.
+  // 25 renders, run in FULL and SAMPLED alike.
+  const RAMP1_GRID_RISES = [
     "perceptual|oklch|152|40|40|0|175&200", // +0.0036 at L* 98.04
     "perceptual|oklch|152|-20|40|100|300&350", // +0.0103 at L* 96.30
     "perceptual|oklch|152|0|40|100|150&175", // +0.0439 at L* 98.36
@@ -1254,12 +1263,21 @@ for (const mode of ["perceptual", "peak"]) {
     "peak|cam16|165|-100|40|100|250&300", // +0.0216 at L* 90.66
     "peak|cam16|145|-50|40|100|250&300", // +0.0201 at L* 94.47
     "peak|cam16|152|0|40|100|175&200", // +0.0702 at L* 98.18
-  ]);
+  ];
+  // the index of a ramp's first measured L* rise, or -1: (iii c)'s predicate, shared by the grid and the
+  // ramp@1 control
+  const firstRise = (rows) => rows.findIndex((r, i) => i > 0 && r.tone > rows[i - 1].tone);
+  for (const key of RAMP1_GRID_RISES) {
+    const [mode, hueSpace, hue, skew, lift, vibrancy, pair] = key.split("|");
+    const rows = R1.paletteStops({ hue: +hue, chroma: 100, skew: +skew, lift: +lift }, OK(mode, { hueSpace, vibrancy: +vibrancy }), STOPS);
+    const i = firstRise(rows);
+    if (i < 0 || `${STOPS[i - 1]}&${STOPS[i]}` !== pair)
+      FAIL("skew-lift-okhsl", `(iii c negative control) ${key} reads ${i < 0 ? "no rise" : `its first rise at ${STOPS[i - 1]}&${STOPS[i]}`} on the frozen ramp@1 layer  -  the control no longer shows the rise predicate bites`);
+  }
   // this grid is synthetic, not a corpus sweep, but at an estimated 16s quiet it decides whether the
   // 120s ceiling holds (#713 design section); SAMPLED thins it to every fifth hue, offset by
   // SAMPLE_SEED % 5, the same thinning prime.mjs's own grids use.
   const GRID_HUES = FULL ? HUES_G : HUES_G.filter((_, i) => i % 5 === SAMPLE_SEED % 5);
-  const seenGridException = new Set();
   let gridCells = 0, measuredUpticks = 0, zeroLiftUpticks = 0, worstRise = 0, worstCell = "";
   for (const mode of ["perceptual", "peak"]) for (const hueSpace of ["oklch", "cam16"]) for (const vibrancy of [0, 50, 100])
     for (const skew of SKEW_G) for (const lift of LIFT_G) for (const hue of GRID_HUES) {
@@ -1270,24 +1288,18 @@ for (const mode of ["perceptual", "peak"]) {
         FAIL("skew-lift-okhsl", `(iii b) ${mode}/${hueSpace} hue ${hue} skew ${skew} lift ${lift} vibrancy ${vibrancy}: OKHSL lightness ROSE at stop ${STOPS[i - 1]}->${STOPS[i]} (${ls[i - 1].toFixed(5)} -> ${ls[i].toFixed(5)})`);
         break;
       }
-      for (let i = 1; i < rows.length; i++) if (rows[i].tone > rows[i - 1].tone) {
+      const i = firstRise(rows);
+      if (i > 0) {
         const key = `${mode}|${hueSpace}|${hue}|${skew}|${lift}|${vibrancy}|${STOPS[i - 1]}&${STOPS[i]}`;
-        if (GRID_R2_EXCEPTIONS.has(key)) { seenGridException.add(key); break; }
         measuredUpticks++;
         if (rows[i].tone - rows[i - 1].tone > worstRise) { worstRise = rows[i].tone - rows[i - 1].tone; worstCell = `${mode}/${hueSpace} hue ${hue} skew ${skew} lift ${lift} vibrancy ${vibrancy} stop ${STOPS[i - 1]}->${STOPS[i]} (${rows[i - 1].tone.toFixed(4)} -> ${rows[i].tone.toFixed(4)}) key ${key}`; }
         if (lift === 0) zeroLiftUpticks++;
-        break;
       }
     }
   if (gridCells < 2 * 2 * 3 * SKEW_G.length * LIFT_G.length * GRID_HUES.length)
     FAIL("skew-lift-okhsl", `(iii b) grid only covered ${gridCells} cells`);
   if (measuredUpticks)
-    FAIL("skew-lift-okhsl", `(iii c) measured CIELAB L* ROSE on ${measuredUpticks} of ${gridCells} grid cells beyond the ${GRID_R2_EXCEPTIONS.size} cited exceptions, worst +${worstRise.toFixed(4)} L* at ${worstCell}  -  the damping is travelling where the lightness is not (#668)`);
-  // exact under FULL; SAMPLED's thinned hue grid cannot reach every cited cell (#713 design section).
-  if (FULL && seenGridException.size !== GRID_R2_EXCEPTIONS.size) {
-    const missing = [...GRID_R2_EXCEPTIONS].filter((k) => !seenGridException.has(k));
-    FAIL("skew-lift-okhsl", `(iii c) ${missing.length} of the ${GRID_R2_EXCEPTIONS.size} cited R2 grid exceptions were not observed this run (${missing.join(", ")})  -  either fixed (remove from the list) or the grid changed under it (re-diagnose before loosening further)`);
-  }
+    FAIL("skew-lift-okhsl", `(iii c) measured CIELAB L* ROSE on ${measuredUpticks} of ${gridCells} grid cells (no cited exception since T-0040), worst +${worstRise.toFixed(4)} L* at ${worstCell}  -  the damping is travelling where the lightness is not (#668)`);
   if (zeroLiftUpticks)
     FAIL("skew-lift-okhsl", `(iii c) ${zeroLiftUpticks} of the upticks are at lift 0  -  the skew gamma now produces them too, so positioning the damping on liftStop alone no longer covers the mechanism (#668)`);
 
