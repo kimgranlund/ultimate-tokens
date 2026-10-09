@@ -2,7 +2,7 @@
 id: T-0029
 title: "Rebuild the app's analysis charts as native DOM (HTML/CSS marks) following /Users/kimgranlund/Projects/nonoun/native-dom-charts"
 type: feature        # feature | bug | chore | spike | idea
-status: ready     # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: done     # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: L4
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -25,3 +25,18 @@ User ruling 2026-10-08: "for charts and graphs, you can learn how to do them pro
 ## Plan review
 scope widened: step 2: scripts/bundle.mjs added to the scope criterion (MODS and KEY entries for src/ui/charts/core.mjs and render.mjs); the tree keeps the blocked attempt work uncommitted
 plan defect: step 2 needed scripts/bundle.mjs (MODS and KEY entries for src/ui/charts/core.mjs and render.mjs); it was added by scope widening and is committed (6445ea08). Replan steps 3 to 5 only: every later step that adds an import of src/ui/charts/ to a module the bundler lists must name scripts/bundle.mjs in Do and scope, or state why it stays untouched (core.mjs and render.mjs are already registered). Steps 1 and 2 are done.
+
+## Closed
+
+2026-10-08: warnings acknowledged: Process deviations reviewed: the verifiers ran the missing pre-edit red controls by hand and each criterion was red at base; Safari and the 390px viewport are unchecked and stay noted in the PR; the bundle.mjs plan defect was widened and committed in step 2
+
+> - process deviation: red-checkpoint (step 4): missing: attempt a8068a5bd4404f18808d17d786989ba0, handoff sha256 2f391e6bb9de, 3 of 3 (red) criteria without a pre-edit red control: `node --input-type=module -e 'const mk = (t) => ({ tagName: t.toUppe...`; `test -f test/repo/dom-charts.mjs && out=$(node test/repo/dom-charts...`; `! grep -qE 'an-svg|stroke' src/ui/styles.css && grep -qE '^[.]gp-re...`. The step 4 verifier ran the base-commit controls itself and got red on all three, then passed the step.
+> - Step 5 has no `process-deviations.md`, but `red-checkpoint.jsonl` there holds 5 lines for 6 `(red)` criteria. The ADR criterion (73) has no pre-edit control. The builder and verifier both say so. The verifier ran the control by hand (`git show HEAD:docs/references/decision-records.md | grep -c 'Analysis charts are native DOM'` printed 0), so it is red at the pre-build HEAD.
+> - All five steps passed. These checks were not run:
+>   - Safari/WebKit was never run.
+>   - The 390px viewport check the handoff asks for was not done.
+>   - The step 5 verifier's visual check covered the rail only, in headless Chrome at 1440x2400, light and dark.
+>   - Step 2's verifier did not re-run `npm run smoke`. Step 5 later ran it, and it passed.
+> - Step 4 builder said rects and the 3px `gc-pad` rule were first-use marks with no real-browser look. The step 5 smoke and visual check cover them in Chrome.
+> - Step 2 first blocked on a plan defect: `npm test` failed because `scripts/bundle.mjs` rejected the new `src/ui/charts/` imports. The conductor widened the step's scope, and `bundle.mjs` now registers `chartsCore` and `chartsRender` (commit 6445ea08). The first attempt is kept as `step-2.superseded-1`.
+> - Nothing from steps 3 to 5 is committed; the work is in the tree.

@@ -45,3 +45,11 @@
 
 - fix-now: Restore the gated citation shape for the `layers.mjs` and `controls.mjs` paths in `.claude/skills/adding-export-formats/references/foundations.md` now that the files are tracked.
 - note: `docs/specs/` and the `.sdlc/plans/archive/compute-layers-adr-draft.md` R102 text also asked for a `baseIntensity` rename. This plan treated the U5 ruling as closing that half, so `model.mjs` still reads `doc.baseIntensity` (`docControls` maps it to `baseChroma`).
+
+## T-0029: Rebuild the app's analysis charts as native DOM (HTML/CSS marks) following /Users/kimgranlund/Projects/nonoun/native-dom-charts (2026-10-08)
+
+- fix-now: Add the 390px viewport pixel check for the three rails, which the handoff requires and no step ran.
+- decide: ADR-035 is written as PROPOSED, and Safari/WebKit rendering of the ribbons, masks and rects (dev browser) is unverified. The user needs to review the ADR and the Safari look before it is ratified.
+- note: Main has moved past this lane's merge base. A resync will conflict on `scripts/bundle.mjs` `MODS`, `test/smoke/smoke.mjs` and the `decision-records.md` append (ADR-035 follows main's ADR-034). Citation repairs may need redoing.
+- note: The mask-dash encoding may read poorly on steep runs, such as the geometry height diagonal and non-kit tier lines. The fallback is CSS only: drop `--dash` from the class.
+- note: `.sdlc/baseline.md` still shows `npm test` at 54 test files (now 56), and `.sdlc/architecture.md`'s DD4 row cites the retired CLAUDE.md line. Neither is part of `npm test`, so re-measure at pre-land.
