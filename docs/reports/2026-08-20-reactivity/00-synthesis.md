@@ -19,7 +19,7 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
    (`_typeScaleFor`/`_geomScaleFor`/`_typeModeScales`/`_geomModeScales`) lives as mirrored
    instance methods in two section files, with the tier-synthesis closure byte-identical in
    both (since #460 ONE closure, `typeTierScale`, model.mjs:186-190), a third geomScale+typeScale join inside
-   `_geomModeScales` (geometry.js:134-136, now a delegate to `geomModeScales`, model.mjs:202-207), and a FOURTH, disconnected implementation in
+   `_geomModeScales` (geometry.js:136-138, now a delegate to `geomModeScales`, model.mjs:202-207), and a FOURTH, disconnected implementation in
    `model.mjs#geometryScale` that only `brandKit()` uses. They agree today by coincidence of
    independently-written code, not by sharing.
 2. **Storage is three disciplines** (03): persist.js's spec-grade doc store (fuzzed roundtrip
@@ -60,7 +60,7 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
 
 | # | Finding | Evidence | Fix shape |
 |---|---|---|---|
-| P1 | `edit()` runs `save()` on EVERY slider pointer-move tick: full doc deep-clone + second stringify + whole-gallery stringify + sync `localStorage.setItem` + (Figma) structured-clone postMessage of ALL sets, unthrottled, while only the DOM rebuild is rAF-coalesced. Likely co-culprit of the observed Figma drag jank the comments blame on rendering alone | 03 cost story; app.js:220-226, 321-326, 1133-1151, 2087-2124 | move `save()` off the live-drag lane: persist at settle (`commitDrag`) like the undo push, or debounce it; keep the doc mutation synchronous |
+| P1 | `edit()` runs `save()` on EVERY slider pointer-move tick: full doc deep-clone + second stringify + whole-gallery stringify + sync `localStorage.setItem` + (Figma) structured-clone postMessage of ALL sets, unthrottled, while only the DOM rebuild is rAF-coalesced. Likely co-culprit of the observed Figma drag jank the comments blame on rendering alone | 03 cost story; app.js:221-227, 321-326, 1133-1151, 2087-2124 | move `save()` off the live-drag lane: persist at settle (`commitDrag`) like the undo push, or debounce it; keep the doc mutation synchronous |
 | P2 | `isDirty()` serialize-per-frame (render + liveRefresh) for the footer badge | 03 §B2 | cheap dirty bit set in `edit()`/cleared in `save()`, or drop the badge |
 
 ### Architecture (the real "unify the mix" work: one refactor)
@@ -73,9 +73,9 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
 
 | # | Finding | Evidence | Fix shape |
 |---|---|---|---|
-| H1 | `_onReorderUp()` hand-rolls the commit ladder | 01 §B2; color.js:1523-1578 (fixed in #462) | route through `this.commit(fn)` |
+| H1 | `_onReorderUp()` hand-rolls the commit ladder | 01 §B2; color.js:1517-1572 (fixed in #462) | route through `this.commit(fn)` |
 | H2 | `mixinInto` has no method-collision guard (zero collisions today, verified; nothing catches the first one) | 01 §B3, 04 §C; app.js:2778-2796 (guard added in #462) | throw on duplicate own-property name during composition |
-| H3 | Gallery crash vector: set records never shape-validated; `buildTiles` search does `s.name.toLowerCase()` unguarded | 03 §C; app.js:721-723, `sanitizeSetRecords` app-helpers.mjs:104-109 (fixed in #468) | per-record shape check in `loadSets`/`receiveStoredSets` (or a `String(s.name||"")` guard) |
+| H3 | Gallery crash vector: set records never shape-validated; `buildTiles` search does `s.name.toLowerCase()` unguarded | 03 §C; app.js:726-728, `sanitizeSetRecords` app-helpers.mjs:104-109 (fixed in #468) | per-record shape check in `loadSets`/`receiveStoredSets` (or a `String(s.name||"")` guard) |
 | H4 | `tokenOverrides` keys never validated against voice/step domains → typo'd/retired keys accumulate as permanent inert orphans | 03 §B5; persist.js:830-841 (`validLead`, fixed in #461) | drop unknown-voice/step keys in `clampTokenOverrides` (RENAME_MAPS already translates legitimate renames) |
 | H5 | `clampProfile` has no rename-forward story (a FLAG_KEYS rename silently drops overrides); app-prefs/apply-consent sit outside `migrateStorageKeys()` undocumented at that site | 03 §B3–B4 | add a one-line comment at `migrateStorageKeys()` naming the exclusion as deliberate; add a rename-map seam to clampProfile only if flags ever rename |
 | H6 | `_applyBusy` has no timeout (a lost reply wedges apply for the session, narrower than D1 since code.js always answers `apply`) | 04 §B | decide: accept (document) or add a timeout fallback consistent with D1's fix |
@@ -85,7 +85,7 @@ What HAS mixed is the **execution layer under that architecture**, at four seams
 - `_schemeOverride` never declared in the constructor while its two mirrors are (02; declared at the app.js constructor since #467), declare it. Resolved by pane-context U4, which removed the override mechanism for `_columnScheme`.
 - `this.view` (route string) vs local `view` (`projectView` result) one underscore apart at app.js:312 (documented at app.js:647-649), rename the route field (e.g. `this.route`) or the locals.
 - `disconnectedCallback` teardown set asymmetric with what connectedCallback registers (`_liveRaf`, `_dragTimer`, `_toastT`, window-level drag listeners), inert for a page-lifetime singleton; either complete the inventory or comment why it's deliberately partial (01 §B6, 04 §D).
-- Stale copy in `graphGeomComposition` (geometry.js:539) contradicts its own card title, font DOES still compose from Type's UI-control voice (02 §B6).
+- Stale copy in `graphGeomComposition` (geometry.js:554) contradicts its own card title, font DOES still compose from Type's UI-control voice (02 §B6).
 - `okhslLAt` (`src/engine/tonal.js:1096`) lost its module-level `_okL` memo Map, the one true exception to "engines are pure, no module state" this review found - deleted at #738, measured not load-bearing (0.40-0.90 us per uncached call on a quiet host, median 1.54 us at load 67); the function is now plain and pure like its siblings, and the comment above it says why no memo sits there.
 
 ## Deliberately fine: do not "fix"

@@ -2,6 +2,8 @@ import { STANDARD_GEOM_RUNGS, geomEffectiveModes, geomModeScales, geomScaleFor, 
 import { CELL_FIELDS, DEFAULT_GEOMETRY, RADIUS_MODES, SCALES, TIERS, mdAnchor, orderedSizeNames, geomTokensDTCG } from "../../engine/geometry.mjs";
 import { icon } from "../icons.js";
 import { btn, ensureTypeFonts, field, h } from "../app-helpers.mjs";
+import { renderChart } from "../charts/render.mjs";
+import { STROKE } from "../charts/core.mjs";
 
 // The Maison ladder's three kit axes (T-0017), labelled for the inspector; ids are the engine's own.
 const TIER_LABEL = { content: "Content", product: "Product", micro: "Micro" };
@@ -430,7 +432,7 @@ export class GeomSectionImpl {
 
   // ── Geometry analysis (left rail, READ-ONLY) ──────────────────────────────────────────
   // The geometry analog of analysisCards(): diagrams of the resolved dimensional system, pure functions
-  // of geometryScale(doc), no inputs. Reuses .an-card / .an-svg / legend(). `view` is accepted for dispatch
+  // of geometryScale(doc), no inputs. Reuses .an-card / .an-chart / legend(). `view` is accepted for dispatch
   // parity but unused (geometry is doc-driven, not palette-view-driven).
   geomAnalysisCards(view) {
     const scale = this._activeGeomScale();
@@ -453,25 +455,29 @@ export class GeomSectionImpl {
     const x0 = (W - side) / 2, y0 = (H - side) / 2;
     const g = side * (s.icon / s.height); // glyph drawn proportional to icon/height
     const gx = x0 + (side - g) / 2, gy = y0 + (side - g) / 2;
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <rect class="gc-cell" x="${x0}" y="${y0}" width="${side}" height="${side}" rx="2"/>
-        <rect class="gc-glyph" x="${gx.toFixed(1)}" y="${gy.toFixed(1)}" width="${g.toFixed(1)}" height="${g.toFixed(1)}" rx="2"/>
-        <line class="gc-pad" x1="${x0}" y1="${gy.toFixed(1)}" x2="${gx.toFixed(1)}" y2="${gy.toFixed(1)}"/>
-        <line class="gc-pad" x1="${(gx + g).toFixed(1)}" y1="${(gy + g).toFixed(1)}" x2="${(x0 + side).toFixed(1)}" y2="${(gy + g).toFixed(1)}"/>
-      </svg>`;
+    const chart = renderChart({
+      W, H,
+      rects: [
+        { cls: "gc-cell", x: x0, y: y0, w: side, h: side },
+        { cls: "gc-glyph", x: gx, y: gy, w: g, h: g },
+      ],
+      rules: [
+        { cls: "gc-pad", x1: x0, y1: gy, x2: gx, y2: gy },
+        { cls: "gc-pad", x1: gx + g, y1: gy + g, x2: x0 + side, y2: gy + g },
+      ],
+    });
     // the caption reads the cell's own inset (the ladder row's), which equals ½(height − icon) on every row.
     return h(
       "div",
       {},
-      h("div", { class: "an-svg", html: svg }),
+      chart,
       h("div", { class: "geom-an-cap" }, `${name} · cell ${s.height} · icon ${s.icon} · inset ½(${s.height}−${s.icon}) = ${s.inset}`),
     );
   }
 
 
   // icon & text vs control height across the ladder's distinct cell heights (15 of them over the 27 cells),
-  // ascending, against the faint height diagonal. fill:none on the lines. The empty check runs before any
+  // ascending, against the faint height diagonal. The empty check runs before any
   // cell read, so a scale with no cells renders "n/a".
   graphGeomPower(scale) {
     const names = orderedSizeNames(scale);
@@ -484,22 +490,28 @@ export class GeomSectionImpl {
     const maxV = Math.max(...rows.map((s) => Math.max(s.icon, s.text, s.height))) * 1.05;
     const X = (hh) => pad + (hh / maxH) * (W - pad - 8);
     const Y = (v) => (H - pad + 8) - (v / maxV) * (H - pad - 8);
-    const path = (key) => "M" + rows.map((s) => `${X(s.height).toFixed(1)},${Y(s[key]).toFixed(1)}`).join(" L");
-    const dots = (key, cls) => rows.map((s) => `<circle class="${cls}" cx="${X(s.height).toFixed(1)}" cy="${Y(s[key]).toFixed(1)}" r="1.8"/>`).join("");
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        <path class="gp-ref" d="${path("height")}"/>
-        <path class="gp-icon" d="${path("icon")}"/>${dots("icon", "gp-dot gp-dot-icon")}
-        <path class="gp-font" d="${path("text")}"/>${dots("text", "gp-dot gp-dot-font")}
-        <text x="2" y="14">px</text>
-        <text x="${W - 44}" y="${H - pad + 18}">height→</text>
-      </svg>`;
+    const points = (key) => rows.map((s) => ({ x: X(s.height), y: Y(s[key]), v: [s.height, s[key]] }));
+    const chart = renderChart({
+      W, H,
+      series: [
+        { cls: "gp-ref", label: "height", stroke: STROKE.ref, points: points("height") },
+        { cls: "gp-icon", label: "icon", dot: 1.8, points: points("icon") },
+        { cls: "gp-font", label: "text", dot: 1.8, points: points("text") },
+      ],
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+      ],
+      labels: [
+        { text: "px", x: 2, y: 14 },
+        { text: "height→", x: W - 44, y: H - pad + 18 },
+      ],
+      columns: ["series", "height px", "px"],
+    });
     return h(
       "div",
       {},
-      h("div", { class: "an-svg", html: svg }),
+      chart,
       this.legend([{ mark: "gp ref", label: "height" }, { mark: "gp icon", label: "icon (ladder row)" }, { mark: "gp font", label: "text (UI text table)" }]),
     );
   }
@@ -507,7 +519,7 @@ export class GeomSectionImpl {
 
   // control height per cell for each tier: the nine (scale, size) cells sm-sm … lg-lg on the x axis, one
   // line per tier (the kit's tier solid with dots, the other two dashed), so the three tier ladders and
-  // where the kit sits on them read at a glance. fill:none on the lines.
+  // where the kit sits on them read at a glance.
   graphGeomBands(scale) {
     const names = orderedSizeNames(scale);
     const tiers = Object.keys(TIERS).map((t) => [t, names.filter((n) => n.startsWith(t + "-"))]).filter(([, ns]) => ns.length > 1);
@@ -516,21 +528,24 @@ export class GeomSectionImpl {
     const maxH = Math.max(...names.map((n) => scale.cells[n].height)) * 1.05;
     const X = (i, len) => pad + (i / (len - 1)) * (W - pad - 8);
     const Y = (hh) => (H - pad + 8) - (hh / maxH) * (H - pad - 8);
-    const line = ([t, ns]) => {
-      const d = "M" + ns.map((n, i) => `${X(i, ns.length).toFixed(1)},${Y(scale.cells[n].height).toFixed(1)}`).join(" L");
-      if (t !== scale.tier) return `<path class="gp-ref" d="${d}"/>`;
-      const dots = ns.map((n, i) => `<circle class="gp-dot gp-dot-font" cx="${X(i, ns.length).toFixed(1)}" cy="${Y(scale.cells[n].height).toFixed(1)}" r="1.9"/>`).join("");
-      return `<path class="gp-font" d="${d}"/>${dots}`;
-    };
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        ${tiers.map(line).join("")}
-        <text x="2" y="14">px</text>
-        <text x="${W - 62}" y="${H - pad + 18}">sm-sm→lg-lg</text>
-      </svg>`;
-    return h("div", { class: "an-svg", html: svg });
+    const line = ([t, ns]) => ({
+      label: t,
+      ...(t === scale.tier ? { cls: "gp-font", dot: 1.9 } : { cls: "gp-ref", stroke: STROKE.ref }),
+      points: ns.map((n, i) => ({ x: X(i, ns.length), y: Y(scale.cells[n].height), v: [n, scale.cells[n].height] })),
+    });
+    return renderChart({
+      W, H,
+      series: tiers.map(line),
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+      ],
+      labels: [
+        { text: "px", x: 2, y: 14 },
+        { text: "sm-sm→lg-lg", x: W - 62, y: H - pad + 18 },
+      ],
+      columns: ["tier", "cell", "height px"],
+    });
   }
 
 

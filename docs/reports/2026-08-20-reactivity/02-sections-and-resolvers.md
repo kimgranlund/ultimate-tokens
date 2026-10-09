@@ -16,8 +16,8 @@ same principle that already justified model.mjs.
 ## (A) Data-source map
 
 **Color**: view-driven throughout, exactly per canon:
-- Canvas (`renderCanvasArea`/`renderRampsScene`, color.js:838/875) and Left (`analysisCards`, color.js:14) read only `view` (projectView output).
-- Right (`renderPaletteInspector` color.js:1658, `renderGlobalInspector` color.js:2017, `renderRolesInspector` (removed with the Roles tab, #806), `renderStoryInspector` color.js:1582): writable controls bind `this.doc.palettes[i]` raw params (hue/chroma/skew/lift/name/on/hueShift/cuspPull); resolved display (ramp swatch, colorName/description) reads `view.palettes[i]`. This doc+view mix is the canon-sanctioned "writable=doc, derived=view" pattern, not a violation; verified at color.js:1658-1862.
+- Canvas (`renderCanvasArea`/`renderRampsScene`, color.js:832/869) and Left (`analysisCards`, color.js:16) read only `view` (projectView output).
+- Right (`renderPaletteInspector` color.js:1652, `renderGlobalInspector` color.js:2011, `renderRolesInspector` (removed with the Roles tab, #806), `renderStoryInspector` color.js:1576): writable controls bind `this.doc.palettes[i]` raw params (hue/chroma/skew/lift/name/on/hueShift/cuspPull); resolved display (ramp swatch, colorName/description) reads `view.palettes[i]`. This doc+view mix is the canon-sanctioned "writable=doc, derived=view" pattern, not a violation; verified at color.js:1652-1856.
 - Exports: drawer.js's "Colors" format group reads straight off `view.exports` (the `view` param passed into `renderDrawer(view)`).
 
 **Typography**: doc-driven throughout, `view` accepted but genuinely unused (self-documented):
@@ -26,17 +26,17 @@ same principle that already justified model.mjs.
 - Right (`renderTypeInspector`, typography.js:585+), binds `this.doc.type`.
 - Exports, `_typeScaleFor("base")` / `_typeModeScales()` (drawer.js:47,67,363-395; apply-gate.js:116,208,284,342).
 
-**Geometry**: mirrors Typography exactly, method-for-method: `geomAnalysisCards(view)` (geometry.js:434, same "unused view" comment) → `this._activeGeomScale()`; `renderGeomInspector` (geometry.js:561) binds `this.doc.geometry`; exports via `_geomScaleFor("base")`/`_geomModeScales()` (drawer.js:48,69,398-419; apply-gate.js:285).
+**Geometry**: mirrors Typography exactly, method-for-method: `geomAnalysisCards(view)` (geometry.js:436, same "unused view" comment) → `this._activeGeomScale()`; `renderGeomInspector` (geometry.js:576) binds `this.doc.geometry`; exports via `_geomScaleFor("base")`/`_geomModeScales()` (drawer.js:48,69,398-419; apply-gate.js:285).
 
-`renderCenter`/`renderLeftPane`/`renderRightPane` (app.js:1825,1527,1923) are thin routers in app.js, exactly per SKILL.md step 1; every actual body method lives in its own section file (color.js/typography.js/geometry.js), verified no leakage.
+`renderCenter`/`renderLeftPane`/`renderRightPane` (app.js:1825,1655,2051) are thin routers in app.js, exactly per SKILL.md step 1; every actual body method lives in its own section file (color.js/typography.js/geometry.js), verified no leakage.
 
 ## (B) Resolver-bypass / duplication findings
 
-**B1 [HIGH, confirmed]**: the flagged lead is real: the `tier` closure in `_typeModeScales` (typography.js:1057) and the `tierType` closure in `_geomModeScales` (geometry.js:127) were byte-identical (both removed in #460, which lifted them into the one `typeTierScale` at `model.mjs:186-190`; the section methods are now one-line delegates):
+**B1 [HIGH, confirmed]**: the flagged lead is real: the `tier` closure in `_typeModeScales` (typography.js:1057) and the `tierType` closure in `_geomModeScales` (geometry.js:129) were byte-identical (both removed in #460, which lifted them into the one `typeTierScale` at `model.mjs:186-190`; the section methods are now one-line delegates):
 `typeScale({ ...t, bodyBase: bb * mult, modeFactor: mf, overrides: { ...(t.overrides || {}), ...this._modeTierNudge(mf) } })`
 Both independently rebuild "the type scale for a synthesized tier" inside `_typeModeScales()`/`_geomModeScales()`. This directly contradicts the neighboring claim at model.mjs:104-106 (then in app.js, moved by #460) that `modeTierNudge` is "the SINGLE source for both call sites... so they can never independently drift", true for the nudge *table*, false for the composition formula wrapped around it.
 
-**B2 [MEDIUM]**: geometry.js has a *third* independent geomScale+typeScale join: `_geomScaleFor` (geometry.js:27-29, now delegating to `geomScaleFor` at model.mjs:157-160) vs the `synth()` closure inside `geomModeScales` (model.mjs:206, lifted there from geometry.js by #460), same idiom, two code paths in the same file (real/materialized modes vs. synthesized tiers).
+**B2 [MEDIUM]**: geometry.js has a *third* independent geomScale+typeScale join: `_geomScaleFor` (geometry.js:29-31, now delegating to `geomScaleFor` at model.mjs:157-160) vs the `synth()` closure inside `geomModeScales` (model.mjs:206, lifted there from geometry.js by #460), same idiom, two code paths in the same file (real/materialized modes vs. synthesized tiers).
 
 **B3 [MEDIUM]**: model.mjs's `geometryScale(doc, opts)` (model.mjs:56-61) is a *fourth* independent implementation of "geomScale composed with typeScale," used only by `brandKit()` (model.mjs:622-678, consumed at app.js:2699/2731 for the MCP-kit zip downloads) and `projectView`'s shadcn `radii` (model.mjs:999). None of the section resolvers that drive every CSS/DTCG/Figma/DS-bundle export (drawer.js, apply-gate.js) call through it; they reimplement the join via `_typeScaleFor`/`_geomScaleFor` instead. Currently equivalent for base-mode-no-nudge, but only by coincidence of two independently-written override slicers agreeing (see B4), not by shared code.
 
@@ -44,7 +44,7 @@ Both independently rebuild "the type scale for a synthesized tier" inside `_type
 
 **B5 [confirmed non-issue]**: checked every `geomScale(` call site in scope (model.mjs before ADR-032, model.mjs:160, model.mjs:206; geometry.js no longer calls it since #460): none omit the `typeScale` composition option. The invariant "geomScale always carries a typeScale" holds everywhere; only the code enforcing it is unshared (B1-B3).
 
-**B6 [LOW, content drift not data-flow]**: `geomAnalysisCards`'s card title (geometry.js:442, "Font ← Typography UI, shared text size") vs. its own body copy (`graphGeomComposition`, geometry.js:544: "its own hand-ratified table, decoupled from the Label voice"). Checked the engine (src/engine/geometry.mjs:160-161): font DOES compose from `typeScale.categories["UI-control"]` at every step, so the title is accurate and the body copy is stale/misleading, describes the historical "moved off Label" rerouting without mentioning it's still composed from Type's UI-control voice. Not a resolver bug, flagging per the stale-context standard.
+**B6 [LOW, content drift not data-flow]**: `geomAnalysisCards`'s card title (geometry.js:444, "Font ← Typography UI, shared text size") vs. its own body copy (`graphGeomComposition`, geometry.js:559: "its own hand-ratified table, decoupled from the Label voice"). Checked the engine (src/engine/geometry.mjs:160-161): font DOES compose from `typeScale.categories["UI-control"]` at every step, so the title is accurate and the body copy is stale/misleading, describes the historical "moved off Label" rerouting without mentioning it's still composed from Type's UI-control voice. Not a resolver bug, flagging per the stale-context standard.
 
 ## (C) Ownership misplacements
 
@@ -54,13 +54,13 @@ Both independently rebuild "the type scale for a synthesized tier" inside `_type
 
 **C3 [verified clean]**: no leakage between app.js (routing) and section files (bodies); mixin composition (app.js:2772-2796: `mixinInto(HctApp, ColorSection, TypeSection, GeomSection, DrawerMixin, ApplyGateMixin, SettingsMixin)`) matches the documented "sections/overlays live in per-file mixins, flattened onto one prototype" contract.
 
-**C4 [non-issue]**: `_pickTypeTreatment`/`_pickGeomTreatment` (app.js:1318-1327) are the only type/geom-named methods living in app.js proper, but they're the shared paywall-gate-then-commit pattern (`_treatmentBlocked`), not resolution logic, defensible placement.
+**C4 [non-issue]**: `_pickTypeTreatment`/`_pickGeomTreatment` (app.js:1323-1332) are the only type/geom-named methods living in app.js proper, but they're the shared paywall-gate-then-commit pattern (`_treatmentBlocked`), not resolution logic, defensible placement.
 
 ## Mode/override channel trace + compare overrides
 
 Traced matrix cell edit → `setTypeTokenOverride`/`setGeomTokenOverride` → `_typeScaleFor`/`_geomScaleFor` → specimen + every export: clean, single path, no consumer reads `tokenOverrides` directly instead of through the resolver.
 
-`deleteTypeMode`/`deleteGeomMode` (typography.js:210-226, geometry.js:193-201): read both in full, line-for-line structurally identical, both correctly strip orphaned `|<id>` override keys on mode deletion. Clean hygiene, no drift.
+`deleteTypeMode`/`deleteGeomMode` (typography.js:210-226, geometry.js:195-203): read both in full, line-for-line structurally identical, both correctly strip orphaned `|<id>` override keys on mode deletion. Clean hygiene, no drift.
 
 Clamping mirror check: setters clamp type to [1,512] (typography.js:407) and geom to [8,256] (geometry.js before ADR-032, and the live-drag `_setGeomSize` at geometry.js before ADR-032); persist.js's `clampTokenOverrides` calls at persist.js:901 (`1, 512, 3`) and persist.js before ADR-032 (`8, 256, 2`) match exactly. No drift here.
 
