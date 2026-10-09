@@ -567,11 +567,11 @@ try {
   // pan so the LAST swatch (step 12 of the last ladder) touches the canvas edge, then report where its centre is
   const parkSwatch = (zoom, edge) => evalJS(`(()=>{const a=${el};a.viewport.zoom=${zoom};a.viewport.panX=0;a.viewport.panY=0;a.applyTransform();
     const area=a.querySelector(".canvas-area").getBoundingClientRect(),all=a.querySelectorAll(".radix-step"),sw=all[all.length-1],r0=sw.getBoundingClientRect();
-    ${edge === "bottom" ? "a.viewport.panY+=area.bottom-4-r0.bottom;" : "a.viewport.panX+=area.right-4-r0.right;a.viewport.panY+=area.top+60-r0.top;"}
+    ${edge === "bottom" ? "a.viewport.panX+=area.left+200-r0.left;a.viewport.panY+=area.bottom-4-r0.bottom;" : "a.viewport.panX+=area.right-4-r0.right;a.viewport.panY+=area.top+60-r0.top;"}
     a.applyTransform();const r=sw.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,areaBottom:area.bottom,areaRight:area.right,swBottom:r.bottom,swRight:r.right}})()`);
   const tipProbe = () => evalJS(`(()=>{const t=${el}.querySelector(".radix-tip");if(!t)return null;const r=t.getBoundingClientRect(),cs=getComputedStyle(t);
     return {open:t.matches(":popover-open"),shown:r.width>0&&r.height>0,left:r.left,top:r.top,right:r.right,bottom:r.bottom,w:r.width,h:r.height,font:cs.fontSize,style:cs.fontStyle,
-      placement:t.getAttribute("data-placement"),inWin:r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight,text:t.textContent}})()`);
+      placement:t.getAttribute("data-placement"),clipFree:!t.closest(".canvas-area, .canvas-scene"),inWin:r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight,text:t.textContent}})()`);
   const sizes = {};
   for (const [zoom, edge] of [[1, "bottom"], [0.25, "bottom"], [1, "right"], [0.25, "right"]]) {
     await moveMouse(5, 5); await sleep(60);
@@ -580,17 +580,19 @@ try {
     const t = await tipProbe();
     const tag = `${Math.round(zoom * 100)}% zoom, swatch at the canvas ${edge} edge`;
     ok(!!t && t.open && t.shown && /^Step 12: /.test(t.text), `radix tooltip (${tag}): hovering shows it as a popover (open=${t && t.open}, text="${t && t.text.split("\n")[0]}")`);
+    ok(!!t && t.clipFree && t.open, `radix tooltip (${tag}): it is a top-layer popover outside the clipped, zoomed canvas scene (clipFree=${t && t.clipFree})`);
     ok(!!t && t.inWin, `radix tooltip (${tag}): the box is inside the window (${t && [Math.round(t.left), Math.round(t.top), Math.round(t.right), Math.round(t.bottom)]} in ${await evalJS("innerWidth+'x'+innerHeight")})`);
     ok(!!t && t.style === "normal", `radix tooltip (${tag}): the text is upright (font-style ${t && t.style})`);
     if (edge === "bottom") ok(!!t && t.placement === "above" && t.bottom <= pos.swBottom, `radix tooltip (${tag}): flipped above the swatch (placement ${t && t.placement})`);
-    else ok(!!t && t.right <= (await evalJS("innerWidth")) - 7 && t.left < pos.swRight, `radix tooltip (${tag}): shifted left to stay in the window (box ${t && Math.round(t.left)}..${t && Math.round(t.right)})`);
+    else ok(!!t && t.right > pos.areaRight && t.right <= (await evalJS("innerWidth")) - 7 && t.left < pos.swRight, `radix tooltip (${tag}): runs past the canvas edge (${pos.areaRight}) and stays in the window (box ${t && Math.round(t.left)}..${t && Math.round(t.right)})`);
     sizes[zoom + edge] = t;
   }
   ok(sizes["0.25bottom"] && sizes["1bottom"] && sizes["0.25bottom"].font === sizes["1bottom"].font && Math.abs(sizes["0.25bottom"].h - sizes["1bottom"].h) <= 1,
     `radix tooltip: at 25% zoom the text size and box height equal the unzoomed ones (${sizes["0.25bottom"] && sizes["0.25bottom"].font}/${sizes["0.25bottom"] && Math.round(sizes["0.25bottom"].h)}px vs ${sizes["1bottom"] && sizes["1bottom"].font}/${sizes["1bottom"] && Math.round(sizes["1bottom"].h)}px)`);
   // keyboard: focus shows it, Escape dismisses just the tooltip (the view stays on Radix)
   await moveMouse(5, 5); await sleep(60);
-  await evalJS(`(()=>{const a=${el};a.fit();a.applyTransform();a.querySelectorAll(".radix-step")[2].focus();})()`); await sleep(150);
+  await evalJS(`${el}.fit()`); await sleep(200); // fit() settles its top-left inset on the next frame; focus after it, so that re-position cannot hide the tooltip
+  await evalJS(`${el}.querySelectorAll(".radix-step")[2].focus()`); await sleep(150);
   const kf = await tipProbe();
   ok(!!kf && kf.open && kf.inWin && /^Step 3: /.test(kf.text), `radix tooltip: keyboard focus shows it inside the window (open=${kf && kf.open}, text="${kf && kf.text.split("\n")[0]}")`);
   await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
