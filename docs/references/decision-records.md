@@ -1517,8 +1517,8 @@ Format: Context → Decision → Rationale → Consequences → Status.
   distinct 19 to 107, notch 15 to 99, every notch addition on even). Gate A reads the band clause from
   the rule. The shadcn and Radix baselines and the Adia exports stay `ramp@1`-pinned. The board is
   `docs/reports/2026-10-09-ramp2-extremes.md`.
-- **Status.** PROPOSED 2026-10-09 (T-0040). Ratification is the owner's: the owner edits this line to
-  DECIDED, or amends the text under the file's amendment shape.
+- **Status.** DECIDED 2026-10-09 (T-0040), ratified by the owner (user ruling 2026-10-09). Amend the text
+  under the file's amendment shape.
 
 ## Quick map: decisions an enhancing agent is most likely to "fix" (don't)
 | ADR | Looks wrong because… | But it's intentional because… |
