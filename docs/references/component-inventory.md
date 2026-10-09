@@ -35,7 +35,7 @@ It builds every control inline with a single hyperscript helper `h(tag, attrs, .
 - **S2 is not a second surface.** `scripts/gen-figma-ui.mjs` bundles the *same* compiled app
   (`dist/ultimate-tokens.html`) and injects a postMessage bridge that flips `inFigma`
   (`markInFigma()`, `gen-figma-ui.mjs:23-33`). So **S2 reuses S1's primitives verbatim**; the only S2-specific
-  *instances* are `inFigma`-gated buttons ("Read live" `sections/color.js:1329`, "Read approx →" (`readFromFigmaVariables()`, `app.js:1266`),
+  *instances* are `inFigma`-gated buttons ("Read live" `sections/color.js:1338`, "Read approx →" (`readFromFigmaVariables()`, `app.js:1266`),
   `.figma-plugin-btn` `overlays/drawer.js:224`) and the `.figma-files` mode segment (`overlays/drawer.js:221`).
 - **No native-replacement layer + no FACE.** Controls are a mix of *native* elements (`<input
   type=range/text/search/checkbox>`, `<select>`) and *custom `<div>`/`<button>` widgets*, none are
@@ -120,9 +120,9 @@ incrementally.
 - **States** default · `hover` (`button:hover` `styles.css:190`) · `focus-visible` (`styles.css:208`) ·
   `disabled` (`styles.css:217`) · toggle-pressed (`.on` + `aria-pressed`, 7 sites in `src/ui/`: the `btn()` and
   `chip()` primitives plus five inline buttons:
-  `aria-pressed` at `app-helpers.mjs:414/541`, `app.js:1516/1795`, `sections/color.js:515/922/1148`).
+  `aria-pressed` at `app-helpers.mjs:414/541`, `app.js:1516/1795`, `sections/color.js:524/931/1157`).
 - **a11y** ✓ `:focus-visible` ring; ✓ `aria-pressed` on toggle-buttons; ✓ `aria-label` on icon-only
-  (`sections/color.js:821`). ✗ no `forced_colors`.
+  (`sections/color.js:830`). ✗ no `forced_colors`.
 - **Geometry** the cell roles: `min-block-size: var(--sh-control-height)`, `padding-inline: var(--sh-control-inset)`,
   `font-size: var(--sh-control-text)`, `border-radius: var(--sh-control-radius)`, `line-height: 1` and
   `white-space: nowrap`, so a label never wraps (`button`, `styles.css:173`). `test/repo/control-text.mjs` gates
@@ -138,10 +138,10 @@ incrementally.
 
 ### 2 · Toggle / switch  (was the worst card; now `switchControl()`)
 
-- **Surface** S1. **Sites** 2: palette Enabled/Disabled (`switchControl`, `sections/color.js:1719`) and
-  Chroma basis peak/gamut (`switchControl`, `sections/color.js:2133`). Hue space OKLCH/CAM16 is **not** a toggle any more:
-  it is a `segmented()` `role=group` (`sections/color.js:2081`, card 3), as is its On-colors sibling
-  (`sections/color.js:2122`).
+- **Surface** S1. **Sites** 2: palette Enabled/Disabled (`switchControl`, `sections/color.js:1728`) and
+  Chroma basis peak/gamut (`switchControl`, `sections/color.js:2197`). Hue space OKLCH/CAM16 is **not** a toggle any more:
+  it is a `segmented()` `role=group` (`sections/color.js:2101`, card 3), as is its On-colors sibling
+  (`sections/color.js:2142`).
 - **Anatomy** `[ track (with ::after thumb) · label-span ]`. CSS `styles.css:1028-1044`; the `.track`
   is 34×19 with a 15px ::after thumb that translates on `.on`.
 - **API** `switchControl({ on, onToggle, label, ariaLabel })` (`app-helpers.mjs:363`), a
@@ -151,7 +151,7 @@ incrementally.
 - **a11y** ✓ real `<button>`: focusable, `:focus-visible` ring, Space/Enter toggle from the platform;
   ✓ `role="switch"` + `aria-checked`; ✓ `aria-label` carries the stable purpose ("Palette enabled" /
   "Chroma basis: gamut when on, peak when off"). The palette site sits in a bare `field` div with no `<label>` at all
-  (`sections/color.js:1718`); the Chroma basis site goes through `field()`, which also associates a
+  (`sections/color.js:1727`); the Chroma basis site goes through `field()`, which also associates a
   `label[for]` (`app-helpers.mjs:551`).
 - **Geometry** ad-hoc (34×19 track / 15px thumb).
 
@@ -167,8 +167,8 @@ incrementally.
 - **Surface** S1. **Sites** 14 static `segmented()` calls: section switcher `app.js:1472`; inspector
   tabs `sections/typography.js:596`, `sections/geometry.js:584` (the Color inspector lost its
   `[Palette|Global]` switch in #809: the selection picks the context); new-palette mode
-  `sections/color.js:522`; canvas view `sections/color.js:799`; canvas stops `sections/color.js:814`;
-  hue space `sections/color.js:2081`; on-colors `sections/color.js:2120`; breakpoint mode
+  `sections/color.js:531`; canvas view `sections/color.js:808`; canvas stops `sections/color.js:823`;
+  hue space `sections/color.js:2101`; on-colors `sections/color.js:2140`; breakpoint mode
   `sections/typography.js:177`, `sections/geometry.js:163`; specimen mode `sections/typography.js:308`,
   `sections/geometry.js:292`; Figma files `overlays/drawer.js:214`; and one settings-row call
   `overlays/settings.js:30` inside the settingRow helper, one live instance per settings row, called
@@ -176,11 +176,11 @@ incrementally.
   compound styling (`.segmented`, `.figma-files`, `.radix-files` share one rule) plus three modifiers remain:
   - **Inspector tabs** `.segmented` in the Typography and Geometry inspectors, `role=tablist`/`tab`, roving
     tabindex, ArrowLeft/ArrowRight (`app.js:1770-1803`). *Well-built.*
-  - **Canvas view** `.canvas-seg` `[Palettes|Scrims|Mapping|Radix]`, `role=tablist` (`sections/color.js:799-809`).
-  - **Canvas stops** `.canvas-seg` `role=group` (`sections/color.js:814-822`); the Typography and Geometry
+  - **Canvas view** `.canvas-seg` `[Palettes|Scrims|Mapping|Radix]`, `role=tablist` (`sections/color.js:808-818`).
+  - **Canvas stops** `.canvas-seg` `role=group` (`sections/color.js:823-831`); the Typography and Geometry
     breakpoint-mode and specimen-mode segments reuse the same modifier: `sections/typography.js:177`,
     `sections/typography.js:308`, `sections/geometry.js:163`, `sections/geometry.js:292`.
-  - **New-palette mode** `.newpal-seg` `role=group`, `sections/color.js:524`, `styles.css:1241`.
+  - **New-palette mode** `.newpal-seg` `role=group`, `sections/color.js:533`, `styles.css:1241`.
   - **Settings rows** `.settings-seg` `role=group`, one live instance per row, `overlays/settings.js:30`,
     `styles.css:1361`.
   - **Drawer format picker**: the as-found `.drawer-tabs` segmented row no longer exists in `src/`; the
@@ -214,8 +214,8 @@ incrementally.
 ### 4 · Slider / range  ★ the model primitive
 
 - **Surface** S1. **Sites** one helper `slider(label,value,min,max,step,fmtFn,onInput)`
-  (`app.js:2215-2240`), ~14 instances: Hue/Chroma/Skew/Lift/Edge-hue `sections/color.js:1789-1814`;
-  Tension/L*min/L*max/Damp/Chroma-floor/Falloff/Amplify/Bias `sections/color.js:2044-2067`.
+  (`app.js:2215-2240`), ~14 instances: Hue/Chroma/Skew/Lift/Edge-hue `sections/color.js:1801-1826`;
+  Tension/L*min/L*max/Damp/Chroma-floor/Falloff/Amplify/Bias `sections/color.js:2057-2087`.
 - **Anatomy** `.field` `[ label · readout(<b>) · input[type=range] ]`; track + custom `thumb` (`styles.css:973-987`).
 - **API** clean function signature; `fmtFn` for the live readout, `onInput` callback; `data-fk`
   carries a focus key so re-render preserves focus, `app.js:2239`.
@@ -233,12 +233,12 @@ incrementally.
 
 ### 5 · Select (native)
 
-- **Surface** S1. **Sites** 3: Distribution (`field()`, `sections/color.js:2022`), Curve (`sections/color.js:2046`),
-  `.map-raw-select` raw token (`sections/color.js:1276`, with `.ov` override state).
+- **Surface** S1. **Sites** 3: Distribution (`field()`, `sections/color.js:2034`), Curve (`sections/color.js:2059`),
+  `.map-raw-select` raw token (`sections/color.js:1285`, with `.ov` override state).
 - **Anatomy** native `<select>` + `<option>[]`; `.map-raw-select` is a compact mono variant on the
   chip row of the cell (`styles.css:815-820`).
-- **a11y** ✓ native keyboard/picker; ✓ `aria-label` on `.map-raw-select` (`sections/color.js:1270-1272`);
-  ✓ Distribution/Curve are built through `field()` (`sections/color.js:2023/2048`), which stamps an `id`
+- **a11y** ✓ native keyboard/picker; ✓ `aria-label` on `.map-raw-select` (`sections/color.js:1279-1281`);
+  ✓ Distribution/Curve are built through `field()` (`sections/color.js:2035/2061`), which stamps an `id`
   on the `<select>`, associates the `<label for>` with it and adds a fallback `aria-label`
   (`app-helpers.mjs:551-559`) → the visible label is the accessible name.
 - **Flag** none; the two naming paths (`field()` vs inline `aria-label`) both yield a name.
@@ -252,13 +252,13 @@ incrementally.
 
 ### 6 · Text input
 
-- **Surface** S1. **Sites** 2, palette **Name** in `.field` (`sections/color.js:1680-1682`), `.map-raw-input`
-  free-text token editor (`sections/color.js:1266`, `.ov` override state).
-- **a11y** ✓ `.map-raw-input` has `aria-label` (`sections/color.js:1266-1270`); ✓ **Name** is a
-  `field()` row (`sections/color.js:1680`): the `<label for>` is associated with the input's stamped
+- **Surface** S1. **Sites** 2, palette **Name** in `.field` (`sections/color.js:1689-1691`), `.map-raw-input`
+  free-text token editor (`sections/color.js:1275`, `.ov` override state).
+- **a11y** ✓ `.map-raw-input` has `aria-label` (`sections/color.js:1275-1279`); ✓ **Name** is a
+  `field()` row (`sections/color.js:1689`): the `<label for>` is associated with the input's stamped
   `id` and a fallback `aria-label` is set by `field()` (`app-helpers.mjs:551-559`) → named to SR.
 - **Behaviour** both debounce into one undo step (`editDrag`) and survive re-render without losing
-  focus/caret (partial `liveRefresh`, documented `sections/color.js:1686-1690`).
+  focus/caret (partial `liveRefresh`, documented `sections/color.js:1695-1699`).
 
 ```json
 { "component":"text-input","layer":"component","role":"textbox(native)","replaces_native":false,
@@ -283,7 +283,7 @@ incrementally.
 
 ### 8 · Checkbox
 
-- **Surface** S1. **Sites** 1, "ends bend same way" (`sections/color.js:1805-1813`, native `type=checkbox`).
+- **Surface** S1. **Sites** 1, "ends bend same way" (`sections/color.js:1817-1825`, native `type=checkbox`).
 - **Anatomy** `.mini-check` `<label>` **wrapping** the native input + text (`styles.css:898-899`) →
   label *is* associated (the correct pattern, unlike the sliders/Name input).
 - **a11y** ✓ associated label, ✓ `accent-color: var(--accent)`, native keyboard (Space).
@@ -303,11 +303,11 @@ Three unrelated "pill" stylings, a naming/coherence drift, not one primitive:
 - **`.tile-tag`** (`styles.css:323-334`), non-interactive status badge on gallery tiles: palette
   count + "preset"/"ago" (`app.js:758/759/842/843`); `pointer-events:none`, absolute over the thumb.
 - **`.chip` interactive**, the damping presets: `chip(name, { mode: "interactive", on })` renders a
-  `<button class="chip" aria-pressed>` inside the `.damp-presets` row (`chip()`, `sections/color.js:167`;
+  `<button class="chip" aria-pressed>` inside the `.damp-presets` row (`chip()`, `sections/color.js:176`;
   `.chip`, `styles.css:862-869`). The old `.damp-presets .preset` styling is gone;
   `.damp-presets` is now only the flex row (`styles.css:882`).
 - **`.chip` status**, the drift summary: `chip(text, { tone })` renders a `<span class="chip">`
-  (`chip()`, `sections/color.js:1321`) with the
+  (`chip()`, `sections/color.js:1330`) with the
   `.chip.in-sync` / `.chip.has-drift` tone classes (`styles.css:896-897`). The old `.map-drift-sum` selector is gone.
 
 ```json
@@ -345,7 +345,7 @@ One concept, *a rectangle filled with a color, optionally over a transparency ch
 **six idioms**: `.ramp-strip i` (26×40 ramp cell + `.oog` out-of-gamut hatch + hover outline, `styles.css:700-707`),
 `.scrim-cell` + `.scrim-fill` (checkerboard, `styles.css:721-725`),
 `.map-swatch` + `.map-swatch-fill` (checkerboard token swatch, `styles.css:788-792`), `.swatch-dot`
-(now `swatch()`, `sections/color.js:1667`), `.roles-table .sw` (16px, now `swatch()` `.swatch`, `styles.css:773-774`), `.canvas-footer .sw` (12px,
+(now `swatch()`, `sections/color.js:1676`), `.roles-table .sw` (16px, now `swatch()` `.swatch`, `styles.css:773-774`), `.canvas-footer .sw` (12px,
 `styles.css:934-937`). The checkerboard background is defined **once**, one rule shared by
 `.swatch.alpha, .scrim-cell, .map-swatch` (`styles.css:729-735`, sized by `--checker`). **Flag:** the
 cell *shapes* still differ per idiom; `swatch()` covers the dot and the roles-table cell only.
@@ -390,7 +390,7 @@ box; each series rule sets `--series`, from `.lc-axis` to `.lc-dot` (`styles.css
 ### 17 · Damping graph
 
 `.damp-graph` container + `.ch-rule.dg-unity` (dashed identity line, `styles.css:913-914`), the differential-damping falloff
-curve as a `.ch-ribbon` in an `.an-chart` box (`graphDamping()` `sections/color.js:197`).
+curve as a `.ch-ribbon` in an `.an-chart` box (`graphDamping()` `sections/color.js:206`).
 
 ### 18 · Graph legend
 

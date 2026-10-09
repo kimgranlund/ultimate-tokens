@@ -380,7 +380,11 @@ function clampOverrides(o) {
 // was made with every layer at version 1, and the stamp is the explicit boundary, so every hydrated
 // doc then serializes with `layers`. layer-pins.mjs's pinsOf then clamps each pin to [1, latest] and
 // hydrate drops an id the registry does not name, reported through DROPPED_KEYS.
-export const CURRENT_SCHEMA_VERSION = 10;
+//
+// v11 (T-0040, ADR-036): a document carries the boolean `matchPeerLightness` (Match peer lightness,
+// read by the `ramp@2` layer only). An absent or non-true value reads false, the rendering every doc
+// had before, so the RENAME_MAPS entry translates nothing; it marks the version that added the key.
+export const CURRENT_SCHEMA_VERSION = 11;
 
 // DROPPED_KEYS (TKT-0455), the loud-fail accounting channel. hydrate() attaches the report of every
 // unknown voice/treatment/tokenOverrides key it dropped as a NON-ENUMERABLE property on its return
@@ -455,6 +459,11 @@ const RENAME_MAPS = [
     // stampIntensity: it fires only when the doc carries no `layers` map at all.
     version: 10,
     stampLayers: true,
+  },
+  {
+    // Match peer lightness (T-0040, ADR-036): the `matchPeerLightness` flag. An absent key reads false
+    // (hydrate below), which is how every earlier doc renders, so nothing is translated.
+    version: 11,
   },
 ];
 
@@ -744,6 +753,7 @@ export function hydrate(snapshot, { latest = LATEST } = {}) {
     primeChroma: clampNumber(s.primeChroma ?? DOMAINS.primeChroma.default, DOMAINS.primeChroma.min, DOMAINS.primeChroma.max),
     hueSpace: clampEnum(s.hueSpace, DOMAINS.hueSpace.values, DOMAINS.hueSpace.default),
     relChroma: s.relChroma === true, // boolean chroma-basis flag; absent/non-true -> false (legacy default)
+    matchPeerLightness: s.matchPeerLightness === true, // Match peer lightness (v11, ramp@2 only); absent/non-true -> false
     chromaFloor: clampNumber(s.chromaFloor ?? DOMAINS.chromaFloor.default, DOMAINS.chromaFloor.min, DOMAINS.chromaFloor.max),
     toneMode: clampEnum(s.toneMode, DOMAINS.toneMode.values, DOMAINS.toneMode.default),
     vibrancy: clampNumber(s.vibrancy ?? DOMAINS.vibrancy.default, DOMAINS.vibrancy.min, DOMAINS.vibrancy.max),

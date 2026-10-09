@@ -2385,6 +2385,58 @@ ok(isEnabledSeg(segForcedOff.children[0]) === false && isEnabledSeg(segForcedOn.
 app.sets = app.sets.filter((s) => s.id !== "hs-test-set");
 app.openSet(app.sets[0].id); flushRaf();
 
+// ── (mpl) Match peer lightness (T-0040, ADR-036): the Global inspector's own row on a ramp@2 kit, the
+// "Upgrade to latest" button on a ramp@1 kit, and the per-palette and global sliders the mode makes
+// moot (Skew, Cusp pull, Vibrancy) hidden while it is on. A fresh defaultDocument() in its own
+// throwaway set, the hs-test-set discipline above, so app.sets[0] is never written.
+const { LATEST: LATEST_MPL } = await import("../../src/engine/layer-pins.mjs");
+const mplOpen = (doc) => {
+  app.sets = app.sets.filter((s) => s.id !== "mpl-test-set");
+  app.sets.push({ id: "mpl-test-set", name: "mpl-test", doc, updated: Date.now() });
+  app.openSet("mpl-test-set");
+  app._deselect(); flushRaf();
+};
+const mplSelected = (root) => { const n = findByFk(root, "matchpeer:off") || findByFk(root, "matchpeer:on"); return n ? (findByFk(root, "matchpeer:on")?.classList.contains("on") ? "on" : findByFk(root, "matchpeer:off")?.classList.contains("on") ? "off" : "none") : "absent"; };
+const mplPrimary = () => app.doc.palettes.findIndex((p) => p.name === "Primary");
+const mplPaletteText = () => { app.selectPalette(mplPrimary()); flushRaf(); const t = gcText(); app._deselect(); flushRaf(); return t; };
+mplOpen(defaultDocumentHS());
+ok(mplSelected(app) === "off" && app.doc.matchPeerLightness === false, `(mpl1) a fresh ramp@2 kit renders the Match peer lightness row with Off selected (got ${mplSelected(app)}, doc ${app.doc.matchPeerLightness})`);
+findByFk(app, "matchpeer:on").click(); flushRaf();
+{
+  const pv = projectViewHSE(app.doc).palettes.find((p) => p.name === "Primary");
+  const s500 = pv.fullRamp.find((x) => x.stop === 500).hex.toUpperCase();
+  const anchorHex = String(app.doc.palettes[mplPrimary()].anchor).toUpperCase();
+  ok(app.doc.matchPeerLightness === true && mplSelected(app) === "on" && s500 !== anchorHex, `(mpl2) clicking On sets matchPeerLightness and Primary's stop 500 leaves its anchor (${s500} vs ${anchorHex})`);
+}
+app.commit((doc) => (doc.toneMode = "even")); flushRaf();
+const mplEvenOn = mplPaletteText();
+app.commit((doc) => (doc.matchPeerLightness = false)); flushRaf();
+const mplEvenOff = mplPaletteText();
+ok(/Lift/.test(mplEvenOn) && !/Skew/.test(mplEvenOn) && /Lift/.test(mplEvenOff) && /Skew/.test(mplEvenOff), "(mpl3) even: the mode on keeps Lift and hides Skew in the palette inspector; off shows both");
+app.commit((doc) => (doc.toneMode = "perceptual")); flushRaf();
+const mplPercOffPal = mplPaletteText(), mplPercOffGlobal = gcText();
+app.commit((doc) => (doc.matchPeerLightness = true)); flushRaf();
+const mplPercOnPal = mplPaletteText(), mplPercOnGlobal = gcText();
+ok(!/Cusp pull/.test(mplPercOnPal) && !/Vibrancy/.test(mplPercOnGlobal) && /Cusp pull/.test(mplPercOffPal) && /Vibrancy/.test(mplPercOffGlobal), "(mpl4) perceptual: the mode on hides Cusp pull and Vibrancy; off shows both");
+app.commit((doc) => (doc.matchPeerLightness = false)); flushRaf();
+const mplFloor2 = /Chroma floor/.test(gcText());
+mplOpen({ ...defaultDocumentHS(), toneMode: "perceptual", layers: { ...LATEST_MPL, ramp: 1 } });
+const mplFloor1 = /Chroma floor/.test(gcText());
+ok(mplFloor2 && !mplFloor1, `(mpl5) perceptual: a ramp@2 kit shows Chroma floor (the shared end tint) and a ramp@1 kit does not (ramp@2 ${mplFloor2}, ramp@1 ${mplFloor1})`);
+{
+  const up = findByFk(app, "matchpeer:upgrade");
+  const before = mplSelected(app);
+  if (up) { up.click(); flushRaf(); }
+  const pinsOk = JSON.stringify(app.doc.layers) === JSON.stringify(LATEST_MPL);
+  ok(before === "absent" && !!up && /Upgrade to latest/.test(up._text || (up.children || []).map((c) => c._text || "").join("")) && pinsOk && mplSelected(app) === "off", `(mpl6) a ramp@1 kit renders no matchpeer segment and an "Upgrade to latest" button; clicking it pins every layer to LATEST and renders Off (before ${before}, layers ${JSON.stringify(app.doc.layers)}, after ${mplSelected(app)})`);
+}
+// (mpl7) negative control: the presence predicate of (mpl1) reads a tree without the control as absent
+// and the SAME segmented() the app renders, with "on" current, as on.
+const mplForced = app.segmented([{ id: "off", label: "Off" }, { id: "on", label: "On" }], "on", () => {}, { idPrefix: "matchpeer", role: "group" });
+ok(mplSelected({ children: [] }) === "absent" && mplSelected(mplForced) === "on", "(mpl7) negative control: the (mpl1) predicate reads a render without the control as absent and a forced On render as on");
+app.sets = app.sets.filter((s) => s.id !== "mpl-test-set");
+app.openSet(app.sets[0].id); flushRaf();
+
 // ── (px) primitive a11y contracts, the refactor's guarantees (component-inventory.md) ──
 app.openSet(app.sets[0].id); app.commit((doc) => (doc.toneMode = "even")); app._deselect(); flushRaf();
 

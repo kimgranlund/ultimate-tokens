@@ -26,6 +26,12 @@
 //     (R69 kept under the band tint): anchors #808080, #808081, #FFFFFF, #000000 and #010101 at palette
 //     hue 250, skew 0, lift 0, Base chroma 50 and 100, all 25 export stops, every cell under CAM16 C 5;
 //     its control runs the same predicate on the default kit's Primary and must find a cell at C 5 or over.
+//   peer-lightness mode-on <mode> (Match peer lightness, `matchPeerLightness: true`): every one of the 25
+//     export stops, not only the bands, has an L* spread of at most 1.0 across the default kit's
+//     palettes, in both hue spaces and on the damped kit too; `mode-off <mode>` prints the same reading
+//     with the mode off as info (the anchored interior keeps each palette's own curve, by design), and
+//     `mode-on control` runs the mode-on predicate on the default kit pinned `ramp: 1` (which never
+//     reads the flag) and must read over 1.0.
 import { defaultDocument, projectView, rampChromaOf } from "../../src/ui/model.mjs";
 import { presetDoc } from "../../src/ui/persist.js";
 import { LATEST } from "../../src/engine/layer-pins.mjs";
@@ -198,8 +204,41 @@ for (const mode of MODES) {
   if (!fails.some((f) => f === name)) ok(name, `${grey} of ${n} cells CAM16 C below 5 (worst ${worst.toFixed(2)}), perceptual and peak, Base chroma 50 and 100; control: Primary reads ${ctl.n - ctl.grey} of ${ctl.n} cells at C 5 or over`);
 }
 
+// mode-on: every stop's L* spread across the kit, with Match peer lightness on
+const everyStopSpread = (doc) => {
+  const v = projectView(doc);
+  let worst = 0, at = "", n = 0;
+  for (let i = 0; i < EXPORT_STOPS.length; i++) {
+    const L = v.palettes.map((p) => lstarOf(p.fullRamp[i].hex));
+    n++;
+    const sp = spread(L);
+    if (sp > worst) { worst = sp; at = `stop ${v.palettes[0].fullRamp[i].stop}`; }
+  }
+  return { worst, at, n };
+};
+for (const mode of MODES) {
+  const name = `peer-lightness mode-on ${mode}`;
+  let worst = { worst: 0, at: "" }, n = 0;
+  for (const [label, base] of [["default kit", kit], ["damped kit", dampedKit]]) for (const hueSpace of ["oklch", "cam16"]) {
+    const r = everyStopSpread({ ...base, toneMode: mode, hueSpace, matchPeerLightness: true });
+    n = r.n;
+    if (r.worst > worst.worst) worst = { worst: r.worst, at: `${label} ${hueSpace} ${r.at}` };
+  }
+  if (n !== EXPORT_STOPS.length) FAIL(name, `vacuity: ${n} stops read, want ${EXPORT_STOPS.length}`);
+  else if (worst.worst > L_TOL) FAIL(name, `max L* spread ${worst.worst.toFixed(3)} at ${worst.at}, over ${L_TOL}`);
+  else ok(name, `max L* spread ${worst.worst.toFixed(3)} over ${n} stops (want <= ${L_TOL.toFixed(1)}; default and damped kit, oklch and cam16; worst ${worst.at || "none"})`);
+  const off = everyStopSpread({ ...kit, toneMode: mode });
+  console.log(`  info  peer-lightness mode-off ${mode}: max L* spread ${off.worst.toFixed(3)} over ${off.n} stops (anchored interior, by design; worst ${off.at})`);
+}
+{
+  const name = "peer-lightness mode-on control";
+  const r = everyStopSpread({ ...kit, toneMode: "perceptual", matchPeerLightness: true, layers: { ...LATEST, ramp: 1 } });
+  if (!(r.worst > L_TOL)) FAIL(name, `the default kit pinned ramp 1 with the flag on reads an L* spread of ${r.worst.toFixed(3)}, not over ${L_TOL}: the mode-on bound does not discriminate`);
+  else ok(name, `the default kit pinned ramp 1 (which never reads the flag) reads an L* spread of ${r.worst.toFixed(2)} at ${r.at} with the flag on (perceptual), over ${L_TOL}`);
+}
+
 if (fails.length) {
   console.log(`\nFAIL: ${fails.length} peer-lightness check(s) failed`);
   process.exit(1);
 }
-console.log(`\nPASS (${FULL ? "FULL" : "SAMPLED"}): peer-lightness extremes in ${MODES.length} modes, control bites, grey anchors stay grey`);
+console.log(`\nPASS (${FULL ? "FULL" : "SAMPLED"}): peer-lightness extremes in ${MODES.length} modes, control bites, grey anchors stay grey, Match peer lightness holds every stop`);

@@ -74,7 +74,7 @@ const layer = (id, version, inputs, outputs, run) => Object.freeze({ id, version
 
 export const LAYERS = Object.freeze({
   controls: layer("controls", 1,
-    ["curve", "tension", "lmin", "lmax", "damp", "dampCurve", "dampAmp", "dampBias", "hueSpace", "relChroma", "chromaFloor", "toneMode", "vibrancy", "onColorMode", "accentRef", "primeChroma"],
+    ["curve", "tension", "lmin", "lmax", "damp", "dampCurve", "dampAmp", "dampBias", "hueSpace", "relChroma", "matchPeerLightness", "chromaFloor", "toneMode", "vibrancy", "onColorMode", "accentRef", "primeChroma"],
     ["controls.resolved"], resolveControls),
   ramp: layer("ramp", 2,
     ["palettes", "controls.resolved"],

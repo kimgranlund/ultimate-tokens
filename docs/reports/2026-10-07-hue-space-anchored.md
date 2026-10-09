@@ -121,7 +121,7 @@ pass  anchor-f4 hueSpace bound control: planted render (default kit Primary perc
 - Perceptual 0.0164 and peak 0.0169 match the plan-time prototype (0.0164 and 0.0169), under the
   per-mode bound of 0.02 (decision 1). The even ramp reads 0.0281, above its 0.01 magnitude floor.
 - The cap ruling (step 2 item 3): the peak cap call `capChromaAtHeldTone(hue, s, l, rgb, chroma,
-  ceiling, null, true)` (`src/engine/tonal.js:1906`) passes `null` in both spaces, so a capped stop
+  ceiling, null, true)` (`src/engine/tonal.js:1951`) passes `null` in both spaces, so a capped stop
   keeps its own pre-cap OKLCH hue, which the `cam16` solve already put on the anchor's CAM16 line. The
   architect's interface passed the anchor's CAM16 hue instead; step 2's plan-time prototype over the
   full corpus and default kit measured the cap-moved peak stops at 0.0202 OKLab dE between spaces

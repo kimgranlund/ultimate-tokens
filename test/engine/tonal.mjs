@@ -2224,7 +2224,7 @@ for (const mode of ["perceptual", "peak"]) {
       const okhslUrl = new URL("../../src/engine/okhsl.js", import.meta.url).href;
       // #725 revision 8: the anchored path's damped `s` is holdTone's own (the per-stop hue solve that
       // read a separate `s` line is gone), so the saturation patch amplifies the envelope it is given.
-      const NEEDLE = "const hold = holdTone(hue, intendedS, l, env);";
+      const NEEDLE = "const hold = holdTone(hue, intendedS, l, env, tgt);";
       // #725 U2: the anchored peak path caps every stop at stop 500's chroma, which absorbs a saturation
       // amplification by construction, so the patch also lifts that cap (the regression it guards).
       const CAP_NEEDLE = "const capPeak = mode === \"peak\" && (controls.dampAmp ?? 0) === 0;";
@@ -2234,7 +2234,7 @@ for (const mode of ["perceptual", "peak"]) {
         const patched = realSrc
           .replace('from "./hct.js"', `from "${hctUrl}"`)
           .replace('from "./okhsl.js"', `from "${okhslUrl}"`)
-          .replace(NEEDLE, "const hold = holdTone(hue, intendedS, l, env * 1.6);")
+          .replace(NEEDLE, "const hold = holdTone(hue, intendedS, l, env * 1.6, tgt);")
           .replace(CAP_NEEDLE, "const capPeak = false;");
         const BuggyT = await import(`data:text/javascript;base64,${Buffer.from(patched).toString("base64")}`);
         // peakResult.witness is `${doc.__presetName}/${pal.name}` (this function's own return shape).
@@ -2480,6 +2480,27 @@ for (const mode of ["perceptual", "peak"]) {
   else console.log(`envelope-presets: ${P.length} presets read env(500) = 1 in 3 modes x 3 lifts and name back; Curated meets the ruled bars; the dampCurve 3 control bites`);
 }
 
+// ── vibrancy-match-peer (T-0040, ADR-036): the vibrancy and cusp-pull groups above render with
+// Match peer lightness off (their controls carry no flag), the mode they describe. With the mode on,
+// every stop's tone is the shared ladder's, so vibrancy and cusp pull move nothing: a perceptual
+// palette renders byte-identical ramps at vibrancy 0 and 100 and at cusp pull 0 and 100, anchored and
+// not, where the same pairs with the mode off differ (the control).
+{
+  const pal = { hue: 95, chroma: 90, skew: 0, lift: 0 };
+  const hexes = (palette, extra) => T.paletteStops(palette, { ...T.DEFAULT_CONTROLS, toneMode: "perceptual", ...extra }, T.EXPORT_STOPS).map((r) => r.hex).join(" ");
+  const anchored = { ...pal, anchor: defaultDocument().palettes.find((p) => p.name === "Warning").anchor };
+  let same = 0, differOff = 0;
+  for (const palette of [pal, anchored]) {
+    if (hexes(palette, { vibrancy: 0, matchPeerLightness: true }) === hexes(palette, { vibrancy: 100, matchPeerLightness: true })) same++;
+    if (hexes({ ...palette, cuspPull: 0 }, { matchPeerLightness: true }) === hexes({ ...palette, cuspPull: 100 }, { matchPeerLightness: true })) same++;
+    if (hexes(palette, { vibrancy: 0 }) !== hexes(palette, { vibrancy: 100 })) differOff++;
+    if (hexes({ ...palette, cuspPull: 0 }, {}) !== hexes({ ...palette, cuspPull: 100 }, {})) differOff++;
+  }
+  if (same !== 4) FAIL("vibrancy-match-peer", `with the mode on ${4 - same} of 4 vibrancy / cusp-pull pairs still move the ramp`);
+  if (differOff !== 4) FAIL("vibrancy-match-peer", `control: with the mode off only ${differOff} of 4 pairs differ, so the predicate cannot tell the modes apart`);
+  if (same === 4 && differOff === 4) console.log(`  pass  vibrancy-match-peer: 4 of 4 vibrancy 0/100 and cusp pull 0/100 pairs byte-identical with the mode on (perceptual, hue 95, unanchored and on the default kit's Warning anchor); control: 4 of 4 differ with the mode off`);
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
 // The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
 // call (#695), so a gate missing from the list below still shows up, loudly, instead of a real
@@ -2491,7 +2512,7 @@ for (const mode of ["perceptual", "peak"]) {
 // keeps every doc citation into the gates above from drifting by a line (same convention as
 // test/ui/persist.mjs's mid-file gate-report.mjs import).
 import { gateReport } from "../gate-report.mjs";
-const DECLARED = ["ingamut", "monotonic", "white-endpoint", "chroma-target", "curve-fidelity", "hue-stability", "damping-curve", "edge-hue", "rel-chroma", "okhsl-modes", "chroma-floor", "cusp-pull", "lift-monotonic", "skew-lift-okhsl", "vibrancy", "oklch-hue-anchor", "hue-solver-best", "intensity-legacy", "ac004-greps", "chroma-envelope", "dip-gate-even", "okl-order", "group-chroma-damper", "envelope-presets", "report-static"];
+const DECLARED = ["ingamut", "monotonic", "white-endpoint", "chroma-target", "curve-fidelity", "hue-stability", "damping-curve", "edge-hue", "rel-chroma", "okhsl-modes", "chroma-floor", "cusp-pull", "lift-monotonic", "skew-lift-okhsl", "vibrancy", "oklch-hue-anchor", "hue-solver-best", "intensity-legacy", "ac004-greps", "chroma-envelope", "dip-gate-even", "okl-order", "group-chroma-damper", "envelope-presets", "vibrancy-match-peer", "report-static"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 console.log(`  (${FULL ? `FULL: ${CORPUS_DOC_COUNT} curated documents, ${CORPUS_PALETTE_COUNT} palettes` : `SAMPLED seed ${SAMPLE_SEED}: ${CORPUS_DOC_COUNT} curated documents, ${CORPUS_PALETTE_COUNT} palettes`})`);
 if (fails.length) { console.error(`\nFAIL: ${fails.length} gate failure(s)`); process.exit(1); }

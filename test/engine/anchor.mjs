@@ -2025,8 +2025,41 @@ kitCheckLine("anchor-ladder", "dupe", kitDupe, kitLadderSuffix);
   console.log(`  ${fails.some((f) => f.startsWith("achromatic-anchor:")) ? "FAIL" : "pass"}  achromatic-anchor: even ${bound} of ${10 - skipped} anchored/twin hue distances at most 12deg (#808080, #808081, #FFFFFF, #000000, #010101 x stop 300/700, ${skipped} skipped under CAM16 C 5 - a near-white/black anchor's own nearest stop); perceptual/peak ${greyOk} of ${greyCells} cells CAM16 C below ${ACHROMATIC_CELL_C}; #808082 (OKLab C ${twoOff.toFixed(4)}, above the constant) chromatic and hue-stable across a moved palette hue: ${chromaticIdentical}`);
 }
 
+// ── anchor-match-peer (T-0040, ADR-036): with Match peer lightness on, stop 500 sits on the shared
+// ladder, so it leaves the anchor pixel (C3, stop 500 verbatim, is a mode-off rule: every document the
+// sweeps above render is mode off), while the anchor's hue still leads: in each tone mode at least one
+// default-kit stop 500 differs from its anchor, every chromatic stop 500 (OKLCH C 0.04 and over, the
+// anchor too) keeps its anchor's OKLCH hue within 5 degrees, and every ramp descends in pixel L*.
+{
+  const kit = defaultDocument();
+  let moved = 0, n = 0, drift = 0, worst = "", rises = 0;
+  const perMode = {};
+  for (const toneMode of MODES) {
+    const v = projectView({ ...kit, toneMode, matchPeerLightness: true });
+    perMode[toneMode] = 0;
+    v.palettes.forEach((vp, k) => {
+      const anchorHex = String(kit.palettes[k].anchor).toUpperCase();
+      const s500 = vp.fullRamp.find((x) => x.stop === 500).hex.toUpperCase();
+      if (s500 !== anchorHex) perMode[toneMode]++;
+      const a = rgbToOklchIndep(hexToRgb(anchorHex)), b = rgbToOklchIndep(hexToRgb(s500));
+      if (a[1] >= 0.04 && b[1] >= 0.04) {
+        n++;
+        const d = Math.abs(((b[2] - a[2] + 540) % 360) - 180);
+        if (d > drift) { drift = d; worst = `${vp.name} ${toneMode}`; }
+      }
+      if (!monotoneOk(vp.fullRamp) || !monotoneOk(vp.ramp)) rises++;
+    });
+    moved += perMode[toneMode];
+  }
+  for (const toneMode of MODES) if (!(perMode[toneMode] >= 1)) FAIL("anchor-match-peer", `${toneMode}: no default-kit stop 500 left its anchor with the mode on`);
+  if (!(n >= 30)) FAIL("anchor-match-peer", `vacuity: ${n} chromatic stop 500s compared, want at least 30`);
+  if (drift > 5) FAIL("anchor-match-peer", `stop 500's OKLCH hue drifts ${drift.toFixed(2)} deg from its anchor (${worst}), over 5`);
+  if (rises) FAIL("anchor-match-peer", `${rises} ramp(s) rise in pixel L* with the mode on`);
+  console.log(`  ${fails.some((f) => f.startsWith("anchor-match-peer:")) ? "FAIL" : "pass"}  anchor-match-peer: stop 500 left the anchor in ${moved} of ${MODES.length * kit.palettes.length} default-kit ramps (${MODES.map((m) => `${m} ${perMode[m]}`).join(", ")}), ${n} chromatic stop 500s within ${drift.toFixed(2)} deg of their anchor's OKLCH hue (want <= 5), ${rises} rises`);
+}
+
 // ── REPORT ───────────────────────────────────────────────────────────────────────────────
-for (const g of ["anchor-identity", "prime-identity-control", "anchor-ladder", "anchor-ramp", "anchor-f4", "key-anchor", "anchor-k", "anchor-k scale control", "prime-huespace", "prime-huespace control", "anchor-achromatic", "achromatic-anchor"]) {
+for (const g of ["anchor-match-peer", "anchor-identity", "prime-identity-control", "anchor-ladder", "anchor-ramp", "anchor-f4", "key-anchor", "anchor-k", "anchor-k scale control", "prime-huespace", "prime-huespace control", "anchor-achromatic", "achromatic-anchor"]) {
   const f = fails.find((x) => x.startsWith(g + ":"));
   if (!f) continue; // already printed a pass/FAIL summary line above; only surface the FIRST failure detail here
   console.error(`, ${f.slice(g.length + 2)}`);
