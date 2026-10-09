@@ -473,10 +473,41 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
   font-size: 10.5px; font-weight: 600; color: var(--ink-dim);
   margin-bottom: 4px;
 }
-.an-svg { display: flex; justify-content: center; }
-.an-svg svg { display: block; max-width: 100%; height: auto; }
-.an-svg.hw { padding-top: 2px; }
 .an-empty { color: var(--ink-faint); padding: 14px 0; text-align: center; font-size: 11px; }
+
+/* native DOM charts (renderChart, src/ui/charts/render.mjs): marks are absolutely placed elements in
+   percent of an aspect-ratio box. A mark paints with --series; a ribbon is masked by --dash when its
+   series is dashed; a rule's border style reads --rule-style. */
+.an-chart {
+  position: relative; width: 100%; margin-inline: auto;
+  --chart-ref: 1px; --chart-label: 9px; --series: var(--ink-faint);
+}
+.ch-marks { position: absolute; inset: 0; }
+.ch-ribbon, .ch-band { position: absolute; inset: 0; background: var(--series); }
+.ch-ribbon { mask-image: var(--dash, none); -webkit-mask-image: var(--dash, none); }
+.ch-rule { position: absolute; }
+.ch-rule.ch-h { border-top: var(--chart-ref) var(--rule-style, solid) var(--series); transform: translateY(-50%); }
+.ch-rule.ch-v { border-left: var(--chart-ref) var(--rule-style, solid) var(--series); transform: translateX(-50%); }
+.ch-dot {
+  position: absolute; width: calc(var(--r) * 2); height: calc(var(--r) * 2);
+  transform: translate(-50%, -50%); border-radius: 50%; background: var(--series);
+}
+.ch-dot.ch-ring { box-shadow: 0 0 0 2px var(--panel), 0 0 0 3.5px var(--accent); }
+.ch-rect { position: absolute; }
+.ch-circle { position: absolute; border: var(--chart-ref) solid var(--series); border-radius: 50%; }
+/* a label's point is its baseline, as an SVG <text> was; ch-a-* is its text-anchor */
+.ch-label {
+  position: absolute; font: var(--chart-label)/1 var(--sans); color: var(--ink-dim);
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.ch-label.ch-a-start { transform: translate(0, -80%); }
+.ch-label.ch-a-middle { transform: translate(-50%, -80%); }
+.ch-label.ch-a-end { transform: translate(-100%, -80%); }
+/* visually hidden: the chart's data table stays in the accessibility tree */
+.vh {
+  position: absolute; width: 1px; height: 1px;
+  clip-path: inset(50%); overflow: hidden; white-space: nowrap;
+}
 
 /* graph legend (keys the overlaid series) */
 .an-legend { display: flex; flex-wrap: wrap; gap: 3px 10px; margin-top: 5px; font-size: 9.5px; color: var(--ink-dim); }
@@ -507,10 +538,10 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 .an-bar b.fail { color: var(--warn); }
 
 /* hue wheel */
-.hw-circle { fill: none; stroke: var(--line); stroke-width: 1.5; }
-.hw-dot { stroke: var(--panel); stroke-width: 1.5; }
-.hw-ring { fill: none; stroke: var(--accent); stroke-width: 1.5; }
-.an-svg.hw text { fill: var(--ink-faint); font-size: 9px; font-family: var(--sans); }
+.an-chart.hw { margin-top: 2px; }
+.hw-circle { --series: var(--line); --chart-ref: 1.5px; }
+.hw-dot:not(.ch-ring) { box-shadow: 0 0 0 1.5px var(--panel); }
+.hw-tick { color: var(--ink-faint); }
 
 /* center column = canvas-header / canvas-area / canvas-footer */
 .center {
@@ -873,7 +904,6 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 .ramp-name.off { text-decoration: line-through; color: var(--ink-faint); }
 .ramp-name small { color: var(--ink-dim); font-weight: 400; margin-left: 6px; }
 
-/* shared analysis-graph SVG styles (left-pane graphs) */
 /* differential damping controls + curve (Global tab) */
 .sub-head { font-size: 10px; font-weight: 600; color: var(--ink-dim); margin: 0; text-transform: uppercase; letter-spacing: .05em; }
 .mini-check { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-dim); margin: 0; cursor: pointer; }
@@ -881,14 +911,16 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 .damp-presets { display: flex; flex-wrap: wrap; gap: 4px; }
 /* the preset buttons are chips (.chip.on), see the chip primitive above. */
 .damp-graph { padding: 6px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--panel-2); }
-.dg-unity { stroke: var(--ink-faint); stroke-width: 1; stroke-dasharray: 2 2; }
+.dg-unity { --series: var(--ink-faint); --rule-style: dashed; }
 
-.lc-axis { stroke: var(--line); stroke-width: 1; }
-.lc-ceiling { fill: color-mix(in srgb, var(--accent) 16%, transparent); stroke: none; }
-.an-svg .lc-toneline { stroke: var(--ink-faint); stroke-width: 1; stroke-dasharray: 3 3; fill: none; }
-.an-svg .lc-applied { stroke: var(--accent); stroke-width: 1.5; fill: none; }
-.lc-dot { fill: var(--accent); }
-.an-svg text { fill: var(--ink-dim); font-size: 9px; font-family: var(--sans); }
+.lc-axis { --series: var(--line); }
+.lc-ceiling { --series: color-mix(in srgb, var(--accent) 16%, transparent); }
+.lc-toneline {
+  --series: var(--ink-faint); --rule-style: dashed;
+  --dash: repeating-linear-gradient(90deg, #000 0 3px, transparent 3px 6px);
+}
+.lc-applied { --series: var(--accent); }
+.lc-dot { --series: var(--accent); }
 
 .canvas-footer, .app-footer {
   display: flex; align-items: center; gap: 14px;
@@ -1228,11 +1260,11 @@ dialog.newpal::backdrop { background: rgba(10,14,22,.34); }
 /* LEFT, diagrams */
 .newpal-diagram { margin-bottom: 16px; }
 .newpal-diagram-title { font-size: 11px; color: var(--ink-dim); font-weight: 600; margin-bottom: 6px; }
-.newpal-hc svg { display: block; width: 100%; height: auto; max-width: 300px; margin: 0 auto; }
-.hc-rim { fill: none; stroke: var(--line-2); stroke-width: 1; }
-.hc-axis { fill: var(--ink-dim); font-size: 11px; font-variant-numeric: tabular-nums; }
-.hc-dot { stroke: rgba(0,0,0,.28); stroke-width: 1; }
-.hc-ring { fill: none; stroke: var(--accent); stroke-width: 2.5; }
+.newpal-hc { max-width: 300px; margin-inline: auto; }
+.hc-rim { --series: var(--line-2); }
+.hc-axis { --chart-label: 11px; color: var(--ink-dim); }
+.hc-dot:not(.ch-ring) { box-shadow: inset 0 0 0 1px rgba(0,0,0,.28); }
+.hc-dot.ch-ring { box-shadow: inset 0 0 0 1px rgba(0,0,0,.28), 0 0 0 1.75px var(--panel), 0 0 0 4.25px var(--accent); }
 /* RIGHT, relationship radios (single column inside the right pane) */
 .newpal-rels { display: grid; grid-template-columns: 1fr; gap: 8px; }
 .newpal-rel {
@@ -1436,29 +1468,26 @@ a.account-manage:hover { text-decoration: underline; }
 .type-spec-render { color: var(--ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .type-spec-render.para { white-space: normal; overflow: visible; max-width: 640px; }
 
-/* typography analysis, the seven-group series (display · 3 headings · body · ui · code), shared palette */
-/* the .ty-sN series classes ride BOTH the line <path> and the dot <circle>; the dots need their `fill`,
-   so qualify the line rule (0,2,0) to outrank `.ty-sN` (0,1,0), otherwise the series fill leaks onto the
-   open path, closing it into a filled wedge. Keep fill:none winning regardless of source order. */
-.an-svg .ty-line { fill: none; stroke-width: 1.5; }
-.ty-dot { stroke: none; }
-/* one series colour per voice, by index in the 11-voice order:
-   0 Display · 1 Heading · 2 Sub-heading · 3 Kicker · 4 Lead · 5 Body · 6 Quote · 7 Caption · 8 UI · 9 Code · 10 Legal */
-.ty-s0 { stroke: var(--accent); fill: var(--accent); }                                                      /* Display */
-.ty-s1 { stroke: color-mix(in srgb, var(--accent) 70%, #e0e0e0); fill: color-mix(in srgb, var(--accent) 70%, #e0e0e0); } /* Heading */
-.ty-s2 { stroke: color-mix(in srgb, var(--accent) 45%, var(--ink-dim)); fill: color-mix(in srgb, var(--accent) 45%, var(--ink-dim)); } /* Sub-heading */
-.ty-s3 { stroke: var(--ink-dim); fill: var(--ink-dim); stroke-dasharray: 3 3; }                              /* Kicker (mono) */
-.ty-s4 { stroke: color-mix(in srgb, var(--accent) 55%, var(--ink)); fill: color-mix(in srgb, var(--accent) 55%, var(--ink)); } /* Lead */
-.ty-s5 { stroke: color-mix(in srgb, var(--ink) 60%, var(--accent)); fill: color-mix(in srgb, var(--ink) 60%, var(--accent)); } /* Body */
-.ty-s6 { stroke: color-mix(in srgb, var(--accent) 40%, var(--ink-dim)); fill: color-mix(in srgb, var(--accent) 40%, var(--ink-dim)); } /* Quote (heading cut) */
-.ty-s7 { stroke: var(--ink-dim); fill: var(--ink-dim); }                                                    /* Caption (ui font, prose) */
-.ty-s8 { stroke: var(--ink-faint); fill: var(--ink-faint); }                                                /* UI */
-.ty-s9 { stroke: var(--ink-faint); fill: var(--ink-faint); stroke-dasharray: 3 3; }                         /* Code (mono) */
-.ty-s10 { stroke: color-mix(in srgb, var(--ink-faint) 80%, var(--accent)); fill: color-mix(in srgb, var(--ink-faint) 80%, var(--accent)); stroke-dasharray: 3 3; } /* Kicker (mono) */
-.ty-s11 { stroke: color-mix(in srgb, var(--ink-dim) 70%, var(--panel)); fill: color-mix(in srgb, var(--ink-dim) 70%, var(--panel)); }                              /* Tiny (ui font, prose) */
-.ty-s12 { stroke: color-mix(in srgb, var(--ink-dim) 70%, var(--panel)); fill: color-mix(in srgb, var(--ink-dim) 70%, var(--panel)); stroke-dasharray: 3 3; }        /* Tiny-mono */
-.ty-s13 { stroke: color-mix(in srgb, var(--accent) 60%, var(--ink-faint)); fill: color-mix(in srgb, var(--accent) 60%, var(--ink-faint)); }                         /* UI-control (TKT-0008) */
-.ty-s14 { stroke: color-mix(in srgb, var(--accent) 35%, var(--ink-faint)); fill: color-mix(in srgb, var(--accent) 35%, var(--ink-faint)); }                         /* UI-widget (TKT-0008) */
+/* typography analysis: one native DOM series per voice (ribbon + dots), painted by --series */
+/* one series colour per voice, by index in the live 15-voice order:
+   0 Display · 1 Headline · 2 Sub-heading · 3 Title · 4 Sub-title · 5 Lead · 6 Body · 7 Body-mono · 8 Label · 9 Label-mono · 10 Kicker · 11 Tiny · 12 Tiny-mono · 13 UI-control · 14 UI-widget */
+.ty-s0 { --series: var(--accent); } /* Display */
+.ty-s1 { --series: color-mix(in srgb, var(--accent) 70%, #e0e0e0); } /* Headline */
+.ty-s2 { --series: color-mix(in srgb, var(--accent) 45%, var(--ink-dim)); } /* Sub-heading */
+.ty-s3 { --series: var(--ink-dim); } /* Title */
+.ty-s4 { --series: color-mix(in srgb, var(--accent) 55%, var(--ink)); } /* Sub-title */
+.ty-s5 { --series: color-mix(in srgb, var(--ink) 60%, var(--accent)); } /* Lead */
+.ty-s6 { --series: color-mix(in srgb, var(--accent) 40%, var(--ink-dim)); } /* Body */
+.ty-s7 { --series: var(--ink-dim); } /* Body-mono */
+.ty-s8 { --series: var(--ink-faint); } /* Label */
+.ty-s9 { --series: var(--ink-faint); } /* Label-mono */
+.ty-s10 { --series: color-mix(in srgb, var(--ink-faint) 80%, var(--accent)); } /* Kicker */
+.ty-s11 { --series: color-mix(in srgb, var(--ink-dim) 70%, var(--panel)); } /* Tiny */
+.ty-s12 { --series: color-mix(in srgb, var(--ink-dim) 70%, var(--panel)); } /* Tiny-mono */
+.ty-s13 { --series: color-mix(in srgb, var(--accent) 60%, var(--ink-faint)); } /* UI-control (TKT-0008) */
+.ty-s14 { --series: color-mix(in srgb, var(--accent) 35%, var(--ink-faint)); } /* UI-widget (TKT-0008) */
+/* every *-mono voice dashes its ribbon, by voice name rather than index */
+.ty-mono { --dash: repeating-linear-gradient(90deg, #000 0 3px, transparent 3px 6px); }
 .an-leg-mark.ty { background: var(--ink-faint); }
 .an-leg-mark.ty.s0 { background: var(--accent); }
 .an-leg-mark.ty.s1 { background: color-mix(in srgb, var(--accent) 70%, #e0e0e0); }
@@ -1573,16 +1602,13 @@ a.account-manage:hover { text-decoration: underline; }
 .geom-space-bar { height: 10px; background: var(--accent); border-radius: 2px; display: inline-block; opacity: .7; }
 
 /* geometry analysis rail, the centering-law diagram, the power-law curves, the band ramp, composition */
-.gc-cell { fill: none; stroke: var(--line); stroke-width: 1.5; }
-.gc-glyph { fill: color-mix(in srgb, var(--accent) 24%, transparent); stroke: var(--accent); stroke-width: 1.5; }
-.gc-pad { stroke: var(--ink-faint); stroke-width: 3; stroke-linecap: round; }
+.gc-cell { border: 1.5px solid var(--line); border-radius: 2px; }
+.gc-glyph { background: color-mix(in srgb, var(--accent) 24%, transparent); border: 1.5px solid var(--accent); border-radius: 2px; }
+.gc-pad { --series: var(--ink-faint); --chart-ref: 3px; }
 .geom-an-cap { text-align: center; color: var(--ink-dim); font-size: 10.5px; font-variant-numeric: tabular-nums; margin-top: 4px; }
-.an-svg .gp-ref { fill: none; stroke: var(--ink-faint); stroke-width: 1; stroke-dasharray: 3 3; }
-.an-svg .gp-icon { fill: none; stroke: var(--accent); stroke-width: 1.5; }
-.an-svg .gp-font { fill: none; stroke: color-mix(in srgb, var(--ink) 55%, var(--accent)); stroke-width: 1.5; }
-.gp-dot { stroke: none; }
-.gp-dot-icon { fill: var(--accent); }
-.gp-dot-font { fill: color-mix(in srgb, var(--ink) 55%, var(--accent)); }
+.gp-ref { --series: var(--ink-faint); --dash: repeating-linear-gradient(90deg, #000 0 3px, transparent 3px 6px); }
+.gp-icon { --series: var(--accent); }
+.gp-font { --series: color-mix(in srgb, var(--ink) 55%, var(--accent)); }
 .an-leg-mark.gp.ref { background: var(--ink-faint); }
 .an-leg-mark.gp.icon { background: var(--accent); }
 .an-leg-mark.gp.font { background: color-mix(in srgb, var(--ink) 55%, var(--accent)); }
@@ -1656,6 +1682,8 @@ a.account-manage:hover { text-decoration: underline; }
   input[type="range"] { background: ButtonText; }
   input[type="range"]::-webkit-slider-thumb { background: Highlight; border: 1px solid ButtonText; }
   input[type="range"]::-moz-range-thumb { background: Highlight; border: 1px solid ButtonText; }
+  /* the chart marks are data colors (palette hexes, series tints), not UI chrome: keep them. */
+  .an-chart .ch-marks { forced-color-adjust: none; }
 }
 
 

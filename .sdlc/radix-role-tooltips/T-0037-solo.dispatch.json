@@ -1,0 +1,21 @@
+{
+  "subagent_type": "sdlc-lite:solo-L2",
+  "name": "T-0037-solo",
+  "description": "T-0037 solo L2 Radix colors:",
+  "model": "sonnet",
+  "effort": "high",
+  "prompt": "T-0037 Radix colors: hover tooltip with | solo L2\nHandoff: .sdlc/radix-role-tooltips/handoff.md\nBrief: deliver ticket .sdlc/radix-role-tooltips/handoff.md end to end in this session as the solo agent. Read the ticket and the files it names, make the smallest change that meets its done criterion, run every check command it names and rerun them all after a fix, and report files changed, each check with its outcome, and anything still open. For a ticket of level L2 or L3 write the handoff's ## Acceptance criteria if it has none, end with your report, and say `verify: needed`: the parent runs the one batched independent verifier. No person is present: never ask the user and never use AskUserQuestion. You work on your own worktree branch: commit early and often, one `WIP T-0037` commit after each green check and a final commit `T-0037: Radix colors: hover tooltip with each step's role and intent` when every check is green. Never push, open a PR, or publish: fanout.py land merges your branch, runs the gates, and closes the ticket.",
+  "run_in_background": true,
+  "isolation": "worktree",
+  "ticket": "T-0037",
+  "tier": "L2",
+  "prune": false,
+  "branch": "worktree-T-0037-solo",
+  "worktree": ".claude/worktrees/T-0037-solo",
+  "handoff": ".sdlc/radix-role-tooltips/handoff.md",
+  "verifier": "/Library/Developer/CommandLineTools/usr/bin/python3 /Users/kimgranlund/.claude/plugins/cache/sdlc-lite/sdlc-lite/0.22.0/scripts/dispatch.py prepare --solo-model sonnet verifier L2 .claude/worktrees/T-0037-solo/.sdlc/radix-role-tooltips/handoff.md",
+  "base_sha": "88752594c4377d23726a22109893a6695b380b8f",
+  "attempt_id": "6ac1ee628a3d4b178ddc67fb5378d0d8",
+  "role": "solo",
+  "level": "L2"
+}

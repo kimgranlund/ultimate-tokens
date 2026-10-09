@@ -488,10 +488,41 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
   font-size: 10.5px; font-weight: 600; color: var(--ink-dim);
   margin-bottom: 4px;
 }
-.an-svg { display: flex; justify-content: center; }
-.an-svg svg { display: block; max-width: 100%; height: auto; }
-.an-svg.hw { padding-top: 2px; }
 .an-empty { color: var(--ink-faint); padding: 14px 0; text-align: center; font-size: 11px; }
+
+/* native DOM charts (renderChart, src/ui/charts/render.mjs): marks are absolutely placed elements in
+   percent of an aspect-ratio box. A mark paints with --series; a ribbon is masked by --dash when its
+   series is dashed; a rule's border style reads --rule-style. */
+.an-chart {
+  position: relative; width: 100%; margin-inline: auto;
+  --chart-ref: 1px; --chart-label: 9px; --series: var(--ink-faint);
+}
+.ch-marks { position: absolute; inset: 0; }
+.ch-ribbon, .ch-band { position: absolute; inset: 0; background: var(--series); }
+.ch-ribbon { mask-image: var(--dash, none); -webkit-mask-image: var(--dash, none); }
+.ch-rule { position: absolute; }
+.ch-rule.ch-h { border-top: var(--chart-ref) var(--rule-style, solid) var(--series); transform: translateY(-50%); }
+.ch-rule.ch-v { border-left: var(--chart-ref) var(--rule-style, solid) var(--series); transform: translateX(-50%); }
+.ch-dot {
+  position: absolute; width: calc(var(--r) * 2); height: calc(var(--r) * 2);
+  transform: translate(-50%, -50%); border-radius: 50%; background: var(--series);
+}
+.ch-dot.ch-ring { box-shadow: 0 0 0 2px var(--panel), 0 0 0 3.5px var(--accent); }
+.ch-rect { position: absolute; }
+.ch-circle { position: absolute; border: var(--chart-ref) solid var(--series); border-radius: 50%; }
+/* a label's point is its baseline, as an SVG <text> was; ch-a-* is its text-anchor */
+.ch-label {
+  position: absolute; font: var(--chart-label)/1 var(--sans); color: var(--ink-dim);
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.ch-label.ch-a-start { transform: translate(0, -80%); }
+.ch-label.ch-a-middle { transform: translate(-50%, -80%); }
+.ch-label.ch-a-end { transform: translate(-100%, -80%); }
+/* visually hidden: the chart's data table stays in the accessibility tree */
+.vh {
+  position: absolute; width: 1px; height: 1px;
+  clip-path: inset(50%); overflow: hidden; white-space: nowrap;
+}
 
 /* graph legend (keys the overlaid series) */
 .an-legend { display: flex; flex-wrap: wrap; gap: 3px 10px; margin-top: 5px; font-size: 9.5px; color: var(--ink-dim); }
@@ -522,10 +553,10 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
 .an-bar b.fail { color: var(--warn); }
 
 /* hue wheel */
-.hw-circle { fill: none; stroke: var(--line); stroke-width: 1.5; }
-.hw-dot { stroke: var(--panel); stroke-width: 1.5; }
-.hw-ring { fill: none; stroke: var(--accent); stroke-width: 1.5; }
-.an-svg.hw text { fill: var(--ink-faint); font-size: 9px; font-family: var(--sans); }
+.an-chart.hw { margin-top: 2px; }
+.hw-circle { --series: var(--line); --chart-ref: 1.5px; }
+.hw-dot:not(.ch-ring) { box-shadow: 0 0 0 1.5px var(--panel); }
+.hw-tick { color: var(--ink-faint); }
 
 /* center column = canvas-header / canvas-area / canvas-footer */
 .center {
@@ -888,7 +919,6 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 .ramp-name.off { text-decoration: line-through; color: var(--ink-faint); }
 .ramp-name small { color: var(--ink-dim); font-weight: 400; margin-left: 6px; }
 
-/* shared analysis-graph SVG styles (left-pane graphs) */
 /* differential damping controls + curve (Global tab) */
 .sub-head { font-size: 10px; font-weight: 600; color: var(--ink-dim); margin: 0; text-transform: uppercase; letter-spacing: .05em; }
 .mini-check { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-dim); margin: 0; cursor: pointer; }
@@ -896,14 +926,16 @@ button.chip:hover { background: var(--line-2); color: var(--ink); }
 .damp-presets { display: flex; flex-wrap: wrap; gap: 4px; }
 /* the preset buttons are chips (.chip.on), see the chip primitive above. */
 .damp-graph { padding: 6px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--panel-2); }
-.dg-unity { stroke: var(--ink-faint); stroke-width: 1; stroke-dasharray: 2 2; }
+.dg-unity { --series: var(--ink-faint); --rule-style: dashed; }
 
-.lc-axis { stroke: var(--line); stroke-width: 1; }
-.lc-ceiling { fill: color-mix(in srgb, var(--accent) 16%, transparent); stroke: none; }
-.an-svg .lc-toneline { stroke: var(--ink-faint); stroke-width: 1; stroke-dasharray: 3 3; fill: none; }
-.an-svg .lc-applied { stroke: var(--accent); stroke-width: 1.5; fill: none; }
-.lc-dot { fill: var(--accent); }
-.an-svg text { fill: var(--ink-dim); font-size: 9px; font-family: var(--sans); }
+.lc-axis { --series: var(--line); }
+.lc-ceiling { --series: color-mix(in srgb, var(--accent) 16%, transparent); }
+.lc-toneline {
+  --series: var(--ink-faint); --rule-style: dashed;
+  --dash: repeating-linear-gradient(90deg, #000 0 3px, transparent 3px 6px);
+}
+.lc-applied { --series: var(--accent); }
+.lc-dot { --series: var(--accent); }
 
 .canvas-footer, .app-footer {
   display: flex; align-items: center; gap: 14px;
@@ -1243,11 +1275,11 @@ dialog.newpal::backdrop { background: rgba(10,14,22,.34); }
 /* LEFT, diagrams */
 .newpal-diagram { margin-bottom: 16px; }
 .newpal-diagram-title { font-size: 11px; color: var(--ink-dim); font-weight: 600; margin-bottom: 6px; }
-.newpal-hc svg { display: block; width: 100%; height: auto; max-width: 300px; margin: 0 auto; }
-.hc-rim { fill: none; stroke: var(--line-2); stroke-width: 1; }
-.hc-axis { fill: var(--ink-dim); font-size: 11px; font-variant-numeric: tabular-nums; }
-.hc-dot { stroke: rgba(0,0,0,.28); stroke-width: 1; }
-.hc-ring { fill: none; stroke: var(--accent); stroke-width: 2.5; }
+.newpal-hc { max-width: 300px; margin-inline: auto; }
+.hc-rim { --series: var(--line-2); }
+.hc-axis { --chart-label: 11px; color: var(--ink-dim); }
+.hc-dot:not(.ch-ring) { box-shadow: inset 0 0 0 1px rgba(0,0,0,.28); }
+.hc-dot.ch-ring { box-shadow: inset 0 0 0 1px rgba(0,0,0,.28), 0 0 0 1.75px var(--panel), 0 0 0 4.25px var(--accent); }
 /* RIGHT, relationship radios (single column inside the right pane) */
 .newpal-rels { display: grid; grid-template-columns: 1fr; gap: 8px; }
 .newpal-rel {
@@ -1451,29 +1483,26 @@ a.account-manage:hover { text-decoration: underline; }
 .type-spec-render { color: var(--ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .type-spec-render.para { white-space: normal; overflow: visible; max-width: 640px; }
 
-/* typography analysis, the seven-group series (display · 3 headings · body · ui · code), shared palette */
-/* the .ty-sN series classes ride BOTH the line <path> and the dot <circle>; the dots need their `fill`,
-   so qualify the line rule (0,2,0) to outrank `.ty-sN` (0,1,0), otherwise the series fill leaks onto the
-   open path, closing it into a filled wedge. Keep fill:none winning regardless of source order. */
-.an-svg .ty-line { fill: none; stroke-width: 1.5; }
-.ty-dot { stroke: none; }
-/* one series colour per voice, by index in the 11-voice order:
-   0 Display · 1 Heading · 2 Sub-heading · 3 Kicker · 4 Lead · 5 Body · 6 Quote · 7 Caption · 8 UI · 9 Code · 10 Legal */
-.ty-s0 { stroke: var(--accent); fill: var(--accent); }                                                      /* Display */
-.ty-s1 { stroke: color-mix(in srgb, var(--accent) 70%, #e0e0e0); fill: color-mix(in srgb, var(--accent) 70%, #e0e0e0); } /* Heading */
-.ty-s2 { stroke: color-mix(in srgb, var(--accent) 45%, var(--ink-dim)); fill: color-mix(in srgb, var(--accent) 45%, var(--ink-dim)); } /* Sub-heading */
-.ty-s3 { stroke: var(--ink-dim); fill: var(--ink-dim); stroke-dasharray: 3 3; }                              /* Kicker (mono) */
-.ty-s4 { stroke: color-mix(in srgb, var(--accent) 55%, var(--ink)); fill: color-mix(in srgb, var(--accent) 55%, var(--ink)); } /* Lead */
-.ty-s5 { stroke: color-mix(in srgb, var(--ink) 60%, var(--accent)); fill: color-mix(in srgb, var(--ink) 60%, var(--accent)); } /* Body */
-.ty-s6 { stroke: color-mix(in srgb, var(--accent) 40%, var(--ink-dim)); fill: color-mix(in srgb, var(--accent) 40%, var(--ink-dim)); } /* Quote (heading cut) */
-.ty-s7 { stroke: var(--ink-dim); fill: var(--ink-dim); }                                                    /* Caption (ui font, prose) */
-.ty-s8 { stroke: var(--ink-faint); fill: var(--ink-faint); }                                                /* UI */
-.ty-s9 { stroke: var(--ink-faint); fill: var(--ink-faint); stroke-dasharray: 3 3; }                         /* Code (mono) */
-.ty-s10 { stroke: color-mix(in srgb, var(--ink-faint) 80%, var(--accent)); fill: color-mix(in srgb, var(--ink-faint) 80%, var(--accent)); stroke-dasharray: 3 3; } /* Kicker (mono) */
-.ty-s11 { stroke: color-mix(in srgb, var(--ink-dim) 70%, var(--panel)); fill: color-mix(in srgb, var(--ink-dim) 70%, var(--panel)); }                              /* Tiny (ui font, prose) */
-.ty-s12 { stroke: color-mix(in srgb, var(--ink-dim) 70%, var(--panel)); fill: color-mix(in srgb, var(--ink-dim) 70%, var(--panel)); stroke-dasharray: 3 3; }        /* Tiny-mono */
-.ty-s13 { stroke: color-mix(in srgb, var(--accent) 60%, var(--ink-faint)); fill: color-mix(in srgb, var(--accent) 60%, var(--ink-faint)); }                         /* UI-control (TKT-0008) */
-.ty-s14 { stroke: color-mix(in srgb, var(--accent) 35%, var(--ink-faint)); fill: color-mix(in srgb, var(--accent) 35%, var(--ink-faint)); }                         /* UI-widget (TKT-0008) */
+/* typography analysis: one native DOM series per voice (ribbon + dots), painted by --series */
+/* one series colour per voice, by index in the live 15-voice order:
+   0 Display · 1 Headline · 2 Sub-heading · 3 Title · 4 Sub-title · 5 Lead · 6 Body · 7 Body-mono · 8 Label · 9 Label-mono · 10 Kicker · 11 Tiny · 12 Tiny-mono · 13 UI-control · 14 UI-widget */
+.ty-s0 { --series: var(--accent); } /* Display */
+.ty-s1 { --series: color-mix(in srgb, var(--accent) 70%, #e0e0e0); } /* Headline */
+.ty-s2 { --series: color-mix(in srgb, var(--accent) 45%, var(--ink-dim)); } /* Sub-heading */
+.ty-s3 { --series: var(--ink-dim); } /* Title */
+.ty-s4 { --series: color-mix(in srgb, var(--accent) 55%, var(--ink)); } /* Sub-title */
+.ty-s5 { --series: color-mix(in srgb, var(--ink) 60%, var(--accent)); } /* Lead */
+.ty-s6 { --series: color-mix(in srgb, var(--accent) 40%, var(--ink-dim)); } /* Body */
+.ty-s7 { --series: var(--ink-dim); } /* Body-mono */
+.ty-s8 { --series: var(--ink-faint); } /* Label */
+.ty-s9 { --series: var(--ink-faint); } /* Label-mono */
+.ty-s10 { --series: color-mix(in srgb, var(--ink-faint) 80%, var(--accent)); } /* Kicker */
+.ty-s11 { --series: color-mix(in srgb, var(--ink-dim) 70%, var(--panel)); } /* Tiny */
+.ty-s12 { --series: color-mix(in srgb, var(--ink-dim) 70%, var(--panel)); } /* Tiny-mono */
+.ty-s13 { --series: color-mix(in srgb, var(--accent) 60%, var(--ink-faint)); } /* UI-control (TKT-0008) */
+.ty-s14 { --series: color-mix(in srgb, var(--accent) 35%, var(--ink-faint)); } /* UI-widget (TKT-0008) */
+/* every *-mono voice dashes its ribbon, by voice name rather than index */
+.ty-mono { --dash: repeating-linear-gradient(90deg, #000 0 3px, transparent 3px 6px); }
 .an-leg-mark.ty { background: var(--ink-faint); }
 .an-leg-mark.ty.s0 { background: var(--accent); }
 .an-leg-mark.ty.s1 { background: color-mix(in srgb, var(--accent) 70%, #e0e0e0); }
@@ -1588,16 +1617,13 @@ a.account-manage:hover { text-decoration: underline; }
 .geom-space-bar { height: 10px; background: var(--accent); border-radius: 2px; display: inline-block; opacity: .7; }
 
 /* geometry analysis rail, the centering-law diagram, the power-law curves, the band ramp, composition */
-.gc-cell { fill: none; stroke: var(--line); stroke-width: 1.5; }
-.gc-glyph { fill: color-mix(in srgb, var(--accent) 24%, transparent); stroke: var(--accent); stroke-width: 1.5; }
-.gc-pad { stroke: var(--ink-faint); stroke-width: 3; stroke-linecap: round; }
+.gc-cell { border: 1.5px solid var(--line); border-radius: 2px; }
+.gc-glyph { background: color-mix(in srgb, var(--accent) 24%, transparent); border: 1.5px solid var(--accent); border-radius: 2px; }
+.gc-pad { --series: var(--ink-faint); --chart-ref: 3px; }
 .geom-an-cap { text-align: center; color: var(--ink-dim); font-size: 10.5px; font-variant-numeric: tabular-nums; margin-top: 4px; }
-.an-svg .gp-ref { fill: none; stroke: var(--ink-faint); stroke-width: 1; stroke-dasharray: 3 3; }
-.an-svg .gp-icon { fill: none; stroke: var(--accent); stroke-width: 1.5; }
-.an-svg .gp-font { fill: none; stroke: color-mix(in srgb, var(--ink) 55%, var(--accent)); stroke-width: 1.5; }
-.gp-dot { stroke: none; }
-.gp-dot-icon { fill: var(--accent); }
-.gp-dot-font { fill: color-mix(in srgb, var(--ink) 55%, var(--accent)); }
+.gp-ref { --series: var(--ink-faint); --dash: repeating-linear-gradient(90deg, #000 0 3px, transparent 3px 6px); }
+.gp-icon { --series: var(--accent); }
+.gp-font { --series: color-mix(in srgb, var(--ink) 55%, var(--accent)); }
 .an-leg-mark.gp.ref { background: var(--ink-faint); }
 .an-leg-mark.gp.icon { background: var(--accent); }
 .an-leg-mark.gp.font { background: color-mix(in srgb, var(--ink) 55%, var(--accent)); }
@@ -1671,6 +1697,8 @@ a.account-manage:hover { text-decoration: underline; }
   input[type="range"] { background: ButtonText; }
   input[type="range"]::-webkit-slider-thumb { background: Highlight; border: 1px solid ButtonText; }
   input[type="range"]::-moz-range-thumb { background: Highlight; border: 1px solid ButtonText; }
+  /* the chart marks are data colors (palette hexes, series tints), not UI chrome: keep them. */
+  .an-chart .ch-marks { forced-color-adjust: none; }
 }
 
 
@@ -14807,7 +14835,6 @@ const h = (tag, attrs = {}, ...kids) => {
   for (const [k, v] of Object.entries(attrs)) {
     if (v == null || v === false) continue;
     if (k === "class") el.className = v;
-    else if (k === "html") el.innerHTML = v;
     else if (k.startsWith("on") && typeof v === "function") el.addEventListener(k.slice(2), v);
     else if (k === "style") el.setAttribute("style", v);
     else el.setAttribute(k, v === true ? "" : v);
@@ -15358,12 +15385,202 @@ function hydrateConfig(config) {
 
 return { SETS_KEY, PROJECT_KEY, PROFILE_KEY, CHECKOUT_STORE, PRO_CHECKOUT_URL, STUDIO_CHECKOUT_URL, REPO_URL, SUPPORT_URL, DOCS_URL, ACCOUNT_URL, PRO_EXPORT_FORMATS, ALIASED_README, LEGACY_STORAGE_PREFIXES, migrateStorageKeys, sanitizeSetRecords, loadSets, saveSets, loadProfile, saveProfile, PRO_KEY_RE, defaultLicenseService, licenseInstanceName, DEV_FLAG_TOGGLES, newSet, hydrateStoredDoc, APP_THEME_STYLE_ID, ensureAppTheme, TYPE_FONTS_LINK_ID, ensureTypeFonts, SELF_HOSTED_FONTS, GENERIC_FONTS, ensureWebFont, ensureWebFontPreconnect, ensureWebFonts, setColorScheme, h, fmt, ago, CURVES, DAMP_PRESETS, switchControl, swatch, BTN_VARIANT, btn, SCHEME_ICON, SCHEME_NEXT, CANVAS_INSET, TYPE_SPECIMENS, TYPE_SAMPLE, TYPE_PARA, chip, MODE_WIDTH_PRESETS, field, POSTER_STRIP_MAX_BAND_PCT, POSTER_STRIP_MAX_BAND_PCT_LOW, POSTER_STRIP_MAX_BAND_PCT_HIGH, POSTER_STRIP_ACCENT_FLOOR_PCT, POSTER_STRIP_CAP_CHROMA_LOW, POSTER_STRIP_CAP_CHROMA_HIGH, posterStripDominantCap, posterStripBands, backfillDefaultAnchors, hydrateConfig };
 })();
+__M.chartsCore = (function(){
+// core.mjs, the pure chart core behind renderChart (render.mjs). No DOM, no imports: a chart spec
+// in nominal px (the W x H box each section function already draws in) resolves to percent
+// primitives, so every mark scales with the chart box and never needs SVG or Canvas.
+//
+// Missing data stays missing: a non-finite input maps to NaN, splits a run, and drops the mark,
+// it is never placed at 0. The ribbon is a port of strokeRibbon from the native-dom-charts
+// project (src/lib/core/geometry.js): one clip-path polygon per run, bounded miter joins.
+
+// Stroke widths in px. The polygon fixes the thickness when the chart resolves, so a width is a
+// constant per series here, not a CSS token.
+const STROKE = { line: 1.5, ref: 1 };
+
+const finite = (v) => typeof v === "number" && Number.isFinite(v);
+const r3 = (v) => Math.round(v * 1000) / 1000;
+
+// scaleLinear([d0, d1], [r0, r1]) maps a domain value to the range. A non-number or non-finite
+// input returns NaN; a degenerate domain maps to the range midpoint.
+function scaleLinear([d0, d1], [r0, r1]) {
+  return (v) => {
+    if (!finite(v)) return NaN;
+    if (d0 === d1) return (r0 + r1) / 2;
+    return r0 + ((v - d0) / (d1 - d0)) * (r1 - r0);
+  };
+}
+
+// runs(points): the stretches of consecutive points with finite x and y. A missing point ends the
+// run and is dropped; a lone point is a run of length 1.
+function runs(points) {
+  const out = [];
+  let cur = [];
+  for (const p of points ?? []) {
+    if (p && finite(p.x) && finite(p.y)) cur.push(p);
+    else if (cur.length) { out.push(cur); cur = []; }
+  }
+  if (cur.length) out.push(cur);
+  return out;
+}
+
+const pctPolygon = (pts, W, H) => {
+  const xs = pts.map((p) => (p.x / W) * 100), ys = pts.map((p) => (p.y / H) * 100);
+  if (![...xs, ...ys].every(Number.isFinite)) return "";
+  return `polygon(${xs.map((x, i) => `${x.toFixed(3)}% ${ys[i].toFixed(3)}%`).join(", ")})`;
+};
+
+// ribbon(run, W, H, stroke): a stroked line as a clip-path polygon of 2n vertices, the run offset
+// by +stroke/2 along each vertex normal, then back by -stroke/2. Fewer than 2 points draws nothing.
+function ribbon(run, W, H, stroke = STROKE.line) {
+  if (!run || run.length < 2 || !(W > 0) || !(H > 0)) return "";
+  const normals = run.slice(1).map((v, i) => {
+    const dx = v.x - run[i].x, dy = v.y - run[i].y, l = Math.hypot(dx, dy) || 1;
+    return { x: -dy / l, y: dx / l };
+  });
+  const edges = run.map((v, i) => {
+    const a = normals[Math.max(0, i - 1)], b = normals[Math.min(i, normals.length - 1)];
+    const den = Math.max(0.25, 1 + a.x * b.x + a.y * b.y);
+    return { x: v.x, y: v.y, nx: (a.x + b.x) / den, ny: (a.y + b.y) / den };
+  });
+  const side = (v, sign) => ({ x: v.x + (v.nx * sign * stroke) / 2, y: v.y + (v.ny * sign * stroke) / 2 });
+  return pctPolygon([...edges.map((v) => side(v, 1)), ...edges.reverse().map((v) => side(v, -1))], W, H);
+}
+
+// band(run, W, H, base): a filled area, the run closed onto a base line. `{ y }` is a horizontal
+// base, `{ x }` a vertical one (graphLC's gamut ceiling closes to X(0)).
+function band(run, W, H, base) {
+  if (!run || !run.length || !(W > 0) || !(H > 0) || !base) return "";
+  const first = run[0], last = run[run.length - 1];
+  let close;
+  if (finite(base.y)) close = [{ x: last.x, y: base.y }, { x: first.x, y: base.y }];
+  else if (finite(base.x)) close = [{ x: base.x, y: last.y }, { x: base.x, y: first.y }];
+  else return "";
+  return pctPolygon([...run, ...close], W, H);
+}
+
+// polar(angleDeg, r, cx, cy): 0 degrees at top, clockwise, in the units of the inputs.
+function polar(angleDeg, r, cx, cy) {
+  const a = (angleDeg * Math.PI) / 180;
+  return { x: cx + r * Math.sin(a), y: cy - r * Math.cos(a) };
+}
+
+const ANCHORS = new Set(["start", "middle", "end"]);
+
+// resolveChart(spec): the spec's px marks as percent primitives. Every number in the result is
+// finite; a mark with a non-finite coordinate is dropped.
+function resolveChart(spec) {
+  const W = spec?.W, H = spec?.H;
+  const out = { W: finite(W) ? W : 0, H: finite(H) ? H : 0, ribbons: [], bands: [], dots: [], rules: [], labels: [], rects: [], circles: [] };
+  if (!(W > 0 && H > 0 && finite(W) && finite(H))) return out;
+  const px = (x) => r3((x / W) * 100), py = (y) => r3((y / H) * 100);
+
+  for (const s of spec.series ?? []) {
+    const cls = s.cls ?? "";
+    for (const run of runs(s.points)) {
+      if (s.kind === "band") {
+        const clip = band(run, W, H, s.base);
+        if (clip) out.bands.push({ cls, clip });
+      } else {
+        const clip = ribbon(run, W, H, finite(s.stroke) ? s.stroke : STROKE.line);
+        if (clip) out.ribbons.push({ cls, clip });
+      }
+      if (finite(s.dot)) for (const p of run) out.dots.push({ cls, left: px(p.x), top: py(p.y), r: s.dot, fill: null, ring: false });
+    }
+  }
+  for (const d of spec.rules ?? []) {
+    if (![d.x1, d.y1, d.x2, d.y2].every(finite)) continue;
+    const h = d.y1 === d.y2;
+    out.rules.push({
+      cls: d.cls ?? "", orient: h ? "h" : "v",
+      left: px(Math.min(d.x1, d.x2)), top: py(Math.min(d.y1, d.y2)),
+      len: h ? r3((Math.abs(d.x2 - d.x1) / W) * 100) : r3((Math.abs(d.y2 - d.y1) / H) * 100),
+    });
+  }
+  for (const d of spec.labels ?? []) {
+    if (!finite(d.x) || !finite(d.y)) continue;
+    out.labels.push({ text: String(d.text ?? ""), left: px(d.x), top: py(d.y), anchor: ANCHORS.has(d.anchor) ? d.anchor : "start", cls: d.cls ?? "" });
+  }
+  for (const d of spec.rects ?? []) {
+    if (![d.x, d.y, d.w, d.h].every(finite)) continue;
+    out.rects.push({ cls: d.cls ?? "", left: px(d.x), top: py(d.y), width: r3((d.w / W) * 100), height: r3((d.h / H) * 100) });
+  }
+  for (const d of spec.circles ?? []) {
+    if (![d.cx, d.cy, d.r].every(finite)) continue;
+    out.circles.push({ cls: d.cls ?? "", left: px(d.cx - d.r), top: py(d.cy - d.r), width: r3(((2 * d.r) / W) * 100), height: r3(((2 * d.r) / H) * 100) });
+  }
+  for (const d of spec.dots ?? []) {
+    if (![d.x, d.y, d.r].every(finite)) continue;
+    out.dots.push({ cls: d.cls ?? "", left: px(d.x), top: py(d.y), r: d.r, fill: d.fill ?? null, ring: !!d.ring });
+  }
+  return out;
+}
+
+const cell = (v) => (typeof v === "string" ? v : finite(v) ? String(r3(v)) : "");
+
+// sourceRows(spec): the chart's data as [label, x, y] strings, one per series point and free dot
+// that carries `v`. A missing value prints "", never "0".
+function sourceRows(spec) {
+  const rows = [];
+  const row = (label, v) => rows.push([String(label ?? ""), cell(v?.[0]), cell(v?.[1])]);
+  for (const s of spec?.series ?? []) for (const p of s.points ?? []) if (p && p.v) row(s.label, p.v);
+  for (const d of spec?.dots ?? []) if (d && d.v) row(d.label, d.v);
+  return rows;
+}
+
+return { STROKE, scaleLinear, runs, ribbon, band, polar, resolveChart, sourceRows };
+})();
+__M.chartsRender = (function(){
+// render.mjs, renderChart(spec): a resolved chart (core.mjs) as native DOM. Marks are plain
+// elements placed in percent inside an aspect-ratio box and styled by CSS; the data rides along
+// in a visually hidden table for assistive tech. No SVG, and no markup strings: every node is h().
+const { h } = __M.appHelpers;
+const { resolveChart, sourceRows } = __M.chartsCore;
+
+const cx = (...c) => c.filter(Boolean).join(" ");
+
+function renderChart(spec) {
+  const o = resolveChart(spec);
+  const marks = [
+    ...o.bands.map((m) => h("div", { class: cx("ch-band", m.cls), style: `clip-path: ${m.clip}` })),
+    ...o.ribbons.map((m) => h("div", { class: cx("ch-ribbon", m.cls), style: `clip-path: ${m.clip}` })),
+    ...o.rules.map((m) =>
+      h("div", { class: cx("ch-rule", m.orient === "h" ? "ch-h" : "ch-v", m.cls), style: `left: ${m.left}%; top: ${m.top}%; ${m.orient === "h" ? "width" : "height"}: ${m.len}%` })),
+    ...o.rects.map((m) => h("div", { class: cx("ch-rect", m.cls), style: `left: ${m.left}%; top: ${m.top}%; width: ${m.width}%; height: ${m.height}%` })),
+    ...o.circles.map((m) => h("div", { class: cx("ch-circle", m.cls), style: `left: ${m.left}%; top: ${m.top}%; width: ${m.width}%; height: ${m.height}%` })),
+    ...o.dots.map((m) =>
+      h("div", { class: cx("ch-dot", m.ring && "ch-ring", m.cls), style: `left: ${m.left}%; top: ${m.top}%; --r: ${m.r}px` + (m.fill ? `; background: ${m.fill}` : "") })),
+    ...o.labels.map((m) => h("div", { class: cx("ch-label", "ch-a-" + m.anchor, m.cls), style: `left: ${m.left}%; top: ${m.top}%` }, m.text)),
+  ];
+  const rows = sourceRows(spec);
+  const columns = spec.columns ?? ["series", "x", "y"];
+  const table = rows.length
+    ? h(
+        "table",
+        { class: "vh" },
+        spec.title ? h("caption", {}, spec.title) : null,
+        h("thead", {}, h("tr", {}, ...columns.map((c) => h("th", { scope: "col" }, c)))),
+        h("tbody", {}, ...rows.map((r) => h("tr", {}, ...r.map((c) => h("td", {}, c))))),
+      )
+    : null;
+  return h(
+    "div",
+    { class: cx("an-chart", spec.cls), style: `aspect-ratio: ${o.W} / ${o.H}; max-width: ${o.W}px` },
+    h("div", { class: "ch-marks", "aria-hidden": "true" }, ...marks),
+    table,
+  );
+}
+
+return { renderChart };
+})();
 __M.colorSection = (function(){
 const { DEFAULT_CONTROLS, PALETTE_GROUPS, SCRIM_BASES, SCRIM_STEPS, STOPS, hasDataPalettes, hexToOklch, mintDataPalettes, nextPaletteName, paletteGroup, paletteGroupLabel, paletteNameClash, projectView, RADIX_STEP_GUIDE, radixCollisionBadge, radixExportKey, radixKeyCollision, rederiveDataHues, seedFromKeyColor, slug } = __M.model;
 const { RELATIONSHIPS, deriveNeutral, deriveRelative } = __M.derive;
 const { chromaEnvelope, envelopePresetOf } = __M.tonal;
 const { icon } = __M.icons;
 const { CURVES, DAMP_PRESETS, btn, chip, field, fmt, h, swatch, switchControl } = __M.appHelpers;
+const { renderChart } = __M.chartsRender;
+const { STROKE, polar, scaleLinear } = __M.chartsCore;
 
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
 // methods, copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
@@ -15398,29 +15615,30 @@ class ColorSectionImpl {
     const W = 244, H = 168, pad = 26;
     const pts = target.points;
     const maxC = Math.max(8, ...pts.map((p) => Math.max(p.ceiling, p.applied))) * 1.05;
-    const X = (c) => pad + (c / maxC) * (W - pad - 8);
-    const Y = (l) => 8 + ((100 - l) / 100) * (H - pad - 8);
-    const ceilPath =
-      "M" + pts.map((p) => `${X(p.ceiling).toFixed(1)},${Y(p.tone).toFixed(1)}`).join(" L") +
-      ` L${X(0)},${Y(pts[pts.length - 1].tone).toFixed(1)} L${X(0)},${Y(pts[0].tone).toFixed(1)} Z`;
-    const appliedPath = "M" + pts.map((p) => `${X(p.applied).toFixed(1)},${Y(p.tone).toFixed(1)}`).join(" L");
-    const tonePath = "M" + pts.map((p) => `${X(0).toFixed(1)},${Y(p.tone).toFixed(1)}`).join(" L");
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        <text x="2" y="${Y(100) + 3}">100</text>
-        <text x="6" y="${Y(0)}">0</text>
-        <text x="${W - 14}" y="${H - pad + 20}">C→</text>
-        <path class="lc-ceiling" d="${ceilPath}"/>
-        <path class="lc-toneline" d="${tonePath}"/>
-        <path class="lc-applied" d="${appliedPath}"/>
-        ${pts.map((p) => `<circle class="lc-dot" cx="${X(p.applied).toFixed(1)}" cy="${Y(p.tone).toFixed(1)}" r="2"/>`).join("")}
-      </svg>`;
+    const X = scaleLinear([0, maxC], [pad, W - 8]);
+    const Y = scaleLinear([100, 0], [8, H - pad]);
+    const chart = renderChart({
+      W, H,
+      series: [
+        { label: "gamut ceiling", cls: "lc-ceiling", kind: "band", base: { x: X(0) }, points: pts.map((p) => ({ x: X(p.ceiling), y: Y(p.tone), v: [p.ceiling, p.tone] })) },
+        { label: "applied C", cls: "lc-applied", dot: 2, points: pts.map((p) => ({ x: X(p.applied), y: Y(p.tone), v: [p.applied, p.tone] })) },
+      ],
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+        { cls: "lc-toneline", x1: X(0), y1: Y(pts[0].tone), x2: X(0), y2: Y(pts[pts.length - 1].tone) },
+      ],
+      labels: [
+        { text: "100", x: 2, y: Y(100) + 3 },
+        { text: "0", x: 6, y: Y(0) },
+        { text: "C→", x: W - 14, y: H - pad + 20 },
+      ],
+      columns: ["series", "C", "L*"],
+    });
     return h(
       "div",
       {},
-      h("div", { class: "an-svg", html: svg }),
+      chart,
       this.legend([
         { mark: "solid", label: "applied C" },
         { mark: "fill", label: "gamut ceiling" },
@@ -15436,19 +15654,21 @@ class ColorSectionImpl {
     if (!vp) return h("div", { class: "an-empty" }, "n/a");
     const W = 244, H = 120, pad = 22;
     const pts = vp.ramp;
-    const X = (i) => pad + (i / (pts.length - 1)) * (W - pad - 8);
-    const Y = (t) => 8 + ((100 - t) / 100) * (H - pad - 8);
-    const line = "M" + pts.map((s, i) => `${X(i).toFixed(1)},${Y(s.tone).toFixed(1)}`).join(" L");
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        <text x="2" y="${Y(100) + 3}">L*</text>
-        <text x="${W - 26}" y="${H - pad + 18}">stops</text>
-        <path class="lc-applied" d="${line}"/>
-        ${pts.map((s, i) => `<circle class="lc-dot" cx="${X(i).toFixed(1)}" cy="${Y(s.tone).toFixed(1)}" r="1.8"/>`).join("")}
-      </svg>`;
-    return h("div", { class: "an-svg", html: svg });
+    const X = scaleLinear([0, pts.length - 1], [pad, W - 8]);
+    const Y = scaleLinear([100, 0], [8, H - pad]);
+    return renderChart({
+      W, H,
+      series: [{ label: "L*", cls: "lc-applied", dot: 1.8, points: pts.map((s, i) => ({ x: X(i), y: Y(s.tone), v: [s.stop, s.tone] })) }],
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+      ],
+      labels: [
+        { text: "L*", x: 2, y: Y(100) + 3 },
+        { text: "stops", x: W - 26, y: H - pad + 18 },
+      ],
+      columns: ["series", "stop", "L*"],
+    });
   }
 
 
@@ -15459,24 +15679,28 @@ class ColorSectionImpl {
     const W = 244, H = 120, pad = 22;
     const pts = vp.ramp;
     const maxC = Math.max(8, ...pts.map((s) => Math.max(s.maxc, s.chroma))) * 1.05;
-    const X = (i) => pad + (i / (pts.length - 1)) * (W - pad - 8);
-    const Y = (c) => (H - pad + 8) - (c / maxC) * (H - pad - 8);
-    const ceil = "M" + pts.map((s, i) => `${X(i).toFixed(1)},${Y(s.maxc).toFixed(1)}`).join(" L");
-    const applied = "M" + pts.map((s, i) => `${X(i).toFixed(1)},${Y(s.chroma).toFixed(1)}`).join(" L");
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        <text x="2" y="14">C</text>
-        <text x="${W - 26}" y="${H - pad + 18}">stops</text>
-        <path class="lc-toneline" d="${ceil}"/>
-        <path class="lc-applied" d="${applied}"/>
-        ${pts.map((s, i) => `<circle class="lc-dot" cx="${X(i).toFixed(1)}" cy="${Y(s.chroma).toFixed(1)}" r="1.6"/>`).join("")}
-      </svg>`;
+    const X = scaleLinear([0, pts.length - 1], [pad, W - 8]);
+    const Y = scaleLinear([0, maxC], [H - pad + 8, 16]);
+    const chart = renderChart({
+      W, H,
+      series: [
+        { label: "gamut ceiling", cls: "lc-toneline", stroke: STROKE.ref, points: pts.map((s, i) => ({ x: X(i), y: Y(s.maxc), v: [s.stop, s.maxc] })) },
+        { label: "applied C", cls: "lc-applied", dot: 1.6, points: pts.map((s, i) => ({ x: X(i), y: Y(s.chroma), v: [s.stop, s.chroma] })) },
+      ],
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+      ],
+      labels: [
+        { text: "C", x: 2, y: 14 },
+        { text: "stops", x: W - 26, y: H - pad + 18 },
+      ],
+      columns: ["series", "stop", "C"],
+    });
     return h(
       "div",
       {},
-      h("div", { class: "an-svg", html: svg }),
+      chart,
       this.legend([
         { mark: "solid", label: "applied C" },
         { mark: "faint", label: "gamut ceiling" },
@@ -15551,22 +15775,23 @@ class ColorSectionImpl {
     const amp = (doc.dampAmp ?? 0) / 100;
     const M = (stop) => chromaEnvelope(stop, 500, 0, { ...doc });
     const ymax = Math.max(1.15, 1 + amp) * 1.05;
-    const X = (i) => pad + (i / (STOPS.length - 1)) * (W - pad - 8);
-    const Y = (m) => H - pad + 8 - (m / ymax) * (H - pad - 8);
-    const line = "M" + STOPS.map((st, i) => `${X(i).toFixed(1)},${Y(M(st)).toFixed(1)}`).join(" L");
-    const y1 = Y(1).toFixed(1);
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        <line class="dg-unity" x1="${pad}" y1="${y1}" x2="${W - 6}" y2="${y1}"/>
-        <text x="2" y="${(+y1 - 3).toFixed(1)}">1×</text>
-        <text x="${pad}" y="${H - pad + 18}">light</text>
-        <text x="${W - 24}" y="${H - pad + 18}">dark</text>
-        <path class="lc-applied" d="${line}"/>
-        ${STOPS.map((st, i) => `<circle class="lc-dot" cx="${X(i).toFixed(1)}" cy="${Y(M(st)).toFixed(1)}" r="1.6"/>`).join("")}
-      </svg>`;
-    return h("div", { class: "an-svg", html: svg });
+    const X = scaleLinear([0, STOPS.length - 1], [pad, W - 8]);
+    const Y = scaleLinear([0, ymax], [H - pad + 8, 16]);
+    return renderChart({
+      W, H,
+      series: [{ label: "multiplier", cls: "lc-applied", dot: 1.6, points: STOPS.map((st, i) => { const m = M(st); return { x: X(i), y: Y(m), v: [st, m] }; }) }],
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+        { cls: "dg-unity", x1: pad, y1: Y(1), x2: W - 6, y2: Y(1) },
+      ],
+      labels: [
+        { text: "1×", x: 2, y: Y(1) - 3 },
+        { text: "light", x: pad, y: H - pad + 18 },
+        { text: "dark", x: W - 24, y: H - pad + 18 },
+      ],
+      columns: ["series", "stop", "m"],
+    });
   }
 
 
@@ -15580,27 +15805,19 @@ class ColorSectionImpl {
       .map(({ p, i }) => {
         const vp = view.palettes[i];
         const mid = vp.ramp.find((s) => s.stop === 550) || vp.ramp[Math.floor(vp.ramp.length / 2)];
-        const a = ((p.hue - 90) * Math.PI) / 180; // 0° at top, clockwise
-        const x = cx + Math.cos(a) * R;
-        const y = cy + Math.sin(a) * R;
-        const r = i === sel ? 7 : 5;
-        const ring = i === sel ? `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r + 3}" class="hw-ring"/>` : "";
-        return ring + `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="${mid.hex}" class="hw-dot"/>`;
-      })
-      .join("");
-    const ticks = [0, 90, 180, 270]
-      .map((d) => {
-        const a = ((d - 90) * Math.PI) / 180;
-        return `<text x="${(cx + Math.cos(a) * (R + 14)).toFixed(1)}" y="${(cy + Math.sin(a) * (R + 14) + 3).toFixed(1)}" text-anchor="middle">${d}°</text>`;
-      })
-      .join("");
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="${cx}" cy="${cy}" r="${R}" class="hw-circle"/>
-        ${ticks}
-        ${dots}
-      </svg>`;
-    return h("div", { class: "an-svg hw", html: svg });
+        return { cls: "hw-dot", ...polar(p.hue, R, cx, cy), r: i === sel ? 7 : 5, ring: i === sel, fill: mid.hex, label: p.name, v: [p.hue, mid.chroma] };
+      });
+    const ticks = [0, 90, 180, 270].map((d) => {
+      const t = polar(d, R + 14, cx, cy);
+      return { cls: "hw-tick", text: `${d}°`, x: t.x, y: t.y + 3, anchor: "middle" };
+    });
+    return renderChart({
+      W, H, cls: "hw",
+      circles: [{ cls: "hw-circle", cx, cy, r: R }],
+      labels: ticks,
+      dots,
+      columns: ["palette", "hue", "C"],
+    });
   }
 
 
@@ -15967,31 +16184,23 @@ class ColorSectionImpl {
       const vp = view.palettes[i];
       if (!vp || !vp.keyOklch) continue;
       const [, C, H] = vp.keyOklch;
-      dots.push({ H, C, fill: vp.key, on: false });
+      dots.push({ H, C, fill: vp.key, on: false, name: vp.name });
     }
-    if (proposed) dots.push({ H: proposed.pos.H, C: proposed.pos.C, fill: proposed.hex, on: true });
+    if (proposed) dots.push({ H: proposed.pos.H, C: proposed.pos.C, fill: proposed.hex, on: true, name: "proposed" });
     const SZ = 280, cx = SZ / 2, cy = SZ / 2, R = SZ / 2 - 30;
     const maxC = Math.max(0.08, ...dots.map((d) => d.C)); // floor so a near-grey-only set still spreads
-    const at = (H, C) => {
-      const rr = R * Math.min(1, C / maxC), a = (H * Math.PI) / 180;
-      return [cx + rr * Math.sin(a), cy - rr * Math.cos(a)];
-    };
-    const dotSvg = dots.map((d) => {
-      const [x, y] = at(d.H, d.C);
-      return d.on
-        ? `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="11" class="hc-ring"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="8" class="hc-dot" fill="${d.fill}"/>`
-        : `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" class="hc-dot" fill="${d.fill}"/>`;
-    }).join("");
-    const svg = `
-      <svg width="${SZ}" height="${SZ}" viewBox="0 0 ${SZ} ${SZ}" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="${cx}" cy="${cy}" r="${R}" class="hc-rim"/>
-        <text x="${cx}" y="13" class="hc-axis" text-anchor="middle">0°</text>
-        <text x="${SZ - 4}" y="${cy + 4}" class="hc-axis" text-anchor="end">90°</text>
-        <text x="${cx}" y="${SZ - 3}" class="hc-axis" text-anchor="middle">180°</text>
-        <text x="4" y="${cy + 4}" class="hc-axis" text-anchor="start">270°</text>
-        ${dotSvg}
-      </svg>`;
-    return h("div", { class: "an-svg newpal-hc", html: svg });
+    return renderChart({
+      W: SZ, H: SZ, cls: "newpal-hc",
+      circles: [{ cls: "hc-rim", cx, cy, r: R }],
+      labels: [
+        { cls: "hc-axis", text: "0°", x: cx, y: 13, anchor: "middle" },
+        { cls: "hc-axis", text: "90°", x: SZ - 4, y: cy + 4, anchor: "end" },
+        { cls: "hc-axis", text: "180°", x: cx, y: SZ - 3, anchor: "middle" },
+        { cls: "hc-axis", text: "270°", x: 4, y: cy + 4, anchor: "start" },
+      ],
+      dots: dots.map((d) => ({ cls: "hc-dot", ...polar(d.H, R * Math.min(1, d.C / maxC), cx, cy), r: d.on ? 8 : 6, ring: d.on, fill: d.fill, label: d.name, v: [d.H, d.C] })),
+      columns: ["palette", "hue", "C"],
+    });
   }
 
 
@@ -17539,6 +17748,7 @@ const { BUNDLED_FONTS, DEFAULT_TYPE, TYPE_TREATMENTS, WEIGHT_NAMES, genericFor, 
 const { googleSafeFontFor } = __M.fontFallbacks;
 const { icon } = __M.icons;
 const { GENERIC_FONTS, SELF_HOSTED_FONTS, TYPE_PARA, TYPE_SAMPLE, btn, ensureTypeFonts, ensureWebFonts, field, fmt, h } = __M.appHelpers;
+const { renderChart } = __M.chartsRender;
 
 // Prototype mixin (TKT-0023): a class body used ONLY as a verbatim, comma-free carrier for these
 // methods, copied onto HctApp.prototype (see app.js's mixin() call), never instantiated directly.
@@ -17547,7 +17757,7 @@ class TypeSectionImpl {
   // ── Typography analysis (left rail, READ-ONLY) ────────────────────────────────────────
   // The type analog of analysisCards(): cards computed from typeScale(doc.type). No inputs, pure
   // diagnostics of the resolved scale. `view` is accepted for dispatch parity but unused (typography
-  // is doc-driven, not palette-view-driven). Reuses .an-card / .an-svg / legend().
+  // is doc-driven, not palette-view-driven). Reuses .an-card / .an-chart / legend().
   typeAnalysisCards(view) {
     const scale = this._activeTypeScale();
     const card = (label, body) => h("div", { class: "an-card" }, h("div", { class: "an-label" }, label), body);
@@ -17572,21 +17782,21 @@ class TypeSectionImpl {
     const maxSize = Math.max(8, ...series.flatMap((g) => g.steps.map((s) => s.size))) * 1.05;
     const X = (i, n) => pad + (n <= 1 ? 0 : i / (n - 1)) * (W - pad - 8);
     const Y = (px) => (H - pad + 8) - (px / maxSize) * (H - pad - 8);
-    const paths = series.map((g, gi) => {
-      const n = g.steps.length;
-      const d = "M" + g.steps.map((s, i) => `${X(i, n).toFixed(1)},${Y(s.size).toFixed(1)}`).join(" L");
-      const dots = g.steps.map((s, i) => `<circle class="ty-dot ty-s${gi}" cx="${X(i, n).toFixed(1)}" cy="${Y(s.size).toFixed(1)}" r="1.6"/>`).join("");
-      return `<path class="ty-line ty-s${gi}" d="${d}"/>${dots}`;
-    }).join("");
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        <text x="2" y="14">px</text>
-        <text x="${W - 40}" y="${H - pad + 18}">SM→LG</text>
-        ${paths}
-      </svg>`;
-    return h("div", {}, h("div", { class: "an-svg", html: svg }), this.legend(series.map((g, gi) => ({ mark: "ty s" + gi, label: g.short || g.cat }))));
+    const ser = (g, gi) => ({ label: g.short || g.cat, cls: "ty-s" + gi + (g.cat.endsWith("-mono") ? " ty-mono" : ""), dot: 1.6 });
+    const chart = renderChart({
+      W, H,
+      series: series.map((g, gi) => ({ ...ser(g, gi), points: g.steps.map((s, i) => ({ x: X(i, g.steps.length), y: Y(s.size), v: [s.name, s.size] })) })),
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+      ],
+      labels: [
+        { text: "px", x: 2, y: 14 },
+        { text: "SM→LG", x: W - 40, y: H - pad + 18 },
+      ],
+      columns: ["voice", "step", "px"],
+    });
+    return h("div", {}, chart, this.legend(series.map((g, gi) => ({ mark: "ty s" + gi, label: g.short || g.cat }))));
   }
 
 
@@ -17600,24 +17810,23 @@ class TypeSectionImpl {
     const tMax = Math.max(0.5, ...tr), tMin = Math.min(-0.5, ...tr), tSpan = (tMax - tMin) || 1;
     const X = (px) => pad + (px / maxSize) * (W - pad - 8);
     const Y = (t) => 8 + ((tMax - t) / tSpan) * (H - pad - 8);
-    const zeroY = Y(0).toFixed(1);
-    const paths = series.map((g, gi) => {
-      const sorted = [...g.steps].sort((a, b) => a.size - b.size);
-      const d = "M" + sorted.map((s) => `${X(s.size).toFixed(1)},${Y(s.letterSpacing).toFixed(1)}`).join(" L");
-      const dots = sorted.map((s) => `<circle class="ty-dot ty-s${gi}" cx="${X(s.size).toFixed(1)}" cy="${Y(s.letterSpacing).toFixed(1)}" r="1.6"/>`).join("");
-      return `<path class="ty-line ty-s${gi}" d="${d}"/>${dots}`;
-    }).join("");
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        <line class="dg-unity" x1="${pad}" y1="${zeroY}" x2="${W - 6}" y2="${zeroY}"/>
-        <text x="2" y="${(+zeroY - 3).toFixed(1)}">0</text>
-        <text x="2" y="14">px</text>
-        <text x="${W - 30}" y="${H - pad + 18}">size→</text>
-        ${paths}
-      </svg>`;
-    return h("div", {}, h("div", { class: "an-svg", html: svg }), this.legend(series.map((g, gi) => ({ mark: "ty s" + gi, label: g.short || g.cat }))));
+    const ser = (g, gi) => ({ label: g.short || g.cat, cls: "ty-s" + gi + (g.cat.endsWith("-mono") ? " ty-mono" : ""), dot: 1.6 });
+    const chart = renderChart({
+      W, H,
+      series: series.map((g, gi) => ({ ...ser(g, gi), points: [...g.steps].sort((a, b) => a.size - b.size).map((s) => ({ x: X(s.size), y: Y(s.letterSpacing), v: [s.size, s.letterSpacing] })) })),
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+        { cls: "dg-unity", x1: pad, y1: Y(0), x2: W - 6, y2: Y(0) },
+      ],
+      labels: [
+        { text: "0", x: 2, y: Y(0) - 3 },
+        { text: "px", x: 2, y: 14 },
+        { text: "size→", x: W - 30, y: H - pad + 18 },
+      ],
+      columns: ["voice", "size px", "tracking px"],
+    });
+    return h("div", {}, chart, this.legend(series.map((g, gi) => ({ mark: "ty s" + gi, label: g.short || g.cat }))));
   }
 
 
@@ -17629,21 +17838,21 @@ class TypeSectionImpl {
     const rMax = Math.max(1.7, ...ratios) * 1.02, rMin = Math.min(0.95, ...ratios), rSpan = (rMax - rMin) || 1;
     const X = (i, n) => pad + (n <= 1 ? 0 : i / (n - 1)) * (W - pad - 8);
     const Y = (r) => 8 + ((rMax - r) / rSpan) * (H - pad - 8);
-    const paths = series.map((g, gi) => {
-      const n = g.steps.length;
-      const d = "M" + g.steps.map((s, i) => `${X(i, n).toFixed(1)},${Y(s.lineHeight / s.size).toFixed(1)}`).join(" L");
-      const dots = g.steps.map((s, i) => `<circle class="ty-dot ty-s${gi}" cx="${X(i, n).toFixed(1)}" cy="${Y(s.lineHeight / s.size).toFixed(1)}" r="1.6"/>`).join("");
-      return `<path class="ty-line ty-s${gi}" d="${d}"/>${dots}`;
-    }).join("");
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        <text x="2" y="14">×</text>
-        <text x="${W - 40}" y="${H - pad + 18}">SM→LG</text>
-        ${paths}
-      </svg>`;
-    return h("div", {}, h("div", { class: "an-svg", html: svg }), this.legend(series.map((g, gi) => ({ mark: "ty s" + gi, label: g.short || g.cat }))));
+    const ser = (g, gi) => ({ label: g.short || g.cat, cls: "ty-s" + gi + (g.cat.endsWith("-mono") ? " ty-mono" : ""), dot: 1.6 });
+    const chart = renderChart({
+      W, H,
+      series: series.map((g, gi) => ({ ...ser(g, gi), points: g.steps.map((s, i) => ({ x: X(i, g.steps.length), y: Y(s.lineHeight / s.size), v: [s.name, s.lineHeight / s.size] })) })),
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+      ],
+      labels: [
+        { text: "×", x: 2, y: 14 },
+        { text: "SM→LG", x: W - 40, y: H - pad + 18 },
+      ],
+      columns: ["voice", "step", "line-height ÷ size"],
+    });
+    return h("div", {}, chart, this.legend(series.map((g, gi) => ({ mark: "ty s" + gi, label: g.short || g.cat }))));
   }
 
 
@@ -18622,6 +18831,8 @@ const { STANDARD_GEOM_RUNGS, geomEffectiveModes, geomModeScales, geomScaleFor, s
 const { CELL_FIELDS, DEFAULT_GEOMETRY, RADIUS_MODES, SCALES, TIERS, mdAnchor, orderedSizeNames, geomTokensDTCG } = __M.geometry;
 const { icon } = __M.icons;
 const { btn, ensureTypeFonts, field, h } = __M.appHelpers;
+const { renderChart } = __M.chartsRender;
+const { STROKE } = __M.chartsCore;
 
 // The Maison ladder's three kit axes (T-0017), labelled for the inspector; ids are the engine's own.
 const TIER_LABEL = { content: "Content", product: "Product", micro: "Micro" };
@@ -19050,7 +19261,7 @@ class GeomSectionImpl {
 
   // ── Geometry analysis (left rail, READ-ONLY) ──────────────────────────────────────────
   // The geometry analog of analysisCards(): diagrams of the resolved dimensional system, pure functions
-  // of geometryScale(doc), no inputs. Reuses .an-card / .an-svg / legend(). `view` is accepted for dispatch
+  // of geometryScale(doc), no inputs. Reuses .an-card / .an-chart / legend(). `view` is accepted for dispatch
   // parity but unused (geometry is doc-driven, not palette-view-driven).
   geomAnalysisCards(view) {
     const scale = this._activeGeomScale();
@@ -19073,25 +19284,29 @@ class GeomSectionImpl {
     const x0 = (W - side) / 2, y0 = (H - side) / 2;
     const g = side * (s.icon / s.height); // glyph drawn proportional to icon/height
     const gx = x0 + (side - g) / 2, gy = y0 + (side - g) / 2;
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <rect class="gc-cell" x="${x0}" y="${y0}" width="${side}" height="${side}" rx="2"/>
-        <rect class="gc-glyph" x="${gx.toFixed(1)}" y="${gy.toFixed(1)}" width="${g.toFixed(1)}" height="${g.toFixed(1)}" rx="2"/>
-        <line class="gc-pad" x1="${x0}" y1="${gy.toFixed(1)}" x2="${gx.toFixed(1)}" y2="${gy.toFixed(1)}"/>
-        <line class="gc-pad" x1="${(gx + g).toFixed(1)}" y1="${(gy + g).toFixed(1)}" x2="${(x0 + side).toFixed(1)}" y2="${(gy + g).toFixed(1)}"/>
-      </svg>`;
+    const chart = renderChart({
+      W, H,
+      rects: [
+        { cls: "gc-cell", x: x0, y: y0, w: side, h: side },
+        { cls: "gc-glyph", x: gx, y: gy, w: g, h: g },
+      ],
+      rules: [
+        { cls: "gc-pad", x1: x0, y1: gy, x2: gx, y2: gy },
+        { cls: "gc-pad", x1: gx + g, y1: gy + g, x2: x0 + side, y2: gy + g },
+      ],
+    });
     // the caption reads the cell's own inset (the ladder row's), which equals ½(height − icon) on every row.
     return h(
       "div",
       {},
-      h("div", { class: "an-svg", html: svg }),
+      chart,
       h("div", { class: "geom-an-cap" }, `${name} · cell ${s.height} · icon ${s.icon} · inset ½(${s.height}−${s.icon}) = ${s.inset}`),
     );
   }
 
 
   // icon & text vs control height across the ladder's distinct cell heights (15 of them over the 27 cells),
-  // ascending, against the faint height diagonal. fill:none on the lines. The empty check runs before any
+  // ascending, against the faint height diagonal. The empty check runs before any
   // cell read, so a scale with no cells renders "n/a".
   graphGeomPower(scale) {
     const names = orderedSizeNames(scale);
@@ -19104,22 +19319,28 @@ class GeomSectionImpl {
     const maxV = Math.max(...rows.map((s) => Math.max(s.icon, s.text, s.height))) * 1.05;
     const X = (hh) => pad + (hh / maxH) * (W - pad - 8);
     const Y = (v) => (H - pad + 8) - (v / maxV) * (H - pad - 8);
-    const path = (key) => "M" + rows.map((s) => `${X(s.height).toFixed(1)},${Y(s[key]).toFixed(1)}`).join(" L");
-    const dots = (key, cls) => rows.map((s) => `<circle class="${cls}" cx="${X(s.height).toFixed(1)}" cy="${Y(s[key]).toFixed(1)}" r="1.8"/>`).join("");
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        <path class="gp-ref" d="${path("height")}"/>
-        <path class="gp-icon" d="${path("icon")}"/>${dots("icon", "gp-dot gp-dot-icon")}
-        <path class="gp-font" d="${path("text")}"/>${dots("text", "gp-dot gp-dot-font")}
-        <text x="2" y="14">px</text>
-        <text x="${W - 44}" y="${H - pad + 18}">height→</text>
-      </svg>`;
+    const points = (key) => rows.map((s) => ({ x: X(s.height), y: Y(s[key]), v: [s.height, s[key]] }));
+    const chart = renderChart({
+      W, H,
+      series: [
+        { cls: "gp-ref", label: "height", stroke: STROKE.ref, points: points("height") },
+        { cls: "gp-icon", label: "icon", dot: 1.8, points: points("icon") },
+        { cls: "gp-font", label: "text", dot: 1.8, points: points("text") },
+      ],
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+      ],
+      labels: [
+        { text: "px", x: 2, y: 14 },
+        { text: "height→", x: W - 44, y: H - pad + 18 },
+      ],
+      columns: ["series", "height px", "px"],
+    });
     return h(
       "div",
       {},
-      h("div", { class: "an-svg", html: svg }),
+      chart,
       this.legend([{ mark: "gp ref", label: "height" }, { mark: "gp icon", label: "icon (ladder row)" }, { mark: "gp font", label: "text (UI text table)" }]),
     );
   }
@@ -19127,7 +19348,7 @@ class GeomSectionImpl {
 
   // control height per cell for each tier: the nine (scale, size) cells sm-sm … lg-lg on the x axis, one
   // line per tier (the kit's tier solid with dots, the other two dashed), so the three tier ladders and
-  // where the kit sits on them read at a glance. fill:none on the lines.
+  // where the kit sits on them read at a glance.
   graphGeomBands(scale) {
     const names = orderedSizeNames(scale);
     const tiers = Object.keys(TIERS).map((t) => [t, names.filter((n) => n.startsWith(t + "-"))]).filter(([, ns]) => ns.length > 1);
@@ -19136,21 +19357,24 @@ class GeomSectionImpl {
     const maxH = Math.max(...names.map((n) => scale.cells[n].height)) * 1.05;
     const X = (i, len) => pad + (i / (len - 1)) * (W - pad - 8);
     const Y = (hh) => (H - pad + 8) - (hh / maxH) * (H - pad - 8);
-    const line = ([t, ns]) => {
-      const d = "M" + ns.map((n, i) => `${X(i, ns.length).toFixed(1)},${Y(scale.cells[n].height).toFixed(1)}`).join(" L");
-      if (t !== scale.tier) return `<path class="gp-ref" d="${d}"/>`;
-      const dots = ns.map((n, i) => `<circle class="gp-dot gp-dot-font" cx="${X(i, ns.length).toFixed(1)}" cy="${Y(scale.cells[n].height).toFixed(1)}" r="1.9"/>`).join("");
-      return `<path class="gp-font" d="${d}"/>${dots}`;
-    };
-    const svg = `
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <line class="lc-axis" x1="${pad}" y1="8" x2="${pad}" y2="${H - pad + 8}"/>
-        <line class="lc-axis" x1="${pad}" y1="${H - pad + 8}" x2="${W - 6}" y2="${H - pad + 8}"/>
-        ${tiers.map(line).join("")}
-        <text x="2" y="14">px</text>
-        <text x="${W - 62}" y="${H - pad + 18}">sm-sm→lg-lg</text>
-      </svg>`;
-    return h("div", { class: "an-svg", html: svg });
+    const line = ([t, ns]) => ({
+      label: t,
+      ...(t === scale.tier ? { cls: "gp-font", dot: 1.9 } : { cls: "gp-ref", stroke: STROKE.ref }),
+      points: ns.map((n, i) => ({ x: X(i, ns.length), y: Y(scale.cells[n].height), v: [n, scale.cells[n].height] })),
+    });
+    return renderChart({
+      W, H,
+      series: tiers.map(line),
+      rules: [
+        { cls: "lc-axis", x1: pad, y1: 8, x2: pad, y2: H - pad + 8 },
+        { cls: "lc-axis", x1: pad, y1: H - pad + 8, x2: W - 6, y2: H - pad + 8 },
+      ],
+      labels: [
+        { text: "px", x: 2, y: 14 },
+        { text: "sm-sm→lg-lg", x: W - 62, y: H - pad + 18 },
+      ],
+      columns: ["tier", "cell", "height px"],
+    });
   }
 
 

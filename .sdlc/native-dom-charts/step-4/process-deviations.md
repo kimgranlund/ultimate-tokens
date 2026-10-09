@@ -1,0 +1,2 @@
+# Process deviations (written by redck.py audit; the verifier and filer read this file)
+process deviation: red-checkpoint: missing: attempt a8068a5bd4404f18808d17d786989ba0, handoff sha256 2f391e6bb9de, 3 of 3 (red) criteria without a pre-edit red control: `node --input-type=module -e 'const mk = (t) => ({ tagName: t.toUppe...`; `test -f test/repo/dom-charts.mjs && out=$(node test/repo/dom-charts...`; `! grep -qE 'an-svg|stroke' src/ui/styles.css && grep -qE '^[.]gp-re...`

@@ -1,0 +1,514 @@
+{
+  "domain": "technical-architecture",
+  "plan": true,
+  "nodes": [
+    {
+      "id": "n0",
+      "label": "match-peer-lightness mode (T-0040)",
+      "leaf": false,
+      "justify": "grouping"
+    },
+    {
+      "id": "n1",
+      "label": "engine: src/engine",
+      "leaf": false,
+      "justify": "grouping"
+    },
+    {
+      "id": "n1a",
+      "label": "tonal.js: DEFAULT_CONTROLS.matchPeerLightness (false) + sharedToneAt(stop, controls) helper (the palette-free CIELAB L* ladder per tone mode)",
+      "leaf": true,
+      "justify": null,
+      "accept": "node -e \"import('./src/engine/tonal.js').then(m=>{if(m.DEFAULT_CONTROLS.matchPeerLightness!==false||typeof m.sharedToneAt!=='function')process.exit(1)})\" exits 0 and node test/engine/controls.mjs exits 0"
+    },
+    {
+      "id": "n1b",
+      "label": "tonal.js paletteStopsAnchored: match branch (pivot = sharedToneAt(500), skew/lift 0 in anchorLerp, no stop-500 verbatim case, anchor hue + chroma basis kept)",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/engine/peer-lightness.mjs exits 0 (even leg) and node test/engine/anchor.mjs exits 0"
+    },
+    {
+      "id": "n1c",
+      "label": "tonal.js okhslStopsAnchored: match branch (l solved per stop for sharedToneAt via solveLForTone at the anchor's hue and enveloped s; t=0; peak cap kept)",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/engine/peer-lightness.mjs exits 0 (perceptual and peak legs) and node test/engine/anchor.mjs exits 0"
+    },
+    {
+      "id": "n1d",
+      "label": "tonal.js okhslStops + paletteStops unanchored: match branch (effStop/toneAt read skew 0 lift 0, t=0, hold to sharedToneAt)",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/engine/peer-lightness.mjs exits 0 (unanchored-variant leg) and node test/engine/tonal.mjs exits 0"
+    },
+    {
+      "id": "n1g",
+      "label": "src/engine/layers/ramp@1.mjs: verbatim frozen copy of today's tonal.js exporting paletteStops (imports hct.js/okhsl.js), SHA-256 in FROZEN.json",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/engine/layers.mjs exits 0 (c4.4-frozen) and `git diff --no-index <merge-base>:src/engine/tonal.js src/engine/layers/ramp@1.mjs` differs only in the header comment and import paths"
+    },
+    {
+      "id": "n1e",
+      "label": "layers.mjs + layer-pins.mjs: REGISTRY lists ramp@1 (frozen) and ramp@2 (live paletteStops); LATEST.ramp = 2; controls.inputs adds matchPeerLightness",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/engine/layers.mjs exits 0 and node test/engine/layer-pins.mjs exits 0 and src/engine/layer-pins.mjs reads `ramp: 2`"
+    },
+    {
+      "id": "n1f",
+      "label": "tonal.js (ramp@2): end-band rule in every tone mode, anchored or not: stops 050..100 and 900..950 at sharedToneAt(stop) with chroma = chromaFloor/100 x maxc(hue, L*); interior affinely remapped per side so 100/900 land on the shared values (anchorLerp with band-edge knots); OKHSL paths solve l and s (solveLForTone, solveSForChroma)",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/engine/peer-lightness.mjs exits 0 (extremes leg over the default kit and presets at ramp@2) and node test/engine/anchor.mjs exits 0 (C3 stop 500 verbatim, C5 monotone/gap/distinct)"
+    },
+    {
+      "id": "n2",
+      "label": "document: src/ui persist + model",
+      "leaf": false,
+      "justify": "grouping"
+    },
+    {
+      "id": "n2a",
+      "label": "persist.js: hydrate line `matchPeerLightness: s.matchPeerLightness === true` (the relChroma pattern at persist.js:746, no DOMAINS entry), CURRENT_SCHEMA_VERSION 11, RENAME_MAPS v11 entry (stamp-only)",
+      "leaf": true,
+      "justify": null,
+      "accept": "grep -q 'CURRENT_SCHEMA_VERSION = 11' src/ui/persist.js and node test/run.mjs exits 0"
+    },
+    {
+      "id": "n2b",
+      "label": "model.mjs: defaultDocument, docControls and stateOf carry matchPeerLightness",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/engine/layers.mjs exits 0 (DOC_KEYS vs controls.inputs) and node scripts/report-compute-neutral.mjs --base $(git merge-base origin/main HEAD) --only default-kit ends with '0 differing cells'"
+    },
+    {
+      "id": "n3",
+      "label": "UI: src/ui/sections/color.js Color inspector",
+      "leaf": false,
+      "justify": "grouping"
+    },
+    {
+      "id": "n3a",
+      "label": "global segmented row: 'Match peer lightness' Off/On beside Hue space, with helper text",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/ui/headless-boot.mjs exits 0 and its new lettered group toggles the control and reads doc.matchPeerLightness === true"
+    },
+    {
+      "id": "n3b",
+      "label": "per-palette Skew, Lift, Cusp pull and global Vibrancy sliders: hidden or annotated when the mode is on",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/ui/headless-boot.mjs exits 0 and the group asserts the Skew slider is absent or disabled with the mode on and present with it off"
+    },
+    {
+      "id": "n3c",
+      "label": "color.js: Chroma floor slider shown in every tone mode while the mode is on (it is the shared end fraction), with title text",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/ui/headless-boot.mjs exits 0 and the group asserts the Chroma floor slider is present in perceptual mode with the mode on and absent with it off"
+    },
+    {
+      "id": "n4",
+      "label": "tests and gates",
+      "leaf": false,
+      "justify": "grouping"
+    },
+    {
+      "id": "n4a",
+      "label": "test/engine/peer-lightness.mjs: cross-palette gate over the default kit, mode on, 3 tone modes: L* spread at all 25 stops plus Radix 12 steps both schemes, and at the extremes (stops 075/100/900/925/950) also the gamut fraction chroma/maxc re-measured from the pixel; mode-off readings printed; negative controls; registered in test/run.mjs",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/engine/peer-lightness.mjs exits 0 on head (L* spread <= 1.0 at every stop, extreme gamut fraction spread <= the stated tolerance), exits 1 on the merge-base tree (git worktree add --detach), prints the mode-off spread above its floor, and grep -q 'engine/peer-lightness.mjs' test/run.mjs"
+    },
+    {
+      "id": "n4b",
+      "label": "test/engine/anchor.mjs C3 and tonal.mjs vibrancy/cusp-pull: scoped to mode off, plus a mode-on negative control that stop 500 leaves the anchor and the yellow centre flattens",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/engine/anchor.mjs exits 0 and node test/engine/tonal.mjs exits 0 and both print the new mode-on control line"
+    },
+    {
+      "id": "n4c",
+      "label": "test/ui/headless-boot.mjs lettered group + smoke screenshot of the control",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/ui/headless-boot.mjs exits 0 and npm run smoke exits 0"
+    },
+    {
+      "id": "n4e",
+      "label": "re-baselined fixtures and declared movements: tonal-legacy.json, mode-isolation.json, shadcn-baseline.css, radix-baseline.json, Gate A basis (chroma-envelope-gate), even-dips, curated-contrast counts, adia derived exports; report-preset-fidelity declaration lines",
+      "leaf": true,
+      "justify": null,
+      "accept": "node test/run.mjs exits 0 after `npm run gen:*` and the regenerated fixtures are committed; the six `identity <mode>` lines of report-preset-fidelity match the plan's declared ramp@2 movement; report-compute-neutral --only default-kit with the kit re-pinned to ramp@1 ends with '0 differing cells'"
+    },
+    {
+      "id": "n4d",
+      "label": "neutrality and sweep runs (ramp-identity --authored, report-compute-neutral, gate:sweeps, build)",
+      "leaf": true,
+      "justify": null,
+      "accept": "node scripts/report-preset-fidelity.mjs --identity-control --migrate --authored --base $(git merge-base origin/main HEAD) ends with '0 differing cells'; node scripts/report-compute-neutral.mjs --base $(git merge-base origin/main HEAD) ends with '0 differing cells'; npm run gate:sweeps exits 0; npm run build exits 0"
+    },
+    {
+      "id": "n5",
+      "label": "records",
+      "leaf": false,
+      "justify": "grouping"
+    },
+    {
+      "id": "n5a",
+      "label": "docs/references/decision-records.md: ADR-035 before the Quick map + Quick-map row, scoping ADR-026 stop-500-verbatim and ADR-031 anchor-verbatim to mode off",
+      "leaf": true,
+      "justify": null,
+      "accept": "grep -c '^## ADR-035' docs/references/decision-records.md prints 1 and grep -q '| ADR-035 |' docs/references/decision-records.md and node test/repo/em-dash.mjs exits 0"
+    },
+    {
+      "id": "n5b",
+      "label": "knowledge-02 section 9 (exactness table scope), color-math SKILL line 42 claim, changelog entry",
+      "leaf": true,
+      "justify": null,
+      "accept": "grep -q 'matchPeerLightness' docs/references/knowledge-02-tonal-scale.md .claude/skills/color-math/SKILL.md docs/references/changelog.md (each) and node test/run.mjs exits 0"
+    },
+    {
+      "id": "n5c",
+      "label": "before/after board of the default kit and presets at ramp@1 vs ramp@2 (docs/reports/<date>-ramp2-extremes.md with smoke screenshots), shown to the user before landing",
+      "leaf": true,
+      "justify": null,
+      "accept": "the report file exists with the default-kit 25-stop table at both versions and the per-stop L* and tint readings, and the conductor records the user's acknowledgement in the plan"
+    }
+  ],
+  "actions": [
+    {
+      "id": "a1",
+      "label": "resolve the mode flag from a document, default off"
+    },
+    {
+      "id": "a2",
+      "label": "compute the palette-free CIELAB L* per stop for the current tone mode (the shared ladder)"
+    },
+    {
+      "id": "a3",
+      "label": "build an anchored even ramp on the shared ladder, keeping the anchor's hue and chroma basis at 500"
+    },
+    {
+      "id": "a4",
+      "label": "build an anchored perceptual or peak ramp on the shared ladder at the anchor's hue and saturation"
+    },
+    {
+      "id": "a5",
+      "label": "build an unanchored ramp on the shared ladder with skew, lift and cusp pull not moving lightness"
+    },
+    {
+      "id": "a6",
+      "label": "keep mode-off output byte-identical for every stored document and preset"
+    },
+    {
+      "id": "a7",
+      "label": "persist the flag: domain, schema bump, hydrate default false, round trip"
+    },
+    {
+      "id": "a8",
+      "label": "assemble the flag into a fresh document and the exporter-shaped state"
+    },
+    {
+      "id": "a9",
+      "label": "declare the flag as a controls-layer input without bumping any layer version"
+    },
+    {
+      "id": "a10",
+      "label": "toggle the mode in the Color inspector with a label and helper text"
+    },
+    {
+      "id": "a11",
+      "label": "show the user that Skew, Lift, Cusp pull and Vibrancy stop moving lightness while the mode is on"
+    },
+    {
+      "id": "a12",
+      "label": "prove cross-palette L* alignment with the mode on, over the default kit, in all three tone modes, and document the mode-off spread"
+    },
+    {
+      "id": "a13",
+      "label": "keep the anchor-verbatim, vibrancy and cusp-pull gates green at default and prove the mode moves them"
+    },
+    {
+      "id": "a14",
+      "label": "record the decision and amend the anchor-verbatim claims"
+    },
+    {
+      "id": "a15",
+      "label": "run the neutrality tools, the eight sweeps, build and smoke"
+    },
+    {
+      "id": "a16",
+      "label": "exercise the control in the headless shim and real Chrome"
+    },
+    {
+      "id": "a17",
+      "label": "Radix steps 9 to 12 and the 53 roles follow the matched ramp with no new mechanism"
+    },
+    {
+      "id": "a18",
+      "label": "keep the prime ladder and prime.DEFAULT verbatim (the anchor token stays exact)"
+    },
+    {
+      "id": "a19",
+      "label": "pin the near-white and near-black extremes of every palette to one shared L* and one shared fraction of the sRGB gamut at that L* (the tint reads equally), continuous with the interior ramp"
+    },
+    {
+      "id": "a20",
+      "label": "prove the extremes match with the mode on (L* and gamut fraction within the stated tolerance) and report them with the mode off"
+    },
+    {
+      "id": "a21",
+      "label": "let the user set the shared extreme tint in every tone mode while the mode is on"
+    },
+    {
+      "id": "a22",
+      "label": "decide extremes cannot be matched in the default mode without moving stored documents (record it)"
+    },
+    {
+      "id": "a23",
+      "label": "ship the extremes rule as ramp@2: a stored document keeps ramp@1 and renders byte-identically; a new document or preset pins ramp@2"
+    },
+    {
+      "id": "a24",
+      "label": "keep ramp@1 runnable and unedited (frozen copy, hash-gated)"
+    },
+    {
+      "id": "a25",
+      "label": "re-baseline every fixture and sweep that binds the default render, declaring the ramp@2 movement"
+    },
+    {
+      "id": "a26",
+      "label": "show the user the visible change to the default kit and presets before landing"
+    }
+  ],
+  "hosts": [
+    {
+      "action": "a1",
+      "node": "n1a"
+    },
+    {
+      "action": "a2",
+      "node": "n1a"
+    },
+    {
+      "action": "a3",
+      "node": "n1b"
+    },
+    {
+      "action": "a4",
+      "node": "n1c"
+    },
+    {
+      "action": "a5",
+      "node": "n1d"
+    },
+    {
+      "action": "a6",
+      "node": "n1b"
+    },
+    {
+      "action": "a6",
+      "node": "n1c"
+    },
+    {
+      "action": "a6",
+      "node": "n1d"
+    },
+    {
+      "action": "a6",
+      "node": "n4d"
+    },
+    {
+      "action": "a7",
+      "node": "n2a"
+    },
+    {
+      "action": "a8",
+      "node": "n2b"
+    },
+    {
+      "action": "a9",
+      "node": "n1e"
+    },
+    {
+      "action": "a10",
+      "node": "n3a"
+    },
+    {
+      "action": "a11",
+      "node": "n3b"
+    },
+    {
+      "action": "a12",
+      "node": "n4a"
+    },
+    {
+      "action": "a13",
+      "node": "n4b"
+    },
+    {
+      "action": "a14",
+      "node": "n5a"
+    },
+    {
+      "action": "a14",
+      "node": "n5b"
+    },
+    {
+      "action": "a15",
+      "node": "n4d"
+    },
+    {
+      "action": "a16",
+      "node": "n4c"
+    },
+    {
+      "action": "a17",
+      "node": "n4a"
+    },
+    {
+      "action": "a18",
+      "node": "n4b"
+    },
+    {
+      "action": "a19",
+      "node": "n1f"
+    },
+    {
+      "action": "a20",
+      "node": "n4a"
+    },
+    {
+      "action": "a21",
+      "node": "n3c"
+    },
+    {
+      "action": "a22",
+      "node": "n5a"
+    },
+    {
+      "action": "a6",
+      "node": "n1f"
+    },
+    {
+      "action": "a23",
+      "node": "n1f"
+    },
+    {
+      "action": "a23",
+      "node": "n1e"
+    },
+    {
+      "action": "a24",
+      "node": "n1g"
+    },
+    {
+      "action": "a25",
+      "node": "n4e"
+    },
+    {
+      "action": "a26",
+      "node": "n5c"
+    },
+    {
+      "action": "a22",
+      "node": "n5a"
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1a",
+      "to": "n1b",
+      "why": "the anchored even branch reads sharedToneAt and the flag"
+    },
+    {
+      "from": "n1a",
+      "to": "n1c",
+      "why": "the anchored OKHSL branch reads sharedToneAt and the flag"
+    },
+    {
+      "from": "n1a",
+      "to": "n1d",
+      "why": "the unanchored branches read sharedToneAt and the flag"
+    },
+    {
+      "from": "n1a",
+      "to": "n1e",
+      "why": "controls.inputs is checked against DEFAULT_CONTROLS keys"
+    },
+    {
+      "from": "n1a",
+      "to": "n2a",
+      "why": "DOMAINS defaults track DEFAULT_CONTROLS"
+    },
+    {
+      "from": "n1a",
+      "to": "n2b",
+      "why": "defaultDocument reads ENGINE_DEFAULT_CONTROLS"
+    },
+    {
+      "from": "n2b",
+      "to": "n3a",
+      "why": "the control commits doc.matchPeerLightness, which stateOf must carry to compute"
+    },
+    {
+      "from": "n1b",
+      "to": "n4a",
+      "why": "the gate measures the built ramps"
+    },
+    {
+      "from": "n1c",
+      "to": "n4a",
+      "why": "the gate measures the built ramps"
+    },
+    {
+      "from": "n1d",
+      "to": "n4a",
+      "why": "the gate measures the built ramps"
+    },
+    {
+      "from": "n4a",
+      "to": "n4d",
+      "why": "neutrality and sweeps run last, over the finished engine"
+    },
+    {
+      "from": "n1a",
+      "to": "n1f",
+      "why": "the end pin reads sharedToneAt and the flag"
+    },
+    {
+      "from": "n1f",
+      "to": "n4a",
+      "why": "the gate measures the pinned extremes"
+    },
+    {
+      "from": "n2b",
+      "to": "n3c",
+      "why": "the slider gate reads doc.matchPeerLightness"
+    },
+    {
+      "from": "n1g",
+      "to": "n1f",
+      "why": "freeze ramp@1 before tonal.js changes, so the copy is today's bytes"
+    },
+    {
+      "from": "n1g",
+      "to": "n1e",
+      "why": "the registry imports the frozen file"
+    },
+    {
+      "from": "n1f",
+      "to": "n4e",
+      "why": "fixtures re-baseline over the finished ramp@2"
+    },
+    {
+      "from": "n4e",
+      "to": "n5c",
+      "why": "the board reads the re-baselined render"
+    }
+  ]
+}

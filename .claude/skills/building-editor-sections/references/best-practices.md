@@ -4,14 +4,15 @@ The non-obvious do/don'ts (each one cost a real bug or review cycle), then a con
 
 ## Rendering
 
-- **The `fill: none` selector** (the rule itself is in the body): the series-color classes (`.x-sN`) are
-  shared by the line path AND the dot circles (the dots need `fill`), so a bare `.x-line { fill:none }`
-  loses to `.x-sN { fill }` on specificity+order. Qualify it: `.an-svg .x-line { fill: none }`
-  (0,2,0 > 0,1,0).
+- **The chart primitive** (the rule itself is in the body): a chart is a `renderChart(spec)` spec in
+  nominal px (`width`/`height` set the aspect-ratio box; marks land in percent inside it). Map data with
+  `scaleLinear` from `src/ui/charts/core.mjs`. Colour a series by setting `--series` (and `--dash` for a
+  dashed ribbon) on its series class, not per mark. The data rides in a visually hidden source table,
+  so give the spec a `title` and its `columns`.
 - **Quote interpolated font-family names** with digits/spaces: `font-family:'${fam}', ${generic}`. Unquoted,
   WebKit drops the declaration (`Source Serif 4`, the digit is invalid); Chrome tolerates it, so smoke
   won't catch it. There is a `typeTokensCSS` guard test for this; keep it.
-- **Reuse classes before adding CSS.** `.an-card`/`.an-svg`/`legend()` (analysis), `.insp-body`/`.insp-title`/
+- **Reuse classes before adding CSS.** `.an-card`/`.an-chart`/`legend()` (analysis), `.insp-body`/`.insp-title`/
   `.insp-sub`/`.insp-actions`/`.tyi-voices`/`.tyi-voice-stats` (inspector), `.seg-body`/`.seg-example`/
   `.pane-head` (shell). Geometry's inspector reuses `.tyi-voices` for its per-size summary with zero new
   CSS. Add a `.<x>-spec*` block only for the center scene, mirroring `.type-spec*`.
@@ -66,7 +67,7 @@ marked), the inspector on tier, scale, radius and space-base pickers, the mode e
 3. Center: `renderGeometryScene` = a `.geom-spec` with a **Controls** group (6 sizes as live `.geom-ctl`
    mock buttons at their real height/icon/font/pad/radius) + the Radius ladder + the Space scale; a
    Controls·Tokens header toggle drops the live boxes for metrics.
-4. Left: 4 `geomAnalysisCards`, centering-law square diagram, power-law curves (`fill:none`!), two-band
+4. Left: 4 `geomAnalysisCards`, centering-law square diagram, power-law curves, two-band
    ramp w/ MD|LG seam, the "font ← Type UI" composition.
 5. Right: `renderGeomInspector` = Ramp/Radius/Space tabs over `doc.geometry`; Ramp writes treatment +
    base-height (`this.slider`), shows the per-size summary read-only; pinned `.seg-example` MD control in

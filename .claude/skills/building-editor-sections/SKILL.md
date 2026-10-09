@@ -26,7 +26,7 @@ triplet, never invent a parallel shape. Depth in `references/`; this body is the
 | Center header | `renderCanvasHeader` | `renderTypeCanvasHeader` | `renderGeomCanvasHeader` | pane toggles · a view/mode segment · the shared `...this.canvasTools()` (fit · zoom, + Palette in Color; collapses into an overflow menu when it does not fit) |
 | Center canvas | `renderCanvasArea` | `renderTypeCanvas` | `renderGeomCanvas` | a `.canvas-area` + `.canvas-scene` (reuse `wirePanZoom` + `applyTransform`) |
 | Center scene | `renderRampsScene` | `renderTypographyScene` | `renderGeometryScene` | the **FULL** dataset (not a curated subset), in the brand's real color/font/mode |
-| Left analysis | `analysisCards` | `typeAnalysisCards` | `geomAnalysisCards` | `.an-card`/`.an-svg`/`legend()`, pure functions of the engine output, **no inputs** |
+| Left analysis | `analysisCards` | `typeAnalysisCards` | `geomAnalysisCards` | `.an-card`/`.an-chart` (`renderChart`)/`legend()`, pure functions of the engine output, **no inputs** |
 | Right inspector | `renderRightPane`(color body) | `renderTypeInspector` | `renderGeomInspector` | `.pane-head` segmented tabs + `.seg-body` + a pinned `.seg-example` live card |
 
 ## Procedure
@@ -39,8 +39,8 @@ triplet, never invent a parallel shape. Depth in `references/`; this body is the
    (e.g. a control's box and its text share one table: each Geometry cell's `text` ← the Type scale's
    height-indexed `uiText` via `geomScaleFor(doc, modeKey)`). Add a header view/mode segment if useful (e.g. Specimen·Tokens, Controls·Tokens).
 3. **Left = read-only diagnostics.** Pure functions of the resolved engine scale; reuse `.an-card`/
-   `.an-svg`/`legend()`. **SVG line charts MUST set `fill: none`** on the path class, qualified so a shared
-   series-color class can't override it (an open `<path>` fills by closing → wedge artifacts).
+   `.an-chart`/`legend()`. Charts are native DOM marks: build them with `renderChart(spec)`
+   (`src/ui/charts/render.mjs`), never an SVG string or an `html:` attribute (`test/repo/dom-charts.mjs`).
 4. **Right = control + live example.** Writable controls bind **only** to the section's persisted doc
    fields (e.g. `doc.geometry = {tier, scale, radius, spaceBase, modes?}`); engine-derived params are shown **read-only**
    (never fake an editable control the engine + persist can't carry, flag it out-of-scope instead). Pin a
@@ -135,7 +135,7 @@ Since T-0017 (ADR-032) the editor chrome sizes its controls from the Geometry la
 | Path | Use when |
 |---|---|
 | `references/foundations.md` | the workbench principle, the doc→view→render data flow, the `h()`/render/`_sync` model |
-| `references/best-practices.md` | the mechanics behind the body's rules (the fill:none selector, font-quoting, reuse-over-CSS, shim internals, retire-modal call sites) + worked walkthrough |
+| `references/best-practices.md` | the mechanics behind the body's rules (the chart primitive, font-quoting, reuse-over-CSS, shim internals, retire-modal call sites) + worked walkthrough |
 | `references/rubric.md` | score a built/evolved section before calling it done |
 | `docs/specs/app-shell.md` | the frame, its regions, the render pipeline, and the state that routes them |
 | `docs/references/component-inventory.md` | the shared primitives (`app-helpers.mjs`) a section builds from |
