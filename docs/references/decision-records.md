@@ -1380,8 +1380,8 @@ Format: Context → Decision → Rationale → Consequences → Status.
   `src/ui/sections/*.js`, no `innerHTML` in `src/ui/app-helpers.mjs`, and none in `src/ui/charts/*.mjs`.
   The `fill: none` rule and the `.an-svg` classes are gone; a new chart is a `renderChart` spec. Smoke
   covers the chart cards in light and dark for all three sections.
-- **Status.** PROPOSED 2026-10-08 (T-0029). Ratification is the owner's: the owner edits this line to
-  DECIDED, or amends the text under the file's amendment shape.
+- **Status.** DECIDED 2026-10-09 (T-0029), ratified by the owner (user ruling 2026-10-09). Amend the text
+  under the file's amendment shape.
 
 ## ADR-036: The editor shell's text roles, control anatomy, glyph motion and product-sm default cell
 - **Context.** T-0044. The editor chrome carried 591 literal text and geometry declarations in
@@ -1445,8 +1445,8 @@ Format: Context → Decision → Rationale → Consequences → Status.
   tokens; the headless (shg) group covers the tri-state; smoke checks compound containers and control
   polish at product-sm and content-lg in light and dark, control text at both, and the caret's reduced
   motion duration.
-- **Status.** PROPOSED 2026-10-09 (T-0044). Ratification is the owner's: the owner edits this line to
-  DECIDED, or amends the text under the file's amendment shape.
+- **Status.** DECIDED 2026-10-09 (T-0044), ratified by the owner (user ruling 2026-10-09). Amend the text
+  under the file's amendment shape.
 
 ## Quick map: decisions an enhancing agent is most likely to "fix" (don't)
 | ADR | Looks wrong because… | But it's intentional because… |
