@@ -60,7 +60,7 @@ Stable handles for the ui-plan clauses the shell realizes. These are the *what*;
 
 ---
 
-## 1. The frame: CSS grid (`renderEditor` `app.js:1406` · `.editor` `styles.css:403`)
+## 1. The frame: CSS grid (`renderEditor` `app.js:1406` · `.editor` `styles.css:421`)
 
 `renderEditor()` returns a `.editor` grid plus its overlay siblings (drawer, dialogs, toast). The grid
 is a fixed 3×3:
@@ -74,7 +74,7 @@ is a fixed 3×3:
     "header header header"
     "left   center right"
     "footer footer footer";
-  transition: grid-template-columns .18s ease; /* pane collapse animates the track */
+  transition: grid-template-columns var(--ui-motion-base) var(--ui-motion-ease); /* pane collapse animates the track */
 }
 .editor.left-collapsed  { grid-template-columns: 0 1fr 300px; }
 .editor.right-collapsed { grid-template-columns: 290px 1fr 0; }
@@ -82,9 +82,9 @@ is a fixed 3×3:
 ```
 
 Collapsing a pane is a **class on `.editor`** that zeroes one column track (`toggleLeftPane` `app.js:1510` /
-`toggleRightPane` `app.js:1507`); the `.18s` transition on `grid-template-columns` animates it. The
+`toggleRightPane` `app.js:1507`); the glyph motion base duration (`--ui-motion-base`, 180ms) on `grid-template-columns` animates it. The
 pane element stays in the DOM (`.left-pane` keeps its box, its padding/border zero out,
-`styles.css:562`), collapse is layout,
+`styles.css:583`), collapse is layout,
 not teardown.
 
 ### 1.1 Editor shell wireframe

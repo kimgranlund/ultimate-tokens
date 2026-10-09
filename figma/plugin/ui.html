@@ -244,6 +244,10 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .ic { display: inline-flex; align-items: center; flex: none; vertical-align: middle; }
 .ic svg { display: block; }
 .ic.flip-x svg { transform: scaleX(-1); }   /* mirror (e.g. the right-pane sidebar toggle) */
+/* the disclosure caret (icon("caret-down", { cls: "caret" }), the CONTROL_ANATOMY trigger row): it turns over
+   when its trigger opens, on the glyph motion set; the reduced-motion rules above collapse the duration */
+.caret { flex: none; transition: transform var(--ui-motion-fast) var(--ui-motion-ease); }
+[aria-expanded="true"] > .caret { transform: rotate(180deg); }
 /* non-button focusables (the ●/○ enable toggle is a role=button span) */
 [role="button"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: var(--r-sm); }
 button:disabled, button[disabled] {
@@ -438,7 +442,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
     "header header header"
     "left   center right"
     "footer footer footer";
-  transition: grid-template-columns .18s ease;
+  transition: grid-template-columns var(--ui-motion-base) var(--ui-motion-ease);
 }
 /* Collapsible side panes: the toggles add these modifiers, which drive the side column to 0.
    The center column (1fr) reclaims the space as the track animates closed. The pane only truly
@@ -1105,12 +1109,12 @@ input[type="range"]::-moz-range-thumb {
 .toggle .track {
   inline-size: calc(1.75 * var(--sh-control-icon)); block-size: var(--sh-control-icon);
   border-radius: calc(var(--sh-control-icon) / 2); background: var(--line);
-  position: relative; transition: background .12s;
+  position: relative; transition: background var(--ui-motion-fast) var(--ui-motion-ease);
 }
 .toggle .track::after {
   content: ""; position: absolute; top: var(--ui-edge); left: var(--ui-edge);
   width: var(--ctl-thumb); height: var(--ctl-thumb); border-radius: 50%; background: #fff;
-  box-shadow: var(--shadow); transition: transform .12s;
+  box-shadow: var(--shadow); transition: transform var(--ui-motion-fast) var(--ui-motion-ease);
 }
 .toggle.on .track { background: var(--accent); }
 .toggle.on .track::after { transform: translateX(calc(0.75 * var(--sh-control-icon))); }
@@ -1285,7 +1289,7 @@ dialog.newpal::backdrop { background: rgba(10,14,22,.34); }
   width: 32px; height: 32px; padding: 0; flex: none;
   border-radius: var(--r-sm); border: 1px solid var(--line);
   box-shadow: inset 0 0 0 1px rgba(0,0,0,.12);
-  opacity: .42; transition: opacity .12s, box-shadow .12s; /* excluded reads dimmer */
+  opacity: .42; transition: opacity var(--ui-motion-fast) var(--ui-motion-ease), box-shadow var(--ui-motion-fast) var(--ui-motion-ease); /* excluded reads dimmer */
 }
 .newpal-chip:hover:not(:disabled) { opacity: .75; }
 .newpal-chip.on { opacity: 1; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
@@ -1554,6 +1558,7 @@ a.account-manage:hover { text-decoration: underline; }
 .tyi-voice.is-sel { border-color: var(--accent, #5b9dff); }
 /* the voice header is a select-to-expand button */
 .tyi-voice-name { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sh-control-inset); width: 100%; border: 0; background: transparent; color: inherit; padding: 0; cursor: pointer; font: var(--ui-control-font); text-align: left; }
+.tyi-voice-name > .caret { align-self: center; } /* the header's caret, after the font name (which takes the free space) */
 .tyi-voice-name:hover .tyi-voice-label { color: var(--accent, #5b9dff); }
 .tyi-voice-name:focus-visible { outline: 2px solid var(--accent, #5b9dff); outline-offset: 2px; border-radius: var(--sh-radius-mark); }
 .tyi-voice-dot { color: var(--accent, #5b9dff); }
@@ -1567,7 +1572,7 @@ a.account-manage:hover { text-decoration: underline; }
 .tyi-weight-num { width: 64px; }
 .tyi-weights-actions { display: flex; gap: 6px; }
 .tyi-weights-core { color: var(--c-on-surface-variant); font-weight: var(--ui-weight-regular); }
-.tyi-voice-font { font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.tyi-voice-font { margin-inline-start: auto; font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case); color: var(--ui-helper-ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .tyi-voice-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px 16px; margin: 8px 0 0; }
 .tyi-voice-stats > div { display: flex; align-items: baseline; justify-content: space-between; }
 .tyi-voice-stats dt { font: var(--ui-label-font); letter-spacing: var(--ui-label-tracking); text-transform: var(--ui-label-case); color: var(--ui-label-ink); margin: 0; }
@@ -1693,7 +1698,7 @@ a.account-manage:hover { text-decoration: underline; }
   position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(20px);
   background: var(--ink); color: var(--bg);
   padding: 9px 16px; border-radius: var(--r); box-shadow: var(--shadow-lg);
-  z-index: 60; opacity: 0; transition: opacity .15s, transform .15s; font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case);
+  z-index: 60; opacity: 0; transition: opacity var(--ui-motion-fast) var(--ui-motion-ease), transform var(--ui-motion-fast) var(--ui-motion-ease); font: var(--ui-helper-font); letter-spacing: var(--ui-helper-tracking); text-transform: var(--ui-helper-case);
   pointer-events: none;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -1737,34 +1742,38 @@ a.account-manage:hover { text-decoration: underline; }
 .icon-tile-lic { opacity: .7; }
 .icon-custom-name, .icon-custom-variant { min-width: 180px; }
 
-/* Select trigger (T-0036): the native look is dropped (appearance none) so it reads as a sibling of the text
-   input rule at the top (`input[type="text"], ..., select`): control height / inset / radius / text roles, token colors, and a DRAWN chevron (two gradient
-   triangles, so it follows --select-chevron and survives dark mode, WebKit and Blink alike). The end padding
-   reserves the chevron's lane; every select class below that re-sets padding-inline keeps padding-inline-end. */
+/* Select trigger (T-0036, T-0044): the native look is dropped (appearance none) so it reads as a sibling of the text
+   input rule at the top (`input[type="text"], ..., select`): control height / inset / radius / text roles, token colors,
+   and a DRAWN caret, the caret-down glyph (icons.js ICONS["caret-down"], its 176 by 96 box) at 0.6 of the control icon
+   (CONTROL_ANATOMY select). A native select takes no child and a data-URI cannot read a var, so --select-caret holds one
+   data-URI per scheme filled with the chrome's --ink-dim (the default theme's neutral 750 light, 250 dark; ui-polish pins
+   both fills and the path), and the kit specimen sets its own from its palette (app.js exampleForm, icons.js selectCaret).
+   The end padding reserves the caret's lane; every select class below that re-sets padding-inline keeps padding-inline-end. */
+ultimate-tokens { --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='40 88 176 96'%3E%3Cpath fill='%232C303C' d='M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,48,88H208a8,8,0,0,1,5.66,13.66Z'/%3E%3C/svg%3E"); }
+ultimate-tokens[data-theme="dark"] { --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='40 88 176 96'%3E%3Cpath fill='%23ACB4C5' d='M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,48,88H208a8,8,0,0,1,5.66,13.66Z'/%3E%3C/svg%3E"); }
+@media (prefers-color-scheme: dark) {
+  ultimate-tokens[data-theme="system"] { --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='40 88 176 96'%3E%3Cpath fill='%23ACB4C5' d='M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,48,88H208a8,8,0,0,1,5.66,13.66Z'/%3E%3C/svg%3E"); }
+}
 select {
   -webkit-appearance: none; appearance: none;
   --select-lane: calc(var(--sh-control-icon) + var(--sh-control-inset));
   padding-inline-end: var(--select-lane);
   text-overflow: ellipsis; white-space: nowrap; cursor: pointer;
   background-color: var(--panel-2);
-  background-image:
-    linear-gradient(45deg, transparent 50%, var(--select-chevron, var(--ink-dim)) 50%),
-    linear-gradient(135deg, var(--select-chevron, var(--ink-dim)) 50%, transparent 50%);
-  background-size: calc(var(--sh-control-icon) * 0.3) calc(var(--sh-control-icon) * 0.3);
+  background-image: var(--select-caret);
+  background-size: calc(var(--sh-control-icon) * 0.6) calc(var(--sh-control-icon) * 0.6 * 96 / 176);
   background-repeat: no-repeat;
-  background-position:
-    calc(100% - var(--sh-control-inset) - var(--sh-control-icon) * 0.3) 50%,
-    calc(100% - var(--sh-control-inset)) 50%;
+  background-position: right var(--sh-control-inset) center;
 }
 select:disabled { opacity: .4; cursor: default; pointer-events: none; }
-/* the compact select: the same lane and chevron at the chip row (the badge glyph box and the chip inset) */
+/* the compact select: the same lane and caret at the chip row (the badge glyph box and the chip inset) */
 .map-raw-select {
   --select-lane: calc(var(--ui-badge-icon, 11px) + var(--sh-chip-inset));
   padding-inline-end: var(--select-lane);
-  background-position: calc(100% - var(--sh-chip-inset) - var(--ui-badge-icon, 11px) * 0.3) 50%, calc(100% - var(--sh-chip-inset)) 50%;
-  background-size: calc(var(--ui-badge-icon, 11px) * 0.3) calc(var(--ui-badge-icon, 11px) * 0.3);
+  background-position: right var(--sh-chip-inset) center;
+  background-size: calc(var(--ui-badge-icon, 11px) * 0.6) calc(var(--ui-badge-icon, 11px) * 0.6 * 96 / 176);
 }
-.ex-select { padding-inline-end: var(--select-lane); } /* the preview select: .ex-input's padding shorthand would drop the chevron lane */
+.ex-select { padding-inline-end: var(--select-lane); } /* the preview select: .ex-input's padding shorthand would drop the caret lane */
 </style></head>
 <body><ultimate-tokens></ultimate-tokens>
 <script type="module">
@@ -13442,6 +13451,9 @@ __M.icons = (function(){
 // icon(name, { size, cls }) -> a <span class="ic"> wrapping an inline <svg fill="currentColor">,
 // so every icon inherits the surrounding text color and aligns on the baseline. Dependency-free
 // (it builds via document directly), so it bundles ahead of app.js without needing its h() helper.
+// `size` names the glyph box (T-0044, shell-roles.mjs CONTROL_ANATOMY): omitted or "control" follows
+// the shell's --sh-control-icon role, "badge" the compact row's --ui-badge-icon; a number pins a px box
+// (the gallery and the kit-cell specimens, which are not the shell chrome).
 
 const ICONS = {
   "arrow-counter-clockwise": "<path d=\"M224,128a96,96,0,0,1-94.71,96H128A95.38,95.38,0,0,1,62.1,197.8a8,8,0,0,1,11-11.63A80,80,0,1,0,71.43,71.39a3.07,3.07,0,0,1-.26.25L44.59,96H72a8,8,0,0,1,0,16H24a8,8,0,0,1-8-8V56a8,8,0,0,1,16,0V85.8L60.25,60A96,96,0,0,1,224,128Z\"/>",
@@ -13473,28 +13485,39 @@ const ICONS = {
   // caret-left is the Phosphor FILL weight (a SOLID triangle), carets are affordance marks; the solid form
   // reads clearer than the thin regular chevron. (The rest of the registry is regular weight.)
   "caret-left": "<path d=\"M168,48V208a8,8,0,0,1-13.66,5.66l-80-80a8,8,0,0,1,0-11.32l80-80A8,8,0,0,1,168,48Z\"/>",
+  // caret-down (fill, the same family): the disclosure caret that rotates on [aria-expanded="true"]; styles.css
+  // draws the native select's caret from this same path (a data-URI, --select-caret).
+  "caret-down": "<path d=\"M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,48,88H208a8,8,0,0,1,5.66,13.66Z\"/>",
   // calendar-blank (regular), the concrete leading glyph in the Geometry control specimen.
   "calendar-blank": "<path d=\"M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32Zm0,16V80H48V48ZM48,208V96H208V208Z\"/>",
 };
 
-// An explicit `size` sizes the svg by its attributes alone, so it holds and a stylesheet rule can still
-// override it; without one the svg follows the shell's --sh-control-icon role.
+// selectCaret(fill), the native select's caret as a CSS url(): the caret-down path cropped to its 176 by 96
+// box and filled with `fill` (a data-URI cannot read a var). styles.css holds the chrome's two (light, dark);
+// the kit specimen select (app.js exampleForm) sets --select-caret from its own palette with this.
+const selectCaret = (fill) => `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='40 88 176 96'%3E%3Cpath fill='${String(fill).replace(/#/g, "%23")}' d='${ICONS["caret-down"].match(/d="([^"]+)"/)[1]}'/%3E%3C/svg%3E")`;
+
+// A numeric `size` sizes the svg by its attributes alone, so it holds and a stylesheet rule can still
+// override it; "badge" follows the compact row's --ui-badge-icon; no size (or "control") follows the
+// shell's --sh-control-icon role.
+const ROLE_BOX = { control: ["16", "--sh-control-icon, 16px"], badge: ["11", "--ui-badge-icon, 11px"] };
 function icon(name, opts = {}) {
-  const { size = 16, cls = "" } = opts;
+  const { size = "control", cls = "" } = opts;
   const el = document.createElement("span");
   el.className = "ic" + (cls ? " " + cls : "");
   el.setAttribute("aria-hidden", "true");
   const path = ICONS[name];
-  const sizing = Object.prototype.hasOwnProperty.call(opts, "size")
-    ? `width="${size}" height="${size}"`
-    : `width="${size}" height="${size}" style="width:var(--sh-control-icon, 16px);height:var(--sh-control-icon, 16px)"`;
+  const role = ROLE_BOX[size];
+  const sizing = role
+    ? `width="${role[0]}" height="${role[0]}" style="width:var(${role[1]});height:var(${role[1]})"`
+    : `width="${size}" height="${size}"`;
   el.innerHTML = path
     ? `<svg viewBox="0 0 256 256" ${sizing} fill="currentColor" aria-hidden="true">${path}</svg>`
     : "";
   return el;
 }
 
-return { ICONS, icon };
+return { ICONS, selectCaret, icon };
 })();
 __M.dataHues = (function(){
 // data-hues.mjs: PURE derivation of the `count` (default 8) evenly-spaced DATA-family hues
@@ -15896,7 +15919,7 @@ class ColorSectionImpl {
           h("span", { class: "an-thresh", title: "4.5:1 minimum" }),
           h("span", { class: "an-fill" + (pass ? "" : " bad"), style: `width:${pct.toFixed(0)}%` }),
         ),
-        h("b", { class: pass ? "pass" : "fail" }, ratio.toFixed(2) + " ", icon(pass ? "check" : "warning", { size: 12 })),
+        h("b", { class: pass ? "pass" : "fail" }, ratio.toFixed(2) + " ", icon(pass ? "check" : "warning", { size: "badge" })),
       );
     };
     return h(
@@ -16676,7 +16699,7 @@ class ColorSectionImpl {
                   this.commit((d) => (d.palettes[i].on = !(d.palettes[i].on !== false)));
                 },
               },
-              icon(p.on !== false ? "dot" : "circle", { size: 13 }),
+              icon(p.on !== false ? "dot" : "circle", { size: "badge" }),
             ),
             h("span", { class: "ramp-name" }, vp.name, h("small", {}, `${stops.length} stops`)),
           ),
@@ -16715,7 +16738,7 @@ class ColorSectionImpl {
                 this.commit((d) => (d.palettes[i].on = true));
               },
             },
-            icon("circle", { size: 13 }),
+            icon("circle", { size: "badge" }),
           ),
           h("span", { class: "ramp-name off" }, p.name || "(unnamed)", h("small", {}, "disabled")),
         ),
@@ -16964,7 +16987,7 @@ class ColorSectionImpl {
                   this.commit((d) => (d.palettes[i].on = !(d.palettes[i].on !== false)));
                 },
               },
-              icon(p.on !== false ? "dot" : "circle", { size: 13 }),
+              icon(p.on !== false ? "dot" : "circle", { size: "badge" }),
             ),
             h("span", { class: "ramp-name" }, vp.name, h("small", {}, `500 base · ${stops.length} scrims`)),
           ),
@@ -17053,8 +17076,8 @@ class ColorSectionImpl {
       const st = this.driftStatus(n + "/" + padRef(ref), hex);
       const title = { match: "Matches the file", drift: "Drifted from the file", absent: "Not in the file" }[st]
         || "Click Read live to compare with the file";
-      const mark = st === "match" ? icon("check", { size: 12 })
-        : st === "drift" ? icon("x", { size: 12 })
+      const mark = st === "match" ? icon("check", { size: "badge" })
+        : st === "drift" ? icon("x", { size: "badge" })
         : st === "absent" ? "n/a" : "·";
       return h("td", { class: "map-file" }, h("span", { class: "map-drift map-drift-" + (st || "none"), title }, mark));
     };
@@ -17103,7 +17126,7 @@ class ColorSectionImpl {
           "td",
           { class: "map-raw" },
           rawEditor(r, mode, ref, overridden),
-          overridden ? btn(icon("arrow-counter-clockwise", { size: 13 }), { variant: "bare", cls: "map-reset", title: "Reset to canonical", ariaLabel: "Reset to canonical", onclick: () => this.clearRoleOverride(r.key, mode) }) : false,
+          overridden ? btn(icon("arrow-counter-clockwise", { size: "badge" }), { variant: "bare", cls: "map-reset", title: "Reset to canonical", ariaLabel: "Reset to canonical", onclick: () => this.clearRoleOverride(r.key, mode) }) : false,
         ),
         this.inFigma ? driftCell(ref, hex) : false, // drift vs the live Figma variable (#3)
       );
@@ -18449,7 +18472,7 @@ class TypeSectionImpl {
             "aria-label": `${cat} ${step} size · ${col.name} (px)`,
             onchange: (e) => this.setTypeTokenOverride(cat, step, col.modeKey, e.target.value),
           }),
-          overridden ? btn(icon("arrow-counter-clockwise", { size: 12 }), { variant: "bare", cls: "tok-reset", title: "Reset to derived size", ariaLabel: `Reset ${cat} ${step} · ${col.name} to the derived size`, onclick: () => this.clearTypeTokenOverride(cat, step, col.modeKey) }) : false,
+          overridden ? btn(icon("arrow-counter-clockwise", { size: "badge" }), { variant: "bare", cls: "tok-reset", title: "Reset to derived size", ariaLabel: `Reset ${cat} ${step} · ${col.name} to the derived size`, onclick: () => this.clearTypeTokenOverride(cat, step, col.modeKey) }) : false,
         ),
         h("span", { class: "tok-sub" }, `${s.lineHeight} · w${s.weight} · ${tr}`),
       );
@@ -18619,6 +18642,7 @@ class TypeSectionImpl {
                 onclick: () => { this.typeVoice = sel ? null : cName; this.render(); } },
               h("span", { class: "tyi-voice-label" }, cName, tuned ? h("span", { class: "tyi-voice-dot", title: "Tuned off the treatment" }, " ●") : false),
               h("span", { class: "tyi-voice-font" }, this._resolvedFont(scale, cName)),
+              icon("caret-down", { cls: "caret" }),
             ),
             sel
               ? h(
@@ -20816,7 +20840,7 @@ class ApplyGateMixinImpl {
         h(
           "div",
           { class: "apply-gate-warn" },
-          icon("warning", { size: 16 }),
+          icon("warning"),
           h("div", {}, h("b", {}, "Back up your file first."), " Duplicate the file (or the collections) before applying, so you can roll back if a mapping overwrites something you meant to keep."),
         ),
         // TKT-0020: the Geometry/Type changed-value count (collections-arch review C2), a hand-tweaked
@@ -21448,7 +21472,7 @@ const { FIGMA_MIGRATIONS, kebabWaveVarRenames, kebabWaveColorRenames } = __M.fig
 const { COLLECTIONS } = __M.collections;
 const { stylePlans } = __M.stylePlan;
 const { ICON_SYSTEMS, iconSystem, iconSystemById, iconSystemLabel } = __M.iconSystems;
-const { icon } = __M.icons;
+const { icon, selectCaret } = __M.icons;
 const { shellRolesCSS } = __M.shellRoles;
 const { CANVAS_INSET, MODE_WIDTH_PRESETS, PROJECT_KEY, PRO_EXPORT_FORMATS, SCHEME_ICON, SCHEME_NEXT, ago, btn, chip, defaultLicenseService, ensureAppTheme, ensureTypeFonts, field, fmt, h, hydrateConfig, hydrateStoredDoc, licenseInstanceName, loadProfile, loadSets, migrateStorageKeys, newSet, posterStripBands, sanitizeSetRecords, saveProfile, saveSets, setColorScheme, swatch } = __M.appHelpers;
 const { ColorSection } = __M.colorSection;
@@ -23502,7 +23526,7 @@ class HctApp extends HTMLElement {
         document.createTextNode(`x:${xy.x} y:${xy.y} · ${z}% · `),
         h("span", { class: "sw", style: `background:${this.hover.hex}` }),
         document.createTextNode(`${this.hover.hex} · tone ${fmt(this.hover.tone)} · `),
-        icon(this.hover.inGamut ? "check" : "x", { size: 12 }),
+        icon(this.hover.inGamut ? "check" : "x", { size: "badge" }),
         document.createTextNode(this.hover.inGamut ? " in-gamut" : " out-of-gamut"),
       );
     } else {
@@ -23623,7 +23647,7 @@ class HctApp extends HTMLElement {
         { class: "ex-form-row", style: "color:" + pick(byKey.onSurfaceVariant) },
         h("label", {}, h("input", { type: "checkbox", checked: "checked", tabindex: "-1", "aria-hidden": "true", style: "accent-color:" + accent }), "Checkbox"),
         h("label", {}, h("input", { type: "radio", checked: "checked", tabindex: "-1", "aria-hidden": "true", style: "accent-color:" + accent }), "Radio"),
-        h("select", { tabindex: "-1", "aria-hidden": "true", class: "ex-input ex-select", style: fieldStyle + ";--select-chevron:" + pick(byKey.onSurfaceVariant) }, h("option", {}, "Select")),
+        h("select", { tabindex: "-1", "aria-hidden": "true", class: "ex-input ex-select", style: fieldStyle + ";--select-caret:" + selectCaret(pick(byKey.onSurfaceVariant)) }, h("option", {}, "Select")),
       ),
     );
   }
@@ -23658,6 +23682,7 @@ class HctApp extends HTMLElement {
         onclick: () => { this.examplesExpanded = !this.examplesExpanded; this.liveRefresh(); },
       },
       this.examplesExpanded ? "Show less" : `Show ${artifacts.length - 1} more examples`,
+      icon("caret-down", { cls: "caret" }),
     );
     return [...schemes, toggle];
   }
@@ -23803,7 +23828,7 @@ class HctApp extends HTMLElement {
     if (save) {
       const dirty = this.isDirty();
       save.className = dirty ? "af-save dirty" : "af-save saved";
-      save.replaceChildren(icon(dirty ? "dot" : "check", { size: 12 }), dirty ? " unsaved" : " saved");
+      save.replaceChildren(icon(dirty ? "dot" : "check", { size: "badge" }), dirty ? " unsaved" : " saved");
     }
 
     const warn = this.querySelector(".app-footer .af-warn");

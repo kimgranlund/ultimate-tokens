@@ -49,7 +49,7 @@ import { FIGMA_MIGRATIONS, kebabWaveVarRenames, kebabWaveColorRenames } from "..
 import { COLLECTIONS } from "../engine/collections.js";
 import { stylePlans } from "../../figma/binder/style-plan.mjs";
 import { ICON_SYSTEMS, iconSystem, iconSystemById, iconSystemLabel } from "../engine/icon-systems.mjs";
-import { icon } from "./icons.js";
+import { icon, selectCaret } from "./icons.js";
 import { shellRolesCSS } from "./shell-roles.mjs";
 import { CANVAS_INSET, MODE_WIDTH_PRESETS, PROJECT_KEY, PRO_EXPORT_FORMATS, SCHEME_ICON, SCHEME_NEXT, ago, btn, chip, defaultLicenseService, ensureAppTheme, ensureTypeFonts, field, fmt, h, hydrateConfig, hydrateStoredDoc, licenseInstanceName, loadProfile, loadSets, migrateStorageKeys, newSet, posterStripBands, sanitizeSetRecords, saveProfile, saveSets, setColorScheme, swatch } from "./app-helpers.mjs";
 import { ColorSection } from "./sections/color.js";
@@ -2103,7 +2103,7 @@ class HctApp extends HTMLElement {
         document.createTextNode(`x:${xy.x} y:${xy.y} · ${z}% · `),
         h("span", { class: "sw", style: `background:${this.hover.hex}` }),
         document.createTextNode(`${this.hover.hex} · tone ${fmt(this.hover.tone)} · `),
-        icon(this.hover.inGamut ? "check" : "x", { size: 12 }),
+        icon(this.hover.inGamut ? "check" : "x", { size: "badge" }),
         document.createTextNode(this.hover.inGamut ? " in-gamut" : " out-of-gamut"),
       );
     } else {
@@ -2224,7 +2224,7 @@ class HctApp extends HTMLElement {
         { class: "ex-form-row", style: "color:" + pick(byKey.onSurfaceVariant) },
         h("label", {}, h("input", { type: "checkbox", checked: "checked", tabindex: "-1", "aria-hidden": "true", style: "accent-color:" + accent }), "Checkbox"),
         h("label", {}, h("input", { type: "radio", checked: "checked", tabindex: "-1", "aria-hidden": "true", style: "accent-color:" + accent }), "Radio"),
-        h("select", { tabindex: "-1", "aria-hidden": "true", class: "ex-input ex-select", style: fieldStyle + ";--select-chevron:" + pick(byKey.onSurfaceVariant) }, h("option", {}, "Select")),
+        h("select", { tabindex: "-1", "aria-hidden": "true", class: "ex-input ex-select", style: fieldStyle + ";--select-caret:" + selectCaret(pick(byKey.onSurfaceVariant)) }, h("option", {}, "Select")),
       ),
     );
   }
@@ -2259,6 +2259,7 @@ class HctApp extends HTMLElement {
         onclick: () => { this.examplesExpanded = !this.examplesExpanded; this.liveRefresh(); },
       },
       this.examplesExpanded ? "Show less" : `Show ${artifacts.length - 1} more examples`,
+      icon("caret-down", { cls: "caret" }),
     );
     return [...schemes, toggle];
   }
@@ -2404,7 +2405,7 @@ class HctApp extends HTMLElement {
     if (save) {
       const dirty = this.isDirty();
       save.className = dirty ? "af-save dirty" : "af-save saved";
-      save.replaceChildren(icon(dirty ? "dot" : "check", { size: 12 }), dirty ? " unsaved" : " saved");
+      save.replaceChildren(icon(dirty ? "dot" : "check", { size: "badge" }), dirty ? " unsaved" : " saved");
     }
 
     const warn = this.querySelector(".app-footer .af-warn");

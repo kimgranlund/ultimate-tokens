@@ -2254,13 +2254,17 @@ ok(hasSvgIcon(findFk("pane-left")), "(ic) the pane toggle renders an inline-SVG 
 ok(hasSvgIcon(app.querySelector(".app-header")), "(ic) the app-header controls (Undo/Redo/Export/theme) carry registry icons");
 ok(hasSvgIcon(app.querySelector(".canvas-header")), "(ic) the canvas-header controls (Fit/zoom/+Palette) carry registry icons");
 
-// ── (ics) icon sizing: no size follows the shell's --sh-control-icon; an explicit size holds by attributes ──
+// ── (ics) icon sizing: no size follows the shell's --sh-control-icon, "badge" the --ui-badge-icon; a number holds by attributes ──
 {
   const { icon: iconICS } = await import("../../src/ui/icons.js");
   const plain = iconICS("x").innerHTML;
   ok(plain.includes("var(--sh-control-icon, 16px)"), `(ics1) icon("x")'s svg style follows var(--sh-control-icon, 16px) (got ${plain.slice(0, 160)})`);
   const sized = iconICS("x", { size: 13 }).innerHTML;
   ok(/<svg[^>]* width="13"/.test(sized) && !sized.includes("--sh-control-icon") && !/<svg[^>]* style=/.test(sized), `(ics2) icon("x", { size: 13 })'s svg has width="13" and no --sh-control-icon style (got ${sized.slice(0, 160)})`);
+  const badge = iconICS("x", { size: "badge" }).innerHTML;
+  ok(/<svg[^>]* style="[^"]*var\(--ui-badge-icon, 11px\)/.test(badge) && !badge.includes("--sh-control-icon"), `(ics3) icon("x", { size: "badge" })'s svg style follows var(--ui-badge-icon, 11px) (got ${badge.slice(0, 160)})`);
+  const caret = iconICS("caret-down", { cls: "caret" });
+  ok(String(caret.tagName).toLowerCase() === "span" && caret.className === "ic caret" && /<svg[^>]*>\s*<path d="M213\.66,101\.66/.test(caret.innerHTML), `(ics4) icon("caret-down", { cls: "caret" }) is a span.ic.caret holding the caret-down svg path (got ${caret.className}: ${String(caret.innerHTML).slice(0, 120)})`);
 }
 
 // ── (mig) storage-key migration: BOTH pre-rename generations forward-migrate into the new namespace ──

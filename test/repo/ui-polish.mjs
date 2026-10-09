@@ -5,6 +5,8 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
+import { selectCaret } from "../../src/ui/icons.js";
+import { appThemeCSS } from "../../src/ui/model.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const CSS = readFileSync(process.argv[2] ? resolve(process.argv[2]) : join(ROOT, "src", "ui", "styles.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
@@ -21,11 +23,19 @@ const decl = (b, prop) => {
 };
 
 const APP = readFileSync(join(ROOT, "src", "ui", "app.js"), "utf8");
+// the chrome's --ink-dim per scheme: --c-neutral-on-surface-variant is light-dark(neutral-750, neutral-250) in the boot theme
+const THEME = appThemeCSS();
+const neutral = (stop) => (THEME.match(new RegExp(`--c-neutral-${stop}:\\s*([^;]+);`)) || [])[1];
+const esc = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+// the rule bodies whose selector is not the gallery or a specimen (the motion allow-list)
+const GALLERY = [".tile", ".category-", ".gallery-", ".set-", ".new-tile", ".preset-", ".masthead", ".ex-", ".geom-ex-"];
+const shellRules = (css) => [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => [m[1].trim().replace(/\s+/g, " "), m[2]]).filter(([sel]) => !GALLERY.some((a) => sel.includes(a)));
+const transitions = (css) => shellRules(css).flatMap(([sel, b]) => b.split(";").filter((d) => /^\s*transition\s*:/.test(d)).map((d) => [sel, d.trim()]));
 const RANGE = 'input[type="range"]';
 const CHECKS = [
-  ["every select drops the native look (appearance none) and draws a chevron", (css) => {
+  ["every select drops the native look (appearance none) and draws the caret (--select-caret)", (css) => {
     const b = body(css, "select");
-    return !!b && decl(b, "appearance") === "none" && /linear-gradient/.test(decl(b, "background-image") || "") && /var\(--sh-control-icon/.test(decl(b, "--select-lane") || "") && /var\(--select-lane\)/.test(decl(b, "padding-inline-end") || "");
+    return !!b && decl(b, "appearance") === "none" && decl(b, "background-image") === "var(--select-caret)" && /var\(--sh-control-icon/.test(decl(b, "--select-lane") || "") && /var\(--select-lane\)/.test(decl(b, "padding-inline-end") || "");
   }],
   ["the range thumb is at least the control icon role in both engines", (css) => {
     const mult = (css.match(/--ctl-range-thumb:\s*calc\(var\(--sh-control-icon\)\s*\*\s*([\d.]+)\)/) || [])[1];
@@ -66,6 +76,25 @@ const CHECKS = [
     const b = body(css, "button");
     return decl(b, "font") === "var(--ui-control-font)" && decl(b, "font-size") === null;
   }],
+  // the select caret (user ruling 2026-10-09: the caret-down glyph, not the gradient triangle)
+  ["select caret: the caret-down path, one data-URI per scheme filled with the chrome's --ink-dim, and the compact select on one caret", (css) => {
+    const light = selectCaret(neutral(750)), dark = selectCaret(neutral(250));
+    const raw = body(css, ".map-raw-select");
+    return !!neutral(750) && css.includes(`ultimate-tokens { --select-caret: ${light}; }`) && css.includes(`ultimate-tokens[data-theme="dark"] { --select-caret: ${dark}; }`) &&
+      new RegExp(`@media \\(prefers-color-scheme: dark\\) \\{\\s*ultimate-tokens\\[data-theme="system"\\] \\{ --select-caret: ${esc(dark)}; \\}`).test(css) &&
+      !/linear-gradient\([^)]*--select-chevron/.test(css) && decl(raw, "background-position") === "right var(--sh-chip-inset) center";
+  }],
+  // the glyph motion set (shell-roles.mjs MOTION)
+  ["motion: every non-gallery transition reads the glyph motion tokens (no literal duration)", (css) => {
+    const all = transitions(css);
+    return all.length > 0 && all.every(([, d]) => !/\d(ms|s)\b/.test(d.replace(/var\([^)]*\)/g, "")) && /var\(--ui-motion-(fast|base)\) var\(--ui-motion-ease\)/.test(d));
+  }],
+  ["motion: the disclosure caret turns over on aria-expanded, and both reduced-motion blocks collapse every duration", (css) => {
+    const base = body(css, ".caret"), open = body(css, '[aria-expanded="true"] > .caret');
+    return decl(base, "transition") === "transform var(--ui-motion-fast) var(--ui-motion-ease)" && decl(open, "transform") === "rotate(180deg)" &&
+      /ultimate-tokens\[data-motion="reduced"\] \*[^{]*\{[^}]*transition-duration:\s*0\.01ms !important/.test(css) &&
+      /@media \(prefers-reduced-motion: reduce\)\s*\{\s*ultimate-tokens\[data-motion="system"\] \*[^{]*\{[^}]*transition-duration:\s*0\.01ms !important/.test(css);
+  }],
 ];
 
 // known-bad samples, one per check, that the check must reject
@@ -81,6 +110,9 @@ const BAD = [
   "ultimate-tokens { --ctl-thumb: calc(var(--sh-control-icon) - 4px); } .toggle .track { border-radius: 999px; } .toggle .track::after { top: 2px; left: 2px; width: var(--ctl-thumb); }",
   ".tools-menu:popover-open { padding: var(--sh-part-inset); border-radius: calc(var(--sh-control-radius) + var(--sh-part-inset)); }",
   "button { font: inherit; font-size: var(--sh-control-text); }",
+  "select { background-image: linear-gradient(45deg, transparent 50%, var(--select-chevron, var(--ink-dim)) 50%); } .map-raw-select { background-position: calc(100% - 5px) 50%, 100% 50%; }",
+  ".toggle .track { transition: background .12s; }",
+  ".caret { flex: none; transition: transform var(--ui-motion-fast) var(--ui-motion-ease); } [aria-expanded=\"true\"] > .caret { transform: rotate(180deg); }",
 ];
 // a field style that is the `background:` shorthand, with the right padding rule: still rejected
 const BAD_APP = 'const fieldStyle = "background:" + pick(x);';

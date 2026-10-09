@@ -190,10 +190,10 @@ incrementally.
   - **Figma files** `.figma-files` (and the Radix picker `.radix-files`), now a `segmented()` call with
     `baseClass: "figma-files"` and `role=group` (`overlays/drawer.js:221`), so it carries the same roving
     tabindex + Arrow keys as every other `segmented()` site. Its own rules are gone: it takes the compound
-    rule below (`.segmented, .figma-files, .radix-files`, `styles.css:976`).
+    rule below (`.segmented, .figma-files, .radix-files`, `styles.css:1000`).
 - **Anatomy** `[ track (group) · segment (button)[] ]`; active = `.on` (`styles.css:989`).
 - **Geometry** the compound rule (ADR-033): the container is one control height with a part-inset pad and
-  the control radius (`.segmented, .figma-files, .radix-files`, `styles.css:976`); each segment is a part,
+  the control radius (`.segmented, .figma-files, .radix-files`, `styles.css:1000`); each segment is a part,
   part height tall, part inset inline, inset radius, so its corner stays concentric with the container's
   (`.segmented button, .figma-files button, .radix-files button`, `styles.css:983`). The small variant is
   gone: every segment reads the control text size.
@@ -304,7 +304,7 @@ Three unrelated "pill" stylings, a naming/coherence drift, not one primitive:
   count + "preset"/"ago" (`app.js:764/765/848/849`); `pointer-events:none`, absolute over the thumb.
 - **`.chip` interactive**, the damping presets: `chip(name, { mode: "interactive", on })` renders a
   `<button class="chip" aria-pressed>` inside the `.damp-presets` row (`chip()`, `sections/color.js:168`;
-  `.chip`, `styles.css:883-890`). The old `.damp-presets .preset` styling is gone;
+  `.chip`, `styles.css:912-927`). The old `.damp-presets .preset` styling is gone;
   `.damp-presets` is now only the flex row (`styles.css:903`).
 - **`.chip` status**, the drift summary: `chip(text, { tone })` renders a `<span class="chip">`
   (`chip()`, `sections/color.js:1386`) with the
@@ -379,7 +379,7 @@ the source row's column `color-scheme` (`_schemeOfColumn`), not the chrome's.
 ### 15 · Hue wheel
 
 `.ch-circle.hw-circle` (axis) · `.ch-dot.hw-dot` (one dot per palette) · `.ch-ring` (accent ring on the
-selected palette), native DOM polar plot in an `.an-chart.hw` box (`styles.css:541-544`).
+selected palette), native DOM polar plot in an `.an-chart.hw` box (`styles.css:561-564`).
 
 ### 16 · Tone / lightness curve
 

@@ -93,7 +93,7 @@ Not cleaned up:
 - `_liveRaf` (`app.js:304-309`): never cancelled; a post-disconnect rAF still runs `_liveRefreshNow` against a detached subtree (harmless, wasted work, unguarded).
 - `_dragTimer` (`app.js:178,364`): a settled-drag commit up to 250ms after disconnect still mutates `this.history`/`this.future` on a dead instance.
 - `_toastT` (`app.js:2793-2794`): same shape, ≤1800ms tail.
-- The blob-download revoke timer (`URL.revokeObjectURL`, `app.js:2448`, 1500ms) and the code.js-download timer (`download()`, `app.js:2697`, 150ms): both harmless, also uncleaned.
+- The blob-download revoke timer (`URL.revokeObjectURL`, `app.js:2455`, 1500ms) and the code.js-download timer (`download()`, `app.js:2700`, 150ms): both harmless, also uncleaned.
 
 None exploitable today because `<ultimate-tokens>` is a true page-lifetime singleton, `disconnectedCallback` in practice never fires outside tests. That's exactly why it's worth flagging: the two things that DO get cleaned up were fixed reactively; the rest were never audited as a set. Nothing in `test/ui/headless-boot.mjs` exercises disconnect/reconnect at all.
 
