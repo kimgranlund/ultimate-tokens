@@ -23,7 +23,9 @@ height = TIERS[tier].base + TIERS[tier].offsets[scale] + SIZES[size] · TIERS[ti
 
 `SIZES = { sm: -1, md: 0, lg: 1 }`. The 27 heights all land on Maison's 25-row component-geometry
 ladder (`LADDER_ROWS`: height, inset, icon). The kit default cell is `{tier}-{scale}-md`;
-product-md-md is the 32px control.
+product-md-md is the 32px control. The editor shell sizes its own chrome from one cell too, product-sm-md
+(28px) by default; its text roles, control anatomy, container composition and glyph motion are in
+[shell-roles.md](shell-roles.md) (T-0044, ADR-036).
 
 ## The law (the one rule)
 

@@ -7,6 +7,9 @@
 // icon(name, { size, cls }) -> a <span class="ic"> wrapping an inline <svg fill="currentColor">,
 // so every icon inherits the surrounding text color and aligns on the baseline. Dependency-free
 // (it builds via document directly), so it bundles ahead of app.js without needing its h() helper.
+// `size` names the glyph box (T-0044, shell-roles.mjs CONTROL_ANATOMY): omitted or "control" follows
+// the shell's --sh-control-icon role, "badge" the compact row's --ui-badge-icon; a number pins a px box
+// (the gallery and the kit-cell specimens, which are not the shell chrome).
 
 export const ICONS = {
   "arrow-counter-clockwise": "<path d=\"M224,128a96,96,0,0,1-94.71,96H128A95.38,95.38,0,0,1,62.1,197.8a8,8,0,0,1,11-11.63A80,80,0,1,0,71.43,71.39a3.07,3.07,0,0,1-.26.25L44.59,96H72a8,8,0,0,1,0,16H24a8,8,0,0,1-8-8V56a8,8,0,0,1,16,0V85.8L60.25,60A96,96,0,0,1,224,128Z\"/>",
@@ -38,21 +41,32 @@ export const ICONS = {
   // caret-left is the Phosphor FILL weight (a SOLID triangle), carets are affordance marks; the solid form
   // reads clearer than the thin regular chevron. (The rest of the registry is regular weight.)
   "caret-left": "<path d=\"M168,48V208a8,8,0,0,1-13.66,5.66l-80-80a8,8,0,0,1,0-11.32l80-80A8,8,0,0,1,168,48Z\"/>",
+  // caret-down (fill, the same family): the disclosure caret that rotates on [aria-expanded="true"]; styles.css
+  // draws the native select's caret from this same path (a data-URI, --select-caret).
+  "caret-down": "<path d=\"M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,48,88H208a8,8,0,0,1,5.66,13.66Z\"/>",
   // calendar-blank (regular), the concrete leading glyph in the Geometry control specimen.
   "calendar-blank": "<path d=\"M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32Zm0,16V80H48V48ZM48,208V96H208V208Z\"/>",
 };
 
-// An explicit `size` sizes the svg by its attributes alone, so it holds and a stylesheet rule can still
-// override it; without one the svg follows the shell's --sh-control-icon role.
+// selectCaret(fill), the native select's caret as a CSS url(): the caret-down path cropped to its 176 by 96
+// box and filled with `fill` (a data-URI cannot read a var). styles.css holds the chrome's two (light, dark);
+// the kit specimen select (app.js exampleForm) sets --select-caret from its own palette with this.
+export const selectCaret = (fill) => `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='40 88 176 96'%3E%3Cpath fill='${String(fill).replace(/#/g, "%23")}' d='${ICONS["caret-down"].match(/d="([^"]+)"/)[1]}'/%3E%3C/svg%3E")`;
+
+// A numeric `size` sizes the svg by its attributes alone, so it holds and a stylesheet rule can still
+// override it; "badge" follows the compact row's --ui-badge-icon; no size (or "control") follows the
+// shell's --sh-control-icon role.
+const ROLE_BOX = { control: ["16", "--sh-control-icon, 16px"], badge: ["11", "--ui-badge-icon, 11px"] };
 export function icon(name, opts = {}) {
-  const { size = 16, cls = "" } = opts;
+  const { size = "control", cls = "" } = opts;
   const el = document.createElement("span");
   el.className = "ic" + (cls ? " " + cls : "");
   el.setAttribute("aria-hidden", "true");
   const path = ICONS[name];
-  const sizing = Object.prototype.hasOwnProperty.call(opts, "size")
-    ? `width="${size}" height="${size}"`
-    : `width="${size}" height="${size}" style="width:var(--sh-control-icon, 16px);height:var(--sh-control-icon, 16px)"`;
+  const role = ROLE_BOX[size];
+  const sizing = role
+    ? `width="${role[0]}" height="${role[0]}" style="width:var(${role[1]});height:var(${role[1]})"`
+    : `width="${size}" height="${size}"`;
   el.innerHTML = path
     ? `<svg viewBox="0 0 256 256" ${sizing} fill="currentColor" aria-hidden="true">${path}</svg>`
     : "";

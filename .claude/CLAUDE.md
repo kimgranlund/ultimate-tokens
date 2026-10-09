@@ -41,7 +41,7 @@ Canonical specs + rubrics: `docs/specs/` and `docs/references/`; runtime-read da
   sandbox (parity-gated). `figma/plugin/ui.html` is a generated bundle of the whole app.
 - `test/`: `engine/*` verifiers · `ui/headless-boot.mjs` (the shim run, lettered groups) · `figma/` ·
   `mcp/` · `plugin/` (skill↔role-table parity) · `repo/` (repo-wide gates: em-dash, citations, branding,
-  control-text) · `smoke/smoke.mjs`. `scripts/`, the generators.
+  `test/repo/shell-text.mjs`, which gates text on every shell rule) · `smoke/smoke.mjs`. `scripts/`, the generators.
   `mcp/`, the MCP server. `plugin/ultimate-tokens/`, the CONSUMER-side Claude plugin: skills that
   teach agents to use exported kits in THEIR projects (parity-gated against the engine).
 - `docs/reference/`: runtime-read data only (`docs/reference/data/`, the role-table answer key;

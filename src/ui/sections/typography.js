@@ -473,7 +473,7 @@ export class TypeSectionImpl {
             "aria-label": `${cat} ${step} size · ${col.name} (px)`,
             onchange: (e) => this.setTypeTokenOverride(cat, step, col.modeKey, e.target.value),
           }),
-          overridden ? btn(icon("arrow-counter-clockwise", { size: 12 }), { variant: "bare", cls: "tok-reset", title: "Reset to derived size", ariaLabel: `Reset ${cat} ${step} · ${col.name} to the derived size`, onclick: () => this.clearTypeTokenOverride(cat, step, col.modeKey) }) : false,
+          overridden ? btn(icon("arrow-counter-clockwise", { size: "badge" }), { variant: "bare", cls: "tok-reset", title: "Reset to derived size", ariaLabel: `Reset ${cat} ${step} · ${col.name} to the derived size`, onclick: () => this.clearTypeTokenOverride(cat, step, col.modeKey) }) : false,
         ),
         h("span", { class: "tok-sub" }, `${s.lineHeight} · w${s.weight} · ${tr}`),
       );
@@ -643,6 +643,7 @@ export class TypeSectionImpl {
                 onclick: () => { this.typeVoice = sel ? null : cName; this.render(); } },
               h("span", { class: "tyi-voice-label" }, cName, tuned ? h("span", { class: "tyi-voice-dot", title: "Tuned off the treatment" }, " ●") : false),
               h("span", { class: "tyi-voice-font" }, this._resolvedFont(scale, cName)),
+              icon("caret-down", { cls: "caret" }),
             ),
             sel
               ? h(

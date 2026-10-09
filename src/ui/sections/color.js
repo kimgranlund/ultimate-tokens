@@ -153,7 +153,7 @@ export class ColorSectionImpl {
           h("span", { class: "an-thresh", title: "4.5:1 minimum" }),
           h("span", { class: "an-fill" + (pass ? "" : " bad"), style: `width:${pct.toFixed(0)}%` }),
         ),
-        h("b", { class: pass ? "pass" : "fail" }, ratio.toFixed(2) + " ", icon(pass ? "check" : "warning", { size: 12 })),
+        h("b", { class: pass ? "pass" : "fail" }, ratio.toFixed(2) + " ", icon(pass ? "check" : "warning", { size: "badge" })),
       );
     };
     return h(
@@ -933,7 +933,7 @@ export class ColorSectionImpl {
                   this.commit((d) => (d.palettes[i].on = !(d.palettes[i].on !== false)));
                 },
               },
-              icon(p.on !== false ? "dot" : "circle", { size: 13 }),
+              icon(p.on !== false ? "dot" : "circle", { size: "badge" }),
             ),
             h("span", { class: "ramp-name" }, vp.name, h("small", {}, `${stops.length} stops`)),
           ),
@@ -972,7 +972,7 @@ export class ColorSectionImpl {
                 this.commit((d) => (d.palettes[i].on = true));
               },
             },
-            icon("circle", { size: 13 }),
+            icon("circle", { size: "badge" }),
           ),
           h("span", { class: "ramp-name off" }, p.name || "(unnamed)", h("small", {}, "disabled")),
         ),
@@ -1221,7 +1221,7 @@ export class ColorSectionImpl {
                   this.commit((d) => (d.palettes[i].on = !(d.palettes[i].on !== false)));
                 },
               },
-              icon(p.on !== false ? "dot" : "circle", { size: 13 }),
+              icon(p.on !== false ? "dot" : "circle", { size: "badge" }),
             ),
             h("span", { class: "ramp-name" }, vp.name, h("small", {}, `500 base · ${stops.length} scrims`)),
           ),
@@ -1310,8 +1310,8 @@ export class ColorSectionImpl {
       const st = this.driftStatus(n + "/" + padRef(ref), hex);
       const title = { match: "Matches the file", drift: "Drifted from the file", absent: "Not in the file" }[st]
         || "Click Read live to compare with the file";
-      const mark = st === "match" ? icon("check", { size: 12 })
-        : st === "drift" ? icon("x", { size: 12 })
+      const mark = st === "match" ? icon("check", { size: "badge" })
+        : st === "drift" ? icon("x", { size: "badge" })
         : st === "absent" ? "n/a" : "·";
       return h("td", { class: "map-file" }, h("span", { class: "map-drift map-drift-" + (st || "none"), title }, mark));
     };
@@ -1360,7 +1360,7 @@ export class ColorSectionImpl {
           "td",
           { class: "map-raw" },
           rawEditor(r, mode, ref, overridden),
-          overridden ? btn(icon("arrow-counter-clockwise", { size: 13 }), { variant: "bare", cls: "map-reset", title: "Reset to canonical", ariaLabel: "Reset to canonical", onclick: () => this.clearRoleOverride(r.key, mode) }) : false,
+          overridden ? btn(icon("arrow-counter-clockwise", { size: "badge" }), { variant: "bare", cls: "map-reset", title: "Reset to canonical", ariaLabel: "Reset to canonical", onclick: () => this.clearRoleOverride(r.key, mode) }) : false,
         ),
         this.inFigma ? driftCell(ref, hex) : false, // drift vs the live Figma variable (#3)
       );

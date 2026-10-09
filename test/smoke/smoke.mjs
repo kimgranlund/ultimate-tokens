@@ -310,12 +310,17 @@ try {
   writeFileSync(resolve(OUT, "editor.png"), Buffer.from(shot.data, "base64"));
   console.log("  · screenshot → smoke-out/editor.png");
 
-  // Compound insets (T-0027): at two shell geometries the shell's segmented controls are one control height
-  // with part-height segments and concentric corners, and every icon-only button outside the canvas scene
-  // is a borderless control-height square. Expected values are the engine's md cell at that tier + scale.
-  for (const [tier, scale, png] of [["product", "md", "compound-product-md.png"], ["content", "lg", "compound-content-lg.png"]]) {
+  // Compound insets (T-0027): at two shell geometries (the product-sm default and the content-lg stress cell, T-0044),
+  // in light and in dark, the shell's segmented controls are one control height with part-height segments and
+  // concentric corners, and every icon-only button outside the canvas scene is a borderless control-height square.
+  // Expected values are the engine's md cell at that tier + scale.
+  const SHELL_MATRIX = [["product", "sm"], ["content", "lg"]];
+  for (const [tier, scale, theme, png] of [
+    ["product", "sm", "light", "compound-product-sm-light.png"], ["product", "sm", "dark", "compound-product-sm-dark.png"],
+    ["content", "lg", "light", "compound-content-lg-light.png"], ["content", "lg", "dark", "compound-content-lg-dark.png"],
+  ]) {
     const cell = geomScale({ tier, scale, radius: "round" }).cells[`${tier}-${scale}-md`];
-    await evalJS(`(()=>{${el}.shellGeometry={tier:"${tier}",scale:"${scale}",radius:"round"};${el}.setSection("color");${el}._deselect();${el}.render();})()`); await sleep(300);
+    await evalJS(`(()=>{${el}.shellGeometry={tier:"${tier}",scale:"${scale}",radius:"round"};${el}.theme="${theme}";${el}.setSection("color");${el}._deselect();${el}.render();})()`); await sleep(300);
     const cpd = await evalJS(`(()=>{const vis=(e)=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0};const px=(e,p)=>parseFloat(getComputedStyle(e)[p]);
       const segs=[...${el}.querySelectorAll(".segmented")].filter(vis).map((s)=>({h:s.getBoundingClientRect().height,r:px(s,"borderTopLeftRadius"),btn:[...s.querySelectorAll("button")].filter(vis).map((b)=>({h:b.getBoundingClientRect().height,r:px(b,"borderTopLeftRadius")}))}));
       const icons=[...${el}.querySelectorAll("button.icon-only")].filter((b)=>vis(b)&&!b.closest(".canvas-scene")).map((b)=>{const r=b.getBoundingClientRect();return {w:r.width,h:r.height,bc:getComputedStyle(b).borderTopColor,label:b.getAttribute("aria-label")}});
@@ -336,18 +341,19 @@ try {
       if (!clear(b.bc)) bad.push(`icon-only "${b.label}" border-top-color ${b.bc} (want transparent)`);
     });
     bad.slice(0, 8).forEach((m) => console.log("    " + m));
-    ok((cpd.segs || []).length > 0 && (cpd.icons || []).length > 0 && bad.length === 0, `compound at ${tier}-${scale}: segmented outer = control height, segments = part height, concentric corners, icon-only buttons square and borderless${bad.length ? ` (${bad.length} off)` : ""}`);
+    ok((cpd.segs || []).length > 0 && (cpd.icons || []).length > 0 && bad.length === 0, `compound at ${tier}-${scale} ${theme}: segmented outer = control height, segments = part height, concentric corners, icon-only buttons square and borderless${bad.length ? ` (${bad.length} off)` : ""}`);
     const cpdShot = await send("Page.captureScreenshot", { format: "png" });
     writeFileSync(resolve(OUT, png), Buffer.from(cpdShot.data, "base64"));
     console.log(`  · screenshot → smoke-out/${png}`);
   }
+  await evalJS(`(()=>{${el}.theme="system";${el}.render();})()`); await sleep(150);
 
   // Control text (T-0027 step 4): at the same two shell geometries every visible shell button, select and
   // text input (the canvas scene, the example previews and the bare glyph buttons aside) computes the cell's
   // text size and stays on one line, across the Global and palette inspectors, Typography and Geometry (the
   // .key-slot add tiles are skipped too: they are dashed tiles with a filled swatch's footprint, not text controls). The
   // palette Name field (data-fk="pname") and the header doc name also take the control radius and height.
-  for (const [tier, scale] of [["product", "md"], ["content", "lg"]]) {
+  for (const [tier, scale] of SHELL_MATRIX) {
     const cell = geomScale({ tier, scale, radius: "round" }).cells[`${tier}-${scale}-md`];
     const views = [
       ["color", `${el}.setSection("color");${el}._deselect();`],
@@ -362,7 +368,7 @@ try {
       const got = await evalJS(`(()=>{const vis=(e)=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0};
         const skip=(e)=>!!e.closest(".canvas-scene, .seg-example, .example-scheme")||[...e.classList].some((c)=>c.includes("ex-"))||e.matches(".map-reset, .key-act, .tok-reset, .tyi-weight-del, .key-slot");
         return [...${el}.querySelectorAll('button, select, input[type="text"], input[type="search"], input.tyi-font-input')].filter((e)=>vis(e)&&!skip(e)).map((e)=>{const cs=getComputedStyle(e);
-          return {tag:e.tagName.toLowerCase(),cls:e.className,fk:e.getAttribute("data-fk"),chip:e.matches(".map-raw-select, .map-raw-input, .chip"),fs:parseFloat(cs.fontSize),h:e.getBoundingClientRect().height,r:parseFloat(cs.borderTopLeftRadius),mh:parseFloat(cs.minHeight)}});})()`);
+          return {tag:e.tagName.toLowerCase(),cls:e.className,fk:e.getAttribute("data-fk"),chip:e.matches(".map-raw-select, .map-raw-input"),fs:parseFloat(cs.fontSize),h:e.getBoundingClientRect().height,r:parseFloat(cs.borderTopLeftRadius),mh:parseFloat(cs.minHeight)}});})()`);
       for (const c of got || []) {
         const who = `${view}: ${c.tag}${c.cls ? "." + String(c.cls).trim().split(/\s+/).join(".") : ""}`;
         const want = c.chip ? cell.chipText : cell.text;
@@ -382,17 +388,21 @@ try {
   }
   await evalJS(`(()=>{${el}.shellGeometry=null;${el}.setSection("color");${el}._deselect();${el}.render();})()`); await sleep(200);
 
-  // Control polish (T-0036): at the same two shell geometries, every visible select drops the native look and draws
-  // its chevron with room reserved for it, every range input has a track and thumb sized from the control icon role,
+  // Control polish (T-0036): at the same two shell geometries, in light and in dark, every visible select drops the
+  // native look and draws its caret (the caret-down data-URI, T-0044) with room reserved for it, every range input has a track and thumb sized from the control icon role,
   // the palette inspector has no Back-to-Global button (a Chrome computed style cannot read ::-webkit-slider-thumb, so the thumb size is
   // the --ctl-range-thumb role the thumb rule reads, measured on a probe; test/repo/ui-polish.mjs pins that both thumb rules use it), and each prime swatch strip is gapless with equal swatches
   // filling the card width. The bad() negative control feeds each measure a value that must fail.
-  for (const [tier, scale, png] of [["product", "md", "polish-product-md.png"], ["content", "lg", "polish-content-lg.png"]]) {
+  const caretImg = (bg) => /^url\("data:image\/svg\+xml,/.test(bg || "") && (bg || "").includes("M213.66,101.66");
+  for (const [tier, scale, theme, png] of [
+    ["product", "sm", "light", "polish-product-sm-light.png"], ["product", "sm", "dark", "polish-product-sm-dark.png"],
+    ["content", "lg", "light", "polish-content-lg-light.png"], ["content", "lg", "dark", "polish-content-lg-dark.png"],
+  ]) {
     const cell = geomScale({ tier, scale, radius: "round" }).cells[`${tier}-${scale}-md`];
     const bad = [];
     let nSel = 0, nEx = 0, nRange = 0, nStrip = 0;
     for (const go of [`${el}._deselect();`, `${el}.selectPalette(0);`]) {
-      await evalJS(`(()=>{${el}.shellGeometry={tier:"${tier}",scale:"${scale}",radius:"round"};${el}.setSection("color");${el}.setCanvasView("palettes");${el}.examplesExpanded=true;${go}${el}.render();})()`); await sleep(300);
+      await evalJS(`(()=>{${el}.shellGeometry={tier:"${tier}",scale:"${scale}",radius:"round"};${el}.theme="${theme}";${el}.setSection("color");${el}.setCanvasView("palettes");${el}.examplesExpanded=true;${go}${el}.render();})()`); await sleep(300);
       const got = await evalJS(`(()=>{const vis=(e)=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0};const R=${el};
         const selects=[...R.querySelectorAll("select")].filter((e)=>vis(e)&&!e.closest(".canvas-scene, .seg-example, .example-scheme")).map((e)=>{const cs=getComputedStyle(e);return {cls:e.className,ap:cs.appearance,bg:cs.backgroundImage,pl:parseFloat(cs.paddingLeft),pr:parseFloat(cs.paddingRight)}});
         const exSelects=[...R.querySelectorAll(".seg-example select.ex-select")].filter(vis).map((e)=>{const cs=getComputedStyle(e);return {ap:cs.appearance,bg:cs.backgroundImage,pl:parseFloat(cs.paddingLeft),pr:parseFloat(cs.paddingRight)}});
@@ -404,14 +414,14 @@ try {
       nEx += got.exSelects.length;
       for (const s of got.exSelects) {
         if (s.ap !== "none") bad.push(`example select appearance ${s.ap} (want none)`);
-        if (!/linear-gradient/.test(s.bg)) bad.push(`example select draws no chevron (${s.bg})`);
-        if (!(s.pr > s.pl)) bad.push(`example select end padding ${s.pr} does not reserve the chevron lane (start ${s.pl})`);
+        if (!caretImg(s.bg)) bad.push(`example select draws no caret-down (${s.bg})`);
+        if (!(s.pr > s.pl)) bad.push(`example select end padding ${s.pr} does not reserve the caret lane (start ${s.pl})`);
       }
       nSel += got.selects.length; nRange += got.ranges.length; nStrip += got.strips.length;
       for (const s of got.selects) {
         if (s.ap !== "none") bad.push(`select.${s.cls} appearance ${s.ap} (want none)`);
-        if (!/linear-gradient/.test(s.bg)) bad.push(`select.${s.cls} draws no chevron (${s.bg})`);
-        if (!(s.pr > s.pl)) bad.push(`select.${s.cls} end padding ${s.pr} does not reserve the chevron lane (start ${s.pl})`);
+        if (!caretImg(s.bg)) bad.push(`select.${s.cls} draws no caret-down (${s.bg})`);
+        if (!(s.pr > s.pl)) bad.push(`select.${s.cls} end padding ${s.pr} does not reserve the caret lane (start ${s.pl})`);
       }
       for (const r of got.ranges) {
         if (r.tw < cell.icon - 0.5 || r.th < cell.icon - 0.5) bad.push(`range thumb role ${r.tw}x${r.th} (want at least the ${cell.icon}px icon role)`);
@@ -427,8 +437,19 @@ try {
       if (go.includes("selectPalette")) { const sh = await send("Page.captureScreenshot", { format: "png" }); writeFileSync(resolve(OUT, png), Buffer.from(sh.data, "base64")); console.log(`  · screenshot → smoke-out/${png}`); }
     }
     bad.slice(0, 10).forEach((m) => console.log("    " + m));
-    ok(nSel > 0 && nEx > 0 && nRange > 0 && nStrip > 0 && bad.length === 0, `control polish at ${tier}-${scale}: ${nSel} selects and ${nEx} pinned example select(s) styled with a chevron, ${nRange} sliders at the icon role, ${nStrip} prime strips gapless and full width, no Back to Global${bad.length ? ` (${bad.length} off)` : ""}`);
+    ok(nSel > 0 && nEx > 0 && nRange > 0 && nStrip > 0 && bad.length === 0, `control polish at ${tier}-${scale} ${theme}: ${nSel} selects and ${nEx} pinned example select(s) styled with the caret, ${nRange} sliders at the icon role, ${nStrip} prime strips gapless and full width, no Back to Global${bad.length ? ` (${bad.length} off)` : ""}`);
   }
+  // Reduced motion (T-0044): the disclosure caret's turn reads the glyph motion token, and Settings › Motion
+  // Reduced collapses it through the host's descendant rule. Headless Chrome emulates no OS preference, so
+  // Motion System keeps the token's 120ms.
+  {
+    const caretDur = (motion) => evalJS(`(()=>{${el}.shellGeometry=null;${el}.theme="system";${el}.motion="${motion}";${el}.setSection("color");${el}.setCanvasView("palettes");${el}.examplesExpanded=true;${el}._deselect();${el}.render();
+      const c=${el}.querySelector(".ex-collapse-toggle .caret");if(!c)return null;const d=getComputedStyle(c).transitionDuration.split(",")[0].trim();return d.endsWith("ms")?parseFloat(d)/1000:parseFloat(d);})()`);
+    const reduced = await caretDur("reduced"); await sleep(150);
+    const system = await caretDur("system"); await sleep(150);
+    ok(reduced !== null && reduced < 0.001 && system !== null && system >= 0.1, `reduced motion: the disclosure caret's transition-duration is under 1ms with Motion Reduced and at least 100ms with Motion System (got ${reduced}s, ${system}s)`);
+  }
+  await evalJS(`(()=>{${el}.theme="system";${el}.motion="system";${el}.render();})()`); await sleep(150);
   await evalJS(`${el}.examplesExpanded=false`);
   // negative control: an unstyled select (native appearance) must read as appearance "auto" in this Chrome, so the check above can fail
   ok(await evalJS(`(()=>{const s=document.createElement("select");s.style.cssText="appearance:auto";document.body.appendChild(s);const a=getComputedStyle(s).appearance;s.remove();return a!=="none"})()`), "negative control: a select forced back to appearance auto does not read as none");
@@ -437,7 +458,7 @@ try {
   // Canvas header fit (T-0031): at the two shell geometries, in every section, no header control is clipped
   // or hidden past the center column's edge: the header is the column's width, nothing in it reaches the
   // right pane, and when the trailing tools do not fit they sit behind the overflow trigger instead. Real
-  // layout only: the headless shim has none. Expected states at the 1440px window: product-md leaves every
+  // layout only: the headless shim has none. Expected states at the 1440px window: product-sm leaves every
   // tool inline; content-lg (64px controls, 22px text) cannot, so the tools collapse into the menu and the
   // segments compact.
   const headerFitExpr = `(()=>{const hd=${el}.querySelector(".canvas-header");const hr=hd.getBoundingClientRect();
@@ -448,7 +469,7 @@ try {
       inColumn:hr.right<=col.right+0.5&&hr.right<=rp.left+0.5,out,tools:vis(hd.querySelector(".canvas-tools")),trigger:vis(hd.querySelector(".tools-more")),
       toolBtns:[...hd.querySelectorAll(".canvas-tools button")].filter(vis).length}})()`;
   const headerFit = () => evalJS(headerFitExpr);
-  for (const [tier, scale] of [["product", "md"], ["content", "lg"]]) {
+  for (const [tier, scale] of SHELL_MATRIX) {
     const want = tier === "content" ? "collapsed" : "inline";
     const bad = [];
     for (const section of ["color", "typography", "geometry"]) {
@@ -583,12 +604,24 @@ try {
     ok(!!t && t.clipFree && t.open, `radix tooltip (${tag}): it is a top-layer popover outside the clipped, zoomed canvas scene (clipFree=${t && t.clipFree})`);
     ok(!!t && t.inWin, `radix tooltip (${tag}): the box is inside the window (${t && [Math.round(t.left), Math.round(t.top), Math.round(t.right), Math.round(t.bottom)]} in ${await evalJS("innerWidth+'x'+innerHeight")})`);
     ok(!!t && t.style === "normal", `radix tooltip (${tag}): the text is upright (font-style ${t && t.style})`);
-    if (edge === "bottom") ok(!!t && t.placement === "above" && t.bottom <= pos.swBottom, `radix tooltip (${tag}): flipped above the swatch (placement ${t && t.placement})`);
+    // the side follows the measured room (placeTip's rule, test/ui/tip-position.mjs): the swatch parked at the canvas
+    // bottom leaves the footers' height below it, which a short tooltip fits (the product-sm default, T-0044) and a
+    // tall one does not; the deterministic flip is the window-bottom probe after this loop
+    if (edge === "bottom") {
+      const wantAbove = !!t && t.h > (await evalJS("innerHeight")) - 8 - (pos.swBottom + 6);
+      ok(!!t && t.placement === (wantAbove ? "above" : "below") && (wantAbove ? t.bottom <= pos.swBottom : t.top >= pos.swBottom), `radix tooltip (${tag}): it takes the side with room, off the swatch (placement ${t && t.placement}, want ${wantAbove ? "above" : "below"})`);
+    }
     else ok(!!t && t.right > pos.areaRight && t.right <= (await evalJS("innerWidth")) - 7 && t.left < pos.swRight, `radix tooltip (${tag}): runs past the canvas edge (${pos.areaRight}) and stays in the window (box ${t && Math.round(t.left)}..${t && Math.round(t.right)})`);
     sizes[zoom + edge] = t;
   }
   ok(sizes["0.25bottom"] && sizes["1bottom"] && sizes["0.25bottom"].font === sizes["1bottom"].font && Math.abs(sizes["0.25bottom"].h - sizes["1bottom"].h) <= 1,
     `radix tooltip: at 25% zoom the text size and box height equal the unzoomed ones (${sizes["0.25bottom"] && sizes["0.25bottom"].font}/${sizes["0.25bottom"] && Math.round(sizes["0.25bottom"].h)}px vs ${sizes["1bottom"] && sizes["1bottom"].font}/${sizes["1bottom"] && Math.round(sizes["1bottom"].h)}px)`);
+  // the flip, deterministically: an anchor pinned 20px above the window bottom leaves no room below at any cell
+  const flip = await evalJS(`(()=>{const a=${el};const p=document.createElement("i");p.setAttribute("data-tip","Step 12: High-contrast text\\nflip probe");
+    p.style.cssText="position:fixed;left:200px;top:"+(innerHeight-20)+"px;width:16px;height:16px";document.body.appendChild(p);a._showRadixTip(p);
+    const t=a.querySelector(".radix-tip"),r=t.getBoundingClientRect(),pr=p.getBoundingClientRect();const out={placement:t.getAttribute("data-placement"),open:t.matches(":popover-open"),inWin:r.top>=0&&r.bottom<=innerHeight,clear:r.bottom<=pr.top};
+    a._hideRadixTip();p.remove();return out;})()`);
+  ok(!!flip && flip.open && flip.placement === "above" && flip.inWin && flip.clear, `radix tooltip: an anchor at the window bottom flips it above, inside the window (placement ${flip && flip.placement})`);
   // keyboard: focus shows it, Escape dismisses just the tooltip (the view stays on Radix)
   await moveMouse(5, 5); await sleep(60);
   await evalJS(`${el}.fit()`); await sleep(200); // fit() settles its top-left inset on the next frame; focus after it, so that re-position cannot hide the tooltip

@@ -49,3 +49,6 @@ Depends on: step 8.
 - `node test/repo/shell-text.mjs --strict`
 - (guard) `node test/repo/citations.mjs`
 - (guard) `test -z "$(git diff --name-only "$SDLC_BASE_SHA" -- src/ui/overlays/settings.js src/ui/overlays/drawer.js src/ui/shell-roles.mjs test/smoke scripts .claude/skills docs/references/decision-records.md)$(git ls-files --others --exclude-standard -- test/smoke scripts .claude/skills)"`
+
+## Notes
+- user ruling 2026-10-09 (screenshot of the Distribution select): the native select's caret must be the `caret-down` glyph (the Phosphor fill path above), not the two-gradient triangle at `src/ui/styles.css` ~:1730 (`--select-chevron`). A native `<select>` takes no child, so draw it as a CSS `background-image` data-URI svg of that path (or a mask) sized `--ui-badge-icon`-free, at `0.6 * --sh-control-icon`, placed at the select's `lane` (icon + inset) so it keeps clearing the text; keep the `--select-chevron` colour token working in light and dark (a data-URI cannot read a var, so use `mask-image` over a `background-color: var(--select-chevron, var(--ink-dim))` layer, or one data-URI per theme). Also swap `.map-raw-select` (~:1739) to the same glyph. The criterion for step 9 should grep that the gradient triangle is gone and the select rules reference the caret-down path.

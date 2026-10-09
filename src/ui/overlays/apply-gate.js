@@ -428,7 +428,7 @@ export class ApplyGateMixinImpl {
         h(
           "div",
           { class: "apply-gate-warn" },
-          icon("warning", { size: 16 }),
+          icon("warning"),
           h("div", {}, h("b", {}, "Back up your file first."), " Duplicate the file (or the collections) before applying, so you can roll back if a mapping overwrites something you meant to keep."),
         ),
         // TKT-0020: the Geometry/Type changed-value count (collections-arch review C2), a hand-tweaked
