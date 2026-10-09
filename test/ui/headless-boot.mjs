@@ -951,9 +951,9 @@ ok(app.querySelectorAll(".an-thresh").length === 3, `(p3) each contrast bar show
 app.openSet(app.sets[0].id); flushRaf(); app._deselect(); flushRaf();
 ok(!!findFk("slider:Falloff") && !!findFk("slider:Amplify") && !!findFk("slider:Bias"), "(q1) Global tab has Falloff/Amplify/Bias sliders");
 ok(!!app.querySelector(".damp-graph"), "(q2) the damping-curve graph is present in the Global tab");
-const dgBefore = app.querySelector(".damp-graph").children[0]?.innerHTML || "";
+const dgBefore = app.querySelector(".damp-graph").querySelector(".ch-ribbon").getAttribute("style") || "";
 app.doc.dampAmp = 80; app.liveRefresh(); flushRaf();
-const dgAfter = app.querySelector(".damp-graph").children[0]?.innerHTML || "";
+const dgAfter = app.querySelector(".damp-graph").querySelector(".ch-ribbon").getAttribute("style") || "";
 ok(dgBefore !== dgAfter && dgAfter.length > 50, "(q3) liveRefresh redraws the damping curve from the new params (input-free)");
 const c0 = _pv({ ...app.doc, dampAmp: 0, dampBias: 0, dampCurve: 1.5 }).exports.css;
 const c1 = _pv({ ...app.doc, dampAmp: 60, dampBias: 40, dampCurve: 1.5 }).exports.css;

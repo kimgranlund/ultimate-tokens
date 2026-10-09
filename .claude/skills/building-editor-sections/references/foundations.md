@@ -47,8 +47,7 @@ scene's children during a drag (it early-returns for Type/Geom, which refresh on
 
 ## 4. Rendering primitives
 
-- `h(tag, attrs, ...kids)`: hyperscript; `attrs` may carry `class`, `style`, `onclick`, `html` (raw
-  innerHTML for SVG strings), `data-fk` (a stable focus key so focus survives a re-render). Light DOM, no
+- `h(tag, attrs, ...kids)`: hyperscript; `attrs` may carry `class`, `style`, `onclick`, `data-fk` (a stable focus key so focus survives a re-render). Light DOM, no
   shadow root. There is no JSX and no template engine.
 - Native `<dialog>` + `showModal()` for overlays. Because `render()` rebuilds a fresh, closed dialog each
   turn, an open dialog is re-promoted to the top layer by a `_sync<X>()` method called after every render
