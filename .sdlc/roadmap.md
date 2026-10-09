@@ -44,5 +44,7 @@ New ticket: `/ticket new <feature|bug|chore|spike|idea> <slug> "title"`. Build p
 | T-0038 | [peer-luminosity](peer-luminosity/handoff.md) | Brightest steps do not share luminosity across peer palettes (diagnose first) | spike | L2 | P2 | none | 🟢 done |
 | T-0039 | [peer-luminosity-diagnose](peer-luminosity-diagnose/handoff.md) | Brightest steps do not share luminosity across peer palettes (diagnose first) | spike | L2 | P2 | none | 🔵 ready |
 | T-0040 | [match-peer-lightness](match-peer-lightness/handoff.md) | Opt-in match-peer-lightness mode: anchored palettes share lightness per stop across peers | feature | L4 | P2 | none | 🔵 ready |
-| T-0041 | [docs-planning-to-specs](docs-planning-to-specs/handoff.md) | Move ui-plan.md and decomposition.md from docs/planning to docs/specs (T-0034 verifier ruling) | chore | L1 | P2 | none | 🔵 ready |
+| T-0041 | [docs-planning-to-specs](docs-planning-to-specs/handoff.md) | Move ui-plan.md and decomposition.md from docs/planning to docs/specs (T-0034 verifier ruling) | chore | L1 | P2 | none | 🟢 done |
 | T-0042 | [docs-leftovers](docs-leftovers/handoff.md) | Docs and copy leftovers from T-0033 and T-0034 (ADR cites, size-ramp copy, store-copy link, notes) | chore | L1 | P2 | none | 🔵 ready |
+| T-0043 | [radix-tooltip-popover](radix-tooltip-popover/handoff.md) | Radix step tooltip: render outside the canvas scene (no clipping, no zoom scaling, upright text) | bug | L2 | P2 | none | 🔵 ready |
+| T-0044 | [ui-standardization](ui-standardization/handoff.md) | UI standardization: shell type roles, container and control anatomy, glyph motion, product-sm default | feature | L4 | P2 | none | 🔵 ready |
