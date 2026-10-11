@@ -1,7 +1,8 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "purpose": "Compatibility projection from Adia tonal primitives to Radix/Park UI 1\u201312 roles",
-  "source_of_truth": "Adia 050\u2013950 + prime-* + scrim-* token families",
+  "source_of_truth": "Adia 050\u2013950 (steps 1\u20136, 11\u201312 and dark 7) + prime-* (steps 7\u201310, ADR-038) + scrim-* token families",
+  "light_step7_guard": "Light step 7 reads its `light` source only while that pixel sits at least 2 CIE L* under step 6's; otherwise light steps 7 and 8 take the first `light_fallback` pair whose step 7 does (the last pair, the base stops, always applies). Dark mode has no guard. ADR-038.",
   "projection": {
     "1": {
       "role": "app-background",
@@ -35,23 +36,31 @@
     },
     "7": {
       "role": "interactive-border",
-      "light": "300",
+      "light": "prime-brightest",
+      "light_fallback": [
+        "prime-brighter",
+        "300"
+      ],
       "dark": "700"
     },
     "8": {
       "role": "strong-border-focus",
-      "light": "350",
-      "dark": "650"
+      "light": "prime-brighter",
+      "light_fallback": [
+        "prime-bright",
+        "350"
+      ],
+      "dark": "prime-dim"
     },
     "9": {
       "role": "solid-accent",
-      "light": "550",
-      "dark": "450"
+      "light": "prime",
+      "dark": "prime"
     },
     "10": {
       "role": "solid-accent-hover",
-      "light": "650",
-      "dark": "350"
+      "light": "prime-dim",
+      "dark": "prime-bright"
     },
     "11": {
       "role": "secondary-text",

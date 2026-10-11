@@ -2,7 +2,7 @@
 doc-type: spec
 id: spec-panda-park-ui-exports
 status: approved        # draft | approved | superseded  (0.1.0 approved 2026-09-11: H-1..H-4, P-1, N-1..N-3 ratified by the owner via team-lead)
-version: 0.3.1          # 0.1.1 2026-09-11: REQ-021 steps 1-8 corrected to raw ramp stops (issue #588 ruling); EX-4 regenerated. Data correction to an approved SPEC, not a new draft round.
+version: 0.4.0          # 0.1.1 2026-09-11: REQ-021 steps 1-8 corrected to raw ramp stops (issue #588 ruling); EX-4 regenerated. Data correction to an approved SPEC, not a new draft round.
                         # 0.2.0 2026-09-12: ticket #614 renamed the "Park UI" format to "Radix" everywhere in
                         # the live surfaces (exportParkUi/exportParkUiModule -> exportRadix/exportRadixModule,
                         # format id parkui -> radix, drawer label/zip folder park-ui/ -> radix/), a rename
@@ -21,6 +21,10 @@ version: 0.3.1          # 0.1.1 2026-09-11: REQ-021 steps 1-8 corrected to raw r
                         # mirror of those literals was left behind. A stale-literal correction to an
                         # approved SPEC, not a mechanical-regeneration exception of the #657/#662 class and
                         # not a new draft round; no REQ text changes.
+                        # 0.4.0 2026-10-11: T-0047 / ADR-038 (user ruling 2026-10-11, "9 and 10 plus 7 and
+                        # 8 to primes"): REQ-021 steps 7..10 read the prime ladder, REQ-024's on-accent is
+                        # picked against the prime, REQ-029 (a) links the rungs. REQ-021/022/024/029 and
+                        # EX-4 carry dated amendment notes; the other REQ text is unchanged.
 date: 2026-09-11
 owner: Kim Granlund
 prd: none               # GitHub issue #570 is the intent record (ADR-017 git-native tickets)
@@ -235,10 +239,10 @@ Consequences that shape the design:
   | 4 | hovered element background | `175` | `825` | yes (raw stop) |
   | 5 | active / selected element | `200` | `800` | yes (raw stop) |
   | 6 | subtle border, separator | `250` | `750` | yes (raw stop) |
-  | 7 | element border, focus ring | `300` | `700` | yes (raw stop) |
-  | 8 | hovered border | `350` | `650` | yes (raw stop) |
-  | 9 | solid background | (bare accent role, `550`/`450`) | | yes (role) |
-  | 10 | hovered solid | (`-hover` role, `650`/`350`) | | yes (role) |
+  | 7 | element border, focus ring | prime `brightest` (guarded) | `700` | yes (prime rung / raw stop) |
+  | 8 | hovered border | prime `brighter` (guarded) | prime `dim` | yes (prime rung / raw stop) |
+  | 9 | solid background | prime `prime` | prime `prime` | yes (prime rung) |
+  | 10 | hovered solid | prime `dim` | prime `bright` | yes (prime rung) |
   | 11 | low-contrast text | (`-on-surface-variant` role, `750`/`250`) | | yes (role) |
   | 12 | high-contrast text | (`-on-surface` role, `950`/`050`) | | yes (role) |
 
@@ -251,6 +255,17 @@ Consequences that shape the design:
   accent/`-hover`/`-on-surface-variant`/`-on-surface` roles, because those already matched the
   corrected source (issue #588's ruling comment, 2026-09-11, compared against
   `src/engine/semantic.js`'s actual role stops and found already correct).
+
+  *Amendment (2026-10-11, T-0047, ADR-038):* steps 7..10 read the palette's PRIME LADDER
+  (`prime.mjs` `PRIME_STEPS`, `p.prime[rung]`), the saturated identity swatches, instead of the raw
+  stops 300/350 and the bare accent and `-hover` roles in the rows above; the table shows the
+  amended sources. A prime rung is mode-independent, so step 9 is the brand colour itself in both
+  modes, as in Radix. Dark step 7 keeps the raw stop `700`: no rung lies between stop `750` and
+  `dim` in dark mode, and `dimmer` sat on or under stop `750` for 6 of the 16 default palettes.
+  Light steps 7 and 8 carry a per-palette guard: light step 7 reads `brightest` only while that
+  pixel sits at least 2 CIE L* under step 6's (stop `250`); otherwise light 7/8 read `brighter`/
+  `bright` when `brighter` does, else the raw stops `300`/`350`, so the interactive border never reads
+  lighter than the subtle border. Steps 1..6, 11 and 12 are unchanged.
 
   Canonical source: `docs/reference/data/radix-projection.json` (the committed projection table)
   and `docs/references/radix-park-adaptation.md` (the architecture + rules this table
@@ -270,7 +285,8 @@ Consequences that shape the design:
   `"transparent"`. Verified unaffected by the #588 correction: this formula reads "the
   same-numbered solid step" generically, never assumed steps 6..8 were translucent, and needs no
   wording change now that steps 6..8 are raw ramp stops rather than flattened role values, `a6/a7/
-  a8` simply project from the new (raw) `6/7/8` solids.
+  a8` simply project from the new (raw) `6/7/8` solids. Likewise after ADR-038 (2026-10-11):
+  `a7..a10` project from the prime-rung solids of REQ-021's amended rows.
 - **REQ-023** Appearance groups per palette, aliasing the palette's own steps by reference (the
   shape of KF-3, the step numbers to be confirmed against `amber.ts` by the K3 builder and recorded
   in the Findings of #570; the gate asserts keys, not numbers). Verified unaffected by the #588
@@ -288,6 +304,12 @@ Consequences that shape the design:
   on-colour: `{n}.on-accent` = the palette's `-on-{n}` role (mode-flipping) and `{n}.prime` = the
   prime swatch (mode-independent, `base` only). They are additive keys inside the same object and
   break nothing that reads Park's keys.
+  *Amendment (2026-10-11, T-0047, ADR-038):* `on-accent` is the on-colour for the fill it sits on,
+  step 9 = the prime. Under `onColorMode: "contrast"` (the default) it is the policy's own pick
+  (`semantic.js` `pickOnColor`) against the prime's luminance: the better of the ramp ends `050`/`950`
+  if it clears WCAG AA, else the better of `white`/`black`, one ref in both modes because the prime
+  is mode-independent. Under `"fixed"`, or where the document overrides the `-on-{n}` role (per
+  mode), the role's own value is kept, as before.
 - **REQ-025** `accent` is a deep copy of the primary driver's object, `gray` of the neutral driver's,
   with every internal `{colors.primary.…}` reference rewritten to `{colors.accent.…}` /
   `{colors.gray.…}` so the copy is self-contained (Park's own `gray: colorPalettes.neutral` is a copy,
@@ -327,6 +349,12 @@ Consequences that shape the design:
   U0 spike result (recorded before U1 started): Panda 1.12.1 passes a raw `var()` string through a
   `{ base, _dark }` semantic-token leaf unchanged, confirming (e1) is viable without falling back to
   a Panda-token-path alternative.
+
+  *Amendment (2026-10-11, T-0047, ADR-038):* steps 7..10 link the prime rung primitive their
+  REQ-021 row names (after the light step 7 guard) (`--{pfx}-{n}-prime-{rung}`, the bare `--{pfx}-{n}-prime` for the centre) or,
+  dark step 7, the raw stop; steps 11..12 link the driving role's own refs; `on-accent` links the
+  REQ-024 pick (`--{pfx}-{n}-050`/`-950` or `--{pfx}-white`/`-black`). Every link still names a
+  primitive `exportCSS`/`exportOKLCH` declares.
 
   The values form (REQ-020..028) is unchanged by this REQ: `exportRadix(state)` with no `opts.refs`
   is byte-identical to the pre-#638 output, stamp line excepted.
@@ -530,6 +558,10 @@ Neutral at full chroma, the emitters must be fed the resolved state, as the draw
   `12` `oklch(0.1774 0.0044 264.46) / oklch(1 0 0)`. Luminance is still monotone in each mode (the
   REQ-061 control): `base` L strictly decreases 0.9552 → 0.1774 across steps 1..12; `_dark` L
   strictly increases 0.2346 → 1 across steps 1..12.
+  *Amendment (2026-10-11, T-0047, ADR-038):* the step 7..10 literals above predate the prime-ladder
+  rows of REQ-021 (and every literal predates later engine moves); the values of record are the
+  committed fixture `test/engine/fixtures/radix-baseline.json`, and the `radix` gate in
+  `test/engine/exports.mjs` still holds the neutral ladder monotone in each mode.
 - **EX-5 (NORMATIVE, park alpha projection, accent = primary).** Step 9 `base` solid `#136CE9`
   projects to `a = 0.9255`, `C = [0, 96, 231]`, emitted `oklch(… / 92.5%)`; `_dark` solid `#428BFB`
   over black projects to `a = 0.9843`, `C = [67, 141, 255]`. Gray step 3 `base` `#E7E9ED` projects
@@ -671,3 +703,9 @@ regenerated values, and the durable source material now live at
 REQ-022 and REQ-023 were checked against the correction and need no wording change (both operate on
 step/alpha-step numbers generically, never assumed steps 6..8 were translucent), see the inline
 notes on each REQ.
+
+**Amendment, 2026-10-11 (T-0047, ADR-038, user ruling "9 and 10 plus 7 and 8 to primes").** Steps
+7..10 read the prime ladder (light `brightest`/`brighter`/`prime`/`dim`, dark `700`/`dim`/`prime`/
+`bright`, light 7/8 under the per-palette step 7 guard) and `on-accent` is picked against the prime. REQ-021, REQ-022, REQ-024, REQ-029 and EX-4
+carry the inline notes; REQ-023's aliases are unchanged. The version moves 0.3.1 → 0.4.0; status
+stays `approved`.

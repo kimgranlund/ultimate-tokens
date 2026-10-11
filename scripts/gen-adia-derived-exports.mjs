@@ -79,8 +79,11 @@ export const ARTIFACTS = [
   // 2.2.0 / 1.5.0 (#788, compute layers): the same document re-exported under EXPORT_SCHEMA_VERSION 7,
   // whose exporters add a layer-pins comment line after the schema stamp; no token value, name or
   // ordering moved, `minor` for both.
+  // 1.6.0 (T-0047, ADR-038): Radix steps 7..10 read the prime ladder (light 7/8 under the per-palette
+  // step 7 guard) and `on-accent` is picked against the prime, so token values moved in the Radix
+  // artifact under unchanged keys, `minor`; the OKLCH artifact's bytes are identical and it stays 2.2.0.
   { name: "adia-oklch-export", file: "adia-oklch-export.css", key: "oklch", version: "2.2.0" },
-  { name: "adia-radix-export", file: "adia-radix-export.mjs", key: "radix", version: "1.5.0" },
+  { name: "adia-radix-export", file: "adia-radix-export.mjs", key: "radix", version: "1.6.0" },
 ];
 
 // exportRadix's own reserved alias keys (I4, ticket #637): promoted into src/engine/exports.js as

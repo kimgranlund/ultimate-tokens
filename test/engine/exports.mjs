@@ -44,6 +44,24 @@ const ALL_WITH_DATA = [...BRAND_ONLY, ...DATA_8];
 // must exercise the SAME document; a second hand-built copy could drift from it.
 const RADIX_MK = (name, hue) => ({ name, hue, chroma: 60, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true });
 const RADIX_COLLIDING = [...BRAND_ONLY.filter((p) => p.name !== "Danger"), RADIX_MK("Accent", 40), RADIX_MK("Error", 350)];
+// ADR-038's light step 7 guard, re-derived with this test's OWN CIE L* (WCAG relative luminance, then
+// the CIE formula), never exports.js's radixSteps: light step 7 keeps `brightest` while its pixel sits
+// at least 2 L* under step 6's (stop 250); otherwise light 7/8 read `brighter`/`bright` when
+// `brighter` does, else the base stops 300/350. RADIX_COLLIDING carries one palette of each fallback
+// (Accent, hue 40, falls to the stops; Error, hue 350, to `brighter`/`bright`).
+const lstarT = (rgb) => {
+  const c = rgb.map((v) => { const s = v / 255; return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; });
+  const y = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  return y > 216 / 24389 ? 116 * Math.cbrt(y) - 16 : (24389 / 27) * y;
+};
+const radixSrcRgbT = (p, src) => (typeof src === "number" ? p.byStop.get(src) : p.prime[src] && p.prime[src].rgb);
+const radixGuardT = (p, table) => {
+  const L = (src) => lstarT(radixSrcRgbT(p, src));
+  const ceiling = L(250) - 2;
+  if (L("brightest") <= ceiling) return table;
+  const [l7, l8] = L("brighter") <= ceiling ? ["brighter", "bright"] : [300, 350];
+  return table.map((s) => (s.step === 7 ? { ...s, light: l7 } : s.step === 8 ? { ...s, light: l8 } : s));
+};
 const fails = [];
 const FAIL = (g, m) => { if (!fails.some((f) => f.startsWith(g + ":"))) fails.push(`${g}: ${m}`); };
 
@@ -623,10 +641,11 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     return { rgb: oklchToRgb(Number(L), Number(C), Number(H)), a: a !== undefined ? Number(a) / 100 : 1 };
   };
 
-  // The ratified 1..8 raw-stop table (docs/reference/data/radix-projection.json), redeclared here
-  // independently of exports.js's own RADIX_RAW_STEPS, pins the EXACT stop number per step, not
-  // just monotone direction (a same-direction off-by-one, e.g. step 6 duplicating step 5's stop,
-  // still reads monotone but is wrong).
+  // The ratified 1..6 raw-stop table and the 7..10 prime table (docs/reference/data/radix-projection.json,
+  // ADR-038), redeclared here independently of exports.js's own RADIX_RAW_STEPS, pin the EXACT
+  // source per step and mode, not just monotone direction (a same-direction off-by-one, e.g. step 6
+  // duplicating step 5's stop, still reads monotone but is wrong). In the prime table a string is a
+  // prime rung (p.prime[rung]) and a number a raw stop (dark 7 keeps stop 700, ADR-038).
   const RATIFIED_RAW_STEPS = [
     { step: 1, light: 100, dark: 900 },
     { step: 2, light: 125, dark: 875 },
@@ -634,9 +653,28 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     { step: 4, light: 175, dark: 825 },
     { step: 5, light: 200, dark: 800 },
     { step: 6, light: 250, dark: 750 },
-    { step: 7, light: 300, dark: 700 },
-    { step: 8, light: 350, dark: 650 },
   ];
+  const RATIFIED_PRIME_STEPS = [
+    { step: 7, light: "brightest", dark: 700 },
+    { step: 8, light: "brighter", dark: "dim" },
+    { step: 9, light: "prime", dark: "prime" },
+    { step: 10, light: "dim", dark: "bright" },
+  ];
+  const srcRgb = radixSrcRgbT;
+  // the committed projection table names the same sources: a padded stop, or a prime rung by its
+  // flat name (`prime` for the centre, `prime-{rung}` otherwise), and the guard's light 7/8 fallbacks.
+  {
+    const proj = JSON.parse(readFileSync(new URL("../../docs/reference/data/radix-projection.json", import.meta.url), "utf8")).projection;
+    const name = (src) => (typeof src === "number" ? String(src).padStart(3, "0") : src === "prime" ? "prime" : `prime-${src}`);
+    for (const { step, light, dark } of [...RATIFIED_RAW_STEPS, ...RATIFIED_PRIME_STEPS]) {
+      const row = proj[String(step)];
+      if (!row || row.light !== name(light) || row.dark !== name(dark)) FAIL("radix", `radix-projection.json step ${step} = ${JSON.stringify(row)}, want light ${name(light)} / dark ${name(dark)}`);
+    }
+    for (const [step, want] of [["7", ["brighter", 300]], ["8", ["bright", 350]]]) {
+      const got = proj[step] && proj[step].light_fallback;
+      if (JSON.stringify(got) !== JSON.stringify(want.map(name))) FAIL("radix", `radix-projection.json step ${step} light_fallback = ${JSON.stringify(got)}, want ${JSON.stringify(want.map(name))} (ADR-038 guard)`);
+    }
+  }
 
   const state = C(ALL);
   const preset = X.exportRadix(state);
@@ -682,19 +720,57 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     // exact-value pin (reviewer finding on #588's radix gate): each of steps 1..8 must read the
     // EXACT ratified stop number, not merely a monotone-in-the-right-direction neighbour, deep-equal
     // the emitted leaf's parsed rgb against derivedAll's own byStop.get(expectedStop) for that step,
-    // per palette (cheap enough to run for all, not just one representative).
-    for (const { step, light, dark } of RATIFIED_RAW_STEPS) {
+    // per palette (cheap enough to run for all, not just one representative). Light 7/8 follow the
+    // ADR-038 guard (radixGuardT).
+    for (const { step, light, dark } of [...RATIFIED_RAW_STEPS, ...radixGuardT(p, RATIFIED_PRIME_STEPS)]) {
       const parsedBase = parseOklch(g[String(step)].value.base);
       const parsedDark = parseOklch(g[String(step)].value._dark);
-      const wantBase = p.byStop.get(light);
-      const wantDark = p.byStop.get(dark);
+      const wantBase = srcRgb(p, light);
+      const wantDark = srcRgb(p, dark);
       if (!parsedBase || !wantBase || parsedBase.rgb.some((c, i) => Math.abs(c - wantBase[i]) > 1)) {
-        FAIL("radix", `colors.${p.n}.${step}.base rgb ${parsedBase && parsedBase.rgb} != byStop.get(${light}) ${wantBase} (exact-stop pin)`);
+        FAIL("radix", `colors.${p.n}.${step}.base rgb ${parsedBase && parsedBase.rgb} != ${light} ${wantBase} (exact-source pin)`);
       }
       if (!parsedDark || !wantDark || parsedDark.rgb.some((c, i) => Math.abs(c - wantDark[i]) > 1)) {
-        FAIL("radix", `colors.${p.n}.${step}._dark rgb ${parsedDark && parsedDark.rgb} != byStop.get(${dark}) ${wantDark} (exact-stop pin)`);
+        FAIL("radix", `colors.${p.n}.${step}._dark rgb ${parsedDark && parsedDark.rgb} != ${dark} ${wantDark} (exact-source pin)`);
       }
     }
+    // ADR-038: step 9 is the brand colour itself, the same in both modes and the same as the `prime` leaf.
+    if (g["9"].value.base !== g["9"].value._dark || g["9"].value.base !== g.prime.value.base) FAIL("radix", `colors.${p.n}.9 = ${JSON.stringify(g["9"].value)} is not the mode-independent prime ${g.prime.value.base}`);
+    // ADR-038: solid.fg (on-accent) clears WCAG AA against solid.bg (step 9) in both modes, scored by
+    // this test's own arithmetic on the parsed leaves.
+    const wcag = (a, b) => { const [x, y] = [X.relLumExp(a), X.relLumExp(b)]; return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+    for (const mode of ["base", "_dark"]) {
+      const on = parseOklch(g["on-accent"].value[mode]), fill = parseOklch(g["9"].value[mode]);
+      const ratio = on && fill ? wcag(on.rgb, fill.rgb) : 0;
+      if (ratio < 4.5) FAIL("radix", `colors.${p.n} on-accent.${mode} on step 9 = ${ratio.toFixed(2)}:1, under WCAG AA 4.5 (ADR-038)`);
+    }
+  }
+
+  // ADR-038's light step 7 guard on the documents that trip it: RADIX_COLLIDING's Accent falls to the
+  // base stops and its Error to `brighter`/`bright`. Light 7/8 pin to the guard's pick, light step 7 is
+  // never lighter than step 6, and step 8 never lighter than step 7; together with C(ALL) (every
+  // palette keeps `brightest`) all three outcomes must be seen, or the guard is unwatched.
+  {
+    const seen = new Set(derived.map((p) => radixGuardT(p, RATIFIED_PRIME_STEPS)[0].light));
+    const cSt = C(RADIX_COLLIDING);
+    const cDerived = X.derivedAll(cSt);
+    const cColors = X.exportRadix(cSt).theme.extend.semanticTokens.colors;
+    const cKeys = X.radixPaletteKeys(cDerived.map((p) => p.n));
+    for (const [st, ds, cs, keys] of [[state, derived, colors, derived.map((p) => p.n)], [cSt, cDerived, cColors, cKeys]]) {
+      ds.forEach((p, i) => {
+        const g = cs[keys[i]];
+        const guarded = radixGuardT(p, RATIFIED_PRIME_STEPS);
+        seen.add(guarded[0].light);
+        for (const { step, light } of guarded.slice(0, 2)) {
+          const got = parseOklch(g[String(step)].value.base), want = srcRgb(p, light);
+          if (!got || !want || got.rgb.some((c, j) => Math.abs(c - want[j]) > 1)) FAIL("radix", `colors.${keys[i]}.${step}.base rgb ${got && got.rgb} != the guard's ${light} ${want} (ADR-038)`);
+        }
+        const L = (k) => lstarT(parseOklch(g[k].value.base).rgb);
+        if (L("7") > L("6") + 0.05) FAIL("radix", `colors.${keys[i]}: light step 7 (L* ${L("7").toFixed(2)}) is lighter than step 6 (${L("6").toFixed(2)}), the ADR-038 guard did not hold`);
+        if (L("8") > L("7") + 0.05) FAIL("radix", `colors.${keys[i]}: light step 8 (L* ${L("8").toFixed(2)}) is lighter than step 7 (${L("7").toFixed(2)})`);
+      });
+    }
+    for (const want of ["brightest", "brighter", 300]) if (!seen.has(want)) FAIL("radix", `no fixture palette took the ADR-038 light step 7 outcome ${JSON.stringify(want)}; the guard is unwatched (seen ${JSON.stringify([...seen])})`);
   }
 
   // REQ-025: accent/gray are self-contained deep copies of the driver groups, ref-rewritten.
@@ -908,6 +984,13 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
 //    OKLCH hue, so the anchored families and their aliases move within rounding: 550 / 306 / 286
 //    leaves (ALL / BRAND_ONLY / COLLIDING). The unanchored Accent and Error palettes are byte-identical.
 //    No leaf shape, key, or ordering changed.
+//    T-0047 re-capture (2026-10-11, by script from the engine, ADR-038): steps 7..10 read the prime
+//    ladder and `on-accent` is picked against the prime, so 264 / 142 / 154 mode leaves moved (ALL /
+//    BRAND_ONLY / COLLIDING), every one a 7.base, 8, 9, 10, a7.base, a8, a9, a10 or on-accent leaf
+//    (dark 7 keeps stop 700; under the light step 7 guard COLLIDING's Accent reads stops 300/350 for
+//    light 7/8, its 7.base unmoved, and its Error `brighter`/`bright`). Steps 1..6, 11, 12, their
+//    alphas, `prime` and the appearance aliases (`solid.*` included, they are `{colors.x.9}` refs) are
+//    byte-identical. No shape, key or order changed.
 {
   const G = "radix-refs-values-unchanged";
   const fixture = JSON.parse(readFileSync(new URL("./fixtures/radix-baseline.json", import.meta.url), "utf8"));
@@ -940,7 +1023,8 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     const [, L, Ch, H, a] = m;
     return { rgb: oklchToRgb(Number(L), Number(Ch), Number(H)), a: a !== undefined ? Number(a) / 100 : 1 };
   };
-  // redeclared independently of exports.js's own RADIX_RAW_STEPS (same reasoning as the radix gate).
+  // redeclared independently of exports.js's own RADIX_RAW_STEPS (same reasoning as the radix gate):
+  // 1..6 raw stops, 7..10 per mode a prime rung (a string) or a raw stop (a number, ADR-038).
   const RATIFIED_RAW_STEPS = [
     { step: 1, light: 100, dark: 900 },
     { step: 2, light: 125, dark: 875 },
@@ -948,10 +1032,15 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     { step: 4, light: 175, dark: 825 },
     { step: 5, light: 200, dark: 800 },
     { step: 6, light: 250, dark: 750 },
-    { step: 7, light: 300, dark: 700 },
-    { step: 8, light: 350, dark: 650 },
+    { step: 7, light: "brightest", dark: 700 },
+    { step: 8, light: "brighter", dark: "dim" },
+    { step: 9, light: "prime", dark: "prime" },
+    { step: 10, light: "dim", dark: "bright" },
   ];
-  const ROLE_STEPS = [{ step: 9, suffix: "" }, { step: 10, suffix: "-hover" }, { step: 11, suffix: "-on-surface-variant" }, { step: 12, suffix: "-on-surface" }];
+  const ROLE_STEPS = [{ step: 11, suffix: "-on-surface-variant" }, { step: 12, suffix: "-on-surface" }];
+  // the test's OWN source -> var-name-fragment rule: a stop pads to 3 digits; a prime rung is the
+  // bare `prime` for the centre and `prime-{rung}` for the other six (the CSS surface's naming).
+  const srcFrag = (src) => (typeof src === "number" ? String(src).padStart(3, "0") : src === "prime" ? "prime" : `prime-${src}`);
   // the test's OWN ref -> var-name-fragment rule (semantic.js's refSlug re-derived here): a bare
   // stop pads to 3 digits; a scrim "{base}-{step}" becomes "scrim-{step}" on the emitted hyphen
   // surface (ADR-016), pinned against exportCSS's real text by radix-refs-parity below.
@@ -990,23 +1079,27 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     if (v1.startsWith("var(")) FAIL(G, `the DEFAULT (values) form emitted a link: ${JSON.stringify(v1)}`);
   }
 
-  // U1.3, steps 1..8 link the exact ratified raw stop, per palette, both modes (c1 identity map).
+  // U1.3, steps 1..10 link the exact ratified source (a raw stop, or a prime rung for 7..10,
+  //        ADR-038, light 7/8 after the guard), per palette, both modes (c1 identity map), on C(ALL)
+  //        and on RADIX_COLLIDING, whose Accent and Error trip the guard (links use the RAW slug).
   {
     const G = "radix-refs-raw-pin";
-    for (const p of derived) {
-      const g = refColors[p.n];
+    const cSt = C(RADIX_COLLIDING), cDerived = X.derivedAll(cSt), cKeys = X.radixPaletteKeys(cDerived.map((p) => p.n));
+    const cRef = X.exportRadix(cSt, { refs: true }).theme.extend.semanticTokens.colors;
+    const rows = [...derived.map((p) => [p, refColors[p.n]]), ...cDerived.map((p, i) => [p, cRef[cKeys[i]]])];
+    for (const [p, g] of rows) {
       if (!g) continue;
-      for (const { step, light, dark } of RATIFIED_RAW_STEPS) {
-        const wantBase = `var(--c-${p.n}-${String(light).padStart(3, "0")})`;
-        const wantDark = `var(--c-${p.n}-${String(dark).padStart(3, "0")})`;
+      for (const { step, light, dark } of radixGuardT(p, RATIFIED_RAW_STEPS)) {
+        const wantBase = `var(--c-${p.n}-${srcFrag(light)})`;
+        const wantDark = `var(--c-${p.n}-${srcFrag(dark)})`;
         if (g[String(step)].value.base !== wantBase) FAIL(G, `colors.${p.n}.${step}.base = ${JSON.stringify(g[String(step)].value.base)}, want ${JSON.stringify(wantBase)}`);
         if (g[String(step)].value._dark !== wantDark) FAIL(G, `colors.${p.n}.${step}._dark = ${JSON.stringify(g[String(step)].value._dark)}, want ${JSON.stringify(wantDark)}`);
       }
     }
   }
 
-  // U1.4, steps 9..12 link the DRIVING ROLE's own lightRef/darkRef, so overrides, accentRef and
-  //        the on-color policy travel with the link instead of being frozen into a stop number.
+  // U1.4, steps 11..12 link the DRIVING ROLE's own lightRef/darkRef, so overrides travel with the
+  //        link instead of being frozen into a stop number (9..10 read the prime ladder, ADR-038).
   {
     const G = "radix-refs-role-pin";
     for (const p of derived) {
@@ -1022,12 +1115,12 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
       }
     }
     // an override moves the link: the anti-freeze control. Re-derive with a role override on the
-    // primary's -hover role and confirm step 10's link followed it.
-    const ovKey = derived.find((p) => p.n === drivers.primary.n).roles.find((r) => r.suffix === "-hover").key;
+    // primary's -on-surface-variant role and confirm step 11's link followed it.
+    const ovKey = derived.find((p) => p.n === drivers.primary.n).roles.find((r) => r.suffix === "-on-surface-variant").key;
     const ovState = { ...state, roleOverrides: { [ovKey]: { light: "150", dark: "850" } } };
-    const ovLink = X.exportRadix(ovState, { refs: true }).theme.extend.semanticTokens.colors[drivers.primary.n]["10"].value;
+    const ovLink = X.exportRadix(ovState, { refs: true }).theme.extend.semanticTokens.colors[drivers.primary.n]["11"].value;
     if (ovLink.base !== `var(--c-${drivers.primary.n}-150)` || ovLink._dark !== `var(--c-${drivers.primary.n}-850)`) {
-      FAIL(G, `a -hover role override did not move step 10's link: ${JSON.stringify(ovLink)}`);
+      FAIL(G, `a -on-surface-variant role override did not move step 11's link: ${JSON.stringify(ovLink)}`);
     }
   }
 
@@ -1076,19 +1169,47 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     }
   }
 
-  // U1.7, the two additive leaves: on-accent follows the `-on-{n}` role's own refs; prime links the
-  //        mode-independent bare-prime identity primitive and stays base-only (REQ-024).
+  // U1.7, the two additive leaves: on-accent is the on-color policy's pick against the fill it sits
+  //        on, step 9 = the prime (ADR-038), re-derived here by the test's OWN arithmetic (the better
+  //        050/950 end if it clears AA, else the better of white/black), one ref in both modes since
+  //        the prime is mode-independent; prime links the bare-prime identity primitive and stays
+  //        base-only (REQ-024).
+  const relLumT = (rgb) => { const c = rgb.map((v) => { const s = v / 255; return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+  const ratioT = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  const wantPick = (p) => {
+    const f = relLumT(p.prime.prime.rgb), lo = relLumT(p.byStop.get(50)), hi = relLumT(p.byStop.get(950));
+    const end = ratioT(lo, f) >= ratioT(hi, f) ? "050" : "950";
+    if (ratioT(end === "050" ? lo : hi, f) >= 4.5) return end;
+    return ratioT(1, f) >= ratioT(0, f) ? "white" : "black";
+  };
   {
     const G = "radix-refs-extras";
+    const picks = new Set();
     for (const p of derived) {
       const g = refColors[p.n];
       if (!g) continue;
-      const onRole = p.roles.find((x) => x.suffix === `-on-${p.n}`);
-      const wantOn = { base: wantLink(p.n, onRole.lightRef), _dark: wantLink(p.n, onRole.darkRef) };
-      if (JSON.stringify(g["on-accent"].value) !== JSON.stringify(wantOn)) FAIL(G, `colors.${p.n}.on-accent = ${JSON.stringify(g["on-accent"].value)}, want ${JSON.stringify(wantOn)}`);
+      const pick = wantPick(p);
+      picks.add(pick);
+      const wantOn = { base: wantLink(p.n, pick), _dark: wantLink(p.n, pick) };
+      if (JSON.stringify(g["on-accent"].value) !== JSON.stringify(wantOn)) FAIL(G, `colors.${p.n}.on-accent = ${JSON.stringify(g["on-accent"].value)}, want ${JSON.stringify(wantOn)} (the policy's pick against the prime)`);
       if (g.prime.value.base !== `var(--c-${p.n}-prime)`) FAIL(G, `colors.${p.n}.prime.base = ${JSON.stringify(g.prime.value.base)}, want var(--c-${p.n}-prime)`);
       if (g.prime.value._dark !== undefined) FAIL(G, `colors.${p.n}.prime must stay mode-independent (base only), got ${JSON.stringify(g.prime.value)}`);
     }
+    // the fixture must exercise both a ramp end and the achromatic fall-through, or half the rule is unwatched.
+    if (![...picks].some((r) => r === "050" || r === "950") || ![...picks].some((r) => r === "white" || r === "black")) FAIL(G, `the on-accent picks ${JSON.stringify([...picks])} do not cover both a ramp end and the white/black fall-through`);
+    // "fixed" (ADR-003, the user's uniform brand on-color) keeps the `-on-{n}` role's own refs verbatim.
+    const fixedColors = X.exportRadix({ ...state, onColorMode: "fixed" }, { refs: true }).theme.extend.semanticTokens.colors;
+    for (const p of X.derivedAll({ ...state, onColorMode: "fixed" })) {
+      const onRole = p.roles.find((x) => x.suffix === `-on-${p.n}`);
+      const want = { base: wantLink(p.n, onRole.lightRef), _dark: wantLink(p.n, onRole.darkRef) };
+      if (JSON.stringify(fixedColors[p.n]["on-accent"].value) !== JSON.stringify(want)) FAIL(G, `onColorMode "fixed": colors.${p.n}.on-accent = ${JSON.stringify(fixedColors[p.n]["on-accent"].value)}, want the role's own ${JSON.stringify(want)}`);
+    }
+    // a per-document override of the `-on-{n}` role wins, mode by mode: a light-only override moves
+    // base and leaves _dark on the prime pick.
+    const pr = derived.find((p) => p.n === drivers.primary.n);
+    const onKey = pr.roles.find((x) => x.suffix === `-on-${pr.n}`).key;
+    const ovOn = X.exportRadix({ ...state, roleOverrides: { [onKey]: { light: "300" } } }, { refs: true }).theme.extend.semanticTokens.colors[pr.n]["on-accent"].value;
+    if (ovOn.base !== `var(--c-${pr.n}-300)` || ovOn._dark !== wantLink(pr.n, wantPick(pr))) FAIL(G, `a light-only -on-${pr.n} override: on-accent = ${JSON.stringify(ovOn)}, want base var(--c-${pr.n}-300) and _dark the prime pick`);
   }
 
   // U1.8, the accent/gray driver clones (REQ-025) link the PRIMARY/NEUTRAL palette's own custom

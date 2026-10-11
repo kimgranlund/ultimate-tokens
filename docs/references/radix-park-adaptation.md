@@ -27,9 +27,12 @@ only ever points from Adia toward Radix/Panda/Park.
 ## Prime and Scrim stay separate namespaces
 
 Adia's `prime-*` (expressive/brand-oriented, high-chroma) and `scrim-*` (alpha compositing
-primitives) families are never collapsed into Radix 1–12 or `a1–a12`. They solve a different
-problem than the Radix ladder (functional UI tonal roles) and keep their own namespace
-(`colors.{family}.prime.*`, `colors.{family}.scrim.*`) alongside the projected ladder.
+primitives) families keep their own namespace (`colors.{family}.prime.*`, `colors.{family}.scrim.*`)
+alongside the projected ladder; they are never renamed or folded into it. Since ADR-038 (T-0047,
+2026-10-11) the ladder READS four prime rungs: steps 7 to 10 point at the saturated identity
+swatches rather than base ramp stops, so step 9 is the brand colour itself, as in Radix. The rungs
+stay prime primitives (`--{pfx}-{family}-prime-*`); the ladder references them, it does not copy
+them into a new name. Scrims are still never projected.
 
 ## Exceptions are data, not hidden component fixes
 
@@ -51,12 +54,17 @@ buried in a component or recipe.
 4. **Panda / Park UI**: `colorPalette` semantic tokens and Park recipes consume the projected
    ladder only; they stay unaware of Adia's own primitive stop numbers.
 
-## Corrected canonical table (2026-09-11, issue #588)
+## Canonical table (2026-09-11, issue #588; steps 7 to 10 since 2026-10-11, ADR-038)
 
-Steps 1–8 are RAW RAMP STOPS, opaque values read directly from each family's own tonal ramp at
-the exact stop listed, never role-indirected and never flattened over white/black. Steps 9–12
-are role-derived (bare accent / hover / `on-surface-variant` / `on-surface`), unchanged from the
-original ratification:
+Steps 1–6 are RAW RAMP STOPS, opaque values read directly from each family's own tonal ramp at
+the exact stop listed, never role-indirected and never flattened over white/black. Steps 7–10
+read the family's PRIME LADDER (ADR-038, T-0047), mode-independent swatches, so step 9 is the same
+brand colour in both modes; dark step 7 keeps the raw stop 700, because no rung lies between stop
+750 and `prime-dim` in dark mode. Light steps 7–8 are guarded per family: light step 7 reads
+`prime-brightest` only while it sits at least 2 L* under step 6; otherwise light 7–8 read
+`prime-brighter`/`prime-bright` when `prime-brighter` does, else the raw stops 300/350 (the
+`light_fallback` lists in the JSON). Steps 11–12 are role-derived (`on-surface-variant` /
+`on-surface`), unchanged from the original ratification:
 
 | Step | Light | Dark | Functional role |
 |---|---|---|---|
@@ -66,12 +74,16 @@ original ratification:
 | 4 | 175 | 825 | component hover background |
 | 5 | 200 | 800 | component active/selected background |
 | 6 | 250 | 750 | subtle border/separator |
-| 7 | 300 | 700 | interactive border |
-| 8 | 350 | 650 | strong border/focus |
-| 9 | 550 | 450 | solid accent |
-| 10 | 650 | 350 | solid accent hover |
+| 7 | prime-brightest (guarded: prime-brighter, else 300) | 700 | interactive border |
+| 8 | prime-brighter (guarded: prime-bright, else 350) | prime-dim | strong border/focus |
+| 9 | prime | prime | solid accent |
+| 10 | prime-dim | prime-bright | solid accent hover |
 | 11 | 750 | 250 | secondary text |
 | 12 | 950 | 050 | primary text |
+
+The solid foreground (`on-accent`) is measured against the fill it sits on, the prime: under the
+default `contrast` on-colour policy it is the better of the ramp ends 050/950 if that clears WCAG
+AA, else white or black, one value in both modes (ADR-038).
 
 ## Source material
 

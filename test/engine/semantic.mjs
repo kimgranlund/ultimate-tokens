@@ -13,11 +13,12 @@ import * as S from "../../src/engine/semantic.js";
 // role-contrast gate below reads that resolved kit and model's own contrastRatio, exactly as the
 // MCP `contrastLint` does, so the gate and the lint can never disagree about which two colors pair.
 import { defaultDocument, brandKit, contrastRatio, slug, stateOf, projectView } from "../../src/ui/model.mjs";
-// the Park leg (#636) measures the SECOND derivation of the same pairing: exports.js's derivedAll,
-// which is the object radixColorGroup reads, on the default document and on the committed Adia brand
-// document (PRESETS is the generated mirror of docs/reference/colors/categories/brands.json that
+// the Park leg (#636) measures the Radix preset's own solid pair (step 9 on-accent, ADR-038) out of
+// exports.js's exportRadix, on the default document and on the committed Adia brand document
+// (PRESETS is the generated mirror of docs/reference/colors/categories/brands.json that
 // scripts/gen-adia-derived-exports.mjs reads; `hydrate` is the same loader it uses).
-import { derivedAll } from "../../src/engine/exports.js";
+import { derivedAll, exportRadix, radixPaletteKeys } from "../../src/engine/exports.js";
+import { oklchToRgb } from "../../src/engine/okhsl.js";
 import { PRESETS } from "../../src/ui/categories/brands.js";
 import { hydrate } from "../../src/ui/persist.js";
 import { gateReport } from "../gate-report.mjs";
@@ -241,11 +242,10 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
 //    FLOORS_BF2AAF6/PENDING_U4/checkFloors below the 96-cell sweep enforce it - reds on a 42nd
 //    unlisted drop, or on any of these 41 eroding further than its value at this commit.
 //
-//    The PARK leg (#636) checks the same pairing through the OTHER derivation, exports.js's
-//    derivedAll, which is what radixColorGroup reads for Park's `solid.bg` (step 9 = the bare accent
-//    role) and `solid.fg` (`on-accent` = the `-on-{n}` role), on the default document AND on the
-//    committed Adia brand document, so a policy that passed via model.mjs cannot fail via the
-//    exporters. ────────────────────────────────────────────────────────────────────────────────────
+//    The PARK leg (#636) checks the Radix preset's own solid pair, read out of exportRadix: Park's
+//    `solid.bg` (step 9, the prime swatch since ADR-038) and `solid.fg` (`on-accent`, the on-color
+//    policy's pick against that prime), on the default document AND on the committed Adia brand
+//    document, so a policy that passed via model.mjs cannot fail via the exporters. ─────────────────
 {
   const hexToRgb = (hex) => [0, 2, 4].map((i) => parseInt(String(hex).slice(1 + i, 3 + i), 16));
   const AA = 4.5;                                   // the ruled floor (#662): every family, both schemes
@@ -433,28 +433,34 @@ if (!succ.some((r) => r.key === "onSuccess") || !succ.some((r) => r.key === "suc
   for (const v of floorViolations) FAIL("role-contrast", `Q-B: ${v}`);
   console.log(`  ${floorViolations.length === 0 ? "pass" : "FAIL"}  role-contrast Q-B floor gate: 0 unlisted drops, 0 further erosion (${PENDING_U4.length} cells named "pending U4")`);
 
-  // ── the PARK leg (#636): the SAME pairing through exports.js's own derivation. Park's `solid.fg`
-  //    sits on `solid.bg`; radixColorGroup builds step 9 from the bare accent role and `on-accent`
-  //    from the `-on-{n}` role, both off derivedAll's resolved `r.light.rgb` / `r.dark.rgb`. Measured
-  //    on the default document and on the committed Adia brand document (the generated brands.js
-  //    mirror gen-adia-derived-exports.mjs reads), so neither the app's default nor the one shipped
-  //    real-world kit can regress. rgb triples straight from the engine, no hex round-trip.
+  // ── the PARK leg (#636): the Radix preset's OWN solid pair. Park's `solid.fg` sits on `solid.bg`;
+  //    since ADR-038 (T-0047) step 9 is the palette's prime swatch, not the bare accent role, and
+  //    `on-accent` is the on-color policy's pick against that prime, so this leg reads the two
+  //    emitted leaves straight out of exportRadix (`9` and `on-accent`, each mode) and parses them
+  //    with okhsl.js's oklchToRgb. Measured on the default document and on the committed Adia brand
+  //    document (the generated brands.js mirror gen-adia-derived-exports.mjs reads), so neither the
+  //    app's default nor the one shipped real-world kit can regress.
   let parkChecked = 0;
   {
     const adia = PRESETS.find((p) => p.name === ADIA_PRESET_NAME);
     if (!adia) FAIL("role-contrast", `the Adia brand preset "${ADIA_PRESET_NAME}" is missing from src/ui/categories/brands.js, the Park leg has nothing to measure`);
     const docs = [["default document", defaultDocument()], ...(adia ? [["Adia brand document", hydrate(adia)]] : [])];
+    const leafRgb = (s) => { const m = /^oklch\(([-\d.]+) ([-\d.]+) ([-\d.]+)\)$/.exec(s); return m ? oklchToRgb(Number(m[1]), Number(m[2]), Number(m[3])) : null; };
     for (const [label, doc] of docs) {
-      for (const p of derivedAll(stateOf(doc))) {
-        const bg = p.roles.find((r) => r.suffix === "");              // Park solid.bg  (radix step 9)
-        const fg = p.roles.find((r) => r.suffix === `-on-${p.n}`);    // Park solid.fg  (on-accent)
-        if (!bg || !fg) { FAIL("role-contrast", `${label} ${p.name}: no accent/on-accent role pair in derivedAll, radixColorGroup would throw`); continue; }
-        for (const side of ["light", "dark"]) {
-          const ratio = contrastRatio(bg[side].rgb, fg[side].rgb);
+      const st = stateOf(doc);
+      const palettes = derivedAll(st);
+      const preset = exportRadix(st, {}, palettes);
+      const keys = radixPaletteKeys(palettes.map((p) => p.n));
+      palettes.forEach((p, i) => {
+        const g = preset.theme.extend.semanticTokens.colors[keys[i]];
+        if (!g || !g["9"] || !g["on-accent"]) { FAIL("role-contrast", `${label} ${p.name}: no step 9 / on-accent leaf in the Radix preset`); return; }
+        for (const [side, mode] of [["light", "base"], ["dark", "_dark"]]) {
+          const bg = leafRgb(g["9"].value[mode]), fg = leafRgb(g["on-accent"].value[mode]);
+          const ratio = bg && fg ? contrastRatio(bg, fg) : 0;
           parkChecked++;
-          if (ratio < AA) FAIL("role-contrast", `${label} ${p.name} ${side.toUpperCase()} (Park solid.fg on solid.bg): ${ratio.toFixed(2)}:1, under the ruled WCAG AA floor ${AA}:1 (#636/#662)`);
+          if (ratio < AA) FAIL("role-contrast", `${label} ${p.name} ${side.toUpperCase()} (Park solid.fg on solid.bg): ${ratio.toFixed(2)}:1, under the ruled WCAG AA floor ${AA}:1 (#636/#662, ADR-038)`);
         }
-      }
+      });
     }
     if (parkChecked !== 64) FAIL("role-contrast", `Park leg compared ${parkChecked} solid.fg/solid.bg pairs, want 64 (2 documents x 16 palettes x 2 schemes)`);
   }

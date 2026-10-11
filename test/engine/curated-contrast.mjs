@@ -15,8 +15,8 @@
 // carries the whole document control surface (curve/damp/toneMode/accentRef/onColorMode/lmin/lmax/…
 // plus `palettes`), so `presetDoc(preset)` (hydrate, pinned to the latest layers as the app opens a
 // preset) is a real document and `derivedAll(doc)` is the production
-// role ladder, the same call exportRadix makes (`const palettes = derivedAll(state)`,
-// src/engine/exports.js:1280; derivedAll itself at :371) and the same one `projectView(...).exports`
+// role ladder, the same call exportRadix makes (`const palettes = derived || derivedAll(state)`
+// in src/engine/exports.js's exportRadix) and the same one `projectView(...).exports`
 // drives. 343 documents, 3780 palettes, 7560 accent/on-color cells per tone mode, 22680 across the
 // three modes this gate holds.
 //
@@ -24,16 +24,17 @@
 // brands.json, exported by scripts/gen-adia-derived-exports.mjs into docs/reference/data/
 // adia-{oklch,radix}-export.*.
 //
-// THE PAIR. Per palette: the ACCENT role, `{ step: 9, suffix: "" }`, exports.js:1075, resolving 550
-// light / 450 dark under accentRef "mode", against its ON-COLOR role, the `-on-<slug>` suffix that
-// exports.js:1263 looks up. Read off `derivedAll` and scored with src/ui/model.mjs's own
-// `contrastRatio`. Identical to the Park-UI `solid.bg` / `solid.fg` pair, `ref("9")` / `ref("on-accent")`
-// at exports.js:1239-1240, that the #636 measurement traced.
-//
-// Those four line numbers are pinned against 381b8d5 (#638's dual Radix export, the latest change
-// to move exports.js); each was re-verified line by line against that tree, not carried forward.
-// scripts/audit-citations.mjs walks docs/** only, so nothing re-checks a citation in a test file,
-// anyone moving exports.js re-checks these by hand, against the quoted source text.
+// THE PAIRS, both scored with src/ui/model.mjs's own `contrastRatio`, per palette and scheme:
+//   ROLE  the ACCENT role (suffix "", 550 light / 450 dark under accentRef "mode") against its
+//         ON-COLOR role, the `-on-<slug>` suffix, read off `derivedAll`.
+//   RADIX the Radix preset's own Park-UI `solid.bg` / `solid.fg` pair, `ref("9")` / `ref("on-accent")`
+//         in exports.js's radixColorGroup, which the #636 measurement traced. Since ADR-038 (T-0047)
+//         step 9 is the palette's PRIME swatch and `on-accent` is the on-color policy's pick against
+//         that prime, no longer the role pair above, so the two leaves are read out of exportRadix's
+//         emitted preset (fed the same `derivedAll` result, so no second derivation) and parsed with
+//         okhsl.js's oklchToRgb.
+// Citations here name symbols, not line numbers: scripts/audit-citations.mjs walks docs/** only, so
+// nothing re-checks a line number in a test file.
 //
 // THE FLOOR IS FLAT, AND THE TABLES ARE EMPTY ON PURPOSE. Before #662 this gate carried 101 named
 // brands.json carve-outs and a per-category miss count, because 5228 of the 7560 cells were under
@@ -72,7 +73,8 @@
 // gallery categories once a category's `PRESETS` array was reversed). Bumping SAMPLE_SEED there
 // rotates the whole sample deliberately. The sampled tier is a canary, not the gate of record; the
 // full sweep in CI is what actually covers the corpus.
-import { derivedAll, isDataPalette } from "../../src/engine/exports.js";
+import { derivedAll, exportRadix, isDataPalette, radixPaletteKeys } from "../../src/engine/exports.js";
+import { oklchToRgb } from "../../src/engine/okhsl.js";
 import { contrastRatio } from "../../src/ui/model.mjs";
 import { presetDoc, DOMAINS } from "../../src/ui/persist.js";
 import { gateReport } from "../gate-report.mjs";
@@ -118,6 +120,20 @@ const identityDocs = new Set();
 const sampled = {};                    // category -> the volume this run picked
 let docsMeasured = 0, cellsMeasured = 0, identityCells = 0, liftSkew = 0, palettes = 0;
 let worst = Infinity, worstAt = "";
+// the RADIX pair (ADR-038): its own flat floor, no carve-out table, every miss is named (capped) and counted.
+const radix = { cells: 0, under: 0, named: 0, worst: Infinity, worstAt: "" };
+// the RADIX ORDER (ADR-038's light step 7 guard): light step 7 (the interactive border) is never lighter
+// than step 6 (the subtle border), one cell per palette and tone mode, measured on the emitted leaves
+// with this file's own CIE L* (WCAG relative luminance, then the CIE formula). Before the guard 3401 of
+// 11340 full-corpus cells read step 7 lighter by 2 L* or more; the tolerance here is 0.5 L*.
+const radixOrder = { cells: 0, lighter: 0, named: 0, worst: -Infinity, worstAt: "" };
+const ORDER_TOL = 0.5;
+const lstar = (rgb) => {
+  const c = rgb.map((v) => { const s = v / 255; return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; });
+  const y = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  return y > 216 / 24389 ? 116 * Math.cbrt(y) - 16 : (24389 / 27) * y;
+};
+const leafRgb = (s) => { const m = /^oklch\(([-\d.]+) ([-\d.]+) ([-\d.]+)\)$/.exec(s); return m ? oklchToRgb(Number(m[1]), Number(m[2]), Number(m[3])) : null; };
 const perMode = Object.fromEntries(MODES.map((m) => [m, { cells: 0, under: 0, worst: Infinity, worstAt: "" }]));
 const gallery = {};
 
@@ -149,7 +165,35 @@ for (const cat of CATS) {
     if (doc.toneMode && !MODES.includes(doc.toneMode))
       FAIL("modes", `${cat} "${preset.name}" ships toneMode ${JSON.stringify(doc.toneMode)}, which this gate does not measure, add it to MODES`);
     for (const mode of MODES) {
-    for (const p of derivedAll({ ...doc, toneMode: mode })) {
+    const modeDoc = { ...doc, toneMode: mode };
+    const derived = derivedAll(modeDoc);
+    // the RADIX pair: step 9 (the prime) against on-accent, out of the emitted preset, both schemes.
+    const rx = exportRadix(modeDoc, {}, derived);
+    const rxKeys = radixPaletteKeys(derived.map((p) => p.n));
+    derived.forEach((p, i) => {
+      const g = typeof rx === "object" ? rx.theme.extend.semanticTokens.colors[rxKeys[i]] : null;
+      if (!g || !g["9"] || !g["on-accent"]) { FAIL("radix", `${cat} "${preset.name}" ${p.n} (${mode}): no step 9 / on-accent leaf in the Radix preset`); return; }
+      for (const [scheme, leaf] of [["light", "base"], ["dark", "_dark"]]) {
+        const bg = leafRgb(g["9"].value[leaf]), fg = leafRgb(g["on-accent"].value[leaf]);
+        const ratio = bg && fg ? contrastRatio(fg, bg) : 0;
+        radix.cells++;
+        if (ratio < radix.worst) { radix.worst = ratio; radix.worstAt = `${cat} "${preset.name}" ${p.n}/${scheme} (${mode})`; }
+        if (ratio < AA) {
+          radix.under++;
+          if (radix.named < 5) { radix.named++; FAIL("radix", `${cat} / ${p.n} / ${scheme} / ${mode}: Radix solid.fg ${g["on-accent"].value[leaf]} on solid.bg (step 9) ${g["9"].value[leaf]} is ${ratio.toFixed(3)}:1, under the ${AA} floor (ADR-038)`); }
+        }
+      }
+      const s6 = g["6"] && leafRgb(g["6"].value.base), s7 = g["7"] && leafRgb(g["7"].value.base);
+      if (!s6 || !s7) { FAIL("radix-order", `${cat} "${preset.name}" ${p.n} (${mode}): light step 6 or 7 is not a parseable oklch() leaf`); return; }
+      const rise = lstar(s7) - lstar(s6);
+      radixOrder.cells++;
+      if (rise > radixOrder.worst) { radixOrder.worst = rise; radixOrder.worstAt = `${cat} "${preset.name}" ${p.n} (${mode})`; }
+      if (rise > ORDER_TOL) {
+        radixOrder.lighter++;
+        if (radixOrder.named < 5) { radixOrder.named++; FAIL("radix-order", `${cat} / ${p.n} / ${mode}: light step 7 ${g["7"].value.base} reads ${rise.toFixed(2)} L* lighter than step 6 ${g["6"].value.base} (ADR-038 guard)`); }
+      }
+    });
+    for (const p of derived) {
       const accent = p.roles.find((x) => x.suffix === "");
       const on = p.roles.find((x) => x.suffix === `-on-${p.n}`);
       // a missing end is a SKIPPED cell, which is how a gate goes quietly vacuous, name it instead.
@@ -204,6 +248,11 @@ for (const cat of Object.keys(gallery)) {
 }
 for (const cat of Object.keys(EXPECTED_GALLERY)) if (!gallery[cat]) FAIL("gallery", `EXPECTED_GALLERY names "${cat}", which the corpus no longer has`);
 
+// ── the RADIX pair's flat floor: the policy picks on-accent against the prime itself, and its
+//    white/black fall-through clears AA against any opaque fill, so nothing may sit under it.
+if (radixOrder.lighter) FAIL("radix-order", `${radixOrder.lighter} of ${radixOrder.cells} palettes read light Radix step 7 more than ${ORDER_TOL} L* lighter than step 6, worst +${radixOrder.worst.toFixed(2)} at ${radixOrder.worstAt}`);
+if (radix.under) FAIL("radix", `${radix.under} of ${radix.cells} Radix solid.fg/solid.bg cells are under ${AA}, worst ${radix.worst.toFixed(3)}:1 at ${radix.worstAt}`);
+
 // ── stale carve-out rows: a key nothing visited is a lie about the corpus ──────────────────────
 for (const k of Object.keys(EXPECTED_BELOW))
   if (!seen.has(k)) FAIL("identity", `EXPECTED_BELOW row "${k}" matched no cell, the palette was renamed or removed; delete or repoint the row`);
@@ -212,6 +261,8 @@ for (const k of Object.keys(EXPECTED_BELOW))
 const WANT = FULL ? { docs: 340, cells: 22500 } : { docs: 34, cells: 2280 };   // documents x palettes x 2 schemes x 3 tone modes
 if (docsMeasured < WANT.docs) FAIL("vacuity", `only ${docsMeasured} curated documents measured in ${FULL ? "FULL" : "SAMPLED"} scope, expected at least ${WANT.docs}, the corpus shrank or an import failed silently`);
 if (cellsMeasured < WANT.cells) FAIL("vacuity", `only ${cellsMeasured} accent/on-color cells measured in ${FULL ? "FULL" : "SAMPLED"} scope, expected at least ${WANT.cells}`);
+if (radixOrder.cells * 2 !== cellsMeasured) FAIL("vacuity", `the Radix order leg measured ${radixOrder.cells} light cells, want half the role leg's ${cellsMeasured}`);
+if (radix.cells !== cellsMeasured) FAIL("vacuity", `the Radix leg measured ${radix.cells} solid.fg/solid.bg cells, but the role leg measured ${cellsMeasured}, the two legs did not see the same palettes`);
 if (identityCells < 480) FAIL("vacuity", `only ${identityCells} brands.json cells measured, expected 504 (168 per tone mode), the identity tier runs in full in BOTH scopes`);
 {
   // THE guard that makes "no tone mode ships ungated" true: MODES against the engine's own enum
@@ -235,7 +286,7 @@ if (!FULL && Object.keys(sampled).length !== CATS.length - 1)
 // The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
 // call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
 // below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row.
-const DECLARED = ["corpus", "sample", "modes", "pair", "identity", "gallery", "vacuity", "report-static"];
+const DECLARED = ["corpus", "sample", "modes", "pair", "identity", "gallery", "radix", "radix-order", "vacuity", "report-static"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 console.log(`  (${FULL ? "FULL" : `SAMPLED seed ${SAMPLE_SEED}, volumes ` + CATS.filter((c) => c !== IDENTITY).map((c) => `${c} ${sampled[c]}`).join(", ")})`);
 console.log(`  (${docsMeasured} curated documents, ${palettes} palettes (${liftSkew} carrying a non-zero lift or skew), ${cellsMeasured} accent/on-color cells; ${identityCells} named per cell, ${Object.keys(EXPECTED_BELOW).length} carried below ${AA})`);
@@ -243,6 +294,8 @@ for (const m of MODES) {
   const pm = perMode[m];
   console.log(`  (${m.padEnd(10)} ${String(pm.cells).padStart(6)} cells, ${pm.under} under ${AA}, worst ${Number.isFinite(pm.worst) ? pm.worst.toFixed(3) : "n/a"}:1 at ${pm.worstAt || "n/a"})`);
 }
+console.log(`  (radix 6>7  ${String(radixOrder.cells).padStart(6)} light cells, ${radixOrder.lighter} with step 7 over ${ORDER_TOL} L* lighter than step 6, largest step 7 minus step 6 ${Number.isFinite(radixOrder.worst) ? radixOrder.worst.toFixed(2) : "n/a"} L* at ${radixOrder.worstAt || "n/a"}, ADR-038)`);
+console.log(`  (radix      ${String(radix.cells).padStart(6)} cells, ${radix.under} under ${AA}, worst ${Number.isFinite(radix.worst) ? radix.worst.toFixed(3) : "n/a"}:1 at ${radix.worstAt || "n/a"}, solid.fg on step 9, ADR-038)`);
 console.log(`  (worst overall ${Number.isFinite(worst) ? worst.toFixed(3) : "n/a"}:1 at ${worstAt || "n/a"})`);
 if (fails.length) {
   console.error(`\n${fails.length} gate failure(s):`);
@@ -250,5 +303,5 @@ if (fails.length) {
   console.error(`\nFAIL: ${fails.length} gate failure(s)`);
   process.exit(1);
 }
-console.log(`\nPASS: every measured curated preset's accent clears ${AA}:1 against its own on-color`);
+console.log(`\nPASS: every measured curated preset's accent clears ${AA}:1 against its own on-color, every Radix solid.fg clears it on step 9, and no light Radix step 7 reads lighter than step 6`);
 process.exit(0);

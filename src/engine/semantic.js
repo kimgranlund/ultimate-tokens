@@ -264,6 +264,25 @@ export const isAchromaticRef = (ref) => Object.prototype.hasOwnProperty.call(ACH
 export const AA_FLOOR = 4.5;
 
 /**
+ * pickOnColor, the "contrast" policy's ONE pick (#662), shared by applyOnColorContrast (a fill that is
+ * a ramp stop) and the Radix export's `on-accent` (a fill that is the prime swatch, ADR-038): the
+ * better-contrasting ramp end against a fill of relative luminance `fillLum`, or, when that end
+ * still misses AA_FLOOR, the better-contrasting achromatic extreme. The fall-through always clears
+ * AA against an opaque fill (the better of white and black never reads under about 4.58:1).
+ * @param {number} fillLum WCAG relative luminance (0..1) of the fill
+ * @param {(ref:string)=>number} lumOf relative luminance of a solid stop ref
+ * @param {string[]} [ends] the two ramp ends to choose between
+ * @returns {string} a stop ref (one of `ends`) or `white`/`black`
+ */
+export function pickOnColor(fillLum, lumOf, ends = ['050', '950']) {
+  const wcag = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  const lum = (ref) => (isAchromaticRef(ref) ? ACHROMATIC_REFS[ref] : lumOf(ref));
+  const end = wcag(lum(ends[0]), fillLum) >= wcag(lum(ends[1]), fillLum) ? ends[0] : ends[1];
+  if (wcag(lum(end), fillLum) >= AA_FLOOR) return end;
+  return wcag(1, fillLum) >= wcag(0, fillLum) ? 'white' : 'black';
+}
+
+/**
  * WCAG-safe on-colors (OD-001, the DEFAULT policy since #662). `on{N}` re-points to whichever end
  * reads best against the accent fill it sits on (`550` light / `450` dark), per mode:
  * `on{N}` → 050|950, `on{N}Variant` → 200|800 (a softer tint of the SAME end the prime chose).
@@ -291,16 +310,8 @@ export const AA_FLOOR = 4.5;
  */
 export function applyOnColorContrast(roles, n, lumOf, onColorMode) {
   if (onColorMode !== 'contrast') return roles;
-  const wcag = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
   const lum = (ref) => (isAchromaticRef(ref) ? ACHROMATIC_REFS[ref] : lumOf(ref));
-  // pick, the better-contrasting ramp end against this fill, or, when that end still misses
-  // AA_FLOOR, the better-contrasting achromatic extreme.
-  const pick = (fillRef, ends) => {
-    const f = lum(fillRef);
-    const end = wcag(lum(ends[0]), f) >= wcag(lum(ends[1]), f) ? ends[0] : ends[1];
-    if (wcag(lum(end), f) >= AA_FLOOR) return end;
-    return wcag(1, f) >= wcag(0, f) ? 'white' : 'black';
-  };
+  const pick = (fillRef, ends) => pickOnColor(lum(fillRef), lumOf, ends);
   // The prime on-color rides the base accent (550/450); the interaction-state on-colors ride their
   // OWN state fills (hover 650/350, active 750/250) so each label is measured against what it
   // actually sits on. `-on-{n}-disabled` is deliberately ABSENT, disabled opts out of the contrast

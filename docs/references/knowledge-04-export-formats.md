@@ -314,14 +314,19 @@ enabled non-data neutral or primary palette returns a `/* … needs at least one
 palette. */` string sentinel (mirroring `exportShadcn`'s own no-driver sentinel).
 
 - **Per-palette colors** (`colors.{n}`, `radixColorGroup`): a Radix-style **12-step ladder**, steps
-  1–8 the raw ramp stops and 9–12 role-derived (REQ-021), each step carrying `base`/`_dark`. Alongside
+  1–6 the raw ramp stops, 7–10 the palette's prime ladder (ADR-038: light `brightest`/`brighter`/
+  `prime`/`dim`, dark stop `700`/`dim`/`prime`/`bright`, so step 9 is the brand colour in both modes;
+  `radixSteps` guards light 7/8 per palette, `brighter`/`bright` or stops 300/350 where `brightest`
+  would not sit 2 L* under step 6)
+  and 11–12 role-derived (REQ-021), each step carrying `base`/`_dark`. Alongside
   it, **`a1`..`a12`** are the same 12 steps re-expressed as alpha values projected over white/black
   (Radix-style, REQ-022), a different mechanism from this doc's own §6 `scrim` (which projects only
   the 500 stop over itself); Radix has no `scrim` group. Five **appearance groups** alias those
   steps by reference (REQ-023): `solid` (`bg`/`bg-hover`/`fg` from steps 9/10/on-accent), `subtle`
   (from `a3`/`a4`/`a5`/step 11), `surface` (`a2`/`a3`/step 11 + `a6`/`a7` border), `outline` (`a2`/`a3`
   bg + `a7` border + step-11 fg), `plain` (`a3`/`a4` bg + step-11 fg). Two additive leaves round it
-  out (REQ-024): `on-accent` (the solid-foreground on-color, `base`/`_dark`) and `prime` (the
+  out (REQ-024): `on-accent` (the solid-foreground on-color, `base`/`_dark`, picked by the on-color
+  policy against the prime it sits on, ADR-038) and `prime` (the
   mode-independent prime identity swatch, `base` only, no `_dark`, unlike every other leaf here).
 - **Step guide** (`RADIX_STEP_GUIDE`, `src/engine/exports.js`): the one table of what each of the 12 steps is for (Radix's published usage, a role and a one-line intent per step). Display text only: the canvas Radix view reads it for each swatch's hover and focus tooltip, and it changes no step value or export.
 - **Driver aliases** (REQ-025): `colors.accent` ← a deep clone of the primary driver's group with
@@ -349,8 +354,9 @@ palette. */` string sentinel (mirroring `exportShadcn`'s own no-driver sentinel)
 - **Reference form** (`exportRadix(state, { refs: true })`, ticket #638): the same preset shape as
   above (one format, not an eleventh) with every numbered step leaf's `base`/`_dark` a
   `var(--{pfx}-{n}-{frag})` LINK into this kit's own CSS custom-property layer instead of a baked
-  `oklch(...)` value. Steps 1..8 link the ratified raw stop; 9..12 link the driving role's own
-  `lightRef`/`darkRef`; `prime` links the bare `--{pfx}-{n}-prime` primitive; the Panda key path stays nested (`prime.prime` and `prime.DEFAULT`); alpha steps `a1..a12` stay
+  `oklch(...)` value. Steps 1..10 link their source primitive per mode, a raw stop or a prime rung
+  (`--{pfx}-{n}-prime-{rung}`, ADR-038); 11..12 and `on-accent` link the driving role's or the pick's
+  own ref; `prime` links the bare `--{pfx}-{n}-prime` primitive; the Panda key path stays nested (`prime.prime` and `prime.DEFAULT`); alpha steps `a1..a12` stay
   computed (no primitive exists for an alpha projection). The `#630` reserved-alias-key collision
   case links the palette's RAW slug, never the renamed `<slug>-palette` group key, because the
   primitive surfaces only ever emit under the raw slug. This file is NOT self-contained: its values
