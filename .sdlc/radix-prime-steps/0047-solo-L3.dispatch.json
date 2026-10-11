@@ -1,0 +1,18 @@
+{
+  "subagent_type": "sdlc-lite:solo-L3",
+  "name": "0047-solo-L3",
+  "description": "T-0047 solo L3 Radix steps",
+  "model": "opus",
+  "effort": "xhigh",
+  "prompt": "T-0047 Radix steps 7 to 10 read the | solo L3\nHandoff: /Users/kimgranlund/Projects/nonoun/ultimate-tokens/.worktrees/radix-prime-steps/.sdlc/radix-prime-steps/handoff.md\nArtifacts dir: /Users/kimgranlund/Projects/nonoun/ultimate-tokens/.worktrees/radix-prime-steps/.sdlc/radix-prime-steps\nDeliver T-0047 end to end in this worktree (branch plan/radix-prime-steps): read `.sdlc/radix-prime-steps/handoff.md` (Goal, Intent, Design, Context, Acceptance criteria, Constraints) and do all of it: the engine change in `src/engine/exports.js`, the data file and spec, the Radix baseline re-capture with the diff reviewed, tests, docs, skills, and ADR-038. Commit a `WIP T-0047` commit after each green sub-step (engine, pins, docs, ADR) so a crash never loses work, and a final commit `T-0047: Radix steps 7 to 10 read the prime ladder`. Run gates through `scripts/gate_lock.py run --name <x> -- <cmd>` with SDLC_GATE_WORKERS=10: `npm test`, then `npm run build` and `npm run smoke` once (symlink node_modules from the root checkout for build and smoke). Do NOT run the 8 full-corpus sweeps locally (this change touches no ramp or tonal code; CI runs them). Add the handoff's `## Acceptance criteria` exactly as written if missing. No per-step verifier and no plan review: end with your report and `verify: needed`. Do not push or open a PR. Report: the final mapping you verified (light and dark per step), any pair you adjusted and why, the on-accent contrast result, the radix baseline diff summary, and gate results.\n",
+  "run_in_background": true,
+  "role": "solo",
+  "level": "L3",
+  "tier": "L3",
+  "prune": false,
+  "handoff": "/Users/kimgranlund/Projects/nonoun/ultimate-tokens/.worktrees/radix-prime-steps/.sdlc/radix-prime-steps/handoff.md",
+  "artifacts_dir": "/Users/kimgranlund/Projects/nonoun/ultimate-tokens/.worktrees/radix-prime-steps/.sdlc/radix-prime-steps",
+  "attempt_id": "c542717999ed47bd982f6d36cc93a03a",
+  "base_sha": "ab6c6d9da3d8c4012d6dbc606d1277d2959459f4",
+  "verifier": "python3 /Users/kimgranlund/.claude/plugins/cache/sdlc-lite/sdlc-lite/0.22.3/scripts/dispatch.py prepare verifier L2 /Users/kimgranlund/Projects/nonoun/ultimate-tokens/.worktrees/radix-prime-steps/.sdlc/radix-prime-steps/handoff.md"
+}

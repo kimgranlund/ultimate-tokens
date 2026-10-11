@@ -140,7 +140,7 @@ re-pin's own inline note and in the step 1 and step 2 builder results.
 | panda EX-1 `prime.dimmest` (step 1) | `test/engine/exports.mjs:532` | `oklch(0.2669 0.1023 258.76)` | `oklch(0.2678 0.1038 258.99)` |
 | `ladder-span` `SPAN_PX_EXPECTED` (step 1) | `test/engine/prime.mjs:1192` | 364 | 365 (`SPAN_CONSTRUCTED_EXPECTED` 363 held) |
 | shadcn baseline (step 2) | `test/engine/fixtures/shadcn-baseline.css`, T-0015 note `:88` | T-0014 capture | re-captured at `hueSpace: "cam16"`: 19 / 19 / 19 lines moved (ALL / BRAND_ONLY / ALL_DATA_OFF), line counts 124 / 115 / 115 unchanged |
-| radix baseline (step 2) | `test/engine/fixtures/radix-baseline.json`, note `test/engine/exports.mjs:903` | T-0014 capture | re-captured: 550 / 306 / 286 leaves moved (ALL / BRAND_ONLY / COLLIDING), leaf counts and key order unchanged; the unanchored Accent and Error palettes byte-identical |
+| radix baseline (step 2) | `test/engine/fixtures/radix-baseline.json`, note `test/engine/exports.mjs:929` | T-0014 capture | re-captured: 550 / 306 / 286 leaves moved (ALL / BRAND_ONLY / COLLIDING), leaf counts and key order unchanged; the unanchored Accent and Error palettes byte-identical |
 | `anchor-f4` hue-space case (step 2) | `test/engine/anchor.mjs:1609` `HUE_SPACE_MODE_BOUND` | one even-only case and the Q-D invisibility block: `HUE_SPACE_DELTA_E_BOUND` 0.01, `HUE_SPACE_DELTA_E_BOUND_PEAK_CAPPED` 0.02, `HUE_SPACE_CODES_BOUND` 2 with its default-kit codes gate, `maxChannelDiff`, the `capped` scope and its vacuity check, the recorded 33/34-code control | removed; three cases `hueSpace-even` (floor 0.01 kept), `hueSpace-perceptual` and `hueSpace-peak` (bound 0.02 each), and the `hueSpace bound control` |
 | `prime-huespace` and its control (step 1) | `test/engine/anchor.mjs` | none | new: at least one default-kit ladder moves above 0.01 OKLab dE between spaces, rung 3 moves 0 |
 | `anchor-identity`, `key-anchor corpus`, `anchor-k`, `anchor-k scale control` (step 1) | `test/engine/anchor.mjs` | `hueSpace` of the preset only | both spaces, 6,760 renders each |
@@ -165,7 +165,7 @@ this step moved them to the new lines so `test/repo/citations.mjs` reads green.
   (decision 4), the same rule the peak cap now follows.
 - No schema bump: no field is added, renamed or translated, and nothing derived is stored.
   `CURRENT_SCHEMA_VERSION` stays 8 (`src/ui/persist.js`) and T-0017 takes v9.
-- `docs/specs/spec-panda-park-ui-exports.md:481` still quotes the pre-T-0015 EX-1 literals
+- `docs/specs/spec-panda-park-ui-exports.md:506` still quotes the pre-T-0015 EX-1 literals
   (`oklch(0.733 0.1374 264.49)`, `oklch(0.2669 0.1023 258.76)`); no gate reads it. The new values are
   in the table above.
 - The `capped` row flag in `src/engine/tonal.js` is still produced, but no test reads it after the

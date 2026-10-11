@@ -3,6 +3,20 @@
 Entries 1.69 to 1.73 were written after 1.68, for changes that landed between 1.66 and 1.67; each
 carries its landing date.
 
+## 1.75 - 2026-10-11 - Radix steps 7 to 10 read the prime ladder, and the solid foreground is measured against the prime (T-0047)
+
+**The ladder (ADR-038).** The Radix export (both files) and the Radix canvas view point the border and
+solid steps at the palette's prime swatches: step 7 `brightest` light / stop 700 dark, step 8
+`brighter` / `dim`, step 9 `prime` in both modes, step 10 `dim` / `bright`. Steps 1 to 6, 11 and 12 are
+unchanged. On the default kit Primary's step 9 moves from #1554B0 to its prime #0C5DCC. Dark step 7
+keeps stop 700 because `dimmer` sat on or under stop 750 for 6 of 16 default palettes.
+
+**The on-colour.** `on-accent` (Park's `solid.fg`) is the `contrast` policy's pick against the prime
+(050/950, else white or black), one value in both modes; against the old role, 12 of 32 default-kit
+cells and 652 of 2,352 sampled corpus cells would miss WCAG AA, now 0. `fixed` and role overrides are
+kept. Gates: `exports.mjs` `radix`, the `semantic.mjs` Park leg, a `radix` leg in `curated-contrast.mjs`.
+`radix-baseline.json` is re-captured and `adia-radix-export` is 1.6.0; every other format is unchanged.
+
 ## 1.74 - 2026-10-09 - ramp@2 matches the lightest and darkest stops across palettes, and Match peer lightness matches every stop (T-0040)
 
 **The band rule (ADR-037).** New documents and presets render with `ramp@2`: stops 050 to 100 and 900 to

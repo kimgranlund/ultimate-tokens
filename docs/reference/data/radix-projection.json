@@ -1,7 +1,7 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "purpose": "Compatibility projection from Adia tonal primitives to Radix/Park UI 1\u201312 roles",
-  "source_of_truth": "Adia 050\u2013950 + prime-* + scrim-* token families",
+  "source_of_truth": "Adia 050\u2013950 (steps 1\u20136, 11\u201312 and dark 7) + prime-* (steps 7\u201310, ADR-038) + scrim-* token families",
   "projection": {
     "1": {
       "role": "app-background",
@@ -35,23 +35,23 @@
     },
     "7": {
       "role": "interactive-border",
-      "light": "300",
+      "light": "prime-brightest",
       "dark": "700"
     },
     "8": {
       "role": "strong-border-focus",
-      "light": "350",
-      "dark": "650"
+      "light": "prime-brighter",
+      "dark": "prime-dim"
     },
     "9": {
       "role": "solid-accent",
-      "light": "550",
-      "dark": "450"
+      "light": "prime",
+      "dark": "prime"
     },
     "10": {
       "role": "solid-accent-hover",
-      "light": "650",
-      "dark": "350"
+      "light": "prime-dim",
+      "dark": "prime-bright"
     },
     "11": {
       "role": "secondary-text",

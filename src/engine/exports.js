@@ -29,9 +29,9 @@
 // theme light/dark/auto.
 
 import { EXPORT_STOPS } from "./tonal.js";
-import { semanticRoles, refKey, refPath, refSlug, roleLeaf, isAchromaticRef, DEFAULT_THEMES } from "./semantic.js";
+import { semanticRoles, refKey, refPath, refSlug, roleLeaf, isAchromaticRef, pickOnColor, DEFAULT_THEMES } from "./semantic.js";
 import { COLLECTIONS } from "./collections.js";
-import { compute, docPins, slug, relLum } from "./layers.mjs"; // slug: the palette-name token prefix the roles are keyed on
+import { compute, docPins, runOf, slug, relLum } from "./layers.mjs"; // slug: the palette-name token prefix the roles are keyed on
 import { PRIME_STEPS, primeSlug } from "./prime.mjs";
 import { oklchToRgb } from "./okhsl.js";
 import { cssFontStack } from "./type.mjs";
@@ -995,10 +995,14 @@ export function exportPandaModule(preset, opts = {}) {
 // 10. RADIX (a Panda preset in Park UI's own 1..12/a1..a12/appearance-group color shape,
 //     docs/specs/spec-panda-park-ui-exports.md REQ-020..028)
 // ──────────────────────────────────────────────────────────────────────────────
-// The 1..8 steps of the 12-step ladder are RAW RAMP STOPS read straight from the palette's own
-// stops (issue #588's correction, superseding the original role-indirected/flattened P-1
-// default); 9..12 stay role-derived (bare accent / -hover / -on-surface-variant / -on-surface,
-// already ratified, unaffected by #588). Canonical source: docs/reference/data/radix-projection.json.
+// Steps 1..6 of the 12-step ladder are RAW RAMP STOPS read straight from the palette's own stops
+// (issue #588's correction, superseding the original role-indirected/flattened P-1 default).
+// Steps 7..10 read the palette's PRIME LADDER (ADR-038, T-0047): the saturated identity rungs
+// (prime.mjs PRIME_STEPS), mode-independent swatches, so step 9 is the brand colour itself in both
+// modes. Each mode names its own source: a number is a raw ramp stop, a string a prime rung. Dark
+// step 7 keeps the raw stop 700 (ADR-038): no rung lies between stop 750 and `dim` in dark mode,
+// and `dimmer` sat on or under stop 750 for 6 of the 16 default palettes. 11..12 stay role-derived
+// (-on-surface-variant / -on-surface). Canonical source: docs/reference/data/radix-projection.json.
 const RADIX_RAW_STEPS = [
   { step: 1, light: 100, dark: 900 },
   { step: 2, light: 125, dark: 875 },
@@ -1006,13 +1010,13 @@ const RADIX_RAW_STEPS = [
   { step: 4, light: 175, dark: 825 },
   { step: 5, light: 200, dark: 800 },
   { step: 6, light: 250, dark: 750 },
-  { step: 7, light: 300, dark: 700 },
-  { step: 8, light: 350, dark: 650 },
+  { step: 7, light: "brightest", dark: 700 },
+  { step: 8, light: "brighter", dark: "dim" },
+  { step: 9, light: "prime", dark: "prime" },
+  { step: 10, light: "dim", dark: "bright" },
 ];
-// step -> the role suffix that drives it (9..12, REQ-021), read off p.roles by suffix.
+// step -> the role suffix that drives it (11..12, REQ-021), read off p.roles by suffix.
 const RADIX_ROLE_STEPS = [
-  { step: 9, suffix: "" }, // bare accent (prime)
-  { step: 10, suffix: "-hover" },
   { step: 11, suffix: "-on-surface-variant" },
   { step: 12, suffix: "-on-surface" },
 ];
@@ -1112,8 +1116,8 @@ export function paletteNameClash(name, palettes, selfIndex = -1) {
 
 // flattenOver(end, bgRgb), Vocabulary "Flattened": a translucent role end composited over an
 // opaque background in 8-bit sRGB. Exported per REQ-041 for the test's independent check; no
-// caller remains inside exportRadix after issue #588's correction (steps 1..8 are raw stops,
-// never flattened), kept as a pure utility.
+// caller remains inside exportRadix after issue #588's correction (steps 1..10 are raw stops or
+// prime rungs, ADR-038, never flattened), kept as a pure utility.
 export function flattenOver(end, bgRgb) {
   const a = end.frac;
   return end.rgb.map((c, i) => Math.round(a * c + (1 - a) * bgRgb[i]));
@@ -1178,22 +1182,30 @@ function rewriteRefs(node, fromN, toN) {
 //   VALUES (the default, unchanged since REQ-021): a baked `oklch(L C H)` string per mode.
 //   REFS  (opts.refs, owner ruling (a1)/(e1) on #638): `var(--{pfx}-{n}-{frag})`, the SAME custom
 //         property exportCSS/exportOKLCH emit for that primitive, prefix from cssPrefixOf(state).
-//         Steps 1..8 link the ratified raw stop; 9..12 link the driving role's own lightRef/darkRef
-//         (so role overrides, accentRef and the on-color policy travel with the link); prime links
-//         the bare `-prime` identity primitive. Alpha steps a1..a12 are NOT built here, no
-//         primitive exists for an alpha projection, so both forms compute them identically.
+//         Steps 1..10 link their source primitive per mode, a raw stop or a prime rung (primeSlug);
+//         11..12 and on-accent link the driving role's own lightRef/darkRef (so role overrides and
+//         the on-color policy travel with the link); prime links the bare `-prime` identity
+//         primitive. Alpha steps a1..a12 are NOT built here, no primitive exists for an alpha
+//         projection, so both forms compute them identically.
 //
 // Reference leaves use the palette's RAW slug `p.n`, never the group key (#630 ruling d1): the
 // primitive surfaces only ever emit `--{pfx}-{raw slug}-…`, so a `<slug>-palette` group still
 // links names that exist. It also keeps the accent/gray clone rewrite harmless, since rewriteRefs
 // only ever rewrites `{colors.{n}.` Panda paths and cannot occur inside a var() string.
+//
+// A step source `src` (RADIX_RAW_STEPS) is a raw stop number or a prime rung name; radixSrcRgb is
+// the colour either names, read by the alpha projection as well as the values leaves.
+const radixSrcRgb = (p, src) => (typeof src === "number" ? p.byStop.get(src) : p.prime[src].rgb);
+const primeOklchStr = (sw) => oklchStr({ L: sw.oklch[0], C: sw.oklch[1], H: sw.oklch[2] });
+const radixSrcOklch = (p, src) => (typeof src === "number" ? roleOklch({ rgb: p.byStop.get(src), frac: 1 }) : primeOklchStr(p.prime[src]));
 const RADIX_VALUE_LEAVES = {
-  rawStep: (p, lightStop, darkStop) => ({ base: roleOklch({ rgb: p.byStop.get(lightStop), frac: 1 }), _dark: roleOklch({ rgb: p.byStop.get(darkStop), frac: 1 }) }),
+  rawStep: (p, light, dark) => ({ base: radixSrcOklch(p, light), _dark: radixSrcOklch(p, dark) }),
   roleStep: (p, r) => ({ base: roleOklch(r.light), _dark: roleOklch(r.dark) }),
-  primeStep: (p) => ({ base: oklchStr({ L: p.prime.prime.oklch[0], C: p.prime.prime.oklch[1], H: p.prime.prime.oklch[2] }) }),
+  primeStep: (p) => ({ base: primeOklchStr(p.prime.prime) }),
 };
 function radixRefLeaves(pfx) {
   const link = (n, frag) => `var(--${pfx}-${n}-${frag})`;
+  const srcFrag = (src) => (typeof src === "number" ? pad3(src) : primeSlug(src));
   // A role ref is usually a stop in its OWN palette, but it can be achromatic (white/black), and
   // an achromatic ref lives under no palette: exportCSS declares it once as `--{pfx}-white` /
   // `--{pfx}-black` and links it that way (its own `rawVar`). The reference form has to follow the
@@ -1202,9 +1214,32 @@ function radixRefLeaves(pfx) {
   // black constant whenever neither ramp end clears AA.
   const roleVar = (p, ref) => (isAchromaticRef(ref) ? `var(--${pfx}-${ref})` : link(p.n, refSlug(ref)));
   return {
-    rawStep: (p, lightStop, darkStop) => ({ base: link(p.n, pad3(lightStop)), _dark: link(p.n, pad3(darkStop)) }),
+    rawStep: (p, light, dark) => ({ base: link(p.n, srcFrag(light)), _dark: link(p.n, srcFrag(dark)) }),
     roleStep: (p, r) => ({ base: roleVar(p, r.lightRef), _dark: roleVar(p, r.darkRef) }),
     primeStep: (p) => ({ base: link(p.n, primeSlug("prime")) }),
+  };
+}
+
+// radixOnAccent(p, onColorMode, override), the role the `on-accent` leaf reads (ADR-038): the
+// `-on-{n}` on-colour measured against the fill it sits on, `solid.bg` = step 9 = the prime swatch,
+// not the 550/450 accent the role itself was picked against. Under the "contrast" policy (the
+// default) that is semantic.js's pickOnColor against the prime's luminance, one ref for both modes
+// because the prime is mode-independent; the lumOf is resolveRoles' own (layers.mjs). "fixed" keeps
+// the role verbatim (the user's uniform brand on-colour, ADR-003), and so does a per-document
+// override of the role, mode by mode (an explicit re-point always wins, as in resolveRoles).
+function radixOnAccent(p, onColorMode, override) {
+  const role = p.roles.find((x) => x.suffix === `-on-${p.n}`);
+  if (onColorMode !== "contrast") return role;
+  const lumOf = (ref) => { const rgb = p.byStop.get(Number(ref)); return rgb ? relLum(rgb) : 0; };
+  const ref = pickOnColor(relLum(p.prime.prime.rgb), lumOf);
+  const end = { rgb: isAchromaticRef(ref) ? (ref === "white" ? WHITE_RGB : BLACK_RGB) : p.byStop.get(Number(ref)), frac: 1 };
+  const o = override || {};
+  return {
+    ...role,
+    lightRef: o.light != null ? role.lightRef : ref,
+    darkRef: o.dark != null ? role.darkRef : ref,
+    light: o.light != null ? role.light : end,
+    dark: o.dark != null ? role.dark : end,
   };
 }
 
@@ -1212,15 +1247,14 @@ function radixRefLeaves(pfx) {
 // numbered steps, the 12 alpha steps, the five appearance groups (aliasing by step reference),
 // and the two additive leaves (on-accent, prime) Park's own scale has no slot for. `key` is the
 // group's emitted key (radixPaletteKey, #630) so the internal `{colors.{key}.…}` references
-// resolve even when the palette's slug was suffixed away from a reserved alias key.
-function radixColorGroup(p, key = p.n, leaves = RADIX_VALUE_LEAVES) {
+// resolve even when the palette's slug was suffixed away from a reserved alias key. `onAccent` is
+// radixOnAccent's role (the `-on-{n}` role verbatim when omitted).
+function radixColorGroup(p, key = p.n, leaves = RADIX_VALUE_LEAVES, onAccent = p.roles.find((x) => x.suffix === `-on-${p.n}`)) {
   const group = {};
   const rawSolid = {}; // step -> { base: [r,g,b], dark: [r,g,b] }, for the a{k} projection below.
 
   for (const { step, light, dark } of RADIX_RAW_STEPS) {
-    const lightRgb = p.byStop.get(light);
-    const darkRgb = p.byStop.get(dark);
-    rawSolid[step] = { base: lightRgb, dark: darkRgb };
+    rawSolid[step] = { base: radixSrcRgb(p, light), dark: radixSrcRgb(p, dark) };
     group[String(step)] = { value: leaves.rawStep(p, light, dark) };
   }
   for (const { step, suffix } of RADIX_ROLE_STEPS) {
@@ -1259,7 +1293,6 @@ function radixColorGroup(p, key = p.n, leaves = RADIX_VALUE_LEAVES) {
 
   // REQ-024: two extra leaves Park's own scale has no slot for, a solid-foreground on-color and
   // the mode-independent prime identity swatch (`base` only, per REQ-024).
-  const onAccent = p.roles.find((x) => x.suffix === `-on-${p.n}`);
   group["on-accent"] = { value: leaves.roleStep(p, onAccent) };
   group.prime = { value: leaves.primeStep(p) };
 
@@ -1288,8 +1321,15 @@ export function exportRadix(state, opts = {}, derived) {
   // through `keyOf` so a renamed driver (e.g. a palette named "error") still resolves.
   const keys = radixPaletteKeys(palettes.map((p) => p.n));
   const keyOf = new Map(palettes.map((p, i) => [p, keys[i]]));
+  // the on-colour policy at the version compute ran (the controls layer the document pins), and the
+  // per-document role overrides, for radixOnAccent (ADR-038).
+  const { onColorMode } = runOf(state, "controls")(state);
+  const overrides = state.roleOverrides || {};
   const colors = {};
-  for (const p of palettes) colors[keyOf.get(p)] = radixColorGroup(p, keyOf.get(p), leaves);
+  for (const p of palettes) {
+    const onAccent = radixOnAccent(p, onColorMode, overrides[p.roles.find((x) => x.suffix === `-on-${p.n}`).key]);
+    colors[keyOf.get(p)] = radixColorGroup(p, keyOf.get(p), leaves, onAccent);
+  }
 
   // REQ-025: accent <- primary, gray <- neutral, each a self-contained deep copy with every
   // internal reference re-pointed at the new group name (Park's own `gray: colorPalettes.neutral`
