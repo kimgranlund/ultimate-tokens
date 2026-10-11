@@ -40,3 +40,8 @@ Verify the lightness order per mode: borders 6 -> 7 -> 8 get progressively stron
 
 ## Constraints
 Engine stays pure and DOM-free; no new dependency; no change to the prime ladder itself or to `ramp@2`; other exports (shadcn, Panda, CSS) stay unchanged; the reference form (`opts.refs`) must link existing primitives that the CSS export declares (no new names). Do not push or open a PR; the conductor does. One independent verifier at the end.
+
+## Acceptance criteria (guard, added 2026-10-11 after the verifier's step 7 finding)
+- Light Radix step 7 is never lighter than step 6 on the full corpus: 343 documents x 3 tone modes read 0 palette-modes with step 7 lighter than step 6 by 0.5 L* or more (own re-derivation from the rendered pixels).
+- The default kit's Radix output is byte-identical to the unguarded build (all 16 keep `brightest`); dark mode and steps 9 and 10 are unchanged; AA on `solid.fg` stays 0 under 4.5 on the full corpus.
+- `node test/engine/exports.mjs`, `node test/engine/curated-contrast.mjs` (incl. the `radix-order` leg), `node test/repo/citations.mjs` and `npm test` pass; with the guard disabled the new checks fail.
