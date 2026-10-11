@@ -1,4 +1,4 @@
-<!-- sdlc-lite:managed:start v1 sha256:7aea6cdbb9ce -->
+<!-- sdlc-lite:managed:start v1 sha256:a06fe1333a71 -->
 # Work records
 
 This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and `config`. `tickets.py roadmap` (also run by `new` and `close`) generates this block: do not edit inside it; change a ticket's `handoff.md` front matter and rerun `roadmap`. `roadmap.md` lists every ticket in dependency order. Closed `.NNNN-*` folders are history: open one only when asked.
@@ -10,7 +10,8 @@ This folder holds SDLC Lite tickets, task records, `roadmap.md`, `notes.md`, and
 ## Stages
 
 - proposed: 0
-- ready: 0
+- ready: 1
+  - T-0047 Radix steps 7 to 10 read the prime ladder instead of base ramp stops (radix-prime-steps)
 - blocked: 0
 - done: 45
 - dropped: 0
