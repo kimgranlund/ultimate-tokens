@@ -2,7 +2,7 @@
 id: T-0047
 title: "Radix steps 7 to 10 read the prime ladder instead of base ramp stops"
 type: feature        # feature | bug | chore | spike | idea
-status: ready        # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: done        # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: L2             # L1 | L2 | L3 | L4 (L5 reserved)
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -45,3 +45,7 @@ Engine stays pure and DOM-free; no new dependency; no change to the prime ladder
 - Light Radix step 7 is never lighter than step 6 on the full corpus: 343 documents x 3 tone modes read 0 palette-modes with step 7 lighter than step 6 by 0.5 L* or more (own re-derivation from the rendered pixels).
 - The default kit's Radix output is byte-identical to the unguarded build (all 16 keep `brightest`); dark mode and steps 9 and 10 are unchanged; AA on `solid.fg` stays 0 under 4.5 on the full corpus.
 - `node test/engine/exports.mjs`, `node test/engine/curated-contrast.mjs` (incl. the `radix-order` leg), `node test/repo/citations.mjs` and `npm test` pass; with the guard disabled the new checks fail.
+
+## Closed
+
+2026-10-11: Shipped in this PR: Radix steps 7 to 10 read the prime ladder with a light step 7 guard (ADR-038); verified by the whole-ticket verifier L3 and a guard delta verifier L3, both pass.
