@@ -22,4 +22,5 @@ Why this exists: the repo's smoke test runs in headless Chrome only, so nobody h
 10. Open an older saved kit: the inspector shows "Upgrade to latest" and the ramps still render as before until you press it.
 
 ## Result
-Mark each line OK or write what looked wrong.
+
+Run by the owner on 2026-10-11 in Safari with `npm run dev`: lines 1 to 10 all OK, no misses. This covers ADR-035, ADR-036 and ADR-037. It predates T-0047 (ADR-038, Radix steps 7 to 10 read the prime ladder, merged 2026-10-11), so the Radix view has no line here and is not yet Safari-checked.
