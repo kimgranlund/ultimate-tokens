@@ -315,7 +315,9 @@ palette. */` string sentinel (mirroring `exportShadcn`'s own no-driver sentinel)
 
 - **Per-palette colors** (`colors.{n}`, `radixColorGroup`): a Radix-style **12-step ladder**, steps
   1–6 the raw ramp stops, 7–10 the palette's prime ladder (ADR-038: light `brightest`/`brighter`/
-  `prime`/`dim`, dark stop `700`/`dim`/`prime`/`bright`, so step 9 is the brand colour in both modes)
+  `prime`/`dim`, dark stop `700`/`dim`/`prime`/`bright`, so step 9 is the brand colour in both modes;
+  `radixSteps` guards light 7/8 per palette, `brighter`/`bright` or stops 300/350 where `brightest`
+  would not sit 2 L* under step 6)
   and 11–12 role-derived (REQ-021), each step carrying `base`/`_dark`. Alongside
   it, **`a1`..`a12`** are the same 12 steps re-expressed as alpha values projected over white/black
   (Radix-style, REQ-022), a different mechanism from this doc's own §6 `scrim` (which projects only

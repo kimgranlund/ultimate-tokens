@@ -1533,8 +1533,8 @@ Format: Context → Decision → Rationale → Consequences → Status.
 
   | Step | Light | Dark |
   |---|---|---|
-  | 7 interactive border, focus ring | `brightest` | stop `700` |
-  | 8 hovered border | `brighter` | `dim` |
+  | 7 interactive border, focus ring | `brightest` (guarded) | stop `700` |
+  | 8 hovered border | `brighter` (guarded) | `dim` |
   | 9 solid | `prime` | `prime` |
   | 10 hovered solid | `dim` | `bright` |
 
@@ -1542,6 +1542,22 @@ Format: Context → Decision → Rationale → Consequences → Status.
   form links `--{pfx}-{n}-prime-{rung}` (the bare `--{pfx}-{n}-prime` for the centre) or the raw stop,
   names `exportCSS`/`exportOKLCH` already declare; no new primitive. Step 9 is the brand colour itself,
   the same in both modes, as in Radix.
+- **The light step 7 guard.** `brightest` sits up to 27 L* over the prime, so for a light prime it reads
+  lighter than step 6 and the interactive border vanishes (3401 of 11340 full-corpus palette-modes by 2
+  L* or more before the guard; 12 of the 16 Adia palettes). `radixSteps(p)` keeps light 7/8 at
+  `brightest`/`brighter` while the `brightest` pixel sits at least 2 L* (`RADIX_STEP7_MARGIN`) under step
+  6's (stop 250, CIE L* of the rendered pixels); otherwise light 7/8 take the first pair whose step 7
+  does: `brighter`/`bright`, else the base stops 300/350. The candidate list ends there because step 9
+  is the prime and step 8 must stay darker than step 7: with step 7 at `bright` the next darker rung is
+  the prime itself (step 8 would repeat step 9), and with step 7 at `prime` or `dim` step 8 falls on or
+  under step 9. Full corpus (343 documents, three tone modes): 7326 palette-modes keep `brightest`,
+  1424 take `brighter`/`bright`, 2590 the base stops; after it 0 read light step 7 lighter than step 6
+  (`radix-order` in `test/engine/curated-contrast.mjs`, tolerance 0.5 L*). The default kit keeps
+  `brightest` on all 16 palettes (smallest margin 3.6 L*, Data 5), so its output is byte-identical to
+  the unguarded mapping. On the stop fallback 721 read stop 300 within 2 L* of stop 250 (the base
+  ramp's own spacing, as before T-0047), 5 repeat stop 300's pixel at stop 350 (ADR-037's declared
+  compression), and 404 put the prime at step 9 lighter than step 8, a light brand colour, as Radix's
+  own yellow and amber scales do. Dark mode has no guard.
 - **Why 1 to 6, 11 and 12 stay base.** Steps 1 to 5 and the subtle border 6 are the ramp's
   near-surface stops, ordered by construction and matched across peers at the ends (ADR-037); the
   lightest prime rung sits up to 27 L* above the prime and cannot stand in for a background. Steps 11
@@ -1568,17 +1584,18 @@ Format: Context → Decision → Rationale → Consequences → Status.
   role wins, mode by mode. Gated by `test/engine/exports.mjs` (`radix`, `radix-refs-extras`), the Park
   leg of `test/engine/semantic.mjs` and the `radix` leg of `test/engine/curated-contrast.mjs`.
 - **Rejected.** Dark 7 at `dimmer` (above). Dark 7 at `dim` with dark 8 at `bright`: step 8 would sit
-  above the prime in dark mode. A per-palette rung pick: no longer one table, and outside the ruling.
-  Keeping `on-accent` as the role: 12 default cells under AA.
+  above the prime in dark mode. Light step 7 at `bright`, `prime` or `dim` (above: step 8 repeats or
+  passes step 9; 2100, 271 and 73 palette-modes would land there). Mixed light 7/8 pairs before the
+  stop fallback, stop 300 with `bright` (would keep step 8 on a rung for 1377 of the 2590) or `bright`
+  with stop 350 (429): more cases to explain for a partial gain. Keeping `on-accent` as the role: 12
+  default cells under AA.
 - **Consequences.** Only the Radix export moves, both forms: steps 7 (light), 8 to 10, `a7` (light),
   `a8` to `a10` and `on-accent`; the appearance aliases (`solid.*` included) are unchanged references.
-  `test/engine/fixtures/radix-baseline.json` is re-captured (264 / 142 / 158 mode leaves, ALL /
-  BRAND_ONLY / COLLIDING) and `adia-radix-export` is 1.6.0. Every other format is byte-identical and
-  `EXPORT_SCHEMA_VERSION` stays 7 (no key changed). The Radix canvas view reads `exportRadix`, so it
-  follows; the step tooltips are unchanged. A declared gap on the corpus: `brightest` sits up to 27 L*
-  over the prime, so where the prime is lighter than about L* 50, light step 7 reads lighter than step
-  6: 158 of 392 sampled corpus palettes by 2 L* or more, 17 more within 2 (28 within 2 on the base
-  stops). Dark 6 to 7 is unchanged (22 within 2). A per-palette guard is a follow-up candidate.
+  `test/engine/fixtures/radix-baseline.json` is re-captured (264 / 142 / 154 mode leaves, ALL /
+  BRAND_ONLY / COLLIDING; COLLIDING's Accent falls to the stops and its Error to `brighter`/`bright`)
+  and `adia-radix-export` is 1.6.0. Every other format is byte-identical and `EXPORT_SCHEMA_VERSION`
+  stays 7 (no key changed). The Radix canvas view reads `exportRadix`, so it follows; the step
+  tooltips are unchanged.
 - **Status.** PROPOSED 2026-10-11 (T-0047). Ratification is the owner's.
 
 ## Quick map: decisions an enhancing agent is most likely to "fix" (don't)
@@ -1621,4 +1638,4 @@ Format: Context → Decision → Rationale → Consequences → Status.
 | ADR-035 | the analysis charts are stacks of divs with `clip-path` polygons, not SVG, and `h()` refuses `html` | the user ruled charts native DOM on 2026-10-08; an `html:` SVG string writes `innerHTML` and brings back the wedge-fill CSS trap, and `test/repo/dom-charts.mjs` fails the build if one returns |
 | ADR-036 | the select caret is a data-URI with two hard-coded fills, shell text sizes come from a JS step table rather than `calc()`, and a null `shellGeometry` no longer follows the kit | a native select takes no child and a data-URI cannot read a var, so the fills are pinned to the boot theme's `--ink-dim` by `test/repo/ui-polish.mjs`; a row step follows the body-base factor, which `calc()` cannot; the user ruled the product-sm default, and Follow kit is the explicit `"kit"` (PROPOSED, ratification is the owner's) |
 | ADR-037 | the lightest and darkest stops of every palette land on one L* and one tint, a muted or grey anchor's ends are greyer than `chromaFloor` asks, a dark anchor's 500 to 900 stops can repeat a pixel, and Match peer lightness moves stop 500 off the anchor | `ramp@2`'s band rule matches the extremes across peers (Radix steps 1 and 12 read them) while the anchor stays verbatim at 500; the tint is capped at the anchor's own so grey stays grey; the compression next to the shared edge is the declared cost; the mode is opt-in and stored kits stay `ramp@1` until upgraded |
-| ADR-038 | Radix steps 7 to 10 read prime swatches while 1 to 6 read ramp stops, dark step 7 alone stays stop 700, and `on-accent` is not the `-on-{n}` role | the user ruled the border and solid steps onto the brand's saturated identity, so step 9 is the prime in both modes, as in Radix; no rung separates from stop 750 in dark mode; the on-colour is measured against the fill it sits on, the prime, or 12 default cells miss AA (PROPOSED, ratification is the owner's) |
+| ADR-038 | Radix steps 7 to 10 read prime swatches while 1 to 6 read ramp stops, dark step 7 alone stays stop 700, a light palette's steps 7 and 8 sometimes read `brighter`/`bright` or stops 300/350, and `on-accent` is not the `-on-{n}` role | the user ruled the border and solid steps onto the brand's saturated identity, so step 9 is the prime in both modes, as in Radix; no rung separates from stop 750 in dark mode; the light step 7 guard keeps the interactive border darker than step 6 where `brightest` would read near-white; the on-colour is measured against the fill it sits on, the prime, or 12 default cells miss AA (PROPOSED, ratification is the owner's) |

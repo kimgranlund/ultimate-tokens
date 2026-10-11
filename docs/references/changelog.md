@@ -9,7 +9,10 @@ carries its landing date.
 solid steps at the palette's prime swatches: step 7 `brightest` light / stop 700 dark, step 8
 `brighter` / `dim`, step 9 `prime` in both modes, step 10 `dim` / `bright`. Steps 1 to 6, 11 and 12 are
 unchanged. On the default kit Primary's step 9 moves from #1554B0 to its prime #0C5DCC. Dark step 7
-keeps stop 700 because `dimmer` sat on or under stop 750 for 6 of 16 default palettes.
+keeps stop 700 because `dimmer` sat on or under stop 750 for 6 of 16 default palettes. A per-palette
+guard keeps light step 7 at least 2 L* darker than step 6: where `brightest` would not be, light 7/8
+read `brighter`/`bright`, else stops 300/350 (full corpus: 7326 keep, 1424 and 2590 fall back; 3401
+palette-modes read step 7 lighter by 2 L* or more without it, 0 with it). The default kit is unaffected.
 
 **The on-colour.** `on-accent` (Park's `solid.fg`) is the `contrast` policy's pick against the prime
 (050/950, else white or black), one value in both modes; against the old role, 12 of 32 default-kit

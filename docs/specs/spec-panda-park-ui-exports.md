@@ -239,8 +239,8 @@ Consequences that shape the design:
   | 4 | hovered element background | `175` | `825` | yes (raw stop) |
   | 5 | active / selected element | `200` | `800` | yes (raw stop) |
   | 6 | subtle border, separator | `250` | `750` | yes (raw stop) |
-  | 7 | element border, focus ring | prime `brightest` | `700` | yes (prime rung / raw stop) |
-  | 8 | hovered border | prime `brighter` | prime `dim` | yes (prime rung) |
+  | 7 | element border, focus ring | prime `brightest` (guarded) | `700` | yes (prime rung / raw stop) |
+  | 8 | hovered border | prime `brighter` (guarded) | prime `dim` | yes (prime rung / raw stop) |
   | 9 | solid background | prime `prime` | prime `prime` | yes (prime rung) |
   | 10 | hovered solid | prime `dim` | prime `bright` | yes (prime rung) |
   | 11 | low-contrast text | (`-on-surface-variant` role, `750`/`250`) | | yes (role) |
@@ -262,7 +262,10 @@ Consequences that shape the design:
   amended sources. A prime rung is mode-independent, so step 9 is the brand colour itself in both
   modes, as in Radix. Dark step 7 keeps the raw stop `700`: no rung lies between stop `750` and
   `dim` in dark mode, and `dimmer` sat on or under stop `750` for 6 of the 16 default palettes.
-  Steps 1..6, 11 and 12 are unchanged.
+  Light steps 7 and 8 carry a per-palette guard: light step 7 reads `brightest` only while that
+  pixel sits at least 2 CIE L* under step 6's (stop `250`); otherwise light 7/8 read `brighter`/
+  `bright` when `brighter` does, else the raw stops `300`/`350`, so the interactive border never reads
+  lighter than the subtle border. Steps 1..6, 11 and 12 are unchanged.
 
   Canonical source: `docs/reference/data/radix-projection.json` (the committed projection table)
   and `docs/references/radix-park-adaptation.md` (the architecture + rules this table
@@ -348,7 +351,7 @@ Consequences that shape the design:
   a Panda-token-path alternative.
 
   *Amendment (2026-10-11, T-0047, ADR-038):* steps 7..10 link the prime rung primitive their
-  REQ-021 row names (`--{pfx}-{n}-prime-{rung}`, the bare `--{pfx}-{n}-prime` for the centre) or,
+  REQ-021 row names (after the light step 7 guard) (`--{pfx}-{n}-prime-{rung}`, the bare `--{pfx}-{n}-prime` for the centre) or,
   dark step 7, the raw stop; steps 11..12 link the driving role's own refs; `on-accent` links the
   REQ-024 pick (`--{pfx}-{n}-050`/`-950` or `--{pfx}-white`/`-black`). Every link still names a
   primitive `exportCSS`/`exportOKLCH` declares.
@@ -703,6 +706,6 @@ notes on each REQ.
 
 **Amendment, 2026-10-11 (T-0047, ADR-038, user ruling "9 and 10 plus 7 and 8 to primes").** Steps
 7..10 read the prime ladder (light `brightest`/`brighter`/`prime`/`dim`, dark `700`/`dim`/`prime`/
-`bright`) and `on-accent` is picked against the prime. REQ-021, REQ-022, REQ-024, REQ-029 and EX-4
+`bright`, light 7/8 under the per-palette step 7 guard) and `on-accent` is picked against the prime. REQ-021, REQ-022, REQ-024, REQ-029 and EX-4
 carry the inline notes; REQ-023's aliases are unchanged. The version moves 0.3.1 → 0.4.0; status
 stays `approved`.

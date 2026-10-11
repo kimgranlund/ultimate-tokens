@@ -44,6 +44,24 @@ const ALL_WITH_DATA = [...BRAND_ONLY, ...DATA_8];
 // must exercise the SAME document; a second hand-built copy could drift from it.
 const RADIX_MK = (name, hue) => ({ name, hue, chroma: 60, skew: 0, lift: 0, hueShift: 0, hueSameDir: false, on: true });
 const RADIX_COLLIDING = [...BRAND_ONLY.filter((p) => p.name !== "Danger"), RADIX_MK("Accent", 40), RADIX_MK("Error", 350)];
+// ADR-038's light step 7 guard, re-derived with this test's OWN CIE L* (WCAG relative luminance, then
+// the CIE formula), never exports.js's radixSteps: light step 7 keeps `brightest` while its pixel sits
+// at least 2 L* under step 6's (stop 250); otherwise light 7/8 read `brighter`/`bright` when
+// `brighter` does, else the base stops 300/350. RADIX_COLLIDING carries one palette of each fallback
+// (Accent, hue 40, falls to the stops; Error, hue 350, to `brighter`/`bright`).
+const lstarT = (rgb) => {
+  const c = rgb.map((v) => { const s = v / 255; return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; });
+  const y = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  return y > 216 / 24389 ? 116 * Math.cbrt(y) - 16 : (24389 / 27) * y;
+};
+const radixSrcRgbT = (p, src) => (typeof src === "number" ? p.byStop.get(src) : p.prime[src] && p.prime[src].rgb);
+const radixGuardT = (p, table) => {
+  const L = (src) => lstarT(radixSrcRgbT(p, src));
+  const ceiling = L(250) - 2;
+  if (L("brightest") <= ceiling) return table;
+  const [l7, l8] = L("brighter") <= ceiling ? ["brighter", "bright"] : [300, 350];
+  return table.map((s) => (s.step === 7 ? { ...s, light: l7 } : s.step === 8 ? { ...s, light: l8 } : s));
+};
 const fails = [];
 const FAIL = (g, m) => { if (!fails.some((f) => f.startsWith(g + ":"))) fails.push(`${g}: ${m}`); };
 
@@ -642,15 +660,19 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     { step: 9, light: "prime", dark: "prime" },
     { step: 10, light: "dim", dark: "bright" },
   ];
-  const srcRgb = (p, src) => (typeof src === "number" ? p.byStop.get(src) : p.prime[src] && p.prime[src].rgb);
+  const srcRgb = radixSrcRgbT;
   // the committed projection table names the same sources: a padded stop, or a prime rung by its
-  // flat name (`prime` for the centre, `prime-{rung}` otherwise).
+  // flat name (`prime` for the centre, `prime-{rung}` otherwise), and the guard's light 7/8 fallbacks.
   {
     const proj = JSON.parse(readFileSync(new URL("../../docs/reference/data/radix-projection.json", import.meta.url), "utf8")).projection;
     const name = (src) => (typeof src === "number" ? String(src).padStart(3, "0") : src === "prime" ? "prime" : `prime-${src}`);
     for (const { step, light, dark } of [...RATIFIED_RAW_STEPS, ...RATIFIED_PRIME_STEPS]) {
       const row = proj[String(step)];
       if (!row || row.light !== name(light) || row.dark !== name(dark)) FAIL("radix", `radix-projection.json step ${step} = ${JSON.stringify(row)}, want light ${name(light)} / dark ${name(dark)}`);
+    }
+    for (const [step, want] of [["7", ["brighter", 300]], ["8", ["bright", 350]]]) {
+      const got = proj[step] && proj[step].light_fallback;
+      if (JSON.stringify(got) !== JSON.stringify(want.map(name))) FAIL("radix", `radix-projection.json step ${step} light_fallback = ${JSON.stringify(got)}, want ${JSON.stringify(want.map(name))} (ADR-038 guard)`);
     }
   }
 
@@ -698,8 +720,9 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
     // exact-value pin (reviewer finding on #588's radix gate): each of steps 1..8 must read the
     // EXACT ratified stop number, not merely a monotone-in-the-right-direction neighbour, deep-equal
     // the emitted leaf's parsed rgb against derivedAll's own byStop.get(expectedStop) for that step,
-    // per palette (cheap enough to run for all, not just one representative).
-    for (const { step, light, dark } of [...RATIFIED_RAW_STEPS, ...RATIFIED_PRIME_STEPS]) {
+    // per palette (cheap enough to run for all, not just one representative). Light 7/8 follow the
+    // ADR-038 guard (radixGuardT).
+    for (const { step, light, dark } of [...RATIFIED_RAW_STEPS, ...radixGuardT(p, RATIFIED_PRIME_STEPS)]) {
       const parsedBase = parseOklch(g[String(step)].value.base);
       const parsedDark = parseOklch(g[String(step)].value._dark);
       const wantBase = srcRgb(p, light);
@@ -721,6 +744,33 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
       const ratio = on && fill ? wcag(on.rgb, fill.rgb) : 0;
       if (ratio < 4.5) FAIL("radix", `colors.${p.n} on-accent.${mode} on step 9 = ${ratio.toFixed(2)}:1, under WCAG AA 4.5 (ADR-038)`);
     }
+  }
+
+  // ADR-038's light step 7 guard on the documents that trip it: RADIX_COLLIDING's Accent falls to the
+  // base stops and its Error to `brighter`/`bright`. Light 7/8 pin to the guard's pick, light step 7 is
+  // never lighter than step 6, and step 8 never lighter than step 7; together with C(ALL) (every
+  // palette keeps `brightest`) all three outcomes must be seen, or the guard is unwatched.
+  {
+    const seen = new Set(derived.map((p) => radixGuardT(p, RATIFIED_PRIME_STEPS)[0].light));
+    const cSt = C(RADIX_COLLIDING);
+    const cDerived = X.derivedAll(cSt);
+    const cColors = X.exportRadix(cSt).theme.extend.semanticTokens.colors;
+    const cKeys = X.radixPaletteKeys(cDerived.map((p) => p.n));
+    for (const [st, ds, cs, keys] of [[state, derived, colors, derived.map((p) => p.n)], [cSt, cDerived, cColors, cKeys]]) {
+      ds.forEach((p, i) => {
+        const g = cs[keys[i]];
+        const guarded = radixGuardT(p, RATIFIED_PRIME_STEPS);
+        seen.add(guarded[0].light);
+        for (const { step, light } of guarded.slice(0, 2)) {
+          const got = parseOklch(g[String(step)].value.base), want = srcRgb(p, light);
+          if (!got || !want || got.rgb.some((c, j) => Math.abs(c - want[j]) > 1)) FAIL("radix", `colors.${keys[i]}.${step}.base rgb ${got && got.rgb} != the guard's ${light} ${want} (ADR-038)`);
+        }
+        const L = (k) => lstarT(parseOklch(g[k].value.base).rgb);
+        if (L("7") > L("6") + 0.05) FAIL("radix", `colors.${keys[i]}: light step 7 (L* ${L("7").toFixed(2)}) is lighter than step 6 (${L("6").toFixed(2)}), the ADR-038 guard did not hold`);
+        if (L("8") > L("7") + 0.05) FAIL("radix", `colors.${keys[i]}: light step 8 (L* ${L("8").toFixed(2)}) is lighter than step 7 (${L("7").toFixed(2)})`);
+      });
+    }
+    for (const want of ["brightest", "brighter", 300]) if (!seen.has(want)) FAIL("radix", `no fixture palette took the ADR-038 light step 7 outcome ${JSON.stringify(want)}; the guard is unwatched (seen ${JSON.stringify([...seen])})`);
   }
 
   // REQ-025: accent/gray are self-contained deep copies of the driver groups, ref-rewritten.
@@ -935,10 +985,12 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
 //    leaves (ALL / BRAND_ONLY / COLLIDING). The unanchored Accent and Error palettes are byte-identical.
 //    No leaf shape, key, or ordering changed.
 //    T-0047 re-capture (2026-10-11, by script from the engine, ADR-038): steps 7..10 read the prime
-//    ladder and `on-accent` is picked against the prime, so 264 / 142 / 158 mode leaves moved (ALL /
+//    ladder and `on-accent` is picked against the prime, so 264 / 142 / 154 mode leaves moved (ALL /
 //    BRAND_ONLY / COLLIDING), every one a 7.base, 8, 9, 10, a7.base, a8, a9, a10 or on-accent leaf
-//    (dark 7 keeps stop 700). Steps 1..6, 11, 12, their alphas, `prime` and the appearance aliases
-//    (`solid.*` included, they are `{colors.x.9}` refs) are byte-identical. No shape, key or order changed.
+//    (dark 7 keeps stop 700; under the light step 7 guard COLLIDING's Accent reads stops 300/350 for
+//    light 7/8, its 7.base unmoved, and its Error `brighter`/`bright`). Steps 1..6, 11, 12, their
+//    alphas, `prime` and the appearance aliases (`solid.*` included, they are `{colors.x.9}` refs) are
+//    byte-identical. No shape, key or order changed.
 {
   const G = "radix-refs-values-unchanged";
   const fixture = JSON.parse(readFileSync(new URL("./fixtures/radix-baseline.json", import.meta.url), "utf8"));
@@ -1028,13 +1080,16 @@ if (rootToks.size === 0 || rootToks.size !== darkToks.size || [...rootToks].some
   }
 
   // U1.3, steps 1..10 link the exact ratified source (a raw stop, or a prime rung for 7..10,
-  //        ADR-038), per palette, both modes (c1 identity map).
+  //        ADR-038, light 7/8 after the guard), per palette, both modes (c1 identity map), on C(ALL)
+  //        and on RADIX_COLLIDING, whose Accent and Error trip the guard (links use the RAW slug).
   {
     const G = "radix-refs-raw-pin";
-    for (const p of derived) {
-      const g = refColors[p.n];
+    const cSt = C(RADIX_COLLIDING), cDerived = X.derivedAll(cSt), cKeys = X.radixPaletteKeys(cDerived.map((p) => p.n));
+    const cRef = X.exportRadix(cSt, { refs: true }).theme.extend.semanticTokens.colors;
+    const rows = [...derived.map((p) => [p, refColors[p.n]]), ...cDerived.map((p, i) => [p, cRef[cKeys[i]]])];
+    for (const [p, g] of rows) {
       if (!g) continue;
-      for (const { step, light, dark } of RATIFIED_RAW_STEPS) {
+      for (const { step, light, dark } of radixGuardT(p, RATIFIED_RAW_STEPS)) {
         const wantBase = `var(--c-${p.n}-${srcFrag(light)})`;
         const wantDark = `var(--c-${p.n}-${srcFrag(dark)})`;
         if (g[String(step)].value.base !== wantBase) FAIL(G, `colors.${p.n}.${step}.base = ${JSON.stringify(g[String(step)].value.base)}, want ${JSON.stringify(wantBase)}`);

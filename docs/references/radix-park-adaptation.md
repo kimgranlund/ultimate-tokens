@@ -60,7 +60,10 @@ Steps 1–6 are RAW RAMP STOPS, opaque values read directly from each family's o
 the exact stop listed, never role-indirected and never flattened over white/black. Steps 7–10
 read the family's PRIME LADDER (ADR-038, T-0047), mode-independent swatches, so step 9 is the same
 brand colour in both modes; dark step 7 keeps the raw stop 700, because no rung lies between stop
-750 and `prime-dim` in dark mode. Steps 11–12 are role-derived (`on-surface-variant` /
+750 and `prime-dim` in dark mode. Light steps 7–8 are guarded per family: light step 7 reads
+`prime-brightest` only while it sits at least 2 L* under step 6; otherwise light 7–8 read
+`prime-brighter`/`prime-bright` when `prime-brighter` does, else the raw stops 300/350 (the
+`light_fallback` lists in the JSON). Steps 11–12 are role-derived (`on-surface-variant` /
 `on-surface`), unchanged from the original ratification:
 
 | Step | Light | Dark | Functional role |
@@ -71,8 +74,8 @@ brand colour in both modes; dark step 7 keeps the raw stop 700, because no rung 
 | 4 | 175 | 825 | component hover background |
 | 5 | 200 | 800 | component active/selected background |
 | 6 | 250 | 750 | subtle border/separator |
-| 7 | prime-brightest | 700 | interactive border |
-| 8 | prime-brighter | prime-dim | strong border/focus |
+| 7 | prime-brightest (guarded: prime-brighter, else 300) | 700 | interactive border |
+| 8 | prime-brighter (guarded: prime-bright, else 350) | prime-dim | strong border/focus |
 | 9 | prime | prime | solid accent |
 | 10 | prime-dim | prime-bright | solid accent hover |
 | 11 | 750 | 250 | secondary text |

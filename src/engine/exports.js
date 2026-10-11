@@ -34,6 +34,7 @@ import { COLLECTIONS } from "./collections.js";
 import { compute, docPins, runOf, slug, relLum } from "./layers.mjs"; // slug: the palette-name token prefix the roles are keyed on
 import { PRIME_STEPS, primeSlug } from "./prime.mjs";
 import { oklchToRgb } from "./okhsl.js";
+import { lstarFromRgb } from "./hct.js";
 import { cssFontStack } from "./type.mjs";
 
 // WCAG relative luminance of an [r,g,b] (0..255) triple: layers.mjs's relLum (the role chain's
@@ -1001,8 +1002,9 @@ export function exportPandaModule(preset, opts = {}) {
 // (prime.mjs PRIME_STEPS), mode-independent swatches, so step 9 is the brand colour itself in both
 // modes. Each mode names its own source: a number is a raw ramp stop, a string a prime rung. Dark
 // step 7 keeps the raw stop 700 (ADR-038): no rung lies between stop 750 and `dim` in dark mode,
-// and `dimmer` sat on or under stop 750 for 6 of the 16 default palettes. 11..12 stay role-derived
-// (-on-surface-variant / -on-surface). Canonical source: docs/reference/data/radix-projection.json.
+// and `dimmer` sat on or under stop 750 for 6 of the 16 default palettes. Light steps 7..8 are guarded
+// per palette (radixSteps below). 11..12 stay role-derived (-on-surface-variant / -on-surface).
+// Canonical source: docs/reference/data/radix-projection.json.
 const RADIX_RAW_STEPS = [
   { step: 1, light: 100, dark: 900 },
   { step: 2, light: 125, dark: 875 },
@@ -1015,6 +1017,23 @@ const RADIX_RAW_STEPS = [
   { step: 9, light: "prime", dark: "prime" },
   { step: 10, light: "dim", dark: "bright" },
 ];
+// The light step 7 guard (ADR-038). `brightest` sits up to 27 L* over the prime, so for a light prime
+// it reads lighter than step 6 and the interactive border vanishes. Light step 7 keeps `brightest`
+// only while its pixel sits at least RADIX_STEP7_MARGIN L* under step 6's; otherwise light steps 7
+// and 8 take the first pair below whose step 7 does, the adjacent rungs `brighter`/`bright` (both
+// still lighter than the prime at step 9), else the base stops 300/350. A rung at or past the prime
+// for step 7 would leave step 8 on or under step 9, so the list stops there. Dark mode is untouched.
+const RADIX_STEP7_MARGIN = 2;
+const RADIX_LIGHT_7_8_FALLBACK = [["brighter", "bright"], [300, 350]];
+// radixSteps(p), RADIX_RAW_STEPS for one palette with the guard applied; CIE L* of the rendered pixels.
+function radixSteps(p) {
+  const lstar = (src) => lstarFromRgb(radixSrcRgb(p, src));
+  const at = (step) => RADIX_RAW_STEPS.find((s) => s.step === step);
+  const ceiling = lstar(at(6).light) - RADIX_STEP7_MARGIN;
+  if (lstar(at(7).light) <= ceiling) return RADIX_RAW_STEPS;
+  const [l7, l8] = RADIX_LIGHT_7_8_FALLBACK.find(([s7]) => typeof s7 === "number" || lstar(s7) <= ceiling);
+  return RADIX_RAW_STEPS.map((s) => (s.step === 7 ? { ...s, light: l7 } : s.step === 8 ? { ...s, light: l8 } : s));
+}
 // step -> the role suffix that drives it (11..12, REQ-021), read off p.roles by suffix.
 const RADIX_ROLE_STEPS = [
   { step: 11, suffix: "-on-surface-variant" },
@@ -1193,7 +1212,7 @@ function rewriteRefs(node, fromN, toN) {
 // links names that exist. It also keeps the accent/gray clone rewrite harmless, since rewriteRefs
 // only ever rewrites `{colors.{n}.` Panda paths and cannot occur inside a var() string.
 //
-// A step source `src` (RADIX_RAW_STEPS) is a raw stop number or a prime rung name; radixSrcRgb is
+// A step source `src` (RADIX_RAW_STEPS, radixSteps) is a raw stop number or a prime rung name; radixSrcRgb is
 // the colour either names, read by the alpha projection as well as the values leaves.
 const radixSrcRgb = (p, src) => (typeof src === "number" ? p.byStop.get(src) : p.prime[src].rgb);
 const primeOklchStr = (sw) => oklchStr({ L: sw.oklch[0], C: sw.oklch[1], H: sw.oklch[2] });
@@ -1253,7 +1272,7 @@ function radixColorGroup(p, key = p.n, leaves = RADIX_VALUE_LEAVES, onAccent = p
   const group = {};
   const rawSolid = {}; // step -> { base: [r,g,b], dark: [r,g,b] }, for the a{k} projection below.
 
-  for (const { step, light, dark } of RADIX_RAW_STEPS) {
+  for (const { step, light, dark } of radixSteps(p)) {
     rawSolid[step] = { base: radixSrcRgb(p, light), dark: radixSrcRgb(p, dark) };
     group[String(step)] = { value: leaves.rawStep(p, light, dark) };
   }

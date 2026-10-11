@@ -70,8 +70,9 @@ like this touches the same three sites as a new format, but narrower: an `opts` 
 entry, and a second zip file beside the first, never a new `FORMAT_GROUPS` row, never a new format id.
 `radixRef` is `exportAll`'s key for it (see `nonempty` below); the count stays at ten colour formats.
 Each Radix step names its source per mode in ONE table, `RADIX_RAW_STEPS`: a number is a raw ramp
-stop, a string a prime rung (steps 7 to 10 read the prime ladder, ADR-038), and both leaf builders
-and the alpha projection read that descriptor, so the two forms cannot point at different colours.
+stop, a string a prime rung (steps 7 to 10 read the prime ladder, ADR-038); `radixSteps(p)` applies
+the per-palette light step 7 guard to that table, and both leaf builders and the alpha projection read
+its descriptors, so the two forms cannot point at different colours.
 The solid foreground `on-accent` is the on-colour policy's pick against the fill it sits on (the
 prime, `radixOnAccent` over `semantic.js` `pickOnColor`), not the `-on-{n}` role picked against 550/450.
 

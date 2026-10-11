@@ -52,8 +52,9 @@ library's series-color source, and the data palettes' own roles for everything e
    same shape Park UI/Panda consume), `accent` is the brand's primary palette, `gray` is its neutral,
    not a literal palette name. In its 12-step ladder, steps 7 to 10 (the interactive borders, the
    solid and its hover) read the palette's prime swatches, so `solid.bg` (step 9) is the brand colour
-   in both modes and `solid.fg` is the on-colour measured against it; steps 1 to 6, 11 and 12 come
-   from the tonal ramp. A palette actually named after one of the seven alias keys (`accent`,
+   in both modes and `solid.fg` is the on-colour measured against it (a light palette's light-mode
+   border steps may fall back to darker rungs or ramp stops, so step 7 always sits under step 6);
+   steps 1 to 6, 11 and 12 come from the tonal ramp. A palette actually named after one of the seven alias keys (`accent`,
    `gray`, `error`, `fg`, `canvas`, `border`, `bg`) is exported under `<slug>-palette` instead. A kit
    may hand you either of two Radix files: the values form (`{s}.preset.mjs`, baked `oklch(...)`
    colors, self-contained) or the reference form (`{s}.refs.preset.mjs`, every numbered step a

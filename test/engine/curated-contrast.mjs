@@ -122,6 +122,17 @@ let docsMeasured = 0, cellsMeasured = 0, identityCells = 0, liftSkew = 0, palett
 let worst = Infinity, worstAt = "";
 // the RADIX pair (ADR-038): its own flat floor, no carve-out table, every miss is named (capped) and counted.
 const radix = { cells: 0, under: 0, named: 0, worst: Infinity, worstAt: "" };
+// the RADIX ORDER (ADR-038's light step 7 guard): light step 7 (the interactive border) is never lighter
+// than step 6 (the subtle border), one cell per palette and tone mode, measured on the emitted leaves
+// with this file's own CIE L* (WCAG relative luminance, then the CIE formula). Before the guard 3401 of
+// 11340 full-corpus cells read step 7 lighter by 2 L* or more; the tolerance here is 0.5 L*.
+const radixOrder = { cells: 0, lighter: 0, named: 0, worst: -Infinity, worstAt: "" };
+const ORDER_TOL = 0.5;
+const lstar = (rgb) => {
+  const c = rgb.map((v) => { const s = v / 255; return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; });
+  const y = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  return y > 216 / 24389 ? 116 * Math.cbrt(y) - 16 : (24389 / 27) * y;
+};
 const leafRgb = (s) => { const m = /^oklch\(([-\d.]+) ([-\d.]+) ([-\d.]+)\)$/.exec(s); return m ? oklchToRgb(Number(m[1]), Number(m[2]), Number(m[3])) : null; };
 const perMode = Object.fromEntries(MODES.map((m) => [m, { cells: 0, under: 0, worst: Infinity, worstAt: "" }]));
 const gallery = {};
@@ -171,6 +182,15 @@ for (const cat of CATS) {
           radix.under++;
           if (radix.named < 5) { radix.named++; FAIL("radix", `${cat} / ${p.n} / ${scheme} / ${mode}: Radix solid.fg ${g["on-accent"].value[leaf]} on solid.bg (step 9) ${g["9"].value[leaf]} is ${ratio.toFixed(3)}:1, under the ${AA} floor (ADR-038)`); }
         }
+      }
+      const s6 = g["6"] && leafRgb(g["6"].value.base), s7 = g["7"] && leafRgb(g["7"].value.base);
+      if (!s6 || !s7) { FAIL("radix-order", `${cat} "${preset.name}" ${p.n} (${mode}): light step 6 or 7 is not a parseable oklch() leaf`); return; }
+      const rise = lstar(s7) - lstar(s6);
+      radixOrder.cells++;
+      if (rise > radixOrder.worst) { radixOrder.worst = rise; radixOrder.worstAt = `${cat} "${preset.name}" ${p.n} (${mode})`; }
+      if (rise > ORDER_TOL) {
+        radixOrder.lighter++;
+        if (radixOrder.named < 5) { radixOrder.named++; FAIL("radix-order", `${cat} / ${p.n} / ${mode}: light step 7 ${g["7"].value.base} reads ${rise.toFixed(2)} L* lighter than step 6 ${g["6"].value.base} (ADR-038 guard)`); }
       }
     });
     for (const p of derived) {
@@ -230,6 +250,7 @@ for (const cat of Object.keys(EXPECTED_GALLERY)) if (!gallery[cat]) FAIL("galler
 
 // ── the RADIX pair's flat floor: the policy picks on-accent against the prime itself, and its
 //    white/black fall-through clears AA against any opaque fill, so nothing may sit under it.
+if (radixOrder.lighter) FAIL("radix-order", `${radixOrder.lighter} of ${radixOrder.cells} palettes read light Radix step 7 more than ${ORDER_TOL} L* lighter than step 6, worst +${radixOrder.worst.toFixed(2)} at ${radixOrder.worstAt}`);
 if (radix.under) FAIL("radix", `${radix.under} of ${radix.cells} Radix solid.fg/solid.bg cells are under ${AA}, worst ${radix.worst.toFixed(3)}:1 at ${radix.worstAt}`);
 
 // ── stale carve-out rows: a key nothing visited is a lie about the corpus ──────────────────────
@@ -240,6 +261,7 @@ for (const k of Object.keys(EXPECTED_BELOW))
 const WANT = FULL ? { docs: 340, cells: 22500 } : { docs: 34, cells: 2280 };   // documents x palettes x 2 schemes x 3 tone modes
 if (docsMeasured < WANT.docs) FAIL("vacuity", `only ${docsMeasured} curated documents measured in ${FULL ? "FULL" : "SAMPLED"} scope, expected at least ${WANT.docs}, the corpus shrank or an import failed silently`);
 if (cellsMeasured < WANT.cells) FAIL("vacuity", `only ${cellsMeasured} accent/on-color cells measured in ${FULL ? "FULL" : "SAMPLED"} scope, expected at least ${WANT.cells}`);
+if (radixOrder.cells * 2 !== cellsMeasured) FAIL("vacuity", `the Radix order leg measured ${radixOrder.cells} light cells, want half the role leg's ${cellsMeasured}`);
 if (radix.cells !== cellsMeasured) FAIL("vacuity", `the Radix leg measured ${radix.cells} solid.fg/solid.bg cells, but the role leg measured ${cellsMeasured}, the two legs did not see the same palettes`);
 if (identityCells < 480) FAIL("vacuity", `only ${identityCells} brands.json cells measured, expected 504 (168 per tone mode), the identity tier runs in full in BOTH scopes`);
 {
@@ -264,7 +286,7 @@ if (!FULL && Object.keys(sampled).length !== CATS.length - 1)
 // The printed set is this declared list UNION every gate name that actually reached a FAIL(...)
 // call (#699, following #695's pattern in test/engine/tonal.mjs), so a gate missing from the list
 // below still shows up, loudly, instead of hiding behind a neighbouring gate's "pass" row.
-const DECLARED = ["corpus", "sample", "modes", "pair", "identity", "gallery", "radix", "vacuity", "report-static"];
+const DECLARED = ["corpus", "sample", "modes", "pair", "identity", "gallery", "radix", "radix-order", "vacuity", "report-static"];
 gateReport({ fails, declared: DECLARED, selfUrl: import.meta.url, FAIL });
 console.log(`  (${FULL ? "FULL" : `SAMPLED seed ${SAMPLE_SEED}, volumes ` + CATS.filter((c) => c !== IDENTITY).map((c) => `${c} ${sampled[c]}`).join(", ")})`);
 console.log(`  (${docsMeasured} curated documents, ${palettes} palettes (${liftSkew} carrying a non-zero lift or skew), ${cellsMeasured} accent/on-color cells; ${identityCells} named per cell, ${Object.keys(EXPECTED_BELOW).length} carried below ${AA})`);
@@ -272,6 +294,7 @@ for (const m of MODES) {
   const pm = perMode[m];
   console.log(`  (${m.padEnd(10)} ${String(pm.cells).padStart(6)} cells, ${pm.under} under ${AA}, worst ${Number.isFinite(pm.worst) ? pm.worst.toFixed(3) : "n/a"}:1 at ${pm.worstAt || "n/a"})`);
 }
+console.log(`  (radix 6>7  ${String(radixOrder.cells).padStart(6)} light cells, ${radixOrder.lighter} with step 7 over ${ORDER_TOL} L* lighter than step 6, largest step 7 minus step 6 ${Number.isFinite(radixOrder.worst) ? radixOrder.worst.toFixed(2) : "n/a"} L* at ${radixOrder.worstAt || "n/a"}, ADR-038)`);
 console.log(`  (radix      ${String(radix.cells).padStart(6)} cells, ${radix.under} under ${AA}, worst ${Number.isFinite(radix.worst) ? radix.worst.toFixed(3) : "n/a"}:1 at ${radix.worstAt || "n/a"}, solid.fg on step 9, ADR-038)`);
 console.log(`  (worst overall ${Number.isFinite(worst) ? worst.toFixed(3) : "n/a"}:1 at ${worstAt || "n/a"})`);
 if (fails.length) {
@@ -280,5 +303,5 @@ if (fails.length) {
   console.error(`\nFAIL: ${fails.length} gate failure(s)`);
   process.exit(1);
 }
-console.log(`\nPASS: every measured curated preset's accent clears ${AA}:1 against its own on-color, and every Radix solid.fg clears it on step 9`);
+console.log(`\nPASS: every measured curated preset's accent clears ${AA}:1 against its own on-color, every Radix solid.fg clears it on step 9, and no light Radix step 7 reads lighter than step 6`);
 process.exit(0);
