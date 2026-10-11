@@ -2,7 +2,7 @@
 id: T-0044
 title: "UI standardization: shell type roles, container and control anatomy, glyph motion, product-sm default"
 type: feature        # feature | bug | chore | spike | idea
-status: ready     # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: done     # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: L4             # L1 | L2 | L3 | L4 (L5 reserved)
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -45,3 +45,7 @@ verifier: L3
 ## Plan review
 
 plan review: replan: step 8 is built and tested (smoke PASS, npm test green, criteria 1 to 4 pass) but its scope guard deny-lists `test/smoke` while the step must edit `test/smoke/smoke.mjs` (line 365, drop `.chip` from the control-text chip predicate: user ruling, interactive chips use the control size); `steps.py widen` cannot rewrite a deny-path guard. Replan step 8 ONLY: keep every other step byte for byte, keep step 8's Do and criteria, and change its scope guard to allow exactly `test/smoke/smoke.mjs` (add `':!test/smoke/smoke.mjs'` to the git diff pathspec, keep the untracked-files list denied) and add the one-line smoke edit to its Do. The step 8 tree work is uncommitted in this worktree and the replanned step 8 continues from it (patch at /private/tmp/claude-501/t0044-s8-wip.patch).
+
+## Closed
+
+2026-10-11: Shipped in #826 (shell text roles, control anatomy, glyph motion, product-sm default, ADR-036).

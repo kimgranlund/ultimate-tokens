@@ -2,7 +2,7 @@
 id: T-0037
 title: "Radix colors: hover tooltip with each step's role and intent"
 type: feature        # feature | bug | chore | spike | idea
-status: ready     # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: done     # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: L2             # L1 | L2 | L3 | L4 (L5 reserved)
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -23,3 +23,7 @@ The Radix mapping is documented in the export format docs (`docs/references/know
 
 ## Constraints
 Every shell control text/padding reads the cell roles (`test/repo/control-text.mjs`). Doc cites into `src/ui/styles.css`, `app.js`, sections shift: run `node scripts/audit-citations.mjs` and repair in the same change. No U+2014. Hyperscript `h()` only, no framework. Gates via `scripts/gate_lock.py run -- <cmd>` with `SDLC_GATE_WORKERS=10`; `npm run smoke` needs `CHROME_BIN` set to Chrome Beta/Canary. `npm test` before done. The user previews in Safari: reason about WebKit from spec, smoke is Chrome only.
+
+## Closed
+
+2026-10-11: Shipped in #822 and #824 (T-0037 and T-0043: Radix step tooltip with role and intent, shared popover).

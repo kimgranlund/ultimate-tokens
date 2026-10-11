@@ -2,7 +2,7 @@
 id: T-0040
 title: "Opt-in match-peer-lightness mode: anchored palettes share lightness per stop across peers"
 type: feature        # feature | bug | chore | spike | idea
-status: ready     # proposed | ready | blocked | done | dropped (build progress lives in /board)
+status: done     # proposed | ready | blocked | done | dropped (build progress lives in /board)
 size: L4             # L1 | L2 | L3 | L4 (L5 reserved)
 priority: P2         # P1 | P2 | P3
 depends: []          # T-NNNN, file:<path>, cap:<name>; e.g. [T-0002]
@@ -50,3 +50,7 @@ plan review: replan: step 2 builder-L5 blocked with plan defects (result .sdlc/m
 plan review: replan: step 2 `(guard) report-compute-neutral ... "0 differing cells"` cannot read 0: the default-kit subject hydrates `defaultDocument()`, which already pins `ramp: 2` at the step base, so both trees render ramp@2. Re-express: run the guard with the default-kit leg pinned to ramp@1 (a `--pin ramp=1` leg), or `--only brands` for 0 and read the default-kit delta as the declared change.
 plan review: replan: step 2 scope guard excludes `test/engine/semantic.mjs` and `test/engine/exports.mjs`, both red under the band rule (role-contrast floor `perceptual Neutral DARK accent #667396 on #FFFFFF 4.71 vs pinned 4.73`; exports EX-1 `panda colors.primary.950`, whose test renders the live ramp, not a ramp@1 pin). Allow their re-pins, or pin them to ramp@1 and add ramp@2 expectations. Also allow `test/engine/tonal.mjs` re-pins and band-stop skips (curve-fidelity, damping-curve, edge-hue, rel-chroma, okhsl-modes, skew-lift-okhsl), `test/ui/headless-boot.mjs` gid3, `test/engine/anchor.mjs` list growth, Gate A SPEC band clause.
 plan review: replan: design decisions the plan must make (defaults chosen by the conductor): (a) pivot clamp: anchored pivots clamp into `pivotWindow(controls, BAND_PIVOT_GAP 0.55)`, unanchored use `BAND_PIVOT_ROOM` 4.4; C3 FULL and `envelope-measure.inRampWindow` read `pivotWindow` instead of RAMP_L_MIN/MAX, and the 5 clamped FULL anchors (Istanbul, Saint-Malo, Wadi Rum, Carlsbad, Kea) are a declared, listed change; (b) achromatic anchor (`#808080 perceptual stop 300`, R69): scale the band tint by the anchor's chroma fraction so a grey anchor stays achromatic (CAM16 C below 5); (c) performance: `projectView` of the 48 default-kit renders took 8 s and tonal.mjs 164 to 245 s, anchor.mjs 371 s, headless-boot 878 s on a loaded host: add a criterion bounding the editor's live render (cache or cheaper snap) so an interactive palette render does not regress more than 2x against base; a step that cannot meet it stops and asks.
+
+## Closed
+
+2026-10-11: Shipped in #827 (ramp@2 shared extremes and the opt-in Match peer lightness mode, ADR-037).
